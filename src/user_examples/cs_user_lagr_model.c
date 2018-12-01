@@ -254,7 +254,7 @@ cs_user_lagr_model(void)
      is not taken into account anymore in the full model
      of turbulent dispersion, in the resolution of the
      Poisson equation of correction of the mean velocities, and
-     in the writing of the listing and post-processing. */
+     in the writing of the log and post-processing. */
 
   cs_glob_lagr_stat_options->threshold = 0.0;
 
@@ -580,7 +580,7 @@ cs_user_lagr_model(void)
      * A priori the user intervenes only in the additional user information
      to be recorded: he must prescribe the name of the recording as well as
      the type of average that he wishes to apply to it for the writing
-     of the listing and the post-processing.
+     of the log and the post-processing.
 
      * The applied average is prescribed through the imoybr array:
      - if imoybr(iusb(ii)) = 0 -> no average applied
@@ -601,8 +601,8 @@ cs_user_lagr_model(void)
      * The back-ups in the restart file are performed without applying
        this average. */
 
-  /* Frequency for the output of the Lagrangian log (listla)
-   * ======================================================= */
+  /* Frequency for the output of the Lagrangian log
+   * ============================================== */
 
   cs_glob_lagr_log_frequency_n = 1;
 }

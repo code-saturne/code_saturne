@@ -100,7 +100,7 @@ call field_get_val_s(ivarfl(ir13), cvar_r13)
 call field_get_val_s(ivarfl(ir23), cvar_r23)
 
 !===============================================================================
-!  ---> Stockage Min et Max pour listing
+!  ---> Stockage Min et Max pour log
 !===============================================================================
 
 do isou = 1, 7
@@ -235,7 +235,7 @@ do isou = 4, 6
 
 enddo
 
-! ---> Stockage nb de clippings pour listing
+! ---> Stockage nb de clippings pour log
 
 do isou = 1, 7
   if    (isou.eq.1) then
@@ -357,7 +357,7 @@ if (clip_r_id.ge.0) then
 endif
 
 !===============================================================================
-!  Compute and store Min Max values for the listing
+!  Compute and store Min Max values for the log
 !===============================================================================
 
 do isou = 1, 7

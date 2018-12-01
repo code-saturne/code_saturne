@@ -20,26 +20,19 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine caltri
-!================
+!> \file caltri.f90
+!> \brief Main time loop.
+!>
+!------------------------------------------------------------------------------
 
-!===============================================================================
-! Purpose:
-! --------
-
-! Main solver subroutine (read, time loop, write)
-
-!-------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________.____._____.________________________________________________.
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine caltri
 
 !===============================================================================
 ! Module files
@@ -141,6 +134,15 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine turbulence_model_free_bc_ids
+
+  !=============================================================================
+
+  subroutine cs_time_step_increment(dt) &
+    bind(C, name='cs_time_step_increment')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), value :: dt
+  end subroutine cs_time_step_increment
 
   !=============================================================================
 
@@ -800,14 +802,12 @@ call timer_stats_stop(post_stats_id)
  100  continue
 
 if (inpdt0.eq.0 .and. itrale.gt.0) then
-  ntcabs = ntcabs + 1
   call timer_stats_increment_time_step
-  if(idtvar.eq.0.or.idtvar.eq.1) then
-    ttcabs = ttcabs + dt(1)
+  if (idtvar.eq.0.or.idtvar.eq.1) then
+    call cs_time_step_increment(dt(1))
   else
-    ttcabs = ttcabs + dtref
+    call cs_time_step_increment(dtref)
   endif
-  write(nfecra,3001) ttcabs,ntcabs
   if (iturbo.eq.2) then
     if(idtvar.eq.0.or.idtvar.eq.1) then
       ttcmob = ttcmob + dt(1)
@@ -816,7 +816,6 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
     endif
   endif
 endif
-
 
 !===============================================================================
 ! Step forward in time
@@ -836,11 +835,7 @@ call cs_boundary_zone_build_all(mesh_modified)
 
 call dmtmps(titer1)
 
-call tridim                                                       &
- ( itrale ,                                                       &
-   nvar   , nscal  ,                                              &
-   dt     )
-
+call tridim(itrale, nvar, nscal, dt)
 
 if (inpdt0.eq.0 .and. itrale.gt.0) then
 
@@ -972,8 +967,7 @@ call post_activate_by_time_step
 call cs_gui_postprocess_activate
 call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
-! If ITRALE=0, deactivate all writers, as geometry has not
-!              been output yet.
+! If ITRALE=0, deactivate all writers, as geometry has not been output yet.
 if (itrale.eq.0) then
   call post_activate_writer(0, .false.)
 endif
@@ -1002,7 +996,6 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
   if (modhis.eq.1) then
 
     ttchis = ttcabs
-
     if (ihistr.eq.1) then
       call strhis(modhis)
     endif
@@ -1012,7 +1005,7 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 endif
 
 !===============================================================================
-! Write to "listing" every ntlist iterations
+! Write to "run_solver.log" every ntlist iterations
 !===============================================================================
 
 if (ntlist.gt.0) then
@@ -1026,7 +1019,12 @@ elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
 else
   modntl = 1
 endif
+
 if (modntl.eq.0) then
+
+  if (inpdt0.eq.0 .and. itrale.gt.0) then
+    write(nfecra,3001) ttcabs,ntcabs
+  endif
 
   call ecrlis(ncelet, ncel, dt, cell_f_vol)
 

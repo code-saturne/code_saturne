@@ -586,7 +586,7 @@ deallocate(mix_mol_mas, x_ncond, mol_mas_ncond)
 deallocate(x_h2o_g, diff_m)
 
 !===============================================================================
-! 5 - Print in the listing every ntlist of the min/max values
+! 5 - Print in the log every ntlist of the min/max values
 !         for exchange coefficient and flux computed
 !===============================================================================
 

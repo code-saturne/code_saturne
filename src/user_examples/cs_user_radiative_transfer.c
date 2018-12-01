@@ -150,7 +150,7 @@ cs_user_radiative_transfer_parameters(void)
 
   cs_glob_rad_transfer_params->idiver = 2;
 
-  /* Verbosity level in the listing concerning the calculation of
+  /* Verbosity level in the log concerning the calculation of
      the wall temperatures (0, 1 or 2) */
 
   cs_glob_rad_transfer_params->iimpar = 1;

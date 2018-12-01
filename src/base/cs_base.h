@@ -212,24 +212,48 @@ cs_base_mem_finalize(void);
 void
 cs_base_time_summary(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update status file.
+ *
+ * If the format string is NULL, the file is removed.
+
+ * \param[in]  format  format string, or NULL
+ * \param[in]  ...     format arguments
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_update_status(const char  *format,
+                      ...);
+
+/*----------------------------------------------------------------------------
+ * Set tracing of progress on or off.
+ *
+ * parameters:
+ *   trace  <-- trace progress to stdout
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_trace_set(bool trace);
+
+
 /*----------------------------------------------------------------------------
  * Set output file name and suppression flag for bft_printf().
  *
  * This allows redirecting or suppressing logging for different ranks.
  *
  * parameters:
- *   log_name    <-- base file name for log, or NULL for stdout
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to <log_name> file
+ *   log_name    <-- base file name for log
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to <log_name>_n*" file;
- *                   2: redirected to "/dev/null" (suppressed)
+ *   rn_log_flag <-- redirection for ranks > 0 log:
+ *                   false: to "/dev/null" (suppressed)
+ *                   true: to <log_name>_r*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_bft_printf_init(const char  *log_name,
-                        int          r0_log_flag,
-                        int          rn_log_flag);
+                        bool         rn_log_flag);
 
 /*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
@@ -238,17 +262,11 @@ cs_base_bft_printf_init(const char  *log_name,
  *
  * parameters:
  *   log_name    <-- base file name for log
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to "listing" file
- *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to "listing_n*" file;
- *                   2: redirected to "/dev/null" (suppressed)
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_bft_printf_set(const char  *log_name,
-                       int          r0_log_flag,
-                       int          rn_log_flag);
+                       bool         rn_log_flag);
 
 /*----------------------------------------------------------------------------
  * Return name of default log file.

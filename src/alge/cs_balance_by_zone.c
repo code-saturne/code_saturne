@@ -1472,7 +1472,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
  * \brief Compute and log the different terms of the balance of a given scalar,
  *        on a volumic zone defined by selection criteria.
  *        The different contributions to the balance are printed in the
- *        listing.
+ *        run_solver.log.
  *
  * This function computes the balance relative to a given scalar
  * on a selected zone of the mesh.
@@ -2109,7 +2109,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
 /*!
  * \brief Computes one term of the head loss balance (pressure drop) on a
  * volumic zone defined by the criterion also given as argument.
- * The different contributions are printed in the listing.
+ * The different contributions are printed in the run_solver.log.
  *
  * \param[in]     selection_crit      zone selection criterion
  */

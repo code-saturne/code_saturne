@@ -101,7 +101,7 @@ extern void CS_PROCF (csprnt, CSPRNT)
 );
 
 /*----------------------------------------------------------------------------
- * Initialize Fortran log (listing) files
+ * Initialize Fortran log files
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (csopli, CSOPLI)
@@ -112,7 +112,7 @@ extern void CS_PROCF (csopli, CSOPLI)
 );
 
 /*----------------------------------------------------------------------------
- * Close log (listing) handled by Fortran: (CLose LIsting)
+ * Close log handled by Fortran: (CLose LIsting)
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (csclli, CSCLLI)
@@ -448,17 +448,14 @@ void CS_PROCF (csdatadir, CSDATADIR)
  *
  * parameters:
  *   log_name    <-- base file name for log, or NULL for stdout
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to <log_name> file
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to <log_name>_n*" file;
- *                   2: redirected to "/dev/null" (suppressed)
+ *                   false:  to "/dev/null" (suppressed)
+ *                   true: redirected to <log_name>_n*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_fortran_bft_printf_set(const char  *log_name,
-                               int          r0_log_flag,
-                               int          rn_log_flag)
+                               bool         rn_log_flag)
 {
   const char *name = NULL;
   bool suppress = false;
@@ -466,7 +463,7 @@ cs_base_fortran_bft_printf_set(const char  *log_name,
 
   /* C output */
 
-  cs_base_bft_printf_init(log_name, r0_log_flag, rn_log_flag);
+  cs_base_bft_printf_init(log_name, rn_log_flag);
 
   name = cs_base_bft_printf_name();
   suppress = cs_base_bft_printf_suppressed();

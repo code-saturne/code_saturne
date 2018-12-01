@@ -237,7 +237,7 @@ do iest = 1, nestmx
 enddo
 
 !     Estimateurs incompatibles avec calcul a champ de vitesse
-!       fige (on ne fait rien, sauf ecrire des betises dans le listing)
+!       fige (on ne fait rien, sauf ecrire des betises dans le log)
 if (indest.eq.1.and.iccvfg.eq.1) then
   write(nfecra,2137)
   iok = iok + 1

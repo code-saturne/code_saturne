@@ -77,7 +77,7 @@ module entsor
   !> field key for logging \n
   !> For every quantity (variable, physical or numerical property ...),
   !> indicator concerning the writing in the execution report file
-  !>    - 1: writing in the execution listing.
+  !>    - 1: writing in the execution log.
   !>    - 0: no writing.
   !> always useful
   integer, save :: keylog = -1
@@ -182,9 +182,9 @@ module entsor
 
   !> \}
 
-  !> \defgroup listing Output listing
+  !> \defgroup log Output log
 
-  !> \addtogroup listing
+  !> \addtogroup log
   !> \{
 
   !> temporary variable name for some algebraic operations

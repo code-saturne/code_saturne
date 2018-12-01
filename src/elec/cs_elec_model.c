@@ -1372,9 +1372,9 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  /* if listing printing is needed */
+  /* if log printing is needed */
   int modntl = 0;
-  //TODO : control listing output
+  //TODO : control log output
 
   /* Reconstructed value */
   cs_real_3_t *grad;

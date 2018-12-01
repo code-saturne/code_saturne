@@ -78,7 +78,7 @@ cs_domain_update_advfield(cs_domain_t       *domain);
  *
  * \param[in, out]  domain       pointer to a cs_domain_t structure
  * \param[in]       nt_interval  frequency for the restart process
- * \param[in]       nt_list      output frequency into the listing
+ * \param[in]       nt_list      output frequency into the log
  * \param[in]       verbosity    level of information displayed
  */
 /*----------------------------------------------------------------------------*/

@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_base.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parall.h"
@@ -146,7 +147,7 @@ BEGIN_C_DECLS
         lower than this limit, otherwise numerical instabilities may appear.\n
         \ref iptlro indicates whether the time step should be limited to the
         local thermal time step (=1) or not (=0).\n
-        When \ref iptlro=1, the listing shows the number of cells where the
+        When \ref iptlro=1, the log shows the number of cells where the
         time step has been clipped due to the thermal criterion, as well as
         the maximum ratio between the time step and the maximum thermal time
         step. If \ref idtvar=0, since the time step is fixed and cannot be
@@ -534,6 +535,9 @@ cs_time_step_increment(double  dt)
 
   _time_step.t_cur = t;
   _time_step.nt_cur += 1;
+
+  cs_base_update_status("time step: %d; t = %g\n",
+                        _time_step.nt_cur, _time_step.t_cur);
 }
 
 /*----------------------------------------------------------------------------*/

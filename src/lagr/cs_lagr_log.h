@@ -56,7 +56,7 @@ cs_lagr_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Log Lagrangian module output in the main listing file.
+ * \brief  Log Lagrangian module output in the main log file.
  */
 /*----------------------------------------------------------------------------*/
 

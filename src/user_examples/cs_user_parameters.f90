@@ -1473,7 +1473,7 @@ type(var_cal_opt) :: vcopt
 ntlist = 1
 
 
-! Log (listing) verbosity
+! Log verbosity
 
 do ii = 1, nvar
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)

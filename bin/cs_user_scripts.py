@@ -164,7 +164,7 @@ def define_domain_parameters(domain):
 
     # Command-line arguments useful for logging, or determining the calculation
     # type may be defined here, for example:
-    #   domain.logging_args = '--logp 1'
+    #   domain.logging_args = '--logp'
 
     if domain.param == None:
         domain.logging_args = None

@@ -165,7 +165,7 @@ Once these steps completed, the user should go in the directory \texttt{CASE1/DA
 \end{center}
 \end{figure}
 
-If no problem arises, the simulation results can be found in the directory \texttt{CASE1/RESU} and be read directly by {\em ParaView} or {\em EnSight} in \texttt{CASE1/RESU/<YYYYMMDD-hhmm>/postprocessing}. Calculation history can be found in the file \texttt{<YYYYMMDD-hhmm>/listing}.
+If no problem arises, the simulation results can be found in the directory \texttt{CASE1/RESU} and be read directly by {\em ParaView} or {\em EnSight} in \texttt{CASE1/RESU/<YYYYMMDD-hhmm>/postprocessing}. Calculation history can be found in the file \texttt{<YYYYMMDD-hhmm>/run\_solver.log}.
 
 %==================================
 \subsection{Troubleshooting}
@@ -176,7 +176,7 @@ following points in\\
 \begin{list}{$\bullet$}{}
 \item  if the calculation stops in the pre-processor, the user should check for error messages in the file \texttt{preprocessor*.log}.
 \item if the problem is related to boundary conditions, the user should visualise the file \texttt{error.ensight} with {\em EnSight} or {\em ParaView},
-\item if the calculation stops in the \CS core, the user should look for messages at the end of the files \texttt{listing} and \texttt{error*}. In addition, the user can track the following keywords in the listing; these are specific error signals:
+\item if the calculation stops in the \CS core, the user should look for messages at the end of the files \texttt{run\_solver.log} and \texttt{error*}. In addition, the user can track the following keywords in the log; these are specific error signals:
   \begin{list}{-}{}
   \item  \texttt{SIGFPE}: a floating point exception occurred. It happens when there is a division by 0, when the calculation did not converge, or when a real number reached a value over $10^{300}$. Depending on the architecture \CS is running
 on, this type of exception may be caught or ignored.
@@ -274,7 +274,7 @@ In the standard cases, \texttt{RESU/<run\_id>} contains a
 (visualization) files, a \texttt{restart} directory for the calculation
 restart files, a \texttt{monitoring} directory for the files of chronological
 record of the results at specific locations (probes),\\
-\texttt{preprocessor.log} and \texttt{listing} files reporting the
+\texttt{preprocessor.log} and \texttt{run\_solver.log} files reporting the
 Preprocessor and the Solver execution. All files from the \texttt{DATA}
 directory not in subdirectories are also copied. For a tracing of
 the modifications in prior calculations, the user-subroutines used in
@@ -290,7 +290,7 @@ version of the code, ...).
 \multicolumn{3}{l}{Below are typical contents of a case directory CASE1 in a study STUDY} \\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA:}}&{\bf \CS data}\\
 &        \texttt{SaturneGUI}        &Graphical User Interface launch script\\
-&        \texttt{study.xml}         &Graphical User Interface parameter file\\
+&        \texttt{setup.xml}         &Graphical User Interface parameter file\\
 &        \texttt{REFERENCE}         &Example of user scripts and meteorological\\
 &                                   &  or thermochemical date files (used with the\\
 &                                   & specific physics modules)\\
@@ -307,11 +307,11 @@ version of the code, ...).
 &        \texttt{monitoring}        &Directory containing the chronological records for \CS\\
 &        \texttt{checkpoint}        &Directory containing the \CS restart files \\
 &        \texttt{compile.log}       &Compilation log\\
-&     \texttt{study.xml}            &Graphical User Interface parameter file used for the\\
+&     \texttt{setup.xml}            &Graphical User Interface parameter file used for the\\
 &                                   &calculation\\
 &        \texttt{runcase}           &Copy of the launch script used for the calculation\\
 &        \texttt{preprocessor.log}  &Execution report for the \CS Preprocessor\\
-&        \texttt{listing}           &Execution report for the Solver module of \CS\\
+&        \texttt{run\_solver.log}   &Execution report for the Solver module of \CS\\
 &        \texttt{summary}           &General information (machine, user, version, ...)\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/SCRIPTS:}}&{\bf Launch script}\\
 &        \texttt{runcase}           &Launch script (which may contain batch
@@ -788,7 +788,7 @@ way whenever they wish.
 
 The \texttt{control\_file} may also contain a few other commands,
 allowing the user to force checkpointing or postprocessing at a given time step
-or physical time, or to force an update of log and \texttt{listing} files.
+or physical time, or to force an update of log files.
 The following commands are available (using the common notations $< >$ to
 indicate a required argument, $[ ]$ to indicate an optional argument).
 
@@ -1572,35 +1572,15 @@ This command is to be placed in the \\texttt{domain.solver\_args} variable
 in the \texttt{cs\_user\_scripts.py} file to be added automatically to the
 Solver command line.
 
-\item \texttt{--log n}: specifies the destination of the output for a
-single-processor calculation or for the processor of rank 0 in a parallel
-calculation.\\
-\hspace*{0.5cm}\texttt{n=0}: output directed towards the standard output\\
-\hspace*{0.5cm}\texttt{n=1}: output redirected towards a file \texttt{listing}
-(default behaviour)\\
+\item \texttt{--trace}: activates the tracing of the output to the standard output.
 This option can be specified in the \texttt{domain.logging\_args} field
 of the user script.
 
-\item \texttt{--logp n}: specifies the destination of the output for the
-processors of rank 1 to $N-1$ in a calculation in parallel on $N$ processors
-({\em i.e.} the redirection of all but the first processor).\\
-\hspace*{0.5cm}\texttt{n=-1}: no output for the processors of rank 1 to $N-1$
-(default behaviour).\\
-\hspace*{0.5cm}\texttt{n=0}: no redirection. Every processor will write to the
-standard output. This might be useful in case a debugger is used, with separate
-terminals for each processor.\\
-\hspace*{0.5cm}\texttt{n=1}: one file for the output of each processor. The
-output of the processors of rank 1 to $N-1$ are directed to the files
-\texttt{listing\_r0001} to \texttt{listing\_r$N-1$}.
+\item \texttt{--logp}: activates the output for the
+processors of rank 1 to $N-1$ in a calculation in parallel on $N$ processors.
+in files \texttt{run\_solver\_r0001.log} to \texttt{run\_solver\_r$N-1$.log}.
 This option can be specified in the \texttt{domain.logging\_args} field
 of the user script.
-
-\item \texttt{-p <filename>} or \texttt{--param <filename>}: specifies the name of the GUI
-parameter file to use for the calculation.\\
-The value of \texttt{<filename>} is to be defined by the \texttt{--param} option
-of \texttt{code\_saturne run}, either directly or in the standard \texttt{runcase}
-script (the file will be searched for in the \texttt{data} directory, though
-an absolute path name may also be defined).
 
 \item \texttt{-h} or \texttt{--help}: displays a summary of the different
 command line options.
@@ -1735,7 +1715,7 @@ following:
 \item Boundary conditions: definition of the boundary conditions for
       each variable. The colors of the boundary faces may be read
       directly from a ``preprocessor.log*'' files created by the \pcs
-      or a ``listing'' file from a previous Solver run.
+      or a ``run\_solver.log'' file from a previous Solver run.
 
 \item Numerical parameters: number and type of time step, advanced parameters
       for the numerical solution of the equations.
@@ -1744,7 +1724,7 @@ following:
       location of
       the probes where some variables will be monitored over time,
       definition of the frequency of the outputs in the calculation
-      listing and in the chronological records and of the EnSight outputs.
+      log and in the chronological records and of the EnSight outputs.
       The item {\itshape Profiles} allows to save, with a  given frequency,
       1D profiles on an axis defined from two points provided by the user.
 
@@ -2242,7 +2222,7 @@ in the standard cases:
       sequential one using the file \texttt{control\_file} (see paragraph
       \ref{sec:prg_control_file}).
 
-\item The standard elements of information displayed in the listing
+\item The standard elements of information displayed in the log
       (marked out with \texttt{'v  '} for the min/max values of the
       variables), \texttt{'c  '} for the data concerning the convergence
       and \texttt{'a  '} for the values before clipping) are global
@@ -2323,9 +2303,9 @@ Care should be taken with the fact that the boundaries between
 \item {\bf Writing operations that should be made on one
       processor only in parallel mode}.\\
 In parallel mode, the user must pay attention during the writing of
-      pieces of information. Writing to the ``listing'' can be done
+      pieces of information. Writing to ``run\_solver.log'' can be done
       simply by using the \texttt{nfecra} logical unit (each processor will write
-      to its own ``listing'' file): use
+      to its own ``run\_solver.log'' file): use
       \texttt{write(nfecra, ...}. \\
 If the user wants an operation to be done by only one processor (for
       example, open or write a file), the associated instructions must
@@ -3341,7 +3321,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
       locations of the probes where some variables will be monitored over time
       (if the GUI is not used, this information is specified in \S~\ref{sec:cs_user_initialization}),
        the definition of the frequency of the outputs in the calculation
-      listing, the post-processing output writer frequency and format options, and
+      log, the post-processing output writer frequency and format options, and
       the post-processing output meshes and variables selection, see
       \figurename~\ref{fig:gui_time_averages}, \figurename~\ref{fig:gui_output_log}, \figurename~\ref{fig:gui_output_writers},
       and \figurename~\ref{fig:gui_output_meshes}. The item ``Profiles'' allows to save, with a
@@ -3658,8 +3638,8 @@ or in the user subroutine \texttt{cs\_user\_boundary\_conditions} called every t
 With the GUI, each region and the type of boundary condition associated to it are defined in
 \figurename~\ref{fig:gui_bc_regions}. Then, the parameters of the boundary condition are specified
  in \figurename~\ref{fig:gui_bc_parameters}. The colors of the boundary faces may be read directly from
-a ``listing'' file created by the Preprocessor. This file can be generated directly by the interface
-under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor listing $\rightarrow$ import groups and references from Preprocessor listing'', see \figurename~\ref{fig:gui_bc_regions}.
+a ``preprocessor.log'' file created by the Preprocessor. This file can be generated directly by the interface
+under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor log $\rightarrow$ import groups and references from Preprocessor log'', see \figurename~\ref{fig:gui_bc_regions}.
 %
 \begin{figure}[!ht]
 \begin{center}
@@ -4117,7 +4097,7 @@ which enables to bypass, for all the missing \texttt{ityp}, the loops such as \\
 \texttt{do ii=idebty(ityp),ifinty(ityp)}.
 
 The values of all these indicators are displayed at the beginning of the
-code execution listing.
+code execution log.
 
 %=============================================================
 \subsubsection[Boundary conditions with LES]
@@ -4382,7 +4362,7 @@ the specific parameters of each LES inlet. These parameters are:
   remark 1).
 
 \item \texttt{iverbo}: level of verbosity in the
-  listing. \texttt{iverbo=1} provides mainly informations about the
+  log. \texttt{iverbo=1} provides mainly informations about the
   size of the eddies and the size of the ``box'' surrounding the inlet
   boundary.
 
@@ -5879,7 +5859,7 @@ view concerns the faces whose boundary conditions belong to the type
 %==================================
 \subsubsection{Initialisation of the options of the variables}
 %==================================
-In the case of coal combustion, time averages, chronological records and listings follow-ups can be set in the Graphical User Interface (GUI) or in the subroutines \texttt{cs\_user\_combustion}. In the GUI, under the heading ``Calculation control'', additional variables appear in the list in the items ``Time averages'' and ``Profiles'', as well as in the item Volume solution control'', see \figurename~\ref{fig:t_average-coal} and \figurename~\ref{fig:V_control-coal}.
+In the case of coal combustion, time averages, chronological records and logss follow-ups can be set in the Graphical User Interface (GUI) or in the subroutines \texttt{cs\_user\_combustion}. In the GUI, under the heading ``Calculation control'', additional variables appear in the list in the items ``Time averages'' and ``Profiles'', as well as in the item Volume solution control'', see \figurename~\ref{fig:t_average-coal} and \figurename~\ref{fig:V_control-coal}.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -5911,7 +5891,7 @@ They allow to:
       \texttt{cs\_user\_parameters.f90}.\\
       Concerning the main variables (velocity, pressure, etc ...) the user
       must still complete \texttt{cs\_user\_parameters.f90} if he wants to get
-      chronological records, printings in the listing or chronological
+      chronological records, printings in the log or chronological
       outputs.
       The variables which can be activated by the user for each specific
       physics are listed below. The solved variables (of variable indices
@@ -6098,7 +6078,7 @@ Boundary conditions are defined as usual on a per-face basis in
 
 The main radiation parameters can be initialise in the Graphical User Interface (GUI) or in the user subroutine \texttt{cs\_user\_radiative\_transfer\_param}. In the GUI, under the heading ``Thermophysical models'', when one of the two thermal radiative transfers models is selected, see \figurename~\ref{fig:0_ray}, additional items appear. The user is asked to choose the number of directions for angular discretisation, to define the absorption coefficient and select if the radiative calculation are restarted or not,
 see \figurename~\ref{fig:1_ray} and \figurename~\ref{fig:3_ray}. When ``Advanced options'' is selected for both models \figurename~\ref{fig:2_ray} or \figurename~\ref{fig:4_ray} appear, the user must fill the resolution frequency and verbosity levels. In addition, the activation of the radiative transfer leads to the creation of an item ``Surface solution control'' under the heading ``Calculation control'',
-see \figurename~\ref{fig:5_ray}, where radiative transfer variables can be selected to appear in the output listing.
+see \figurename~\ref{fig:5_ray}, where radiative transfer variables can be selected to appear in the output log.
 
 \begin{figure}[ht]
 \begin{center}
@@ -6212,7 +6192,7 @@ the walls, a boundary condition type and an initialisation temperature
 solving implicit at the first time step. The zone number allows assigning
 an arbitrary integer to a set of boundary faces having the same
 radiation boundary condition type. This gathering is used by the
-calculation, and in the listing to print some physical values (mean
+calculation, and in the log to print some physical values (mean
 temperature, net radiative flux ...). An independent graphic output in
 {\em EnSight} format is associated with each zone and allows the display on
 the boundary faces of the variables selected in the third heading of the
@@ -6282,9 +6262,9 @@ the code needs to be given some additional information:
 \noindent
 {\em WARNING: it is mandatory to set a zone number to every boundary
 face, even those which are not wall faces. These zones will be used during the
-printing in the listing. It is recommended to gather together the
-boundary faces of the same type, in order to ease the reading of the
-listing.}\\
+printing in the log. It is recommended to gather together the
+boundary faces of the same type, in order to ease the reading of
+run\_solver.log.}\\
 
 %==================================
 \subsubsection{Absorption coefficient of the medium, boundary conditions
@@ -6436,7 +6416,7 @@ In the GUI, the selection of the Lagrangian module activates the heading \texttt
 \begin{itemize}
  \item [$\bullet$] \texttt{Global settings}. The user defines in this item the kind of Euler/Lagrange multi-phase treatment, the main parameters, the specific physics associated with the particles and advanced numerical options, see ~\figurename~\ref {fig:Ini-Lag1} to \figurename\ref {fig:Ini-Lag3}.
  \item [$\bullet$] \texttt{Statistics}. The user can select the volume and boundary statistics to be post-processed.
- \item [$\bullet$] \texttt{Output}. The user defines the output frequency and post-processing options for particles and select the variables that will appear in the listing.
+ \item [$\bullet$] \texttt{Output}. The user defines the output frequency and post-processing options for particles and select the variables that will appear in the log.
 \end{itemize}
 
 \begin{figure}[ht]

@@ -920,7 +920,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
       }
     }
 
-    /* Reading the number of obs/times to print in the listing */
+    /* Reading the number of obs/times to print in the log */
     if (strncmp(line, "_n_log_data_", 12) == 0) {
       fscanf(fichier, "%i", &(oi->n_log_data));
       if (oi->n_log_data < 0)

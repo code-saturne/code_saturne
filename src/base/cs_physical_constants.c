@@ -169,7 +169,7 @@ BEGIN_C_DECLS
         \rho\f$, the more \f$P^*\f$ will tend to
         represent only the dynamic part of the pressure and the faster and more
         precise its solution will be. Whatever the value of \ref ro0, both \f$
-        P\f$ and \f$P^*\f$ appear in the listing and the post-processing
+        P\f$ and \f$P^*\f$ appear in the log and the post-processing
         outputs with the compressible module, the calculation is made directly
         on the total pressure.
   \var  cs_fluid_properties_t::viscl0

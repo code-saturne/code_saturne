@@ -1037,7 +1037,7 @@ write(nfecra,7510) ntsuit
 write(nfecra,7530) nthist,frhist
 write(nfecra,7532)
 
-!   - Fichiers listing
+!   - Fichiers log
 
 write(nfecra,7540) ntlist
 
@@ -1070,7 +1070,7 @@ write(nfecra,9900)
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &
-' --- Fichiers listing',                                        /,&
+' --- Fichiers run_solver.log',                                 /,&
 '       NTLIST = ',4x,i10,    ' (Periode de sortie    )',       /)
  7550 format(                                                     &
 ' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
@@ -1098,7 +1098,7 @@ write(nfecra,9900)
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &
-' --- Log files',                                               /,&
+' --- run_solver.log files',                                    /,&
 '       NTLIST = ',4x,i10,    ' (Output frequency     )',       /)
  7550 format(                                                     &
 ' --- Additional post-processing variables (ipstdv)',           /,&

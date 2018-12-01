@@ -113,7 +113,7 @@ end subroutine cs_user_les_inflow_init
 !>       - for SEM    : number of synthetic eddies building the fluctuations
 !>       .
 !>
-!>    - iverbo indicates the verbosity level (listing)
+!>    - iverbo indicates the verbosity level (log)
 !>
 !>       -   0  no specific output
 !>       - > 0 additionnal output (only for SEM)

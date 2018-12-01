@@ -447,7 +447,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
       Set the initial values of the fields and properties */
   cs_domain_initialize_systems(domain);
 
-  /* Flush listing and setup.log files */
+  /* Flush log files */
   cs_log_printf_flush(CS_LOG_DEFAULT);
   cs_log_printf_flush(CS_LOG_SETUP);
   cs_log_printf_flush(CS_LOG_PERFORMANCE);

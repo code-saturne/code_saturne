@@ -90,13 +90,13 @@ BEGIN_C_DECLS
         Phase which radiates (bulk by default, but may be coal class or fuel
         droplets phase).
   \var  cs_rad_transfer_params_t::iimpar
-        Verbosity level in the listing concerning the calculation of
+        Verbosity level in the log concerning the calculation of
         the wall temperatures:
         - 0: no display
         - 1: standard
         - 2: complete
   \var  cs_rad_transfer_params_t::iimlum
-        Verbosity level in the listing concerning the calculation of
+        Verbosity level in the log concerning the calculation of
         the radiative transfer equation:
         - 0: no display
         - 1: standard

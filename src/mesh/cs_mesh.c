@@ -232,7 +232,7 @@ _display_histograms(cs_lnum_t        n_vals,
 }
 
 /*----------------------------------------------------------------------------
- * Write a summary about halo features in listing
+ * Write a summary about halo features in log
  *
  * parameters:
  *   mesh                   <-- pointer to cs_mesh_t structure
@@ -276,7 +276,7 @@ _print_halo_info(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Write a summary about cell neighbor features in listing
+ * Write a summary about cell neighbor features in log
  *
  * parameters:
  *   mesh                   <-- pointer to cs_mesh_t structure
@@ -2906,7 +2906,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     BFT_FREE(gcell_vtx_lst);
   }
 
-  /* Output for listing */
+  /* Output for log */
 
   if (mesh->verbosity > 0) {
 

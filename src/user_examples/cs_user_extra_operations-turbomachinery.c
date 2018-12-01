@@ -249,7 +249,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   cs_real_t efficiency = turbomachinery_head*flowrate/power;
 
-  /* Print in the listing */
+  /* Print in the log */
 
   bft_printf("Turbomachinery characteristics:\n\n"
              "  %17s%17s%17s%17s\n"

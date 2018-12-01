@@ -829,7 +829,7 @@ cs_parameters_check(void)
   char *f_desc = NULL;
 
   /*--------------------------------------------------------------------------
-   * listing log frequency
+   * log frequency
    *--------------------------------------------------------------------------*/
 
   cs_parameters_is_greater_int(CS_ABORT_DELAYED,

@@ -128,7 +128,7 @@ cs_dbg_array_fprintf(FILE             *fp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump an array of double into the listing
+ * \brief  In debug mode, dump an array of double into the log
  *
  * \param[in] header     header message to write
  * \param[in] size       number of elements in array
@@ -145,7 +145,7 @@ cs_dbg_darray_to_listing(const char        *header,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump an array of integer into the listing
+ * \brief  In debug mode, dump an array of integer into the log
  *
  * \param[in] header     header message to write
  * \param[in] size       number of elements in array

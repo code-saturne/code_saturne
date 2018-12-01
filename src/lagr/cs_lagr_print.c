@@ -107,7 +107,7 @@ cs_lagr_print(cs_real_t ttcabs)
 
   if (   cs_glob_rank_id <= 0
       && flal == NULL && _ipass == 1)
-    flal = fopen("listla","w");
+    flal = fopen("lagrangian.log","w");
 
   /* ====================================================================   */
   /* 2. OUVERTURE DU FICHIER DE STOCKAGE */

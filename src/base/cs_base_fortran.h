@@ -200,17 +200,14 @@ void CS_PROCF (csdatadir, CSDATADIR)
  *
  * parameters:
  *   log_name    <-- base file name for log, or NULL for stdout
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to <log_name> file
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to <log_name>_n*" file;
- *                   2: redirected to "/dev/null" (suppressed)
+ *                   false:  to "/dev/null" (suppressed)
+ *                   true: redirected to <log_name>_n*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_fortran_bft_printf_set(const char  *log_name,
-                               int          r0_log_flag,
-                               int          rn_log_flag);
+                               bool         rn_log_flag);
 
 /*----------------------------------------------------------------------------
  * Switch bft_printf() mechanism to C output.

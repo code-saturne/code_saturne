@@ -106,51 +106,73 @@ class ScriptRunningModel(Model):
 
 
     @Variables.noUndo
-    def getLogType(self):
+    def getTrace(self):
         """
         Get logging options.
         """
-        log_type = ['listing', 'null']
+        trace = False
+        trace_type = 'no'
 
         node = self.node_mgt.xmlGetNode('logging')
         if node:
-            log_type[0] = node['main']
-            log_type[1] = node['parallel']
+            trace_type = node['main']
 
-        if not log_type[0]:
+        if not trace_type:
             if self.case['salome']:
-                log_type[0] = 'stdout'
-            else:
-                log_type[0] = 'listing'
+                trace_type = 'stdout'
 
-        if not log_type[1]:
-            log_type[1] = 'null'
+        if trace_type == 'stdout':
+            trace = True
 
-        return log_type
+        return trace
 
 
     @Variables.undoLocal
-    def setLogType(self, log_type):
+    def setTrace(self, trace):
         """
-        Set logging options.
+        Set tracing options.
         """
-        if log_type[0] == 'listing' and not self.case['salome']:
-            log_type[0] = None
-        if log_type[1] == 'null':
-            log_type[1] = None
 
         node = self.node_mgt.xmlInitNode('logging')
 
-        if not log_type[0] and not log_type[1]:
+        if not trace and not self.getLogParallel():
             if node:
                 node.xmlRemoveNode()
         else:
-            if log_type[0]:
-                node['main'] = log_type[0]
+            if trace:
+                node['main'] = 'stdout'
             else:
                 del node['main']
-            if log_type[1]:
-                node['parallel'] = log_type[1]
+
+
+    @Variables.noUndo
+    def getLogParallel(self):
+        """
+        Get logging options.
+        """
+        logp = False
+
+        node = self.node_mgt.xmlGetNode('logging')
+        if node:
+            if node['parallel'] and node['parallel'] != 'null':
+                logp = True
+
+        return logp
+
+
+    @Variables.undoLocal
+    def setLogParallel(self, logp):
+        """
+        Set logging options.
+        """
+        node = self.node_mgt.xmlInitNode('logging')
+
+        if not logp and not self.getTrace():
+            if node:
+                node.xmlRemoveNode()
+        else:
+            if logp:
+                node['parallel'] = 'listing'
             else:
                 del node['parallel']
 

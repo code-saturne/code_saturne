@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-11-16 18:08+0100\n"
+"POT-Creation-Date: 2018-12-01 02:47+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5076,6 +5076,33 @@ msgid ""
 "(%llu expected, %llu determined)."
 msgstr ""
 
+msgid "wall"
+msgstr ""
+
+msgid "sliding wall"
+msgstr ""
+
+msgid "inlet"
+msgstr "entrée"
+
+msgid "outlet"
+msgstr "sortie"
+
+msgid "symmetry"
+msgstr "symmétrie"
+
+#, c-format
+msgid ""
+" %s: Invalid type of default boundary.\n"
+" A valid choice is either \"CS_BOUNDARY_WALL\" or \"CS_BOUNDARY_SYMMETRY\"."
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid zone name %s.\n"
+" This zone is not already defined.\n"
+msgstr ""
+
 msgid "boundary condition type"
 msgstr "type de conditions aux limites"
 
@@ -5569,9 +5596,6 @@ msgstr "intensif"
 
 msgid "extensive"
 msgstr "extensif"
-
-msgid "steady"
-msgstr "stationnaire"
 
 msgid "variable"
 msgstr "variable"
@@ -6695,32 +6719,16 @@ msgstr ""
 "                   pour des bibliothèques MPI inconnues)\n"
 
 #, c-format
-msgid ""
-" --log             output redirection for rank -1 or 0:\n"
-"                     0: standard output\n"
-"                     1: output in \"listing\" (default)\n"
-msgstr ""
-" --log             redirection des sorties de rang -1 ou 0 :\n"
-"                     0 : sortie standard\n"
-"                     1 : sorties dans \"listing\" (défaut)\n"
+msgid " --trace           trace progress in standard output\n"
+msgstr " --trace           trace de la progression en sortie standard\n"
 
 #, c-format
 msgid ""
-" --logp            output redirection for rank > 0:\n"
-"                    -1: remove output (default)\n"
-"                     0: no redirection (if independant\n"
-"                        terminals, debugger type)\n"
-"                     1: output in \"listing_n<rank>\"\n"
+" --logp            output redirection for ranks > 0\n"
+"                   to \"run_solver_n<rank>.log\"\n"
 msgstr ""
-" --logp            redirection des sorties de rang > 0 :\n"
-"                    -1 : sorties supprimées (défaut)\n"
-"                     0 : aucune redirection (si terminaux\n"
-"                         indépendants, type deboggeur)\n"
-"                     1 : sorties dans \"listing_n<rang>\"\n"
-
-#, c-format
-msgid " -p, --param       <file_name> parameter file\n"
-msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
+" --logp            redirection des sorties des rangs > O\n"
+"                   vers \"run_solver_n<rang>.log\"\n"
 
 #, c-format
 msgid " --preprocess      mesh preprocessing mode\n"
@@ -7254,35 +7262,6 @@ msgstr ""
 
 msgid ""
 "while reading input data,\n"
-"modifications of relaxation coefficients for turbulence variables k and "
-"omega will be ignored"
-msgstr ""
-"lors de la lecture des données d'entrée,\n"
-"les modifications des coefficients de relaxation pour les variables "
-"turbulentes k et omega seront ignorées"
-
-msgid "while reading input data for turbulent variable k"
-msgstr "lors de la lecture des données d'entrée pour la variable turbulente k"
-
-msgid "while reading input data for turbulent variable omega"
-msgstr ""
-"lors de la lecture des données d'entrée pour la variable turbulente omega"
-
-msgid ""
-"while reading input data,\n"
-"modifications of relaxation coefficients for turbulence variables k and "
-"epsilon will be ignored"
-msgstr ""
-"lors de la lecture des données d'entrée,\n"
-"les modifications des coefficients de relaxation pour les variables "
-"turbulentes k et epsilon seront ignorées"
-
-msgid "while reading input data for turbulent variable epsilon"
-msgstr ""
-"lors de la lecture des données d'entrée pour la variable turbulente epsilon"
-
-msgid ""
-"while reading input data,\n"
 "Van Driest near wall damping not compatible with dynamic Smagorinsky or Wale "
 "models"
 msgstr ""
@@ -7396,6 +7375,9 @@ msgstr ""
 
 msgid "LES dynamic model constant"
 msgstr "Constante du modèle de LES dynamique"
+
+msgid "flag for ALE method"
+msgstr ""
 
 msgid "flag for consideration of rotation"
 msgstr "indicateur de prise en compte de la rotation"
@@ -7772,7 +7754,7 @@ msgstr ""
 #, c-format
 msgid ""
 " Invalid key for probe options %s.\n"
-" Please read listing for more details and modify your settings."
+" Please read run_solver.log for more details and modify your settings."
 msgstr ""
 
 #, c-format
@@ -9602,16 +9584,13 @@ msgstr " %s : réduction incompatible pour le champ %s.\n"
 msgid " %s: Incompatible way to initialize the field %s.\n"
 msgstr " %s : réduction incompatible pour le champ %s.\n"
 
-msgid " Convection term is not handled yet.\n"
-msgstr ""
-
 msgid "interior_faces"
 msgstr "faces intérieures"
 
 msgid "boundary_faces"
 msgstr "faces de bord"
 
-msgid " Unsteady terms are not handled yet.\n"
+msgid " Convection term is not handled yet.\n"
 msgstr ""
 
 #, c-format
@@ -9636,33 +9615,6 @@ msgstr ""
 
 msgid ""
 " Computing the flux across all interior or border faces is not managed yet."
-msgstr ""
-
-msgid "wall"
-msgstr ""
-
-msgid "sliding wall"
-msgstr ""
-
-msgid "inlet"
-msgstr "entrée"
-
-msgid "outlet"
-msgstr "sortie"
-
-msgid "symmetry"
-msgstr "symmétrie"
-
-#, c-format
-msgid ""
-" %s: Invalid type of boundary by default.\n"
-" A valid choice is CS_DOMAIN_BOUNDARY_WALL or CS_DOMAIN_BOUNDARY_SYMMETRY."
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid zone name %s.\n"
-" This zone is not already defined.\n"
 msgstr ""
 
 #, c-format
@@ -9700,24 +9652,27 @@ msgid ""
 " Please check your settings.\n"
 msgstr ""
 
+#, c-format
 msgid ""
-" No variable name associated to an equation structure.\n"
-" Check your initialization."
-msgstr ""
-
-msgid ""
-" No equation name associated to an equation structure.\n"
+" %s: No variable name associated to an equation structure.\n"
 " Check your initialization."
 msgstr ""
 
 #, c-format
 msgid ""
-" Stop adding a new equation.\n"
+" %s No equation name associated to an equation structure.\n"
+" Check your initialization."
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Stop adding a new equation.\n"
 " Equation name %s is already defined."
 msgstr ""
 
+#, c-format
 msgid ""
-" Invalid type of boundary condition by default.\n"
+" %s: Invalid type of boundary condition by default.\n"
 " Valid choices are CS_PARAM_BC_HMG_DIRICHLET or CS_PARAM_BC_HMG_NEUMANN"
 msgstr ""
 
@@ -9799,6 +9754,9 @@ msgid ""
 msgstr ""
 
 msgid "Invalid space scheme."
+msgstr ""
+
+msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
 
 msgid "Stokes velocity-pressure system"
@@ -15575,9 +15533,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-
-#~ msgid "%s: Incompatible type of variable for the equation %s."
-#~ msgstr "%s : type de variable incompatible pour l'équation %s."
-
-#~ msgid " Incompatible reduction for equation %s.\n"
-#~ msgstr " Réduction incompatible pour l'équation %s.\n"

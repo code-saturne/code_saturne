@@ -1159,7 +1159,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
       BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells], cs_lnum_t);
 
-      /* Output for listing */
+      /* Output for log */
 
 #if defined(HAVE_MPI)
 

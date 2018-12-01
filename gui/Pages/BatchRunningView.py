@@ -24,7 +24,6 @@
 
 """
 This module contains the following classes and function:
-- BatchRunningAdvancedOptionsDialogView
 - BatchRunningStopByIterationDialogView
 - BatchRunningListingLinesDisplayedDialogView
 - ListingDialogView
@@ -65,7 +64,6 @@ import cs_submit
 #-------------------------------------------------------------------------------
 
 from code_saturne.Pages.BatchRunningForm import Ui_BatchRunningForm
-from code_saturne.Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
 from code_saturne.Pages.BatchRunningDebugOptionsHelpDialogForm import Ui_BatchRunningDebugOptionsHelpDialogForm
 from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
@@ -86,7 +84,7 @@ log = logging.getLogger("BatchRunningView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Popup advanced options
+# Popup help for debug tools
 #-------------------------------------------------------------------------------
 
 class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOptionsHelpDialogForm):
@@ -99,7 +97,7 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOption
         """
         QDialog.__init__(self, parent)
 
-        Ui_BatchRunningAdvancedOptionsDialogForm.__init__(self)
+        Ui_BatchRunningDebugOptionsHelpDialogForm.__init__(self)
         self.setupUi(self)
         self.retranslateUi(self)
 
@@ -119,123 +117,6 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOption
         QDialog.accept(self)
         return
 
-
-#-------------------------------------------------------------------------------
-# Popup advanced options
-#-------------------------------------------------------------------------------
-
-
-class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOptionsDialogForm):
-    """
-    Advanced dialog
-    """
-    def __init__(self, parent):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-
-        Ui_BatchRunningAdvancedOptionsDialogForm.__init__(self)
-        self.setupUi(self)
-
-        self.setWindowTitle(self.tr("Advanced options"))
-        self.parent = parent
-
-        # Combo models
-        self.modelCSOUT1       = ComboModel(self.comboBox_6, 2, 1)
-        self.modelCSOUT2       = ComboModel(self.comboBox_7, 3, 1)
-
-        # Combo items
-        self.modelCSOUT1.addItem(self.tr("to standard output"), 'stdout')
-        self.modelCSOUT1.addItem(self.tr("to listing"), 'listing')
-
-        self.modelCSOUT2.addItem(self.tr("no output"), 'null')
-        self.modelCSOUT2.addItem(self.tr("to standard output"), 'stdout')
-        self.modelCSOUT2.addItem(self.tr("to listing_r<r>"), 'listing')
-
-        # Connections
-        self.toolButton_2.clicked.connect(self.slotDebugHelp)
-        self.lineEdit_3.textChanged[str].connect(self.slotDebug)
-        self.comboBox_6.activated[str].connect(self.slotLogType)
-        self.comboBox_7.activated[str].connect(self.slotLogType)
-
-        # Previous values
-        self.debug = self.parent.mdl.getString('debug')
-        if self.debug is not None:
-            self.lineEdit_3.setText(str(self.debug))
-
-        self.setLogType()
-
-
-    @pyqtSlot(str)
-    def slotDebug(self, text):
-        """
-        Input for Debug.
-        """
-        self.debug = str(text)
-
-
-    def setLogType(self):
-        """
-        Set logging arguments.
-        """
-        self.log_type = self.parent.mdl.getLogType()
-        self.modelCSOUT1.setItem(str_model=self.log_type[0])
-        self.modelCSOUT2.setItem(str_model=self.log_type[1])
-
-
-    @pyqtSlot(str)
-    def slotLogType(self, text):
-        """
-        Input logging options.
-        """
-        self.log_type = [self.modelCSOUT1.dicoV2M[str(self.comboBox_6.currentText())],
-                         self.modelCSOUT2.dicoV2M[str(self.comboBox_7.currentText())]]
-
-
-    @pyqtSlot()
-    def slotDebugHelp(self):
-        """
-        Show help page for debugging
-        """
-
-        dialog = BatchRunningDebugOptionsHelpDialogView(self)
-        dialog.show()
-
-        return
-
-
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
-
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-
-        self.parent.mdl.setString('debug', self.debug.strip())
-
-        self.parent.mdl.setLogType(self.log_type)
-
-        QDialog.accept(self)
-
-
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        QDialog.reject(self)
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Popup window class: stop the computation at a iteration
@@ -585,9 +466,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.spinBoxNThreads.valueChanged[int].connect(self.slotNThreads)
 
         self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
-        self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
         self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
         self.lineEditRunId.textChanged[str].connect(self.slotJobRunId)
+
+        self.lineEdit_tool.textChanged[str].connect(self.slotDebug)
+        self.toolButton_2.clicked.connect(self.slotDebugHelp)
+
+        self.checkBoxTrace.stateChanged.connect(self.slotTrace)
+        self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
 
         # Combomodels
 
@@ -620,6 +506,17 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.lineEditRunId.setText(run_id)
         else:
             self.lineEditRunId.setText("")
+
+        # Advanced options
+
+        self.debug = self.mdl.getString('debug')
+        if self.debug is not None:
+            self.lineEdit_tool.setText(str(self.debug))
+
+        if self.mdl.getTrace():
+            self.checkBoxTrace.setChecked(True)
+        if self.mdl.getLogParallel():
+            self.checkBoxLogParallel.setChecked(True)
 
         # Script info is based on the XML model
 
@@ -901,6 +798,51 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.__updateRuncase('')  # remove --id <id> from runcase
 
         os.chdir(prv_dir)
+
+
+    @pyqtSlot(str)
+    def slotDebug(self, text):
+        """
+        Input for Debug.
+        """
+        self.debug = str(text)
+        self.mdl.setString('debug', self.debug.strip())
+
+
+    @pyqtSlot()
+    def slotDebugHelp(self):
+        """
+        Show help page for debugging
+        """
+
+        dialog = BatchRunningDebugOptionsHelpDialogView(self)
+        dialog.show()
+
+        return
+
+
+    @pyqtSlot()
+    def slotTrace(self):
+        """
+        Update log type for trace
+        """
+        if self.checkBoxTrace.isChecked():
+            trace = True
+        else:
+            trace = False
+        self.mdl.setTrace(trace)
+
+
+    @pyqtSlot()
+    def slotLogParallel(self):
+        """
+        Update log type for trace
+        """
+        if self.checkBoxLogParallel.isChecked():
+            logp = True
+        else:
+            logp = False
+        self.mdl.setLogParallel(logp)
 
 
     def __suggest_run_id(self):

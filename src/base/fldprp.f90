@@ -347,7 +347,7 @@ end subroutine fldprp
 !>        with no previous time values and with default options
 !
 !> It is recommended not to define property names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------
@@ -451,7 +451,7 @@ end subroutine hide_property
 !>        with default options
 !
 !> It is recommended not to define property names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------
@@ -558,7 +558,7 @@ end subroutine add_property_field
 !>        with default options
 !
 !> It is recommended not to define property names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------

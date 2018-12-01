@@ -359,7 +359,7 @@ cs_resource_get_max_timestep(int   ts_cur,
              "===========================================================\n"),
            *ts_max);
 
-        FILE *_f = fopen("status.exceeded_time_limit", "w");
+        FILE *_f = fopen("run_status.exceeded_time_limit", "w");
         if (_f != NULL) {
           fprintf(_f, "%d\n", ts_cur);
           fclose(_f);

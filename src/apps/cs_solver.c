@@ -43,8 +43,6 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_selector.h"
-
 #include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_base_fortran.h"
@@ -68,6 +66,7 @@
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
 #include "cs_gui_radiative_transfer.h"
+#include "cs_gui_util.h"
 #include "cs_io.h"
 #include "cs_join.h"
 #include "cs_lagr.h"
@@ -85,6 +84,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_smoother.h"
+#include "cs_notebook.h"
 #include "cs_opts.h"
 #include "cs_param_cdo.h"
 #include "cs_parameters.h"
@@ -200,6 +200,8 @@ cs_run(void)
   cs_partition_external_library_info();
 
   bft_printf("\n");
+
+  cs_base_update_status("initializing\n");
 
   /* Initialize random number generator
      (used in only some cases, but safe to do, and inexpensive) */
@@ -633,9 +635,10 @@ main(int    argc,
 
   cs_base_error_init(opts.sig_defaults);
 
-  /* Open 'listing' (log) files */
+  /* Open 'run_solver.log' (log) files */
 
-  cs_base_fortran_bft_printf_set("listing", opts.ilisr0, opts.ilisrp);
+  cs_base_trace_set(opts.trace);
+  cs_base_fortran_bft_printf_set("run_solver", opts.logrp);
 
   /* Log-file header and command line arguments recap */
 

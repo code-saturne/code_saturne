@@ -126,17 +126,10 @@ _arg_env_help(const char  *name)
           "                   (usually automatic, only required for\n"
           "                   undetermined MPI libraries)\n"));
   fprintf
-    (e, _(" --log             output redirection for rank -1 or 0:\n"
-          "                     0: standard output\n"
-          "                     1: output in \"listing\" (default)\n"));
+    (e, _(" --trace           trace progress in standard output\n"));
   fprintf
-    (e, _(" --logp            output redirection for rank > 0:\n"
-          "                    -1: remove output (default)\n"
-          "                     0: no redirection (if independant\n"
-          "                        terminals, debugger type)\n"
-          "                     1: output in \"listing_n<rank>\"\n"));
-  fprintf
-    (e, _(" -p, --param       <file_name> parameter file\n"));
+    (e, _(" --logp            output redirection for ranks > 0\n"
+          "                   to \"run_solver_n<rank>.log\"\n"));
 
   fprintf
     (e, _(" --preprocess      mesh preprocessing mode\n"));
@@ -173,44 +166,6 @@ _print_version(void)
   printf(_("%s version %s\n"), CS_APP_NAME, CS_APP_VERSION);
 }
 
-/*----------------------------------------------------------------------------
- * Convert an argument to an integer and check its validity
- *
- * parameters:
- *   arg_id  <-- index of argument in argv
- *   argc    <-- number of command line arguments
- *   argv    <-- array of command line arguments
- *   argerr  --> error indicator
- *
- * returns:
- *   integer value
- *----------------------------------------------------------------------------*/
-
-static int
-_arg_to_int(int    arg_id,
-            int    argc,
-            char  *argv[],
-            int   *argerr)
-{
-  char  *start = NULL;
-  char  *end = NULL;
-  int  retval = 0;
-
-  *argerr = 0;
-
-  if (arg_id < argc) {
-    start = argv[arg_id];
-    end = start + strlen(start);
-    retval = strtol(start, &end, 0);
-    if (end != start + strlen(start)) *argerr = 1;
-  }
-  else {
-    *argerr = 1;
-  }
-
-  return retval;
-}
-
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -245,8 +200,8 @@ cs_opts_define(int         argc,
 
   opts->app_name = NULL;
 
-  opts->ilisr0 = 1;
-  opts->ilisrp = 2;
+  opts->trace = false;
+  opts->logrp = false;
 
   opts->sig_defaults = false;
 
@@ -298,28 +253,12 @@ cs_opts_define(int         argc,
 
 #endif
 
-    else if (strcmp(s, "--log") == 0) {
-      int n1 = 0;
-      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
-      if (n1 == 0)
-        opts->ilisr0 = 0;
-      else if (n1 == 1)
-        opts->ilisr0 = 1;
-      else
-        argerr = 1;
+    else if (strcmp(s, "--trace") == 0) {
+      opts->trace = true;
     }
 
     else if (strcmp(s, "--logp") == 0) {
-      int n1 = 0;
-      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
-      if (n1 == -1)
-        opts->ilisrp = 2;
-      else if (n1 == 0)
-        opts->ilisrp = 0;
-      else if (n1 == 1)
-        opts->ilisrp = 1;
-      else
-        argerr = 1;
+      opts->logrp = true;
     }
 
 #if defined(HAVE_MPI)

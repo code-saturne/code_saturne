@@ -26,7 +26,7 @@
 
 !> \file ecrlis.f90
 !>
-!> \brief This subroutine writes listing information on equation convergence.
+!> \brief This subroutine writes log information on equation convergence.
 !
 !-------------------------------------------------------------------------------
 

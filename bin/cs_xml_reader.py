@@ -322,12 +322,10 @@ class Parser:
         if log_node != None:
             attr = str(log_node.getAttribute('main'))
             if attr == 'stdout':
-                logging_args += '--log 0 '
+                logging_args += '--trace '
             attr = str(log_node.getAttribute('parallel'))
-            if attr == 'stdout':
-                logging_args += '--logp 0'
-            elif attr == 'listing':
-                logging_args += '--logp 1'
+            if attr == 'listing':
+                logging_args += '--logp'
         logging_args.strip()
 
         if logging_args:

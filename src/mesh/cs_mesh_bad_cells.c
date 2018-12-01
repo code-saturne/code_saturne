@@ -880,7 +880,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   for (i = 0; i < n_cells_wghosts; i++)
     bad_cell_flag[i] = 0;
 
-  /* Possible warning printed in the listing --> flag initialization */
+  /* Possible warning printed in the log --> flag initialization */
 
   iwarning = 0;
   n_cells_tot = mesh->n_g_cells;
@@ -945,7 +945,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
       cs_parall_counter(&iwarning, 1);
     }
 
-    /* Display listing output */
+    /* Display log output */
     bft_printf(_("\n  Criterion 2: Offset:\n"));
     bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
                (unsigned long long)ibad,
@@ -1007,7 +1007,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
       cs_parall_counter(&iwarning, 1);
     }
 
-    /* Display listing output */
+    /* Display log output */
     bft_printf(_("\n  Criterion 4: Cells Volume Ratio:\n"));
     bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
                (unsigned long long)ibad,
@@ -1057,7 +1057,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
         cs_parall_counter(&iwarning, 1);
       }
 
-      /* Display listing output */
+      /* Display log output */
       bft_printf(_("\n  Criterion 5: Guilt by Association:\n"));
       bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
                  (unsigned long long)ibad,
@@ -1091,7 +1091,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
         cs_parall_counter(&iwarning, 1);
       }
 
-      /* Display listing output */
+      /* Display log output */
       bft_printf(_("\n  Regularisation:\n"));
       bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
                  (unsigned long long)ibad,

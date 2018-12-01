@@ -239,7 +239,7 @@ do ii = 1, nusrmx
   impusr(ii) = 69+ii
 enddo
 
-! ---> Sorties listing
+! ---> Sorties log
 
 ntlist = 1
 

@@ -251,7 +251,7 @@ type(var_cal_opt) :: vcopt
 ntlist = 1
 !< [usipes_ex_01]
 
-! Log (listing) verbosity
+! Log verbosity
 
 !< [usipes_ex_02]
 do ii = 1, nvar

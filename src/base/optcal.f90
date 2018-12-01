@@ -421,7 +421,7 @@ module optcal
   !> lower than this limit, otherwise numerical instabilities may appear.\n
   !> \ref iptlro indicates whether the time step should be limited to the
   !> local thermal time step (=1) or not (=0).\n
-  !> When \ref iptlro=1, the listing shows the number of cells where the
+  !> When \ref iptlro=1, the log shows the number of cells where the
   !> time step has been clipped due to the thermal criterion, as well as
   !> the maximum ratio between the time step and the maximum thermal time
   !> step. If \ref idtvar=0, since the time step is fixed and cannot be
@@ -997,7 +997,7 @@ module optcal
   !> except for \ref paramx::iescor "iescor", for which
   !> \f$|\Omega_i|\ \eta^{corr}_{i,1}\ \f$
   !> is calculated. The names of the estimators appearing
-  !> in the listing and the post-processing are made up of
+  !> in the log and the post-processing are made up of
   !> the default name (given before), followed by the value of
   !> \ref iescal}. For instance, EsPre2 is the estimator
   !> \ref paramx::iespre "iespre" calculated with \ref iescal = 2.

@@ -173,8 +173,10 @@ static char *_cs_base_env_pkglibdir = NULL;
 
 /* Log file */
 
+static FILE  *_bft_printf_file = NULL;
 static char  *_bft_printf_file_name = NULL;
 static bool   _bft_printf_suppress = false;
+static bool   _cs_trace = false;
 
 /* Additional cleanup steps */
 
@@ -199,6 +201,17 @@ _cs_base_bft_printf_null(const char  *format,
 }
 
 /*----------------------------------------------------------------------------
+ * False print of a message to standard output for discarded logs
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_base_bft_printf_file(const char  *format,
+                         va_list      arg_ptr)
+{
+  return  vfprintf(_bft_printf_file, format, arg_ptr);
+}
+
+/*----------------------------------------------------------------------------
  * Flush of log output buffer
  *----------------------------------------------------------------------------*/
 
@@ -216,6 +229,16 @@ static int
 _cs_base_bft_printf_flush_null(void)
 {
   return 0;
+}
+
+/*----------------------------------------------------------------------------
+ * False flush of log output buffer for discarded logs
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_base_bft_printf_flush_file(void)
+{
+  return fflush(_bft_printf_file);
 }
 
 /*----------------------------------------------------------------------------
@@ -300,17 +323,16 @@ static void
 _cs_base_err_printf(const char  *format,
                     ...)
 {
-  /* Initialisation de la liste des arguments */
+  /* Initialize arguments list */
 
   va_list  arg_ptr;
-
   va_start(arg_ptr, format);
 
   /* message sur les sorties */
 
   _cs_base_err_vprintf(format, arg_ptr);
 
-  /* Finalisation de la liste des arguments */
+  /* Finalize arguments list */
 
   va_end(arg_ptr);
 }
@@ -322,6 +344,9 @@ _cs_base_err_printf(const char  *format,
 static void
 _cs_base_exit(int status)
 {
+  if (status == EXIT_SUCCESS)
+    cs_base_update_status(NULL);
+
 #if defined(HAVE_MPI)
   {
     int mpi_flag;
@@ -1620,34 +1645,126 @@ cs_base_time_summary(void)
   cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update status file.
+ *
+ * If the format string is NULL, the file is removed.
+
+ * \param[in]  format  format string, or NULL
+ * \param[in]  ...     format arguments
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_update_status(const char  *format,
+                      ...)
+{
+  static const char _status_file_name[] = "run_status.running";
+  static FILE *_status_file = NULL;
+
+  if (cs_glob_rank_id < 1) {
+
+    if (format == NULL) {
+      if (_status_file != NULL) {
+        if (fclose(_status_file) == 0) {
+          _status_file = NULL;
+          remove(_status_file_name);
+        }
+      }
+    }
+
+    else {
+
+      va_list  arg_ptr;
+      va_start(arg_ptr, format);
+
+      /* Output to trace */
+
+#if defined(va_copy) || defined(__va_copy)
+      if (_cs_trace && format != NULL) {
+        va_list arg_ptr_2;
+#if defined(va_copy)
+        va_copy(arg_ptr_2, arg_ptr);
+#else
+        __va_copy(arg_ptr_2, arg_ptr);
+#endif
+        vprintf(format, arg_ptr_2);
+        va_end(arg_ptr_2);
+      }
+#endif
+
+      /* Status file */
+
+      if (_status_file == NULL)
+        _status_file = fopen(_status_file_name, "w");
+
+      if (_status_file != NULL) {
+        long p_size = ftell(_status_file);
+        fseek(_status_file, 0, SEEK_SET);
+        vfprintf(_status_file, format, arg_ptr);
+        long c_size = ftell(_status_file);
+
+        if (p_size > c_size) {
+          char c = ' ';
+          fwrite(&c, 1, (p_size - c_size),_status_file);
+        }
+      }
+
+      va_end(arg_ptr);
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Set tracing of progress on or off.
+ *
+ * This function should be called before cs_base_bft_printf_set() if tracing
+ * is activated.
+ *
+ * parameters:
+ *   trace  <-- trace progress to stdout
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_trace_set(bool  trace)
+{
+  if (_bft_printf_file_name == NULL)
+    _cs_trace = trace;
+}
+
 /*----------------------------------------------------------------------------
  * Set output file name and suppression flag for bft_printf().
  *
  * This allows redirecting or suppressing logging for different ranks.
  *
  * parameters:
- *   log_name    <-- base file name for log, or NULL for stdout
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to <log_name> file
+ *   log_name    <-- base file name for log
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to <log_name>_n*" file;
- *                   2: redirected to "/dev/null" (suppressed)
+ *                   false: to "/dev/null" (suppressed)
+ *                   true: to <log_name>_r*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_bft_printf_init(const char  *log_name,
-                        int          r0_log_flag,
-                        int          rn_log_flag)
+                        bool         rn_log_flag)
 {
   BFT_FREE(_bft_printf_file_name);
   _bft_printf_suppress = false;
 
+  const char ext[] = ".log";
+
   /* Rank 0 */
 
-  if (cs_glob_rank_id < 1 && r0_log_flag == 1 && log_name != NULL) {
+  if (cs_glob_rank_id < 1 && log_name != NULL) {
 
-    BFT_MALLOC(_bft_printf_file_name, strlen(log_name) + 1, char);
+    BFT_MALLOC(_bft_printf_file_name,
+               strlen(log_name) + strlen(ext) + 1,
+               char);
     strcpy(_bft_printf_file_name, log_name);
+    strcat(_bft_printf_file_name, ext);
 
   }
 
@@ -1655,21 +1772,23 @@ cs_base_bft_printf_init(const char  *log_name,
 
   else if (cs_glob_rank_id > 0) {
 
-    if (log_name != NULL && rn_log_flag == 1) { /* Non-suppressed logs */
+    if (log_name != NULL && rn_log_flag > 0) { /* Non-suppressed logs */
 
       int i;
       int n_dec = 1;
       for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-      BFT_MALLOC(_bft_printf_file_name, strlen(log_name) + n_dec + 3, char);
+      BFT_MALLOC(_bft_printf_file_name,
+                 strlen(log_name) + n_dec + 3 + strlen(ext), char);
       sprintf(_bft_printf_file_name,
-              "%s_r%0*d",
+              "%s_r%0*d%s",
               log_name,
               n_dec,
-              cs_glob_rank_id);
+              cs_glob_rank_id,
+              ext);
 
     }
 
-    else if (rn_log_flag == 2) { /* Suppressed logs */
+    else { /* Suppressed logs */
 
       _bft_printf_suppress = true;
       bft_printf_proxy_set(_cs_base_bft_printf_null);
@@ -1687,44 +1806,58 @@ cs_base_bft_printf_init(const char  *log_name,
  * This allows redirecting or suppressing logging for different ranks.
  *
  * parameters:
- *   log_name    <-- base file name for log, or NULL for stdout
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to <log_name> file
+ *   log_name    <-- base file name for log
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to <log_name>_n*" file;
- *                   2: suppressed
+ *                   false: to "/dev/null" (suppressed)
+ *                   true: to <log_name>_r*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_bft_printf_set(const char  *log_name,
-                       int          r0_log_flag,
-                       int          rn_log_flag)
+                       bool         rn_log_flag)
 {
-  cs_base_bft_printf_init(log_name, r0_log_flag, rn_log_flag);
+  cs_base_bft_printf_init(log_name, rn_log_flag);
 
   if (_bft_printf_file_name != NULL && _bft_printf_suppress == false) {
-
-    bft_printf_proxy_set(vprintf);
-    bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
-    ple_printf_function_set(vprintf);
 
     /* Redirect log */
 
     if (_bft_printf_file_name != NULL) {
 
-      FILE *fp = freopen(_bft_printf_file_name, "w", stdout);
+      bft_printf_proxy_set(vprintf);
+      bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
+      ple_printf_function_set(vprintf);
 
-      if (fp == NULL)
-        bft_error(__FILE__, __LINE__, errno,
-                  _("It is impossible to redirect the standard output "
-                    "to file:\n%s"), _bft_printf_file_name);
+      if (cs_glob_rank_id > 0 || _cs_trace == false) {
+
+        FILE *fp = freopen(_bft_printf_file_name, "w", stdout);
+
+        if (fp == NULL)
+          bft_error(__FILE__, __LINE__, errno,
+                    _("It is impossible to redirect the standard output "
+                      "to file:\n%s"), _bft_printf_file_name);
 
 #if defined(HAVE_DUP2)
-      if (dup2(fileno(fp), fileno(stderr)) == -1)
-        bft_error(__FILE__, __LINE__, errno,
-                  _("It is impossible to redirect the standard error "
-                    "to file:\n%s"), _bft_printf_file_name);
+        if (dup2(fileno(fp), fileno(stderr)) == -1)
+          bft_error(__FILE__, __LINE__, errno,
+                    _("It is impossible to redirect the standard error "
+                      "to file:\n%s"), _bft_printf_file_name);
 #endif
+
+      }
+      else {
+
+        _bft_printf_file = fopen(_bft_printf_file_name, "w");
+        if (_bft_printf_file == NULL)
+          bft_error(__FILE__, __LINE__, errno,
+                    _("Error opening log file:\n%s"),
+                    _bft_printf_file_name);
+
+        bft_printf_proxy_set(_cs_base_bft_printf_file);
+        bft_printf_flush_proxy_set(_cs_base_bft_printf_flush_file);
+        ple_printf_function_set(_cs_base_bft_printf_file);
+
+      }
 
     }
 

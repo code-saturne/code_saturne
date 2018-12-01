@@ -1392,6 +1392,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
             return XMLinit(self.case).initialize(self.case['prepro'])
 
+
     def displayWelcomePage(self):
         """
         Display the Welcome (and the default) page
@@ -1441,6 +1442,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         self.displayManual(self.package, 'theory')
 
+
     def displayCSSmgr(self):
         """
         public slot
@@ -1448,6 +1450,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the studymanager guide
         """
         self.displayManual(self.package, 'studymanager')
+
 
     def displayCSRefcard(self):
         """

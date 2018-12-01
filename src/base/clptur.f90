@@ -1664,7 +1664,7 @@ endif
 ! 9. Writings
 !===============================================================================
 
-!     Remarque : afin de ne pas surcharger les listings dans le cas ou
+!     Remarque : afin de ne pas surcharger les logs dans le cas ou
 !       quelques yplus ne sont pas corrects, on ne produit le message
 !       qu'aux deux premiers pas de temps ou le message apparait et
 !       aux deux derniers pas de temps du calcul, ou si IWARNI est >= 2

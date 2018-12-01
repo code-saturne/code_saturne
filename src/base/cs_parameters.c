@@ -136,7 +136,7 @@ BEGIN_C_DECLS
         \anchor iwarni
         \ref iwarni characterises the level of detail of the outputs for a
         variable. The quantity of information increases with its value.
-        Impose the value 0 or 1 for a reasonable listing size. Impose the
+        Impose the value 0 or 1 for a reasonable log size. Impose the
         value 2 to get a maximum quantity of information, in case of problem
         during the execution.
 
@@ -1006,7 +1006,7 @@ cs_parameters_define_field_keys(void)
                              CS_FIELD_VARIABLE);
 
   /* Structure containing the solving info of the field variables
-     (used for listing, not setup, so set NULL setup logging function) */
+     (used for log, not setup, so set NULL setup logging function) */
   cs_field_define_key_struct("solving_info",
                              &_solving_info,
                              NULL,

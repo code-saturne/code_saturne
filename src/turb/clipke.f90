@@ -114,7 +114,7 @@ if (clip_e_id.ge.0) then
 endif
 
 !===============================================================================
-! ---> Stockage Min et Max pour listing
+! ---> Stockage Min et Max pour log
 !===============================================================================
 
 do ii = 1, 2
@@ -203,7 +203,7 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
 
   endif
 
-  ! ---  Stockage nb de clippings pour listing
+  ! ---  Stockage nb de clippings pour log
 
   if (iclkep.eq.1) then
     iclpmn(1) = iclpke
@@ -254,7 +254,7 @@ if (iclkep.eq.0) then
     endif
   enddo
 
-  ! Stockage nb de clippings pour listing
+  ! Stockage nb de clippings pour log
 
   iclpmn(1) = iclpk2
   iclpmn(2) = iclpe2

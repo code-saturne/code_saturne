@@ -126,7 +126,7 @@ _needs_adimensional_numbers(void)
  *         at cells (scalar-valued)
  *
  * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]  basename   label for output in the listing
+ * \param[in]  basename   label for output in the log
  * \param[in]  array      pointer to the array to analyze
  */
 /*----------------------------------------------------------------------------*/
@@ -190,7 +190,7 @@ _post_courant_number(const cs_adv_field_t       *adv,
 
   cs_advection_get_courant(adv, time_step->dt[0], courant);
 
-  /* Brief output for the listing */
+  /* Brief output for the log */
   _analyze_cell_array(cdoq, label, courant);
 
   /* Postprocessing */
@@ -240,7 +240,7 @@ _post_peclet_number(const cs_equation_t        *eq,
   cs_real_t  *peclet = cs_equation_get_tmpbuf();
   cs_equation_compute_peclet(eq, time_step, peclet);
 
-  /* Brief output for the listing */
+  /* Brief output for the log */
   _analyze_cell_array(cdoq, label, peclet);
 
   /* Postprocessing */
@@ -287,7 +287,7 @@ _post_fourier_number(const cs_property_t        *pty,
   BFT_MALLOC(label, len, char);
   sprintf(label, "%s.Fourier", pty->name);
 
-  /* Brief output for the listing */
+  /* Brief output for the log */
   _analyze_cell_array(cdoq, label, fourier);
 
   /* Postprocessing */

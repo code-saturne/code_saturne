@@ -213,7 +213,6 @@ UIFILES = \
 AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
 BalanceForm.ui \
-BatchRunningAdvancedOptionsDialogForm.ui \
 BatchRunningDebugOptionsHelpDialogForm.ui \
 BatchRunningForm.ui \
 BatchRunningStopByIterationDialogForm.ui \

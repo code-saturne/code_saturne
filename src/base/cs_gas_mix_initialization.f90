@@ -206,7 +206,7 @@ if (isuite.eq.0) then
   endif
 
   !===============================================================================
-  ! 4. Print to the listing to check the variables intialization
+  ! 4. Print to the log to check the variables intialization
   !===============================================================================
 
   write(nfecra, 200)

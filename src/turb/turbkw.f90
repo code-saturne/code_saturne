@@ -1177,7 +1177,7 @@ do iel = 1, ncel
   endif
 enddo
 
-! ---  Stockage nb de clippings pour listing
+! ---  Stockage nb de clippings pour log
 
 call log_iteration_clipping_field(ivarfl(ik), iclipk(1), 0,    &
                                   vrmin(1:1), vrmax(1:1),iclipk(1), iclpkmx(1))

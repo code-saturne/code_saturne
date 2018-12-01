@@ -704,6 +704,12 @@ class domain(base_domain):
         if err_str:
             sys.stderr.write(err_str)
             self.error = 'data preparation'
+        else:
+            try:
+                os.symlink("listing", os.path.join("run_solver.log"))
+            except Exception:
+                pass
+
 
     #---------------------------------------------------------------------------
 

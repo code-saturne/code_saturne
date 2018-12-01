@@ -637,7 +637,7 @@ end subroutine
 !> \brief add field defining a general solved variable, with default options
 !
 !> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 
 !-------------------------------------------------------------------------------
@@ -830,7 +830,7 @@ end subroutine add_user_scalar_fields
 !>        with default options
 !
 !> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------
@@ -883,7 +883,7 @@ end subroutine add_model_scalar_field
 !>        with default options
 !
 !> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------

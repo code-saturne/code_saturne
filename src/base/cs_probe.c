@@ -951,7 +951,7 @@ cs_probe_set_option(cs_probe_set_t   *pset,
     }
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for probe options %s.\n"
-                " Please read listing for more details and"
+                " Please read run_solver.log for more details and"
                 " modify your settings."), pset->name);
 
   } /* Error message */

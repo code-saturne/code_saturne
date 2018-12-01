@@ -146,7 +146,7 @@ module cstphy
   !> \f$-\grad{P^*}+(\rho-\rho_0)\vect{g}\f$. The closer \ref ro0 is to the value of \f$\rho\f$,
   !> the more \f$P^*\f$ will tend to represent only the dynamic part of the pressure and
   !> the faster and more precise its solution will be. Whatever the value of \ref ro0,
-  !> both \f$P\f$ and \f$P^*\f$ appear in the listing and the post-processing outputs..
+  !> both \f$P\f$ and \f$P^*\f$ appear in the log and the post-processing outputs..
   !> with the compressible module, the calculation is made directly on the total
   !> pressure
   real(c_double), pointer, save :: ro0

@@ -1700,11 +1700,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         move_particle = CS_LAGR_PART_MOVE_OFF;
         particle_state = CS_LAGR_PART_OUT;
 
-        /* Recording for listing/listla*/
+        /* Recording for log/lagrangian.log */
         particles->n_part_fou += 1;
         particles->weight_fou += particle_stat_weight;
 
-        /* Recording for statistics*/
+        /* Recording for statistics */
         if (cs_glob_lagr_boundary_interactions->iencnbbd > 0) {
           bound_stat[  cs_glob_lagr_boundary_interactions->iencnb
                      * n_b_faces + face_id]

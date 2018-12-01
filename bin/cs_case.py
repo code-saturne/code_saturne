@@ -1436,7 +1436,7 @@ $appli/salome kill `cat $port_log`
         """
         Check if the allocated time limit was exceeded.
         """
-        p = os.path.join(self.exec_dir, 'status.exceeded_time_limit')
+        p = os.path.join(self.exec_dir, 'run_status.exceeded_time_limit')
 
         if os.path.isfile(os.path.join(p)):
             return True
