@@ -66,7 +66,7 @@ def preprocessorFile(parent, initdir):
     Verify if the choses of file is correct
     """
     file_name = ""
-    title = tr("Select a Code_Saturne Preprocessor listing")
+    title = tr("Select a preprocessor log")
     filetypes = "Preprocessor log (*.log);;All Files (*)"
     filt = "All files (*)"
     initdir = os.path.join(initdir, 'check_mesh')
@@ -114,7 +114,7 @@ class Informations:
 
         lines = self.readFile(file)
         if not lines:
-            raise ValueError("Code_Saturne Preprocessor log language unknown.")
+            raise ValueError("Preprocessor log language unknown.")
 
         refList, groupList = self.getLists(lines)
 

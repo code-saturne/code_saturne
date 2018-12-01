@@ -310,7 +310,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
     @pyqtSlot()
     def slotAddFromPrePro(self):
         """
-        Research a Preprocessor listing to pick colors or groups of cells or faces.
+        Research a preprocessor log to pick colors or groups of cells or faces.
         """
         entity = 'faces'
 
