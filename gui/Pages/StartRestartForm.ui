@@ -44,7 +44,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate if the calculation resumes from a previous one.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Calculation restart (checkpoint directory):</string>
+           <string>Calculation restart (checkpoint directory)</string>
           </property>
          </widget>
         </item>
