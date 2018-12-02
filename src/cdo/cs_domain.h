@@ -123,8 +123,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-extern cs_domain_t *cs_glob_domain; /* Pointer to main computational domain
-                                       used in CDO/HHO schmes */
+extern cs_domain_t *cs_glob_domain; /* Pointer to main computational domain */
 
 /*============================================================================
  * Static inline public function prototypes
