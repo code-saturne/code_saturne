@@ -674,26 +674,25 @@ _lagr_map_fields_default(void)
     /* we are probably using NEPTUNE_CFD */
     _lagr_extra_module.vel         = cs_field_by_name_try("velocity_1");
 
-    _lagr_extra_module.cvar_k      = cs_field_by_name_try("lagr_k");
-    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("lagr_epsilon");
+    _lagr_extra_module.cvar_k      = cs_field_by_name_try("TurbKineEner_k_1");
+    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon_1");
     _lagr_extra_module.cvar_omg    = NULL;
     _lagr_extra_module.cvar_r11    = cs_field_by_name_try("lagr_r11");
     _lagr_extra_module.cvar_r22    = cs_field_by_name_try("lagr_r22");
     _lagr_extra_module.cvar_r33    = cs_field_by_name_try("lagr_r33");
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("lagr_rij");
     _lagr_extra_module.viscl       = cs_field_by_name_try
-                                       ("lagr_molecular_viscosity");
-    _lagr_extra_module.scal_t      = cs_field_by_name_try("lagr_enthalpy");
+                                       ("molecular_viscosity_1");
+    _lagr_extra_module.scal_t      = cs_field_by_name_try("enthalpy_1");
     _lagr_extra_module.cpro_viscls = cs_field_by_name_try
-                                       ("lagr_thermal_conductivity");
-    _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
+                                       ("thermal_conductivity_1");
+    _lagr_extra_module.cpro_cp     = cs_field_by_name_try("specific_heat_1");
     _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
     _lagr_extra_module.t_gaz       = NULL;
-    _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
     _lagr_extra_module.x_oxyd      = NULL;
     _lagr_extra_module.x_eau       = NULL;
     _lagr_extra_module.x_m         = NULL;
-    _lagr_extra_module.cromf       = cs_field_by_name_try("lagr_density");
+    _lagr_extra_module.cromf       = cs_field_by_name_try("density_1");
     /* TODO FIXME */
     _lagr_extra_module.visls0      = 0.;
 
