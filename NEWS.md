@@ -1,10 +1,16 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Add option --create-xml to studymanager command allowing to generate a xml
+  studymanager parameter file automatically from within a study directory.
+
 Physical modelling:
 
 - ALE module: use CDO vertex based numerical schemes (more robust) for ALE
-  displacement. To activate it use "cs_glob_ale = 2" in C or "iale = 2" in Fortran.
+  displacement. To activate it use "cs_glob_ale = 2" in C or "iale = 2" in
+  Fortran.
 
 Bug fixes:
 
