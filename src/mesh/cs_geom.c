@@ -314,7 +314,7 @@ cs_geom_segment_intersect_face(int              orient,
 
     double od_p = cs_math_3_dot_product(disp, pvec);
 
-    /* This sign is absolute (ie same result is obtained if the face is seen i
+    /* This sign is absolute (ie same result is obtained if the face is seen
      * from the other neighbooring cell).
      */
     int sign_od_p = (od_p > 0 ? 1 : -1);
