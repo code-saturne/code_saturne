@@ -465,7 +465,7 @@ temperature = enthalpy / 1000;
         self.m_out = OutputFieldsModel(self.case)
         self.currentFluid = 0
 
-        label = self.m_out.getVariableLabel("none", "Pressure")
+        label = self.m_out.getVariableLabel("none", "pressure")
         self.list_scalars.append((label, self.tr("Field variables")))
 
         self.tableModelProperties = StandardItemModelProperty(self.mdl, self.ncond, self.dicoM2V, self.dicoV2M)
@@ -1025,7 +1025,7 @@ temperature = enthalpy / 1000;
            symbols_rho.append(s)
 
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols_rho.append((label, self.tr("Field variable")))
         symbols_rho.append(('rho0', 'Density (reference value)'))
 
@@ -1062,7 +1062,7 @@ temperature = enthalpy / 1000;
         for s in self.list_scalars:
            symbols_mu.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols_mu.append((label, self.tr("Field variable")))
         symbols_mu.append(('mu0', 'Viscosity (reference value)'))
 
@@ -1099,7 +1099,7 @@ temperature = enthalpy / 1000;
         for s in self.list_scalars:
            symbols_cp.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols_cp.append((label, self.tr("Field variable")))
         symbols_cp.append(('cp0', 'Specific heat (reference value)'))
 
@@ -1136,7 +1136,7 @@ temperature = enthalpy / 1000;
         for s in self.list_scalars:
            symbols_al.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols_al.append((label, self.tr("Field variable")))
         symbols_al.append(('lambda0', 'Thermal conductivity (reference value)'))
 
@@ -1173,7 +1173,7 @@ temperature = enthalpy / 1000;
            symbols_st.append(s)
         for fieldId in self.mdl.getFieldIdList():
             if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-                label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+                label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
                 symbols_st.append((label, self.tr("Field variable")))
         symbols_st.append(('sigma0', 'Surface tension (reference value)'))
 
@@ -1240,7 +1240,7 @@ temperature = enthalpy / 1000;
         for s in self.list_scalars:
            symbols.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, self.tr("Field variable")))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
@@ -1276,7 +1276,7 @@ temperature = enthalpy / 1000;
         for s in self.list_scalars:
            symbols.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, self.tr("Field variable")))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
@@ -1312,7 +1312,7 @@ temperature = enthalpy / 1000;
         for s in self.list_scalars:
            symbols.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "Enthalpy")
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, self.tr("Field variable")))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
