@@ -180,7 +180,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonVelocity.setToolTip(exp)
             else:
                 self.pushButtonVelocity.setStyleSheet("background-color: red")
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'VolumeFraction')
+            exp = self.mdl.getFormula(self.zone, self.currentid, 'volume_fraction')
             if exp:
                 self.pushButtonFraction.setStyleSheet("background-color: green")
                 self.pushButtonFraction.setToolTip(exp)
@@ -188,7 +188,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonFraction.setStyleSheet("background-color: red")
 
             if self.mdl.getEnergyResolution(self.currentid) == "on":
-                exp = self.mdl.getFormula(self.zone, self.currentid, 'Enthalpy')
+                exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
                 if exp:
                     self.pushButtonEnergy.setStyleSheet("background-color: green")
                     self.pushButtonEnergy.setToolTip(exp)
@@ -242,7 +242,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         else:
             self.pushButtonVelocity.setStyleSheet("background-color: red")
 
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'VolumeFraction')
+        exp = self.mdl.getFormula(self.zone, self.currentid, 'volume_fraction')
         if exp:
             self.pushButtonFraction.setStyleSheet("background-color: green")
             self.pushButtonFraction.setToolTip(exp)
@@ -250,7 +250,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonFraction.setStyleSheet("background-color: red")
 
         if self.mdl.getEnergyResolution(self.currentid) == "on":
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'Enthalpy')
+            exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
             if exp:
                 self.pushButtonEnergy.setStyleSheet("background-color: green")
                 self.pushButtonEnergy.setToolTip(exp)
@@ -285,7 +285,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.mdl.setEnergyModel(self.zone, self.currentid, model)
 
         if model != "hsat_P":
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'Enthalpy')
+            exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
             if exp:
                 self.pushButtonEnergy.setStyleSheet("background-color: green")
                 self.pushButtonEnergy.setToolTip(exp)
@@ -362,7 +362,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for fraction
         """
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'VolumeFraction')
+        exp = self.mdl.getFormula(self.zone, self.currentid, 'volume_fraction')
         if not exp:
             if self.currentid == "1":
                 exp = "alpha = 1.;\n"
@@ -385,7 +385,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula(self.zone, self.currentid, 'VolumeFraction', result)
+            self.mdl.setFormula(self.zone, self.currentid, 'volume_fraction', result)
             self.pushButtonFraction.setStyleSheet("background-color: green")
             self.pushButtonFraction.setToolTip(result)
 
@@ -395,7 +395,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for energy
         """
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'Enthalpy')
+        exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
         th_sca_label = self.mdl.getEnergyModel(self.zone, self.currentid)
         if not exp:
             exp = th_sca_label + """ = 0;\n"""
@@ -416,7 +416,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula(self.zone, self.currentid, 'Enthalpy', result)
+            self.mdl.setFormula(self.zone, self.currentid, 'enthalpy', result)
             self.pushButtonEnergy.setStyleSheet("background-color: green")
             self.pushButtonEnergy.setToolTip(result)
 
