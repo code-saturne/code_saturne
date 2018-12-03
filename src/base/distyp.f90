@@ -371,9 +371,25 @@ enddo
 ! 5. Diagonal part of the matrix
 !===============================================================================
 
-do iel = 1, ncel
+do iel = 1, ncelet
   rovsdp(iel) = 0.d0
 enddo
+
+! Reinforce diagonal
+do ifac = 1, nfac
+  rovsdp(ifacel(1, ifac)) =  rovsdp(ifacel(1, ifac)) + imasfl(ifac)
+  rovsdp(ifacel(2, ifac)) =  rovsdp(ifacel(2, ifac)) - imasfl(ifac)
+enddo
+
+do ifac = 1, nfabor
+  rovsdp(ifabor(ifac)) =  rovsdp(ifabor(ifac)) + bmasfl(ifac)
+enddo
+
+do iel = 1, ncel
+  rovsdp(iel) = 1.d-6 * abs(rovsdp(iel))
+enddo
+
+call synsca(rovsdp)
 
 !===============================================================================
 ! 6. Time loop
