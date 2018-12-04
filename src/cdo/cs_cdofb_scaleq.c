@@ -804,6 +804,13 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_faces; i++) eqc->face_values[i] = 0;
 
+  eqc->face_values_pre = NULL;
+  if (cs_equation_param_has_time(eqp)) {
+    BFT_MALLOC(eqc->face_values_pre, n_faces, cs_real_t);
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_faces; i++) eqc->face_values_pre[i] = 0;
+  }
+
   /* Store the last computed values of the field at cell centers and the data
      needed to compute the cell values from the face values.
      No need to synchronize all these quantities since they are only cellwise
@@ -1008,6 +1015,8 @@ cs_cdofb_scaleq_free_context(void   *data)
   /* Free temporary buffers */
   BFT_FREE(eqc->source_terms);
   BFT_FREE(eqc->face_values);
+  if (eqc->face_values_pre != NULL)
+    BFT_FREE(eqc->face_values_pre);
   BFT_FREE(eqc->rc_tilda);
   BFT_FREE(eqc->acf_tilda);
 
@@ -1357,6 +1366,10 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
+  /* Store the current face values as previous */
+  memcpy(eqc->face_values_pre, eqc->face_values,
+         quant->n_faces*sizeof(cs_real_t));
+
   /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
 
@@ -1597,6 +1610,10 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
+  /* Store the current face values as previous */
+  memcpy(eqc->face_values_pre, eqc->face_values,
+         quant->n_faces*sizeof(cs_real_t));
+
   /* Detect the first call (in this case, we compute the initial source term)*/
   _Bool  compute_initial_source = false;
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
@@ -1825,7 +1842,7 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Now solve the system */
+  /* Now solve the system. Overwrite face_values with the computed solution */
   _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
                     matrix, eqp,
                     eqc->face_values, rhs);

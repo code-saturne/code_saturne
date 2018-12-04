@@ -56,9 +56,9 @@ struct  _cs_cdofb_t {
   /* System size (n_faces + n_cells) */
   cs_lnum_t    n_dofs;
 
-  /* Solution of the algebraic system at the last iteration
-     DoF unknowns (x) + BCs */
-  cs_real_t   *face_values;
+  /* Solution of the algebraic system DoF unknowns (x) + BCs */
+  cs_real_t   *face_values;     /* At the last iteration */
+  cs_real_t   *face_values_pre; /* At the previous iteration */
 
   /* Members related to the static condensation */
   cs_real_t   *rc_tilda;   /* Acc^-1 * RHS_cell */
