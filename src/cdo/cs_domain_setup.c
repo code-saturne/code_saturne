@@ -391,11 +391,6 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 void
 cs_domain_initialize_setup(cs_domain_t    *domain)
 {
-  /* Add a boundary zone gathering all "wall" boundaries */
-  if (cs_navsto_system_is_activated() ||
-      cs_walldistance_is_activated())
-    cs_boundary_def_wall_zones(domain->boundaries);
-
   /* Setup predefined equations which are activated. At this stage,
    * no equation is added. Space discretization scheme and the related
    * numerical parameters are set.

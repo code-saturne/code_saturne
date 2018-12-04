@@ -365,6 +365,9 @@ _log_setup(const cs_domain_t   *domain)
 void
 cs_cdo_initialize_setup(cs_domain_t   *domain)
 {
+  /* Add an automatic boundary zone gathering all "wall" boundaries */
+  cs_boundary_def_wall_zones(domain->boundaries);
+
   if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
     return;
 
