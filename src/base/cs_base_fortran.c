@@ -470,6 +470,17 @@ cs_base_fortran_bft_printf_set(const char  *log_name,
 
   if (suppress == false) {
 
+    /* Allow bypassing this with environment variable to accomodate
+       some debug habits */
+
+    const char *p = getenv("CS_LOG_TO_STDOUT");
+    if (p != NULL) {
+      if (atoi(p) > 0)
+        name = NULL;
+    }
+
+    /* In standard case, redirect if possible */
+
     if (name != NULL) {
 
       _bft_printf_file = fopen(name, "w");

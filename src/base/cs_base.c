@@ -1756,9 +1756,21 @@ cs_base_bft_printf_init(const char  *log_name,
 
   const char ext[] = ".log";
 
+  /* Allow bypassing this with environment variable to accomodate
+     some debug habits */
+
+  bool log_to_stdout = false;
+  const char *p = getenv("CS_LOG_TO_STDOUT");
+  if (p != NULL) {
+    if (atoi(p) > 0)
+      log_to_stdout = true;
+  }
+
   /* Rank 0 */
 
-  if (cs_glob_rank_id < 1 && log_name != NULL) {
+  if (   cs_glob_rank_id < 1
+      && log_name != NULL
+      && log_to_stdout == false) {
 
     BFT_MALLOC(_bft_printf_file_name,
                strlen(log_name) + strlen(ext) + 1,
@@ -1774,17 +1786,18 @@ cs_base_bft_printf_init(const char  *log_name,
 
     if (log_name != NULL && rn_log_flag > 0) { /* Non-suppressed logs */
 
-      int i;
-      int n_dec = 1;
-      for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-      BFT_MALLOC(_bft_printf_file_name,
-                 strlen(log_name) + n_dec + 3 + strlen(ext), char);
-      sprintf(_bft_printf_file_name,
-              "%s_r%0*d%s",
-              log_name,
-              n_dec,
-              cs_glob_rank_id,
-              ext);
+      if (log_to_stdout == false) {
+        int n_dec = 1;
+        for (int i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
+        BFT_MALLOC(_bft_printf_file_name,
+                   strlen(log_name) + n_dec + 3 + strlen(ext), char);
+        sprintf(_bft_printf_file_name,
+                "%s_r%0*d%s",
+                log_name,
+                n_dec,
+                cs_glob_rank_id,
+                ext);
+      }
 
     }
 
