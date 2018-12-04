@@ -486,6 +486,7 @@ cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
   CS_UNUSED(rhs);
   CS_UNUSED(solu);
   CS_UNUSED(field_val);
+  CS_UNUSED(eqp);
 
   cs_cdofb_navsto_t  *eqc = (cs_cdofb_navsto_t *)data;
   cs_timer_t  t0 = cs_timer_time();
