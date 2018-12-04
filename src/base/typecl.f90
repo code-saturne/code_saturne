@@ -601,62 +601,6 @@ if (ntcabs.eq.ntpabs+1) then
 
 endif
 
-!===============================================================================
-! 6.  Convert to rcodcl and icodcl
-!     (if this has not already been set by the user)
-
-!     First, process variables for which a specific treatement is done
-!     (pressure, velocity, ...)
-!===============================================================================
-
-! 6.1.1 Inlet
-! ===========
-
-! ---> La pression a un traitement Neumann, le reste Dirichlet
-!                                           sera traite plus tard.
-
-ideb = idebty(ientre)
-ifin = ifinty(ientre)
-
-ivar = ipr
-do ii = ideb, ifin
-  ifac = itrifb(ii)
-  if(icodcl(ifac,ivar).eq.0) then
-    icodcl(ifac,ivar)   = 3
-    rcodcl(ifac,ivar,1) = 0.d0
-    rcodcl(ifac,ivar,2) = rinfin
-    rcodcl(ifac,ivar,3) = 0.d0
-  endif
-enddo
-
-! 6.1.2 Convective Inlet
-! ======================
-
-! ---> La pression a un traitement Neumann, le reste Dirichlet
-!                                           sera traite plus tard.
-
-ideb = idebty(i_convective_inlet)
-ifin = ifinty(i_convective_inlet)
-
-ivar = ipr
-do ii = ideb, ifin
-  ifac = itrifb(ii)
-  if(icodcl(ifac,ivar).eq.0) then
-    icodcl(ifac,ivar)   = 3
-    rcodcl(ifac,ivar,1) = 0.d0
-    rcodcl(ifac,ivar,2) = rinfin
-    rcodcl(ifac,ivar,3) = 0.d0
-  endif
-enddo
-
-
-! 6.2 SORTIE (entree-sortie libre) (ISOLIB)
-! ===================
-
-! ---> La pression a un traitement Dirichlet, les vitesses 9
-!        (le reste Neumann, ou Dirichlet si donnee utilisateur,
-!        sera traite plus tard)
-
 if (iphydr.eq.1.or.iifren.eq.1) then
 
 !     En cas de prise en compte de la pression hydrostatique,
@@ -832,6 +776,78 @@ if (itbslb.gt.0) then
 
 endif
 
+!===============================================================================
+! 6.  Convert to rcodcl and icodcl
+!     (if this has not already been set by the user)
+
+!     First, process variables for which a specific treatement is done
+!     (pressure, velocity, ...)
+!===============================================================================
+
+
+! Translate total pressure P_tot given by the user into solved pressure P
+! P = P_tot - p0 - rho0 ( g . (z-z0))
+ivar = ipr
+if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
+  do ifac = 1, nfabor
+    if (icodcl(ifac,ivar).ne.0) then
+      rcodcl(ifac,ivar,1) =  rcodcl(ifac,ivar,1)                   &
+                          - ro0*( gx*(cdgfbo(1,ifac) - xyzp0(1))  &
+                                + gy*(cdgfbo(2,ifac) - xyzp0(2))  &
+                                + gz*(cdgfbo(3,ifac) - xyzp0(3))) &
+                          - p0
+    endif
+  enddo
+endif
+
+! 6.1.1 Inlet
+! ===========
+
+! ---> La pression a un traitement Neumann, le reste Dirichlet
+!                                           sera traite plus tard.
+
+ideb = idebty(ientre)
+ifin = ifinty(ientre)
+
+ivar = ipr
+do ii = ideb, ifin
+  ifac = itrifb(ii)
+  if (icodcl(ifac,ivar).eq.0) then
+    icodcl(ifac,ivar)   = 3
+    rcodcl(ifac,ivar,1) = 0.d0
+    rcodcl(ifac,ivar,2) = rinfin
+    rcodcl(ifac,ivar,3) = 0.d0
+  endif
+enddo
+
+! 6.1.2 Convective Inlet
+! ======================
+
+! ---> La pression a un traitement Neumann, le reste Dirichlet
+!                                           sera traite plus tard.
+
+ideb = idebty(i_convective_inlet)
+ifin = ifinty(i_convective_inlet)
+
+ivar = ipr
+do ii = ideb, ifin
+  ifac = itrifb(ii)
+  if (icodcl(ifac,ivar).eq.0) then
+    icodcl(ifac,ivar)   = 3
+    rcodcl(ifac,ivar,1) = 0.d0
+    rcodcl(ifac,ivar,2) = rinfin
+    rcodcl(ifac,ivar,3) = 0.d0
+  endif
+enddo
+
+
+! 6.2 SORTIE (entree-sortie libre) (ISOLIB)
+! ===================
+
+! ---> La pression a un traitement Dirichlet, les vitesses 9
+!        (le reste Neumann, ou Dirichlet si donnee utilisateur,
+!        sera traite plus tard)
+
 ! ---> Entree/Sortie libre
 
 ideb = idebty(isolib)
@@ -922,7 +938,9 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 1
-        rcodcl(ifac,ivar,1) = p0
+        rcodcl(ifac,ivar,1) = - ro0*( gx*(cdgfbo(1,ifac) - xyzp0(1))  &
+                                    + gy*(cdgfbo(2,ifac) - xyzp0(2))  &
+                                    + gz*(cdgfbo(3,ifac) - xyzp0(3)))
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif
@@ -1050,7 +1068,7 @@ do ivar = 1, nvar
   elseif(ivar.eq.ipr) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
+      if (icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 3
         rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
@@ -1445,7 +1463,7 @@ ifin = ifinty(ifrent)
 do ivar = 1, nvar
   do ii = ideb, ifin
     ifac = itrifb(ii)
-    if(icodcl(ifac,ivar).eq.0) then
+    if (icodcl(ifac,ivar).eq.0) then
 
       if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
         icodcl(ifac,ivar) = 3
