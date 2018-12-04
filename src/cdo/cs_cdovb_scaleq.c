@@ -2041,8 +2041,6 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
   cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_vtx,
                                                           quant->n_vertices);
 
-  cs_equation_balance_reset(eb);
-
   /* OpenMP block */
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, eqc, pot, bflux, eb, _vbs_cell_builder)

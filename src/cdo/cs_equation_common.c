@@ -1358,6 +1358,9 @@ cs_equation_balance_create(cs_flag_t    location,
   b->source_term    = b->balance + 5*size;
   b->boundary_term  = b->balance + 6*size;
 
+  /* Set to zero all members */
+  cs_equation_balance_reset(b);
+
   return b;
 }
 
