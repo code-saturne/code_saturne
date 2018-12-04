@@ -49,6 +49,7 @@
 #include "bft_printf.h"
 
 #include "cs_blas.h"
+#include "cs_boundary.h"
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_log.h"
@@ -463,7 +464,7 @@ cs_walldistance_setup(void)
 
   /* Add boundary conditions */
   cs_real_t  zero_value = 0.;
-  const char  bc_zone_name[] = "cs_domain_boundary_walls";
+  const char  bc_zone_name[] = CS_BOUNDARY_WALLS_NAME;
 
   cs_equation_add_bc_by_value(eqp,
                               CS_PARAM_BC_DIRICHLET,
