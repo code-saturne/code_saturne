@@ -1281,7 +1281,7 @@ cs_parameters_check(void)
   /* Model */
   const int iturb_vals[14] = {0,          /* laminar */
                               10,         /* mixing length */
-                              20, 21,     /* k-epsilon */
+                              20, 21, 22, /* k-epsilon */
                               30, 31, 32, /* RSM */
                               40, 41, 42, /* LES */
                               50, 51,     /* v2f */
@@ -1423,10 +1423,12 @@ cs_parameters_check(void)
 
     /* En k-eps a prod lin et en v2f on force IKECOU a 0 */
     if (   cs_glob_turb_model->iturb == 21
+        || cs_glob_turb_model->iturb == 22
         || cs_glob_turb_model->itytur == 5) {
       cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
-                                   "with k-epsilon LP (iturb=21) or v2f model "
+                                   "with k-epsilon LP (iturb=21),"
+                                   "k-epsilon LS (iturb=22) or v2f model "
                                    "(iturb=50/51)"),
                                  "cs_glob_turb_rans_model->ikecou",
                                  cs_glob_turb_rans_model->ikecou,

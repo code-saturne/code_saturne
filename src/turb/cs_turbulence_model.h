@@ -56,6 +56,7 @@ typedef struct {
                                  - 20: standard k-epsilon model
                                  - 21: k-epsilon model with Linear
                                        Production (LP) correction
+                                 - 22: Launder-Sharma low Re k-epsilon model
                                  - 30: Rij-epsilon (LRR)
                                  - 31: Rij-epsilon (SSG)
                                  - 32: Rij-epsilon (EBRSM)

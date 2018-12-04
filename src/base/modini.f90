@@ -631,7 +631,8 @@ endif
 ! Idem en Spalart-Allmaras.
 
 if (ypluli.lt.-grand) then
-  if (iwallf.eq.4 .or. itytur.eq.4 .or. iturb.eq.70.or.iwallf.eq.6.or.iturb.eq.60) then
+  if (iwallf.eq.4 .or. itytur.eq.4 .or. iturb.eq.70.or.iwallf.eq.6.or.iturb.eq.60 &
+      .or. iturb.eq.22 ) then
     ypluli = 10.88d0
   else
     ypluli = 1.d0/xkappa
@@ -748,7 +749,7 @@ if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
 if (ikecou.eq.-999) then
   if (idtvar.lt.0) then
     ikecou = 0
-  else if (iturb.eq.21 .or. itytur.eq.5           &
+  else if (iturb.eq.21 .or. iturb.eq.22 .or. itytur.eq.5           &
        .or. iturb.eq.60 ) then
     ikecou = 0
   else

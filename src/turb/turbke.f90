@@ -151,8 +151,13 @@ double precision, allocatable, dimension(:) :: w7, w8, usimpe
 double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, allocatable, dimension(:) :: ce2rc
 double precision, allocatable, dimension(:,:) :: grad
-double precision, dimension(:,:,:), allocatable :: gradv
+double precision, allocatable, dimension(:) :: sqrt_k, sqrt_strain
+double precision, allocatable, dimension(:) :: coefa_sqk, coefb_sqk
+double precision, allocatable, dimension(:) :: coefa_sqs, coefb_sqs
+double precision, allocatable, dimension(:,:) :: grad_sqk, grad_sqs
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:) :: dpvar
+
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, bromo, cromo
 double precision, dimension(:,:), pointer :: coefau
@@ -192,6 +197,11 @@ allocate(dpvar(ncelet))
 
 if (iturb.eq.20) then
   allocate(prdtke(ncelet), prdeps(ncelet))
+else if (iturb.eq.22) then
+  allocate(sqrt_k(ncelet)    , sqrt_strain(ncelet))
+  allocate(grad_sqk(3,ncelet), grad_sqs(3,ncelet))
+  allocate(coefa_sqk(nfabor), coefb_sqk(nfabor))
+  allocate(coefa_sqs(nfabor), coefb_sqs(nfabor))
 endif
 
 if (iturb.eq.51) then
@@ -259,6 +269,8 @@ if (vcopt_k%iwarni.ge.1) then
     write(nfecra,1000)
   else if (iturb.eq.21) then
     write(nfecra,1001)
+  else if(iturb.eq.22) then
+    write(nfecra,1003)
   else
     write(nfecra,1002)
   endif
@@ -408,6 +420,15 @@ do iel = 1, ncel
 
 enddo
 
+! Compute the square root of the strain and the turbulent
+! kinetic energy for Launder-Sharma k-epsilon source terms
+if (iturb.eq.22) then
+  do iel = 1, ncel
+    sqrt_strain(iel) = abs(strain(iel))**.5d0
+    sqrt_k(iel)      = abs(cvar_k(iel))**.5d0
+  enddo
+end if
+
 ! Free memory
 deallocate(gradv)
 
@@ -467,13 +488,26 @@ if (irccor.eq.1) then
 else
 
   if (itytur.eq.2) then
-    do iel = 1, ncel
-      ce2rc(iel) = ce2
-    enddo
+    ! Launder-Sharma k-epsilon model
+    if (iturb.eq.22) then
+      do iel = 1, ncel
+        rho  = crom(iel)
+        xeps = cvar_ep(iel)
+        xk   = cvar_k(iel)
+        ce2rc(iel) = (1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))*ce2
+      end do
+    ! Other k-epsilon models
+    else
+      do iel = 1, ncel
+        ce2rc(iel) = ce2
+      enddo
+    end if
+
   elseif (iturb.eq.50) then
     do iel = 1, ncel
       ce2rc(iel) = cv2fe2
     enddo
+
   elseif (iturb.eq.51) then
     do iel = 1, ncel
       ce2rc(iel) = ccaze2
@@ -679,6 +713,74 @@ if (iturb.eq.51) then
 endif
 
 !===============================================================================
+! 7bis. pre Only for the Launder-Sharma model, calculation of E and D terms
+
+!      The terms are stored in          grad_sqk, grad_sqs
+!===============================================================================
+
+if (iturb.eq.22) then
+
+  !----------------------------------------------
+  ! Gradient of square root of k
+  !----------------------------------------------
+
+  iccocg = 1
+  inc = 1
+  nswrgp = vcopt_k%nswrgr
+  epsrgp = vcopt_k%epsrgr
+  imligp = vcopt_k%imligr
+  iwarnp = vcopt_k%iwarni
+  climgp = vcopt_k%climgr
+  extrap = vcopt_k%extrag
+  ivar = ik
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
+  ! For all usual type of boundary faces (wall, inlet, sym, outlet) :
+  !   - coefa for sqrt(k) is the sqrt of the coefa for k,
+  !   - coefb is the same as for k
+  do ifac = 1, nfabor
+    coefa_sqk(ifac) = coefap(ifac)**.5d0
+    coefb_sqk(ifac) = coefbp(ifac)
+  enddo
+
+  f_id0 = -1
+  call gradient_s                                               &
+( f_id0   , imrgra     , inc       , iccocg , nswrgp , imligp , &
+  iwarnp  , epsrgp     , climgp    , extrap ,                   &
+  sqrt_k  , coefa_sqk  , coefb_sqk ,                            &
+  grad_sqk   )
+
+  !-------------------------------------------------------------------------
+  !  Gradient of the Strain gradient (grad S)
+  !-------------------------------------------------------------------------
+
+  iccocg = 1
+  inc = 1
+  nswrgp = vcopt_k%nswrgr
+  epsrgp = vcopt_k%epsrgr
+  imligp = vcopt_k%imligr
+  iwarnp = vcopt_k%iwarni
+  climgp = vcopt_k%climgr
+  extrap = vcopt_k%extrag
+
+  do ifac = 1, nfabor
+   coefa_sqs(ifac) = 0.d0
+   coefb_sqs(ifac) = 1.d0
+  enddo
+
+  f_id0 = - 1
+  call gradient_s                                                  &
+( f_id0       , imrgra    , inc       , iccocg , nswrgp , imligp , &
+  iwarnp      , epsrgp    , climgp    , extrap ,                   &
+  sqrt_strain , coefa_sqs , coefb_sqs ,                            &
+  grad_sqs   )
+
+endif
+
+!===============================================================================
 ! 8. Finalization of explicit and implicit source terms
 !===============================================================================
 
@@ -707,14 +809,32 @@ if (itytur.eq.2) then
                - d2s3*rho*cvara_k(iel)*divu(iel)                      &
                )
 
-    smbre(iel) = cell_f_vol(iel)*                                              &
-               ( cvara_ep(iel)/cvara_k(iel)*( ce1*smbre(iel)                       &
-                                            - ce2rc(iel)*rho*cvara_ep(iel)     &
+    smbre(iel) = cell_f_vol(iel)*                                          &
+               ( cvara_ep(iel)/cvara_k(iel)*( ce1*smbre(iel)               &
+                                            - ce2rc(iel)*rho*cvara_ep(iel) &
                                             )                              &
-               - d2s3*rho*ce1*cvara_ep(iel)*divu(iel)                          &
+               - d2s3*rho*ce1*cvara_ep(iel)*divu(iel)                      &
                )
 
   enddo
+
+  if (iturb.eq.22) then
+    do iel = 1, ncel
+      rho   = cromo(iel)
+      xnu   = cpro_pcvlo(iel)/rho
+      xnut  = cpro_pcvto(iel)/rho
+
+      smbrk(iel) = smbrk(iel) - cell_f_vol(iel) *  2.d0 * rho * xnu        &
+                                                * ( grad_sqk(1,iel)**2.d0  &
+                                                  + grad_sqk(2,iel)**2.d0  &
+                                                  + grad_sqk(3,iel)**2.d0  )
+
+      smbre(iel) = smbre(iel) + cell_f_vol(iel) * 2.d0 * rho * xnu * xnut  &
+                                                * ( grad_sqs(1,iel)**2.d0  &
+                                                  + grad_sqs(2,iel)**2.d0  &
+                                                  + grad_sqs(3,iel)**2.d0  )
+    enddo
+  endif
 
   ! If the solving of k-epsilon is uncoupled, negative source terms are implicited
   if (ikecou.eq.0) then
@@ -1404,6 +1524,12 @@ deallocate(ce2rc)
 
 if (allocated(w10)) deallocate(w10, w11)
 if (allocated(prdtke)) deallocate(prdtke, prdeps)
+if (allocated(sqrt_k)) then
+  deallocate(sqrt_k, sqrt_strain)
+  deallocate(grad_sqk, grad_sqs)
+  deallocate(coefa_sqk, coefb_sqk)
+  deallocate(coefa_sqs, coefb_sqs)
+end if
 
 !--------
 ! Formats
@@ -1420,7 +1546,10 @@ if (allocated(prdtke)) deallocate(prdtke, prdeps)
  1002 format(/,                                      &
 '   ** Resolution du v2f (k et epsilon)               ',/,&
 '      --------------------------------          ',/)
- 1100 format(1X,A8,' : Bilan explicite = ',E14.5)
+ 1003 format(/,                                      &
+'   ** Resolution du k-epsilon Launder Sharma    ',/,&
+'      --------------------------------          ',/)
+1100 format(1X,A8,' : Bilan explicite = ',E14.5)
 
 #else
 
@@ -1433,6 +1562,9 @@ if (allocated(prdtke)) deallocate(prdtke, prdeps)
  1002 format(/,                                      &
 '   ** Solving v2f (k and epsilon)'               ,/,&
 '      ---------------------------'               ,/)
+ 1003 format(/,                                      &
+'   ** Solving k-epsilon Launder Sharma          ',/,&
+'      --------------------------------          ',/)
  1100 format(1X,A8,' : Explicit balance = ',E14.5)
 #endif
 

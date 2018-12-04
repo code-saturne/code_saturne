@@ -227,7 +227,7 @@ double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
 double precision, dimension(:,:), pointer :: coefa_rij, coefaf_rij, coefad_rij
 double precision, dimension(:,:,:), pointer :: coefb_rij, coefbf_rij, coefbd_rij
 
-double precision  pimp_lam, pimp_turb, gammap, fep, dep, falpg, falpv, ypsd
+double precision  pimp_lam, pimp_turb, gammap, fep, dep, falpg, falpv, ypsd, fct_bl
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -954,45 +954,108 @@ do ifac = 1, nfabor
 
     if (itytur.eq.2) then
 
-      ! Dirichlet Boundary Condition on k
-      !----------------------------------
+      ! Launder Sharma boundary conditions
+      if(iturb.eq.22) then
 
-      if (iuntur.eq.1) then
-        pimp = uk**2/sqrcmu
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+        if (iwallf.eq.0) then
+          ! No wall functions forces by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+            pimp = uk**2/sqrcmu
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
+
+
+        ! Diriclet Boundary Condition on epsilon tilda
+        !---------------------------------------------
+        pimp_lam = 0.d0
+
+        if (iwallf.eq.0) then
+          ! No wall functions forces by user
+          pimp = pimp_lam
+        else
+          ! Use of wall functions
+          if (yplus > epzero) then
+            pimp_turb = 5.d0*uk**4*romc/  &
+                        (xkappa*visclc*(yplus+dplus))
+
+            ! Blending function, from JF Wald PhD (2016)
+            fct_bl    = exp(-0.674d-3*(yplus+dplus)**3.d0)
+            pimp      = pimp_lam*fct_bl + pimp_turb*(1.d0-fct_bl)
+            fep = exp(-(yplus/4.d0)**1.5d0)
+            dep = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmae)/distbf
+
+        call set_dirichlet_scalar &
+               !====================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             pimp         , hint          , rinfin )
+
+      ! k-epsilon and k-epsilon LP boundary conditions
       else
-        pimp = 0.d0
-      endif
-      hint = (visclc+visctc/sigmak)/distbf
 
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa_k(ifac), coefaf_k(ifac),             &
-           coefb_k(ifac), coefbf_k(ifac),             &
-           pimp         , hint          , rinfin )
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+
+        if (iuntur.eq.1) then
+          pimp = uk**2/sqrcmu
+        else
+          pimp = 0.d0
+        endif
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
 
 
-      ! Neumann Boundary Condition on epsilon
-      !--------------------------------------
+        ! Neumann Boundary Condition on epsilon
+        !--------------------------------------
 
-      hint = (visclc+visctc/sigmae)/distbf
+        hint = (visclc+visctc/sigmae)/distbf
 
-      ! If yplus=0, uiptn is set to 0 to avoid division by 0.
-      ! By the way, in this case: iuntur=0
-      if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
-        efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
-        pimp = distbf*4.d0*uk**5/           &
-            (xkappa*efvisc**2*(yplus+dplus)**2)
+        ! If yplus=0, uiptn is set to 0 to avoid division by 0.
+        ! By the way, in this case: iuntur=0
+        if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
+          efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
+          pimp = distbf*4.d0*uk**5/           &
+              (xkappa*efvisc**2*(yplus+dplus)**2)
 
-        qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
-      else
-        qimp = 0.d0
-      endif
+          qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
+        else
+          qimp = 0.d0
+        endif
 
-      call set_neumann_scalar &
-           !==================
-         ( coefa_ep(ifac), coefaf_ep(ifac),             &
-           coefb_ep(ifac), coefbf_ep(ifac),             &
-           qimp          , hint )
+        call set_neumann_scalar &
+             !==================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             qimp          , hint )
+
+      end if
 
     !===========================================================================
     ! 5. Boundary conditions on Rij-epsilon
@@ -1705,11 +1768,11 @@ if (vcopt_u%iwarni.ge.0) then
     if (iturb.eq. 0) write(nfecra,2020)  ntlast,ypluli
     if (itytur.eq.5) write(nfecra,2030)  ntlast,ypluli
     ! No warnings in EBRSM
-    if (itytur.eq.2.or.iturb.eq.30.or.iturb.eq.31)                &
+    if ((itytur.eq.2.and.iturb.ne.22).or.iturb.eq.30.or.iturb.eq.31)   &
       write(nfecra,2040)  ntlast,ypluli
-    if (vcopt_u%iwarni.lt.2.and.iturb.ne.32) then
+    if (vcopt_u%iwarni.lt.2.and.(iturb.ne.32.and.iturb.ne.22)) then
       write(nfecra,2050)
-    elseif (iturb.ne.32) then
+    elseif (iturb.ne.32.and.iturb.ne.22) then
       write(nfecra,2060)
     endif
 

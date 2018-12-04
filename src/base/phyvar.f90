@@ -98,6 +98,7 @@ integer          nn    , isou
 integer          mbrom , ifcvsl
 integer          iclipc, idftnp
 double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
+double precision xfmu, xmu, xmut
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
 double precision xttkmg, xttdrb
@@ -283,15 +284,28 @@ elseif (itytur.eq.2) then
 ! =============
 
   call field_get_val_s(ivisct, visct)
+  call field_get_val_s(iviscl, viscl)
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
-  do iel = 1, ncel
-    xk = cvar_k(iel)
-    xe = cvar_ep(iel)
-    visct(iel) = crom(iel)*cmu*xk**2/xe
-  enddo
+  if (iturb.eq.22) then
+    do iel = 1, ncel
+      xk   = cvar_k(iel)
+      xe   = cvar_ep(iel)
+      xrom = crom(iel)
+      xmu  = viscl(iel)
+      xmut = xrom*xk**2/xe
+      xfmu = exp(-3.4d0/(1.d0+xmut/xmu/50.d0)**2.d0)
+      visct(iel) = cmu*xfmu*xmut
+    enddo
+  else
+    do iel = 1, ncel
+      xk = cvar_k(iel)
+      xe = cvar_ep(iel)
+      visct(iel) = crom(iel)*cmu*xk**2/xe
+    enddo
+  endif
 
 elseif (itytur.eq.3) then
 
