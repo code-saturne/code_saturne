@@ -165,6 +165,8 @@ do ilelt = 1, nlelt
   itypfb(ifac) = isolib
 
   ! Precribe a pressure profile for all faces
+  ! Warning: the pressure has to be specified in term of TOTAL pressure
+  ! i.e. including ro0.g.z...
   icodcl(ifac,ipr) = 1
   rcodcl(ifac,ipr,1) =                                      &
     ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1))                     &

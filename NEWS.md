@@ -3,6 +3,17 @@ Release 5.3.2 (unreleased)
 
 Bug fixes:
 
+- Marjor fix in BCs for the pressure (excluding compressible and GWF
+  modules). Mainly impacting free-surface BCs.
+  The pressure when imposed by the user (Dirichlet or radiative outlet)
+  has to be specified in term of TOTAL pressure P_tot (containing the
+  hydrostatic part). Then the code (for accuracy purpose) convert that
+  into a solved pressure P using the formula:
+  P = P_tot - P0 - ro0 g.(X - X0)
+  This conversion is now done on all the faces, for all BC types where
+  icodcl is specified. Otherwise, an automatic value (in P) is given by
+  the code.
+
 - Fix bug in automatic turbulent BCs. They were only set if not already
   initialized. Cases calling turbulent_bc_inlet_k_eps in user sources to
   overwrite GUI settings were impacted.
