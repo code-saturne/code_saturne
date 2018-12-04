@@ -121,11 +121,9 @@ _wall_boundary_selection(void              *input,
 {
   CS_UNUSED(location_id);
 
-  cs_boundary_t  *bdy = (cs_boundary_t *)input;
-  cs_lnum_t  n_wall_elts = 0;
-  cs_lnum_t *wall_elts = NULL;
-  bool  *is_wall = NULL;
+  const cs_boundary_t  *bdy = (const cs_boundary_t *)input;
 
+  bool  *is_wall = NULL;
   BFT_MALLOC(is_wall, m->n_b_faces, bool);
 
   if (bdy->default_type == CS_BOUNDARY_WALL) {
@@ -139,11 +137,18 @@ _wall_boundary_selection(void              *input,
 
         const int  z_id = bdy->zone_ids[i];
         const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
-        const cs_lnum_t  _n_faces = z->n_elts;
-        const cs_lnum_t  *_face_ids = z->elt_ids;
 
-        for (cs_lnum_t j = 0; j < _n_faces; j++)
-          is_wall[_face_ids[j]] = false;
+        /* At this stage, zone are not defined contrary to the mesh location
+         * So, we retrieve the mesh location information
+         */
+        const int  ml_id = z->location_id;
+        const cs_lnum_t  _n_elts = cs_mesh_location_get_n_elts(ml_id)[0];
+        const cs_lnum_t  *_elt_ids = cs_mesh_location_get_elt_ids(ml_id);
+
+        if (_elt_ids == NULL)
+          for (cs_lnum_t j = 0; j < _n_elts; j++) is_wall[j] = false;
+        else
+          for (cs_lnum_t j = 0; j < _n_elts; j++) is_wall[_elt_ids[j]] = false;
 
       }
     } /* Loop on boundary definitions */
@@ -160,21 +165,30 @@ _wall_boundary_selection(void              *input,
 
         const int  z_id = bdy->zone_ids[i];
         const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
-        const cs_lnum_t  _n_faces = z->n_elts;
-        const cs_lnum_t  *_face_ids = z->elt_ids;
 
-        for (cs_lnum_t j = 0; j < _n_faces; j++)
-          is_wall[_face_ids[j]] = true;
+        /* At this stage, zone are not defined contrary to the mesh location
+         * So, we retrieve the mesh location information
+         */
+        const int  ml_id = z->location_id;
+        const cs_lnum_t  _n_elts = cs_mesh_location_get_n_elts(ml_id)[0];
+        const cs_lnum_t  *_elt_ids = cs_mesh_location_get_elt_ids(ml_id);
+
+        if (_elt_ids == NULL)
+          for (cs_lnum_t j = 0; j < _n_elts; j++) is_wall[j] = true;
+        else
+          for (cs_lnum_t j = 0; j < _n_elts; j++) is_wall[_elt_ids[j]] = true;
 
       }
     } /* Loop on boundary definitions */
 
-  } /* Which default ? */
+  } /* Which kind of default boundary ? */
 
   /* Count the number of boundary faces attached to a wall boundary */
+  cs_lnum_t  n_wall_elts = 0;
   for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
     if (is_wall[i]) n_wall_elts++;
 
+  cs_lnum_t *wall_elts = NULL;
   if (n_wall_elts < m->n_b_faces) {
 
     /* Fill list  */
