@@ -706,7 +706,7 @@ class domain(base_domain):
             self.error = 'data preparation'
         else:
             try:
-                os.symlink("listing", os.path.join("run_solver.log"))
+                os.symlink(os.path.join("run_solver.log"), "listing")
             except Exception:
                 pass
 
