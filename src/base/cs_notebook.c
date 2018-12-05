@@ -100,7 +100,7 @@ cs_notebook_load_from_file(void)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_notebook_parameter_value_by_name(char *name)
+cs_notebook_parameter_value_by_name(const char *name)
 {
 
   cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook, "name", name);
