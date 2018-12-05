@@ -72,35 +72,6 @@ typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the local structure for the current cell
- *
- * \param[in]      cell_flag   flag related to the current cell
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdofb_vecteq_t structure
- * \param[in]      dir_values  Dirichlet values associated to each face
- * \param[in]      field_tn    values of the field at the last computed time
- * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_init_cell_system_depr(const cs_flag_t               cell_flag,
-                                      const cs_cell_mesh_t         *cm,
-                                      const cs_equation_param_t    *eqp,
-                                      const cs_equation_builder_t  *eqb,
-                                      const cs_cdofb_vecteq_t      *eqc,
-                                      const cs_real_t               dir_values[],
-                                      const cs_real_t               field_tn[],
-                                      cs_real_t                     t_eval,
-                                      cs_cell_sys_t                *csys,
-                                      cs_cell_builder_t            *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief    Check if the generic structures for building a CDO-Fb scheme are
  *           allocated
  *
@@ -219,27 +190,6 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
                             const cs_equation_param_t    *eqp,
                             cs_equation_builder_t        *eqb,
                             void                         *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         data structure
- *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdofb_vecteq_t structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
-                                  cs_equation_builder_t      *eqb,
-                                  void                       *data,
-                                  cs_matrix_t               **system_matrix,
-                                  cs_real_t                 **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -386,28 +336,6 @@ cs_cdofb_vecteq_apply_bc_partly(cs_real_t                      time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary conditions known from the settings when the fields
- *         stem from a vector CDO face-based scheme.
- *
- * \param[in]      t_eval      time at which one evaluates BCs
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
- * \param[in, out] field_val   pointer to the values of the variable field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_set_dir_bc(cs_real_t                     t_eval,
-                           const cs_mesh_t              *mesh,
-                           const cs_equation_param_t    *eqp,
-                           cs_equation_builder_t        *eqb,
-                           void                         *context,
-                           cs_real_t                     field_val[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Apply the boundary conditions to the local system in CDO-Fb schemes
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -486,46 +414,6 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t          *csys,
     for (int k = 0; k < 3; k++)
       eqc_st[3*cm->c_id + k] = csys->source[3*n_f + k];
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the variables related to CDO-Fb system after a resolution
- *
- * \param[in, out] tce     pointer to a timer counter
- * \param[in, out] fld     pointer to a cs_field_t structure
- * \param[in, out] eqc     pointer to a context structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_update_fields(cs_timer_counter_t      *tce,
-                              cs_field_t              *fld,
-                              cs_cdofb_vecteq_t       *eqc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build the linear system arising from a vector convection/diffusion
- *         equation with a CDO face-based scheme.
- *         One works cellwise and then process to the assembly
- *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdofb_vecteq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!

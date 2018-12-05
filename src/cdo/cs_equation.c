@@ -1699,11 +1699,11 @@ cs_equation_assign_functions(void)
         eq->init_field_values = cs_cdofb_vecteq_init_values;
 
         /* Depreacted */
-        eq->initialize_system = cs_cdofb_vecteq_initialize_system;
-        eq->set_dir_bc = cs_cdofb_vecteq_set_dir_bc;
-        eq->build_system = cs_cdofb_vecteq_build_system;
-        eq->prepare_solving = _prepare_fb_solving;
-        eq->update_field = cs_cdofb_vecteq_update_field;
+        eq->initialize_system = NULL;
+        eq->set_dir_bc = NULL;
+        eq->build_system = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field = NULL;
 
         /* New mechanism */
         eq->solve_steady_state = cs_cdofb_vecteq_solve_steady_state;
