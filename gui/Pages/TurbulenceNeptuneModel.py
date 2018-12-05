@@ -103,7 +103,19 @@ class TurbulenceModel(MainFieldsModel):
 
            # add new variables and properties from XML
            for var in TurbulenceModelsDescribing.turbulenceVariables[model]:
-               Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, var, var+str(fieldId))
+             if var == "ReynoldsStress":
+                 Variables(self.case).setNewVariableProperty("variable", "",
+                                                             self.XMLNodeVariable,
+                                                             fieldId,
+                                                             var,
+                                                             var+str(fieldId),
+                                                             dim=6)
+             else:
+                 Variables(self.case).setNewVariableProperty("variable", "",
+                                                             self.XMLNodeVariable,
+                                                             fieldId,
+                                                             var,
+                                                             var+str(fieldId))
 
            for var in TurbulenceModelsDescribing.turbulenceProperties[model]:
                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, var, var+str(fieldId))

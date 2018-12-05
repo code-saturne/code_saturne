@@ -311,9 +311,31 @@ class XMLinitNeptune(Variables):
         # Add the choice between SGDH and GGDH turbulent thermal flux models
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
+
+        thermo_node = self.case.xmlGetNode('thermophysical_models')
+
+        fnode = thermo_node.xmlGetNode('fields')
         for node in tnode.xmlGetNodeList('field'):
             if node['turb_flux'] == None:
                 node['turb_flux'] = 'sgdh'
+
+            # Renaming of Rij tensor
+            tvn = tnode.xmlGetNode('variables')
+            for node in fnode.xmlGetNodeList('field'):
+                fieldId = node['field_id']
+
+                rn = tvn.xmlGetNode('variable',
+                                    name="ReynoldsStressXX",
+                                    field_id=fieldId)
+                if rn != None:
+                    rn['name']  = "ReynoldsStress"
+                    rn['label'] = "ReynoldsStress"+str(fieldId)
+                    rn['dim']   = 6
+
+                    for comp in ["XY", "XZ", "YY", "YZ", "ZZ"]:
+                        tvn.xmlRemoveChild('variable',
+                                           name="ReynoldsStress"+comp,
+                                           field_id=fieldId)
 
         # Modify the rad transfer xml node name for particles to allow a correct
         # workflow with the RTE SOLVER
@@ -434,6 +456,24 @@ class XMLinitNeptune(Variables):
             for node in tnode.xmlGetNodeList('field'):
                 if node['turb_flux'] == None:
                     node['turb_flux'] = 'sgdh'
+
+            # Renaming of Rij tensor
+            tvn = tnode.xmlGetNode('variables')
+            for node in self.__XMLNodefields.xmlGetNodeList('field'):
+                fieldId = node['field_id']
+
+                rn = tvn.xmlGetNode("variable",
+                                    name="ReynoldsStressXX",
+                                    field_id=fieldId)
+                if rn != None:
+                    rn['name']  = "ReynoldsStress"
+                    rn['label'] = "ReynoldsStress"+str(fieldId)
+                    rn['dim']   = 6
+
+                    for comp in ["XY", "XZ", "YY", "YZ", "ZZ"]:
+                        tvn.xmlRemoveChild("variable",
+                                           name="ReynoldsStress"+comp,
+                                           field_id=fieldId)
 
         # Modify the rad transfer xml node name for particles to allow a correct
         # workflow with the RTE SOLVER

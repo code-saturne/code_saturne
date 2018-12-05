@@ -71,18 +71,14 @@ class TurbulenceModelsDescribing:
     turbulenceVariables['mixing_length'] = []
     turbulenceVariables['k-epsilon'] = ['TurbKineEner_k', 'TurbDissip']
     turbulenceVariables['k-epsilon_linear_production'] = ['TurbKineEner_k', 'TurbDissip']
-    turbulenceVariables['rij-epsilon_ssg'] = ['ReynoldsStressXX', 'ReynoldsStressXY', 'ReynoldsStressXZ',
-                        'ReynoldsStressYY', 'ReynoldsStressYZ', 'ReynoldsStressZZ', 'TurbDissip']
-    turbulenceVariables['rij-epsilon_ebrsm'] = ['ReynoldsStressXX', 'ReynoldsStressXY', 'ReynoldsStressXZ',
-                        'ReynoldsStressYY', 'ReynoldsStressYZ', 'ReynoldsStressZZ', 'TurbDissip']
+    turbulenceVariables['rij-epsilon_ssg'] = ['ReynoldsStress', 'TurbDissip']
+    turbulenceVariables['rij-epsilon_ebrsm'] = ['ReynoldsStress', 'TurbDissip']
     turbulenceVariables['les_smagorinsky'] = []
     turbulenceVariables['les_wale'] = []
     turbulenceVariables['tchen'] = []
     turbulenceVariables['q2-q12'] = ['TurbKineEner_q2', 'Covariance_q12']
-    turbulenceVariables['r2-q12'] = ['ReynoldsStressXX', 'ReynoldsStressXY', 'ReynoldsStressXZ',
-                                     'ReynoldsStressYY', 'ReynoldsStressYZ', 'ReynoldsStressZZ','Covariance_q12']
-    turbulenceVariables['r2-r12-tchen'] = ['ReynoldsStressXX', 'ReynoldsStressXY', 'ReynoldsStressXZ',
-                                           'ReynoldsStressYY', 'ReynoldsStressYZ', 'ReynoldsStressZZ',
+    turbulenceVariables['r2-q12'] = ['ReynoldsStress','Covariance_q12']
+    turbulenceVariables['r2-r12-tchen'] = ['ReynoldsStress',
                                            'R12XX','R12XY','R12XZ','R12YY','R12YZ','R12ZZ']
 
     turbulenceVariables['all'] = turbulenceVariables['k-epsilon'] \
