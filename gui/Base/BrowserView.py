@@ -1034,7 +1034,7 @@ Calculation management
         self.setRowShow(self.tr('Start/Restart'), True)
         self.setRowShow(self.tr('Performance tuning'), True)
         self.setRowShow(self.tr('Prepare batch calculation'), True)
-        self.setRowShow(self.tr('OpenTurns study'), (not is_ncfd))
+        self.setRowShow(self.tr('OpenTurns study'), case['salome'])
 
         # End of test of physical module
 
