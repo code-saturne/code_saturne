@@ -6,6 +6,10 @@ User changes:
 - Add option --create-xml to studymanager command allowing to generate a xml
   studymanager parameter file automatically from within a study directory.
 
+- Add the possibility to visualize the turbulent production
+  and buoyant terms for DRSM models
+  (the user only has to create "rij_production" and/or "rij_buoyancy" field).
+
 Physical modelling:
 
 - ALE module: use CDO vertex based numerical schemes (more robust) for ALE
@@ -71,6 +75,14 @@ User changes:
 - Allow joining of meshes including isolated faces.
 
 - Add postprocessing of temperature and flux at internal coupling interface.
+
+Physical modelling:
+
+- Make particle tracking compatible with transient turbomachinery model.
+
+- Major modification for K-omega SST (iturb=60) boundary condition.
+  * Switch from a Neumann boundary condition to a Dirichlet
+    boundary condition on omega.
 
 Numerics:
 
@@ -177,6 +189,12 @@ Architectural changes:
   evaluations can be run on either the local workstation or distant machines
   such as computing clusters.
 
+Default option changes:
+
+- Change default options for bad meshes:
+  CS_BAD_CELLS_WARPED_CORRECTION, CS_FACE_DISTANCE_CLIP, CS_FACE_RECONSTRUCTION
+  are switch on by default.
+
 Bug fixes:
 
 - Fix initialisation of some turbulence constants. Constant/Models concerned:
@@ -193,6 +211,13 @@ Bug fixes:
 - Fix face external force projection with tensorial diffusion and porous models 1, 2.
   This was impacting cases with head losses, improved pressure interpolation, and
   scalar or tensorial volume porosity models (iporos=1, 2).
+
+- Fix in the Lagrangian particle tracking:
+  * some minor inconsistencies were introduced on wraped faces
+  * local normal (of the crossed sub-triangle of the crossed face) is stored for
+    particle rebound at the boundary
+  * if the maximum number of sweeps is reached, the put the particle at the last
+    cell center.
 
 Release 5.2.0 - March 30, 2018
 ------------------------------
