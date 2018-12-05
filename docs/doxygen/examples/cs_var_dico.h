@@ -156,13 +156,13 @@
       <tt>cp = CS_F_(cp)->val[cell_id]</tt> \n\n
       <tt>temp = CS_F_(t)->val[cell_id]</tt> \n\n
      - For multidimensional arrays:\n\n
-      <tt>uz = CS_F_(u)->val[3*cell_id + 2]</tt>\n\n
+      <tt>uz = CS_F_(vel)->val[3*cell_id + 2]</tt>\n\n
       These arrays can also be casted as follows (for a 3-D array):\n\n
-      <tt>\ref cs_real_3_t *cvar_vel = (\ref cs_real_3_t *)CS_F_(u)->val</tt> \n\n
+      <tt>\ref cs_real_3_t *cvar_vel = (\ref cs_real_3_t *)CS_F_(vel)->val</tt> \n\n
       The cell value can then be accessed as : \n\n
       <tt>ux = cvar_vel[cell_id][0]</tt>\n\n
      .
-      <b>\c u, \c p, or \c cp </b> are defined in \ref cs_field_pointer.h. \n
+      <b>\c vel, \c p, or \c cp </b> are defined in \ref cs_field_pointer.h. \n
     - Indexed variables (such as user scalars) and indexed properties
       are accessed as: \n
       <tt>\ref CS_FI_(name,ii-1)->val[cell_id]</tt>.\n
@@ -196,7 +196,7 @@
   Fortran code                             | C code                       | Description
   ------------------------------------------------ | ---------------------------- | ------------
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ipr), cvar_pr)       | CS_F_(p)->val       | Pressure
-  call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iu), cvar_vel)       | CS_F_(u)->val       | Velocity
+  call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iu), cvar_vel)       | CS_F_(vel)->val     | Velocity
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val  | Void fraction for cavitation modelling
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val       | Turbulent kinetic energy \f$ k \f$
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iep ), cvar_eps)     | CS_F_(eps)->val     | Turbulent dissipation \f$ \varepsilon \f$
@@ -208,7 +208,7 @@
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir13), cvar_r13)     | CS_F_(r13)->val     | Reynolds stress component \f$ R_{xz} \f$
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iphi), cvar_phi)     | CS_F_(phi)->val     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ifb ), cvar_fb )     | CS_F_(f_bar)->val   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ial ), cvar_al )     | CS_F_(alpha)->val   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
+  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ial ), cvar_al )     | CS_F_(alp_bl)->val  | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iomg), cvar_omg)     | CS_F_(omg)->val     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref inusa), cvar_nusa)   | CS_F_(nusa)->val    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
   call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iuma), cvar_mesh_v)  | CS_F_(mesh_u)->val  | Mesh velocity
