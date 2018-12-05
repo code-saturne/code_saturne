@@ -287,8 +287,13 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if model != "hsat_P":
             exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
             if exp:
-                self.pushButtonEnergy.setStyleSheet("background-color: green")
-                self.pushButtonEnergy.setToolTip(exp)
+                if (model == 'enthalpy' and 'temperature' in exp):
+                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+                elif (model == 'temperature' and 'enthalpy' in exp):
+                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+                else:
+                    self.pushButtonEnergy.setStyleSheet("background-color: green")
+                    self.pushButtonEnergy.setToolTip(exp)
             else:
                 self.pushButtonEnergy.setStyleSheet("background-color: red")
         else:
@@ -398,7 +403,18 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
         th_sca_label = self.mdl.getEnergyModel(self.zone, self.currentid)
         if not exp:
-            exp = th_sca_label + """ = 0;\n"""
+            if str(th_sca_label) == 'enthalpy':
+                exp = th_sca_label + """ = 50000.0;\n"""
+
+            elif str(th_sca_label) == 'temperature':
+                exp = th_sca_label + """ = 293.15;\n"""
+
+        elif ('enthalpy' in exp and str(th_sca_label) == 'temperature'):
+            exp = th_sca_label + """ = 293.15;\n"""
+
+        elif ('temperature' in exp and str(th_sca_label) == 'enthalpy'):
+            exp = th_sca_label + """ = 50000.0;\n"""
+
         req = [(th_sca_label, str(th_sca_label))]
 
         sym = [('x', "X cell's gravity center"),

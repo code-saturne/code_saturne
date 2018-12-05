@@ -756,7 +756,7 @@ class OutletBoundary(Boundary) :
         dico['reference_pressure'] = 101325.0
         dico['enthalpy']           = 0.
         dico['EnthalpyModel']      = 'flux'
-        dico['FractionModel']      = 'automatic'
+        dico['FractionModel']      = 'dirichlet'
         dico['fraction']           = 0.
         dico['noncondensable']     = 0.
         dico['scalar']             = 0.
