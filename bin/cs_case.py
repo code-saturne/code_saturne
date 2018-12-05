@@ -45,28 +45,6 @@ homard_prefix = None
 # Utility functions
 #===============================================================================
 
-def adaptation(adaptation, saturne_script, case_dir):
-
-    """
-    Call HOMARD adaptation.
-    """
-
-    cmd = os.path.join(homard_prefix, 'saturne_homard')
-
-    if adaptation == '-help':
-        cmd.append('-help')
-        cs_exec_environment.run_command(cmd)
-        sys.exit(0)
-    else:
-        homard_options = '-v'
-        cmd = cmd + ['-Saturne_Script', saturne_script, case_dir]
-        cmd = cmd + ['-Pilotage_Adaptation', adaptation, homard_options]
-
-    if cs_exec_environment.run_command(cmd) != 0:
-        sys.exit(0)
-
-#-------------------------------------------------------------------------------
-
 def check_exec_dir_stamp(d):
 
     """
@@ -87,6 +65,90 @@ def check_exec_dir_stamp(d):
             retval = d
 
     return retval
+
+#-------------------------------------------------------------------------------
+
+def get_case_dir(case=None, param=None, coupling=None, id=None):
+
+    """
+    Check and return case path based on partial or sub-path.
+    """
+
+    casedir = None
+    staging_dir = None
+    param = None
+    coupling= None
+    data = None
+    src = None
+
+    if coupling:
+
+        # Multiple domain case
+
+        if param and coupling:
+            err_str = 'Error: coupling and param options are incompatible.\n'
+            raise RunCaseError(err_str)
+
+        coupling = os.path.realpath(coupling)
+        if not os.path.isfile(coupling):
+            err_str = 'Error: coupling parameters: ' + coupling + '\n' \
+                      'not found or not a file.\n'
+            raise RunCaseError(err_str)
+
+        if id:
+            cwd = os.path.split(coupling)[0]
+            if os.path.basename(cwd) == str(id):
+                d = os.path.split(cwd)[0]
+                if os.path.basename(d) == 'RESU_COUPLING':
+                    staging_dir = cwd
+
+        if case:
+            casedir = os.path.realpath(case)
+        else:
+            casedir = os.path.split(coupling)[0]
+            if staging_dir:
+                casedir = os.path.split(os.path.split(staging_dir)[0])[0]
+
+    else:
+
+        cwd = os.getcwd()
+
+        # Single domain case
+
+        if param:
+            param = os.path.basename(param)
+            if param != param:
+                datadir = os.path.split(os.path.realpath(param))[0]
+                (casedir, data) = os.path.split(datadir)
+                if data != 'DATA': # inconsistent paramaters location.
+                    casedir = None
+
+        if id:
+            if os.path.basename(cwd) == str(id):
+                d = os.path.split(cwd)[0]
+                if os.path.basename(d) == 'RESU':
+                    staging_dir = cwd
+
+        if case:
+            casedir = os.path.realpath(case)
+            data = os.path.join(casedir, 'DATA')
+            src = os.path.join(casedir, 'SRC')
+        else:
+            casedir = cwd
+            while os.path.basename(casedir):
+                data = os.path.join(casedir, 'DATA')
+                src = os.path.join(casedir, 'SRC')
+                if os.path.isdir(data) and os.path.isdir(src):
+                    break
+                casedir = os.path.split(casedir)[0]
+
+        if not (os.path.isdir(data) and os.path.isdir(src)):
+            casedir = None
+
+    # Return casedir or None
+
+    return casedir, staging_dir
+
 
 #===============================================================================
 # Main class

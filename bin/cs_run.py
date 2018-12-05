@@ -147,90 +147,33 @@ def process_cmd_line(argv, pkg):
     staging_dir = None
     param = None
     coupling= None
-    data = None
-    src = None
     compute_build = None
 
-    if options.coupling:
-
+    if options.coupling and options.param:
         # Multiple domain case
+        cmd_line = sys.argv[0]
+        for arg in sys.argv[1:]:
+            cmd_line += ' ' + arg
+        err_str = 'Error:\n' + cmd_line + '\n' \
+                  '--coupling and -p/--param options are incompatible.\n'
+        sys.stderr.write(err_str)
+        sys.exit(1)
 
-        if options.param:
-            cmd_line = sys.argv[0]
-            for arg in sys.argv[1:]:
-                cmd_line += ' ' + arg
-            err_str = 'Error:\n' + cmd_line + '\n' \
-                      '--coupling and -p/--param options are incompatible.\n'
-            sys.stderr.write(err_str)
-            sys.exit(1)
+    casedir, staging_dir = cs_case.get_case_dir(case=options.case,
+                                                param=options.param,
+                                                coupling=options.coupling,
+                                                id=options.id)
 
-        coupling = os.path.realpath(options.coupling)
-        if not os.path.isfile(coupling):
-            cmd_line = sys.argv[0]
-            for arg in sys.argv[1:]:
-                cmd_line += ' ' + arg
-            err_str = 'Error:\n' + cmd_line + '\n' \
-                      'coupling parameters: ' + options.coupling + '\n' \
-                      'not found or not a file.\n'
-            sys.stderr.write(err_str)
-            sys.exit(1)
+    if casedir == None:
+        cmd_line = sys.argv[0]
+        for arg in sys.argv[1:]:
+            cmd_line += ' ' + arg
+        err_str = 'Error:\n' + cmd_line + '\n' \
+                  'run from directory \"' + str(os.getcwd()) + '\",\n' \
+                  'which does not seem to be inside a case directory.\n'
+        sys.stderr.write(err_str)
 
-        if options.id:
-            cwd = os.path.split(coupling)[0]
-            if os.path.basename(cwd) == str(options.id):
-                d = os.path.split(cwd)[0]
-                if os.path.basename(d) == 'RESU_COUPLING':
-                    staging_dir = cwd
-
-        if options.case:
-            casedir = os.path.realpath(options.case)
-        else:
-            casedir = os.path.split(coupling)[0]
-            if staging_dir:
-                casedir = os.path.split(os.path.split(staging_dir)[0])[0]
-
-    else:
-
-        cwd = os.getcwd()
-
-        # Single domain case
-
-        if options.param:
-            param = os.path.basename(options.param)
-            if param != options.param:
-                datadir = os.path.split(os.path.realpath(options.param))[0]
-                (casedir, data) = os.path.split(datadir)
-                if data != 'DATA': # inconsistent paramaters location.
-                    casedir = None
-
-        if options.id:
-            if os.path.basename(cwd) == str(options.id):
-                d = os.path.split(cwd)[0]
-                if os.path.basename(d) == 'RESU':
-                    staging_dir = cwd
-
-        if options.case:
-            casedir = os.path.realpath(options.case)
-            data = os.path.join(casedir, 'DATA')
-            src = os.path.join(casedir, 'SRC')
-        else:
-            casedir = os.getcwd()
-            while os.path.basename(casedir):
-                data = os.path.join(casedir, 'DATA')
-                src = os.path.join(casedir, 'SRC')
-                if os.path.isdir(data) and os.path.isdir(src):
-                    break
-                casedir = os.path.split(casedir)[0]
-
-        if not (os.path.isdir(data) and os.path.isdir(src)):
-            casedir = None
-            cmd_line = sys.argv[0]
-            for arg in sys.argv[1:]:
-                cmd_line += ' ' + arg
-            err_str = 'Error:\n' + cmd_line + '\n' \
-                      'run from directory \"' + str(os.getcwd()) + '\",\n' \
-                      'which does not seem to be inside a case directory.\n'
-            sys.stderr.write(err_str)
+    param = options.param
 
     # Stages to run (if no filter given, all are done).
 
