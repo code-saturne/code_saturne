@@ -1007,8 +1007,25 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
     /* get the ale choice */
     const char *label = boundaries->label[izone];
     enum ale_boundary_nature nature =_get_ale_boundary_nature(label);
+    bool is_free_surface = false;
 
-    if (nature ==  ale_boundary_nature_fixed_wall) {
+    /* check for free surface, which supercedes ale choice */
+    {
+      int ith_zone = izone + 1;
+      char *nat = cs_gui_boundary_zone_nature(ith_zone);
+      if (cs_gui_strcmp(nat, "free_surface"))
+        is_free_surface = true;
+      BFT_FREE(nat);
+    }
+
+    if (is_free_surface) {
+      for (ifac = 0; ifac < faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        ialtyb[ifbr] = *ifresf;
+      }
+    }
+
+    else if (nature ==  ale_boundary_nature_fixed_wall) {
       for (ifac = 0; ifac < faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         ialtyb[ifbr] = *ibfixe;
@@ -1046,17 +1063,6 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
         ialtyb[ifbr]  = *ivimpo;
       }
       cs_gui_add_mei_time(cs_timer_wtime() - t0);
-    }
-    else {
-      int ith_zone = izone + 1;
-      char *nat = cs_gui_boundary_zone_nature(ith_zone);
-      if (cs_gui_strcmp(nat, "free_surface")) {
-        for (ifac = 0; ifac < faces; ifac++) {
-          cs_lnum_t ifbr = faces_list[ifac];
-          ialtyb[ifbr]  = *ifresf;
-        }
-      }
-      BFT_FREE(nat);
     }
   }
 }

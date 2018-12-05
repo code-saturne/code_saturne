@@ -5,6 +5,9 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Fix missing free surface boundary movement in some cases depending on
+  which pages were visited in the GUI (GitHub issue #27).
+
 - Fix bug in automatic turbulent BCs. They were only set if not already
   initialized. Cases calling turbulent_bc_inlet_k_eps in user sources to
   overwrite GUI settings were impacted.
