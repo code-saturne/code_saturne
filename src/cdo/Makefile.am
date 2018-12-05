@@ -99,7 +99,6 @@ cs_quadrature.h \
 cs_reco.h \
 cs_scheme_geometry.h \
 cs_sdm.h \
-cs_sla.h \
 cs_source_term.h \
 cs_static_condensation.h \
 cs_walldistance.h \
@@ -160,7 +159,6 @@ cs_quadrature.c \
 cs_reco.c \
 cs_scheme_geometry.c \
 cs_sdm.c \
-cs_sla.c \
 cs_source_term.c \
 cs_static_condensation.c \
 cs_walldistance.c \
