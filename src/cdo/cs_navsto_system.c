@@ -509,7 +509,9 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
       ns->init_velocity = cs_cdofb_uzawa_init_velocity;
       ns->init_pressure = cs_cdofb_uzawa_init_pressure;
       ns->compute_steady = cs_cdofb_uzawa_compute_steady;
+
       switch (nsp->time_scheme) {
+
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_uzawa_compute_implicit;
         break;
@@ -520,7 +522,7 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-            "%s: Invalid time scheme for the Uzawa coupling", __func__);
+                  "%s: Invalid time scheme for the Uzawa coupling", __func__);
         break;
 
       } /* Switch */
@@ -534,11 +536,14 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
       ns->init_velocity = cs_cdofb_ac_init_velocity;
       ns->init_pressure = cs_cdofb_ac_init_pressure;
       ns->compute_steady = NULL;
-      switch (nsp->time_scheme) {
-      case CS_TIME_SCHEME_STEADY:
-        bft_error(__FILE__, __LINE__, 0, "%s: The Artificial Compressibility "
-            "can be used only in unsteady problems", __func__);
 
+      switch (nsp->time_scheme) {
+
+      case CS_TIME_SCHEME_STEADY:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: The Artificial Compressibility "
+                  "can be used only in unsteady problems", __func__);
+        break;
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_ac_compute_implicit;
         break;
@@ -548,8 +553,9 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
         break;
 
       default:
-        bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme for the "
-            " Artificial Compressibility coupling", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid time scheme for the "
+                  " Artificial Compressibility coupling", __func__);
         break;
 
       } /* Switch */
