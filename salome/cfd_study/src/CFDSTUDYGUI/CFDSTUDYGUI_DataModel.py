@@ -352,7 +352,7 @@ __engine__ = None
 def _getEngine():
     global __engine__
     if __engine__ is None:
-        __engine__ = getLCC().FindOrLoadComponent( "FactoryServerPy", __MODULE_NAME__() )
+        __engine__ = getLCC().FindOrLoadComponent( "FactoryServerPy", __MODULE_NAME__ )
         pass
     return __engine__
 
