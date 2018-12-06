@@ -1279,7 +1279,7 @@ cs_parameters_check(void)
   /* Turbulence */
 
   /* Model */
-  const int iturb_vals[14] = {0,          /* laminar */
+  const int iturb_vals[15] = {0,          /* laminar */
                               10,         /* mixing length */
                               20, 21, 22, /* k-epsilon */
                               30, 31, 32, /* RSM */
@@ -1292,7 +1292,7 @@ cs_parameters_check(void)
                                _("while reading input data"),
                                "cs_glob_turb_model->iturb",
                                cs_glob_turb_model->iturb,
-                               14,
+                               15,
                                iturb_vals,
                                NULL);
 
