@@ -80,6 +80,8 @@ typedef enum {
 
 typedef enum {
 
+  CS_RENUMBER_VERTICES_BY_CELL_ADJ,  /* Renumbering based on cell adjacency */
+  CS_RENUMBER_VERTICES_BY_FACE_ADJ,  /* Renumbering based on face adjacency */
   CS_RENUMBER_VERTICES_NONE          /* No vertex numbering */
 
 } cs_renumber_vertices_type_t;

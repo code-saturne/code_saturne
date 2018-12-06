@@ -174,6 +174,10 @@ BEGIN_C_DECLS
 
   \brief Vertices renumbering algorithm types
 
+  \var CS_RENUMBER_VERTICES_BY_CELL_ADJ
+       Renumbering based on the cell adjacency.
+  \var CS_RENUMBER_VERTICES_BY_FACE_ADJ
+       Renumbering based on the face adjacency.
   \var CS_RENUMBER_VERTICES_NONE
        No vertex renumbering.
 
@@ -263,7 +267,9 @@ static const char *_b_face_renum_name[]
      N_("adjacent cells")};
 
 static const char *_vertices_renum_name[]
-= {N_("no renumbering")};
+= {N_("adjacent cells"),
+   N_("adjacent faces"),
+   N_("no renumbering")};
 
 /*============================================================================
  * Private function definitions
@@ -799,6 +805,117 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
     cs_post_renum_faces(NULL, new_to_old_b);
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Apply renumbering to a face -> vertices connectivity when the vertices
+ * have been renumbered.
+ *
+ * parameters:
+ *   n_faces         <-- Number of faces
+ *   face_vtx_idx    <-- Face -> vertices index
+ *   face_vtx        <-> Face vertices
+ *   old_to_new      <-- Vertices renumbering array
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_face_vertices_v(cs_lnum_t         n_faces,
+                        const cs_lnum_t  *face_vtx_idx,
+                        cs_lnum_t        *face_vtx,
+                        const cs_lnum_t  *old_to_new)
+{
+  if (old_to_new == NULL || face_vtx == NULL)
+    return;
+
+  const cs_lnum_t connect_size = face_vtx_idx[n_faces];
+
+  /* face_vtx_idx is not modified by the vertices renumbering */
+
+  cs_lnum_t *face_vtx_old = NULL;
+  BFT_MALLOC(face_vtx_old, connect_size, cs_lnum_t);
+
+  memcpy(face_vtx_old, face_vtx, connect_size*sizeof(cs_lnum_t));
+
+  for (cs_lnum_t jj = 0; jj < connect_size; jj++)
+    face_vtx[jj] = old_to_new[face_vtx_old[jj]];
+
+  BFT_FREE(face_vtx_old);
+}
+
+/*----------------------------------------------------------------------------
+ * Apply renumbering of vertices.
+ *
+ * parameters:
+ *   mesh         <-> Pointer to global mesh structure
+ *   n2o_v        <-- Vertices renumbering array
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_renumber_update_vertices(cs_mesh_t        *mesh,
+                             const cs_lnum_t  *n2o_v)
+{
+  if (n2o_v == NULL)
+    return;
+
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+
+  /* Allocate Work array */
+
+  cs_real_t  *vtx_coord_old = NULL;
+
+  BFT_MALLOC(vtx_coord_old, 3*n_vertices, cs_real_t);
+
+  /* Update the vertex coordinates */
+
+  memcpy(vtx_coord_old, mesh->vtx_coord, 3*n_vertices*sizeof(cs_real_t));
+
+  for (cs_lnum_t new_v_id = 0; new_v_id < n_vertices; new_v_id++) {
+
+    const cs_real_t  *old_coord = vtx_coord_old + 3*n2o_v[new_v_id];
+    cs_real_t *new_coord = mesh->vtx_coord + 3*new_v_id;
+
+    for (int k = 0; k < 3; k++)
+      new_coord[k] = old_coord[k];
+
+  }
+
+  BFT_FREE(vtx_coord_old);
+
+  /* Build the old --> new numbering */
+
+  cs_lnum_t  *o2n_v = NULL;
+
+  BFT_MALLOC(o2n_v, n_vertices, cs_lnum_t);
+  for (cs_lnum_t new_id = 0; new_id < n_vertices; new_id++)
+    o2n_v[n2o_v[new_id]] = new_id; /* old_id = n2o_v[new_id] */
+
+  /* Update faces -> vertices connectivity for boundary faces */
+
+  _update_face_vertices_v(mesh->n_b_faces,
+                          mesh->b_face_vtx_idx,
+                          mesh->b_face_vtx_lst,
+                          o2n_v);
+
+  /* Update faces -> vertices connectivity for interior faces */
+
+  _update_face_vertices_v(mesh->n_i_faces,
+                          mesh->i_face_vtx_idx,
+                          mesh->i_face_vtx_lst,
+                          o2n_v);
+
+  BFT_FREE(o2n_v);
+
+  /* Update global numbering */
+
+  _update_global_num(n_vertices, n2o_v, &(mesh->global_vtx_num));
+
+  /* Update parent vertes numbers for post-processing meshes
+     that may already have been built; Post-processing meshes
+     built after renumbering will have correct parent numbers
+
+     This should not be the standard behavior. Otherwise, this is
+     something to do.
+  */
 }
 
 /*----------------------------------------------------------------------------
@@ -4449,6 +4566,174 @@ _renum_adj_halo_cells_last(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Renumbering of vertices based on cell adjacency.
+ *
+ * parameters:
+ *   mesh   <-> pointer to global mesh structure
+ *   n2o_v  <-> new to old numbering for vertices
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_vertices_by_cell_adjacency(cs_mesh_t  *mesh,
+                                     cs_lnum_t  *n2o_v)
+{
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+
+  /* Order vertices such that the couple (f_id, v_id) is scanned in an
+     increasing way */
+
+  cs_lnum_t  *v_couples = NULL;
+  BFT_MALLOC(v_couples, 2*n_vertices, cs_lnum_t);
+
+  /* Set the initial values */
+
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    v_couples[2*i] = -1, v_couples[2*i+1] = n2o_v[i];
+
+  /* Build the cell --> faces connectivity */
+
+  cs_adjacency_t  *c2f = cs_mesh_adjacency_c2f(mesh, 1);
+
+  /* Map the boundary face --> vertices connectivity */
+
+  cs_adjacency_t  *bf2v
+    = cs_adjacency_create_from_i_arrays(mesh->n_b_faces,
+                                        mesh->b_face_vtx_idx,
+                                        mesh->b_face_vtx_lst,
+                                        NULL);
+
+  /* Map the interior face --> vertices connectivity */
+
+  cs_adjacency_t  *if2v
+    = cs_adjacency_create_from_i_arrays(mesh->n_i_faces,
+                                        mesh->i_face_vtx_idx,
+                                        mesh->i_face_vtx_lst,
+                                        NULL);
+
+  /* Loop on cells to build the v_couples */
+
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_lnum_t  f_id = c2f->ids[j];
+
+      if (f_id < mesh->n_i_faces) { /* Interior face */
+
+        for (cs_lnum_t jj = if2v->idx[f_id]; jj < if2v->idx[f_id+1]; jj++) {
+          if (v_couples[2*if2v->ids[jj]] == -1)
+            v_couples[2*if2v->ids[jj]] = c_id;
+        }
+
+      }
+      else { /* Border face */
+
+        const cs_lnum_t  bf_id = f_id - mesh->n_i_faces;
+        for (cs_lnum_t jj = bf2v->idx[bf_id]; jj < bf2v->idx[bf_id+1]; jj++) {
+          if (v_couples[2*bf2v->ids[jj]] == -1)
+            v_couples[2*bf2v->ids[jj]] = c_id;
+        }
+
+      }
+
+    } /* Loop on cell faces */
+
+  } /* Loop on cells */
+
+  cs_order_lnum_allocated_s(NULL,
+                            v_couples,
+                            2,
+                            n2o_v,
+                            n_vertices);
+
+  /* Free temporary array */
+
+  BFT_FREE(v_couples);
+  cs_adjacency_destroy(&c2f);
+  cs_adjacency_destroy(&if2v);
+  cs_adjacency_destroy(&bf2v);
+}
+
+/*----------------------------------------------------------------------------
+ * Renumbering of vertices based on face adjacency.
+ *
+ * parameters:
+ *   mesh   <-> pointer to global mesh structure
+ *   n2o_v  <-> new to old numbering for vertices
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_vertices_by_face_adjacency(cs_mesh_t  *mesh,
+                                     cs_lnum_t  *n2o_v)
+{
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+
+  /* Order vertices such that the couple (f_id, v_id) is scanned in an
+     increasing way */
+
+  cs_lnum_t  *v_couples = NULL;
+  BFT_MALLOC(v_couples, 2*n_vertices, cs_lnum_t);
+
+  /* Set the initial values */
+
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    v_couples[2*i] = -1, v_couples[2*i+1] = n2o_v[i];
+
+  /* Loop on interior faces */
+
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
+
+    for (cs_lnum_t j = mesh->i_face_vtx_idx[i]; j < mesh->i_face_vtx_idx[i+1];
+         j++) {
+
+      const cs_lnum_t  v_id = mesh->i_face_vtx_lst[j];
+
+      if (v_couples[2*v_id] < 0)
+        v_couples[2*v_id] = i;
+      else {
+        if (v_couples[2*v_id] > i)
+          v_couples[2*v_id] = i;
+      }
+
+    }
+
+  } /* Loop on interior faces */
+
+  /* Loop on border faces */
+
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
+
+    const cs_lnum_t  bf_id = i + mesh->n_i_faces;
+
+    for (cs_lnum_t j = mesh->b_face_vtx_idx[i]; j < mesh->b_face_vtx_idx[i+1];
+         j++) {
+
+      const cs_lnum_t  v_id = mesh->b_face_vtx_lst[j];
+
+      if (v_couples[2*v_id] < 0)
+        v_couples[2*v_id] = bf_id;
+      else {
+        if (v_couples[2*v_id] > bf_id)
+          v_couples[2*v_id] = bf_id;
+      }
+
+    }
+
+  } /* Loop on border faces */
+
+  cs_order_lnum_allocated_s(NULL,
+                            v_couples,
+                            2,
+                            n2o_v,
+                            n_vertices);
+
+  /* Free temporary array */
+
+  BFT_FREE(v_couples);
+
+}
+
+/*----------------------------------------------------------------------------
  * Renumber cells for locality and possible computation/communication
  * overlap.
  *
@@ -4808,10 +5093,65 @@ _renumber_b_faces(cs_mesh_t  *mesh)
 static void
 _renumber_vertices(cs_mesh_t  *mesh)
 {
-  CS_UNUSED(mesh);
-
   if (_vertices_algorithm == CS_RENUMBER_VERTICES_NONE)
     return;
+
+  cs_lnum_t  *n2o_v = NULL;
+
+  if (mesh->vtx_numbering != NULL)
+    cs_numbering_destroy(&(mesh->vtx_numbering));
+
+  mesh->vtx_numbering = cs_numbering_create_default(mesh->n_vertices);
+
+  BFT_MALLOC(n2o_v, mesh->n_vertices, cs_lnum_t);
+
+  for (cs_lnum_t ii = 0; ii < mesh->n_vertices; ii++) n2o_v[ii] = ii;
+
+  /* Vertices renumbering */
+  /*----------------------*/
+
+  switch(_vertices_algorithm) {
+
+  case CS_RENUMBER_VERTICES_BY_CELL_ADJ:
+    _renumber_vertices_by_cell_adjacency(mesh, n2o_v);
+    break;
+
+  case CS_RENUMBER_VERTICES_BY_FACE_ADJ:
+    _renumber_vertices_by_face_adjacency(mesh, n2o_v);
+    break;
+
+  default:
+    break; /* Nothing to do */
+  }
+
+  /* Update mesh if needed */
+  /*-----------------------*/
+
+  {
+    /* Check numbering is non trivial */
+
+    cs_lnum_t v_id = 0;
+    while (v_id < mesh->n_vertices) {
+      if (n2o_v[v_id] != v_id)
+        break;
+      else
+        v_id++;
+    }
+
+    /* Update connectivity */
+    if (v_id < mesh->n_vertices)
+      _cs_renumber_update_vertices(mesh, n2o_v);
+
+  }
+
+  if (mesh->verbosity > 0)
+    cs_numbering_log_info(CS_LOG_DEFAULT,
+                          _("vertices"),
+                          mesh->vtx_numbering);
+
+  /* Now free remaining array */
+
+  BFT_FREE(n2o_v);
 }
 
 /*----------------------------------------------------------------------------
