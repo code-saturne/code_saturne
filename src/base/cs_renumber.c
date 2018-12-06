@@ -649,8 +649,8 @@ _update_face_vertices(cs_lnum_t         n_faces,
     BFT_MALLOC(face_vtx_idx_old, n_faces + 1, cs_lnum_t);
     BFT_MALLOC(face_vtx_old, connect_size, cs_lnum_t);
 
-    memcpy(face_vtx_idx_old, face_vtx_idx, (n_faces+1)*sizeof(int));
-    memcpy(face_vtx_old, face_vtx, connect_size*sizeof(int));
+    memcpy(face_vtx_idx_old, face_vtx_idx, (n_faces+1)*sizeof(cs_lnum_t));
+    memcpy(face_vtx_old, face_vtx, connect_size*sizeof(cs_lnum_t));
 
     face_vtx_idx[0] = 0;
     start_id = 0;
