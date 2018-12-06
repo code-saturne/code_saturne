@@ -134,6 +134,7 @@ typedef struct {
                                             vertices in parallel */
 
   cs_numbering_t  *cell_numbering;   /* Cell numbering info */
+  cs_numbering_t  *vtx_numbering;    /* Vertex numbering info */
   cs_numbering_t  *i_face_numbering; /* Interior face numbering info */
   cs_numbering_t  *b_face_numbering; /* Boundary face numbering info */
 

@@ -2193,6 +2193,7 @@ cs_mesh_create(void)
   mesh->cell_numbering = NULL;
   mesh->i_face_numbering = NULL;
   mesh->b_face_numbering = NULL;
+  mesh->vtx_numbering = NULL;
 
   /* Group and family features */
 
@@ -2357,6 +2358,8 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
     cs_numbering_destroy(&(mesh->i_face_numbering));
   if (mesh->b_face_numbering != NULL)
     cs_numbering_destroy(&(mesh->b_face_numbering));
+  if (mesh->vtx_numbering != NULL)
+    cs_numbering_destroy(&(mesh->vtx_numbering));
 
   /* Free selection structures */
 
@@ -4007,6 +4010,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   cs_numbering_dump(mesh->cell_numbering);
   cs_numbering_dump(mesh->i_face_numbering);
   cs_numbering_dump(mesh->b_face_numbering);
+  cs_numbering_dump(mesh->vtx_numbering);
 
   /* Modification flag */
 

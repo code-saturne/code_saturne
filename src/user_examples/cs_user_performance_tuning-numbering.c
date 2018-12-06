@@ -110,7 +110,8 @@ cs_user_numbering(void)
      CS_RENUMBER_CELLS_NONE,          /* cells_pre_numbering */
      CS_RENUMBER_CELLS_NONE,          /* cells_numbering */
      CS_RENUMBER_I_FACES_MULTIPASS,   /* interior faces numbering */
-     CS_RENUMBER_B_FACES_THREAD);     /* boundary faces numbering */
+     CS_RENUMBER_B_FACES_THREAD,      /* boundary faces numbering */
+     CS_RENUMBER_VERTICES_NONE);      /* vertices numbering */
 
   /*! [performance_tuning_numbering] */
 }

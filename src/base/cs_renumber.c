@@ -170,6 +170,13 @@ BEGIN_C_DECLS
   \var CS_RENUMBER_I_FACES_NONE
        No interior face renumbering.
 
+  \enum cs_renumber_vertices_type_t
+
+  \brief Vertices renumbering algorithm types
+
+  \var CS_RENUMBER_VERTICES_NONE
+       No vertex renumbering.
+
   \enum cs_renumber_ordering_t
 
   \brief Ordering options for adjacency arrays
@@ -231,6 +238,9 @@ static cs_renumber_b_faces_type_t _b_faces_algorithm
    = CS_RENUMBER_B_FACES_NONE;
 #endif
 
+static cs_renumber_vertices_type_t _vertices_algorithm
+  = CS_RENUMBER_VERTICES_NONE;
+
 static const char *_cell_renum_name[]
   = {N_("sub-partitioning with LibScotch"),
      N_("fill-reducing ordering with LibScotch"),
@@ -251,6 +261,9 @@ static const char *_b_face_renum_name[]
   = {N_("no shared cell across threads"),
      N_("vectorizing"),
      N_("adjacent cells")};
+
+static const char *_vertices_renum_name[]
+= {N_("no renumbering")};
 
 /*============================================================================
  * Private function definitions
@@ -4785,6 +4798,23 @@ _renumber_b_faces(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
+ * Renumber vertices for locality and possible computation/communication
+ * overlap.
+ *
+ * parameters:
+ *   mesh <-> pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_renumber_vertices(cs_mesh_t  *mesh)
+{
+  CS_UNUSED(mesh);
+
+  if (_vertices_algorithm == CS_RENUMBER_VERTICES_NONE)
+    return;
+}
+
+/*----------------------------------------------------------------------------
  * Test local operations related to renumbering for interior faces.
  *
  * parameters:
@@ -5199,6 +5229,12 @@ _renumber_mesh(cs_mesh_t  *mesh)
          "     numbering:                           %s\n"),
        _(_b_face_renum_name[_b_faces_algorithm]));
 
+    bft_printf
+      (_("\n"
+         "   renumbering for vertices:\n"
+         "     numbering:                           %s\n"),
+       _(_vertices_renum_name[_vertices_algorithm]));
+
   }
 
   /* Renumber cells first */
@@ -5209,6 +5245,10 @@ _renumber_mesh(cs_mesh_t  *mesh)
 
   _renumber_i_faces(mesh);
   _renumber_b_faces(mesh);
+
+  /* Renumber vertices afterwards */
+
+  _renumber_vertices(mesh);
 
   if (mesh->verbosity > 0)
     bft_printf
@@ -5319,17 +5359,19 @@ cs_renumber_get_min_subset_size(cs_lnum_t  *min_i_subset_size,
  * \param[in]  cells_numbering           algorithm for cells numbering
  * \param[in]  i_faces_numbering         algorithm for interior faces numbering
  * \param[in]  b_faces_numbering         algorithm for boundary faces numbering
+ * \param[in]  vertices_numbering        algorithm for vertices numbering
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_set_algorithm(bool                        halo_adjacent_cells_last,
-                          bool                        halo_adjacent_faces_last,
-                          cs_renumber_ordering_t      i_faces_base_ordering,
-                          cs_renumber_cells_type_t    cells_pre_numbering,
-                          cs_renumber_cells_type_t    cells_numbering,
-                          cs_renumber_i_faces_type_t  i_faces_numbering,
-                          cs_renumber_b_faces_type_t  b_faces_numbering)
+cs_renumber_set_algorithm(bool                         halo_adjacent_cells_last,
+                          bool                         halo_adjacent_faces_last,
+                          cs_renumber_ordering_t       i_faces_base_ordering,
+                          cs_renumber_cells_type_t     cells_pre_numbering,
+                          cs_renumber_cells_type_t     cells_numbering,
+                          cs_renumber_i_faces_type_t   i_faces_numbering,
+                          cs_renumber_b_faces_type_t   b_faces_numbering,
+                          cs_renumber_vertices_type_t  vertices_numbering)
 {
   _cells_adjacent_to_halo_last = halo_adjacent_cells_last;
   _i_faces_adjacent_to_halo_last = halo_adjacent_faces_last;
@@ -5339,6 +5381,7 @@ cs_renumber_set_algorithm(bool                        halo_adjacent_cells_last,
   _cells_algorithm[1] = cells_numbering;
   _i_faces_algorithm = i_faces_numbering;
   _b_faces_algorithm = b_faces_numbering;
+  _vertices_algorithm = vertices_numbering;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5359,6 +5402,7 @@ cs_renumber_set_algorithm(bool                        halo_adjacent_cells_last,
  * \param[out]  cells_numbering           algorithm for cells numbering
  * \param[out]  i_faces_numbering         algorithm for interior faces numbering
  * \param[out]  b_faces_numbering         algorithm for boundary faces numbering
+ * \param[out]  vertices_numbering        algorithm for vertices numbering
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5369,7 +5413,8 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
                           cs_renumber_cells_type_t    *cells_pre_numbering,
                           cs_renumber_cells_type_t    *cells_numbering,
                           cs_renumber_i_faces_type_t  *i_faces_numbering,
-                          cs_renumber_b_faces_type_t  *b_faces_numbering)
+                          cs_renumber_b_faces_type_t  *b_faces_numbering,
+                          cs_renumber_vertices_type_t *vertices_numbering)
 {
   if (halo_adjacent_cells_last != NULL)
     *halo_adjacent_cells_last = _cells_adjacent_to_halo_last;
@@ -5386,6 +5431,8 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
     *i_faces_numbering = _i_faces_algorithm;
   if (b_faces_numbering != NULL)
     *b_faces_numbering = _b_faces_algorithm;
+  if (vertices_numbering != NULL)
+    *vertices_numbering = _vertices_algorithm;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5419,6 +5466,8 @@ cs_renumber_mesh(cs_mesh_t  *mesh)
     mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
   if (mesh->b_face_numbering == NULL)
     mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
+  if (mesh->vtx_numbering == NULL)
+    mesh->vtx_numbering = cs_numbering_create_default(mesh->n_vertices);
 
   _renumber_i_test(mesh);
   _renumber_b_test(mesh);
@@ -5639,6 +5688,53 @@ cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh)
       BFT_FREE(mesh->global_b_face_num);
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber vertices depending on code options and target machine.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_vertices(cs_mesh_t  *mesh)
+{
+  if (mesh->vtx_numbering != NULL)
+    cs_numbering_destroy(&(mesh->vtx_numbering));
+
+  const char *p = NULL;
+
+  /* Initialization */
+
+  if (_cs_renumber_n_threads < 1)
+    cs_renumber_set_n_threads(cs_glob_n_threads);
+
+  p = getenv("CS_RENUMBER");
+
+  if (p != NULL) {
+    if (strcmp(p, "off") == 0) {
+      if (mesh->vtx_numbering == NULL)
+        mesh->vtx_numbering = cs_numbering_create_default(mesh->n_vertices);
+      return;
+    }
+  }
+
+  /* Apply renumbering */
+
+  _renumber_vertices(mesh);
+
+  if (mesh->verbosity > 0)
+    bft_printf
+      ("\n ----------------------------------------------------------\n");
+
+  if (mesh->vtx_numbering == NULL)
+    mesh->vtx_numbering = cs_numbering_create_default(mesh->n_vertices);
+
 }
 
 /*----------------------------------------------------------------------------*/
