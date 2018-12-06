@@ -1357,6 +1357,9 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayCSSmgrAction.triggered.connect(self.displayCSSmgr)
         self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
+
+        self.rename_doc_buttons()
+
         self.actionUndo.triggered.connect(self.slotUndo)
         self.actionRedo.triggered.connect(self.slotRedo)
         self.actionPrepro.triggered.connect(self.slotPreproMode)
@@ -1381,6 +1384,27 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayNCManualAction.setVisible(False)
 
 
+    def rename_doc_buttons(self, pkg_name=None):
+
+        pn = pkg_name
+        if pn == None:
+            pn = self.package.name
+
+        if pn == 'code_saturne':
+            self.displayCSManualAction.setText("Code_Saturne")
+            self.displayCSTutorialAction.setText("Code_Saturne tutorial")
+            self.displayCSTheoryAction.setText("Code_Saturne theory")
+            self.displayCSSmgrAction.setText('Code_Saturne studymanager')
+            self.displayCSRefcardAction.setText('Code_Saturne reference card')
+            self.displayCSDoxygenAction.setText("Code_Saturne doxygen")
+
+        elif pn == 'neptune_cfd':
+            self.displayCSManualAction.setText("NEPTUNE_CFD")
+            self.displayCSTutorialAction.setText("NEPTUNE_CFD tutorial")
+            self.displayCSTheoryAction.setText("NEPTUNE_CFD theory")
+            self.displayCSDoxygenAction.setText("NEPTUNE_CFD doxygen")
+
+
     def initCase(self):  #Il faut rappeller cette methode des que l'on passe de CS a Neptune...
         """
         Initializes the new case with default xml nodes.
@@ -1388,8 +1412,14 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
 
         if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+            from neptune_cfd.nc_package import package as nc_package
+            self.package = nc_package()
+            self.rename_doc_buttons()
             return XMLinitNeptune(self.case).initialize(self.case['prepro'])
         elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
+            from code_saturne.cs_package import package as cs_package
+            self.package = cs_package()
+            self.rename_doc_buttons()
             return XMLinit(self.case).initialize(self.case['prepro'])
 
 
