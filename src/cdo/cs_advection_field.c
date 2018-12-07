@@ -640,6 +640,8 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  */
 /*----------------------------------------------------------------------------*/
@@ -648,6 +650,7 @@ void
 cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                 cs_flag_t          loc,
                                 cs_real_t         *array,
+                                _Bool              is_owner,
                                 cs_lnum_t         *index)
 {
   if (adv == NULL)
@@ -658,6 +661,7 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
   cs_xdef_array_input_t  input = {.stride = 3,
                                   .loc = loc,
                                   .values = array,
+                                  .is_owner = is_owner,
                                   .index = index };
   int  dim = _get_dim_def(adv);
 
@@ -666,7 +670,7 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                           0,  /* zone_id */
                                           state_flag,
                                           meta_flag,
-                                          &input);
+                                          (void *)&input);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -785,6 +789,8 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
  * \param[in]       zname     name of the boundary zone to consider
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  */
 /*----------------------------------------------------------------------------*/
@@ -794,6 +800,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               const char        *zname,
                                               cs_flag_t          loc,
                                               cs_real_t         *array,
+                                              _Bool              is_owner,
                                               cs_lnum_t         *index)
 {
   if (adv == NULL)
@@ -804,6 +811,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   cs_xdef_array_input_t  input = {.stride = 1,
                                   .loc = loc,
                                   .values = array,
+                                  .is_owner = is_owner,
                                   .index = index };
 
   int  z_id = cs_get_bdy_zone_id(zname);
@@ -815,7 +823,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                           z_id,
                                           state_flag,
                                           meta_flag,
-                                          &input);
+                                          (void *)&input);
 
   int  def_id = adv->n_bdy_flux_defs;
   adv->n_bdy_flux_defs += 1;
@@ -1512,8 +1520,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
       case CS_XDEF_BY_ARRAY:
         {
-          const cs_xdef_array_input_t  *input =
-            (cs_xdef_array_input_t *)def->input;
+          const cs_xdef_array_input_t  *input
+            = (cs_xdef_array_input_t *)def->input;
           const cs_real_t  *val = input->values;
 
           assert(input->stride == 1);
@@ -1719,8 +1727,8 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
 
     case CS_XDEF_BY_ARRAY:
       {
-        const cs_xdef_array_input_t  *input =
-          (cs_xdef_array_input_t *)def->input;
+        const cs_xdef_array_input_t  *input
+          = (cs_xdef_array_input_t *)def->input;
         const cs_real_t  *val = input->values;
 
         assert(input->stride == 1);
@@ -1901,8 +1909,8 @@ cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
 
     case CS_XDEF_BY_ARRAY:
       {
-        const cs_xdef_array_input_t  *input =
-          (cs_xdef_array_input_t *)def->input;
+        const cs_xdef_array_input_t  *input
+          = (cs_xdef_array_input_t *)def->input;
         const cs_real_t  *val = input->values;
 
         assert(input->stride == 1);
@@ -2577,8 +2585,8 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
 
       case CS_XDEF_BY_ARRAY:
         {
-          const cs_xdef_array_input_t  *input =
-            (cs_xdef_array_input_t *)def->input;
+          const cs_xdef_array_input_t  *input
+            = (cs_xdef_array_input_t *)def->input;
           const cs_real_t  *val = input->values;
 
           assert(input->stride == 1);

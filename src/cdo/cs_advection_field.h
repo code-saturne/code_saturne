@@ -538,6 +538,8 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  */
 /*----------------------------------------------------------------------------*/
@@ -546,6 +548,7 @@ void
 cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                 cs_flag_t          loc,
                                 cs_real_t         *array,
+                                _Bool              is_owner,
                                 cs_lnum_t         *index);
 
 /*----------------------------------------------------------------------------*/
@@ -604,6 +607,8 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
  * \param[in]       zname     name of the boundary zone to consider
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  */
 /*----------------------------------------------------------------------------*/
@@ -613,6 +618,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               const char        *zname,
                                               cs_flag_t          loc,
                                               cs_real_t         *array,
+                                              _Bool              is_owner,
                                               cs_lnum_t         *index);
 
 /*----------------------------------------------------------------------------*/

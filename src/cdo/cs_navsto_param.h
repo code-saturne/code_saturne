@@ -600,6 +600,8 @@ cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
  *                           cells are considered)
  * \param[in]      loc       information to know where are located values
  * \param[in]      array     pointer to an array
+ * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                           (true or false)
  * \param[in]      index     optional pointer to the array index
  *
  * \return a pointer to the new \ref cs_xdef_t structure
@@ -611,6 +613,7 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
                                    const char           *z_name,
                                    cs_flag_t             loc,
                                    cs_real_t            *array,
+                                   _Bool                 is_owner,
                                    cs_lnum_t            *index);
 
 /*----------------------------------------------------------------------------*/

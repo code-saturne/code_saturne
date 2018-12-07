@@ -388,8 +388,8 @@ cs_xdef_cw_eval_scalar_face_avg_by_array(const cs_cell_mesh_t       *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_input_t *array_input =
-    (const cs_xdef_array_input_t *)input;
+  const cs_xdef_array_input_t *array_input
+    = (const cs_xdef_array_input_t *)input;
 
   assert(input != NULL);
   assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
@@ -497,8 +497,8 @@ cs_xdef_cw_eval_vector_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_input_t *array_input =
-    (const cs_xdef_array_input_t *)input;
+  const cs_xdef_array_input_t *array_input
+    = (const cs_xdef_array_input_t *)input;
 
   assert(input != NULL);
   assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
@@ -577,8 +577,8 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_input_t *array_input =
-    (const cs_xdef_array_input_t *)input;
+  const cs_xdef_array_input_t *array_input
+    = (const cs_xdef_array_input_t *)input;
 
   assert(input != NULL);
   assert(cs_flag_test(array_input->loc, cs_flag_primal_face));

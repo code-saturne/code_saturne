@@ -998,9 +998,11 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  * \param[in]       z_name    name of the related boundary zone
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  *
- * \return a pointer to the new \ref cs_xdef_t structure
+ * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1010,6 +1012,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             const char                 *z_name,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
+                            _Bool                       is_owner,
                             cs_lnum_t                  *index);
 
 /*----------------------------------------------------------------------------*/
@@ -1157,6 +1160,8 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
  *                           all cells are considered)
  * \param[in]      loc       information to know where are located values
  * \param[in]      array     pointer to an array
+ * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                           (true or false)
  * \param[in]      index     optional pointer to the array index
  *
  * \return a pointer to the new cs_source_term_t structure
@@ -1168,6 +1173,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      const char             *z_name,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
+                                     _Bool                   is_owner,
                                      cs_lnum_t              *index);
 
 /*----------------------------------------------------------------------------*/

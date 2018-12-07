@@ -1869,9 +1869,11 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  * \param[in]       z_name    name of the related boundary zone
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  *
- * \return a pointer to the new \ref cs_xdef_t structure
+ * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1881,6 +1883,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             const char                 *z_name,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
+                            _Bool                       is_owner,
                             cs_lnum_t                  *index)
 {
   if (eqp == NULL)
@@ -1893,7 +1896,8 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   cs_xdef_array_input_t  input = {.stride = eqp->dim,
                                   .loc = loc,
                                   .values = array,
-                                  .index = index };
+                                  .index = index,
+                                  .is_owner = is_owner};
 
   cs_flag_t  state_flag = 0;
   if (loc == cs_flag_primal_face)
@@ -2242,6 +2246,8 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
  *                           all cells are considered)
  * \param[in]      loc       information to know where are located values
  * \param[in]      array     pointer to an array
+ * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                           (true or false)
  * \param[in]      index     optional pointer to the array index
  *
  * \return a pointer to the new cs_source_term_t structure
@@ -2253,6 +2259,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      const char             *z_name,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
+                                     _Bool                   is_owner,
                                      cs_lnum_t              *index)
 {
   if (eqp == NULL)
@@ -2274,15 +2281,15 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   cs_xdef_array_input_t  input = {.stride = eqp->dim,
                                   .loc = loc,
                                   .values = array,
+                                  .is_owner = is_owner,
                                   .index = index };
-
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        &input);
+                                        (void *)&input);
 
   int  new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;

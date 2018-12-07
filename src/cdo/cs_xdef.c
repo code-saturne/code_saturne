@@ -145,10 +145,8 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
       b->stride = a->stride;
       b->loc = a->loc;
       b->values = a->values;
+      b->is_owner = a->is_owner;
       b->index = a->index;
-
-      if (a->values != NULL)
-        d->state |= CS_FLAG_STATE_OWNER;
 
       /* Update state flag */
       if (cs_flag_test(b->loc, cs_flag_primal_cell) ||
@@ -260,10 +258,8 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       b->stride = a->stride;
       b->loc = a->loc;
       b->values = a->values;
+      b->is_owner = a->is_owner;
       b->index = a->index;
-
-      if (a->values != NULL)
-        d->state |= CS_FLAG_STATE_OWNER;
 
       d->input = b;
 
@@ -387,18 +383,17 @@ cs_xdef_free(cs_xdef_t     *d)
     return d;
 
   if (d->type == CS_XDEF_BY_ARRAY) {
-    if (d->state & CS_FLAG_STATE_OWNER) {
 
-      cs_xdef_array_input_t  *a = (cs_xdef_array_input_t *)d->input;
+    cs_xdef_array_input_t  *a = (cs_xdef_array_input_t *)d->input;
+    if (a->is_owner)
       BFT_FREE(a->values);
-    }
     BFT_FREE(d->input);
-  }
 
-  if (d->type == CS_XDEF_BY_TIME_FUNCTION ||
-      d->type == CS_XDEF_BY_VALUE ||
-      d->type == CS_XDEF_BY_ANALYTIC_FUNCTION ||
-      d->type == CS_XDEF_BY_QOV)
+  }
+  else if (d->type == CS_XDEF_BY_TIME_FUNCTION ||
+           d->type == CS_XDEF_BY_VALUE ||
+           d->type == CS_XDEF_BY_ANALYTIC_FUNCTION ||
+           d->type == CS_XDEF_BY_QOV)
     BFT_FREE(d->input);
 
   BFT_FREE(d);
@@ -488,17 +483,15 @@ cs_xdef_set_array(cs_xdef_t     *d,
               "%s: The given cs_xdef_t structure should be defined by array.",
               __func__);
 
-  cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)d->input;
+  cs_xdef_array_input_t  *a = (cs_xdef_array_input_t *)d->input;
 
   /* An array is already assigned and one manages the lifecycle */
-  if ((d->state & CS_FLAG_STATE_OWNER) &&
-      ai->values != NULL)
-    BFT_FREE(ai->values);
+  if (a->is_owner && a->values != NULL)
+    BFT_FREE(a->values);
 
-  if (is_owner)
-    d->state |= CS_FLAG_STATE_OWNER;
-
-  ai->values = array;
+  /* Set the new values */
+  a->is_owner = is_owner;
+  a->values = array;
 }
 
 /*----------------------------------------------------------------------------*/

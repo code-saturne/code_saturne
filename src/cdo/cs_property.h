@@ -431,6 +431,8 @@ cs_property_def_by_func(cs_property_t         *pty,
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  *
  * \return a pointer to the resulting cs_xdef_t structure
@@ -441,6 +443,7 @@ cs_xdef_t *
 cs_property_def_by_array(cs_property_t    *pty,
                          cs_flag_t         loc,
                          cs_real_t        *array,
+                         _Bool             is_owner,
                          cs_lnum_t        *index);
 
 /*----------------------------------------------------------------------------*/

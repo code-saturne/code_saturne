@@ -178,22 +178,29 @@ typedef struct {
 typedef struct {
 
   /*! * \var stride
-   * stride to access the array values
+   * Stride to access the array values
    *
    * \var loc
-   * flag to know where are defined array values
+   * Flag to know where are defined array values
    *
    * \var values
-   * array values
+   * Array values
    *
    * \var index
-   * optional index for accessing to the values
+   * Optional index for accessing to the values. One assumes that the lifecycle
+   * of this buffer is managed outside (pointer to a cs_adjacency_t stored
+   * either in the \ref cs_cdo_connect_t struct. or the \ref cs_mesh_t struct.
+   *
+   * \var is_owner
+   * If true the lifecycle of the values is managed by the cs_xdef_t structure.
+   * Otherwise, the lifecycle is managed by the calling code.
    */
 
   int           stride;
   cs_flag_t     loc;
   cs_real_t    *values;
   cs_lnum_t    *index;
+  _Bool         is_owner;
 
 } cs_xdef_array_input_t;
 

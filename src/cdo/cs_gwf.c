@@ -668,14 +668,17 @@ cs_gwf_destroy_all(void)
 
   /* darcian_flux and darcian_boundary_flux are allocated only if the related
      advection field is defined by array.
-     In this case, the lifecycle is managed by the definition */
+     At the definition step, the GWF module has kept the ownership of the
+     lifecycle of the darcian_flux and darcian_boundary_flux arrays.
+     In this case, the lifecycle is not managed by the definition */
 
-  if (gw->head_in_law != NULL)
-    BFT_FREE(gw->head_in_law);
+  BFT_FREE(gw->darcian_boundary_flux);
+  BFT_FREE(gw->darcian_flux);
+  BFT_FREE(gw->head_in_law);
 
   cs_gwf_soil_free_all();
 
-  /* Manage tracer-related members */
+  /* Manage the tracer-related members */
   for (int i = 0; i < gw->n_tracers; i++)
     gw->tracers[i] = cs_gwf_tracer_free(gw->tracers[i]);
   BFT_FREE(gw->tracers);
@@ -1180,10 +1183,13 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
       memset(gw->darcian_boundary_flux, 0, array_size*sizeof(cs_real_t));
 
       array_location = CS_FLAG_SCALAR | cs_flag_dual_closure_byf;
+
+      /* Do not transfer the ownership */
       cs_advection_field_def_boundary_flux_by_array(gw->adv_field,
                                                     NULL,
                                                     array_location,
                                                     gw->darcian_boundary_flux,
+                                                    false,
                                                     bf2v->idx);
 
       /* Define the advection field in the volume */
@@ -1197,9 +1203,12 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
         memset(gw->darcian_flux, 0, array_size*sizeof(cs_real_t));
 
         array_location = CS_FLAG_SCALAR | gw->flux_location;
+
+        /* Do not transfer the ownership */
         cs_advection_field_def_by_array(gw->adv_field,
                                         array_location,
                                         gw->darcian_flux,
+                                        false, /* transfer ownership */
                                         c2e->idx);
 
       }
