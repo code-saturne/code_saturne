@@ -262,6 +262,7 @@ MobileMeshForm.ui \
 NotebookForm.ui \
 NumericalParamEquationForm.ui \
 NumericalParamGlobalForm.ui \
+OpenTurnsForm.ui \
 OutputControlForm.ui \
 OutputSurfacicVariablesForm.ui \
 OutputVolumicVariablesForm.ui \
