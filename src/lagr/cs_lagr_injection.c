@@ -1322,7 +1322,21 @@ cs_lagr_injection(int        time_id,
                                   time_id,
                                   vislen);
 
-        /* advanced user modification */
+        /* for safety, build values at previous time step */
+
+        for (cs_lnum_t p_id = particle_range[0];
+             p_id < particle_range[1];
+             p_id++)
+          cs_lagr_particles_current_to_previous(p_set, p_id);
+
+        /* advanced user modification:
+         * WARNING: the user may change the particle coordinates BUT it is
+         * forbidden to change the previous location (otherwise, if the particle
+         * is not in the same cell anymore, it will be lost for ever).
+         *
+         * Moreover, a precaution has to be taken when calling "current to previous"
+         * in the tracking
+         * */
 
         {
           cs_lnum_t *particle_face_ids = NULL;
@@ -1340,13 +1354,6 @@ cs_lagr_injection(int        time_id,
 
           BFT_FREE(particle_face_ids);
         }
-
-        /* for safety, build values at previous time step */
-
-        for (cs_lnum_t p_id = particle_range[0];
-             p_id < particle_range[1];
-             p_id++)
-          cs_lagr_particles_current_to_previous(p_set, p_id);
 
         /* check some particle attributes consistency */
 

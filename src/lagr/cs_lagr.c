@@ -1804,6 +1804,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
        --------------------- */
 
     bool go_on = true;
+    cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
     while (go_on) {
 
       cs_glob_lagr_time_step->nor
@@ -1850,8 +1851,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* Copy results from previous step */
 
       if (cs_glob_lagr_time_step->nor == 1) {
-        for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
+        /* Current to previous but not on new particles at the first time
+         * because the user may have changed their position */
+        for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++)
           cs_lagr_particles_current_to_previous(p_set, ip);
+
+        n_particles_prev = p_set->n_particles;
       }
 
       /* Computation of the fluid's pressure and velocity gradient
