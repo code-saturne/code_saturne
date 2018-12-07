@@ -826,6 +826,13 @@ cs_gwf_set_darcian_flux_location(cs_flag_t      location_flag)
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   gw->flux_location = location_flag;
+
+  if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc))
+    cs_advection_field_set_type(gw->adv_field,
+                                CS_ADVECTION_FIELD_TYPE_FLUX);
+  else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell))
+    cs_advection_field_set_type(gw->adv_field,
+                                CS_ADVECTION_FIELD_TYPE_VELOCITY);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1194,7 +1201,6 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
                                         array_location,
                                         gw->darcian_flux,
                                         c2e->idx);
-
 
       }
       else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell)) {

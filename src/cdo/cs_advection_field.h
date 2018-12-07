@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 /*!  1: Perform the computation and post-processing of the Courant number */
 #define CS_ADVECTION_FIELD_POST_COURANT (1 << 0)
 /*!  2: Advection-field is steady-state */
-#define CS_ADVECTION_FIELD_STEADY       (1 << 1)  // steady-state field
+#define CS_ADVECTION_FIELD_STEADY       (1 << 1)  /* steady-state field */
 
 /*! @} */
 
@@ -94,7 +94,7 @@ typedef enum {
 
 } cs_advection_field_key_t;
 
-/*! \enum cs_advection_field_type_t
+/*! \enum cs_advection_field_status_t
  *  \brief Type of advection field
  *
  * \var CS_ADVECTION_FIELD_NAVSTO
@@ -113,6 +113,26 @@ typedef enum {
   CS_ADVECTION_FIELD_NAVSTO,
   CS_ADVECTION_FIELD_GWF,
   CS_ADVECTION_FIELD_USER,
+  CS_N_ADVECTION_FIELD_STATUS
+
+} cs_advection_field_status_t;
+
+/*! \enum cs_advection_field_type_t
+ *  \brief Status of the advection field. The advection field stands for what.
+ *
+ * \var CS_ADVECTION_FIELD_STATUS_VELOCITY
+ * The advection field stands for a velocity.
+ * This is described by a vector-valued array or function.
+ *
+ * \var CS_ADVECTION_FIELD_STATUS_FLUX
+ * The advection field stands for a flux.
+ * This is described by a scalar-valued array or function.
+ */
+
+typedef enum {
+
+  CS_ADVECTION_FIELD_TYPE_VELOCITY,
+  CS_ADVECTION_FIELD_TYPE_FLUX,
   CS_N_ADVECTION_FIELD_TYPES
 
 } cs_advection_field_type_t;
@@ -131,7 +151,10 @@ typedef struct {
    * name of the advection field
    *
    * \var type
-   * type of advection field
+   * type of advection field (velocity, flux..)
+   *
+   * \var status
+   * status of the advection field (user, gwf...)
    *
    * \var flag
    * short descriptor dedicated to postprocessing
@@ -160,23 +183,24 @@ typedef struct {
    * Array of pointers to the definitions of the jormal flux at the boundary
    */
 
-  int                         id;
-  char              *restrict name;
-  cs_advection_field_type_t   type;
+  int                           id;
+  char                *restrict name;
+  cs_advection_field_status_t   status;
+  cs_advection_field_type_t     type;
+  cs_flag_t                     flag;
 
-  cs_flag_t                   flag;
-  int                         vtx_field_id;
-  int                         cell_field_id;
-  int                         bdy_field_id;
+  int                           vtx_field_id;
+  int                           cell_field_id;
+  int                           bdy_field_id;
 
   /* We assume that there is only one definition associated to an advection
      field inside the computational domain */
-  cs_xdef_t                  *definition;
+  cs_xdef_t                    *definition;
 
   /* Optional: Definition(s) for the boundary flux */
-  int                         n_bdy_flux_defs;
-  cs_xdef_t                 **bdy_flux_defs;
-  short int                  *bdy_def_ids;
+  int                           n_bdy_flux_defs;
+  cs_xdef_t                   **bdy_flux_defs;
+  short int                    *bdy_def_ids;
 
 } cs_adv_field_t;
 
@@ -190,9 +214,28 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the type of advection field for the given structure
+ *
+ * \param[in, out] adv      pointer to an advection field structure
+ * \param[in]      type     type to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_advection_field_set_type(cs_adv_field_t              *adv,
+                            cs_advection_field_type_t    type)
+{
+  if (adv == NULL)
+    return;
+
+  adv->type = type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  returns true if the advection field is uniform, otherwise false
  *
- * \param[in]    adv    pointer to a property to test
+ * \param[in]    adv    pointer to an advection field to test
  *
  * \return  true or false
  */
@@ -215,7 +258,7 @@ cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
  * \brief  returns true if the advection field is uniform in each cell
  *         otherwise false
  *
- * \param[in]    adv    pointer to a property to test
+ * \param[in]    adv    pointer to an advection field to test
  *
  * \return  true or false
  */
@@ -402,15 +445,15 @@ cs_advection_field_add_user(const char  *name);
  * \brief  Add and initialize a new advection field structure
  *
  * \param[in]  name        name of the advection field
- * \param[in]  type        type of advection field
+ * \param[in]  status      status of the advection field to create
  *
  * \return a pointer to the new allocated cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_adv_field_t *
-cs_advection_field_add(const char                  *name,
-                       cs_advection_field_type_t    type);
+cs_advection_field_add(const char                    *name,
+                       cs_advection_field_status_t    status);
 
 /*----------------------------------------------------------------------------*/
 /*!
