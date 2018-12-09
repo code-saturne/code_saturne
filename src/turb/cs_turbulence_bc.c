@@ -193,6 +193,12 @@ cs_f_turbulence_bc_init_inlet_k_eps(cs_lnum_t   face_num,
                                     double      eps,
                                     double     *rcodcl);
 
+void
+cs_f_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_num,
+                                          double      k,
+                                          double      eps,
+                                          double     *rcodcl);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -417,6 +423,7 @@ _inlet_bc(cs_lnum_t   face_id,
  *   rcodcl  <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
+static inline void
 _set_uninit_inlet_bc(cs_lnum_t   face_id,
                      double      k,
                      double      eps,
