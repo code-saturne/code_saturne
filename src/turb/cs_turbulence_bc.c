@@ -966,5 +966,176 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute matrix \f$\tens{\alpha}\f$ used in the computation of the
+ * Reynolds stress tensor boundary conditions.
+ *
+ * We note \f$\tens{R}_g\f$ the Reynolds Stress tensor in the global reference
+ * frame (mesh reference frame) and \f$\tens{R}_l\f$ the Reynolds stress
+ * tensor in the local reference frame (reference frame associated to the
+ * boundary face).
+ *
+ * \f$\tens{P}_{lg}\f$ is the change of basis orthogonal matrix from local
+ * to global reference frame.
+
+ * \f$\tens{\alpha}\f$ is a 6 by 6 matrix such that:
+ * \f[
+ * \vect{R}_{g,\fib} = \tens{\alpha} \vect{R}_{g,\centip} + \vect{R}_{g}^*
+ * \f]
+ * where symetric tensors \f$\tens{R}_g\f$ have been unfolded as follows:
+ * \f[
+ * \vect{R}_g = \transpose{\left(R_{g,11},R_{g,22},R_{g,33},
+ *                              R_{g,12},R_{g,13},R_{g,23}\right)}
+ * \f].
+ *
+ * \f$\tens{\alpha}\f$ is defined so that \f$ \tens{R}_{g,\fib} \f$ is computed
+ * as a function of \f$\tens{R}_{g,\centip}\f$ as follows:
+ * \f[
+ * \tens{R}_{g,\fib}=\tens{P}_{lg}\tens{R}_{l,\fib}\transpose{\tens{P}_{lg}}
+ * \f]
+ *
+ * with
+ * \f[
+ * \tens{R}_{l,\fib} =
+ * \begin{bmatrix}
+ * R_{l,11,\centip}   &   u^* u_k        & c R_{l,13,\centip}\\
+ *   u^* u_k          & R_{l,22,\centip} & 0                 \\
+ * c R_{l,13,\centip} & 0                & R_{l,33,\centip}
+ * \end{bmatrix} +
+ * \underbrace{\begin{bmatrix}
+ *                 0  &   u^* u_k        & 0                 \\
+ *   u^* u_k          & 0                & 0                 \\
+ * 0                  & 0                & 0
+ * \end{bmatrix}}_{\tens{R}_l^*}
+ * \f]
+ *
+ * and
+ * \f$\tens{R}_{l,\centip}=\transpose{\tens{P}_{lg}}\tens{R}_{g,\centip}
+ *                       \tens{P}_{lg}\f$.
+ *
+ * Constant c is chosen depending on the type of the boundary face:
+ * \f$c = 0\f$ at a wall face, \f$c = 1\f$ at a symmetry face.
+ *
+ * \param[in]      is_sym  Constant c in description above
+ *                         (1 at a symmetry face, 0 at a wall face)
+ * \param[in]      p_lg    change of basis matrix (local to global)
+ * \param[out]     alpha   transformation matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_rij_transform(const cs_real_t is_sym,
+                               cs_real_t       p_lg[3][3],
+                               cs_real_t       alpha[6][6])
+{
+  cs_real_t p_lg2[3][3];
+  for (int ii = 0; ii < 3; ii++)
+    for (int jj = 0; jj < 3; jj++)
+      p_lg2[ii][jj] = cs_math_pow2(p_lg[ii][jj]);
+
+  /* alpha(i,j)  for i in [1,3] and j in [1,3]: 9 terms */
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+      alpha[jj][ii] =  p_lg2[0][ii] * p_lg2[0][jj]
+                     + p_lg2[1][ii] * p_lg2[1][jj]
+                     + p_lg2[2][ii] * p_lg2[2][jj]
+                     + 2. * is_sym * p_lg[0][ii] * p_lg[2][ii]
+                                   * p_lg[0][jj] * p_lg[2][jj];
+    }
+  }
+
+  /* alpha(i,j)  for i in [1,3] and j in [4,6]: 9 terms */
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+
+      int kk, pp;
+      if (jj == 0) {
+        kk = 0;
+        pp = 1;
+      } else if (jj == 1) {
+        kk = 1;
+        pp = 2;
+      } else if (jj == 2) {
+        kk = 0;
+        pp = 2;
+      }
+
+      alpha[jj + 3][ii] =
+        2. * (  p_lg2[0][ii] * p_lg[0][kk] * p_lg[0][pp]
+              + p_lg2[1][ii] * p_lg[1][kk] * p_lg[1][pp]
+              + p_lg2[2][ii] * p_lg[2][kk] * p_lg[2][pp]
+              + is_sym * p_lg[2][ii] * p_lg[0][ii]
+                       * (  p_lg[0][kk]*p_lg[2][pp]
+                          + p_lg[2][kk]*p_lg[0][pp]));
+    }
+  }
+
+  /* alpha(i,j)  for i in [4,6] and j in [1,3]: 9 terms */
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+
+      int kk, pp;
+      if (ii == 0) {
+        kk = 0;
+        pp = 1;
+      } else if (ii == 1) {
+        kk = 1;
+        pp = 2;
+      } else if (ii == 2) {
+        kk = 0;
+        pp = 2;
+      }
+
+      alpha[jj][ii + 3] =
+          p_lg[0][kk] * p_lg[0][pp] * p_lg2[0][jj]
+        + p_lg[1][kk] * p_lg[1][pp] * p_lg2[1][jj]
+        + p_lg[2][kk] * p_lg[2][pp] * p_lg2[2][jj]
+        + is_sym * p_lg[2][jj] * p_lg[0][jj]
+                 * (  p_lg[0][kk]*p_lg[2][pp]
+                    + p_lg[2][kk]*p_lg[0][pp]);
+    }
+  }
+
+  /* alpha(i,j)  for i in [4,6] and j in [4,6]: 9 terms */
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+
+      int kk, pp;
+      if (ii == 0) {
+        kk = 0;
+        pp = 1;
+      } else if (ii == 1) {
+        kk = 1;
+        pp = 2;
+      } else if (ii == 2) {
+        kk = 0;
+        pp = 2;
+      }
+
+      int jj1, jj2;
+      if (jj == 0) {
+        jj1 = 0;
+        jj2 = 1;
+      } else if (jj == 1) {
+        jj1 = 1;
+        jj2 = 2;
+      } else if (jj == 2) {
+        jj1 = 0;
+        jj2 = 2;
+      }
+
+      alpha[jj + 3][ii + 3] =
+        2. * (  p_lg[0][kk] * p_lg[0][pp] * p_lg[0][jj1] * p_lg[0][jj2]
+              + p_lg[1][kk] * p_lg[1][pp] * p_lg[1][jj1] * p_lg[1][jj2]
+              + p_lg[2][kk] * p_lg[2][pp] * p_lg[2][jj1] * p_lg[2][jj2])
+              + is_sym * (  p_lg[0][kk]*p_lg[2][pp]
+                          + p_lg[2][kk]*p_lg[0][pp])
+                       * (  p_lg[2][jj1]*p_lg[0][jj2]
+                          + p_lg[0][jj1]*p_lg[2][jj2]);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

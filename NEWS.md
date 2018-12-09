@@ -33,6 +33,11 @@ Bug fixes:
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
 
+Architectural changes:
+
+- Move Reynolds stress tensor transformation matrix (alpha in clca66)
+  computation to C. C translation is taken from NEPTUNE_CFD.
+
 Release 5.3.0 - October 26, 2018
 --------------------------------
 

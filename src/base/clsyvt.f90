@@ -113,13 +113,12 @@ double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 ! Local variables
 
 integer          ifac, ii, isou
-integer          iel, f_dim
+integer          iel, f_dim, clsyme
 integer          iscal , ivar, idftnp
 
 double precision rnx, rny, rnz, rxnn
 double precision upx, upy, upz, usn
 double precision tx, ty, tz, txn, t2x, t2y, t2z
-double precision clsyme
 double precision eloglo(3,3), alpha(6,6)
 double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
 double precision cpp
@@ -379,37 +378,10 @@ do ifac = 1, nfabor
       eloglo(3,2) = -rnz
       eloglo(3,3) =  t2z
 
-      ! --> Commpute alpha(6,6)
+      ! Compute Reynolds stress transformation matrix
 
-      ! Let f be the center of the boundary faces and
-      !   I the center of the matching cell
-
-      ! We noteE Rg (resp. Rl) indexed by f or by I
-      !   the Reynolds Stress tensor in the global basis (resp. local)
-
-      ! The alpha matrix applied to the global vector in I'
-      !   (Rg11,I'|Rg22,I'|Rg33,I'|Rg12,I'|Rg13,I'|Rg23,I')t
-      !    must provide the values to prescribe to the face
-      !   (Rg11,f |Rg22,f |Rg33,f |Rg12,f |Rg13,f |Rg23,f )t
-      !    except for the Dirichlet boundary conditions (added later)
-
-      ! We define it by computing Rg,f as a function of Rg,I' as follows
-
-      !   RG,f = ELOGLO.RL,f.ELOGLOt (matrix products)
-
-      !                     | RL,I'(1,1)     B*U*.Uk     C*RL,I'(1,3) |
-      !      with    RL,f = | B*U*.Uk       RL,I'(2,2)       0        |
-      !                     | C*RL,I'(1,3)     0         RL,I'(3,3)   |
-
-      !             with    RL,I = ELOGLOt.RG,I'.ELOGLO
-      !                     B = 0
-      !              and    C = 0 at the wall (1 with symmetry)
-
-      ! We compute in fact  ELOGLO.projector.ELOGLOt
-
-      clsyme=1.d0
-      call clca66 ( clsyme , eloglo , alpha )
-      !==========
+      clsyme = 1
+      call turbulence_bc_rij_transform(clsyme, eloglo, alpha)
 
     endif
 

@@ -660,6 +660,25 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute matrix \tens{alpha} used in the computation of the
+    !>        Reynolds stress tensor boundary conditions.
+    !>
+    !> \param[in]      is_sym  Constant c in description above
+    !>                         (1 at a symmetry face, 0 at a wall face)
+    !> \param[in]      p_lg    change of basis matrix (local to global)
+    !> \param[out]     alpha   transformation matrix
+
+    subroutine turbulence_bc_rij_transform(is_sym, p_lg, alpha)                &
+      bind(C, name='cs_turbulence_bc_rij_transform')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: is_sym
+      real(c_double), dimension(3,3), intent(in) :: p_lg
+      real(c_double), dimension(6,6), intent(out) :: alpha
+    end subroutine turbulence_bc_rij_transform
+
+    !---------------------------------------------------------------------------
+
     !> \brief Set inlet boundary condition values for turbulence variables based
     !>        on a diameter \f$ D_H \f$ and the reference velocity
     !>        \f$ U_{ref} \f$
