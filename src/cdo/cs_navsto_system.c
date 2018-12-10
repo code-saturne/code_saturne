@@ -378,8 +378,6 @@ cs_navsto_system_init_setup(void)
                                          3, /* dimension */
                                          has_previous);
 
-  cs_advection_field_def_by_field(ns->adv_field, ns->velocity);
-
   /* Set default value for keys related to log and post-processing */
   cs_field_set_key_int(ns->velocity, cs_field_key_id("log"), 1);
   cs_field_set_key_int(ns->velocity, cs_field_key_id("post_vis"), post_flag);
@@ -636,6 +634,33 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
   /* Initial conditions for the pressure */
   if (ns->init_pressure != NULL)
     ns->init_pressure(nsp, ns->scheme_context);
+
+  /* Define the advection field. Since one links the advection field to the face
+     velocity this is only available for Fb schemes and should be done after
+     initializing the context structure */
+  cs_real_t *face_vel = NULL;
+
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_UZAWA:
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    face_vel = cs_equation_get_face_values(cs_equation_by_name("momentum"));
+    break;
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_PROJECTION:
+  default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+    break;
+
+  }
+
+  const cs_flag_t loc_flag = CS_FLAG_FULL_LOC |
+    cs_flag_primal_face | CS_FLAG_VECTOR;
+
+  cs_advection_field_def_by_array(ns->adv_field, loc_flag, face_vel,
+                                  false, /* the advection field is not owner */
+                                  NULL);
 }
 
 /*----------------------------------------------------------------------------*/
