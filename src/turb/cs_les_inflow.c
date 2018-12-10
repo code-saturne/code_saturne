@@ -52,7 +52,6 @@
 #include "cs_field_pointer.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_timer.h"
 #include "cs_mesh_location.h"

@@ -57,7 +57,6 @@
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_boundary.h"
 #include "cs_mesh_extrude.h"
-#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -56,7 +56,6 @@
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
-#include "cs_prototypes.h"
 #include "cs_face_viscosity.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_gradient.h"

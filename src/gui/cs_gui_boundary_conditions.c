@@ -63,7 +63,6 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_timer.h"
 #include "cs_tree.h"

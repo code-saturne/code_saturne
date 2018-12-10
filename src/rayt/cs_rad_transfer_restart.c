@@ -59,7 +59,6 @@
 #include "cs_thermal_model.h"
 #include "cs_parameters.h"
 
-#include "cs_prototypes.h"
 #include "cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------

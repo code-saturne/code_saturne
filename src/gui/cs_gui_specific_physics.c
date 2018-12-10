@@ -58,7 +58,6 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_elec_model.h"
 #include "cs_gwf_physical_properties.h"
@@ -586,7 +585,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
   bft_printf("--tfuel  = %f\n", *tfuel);
 #endif
 }
-
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data

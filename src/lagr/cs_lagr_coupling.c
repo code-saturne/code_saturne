@@ -50,12 +50,14 @@
 
 #include "cs_base.h"
 #include "cs_math.h"
-#include "cs_prototypes.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 #include "bft_mem.h"
 #include "bft_error.h"
 
 #include "cs_physical_constants.h"
+#include "cs_time_step.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_particle.h"

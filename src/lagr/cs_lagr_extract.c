@@ -49,7 +49,6 @@
 #include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_lagr_tracking.h"
-#include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"

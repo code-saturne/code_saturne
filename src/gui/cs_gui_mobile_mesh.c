@@ -58,7 +58,6 @@
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_mesh.h"
-#include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"
 

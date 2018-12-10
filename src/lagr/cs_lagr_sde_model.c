@@ -55,7 +55,6 @@
 #include "cs_math.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 
 #include "cs_mesh.h"
 #include "cs_thermal_model.h"

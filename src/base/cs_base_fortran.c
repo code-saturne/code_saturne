@@ -609,8 +609,8 @@ cs_base_fortran_bft_printf_to_f(void)
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_user_extra_operations
- * ---------------------------------------------------------------------------*/
+ * Wrappers to cs_user_extra_operations
+ *----------------------------------------------------------------------------*/
 
 void
 cs_user_extra_operations_initialize_wrapper(void)
@@ -623,5 +623,7 @@ cs_user_extra_operations_wrapper(void)
 {
   cs_user_extra_operations(cs_glob_domain);
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

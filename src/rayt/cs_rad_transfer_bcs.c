@@ -54,10 +54,10 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_thermal_model.h"
-#include "cs_prototypes.h"
 #include "cs_boundary_conditions.h"
 #include "cs_physical_constants.h"
 
@@ -1195,7 +1195,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
   cs_real_t onedpi  = 1.0 / cs_math_pi;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_real_3_t *b_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  cs_real_3_t *b_face_normal
+    = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
 
   /* Initialization */
 

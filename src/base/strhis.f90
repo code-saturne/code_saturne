@@ -54,6 +54,8 @@ use optcal
 use alstru
 use parall
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
@@ -79,9 +81,9 @@ save     nptpl
 
 ! Number of passes in this routine
 
-integer          ipass
-data             ipass /0/
-save             ipass
+integer  ipass
+data     ipass /0/
+save     ipass
 
 !===============================================================================
 ! 0. Local initializations
@@ -98,7 +100,6 @@ if (ipass.eq.1.and.modhis.eq.2) return
 
 if (ipass.eq.1) then
   call tplnbr(nptpl)
-  !==========
 endif
 
 !===============================================================================
@@ -108,7 +109,6 @@ endif
 ! Create directory if required
 if (ipass.eq.1 .and. irangp.le.0) then
   call csmkdr(emphis, len(emphis))
-  !==========
 endif
 
 if (ipass.eq.1 .and. irangp.le.0) then
@@ -133,26 +133,20 @@ if (ipass.eq.1 .and. irangp.le.0) then
     ! plot prefix
     nompre = ' '
     call verlon(emphis, ii1, ii2, lpre)
-    !==========
     nompre(1:lpre) = emphis(ii1:ii2)
     call verlon(prehis, ii1, ii2, lnam)
-    !==========
     nompre(lpre+1:lpre+lnam) = prehis(ii1:ii2)
     call verlon(nompre, ii1, ii2, lpre)
-    !==========
     nompre(lpre+1:lpre+4) = 'str_'
     call verlon(nompre, ii1, ii2, lpre)
-    !==========
 
     ! plot name
     nenvar = namevr(ii)
     call verlon(nenvar,ii1,ii2,lnam)
-    !==========
 
     tplnum = nptpl + ii
 
     call tpsini(tplnum, nenvar, nompre, tplfmt, idtvar, &
-    !==========
                 nbstru, xmstru, xcstru, xkstru, lnam, lpre)
 
   enddo

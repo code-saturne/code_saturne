@@ -227,6 +227,16 @@ cs_base_fortran_bft_printf_to_c(void);
 void
 cs_base_fortran_bft_printf_to_f(void);
 
+/*----------------------------------------------------------------------------
+ * Wrappers to cs_user_extra_operations
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_initialize_wrapper(void);
+
+void
+cs_user_extra_operations_wrapper(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -57,8 +57,7 @@
 #include "cs_sles.h"
 #include "cs_sles_it.h"
 #include "cs_timer.h"
-
-#include "cs_prototypes.h"
+#include "cs_time_step.h"
 
 #include "cs_rad_transfer.h"
 

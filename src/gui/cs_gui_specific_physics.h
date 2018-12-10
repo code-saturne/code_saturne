@@ -90,7 +90,6 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
                                 int           *len
                                 CS_ARGF_SUPP_CHAINE);
 
-
 /*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics
@@ -170,7 +169,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
 void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
                                int           *len      /* --> String Length  */
                                CS_ARGF_SUPP_CHAINE);
-
 
 /*----------------------------------------------------------------------------
  * groundwater model : read parameters

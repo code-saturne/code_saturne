@@ -63,7 +63,6 @@
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"

@@ -50,7 +50,8 @@
 
 #include "cs_base.h"
 #include "cs_math.h"
-#include "cs_prototypes.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 #include "bft_mem.h"
 #include "bft_error.h"
@@ -318,9 +319,6 @@ cs_lagr_resuspension(void)
             cs_real_t v_part_t_dt = cs_math_3_norm(part_vel);
 
             cs_real_t sub_dt = cs_glob_lagr_time_step->dtp / ndiam;
-
-            cs_real_t v_part_inst =   v_part_t + sub_dt * (v_part_t_dt + v_part_t)
-                                    / cs_glob_lagr_time_step->dtp;
 
             if (   test_colli == 1
                 && cs_lagr_particle_get_lnum(part, p_am,

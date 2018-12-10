@@ -61,12 +61,12 @@
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_physical_constants.h"
+#include "cs_prototypes.h"
 #include "cs_time_step.h"
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_random.h"
-#include "cs_prototypes.h"
 
 #include "cs_gui_particles.h"
 #include "cs_gui_util.h"

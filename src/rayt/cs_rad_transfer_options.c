@@ -64,7 +64,6 @@
 
 #include "cs_combustion_model.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 
 #include "cs_gui_radiative_transfer.h"
 #include "cs_rad_transfer.h"

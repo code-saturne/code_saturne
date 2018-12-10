@@ -46,7 +46,6 @@
 
 #include "cs_base.h"
 #include "cs_mesh_location.h"
-#include "cs_prototypes.h"
 
 #include "cs_parameters.h"
 #include "cs_time_step.h"

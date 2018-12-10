@@ -58,13 +58,13 @@
 
 #include "cs_math.h"
 #include "cs_mesh_location.h"
-#include "cs_prototypes.h"
 
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
 #include "cs_volume_zone.h"
 
 #include "cs_parameters.h"
+#include "cs_prototypes.h"
 #include "cs_time_step.h"
 #include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
@@ -73,6 +73,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_post_default.h"
+#include "cs_prototypes.h"
 
 #include "cs_gui_particles.h"
 #include "cs_gui_util.h"

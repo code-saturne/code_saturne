@@ -51,8 +51,9 @@
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_mesh.h"
-#include "cs_prototypes.h"
+#include "cs_parameters.h"
 #include "cs_syr_coupling.h"
+#include "cs_tree.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

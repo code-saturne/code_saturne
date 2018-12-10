@@ -792,6 +792,13 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
     }
   }
 #else
+  CS_UNUSED(thermo_plane);
+  CS_UNUSED(property);
+  CS_UNUSED(n_vals);
+  CS_UNUSED(var1);
+  CS_UNUSED(var2);
+  CS_UNUSED(val);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Freesteam support not available in this build."));
 #endif

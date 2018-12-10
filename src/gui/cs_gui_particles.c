@@ -47,12 +47,13 @@
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_gui_boundary_conditions.h"
-#include "cs_prototypes.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_stat.h"
 #include "cs_lagr_tracking.h"
+
+#include "cs_parameters.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

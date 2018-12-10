@@ -50,7 +50,6 @@
 
 #include "cs_base.h"
 #include "cs_math.h"
-#include "cs_prototypes.h"
 
 #include "bft_mem.h"
 #include "bft_error.h"

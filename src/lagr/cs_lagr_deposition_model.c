@@ -54,7 +54,6 @@
 
 #include "cs_physical_constants.h"
 #include "cs_random.h"
-#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

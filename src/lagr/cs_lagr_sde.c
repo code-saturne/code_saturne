@@ -48,7 +48,6 @@
 #include "cs_mesh_quantities.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_thermal_model.h"
 

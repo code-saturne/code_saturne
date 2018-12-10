@@ -62,10 +62,10 @@
 #include "cs_interface.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 #include "cs_order.h"
 #include "cs_parall.h"
-#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_rotation.h"
 #include "cs_search.h"
@@ -2269,7 +2269,8 @@ _local_propagation(void                           *particle,
             /* Marking of particles */
 
             *particle_yplus = - *particle_yplus;
-            //FIXME... a projection was made, it is safer to project when we use it !
+            //FIXME... a projection was made, it
+            //is safer to project when we use it !
 
           }
 
@@ -2288,15 +2289,14 @@ _local_propagation(void                           *particle,
 
           if (save_yplus < 100.) {
 
-            cs_real_t  disp[3], intersect_pt[3], vect_cen[3];
+            cs_real_t intersect_pt[3], vect_cen[3];
             cs_real_t bc_epsilon = 1e-8;
             cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
 
             for (int k = 0; k < 3; k++)
-              disp[k] = particle_coord[k] - prev_location[k];
-
-            for (int k = 0; k < 3; k++)
-              intersect_pt[k] = disp[k]*t_intersect + prev_location[k];
+              intersect_pt[k]
+                =   (particle_coord[k] - prev_location[k])*t_intersect
+                  + prev_location[k];
 
             for (int k = 0; k < 3; k++) {
               vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -2333,7 +2333,8 @@ _local_propagation(void                           *particle,
               cs_real_t old_fl_seen_norm
                 =   particle_velocity_seen[0] * e1_x
                   + particle_velocity_seen[1] * e1_y
-                  + particle_velocity_seen[2] * e1_z;//FIXME check that it is the new normal to use...
+                  + particle_velocity_seen[2] * e1_z;
+              //FIXME check that it is the new normal to use...
 
               /* V_n * e1 */
 
