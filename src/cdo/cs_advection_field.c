@@ -2001,17 +2001,19 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
   if (fluxes == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " fluxes array should be allocated before the call.");
+              " %s: The array of local fluxes should be already allocated.",
+              __func__);
 
   cs_xdef_t  *def = adv->definition;
 
-  /* Sanity checks */
-  assert(def != NULL);
+  assert(def != NULL); /* Sanity checks */
 
   switch (def->type) {
 
   case CS_XDEF_BY_VALUE:
     {
+      assert(def->dim == 3 && adv->type == CS_ADVECTION_FIELD_TYPE_VELOCITY);
+
       /* Loop on cell faces */
       for (short int f = 0; f < cm->n_fc; f++)
         cs_xdef_cw_eval_flux_by_val(cm, f, time_eval, def->input, fluxes);
@@ -2025,41 +2027,68 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
       /* Loop on cell faces */
       for (short int f = 0; f < cm->n_fc; f++)
-        cs_xdef_cw_eval_flux_by_analytic(cm, f,
-                                         time_eval,
+        cs_xdef_cw_eval_flux_by_analytic(cm, f, time_eval,
                                          def->input, def->qtype,
                                          fluxes);
 
-    } /* definition by analytic function */
+    }
     break;
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_input_t  *input = (cs_xdef_array_input_t *)def->input;
+      cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
+      assert(ai->values != NULL);
 
       /* Test if location has at least the pattern of the reference support */
-      if (cs_flag_test(input->loc, cs_flag_primal_face)) {
+      if (cs_flag_test(ai->loc, cs_flag_primal_face)) {
 
-        /* Sanity check */
-        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PF));
-        for (short int f = 0; f < cm->n_fc; f++)
-          fluxes[f] = input->values[cm->f_ids[f]];
+        switch (def->dim) {
+
+        case 1: /* Advection field is viewed as a flux */
+          for (short int f = 0; f < cm->n_fc; f++)
+            fluxes[f] = ai->values[cm->f_ids[f]];
+          break;
+
+        case 3: /* Advection field is viewed as a velocity */
+          {
+            /* Sanity check */
+            assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+
+            for (short int f = 0; f < cm->n_fc; f++) {
+              /* Retrieve the advection field:
+                 Switch to a cs_nvec3_t representation */
+              cs_nvec3_t  nv;
+              cs_nvec3(ai->values + 3*cm->f_ids[f], &nv);
+
+              fluxes[f] = nv.meas*cm->face[f].meas * _dp3(nv.unitv,
+                                                          cm->face[f].unitv);
+
+            } /* Loop on faces */
+          }
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                   " Invalid dimension for evaluating the advection field %s",
+                    adv->name);
+
+        } /* Switch */
 
       }
-      else if (cs_flag_test(input->loc, cs_flag_primal_cell)) {
+      else if (cs_flag_test(ai->loc, cs_flag_primal_cell)) {
 
         /* Retrieve the advection field:
            Switch to a cs_nvec3_t representation */
-        cs_nvec3_t  adv_vect;
-        cs_nvec3(input->values + 3*cm->c_id, &adv_vect);
+        cs_nvec3_t  nv;
+        cs_nvec3(ai->values + 3*cm->c_id, &nv);
 
         /* Sanity check */
         assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
 
         /* Loop on cell faces */
         for (short int f = 0; f < cm->n_fc; f++)
-          fluxes[f] = adv_vect.meas*cm->face[f].meas * _dp3(adv_vect.unitv,
-                                                            cm->face[f].unitv);
+          fluxes[f] = nv.meas*cm->face[f].meas * _dp3(nv.unitv,
+                                                      cm->face[f].unitv);
 
       }
       else
@@ -2067,7 +2096,7 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
                   " Invalid support for evaluating the advection field %s"
                   " at the cell center of cell %d.", adv->name, cm->c_id);
     }
-    break;
+    break; /* Definition by array */
 
   case CS_XDEF_BY_FIELD:
     {
@@ -2077,16 +2106,16 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
         /* Retrieve the advection field:
            Switch to a cs_nvec3_t representation */
-        cs_nvec3_t  adv_vect;
-        cs_nvec3(fld->val + 3*cm->c_id, &adv_vect);
+        cs_nvec3_t  nv;
+        cs_nvec3(fld->val + 3*cm->c_id, &nv);
 
         /* Sanity check */
         assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
 
         /* Loop on cell faces */
         for (short int f = 0; f < cm->n_fc; f++)
-          fluxes[f] = adv_vect.meas*cm->face[f].meas * _dp3(adv_vect.unitv,
-                                                            cm->face[f].unitv);
+          fluxes[f] = nv.meas*cm->face[f].meas * _dp3(nv.unitv,
+                                                      cm->face[f].unitv);
 
       }
       else
@@ -2140,16 +2169,16 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
       /* Retrieve the advection field: Switch to a cs_nvec3_t representation */
       cs_real_3_t  cell_vector;
       cs_xdef_cw_eval_vector_by_val(cm, time_eval, def->input, cell_vector);
-      cs_nvec3_t  adv_vect;
-      cs_nvec3(cell_vector, &adv_vect);
+      cs_nvec3_t  nv;
+      cs_nvec3(cell_vector, &nv);
 
       /* Sanity check */
       assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
 
       /* Loop on cell edges */
       for (short int e = 0; e < cm->n_ec; e++)
-        fluxes[e] = adv_vect.meas * cm->dface[e].meas *
-          _dp3(adv_vect.unitv, cm->dface[e].unitv);
+        fluxes[e] = nv.meas * cm->dface[e].meas * _dp3(nv.unitv,
+                                                       cm->dface[e].unitv);
 
     }
     break;
@@ -2267,16 +2296,16 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
         /* Retrieve the advection field:
            Switch to a cs_nvec3_t representation */
-        cs_nvec3_t  adv_vect;
-        cs_nvec3(input->values + 3*cm->c_id, &adv_vect);
+        cs_nvec3_t  nv;
+        cs_nvec3(input->values + 3*cm->c_id, &nv);
 
         /* Sanity check */
         assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
 
         /* Loop on cell edges */
         for (short int e = 0; e < cm->n_ec; e++)
-          fluxes[e] = adv_vect.meas*cm->dface[e].meas*_dp3(adv_vect.unitv,
-                                                           cm->dface[e].unitv);
+          fluxes[e] = nv.meas*cm->dface[e].meas*_dp3(nv.unitv,
+                                                     cm->dface[e].unitv);
 
       }
       else
@@ -2294,16 +2323,16 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
         /* Retrieve the advection field:
            Switch to a cs_nvec3_t representation */
-        cs_nvec3_t  adv_vect;
-        cs_nvec3(f->val + 3*cm->c_id, &adv_vect);
+        cs_nvec3_t  nv;
+        cs_nvec3(f->val + 3*cm->c_id, &nv);
 
         /* Sanity check */
         assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
 
         /* Loop on cell edges */
         for (short int e = 0; e < cm->n_ec; e++)
-          fluxes[e] = adv_vect.meas*cm->dface[e].meas*_dp3(adv_vect.unitv,
-                                                           cm->dface[e].unitv);
+          fluxes[e] = nv.meas*cm->dface[e].meas*_dp3(nv.unitv,
+                                                     cm->dface[e].unitv);
 
       }
       else
