@@ -182,8 +182,7 @@ typedef struct {
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_scal_ms;
-static const cs_matrix_structure_t  *cs_shared_vect_ms;
+static const cs_matrix_structure_t  *cs_shared_ms;
 
 /*============================================================================
  * Private function prototypes
@@ -271,14 +270,9 @@ cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
   cs_shared_time_step = time_step;
 
   /*
-    Matrix structure related to the algebraic system for scalar-valued equation
-  */
-  cs_shared_scal_ms = cs_cdofb_scaleq_matrix_structure();
-
-  /*
     Matrix structure related to the algebraic system for vector-valued equation
   */
-  cs_shared_vect_ms = cs_cdofb_vecteq_matrix_structure();
+  cs_shared_ms = cs_cdofb_vecteq_matrix_structure();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -385,40 +379,42 @@ cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
                           void                        *scheme_context)
 {
   /* Sanity checks */
-  assert(nsp != NULL && scheme_context != NULL);
+  assert(nsp != NULL);
+
+  /* Initial conditions for the pressure */
+  if (nsp->n_pressure_ic_defs == 0)
+    return; /* Nothing to do */
+
+  assert(scheme_context != NULL && nsp->pressure_ic_defs != NULL);
 
   /* Navier-Stokes scheme context (SC) */
   cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
 
-  /* Initial conditions for the pressure */
-  if (nsp->n_pressure_ic_defs > 0) {
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_flag_t   dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
 
-    assert(nsp->pressure_ic_defs != NULL);
-    assert(sc != NULL);
+  cs_field_t *pr  = sc->pressure;
+  cs_real_t  *values = pr->val;
 
-    const cs_time_step_t *ts = cs_shared_time_step;
-    cs_field_t *pr  = sc->pressure;
-    cs_real_t  *values = pr->val;
+  for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
 
-    const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
-    const cs_flag_t   dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
-    const cs_real_t  t_cur = ts->t_cur;
+    /* Get and then set the definition of the initial condition */
+    cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
 
-    for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
+    /* Initialize face-based array */
+    switch (def->type) {
 
-      /* Get and then set the definition of the initial condition */
-      cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
+      /* Evaluating the integrals: the averages will be taken care of at the
+       * end when ensuring zero-mean valuedness */
+    case CS_XDEF_BY_VALUE:
+      cs_evaluate_density_by_value(dof_flag, def, values);
+      break;
 
-      /* Initialize face-based array */
-      switch (def->type) {
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
 
-        /* Evaluating the integrals: the averages will be taken care of at the
-         * end when ensuring zero-mean valuedness */
-      case CS_XDEF_BY_VALUE:
-        cs_evaluate_density_by_value(dof_flag, def, values);
-        break;
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
         switch (red) {
         case CS_PARAM_REDUCTION_DERHAM:
           /* Forcing BARY so that it is equivalent to DeRham (JB?)*/
@@ -438,31 +434,31 @@ cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
                     __func__, pr->name);
 
         }  /* Switch on possible reduction types */
-        break;
 
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Incompatible way to initialize the field %s.\n"),
-                  __func__, pr->name);
-        break;
+      }
+      break;
 
-      }  /* Switch on possible type of definition */
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Incompatible way to initialize the field %s.\n"),
+                __func__, pr->name);
+      break;
 
-    }  /* Loop on definitions */
+    }  /* Switch on possible type of definition */
+
+  }  /* Loop on definitions */
 
   /* We should ensure that the mean of the pressure is zero. Thus we compute
    * it and subtract it from every value.
+   *
    * NOTES:
    *  - It could be useful to stored this average somewhere
    *  - The procedure is not optimized (we can avoid setting the average if
    *    it's a value), but it is the only way to allow multiple definitions
    *    and definitions that do not cover all the domain. Moreover, we need
-   *    information (e.g. cs_cdo_quant) which we do not know here
+   *    information (e.g. cs_cdo_quantities_t) which we do not know here
    */
   cs_cdofb_navsto_set_zero_mean_pressure(values);
-
-  }  /* Not the default */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -526,7 +522,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_setup_bc(t_cur + dt_cur, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_vect_ms);
+  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
   BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
@@ -853,7 +849,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_setup_bc(t_cur + dt_cur, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_vect_ms);
+  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
   BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
