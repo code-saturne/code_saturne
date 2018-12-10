@@ -795,6 +795,7 @@ cs_property_def_by_array(cs_property_t    *pty,
   cs_xdef_array_input_t  input = {.stride = dim,
                                   .loc = loc,
                                   .values = array,
+                                  .is_owner = is_owner,
                                   .index = index };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
