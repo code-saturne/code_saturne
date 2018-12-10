@@ -294,7 +294,7 @@ or
 For the symmetry faces which are treated by \fort{clsyvt}, the
 coefficient $B$ is 1. However a similar treatment is applied in
 \fort{clptur} for the wall faces, and in this $B$ is zero. This
-parameter has to be specified when \fort{clca66} is called
+parameter has to be specified when \code{cs\_turbulence\_bc\_rij\_transform} is called
 (see \S\ref{Base_Clsyvt_prg_meo}).
 
 Back in the global coordinate system, the following formulae is
@@ -332,7 +332,7 @@ By gathering different lines of matrix $\matt{C}$, equation
 \end{equation}
 
 The computation of the matrix $\matt{D}$ is performed in the subroutine
-\fort{clca66}. The methodology is described in annexe B.
+\code{cs\_turbulence\_bc\_rij\_transform}. The methodology is described in annexe B.
 
 From $\matt{D}$, the coefficients of the boundary conditions can be
  partially implicited ($\var{ICLSYR}=1$) or totally explicited
@@ -386,8 +386,8 @@ With the $R_{ij}-\varepsilon$ model (\var{ITURB}=30 or 31), the vectors
 They are stored in \var{(TX,TY,TZ)} and
 \var{(T2X,T2Y,T2Z)}, respectively.\\
 The transform matrix $\matt{P}$ is then calculated and stored in the array \var{ELOGLO}.\\
-The subroutine \fort{clca66} is then called to calculate the reduced
-matrix $\matt{D}$. It is stored in \var{ALPHA}. \fort{clca66} is called
+The subroutine \code{cs\_turbulence\_bc\_rij\_transform} is then called to calculate the reduced
+matrix $\matt{D}$. It is stored in \var{ALPHA}. \code{cs\_turbulence\_bc\_rij\_transform} is called
 with a parameter \var{CLSYME} which is 1, and which corresponds to the parameter
 $\omega$ of equation \ref{Base_Clsyvt_eq_clRij}.
 
@@ -610,5 +610,3 @@ with $(m,n)=(1,2)$ if $i=4$, $(m,n)=(1,3)$ if $i=5$ and $(m,n)=(2,3)$ if
 $i=6$\\
 and $(m^\prime ,n^\prime )=(1,2)$ if $j=4$, $(m^\prime ,n^\prime )=(1,3)$
 if $j=5$ and $(m^\prime ,n^\prime )=(2,3)$ if $j=6$.
-
-
