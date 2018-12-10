@@ -1,5 +1,5 @@
-#ifndef __CS_RAYT_HEADERS_H__
-#define __CS_RAYT_HEADERS_H__
+#ifndef __CS_RAD_HEADERS_H__
+#define __CS_RAD_HEADERS_H__
 
 /*============================================================================
  * Global Code_Saturne headers file for easier include
@@ -25,7 +25,6 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -45,4 +44,6 @@
 #include "cs_rad_transfer_source_terms.h"
 #include "cs_rad_transfer_wall_flux.h"
 
-#endif /* __CS_RAYT_HEADERS_H__ */
+/*----------------------------------------------------------------------------*/
+
+#endif /* __CS_RAD_HEADERS_H__ */

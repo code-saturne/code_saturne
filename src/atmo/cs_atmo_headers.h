@@ -25,13 +25,16 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_measures_util.h"
+
 #include "cs_at_data_assim.h"
 #include "cs_at_opt_interp.h"
 #include "cs_at_plugin.h"
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_ATMO_HEADERS_H__ */

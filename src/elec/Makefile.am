@@ -70,6 +70,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_elec_headers.h \
 cs_elec_model.h
 
 # Library source files
