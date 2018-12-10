@@ -1756,7 +1756,7 @@ fvm_nodal_make_vertices_private(fvm_nodal_t  *this_nodal)
     const cs_lnum_t n_vertices = this_nodal->n_vertices;
     const int dim = this_nodal->dim;
 
-    BFT_MALLOC(vertex_coords, n_vertices * dim, cs_coord_t);
+    BFT_MALLOC(_vertex_coords, n_vertices * dim, cs_coord_t);
 
     /* If renumbering is necessary, update connectivity */
 
