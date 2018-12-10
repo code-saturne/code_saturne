@@ -100,7 +100,7 @@ BEGIN_C_DECLS
        Warn only
   \var CS_ABORT_DELAYED
        Abort when \ref cs_parameters_error_barrier is called.
-  \var CS_FILE_MODE_APPEND
+  \var CS_ABORT_IMMEDIATE
        Abort immediately
 
 */
