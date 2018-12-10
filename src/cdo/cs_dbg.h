@@ -128,6 +128,28 @@ cs_dbg_array_fprintf(FILE             *fp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  In debug mode, print into a file the solution and its right-hand
+ *         side
+ *
+ * \param[in] eqname     name of the related equation
+ * \param[in] nt         number of time step
+ * \param[in] level      level of debug
+ * \param[in] sol        solution array
+ * \param[in] rhs        rhs array
+ * \param[in] size       size of the array to print
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_fprintf_system(const char        *eqname,
+                      int                nt,
+                      int                level,
+                      const cs_real_t   *sol,
+                      const cs_real_t   *rhs,
+                      cs_lnum_t          size);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  In debug mode, dump an array of double into the log
  *
  * \param[in] header     header message to write

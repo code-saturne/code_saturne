@@ -617,23 +617,20 @@ _solve_vcb_system(cs_sles_t                    *sles,
                   " residual % -8.4e nnz %lu\n",
                   eqp->name, code, n_iters, residual, nnz);
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
                          xsol, x);
 
-  }
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_vertices, x, 6);
-
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
   if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
                          b, b);
 
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_vertices, b, 6);
+  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
+                        CS_CDOVCB_SCALEQ_DBG,
+                        x, b, n_vertices);
 #endif
 
   /* Free what can be freed at this stage */

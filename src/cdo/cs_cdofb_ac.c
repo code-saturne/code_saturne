@@ -506,8 +506,9 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
    *
    *--------------------------------------------------------------------------*/
 
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
-  const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
   const cs_real_t  time_eval = t_cur + dt_cur;
 
   /* Sanity checks */
@@ -746,6 +747,11 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
 
   cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
+  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_AC_DBG,
+                        vel_f, rhs, 3*n_faces);
+#endif
 
   /* Update pressure, velocity and divergence fields */
   t_upd = cs_timer_time();
@@ -1104,7 +1110,6 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
   /* Update pressure, velocity and divergence fields */
   t_upd = cs_timer_time();
-  /* ----------------------------------------------- */
 
   /* Compute values at cells pc from values at faces pf
      pc = acc^-1*(RHS - Acf*pf) */
@@ -1112,6 +1117,11 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
                                         mom_eqc->rc_tilda,
                                         mom_eqc->acf_tilda,
                                         vel_f, vel_c);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
+  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_AC_DBG,
+                        vel_f, rhs, 3*n_faces);
+#endif
 
   /* Updates after the resolution:
    *  the divergence: div = B.u_f
@@ -1127,7 +1137,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
 #endif
 
-  /* -- Frees -- */
+  /* Frees */
   cs_sles_free(sles);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);

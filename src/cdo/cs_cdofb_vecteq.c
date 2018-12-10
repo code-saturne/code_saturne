@@ -513,26 +513,20 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
                   " residual % -8.4e nnz %lu\n",
                   eqp->name, code, n_iters, residual, nnz);
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
                          xsol, x);
 
-  }
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
-  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, 3*n_faces, x, 6);
-
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
                          b, b);
 
-  }
-
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, 3*n_faces, b, 6);
+  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
+                        CS_CDOFB_VECTEQ_DBG,
+                        x, b, 3*n_faces);
 #endif
 
   /* Free what can be freed at this stage */

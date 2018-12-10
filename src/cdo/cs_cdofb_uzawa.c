@@ -838,7 +838,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
   cs_dbg_darray_to_listing("FACE_VELOCITY_k=1", 3*n_faces, vel_f, 9);
   cs_dbg_darray_to_listing("CELL_VELOCITY_k=1", 3*n_cells, vel_c, 9);
 #endif
@@ -850,7 +850,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
    */
   _update_pr_div_rhs(zeta, mom_eqb, time_eval, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
   cs_dbg_darray_to_listing("PRESSURE_k=1", n_cells, pr, 9);
   cs_dbg_darray_to_listing("VELOCITY_DIV_k=1", n_cells, div, 9);
 #endif
@@ -909,7 +909,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
         break;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("FACE_DELTA_VELOCITY",
                                3*n_faces, delta_vel_f, 9);
 #endif
@@ -926,7 +926,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
       } /* End of the OpenMP region */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("CELL_DELTA_VELOCITY",
                                3*n_cells, delta_vel_c, 9);
 #endif
@@ -938,7 +938,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
        */
       _update_pr_div_rhs(zeta, mom_eqb, time_eval, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("FACE_VELOCITY", 3*n_faces, vel_f, 9);
       cs_dbg_darray_to_listing("CELL_VELOCITY", 3*n_cells, vel_c, 9);
       cs_dbg_darray_to_listing("PRESSURE", n_cells, pr, 9);
@@ -988,10 +988,12 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
   sc->residual = res;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-  cs_dbg_darray_to_listing("FINAL_OUTER_SOLUTION", 3*n_faces, vel_f, 9);
+  cs_dbg_fprintf_system(mom_eqp->name, cs_shared_time_step->nt_cur,
+                        CS_CDOFB_UZAWA_DBG,
+                        vel_f, NULL, 3*n_faces);
 #endif
 
-  /* -- Frees */
+  /* Frees */
   BFT_FREE(rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
@@ -1061,8 +1063,9 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
    *
    *--------------------------------------------------------------------------*/
 
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
-  const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
   const cs_real_t  time_eval = t_cur + dt_cur;
 
   /* Sanity checks */
@@ -1329,7 +1332,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
   cs_dbg_darray_to_listing("FACE_VELOCITY_k=1", 3*n_faces, vel_f, 9);
   cs_dbg_darray_to_listing("CELL_VELOCITY_k=1", 3*n_cells, vel_c, 9);
 #endif
@@ -1341,7 +1344,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
    */
   _update_pr_div_rhs(zeta, mom_eqb, time_eval, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
   cs_dbg_darray_to_listing("PRESSURE_k=1", n_cells, pr, 9);
   cs_dbg_darray_to_listing("VELOCITY_DIV_k=1", n_cells, div, 9);
 #endif
@@ -1400,7 +1403,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
         break;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("FACE_DELTA_VELOCITY",
                                3*n_faces, delta_vel_f, 9);
 #endif
@@ -1417,7 +1420,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       } /* End of the OpenMP region */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("CELL_DELTA_VELOCITY",
                                3*n_cells, delta_vel_c, 9);
 #endif
@@ -1429,7 +1432,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
        */
       _update_pr_div_rhs(zeta, mom_eqb, time_eval, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("FACE_VELOCITY", 3*n_faces, vel_f, 9);
       cs_dbg_darray_to_listing("CELL_VELOCITY", 3*n_cells, vel_c, 9);
       cs_dbg_darray_to_listing("PRESSURE", n_cells, pr, 9);
@@ -1479,7 +1482,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
   sc->residual = res;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-  cs_dbg_darray_to_listing("FINAL_OUTER_SOLUTION", 3*n_faces, vel_f, 9);
+  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_UZAWA_DBG,
+                        vel_f, NULL, 3*n_faces);
 #endif
 
   /* Frees */
@@ -1861,7 +1865,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
   cs_dbg_darray_to_listing("FACE_VELOCITY_k=1", 3*n_faces, vel_f, 9);
   cs_dbg_darray_to_listing("CELL_VELOCITY_k=1", 3*n_cells, vel_c, 9);
 #endif
@@ -1873,7 +1877,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
    */
   _update_pr_div_rhs(zeta, mom_eqb, time_eval, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
   cs_dbg_darray_to_listing("PRESSURE_k=1", n_cells, pr, 9);
   cs_dbg_darray_to_listing("VELOCITY_DIV_k=1", n_cells, div, 9);
 #endif
@@ -1932,7 +1936,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
         break;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("FACE_DELTA_VELOCITY",
                                3*n_faces, delta_vel_f, 9);
 #endif
@@ -1949,7 +1953,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
       } /* End of the OpenMP region */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
       cs_dbg_darray_to_listing("CELL_DELTA_VELOCITY",
                                3*n_cells, delta_vel_c, 9);
 #endif
@@ -2011,7 +2015,8 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
   sc->residual = res;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-  cs_dbg_darray_to_listing("FINAL_OUTER_SOLUTION", 3*n_faces, vel_f, 9);
+  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_UZAWA_DBG,
+                        vel_f, NULL, 3*n_faces);
 #endif
 
   /* Frees */

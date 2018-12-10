@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
+#include "bft_mem.h"
 
 #include "cs_log.h"
 
@@ -160,9 +161,9 @@ cs_dbg_array_fprintf(FILE             *fp,
   for (cs_lnum_t i = 0; i < n_rows; i++) {
     for (cs_lnum_t j = i*n_cols; j < (i+1)*n_cols; j++) {
       if (fabs(array[j]) < thd)
-        fprintf(fout, "% -8.5e", 0.);
+        fprintf(fout, " % -8.5e", 0.);
       else
-        fprintf(fout, "% -8.5e", array[j]);
+        fprintf(fout, " % -8.5e", array[j]);
     }
     fprintf(fout, "\n");
   }
@@ -170,15 +171,53 @@ cs_dbg_array_fprintf(FILE             *fp,
   if (n_rows*n_cols < n_elts) {
     for (cs_lnum_t j = n_rows*n_cols; j < n_elts; j++) {
       if (fabs(array[j]) < thd)
-        fprintf(fout, "% -8.5e", 0.);
+        fprintf(fout, " % -8.5e", 0.);
       else
-        fprintf(fout, "% -8.5e", array[j]);
+        fprintf(fout, " % -8.5e", array[j]);
     }
     fprintf(fout, "\n");
   }
 
   if (fout != stdout && fout != fp)
     fclose(fout);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, print into a file the solution and its right-hand
+ *         side
+ *
+ * \param[in] eqname     name of the related equation
+ * \param[in] nt         number of time step
+ * \param[in] level      level of debug
+ * \param[in] sol        solution array
+ * \param[in] rhs        rhs array
+ * \param[in] size       size of the array to print
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_fprintf_system(const char        *eqname,
+                      int                nt,
+                      int                level,
+                      const cs_real_t   *sol,
+                      const cs_real_t   *rhs,
+                      cs_lnum_t          size)
+{
+  int  len = strlen(eqname) + strlen("-sol-.log") + 4 + 1;
+  char  *filename = NULL;
+
+  BFT_MALLOC(filename, len, char);
+
+  sprintf(filename, "%s-sol-%04d.log", eqname, nt);
+  if (sol != NULL && level > 2)
+    cs_dbg_array_fprintf(NULL, filename, 1e-16, size, sol, 6);
+
+  sprintf(filename, "%s-rhs-%04d.log", eqname, nt);
+  if (rhs != NULL && level > 3)
+    cs_dbg_array_fprintf(NULL, filename, 1e-16, size, rhs, 6);
+
+  BFT_FREE(filename);
 }
 
 /*----------------------------------------------------------------------------*/
