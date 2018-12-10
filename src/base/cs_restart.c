@@ -72,6 +72,15 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_restart.c
+        Manage checkpoint / restart files.
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -118,7 +127,38 @@ struct _cs_restart_t {
   _location_t       *location;       /* Location definition array */
 
   cs_restart_mode_t  mode;           /* Read or write */
+
 };
+
+/*============================================================================
+ * Prototypes for private functions
+ *============================================================================*/
+
+static int
+_check_section(cs_restart_t           *restart,
+               void                   *context,
+               const char             *sec_name,
+               int                     location_id,
+               int                     n_location_vals,
+               cs_restart_val_type_t   val_type);
+
+static int
+_read_section(cs_restart_t           *restart,
+              void                   *context,
+              const char             *sec_name,
+              int                     location_id,
+              int                     n_location_vals,
+              cs_restart_val_type_t   val_type,
+              void                   *val);
+
+static void
+_write_section(cs_restart_t           *restart,
+               void                   *context,
+               const char             *sec_name,
+               int                     location_id,
+               int                     n_location_vals,
+               cs_restart_val_type_t   val_type,
+               const void             *val);
 
 /*============================================================================
  * Static global variables
@@ -151,6 +191,16 @@ static double _checkpoint_wt_interval = -1.; /* wall-clock interval */
 static double _checkpoint_wt_next = -1.;     /* next forced wall-clock value */
 static double _checkpoint_wt_last = 0.;      /* wall-clock time of last
                                                 checkpointing */
+
+/* Restart modification */
+
+static void                        *_restart_context = NULL;
+static cs_restart_check_section_t  *_check_section_f = _check_section;
+static cs_restart_read_section_t   *_read_section_f  = _read_section;
+static cs_restart_write_section_t  *_write_section_f = _write_section;
+
+static size_t        _n_locations_ref;    /* Number of locations */
+static _location_t  *_location_ref;       /* Location definition array */
 
 /*============================================================================
  * Private function definitions
@@ -933,716 +983,33 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
   return default_rank;
 }
 
-#endif /* defined(HAVE_MPI) */
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public Fortran function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Indicate if a restart directory is present.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the presence of a given section in a restart file.
  *
- * Fortran interface
+ * \param[in]       restart          associated restart file pointer
+ * \param[in, out]  context          associated context
+ * \param[in]       sec_name         section name
+ * \param[in]       location_id      id of corresponding location
+ * \param[in]       n_location_vals  number of values per location (interlaced)
+ * \param[in]       val_type         value type
  *
- * subroutine dflsui (ntsuit, ttsuit, wtsuit)
- * *****************
- *
- * integer          ntsuit      : <-- : > 0: checkpoint time step interval
- *                              :     : 0: default interval
- *                              :     : -1: checkpoint at end
- *                              :     : -2: no checkpoint
- * double precision ttsuit      : <-- : if> 0, checkpoint time interval
- * double precision wtsuit      : <-- : if> 0, checkpoint wall time interval
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (dflsui, DFLSUI)
-(
- cs_int_t   *ntsuit,
- cs_real_t  *ttsuit,
- cs_real_t  *wtsuit
-)
-{
-  cs_restart_checkpoint_set_defaults(*ntsuit, *ttsuit, *wtsuit);
-}
-
-/*----------------------------------------------------------------------------
- * Check if checkpointing is recommended at a given time.
- *
- * Fortran interface
- *
- * subroutine reqsui (iisuit)
- * *****************
- *
- * integer          iisuit      : --> : 0 if no restart required, 1 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (reqsui, REQSUI)
-(
- cs_int_t   *iisuit
-)
-{
-  if (cs_restart_checkpoint_required(cs_glob_time_step))
-    *iisuit = 1;
-  else
-    *iisuit = 0;
-}
-
-/*----------------------------------------------------------------------------
- * Indicate checkpointing has been done at a given time.
- *
- * This updates the status for future checks to determine
- * if checkpointing is recommended at a given time.
- *
- * Fortran interface
- *
- * subroutine indsui
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (stusui, STUSUI)
-(
- void
-)
-{
-  cs_restart_checkpoint_done(cs_glob_time_step);
-}
-
-/*----------------------------------------------------------------------------
- * Save output mesh for turbomachinery if needed
- *
- * Fortran interface
- *
- * subroutine trbsui
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (trbsui, TRBSUI)
-(
- void
-)
-{
-  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh");
-}
-
-/*----------------------------------------------------------------------------
- * Indicate if a restart directory is present.
- *
- * Fortran interface
- *
- * subroutine indsui (isuite)
- * *****************
- *
- * integer          isuite      : --> : 1 for restart, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (indsui, INDSUI)
-(
- cs_int_t   *isuite
-)
-{
-  *isuite = cs_restart_present();
-}
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Define default checkpoint interval.
- *
- * parameters
- *   nt_interval <-- if > 0 time step interval for checkpoint
- *                   if 0, default of 4 checkpoints per run
- *                   if -1, checkpoint at end
- *                   if -2, no checkpointing
- *   t_interval  <-- if > 0, time value interval for checkpoint
- *   wt_interval <-- if > 0, wall-clock interval for checkpoints
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_checkpoint_set_defaults(int     nt_interval,
-                                   double  t_interval,
-                                   double  wt_interval)
-{
-  _checkpoint_nt_interval = nt_interval;
-  _checkpoint_t_interval = t_interval;
-  _checkpoint_wt_interval = wt_interval;
-}
-
-/*----------------------------------------------------------------------------
- * Define last forced checkpoint time step
- *
- * parameters
- *   nt_last <-- last time step for forced checkpoint
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_checkpoint_set_last_ts(int  nt_last)
-{
-  _checkpoint_nt_last = nt_last;
-}
-
-/*----------------------------------------------------------------------------
- * Define next forced checkpoint time step
- *
- * parameters
- *   nt_next <-- next time step for forced checkpoint
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_checkpoint_set_next_ts(int  nt_next)
-{
-  _checkpoint_nt_next = nt_next;
-}
-
-/*----------------------------------------------------------------------------
- * Define next forced checkpoint time value
- *
- * parameters
- *   t_next <-- next time value for forced checkpoint
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_checkpoint_set_next_tv(double  t_next)
-{
-  _checkpoint_t_next = t_next;
-}
-
-/*----------------------------------------------------------------------------
- * Define next forced checkpoint wall-clock time value
- *
- * parameters
- *   wt_next <-- next wall-clock time value for forced checkpoint
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_checkpoint_set_next_wt(double  wt_next)
-{
-  _checkpoint_wt_next = wt_next;
-}
-
-/*----------------------------------------------------------------------------
- * Check if checkpointing is recommended at a given time.
- *
- * parameters
- *   ts <-- time step status structure
- *
- * returns:
- *   true if checkpointing is recommended, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-bool
-cs_restart_checkpoint_required(const cs_time_step_t  *ts)
-{
-  assert(ts != NULL);
-
-  int nt = ts->nt_cur - ts->nt_prev;
-  double t = ts->t_cur - ts->t_prev;
-
-  bool retval = false;
-
-  if (_checkpoint_nt_interval > -2) {
-
-    if (ts->nt_cur == ts->nt_max)
-      retval = true;
-
-    else if (_checkpoint_nt_interval == 0) {
-      /* default interval: current number of expected time_steps for this run,
-         with a minimum of 10. */
-      int nt_def = (ts->nt_max - ts->nt_prev)/4;
-      if (nt_def < 10)
-        nt_def = 10;
-      if (nt % nt_def == 0)
-        retval = true;
-    }
-
-    else if (_checkpoint_nt_interval > 0 && nt % _checkpoint_nt_interval == 0)
-      retval = true;
-
-    else if (_checkpoint_nt_interval > 0 && _checkpoint_nt_last > -1) {
-      if (ts->nt_cur >= _checkpoint_nt_interval + _checkpoint_nt_last)
-        retval = true;
-    }
-
-  }
-
-  if (_checkpoint_t_interval > 0
-      && _checkpoint_t_last + _checkpoint_t_interval <= t)
-    retval = true;
-
-  else if (_checkpoint_wt_next >= 0) {
-    double wt = cs_timer_wtime();
-    if (wt >= _checkpoint_wt_next)
-      retval = true;
-  }
-
-  else if (   (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= ts->nt_cur)
-           || (_checkpoint_t_next >= 0 && _checkpoint_t_next <= ts->t_cur))
-    retval = true;
-
-  else if (_checkpoint_wt_interval >= 0) {
-    double wt = cs_timer_wtime();
-    if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
-      retval = true;
-  }
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Indicate checkpointing has been done at a given time.
- *
- * This updates the status for future checks to determine
- * if checkpointing is recommended at a given time.
- *
- * parameters
- *   ts <-- time step status structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_checkpoint_done(const cs_time_step_t  *ts)
-{
-  assert(ts != NULL);
-
-  double t = ts->t_cur - ts->t_prev;
-
-  _checkpoint_nt_last = ts->nt_cur;
-
-  if (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= ts->nt_cur)
-    _checkpoint_nt_next = -1;
-
-  if (_checkpoint_t_next >= 0 && _checkpoint_t_next <= ts->t_cur)
-    _checkpoint_t_next = -1.;
-
-  if (_checkpoint_wt_next >= 0) {
-    double wt = cs_timer_wtime();
-    if (wt >= _checkpoint_wt_next)
-      _checkpoint_wt_next = -1.;
-  }
-
-  if (_checkpoint_t_interval > 0
-      && _checkpoint_t_last + _checkpoint_t_interval <= t)
-    _checkpoint_t_last = ts->t_cur;
-
-  if (_checkpoint_wt_interval >= 0) {
-    double wt = cs_timer_wtime();
-    if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
-      _checkpoint_wt_last = cs_timer_wtime();
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Check if we have a restart directory.
- *
- * returns:
- *   1 if a restart directory is present, 0 otherwise.
- *----------------------------------------------------------------------------*/
-
-int
-cs_restart_present(void)
-{
-  if (! _restart_present) {
-     if (cs_file_isdir("restart"))
-       _restart_present = 1;
-  }
-
-  return _restart_present;
-}
-
-/*----------------------------------------------------------------------------
- * Initialize a restart file
- *
- * parameters:
- *   name <-- file name
- *   path <-- optional directory name for output, or NULL for default
- *            (directory automatically created if necessary)
- *   mode <-- read or write
- *
- * returns:
- *   pointer to initialized restart file structure
- *----------------------------------------------------------------------------*/
-
-cs_restart_t *
-cs_restart_create(const char         *name,
-                  const char         *path,
-                  cs_restart_mode_t   mode)
-{
-  cs_restart_t  * restart;
-
-  double timing[2];
-
-  char *_name = NULL;
-  size_t  ldir, lname;
-
-  const char  *_path = path;
-  const char _restart[] = "restart";
-  const char _checkpoint[] = "checkpoint";
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-
-  timing[0] = cs_timer_wtime();
-
-  if (_path != NULL) {
-    if (strlen(_path) == 0)
-      _path = NULL;
-  }
-
-  if (_path == NULL) {
-    if (mode == CS_RESTART_MODE_WRITE)
-      _path = _checkpoint;
-    else
-      _path = _restart;
-  }
-
-  /* Create 'checkpoint' directory or read from 'restart' directory */
-
-  if (mode == CS_RESTART_MODE_WRITE) {
-    if (cs_file_mkdir_default(_path) != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("The %s directory cannot be created"), _path);
-  }
-  else if (mode == CS_RESTART_MODE_READ) {
-    if (cs_file_isdir(_path) == 0) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("The %s directory cannot be found"), _path);
-    }
-  }
-
-  ldir = strlen(_path);
-  lname = strlen(name);
-
-  BFT_MALLOC(_name, ldir + lname + 2, char);
-
-  strcpy(_name, _path);
-  _name[ldir] = _dir_separator;
-  _name[ldir+1] = '\0';
-  strcat(_name, name);
-  _name[ldir+lname+1] = '\0';
-
-  /* Allocate and initialize base structure */
-
-  BFT_MALLOC(restart, 1, cs_restart_t);
-
-  BFT_MALLOC(restart->name, strlen(_name) + 1, char);
-
-  strcpy(restart->name, _name);
-
-  BFT_FREE(_name);
-
-  /* Initialize other fields */
-
-  restart->mode = mode;
-
-  restart->fh = NULL;
-
-  restart->rank_step = 1;
-  restart->min_block_size = 0;
-
-  /* Initialize location data */
-
-  restart->n_locations = 0;
-  restart->location = NULL;
-
-  /* Open associated file, and build an index of sections in read mode */
-
-  _add_file(restart);
-
-  /* Add basic location definitions */
-
-  cs_restart_add_location(restart, "cells",
-                          mesh->n_g_cells, mesh->n_cells,
-                          mesh->global_cell_num);
-  cs_restart_add_location(restart, "interior_faces",
-                          mesh->n_g_i_faces, mesh->n_i_faces,
-                          mesh->global_i_face_num);
-  cs_restart_add_location(restart, "boundary_faces",
-                          mesh->n_g_b_faces, mesh->n_b_faces,
-                          mesh->global_b_face_num);
-  cs_restart_add_location(restart, "vertices",
-                          mesh->n_g_vertices, mesh->n_vertices,
-                          mesh->global_vtx_num);
-
-  timing[1] = cs_timer_wtime();
-  _restart_wtime[mode] += timing[1] - timing[0];
-
-  return restart;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy structure associated with a restart file (and close the file).
- *
- * parameters:
- *   restart <-- pointer to restart file structure pointer
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_destroy(cs_restart_t  **restart)
-{
-  cs_restart_mode_t   mode;
-
-  cs_restart_t *r = *restart;
-
-  double timing[2];
-
-  timing[0] = cs_timer_wtime();
-
-  assert(restart != NULL);
-
-  mode = r->mode;
-
-  if (r->fh != NULL)
-    cs_io_finalize(&(r->fh));
-
-  /* Free locations array */
-
-  if (r->n_locations > 0) {
-    size_t loc_id;
-    for (loc_id = 0; loc_id < r->n_locations; loc_id++) {
-      BFT_FREE((r->location[loc_id]).name);
-      BFT_FREE((r->location[loc_id])._ent_global_num);
-    }
-  }
-  if (r->location != NULL)
-    BFT_FREE(r->location);
-
-  /* Free remaining memory */
-
-  BFT_FREE(r->name);
-
-  BFT_FREE(*restart);
-
-  timing[1] = cs_timer_wtime();
-  _restart_wtime[mode] += timing[1] - timing[0];
-}
-
-/*----------------------------------------------------------------------------
- * Check the locations associated with a restart file.
- *
- * For each type of entity, the corresponding flag is set to true if the
- * associated number of entities matches the current value (and so that we
- * consider the mesh locations are the same), false otherwise.
- *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   match_cell   <-- matching cells flag
- *   match_i_face <-- matching interior faces flag
- *   match_b_face <-- matching boundary faces flag
- *   match_vertex <-- matching vertices flag
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_check_base_location(const cs_restart_t  *restart,
-                               bool                *match_cell,
-                               bool                *match_i_face,
-                               bool                *match_b_face,
-                               bool                *match_vertex)
-{
-  size_t location_id;
-
-  *match_cell = false;
-  *match_i_face = false;
-  *match_b_face = false;
-  *match_vertex = false;
-
-  assert(restart != NULL);
-
-  for (location_id = 0; location_id < 4; location_id++) {
-
-    const _location_t *loc = restart->location + location_id;
-
-    if (loc->n_glob_ents_f == loc->n_glob_ents) {
-      if (location_id == 0)
-        *match_cell = true;
-      else if (location_id == 1)
-        *match_i_face = true;
-      else if (location_id == 2)
-        *match_b_face = true;
-      else if (location_id == 3)
-        *match_vertex = true;
-    }
-
-    else if (cs_glob_rank_id <= 0) {
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The size of location \"%s\" associated with\n"
-                   "the restart file \"%s\" is %llu and does not\n"
-                   "correspond to that of the current mesh (%llu).\n"),
-                 loc->name, restart->name,
-                 (unsigned long long)loc->n_glob_ents_f,
-                 (unsigned long long)loc->n_glob_ents);
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Add a location definition.
- *
- * parameters:
- *   restart        <-- associated restart file pointer
- *   location_name  <-- name associated with the location
- *   n_glob_ents    <-- global number of entities
- *   n_ents         <-- local number of entities
- *   ent_global_num <-- global entity numbers, or NULL
- *
- * returns:
- *   the location id assigned, or -1 in case of error
- *----------------------------------------------------------------------------*/
-
-int
-cs_restart_add_location(cs_restart_t     *restart,
-                        const char       *location_name,
-                        cs_gnum_t         n_glob_ents,
-                        cs_lnum_t         n_ents,
-                        const cs_gnum_t  *ent_global_num)
-{
-  double timing[2];
-
-  int loc_id;
-
-  timing[0] = cs_timer_wtime();
-
-  if (restart->mode == CS_RESTART_MODE_READ) {
-
-    /* Search for a location with the same name */
-
-    for (loc_id = 0; loc_id < (int)(restart->n_locations); loc_id++) {
-
-      if ((strcmp((restart->location[loc_id]).name, location_name) == 0)) {
-
-        (restart->location[loc_id]).n_glob_ents = n_glob_ents;
-
-        (restart->location[loc_id]).n_ents  = n_ents;
-        (restart->location[loc_id]).ent_global_num = ent_global_num;
-        (restart->location[loc_id])._ent_global_num = NULL;
-
-        timing[1] = cs_timer_wtime();
-        _restart_wtime[restart->mode] += timing[1] - timing[0];
-
-        return loc_id + 1;
-
-      }
-    }
-
-    if (loc_id >= ((int)(restart->n_locations)))
-      bft_error(__FILE__, __LINE__, 0,
-                _("The restart file \"%s\" references no\n"
-                  "location named \"%s\"."),
-                restart->name, location_name);
-
-  }
-
-  else {
-
-    cs_datatype_t gnum_type
-      = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
-
-    /* Create a new location */
-
-    restart->n_locations += 1;
-
-    BFT_REALLOC(restart->location, restart->n_locations, _location_t);
-    BFT_MALLOC((restart->location[restart->n_locations-1]).name,
-               strlen(location_name)+1,
-               char);
-
-    strcpy((restart->location[restart->n_locations-1]).name, location_name);
-
-    (restart->location[restart->n_locations-1]).id = restart->n_locations;
-    (restart->location[restart->n_locations-1]).n_glob_ents    = n_glob_ents;
-    (restart->location[restart->n_locations-1]).n_glob_ents_f  = n_glob_ents;
-    (restart->location[restart->n_locations-1]).n_ents         = n_ents;
-    (restart->location[restart->n_locations-1]).ent_global_num = ent_global_num;
-    (restart->location[restart->n_locations-1])._ent_global_num = NULL;
-
-    cs_io_write_global(location_name, 1, restart->n_locations, 0, 0,
-                       gnum_type, &n_glob_ents,
-                       restart->fh);
-
-    timing[1] = cs_timer_wtime();
-    _restart_wtime[restart->mode] += timing[1] - timing[0];
-
-    return restart->n_locations;
-  }
-
-  timing[1] = cs_timer_wtime();
-  _restart_wtime[restart->mode] += timing[1] - timing[0];
-
-  return -1;
-}
-
-/*----------------------------------------------------------------------------
- * Return name of restart file
- *
- * parameters:
- *   restart <-- associated restart file pointer
- *
- * returns:
- *   base name of restart file
- *----------------------------------------------------------------------------*/
-
-const char *
-cs_restart_get_name(const cs_restart_t  *restart)
-{
-  assert(restart != NULL);
-
-  return restart->name;
-}
-
-/*----------------------------------------------------------------------------
- * Print the index associated with a restart file in read mode
- *
- * parameters:
- *   restart <-- associated restart file pointer
- *----------------------------------------------------------------------------*/
-
-void
-cs_restart_dump_index(const cs_restart_t  *restart)
-{
-  size_t loc_id;
-
-  assert(restart != NULL);
-
-  for (loc_id = 0; loc_id < restart->n_locations; loc_id++) {
-    const _location_t *loc = &(restart->location[loc_id]);
-    bft_printf(_("  Location: %s\n"
-                 "    (number: %03d, n_glob_ents: %llu)\n"),
-               loc->name, (int)(loc->id),
-               (unsigned long long)(loc->n_glob_ents));
-  }
-  if (restart->n_locations > 0)
-    bft_printf("\n");
-
-  /* Dump general file info, including index */
-
-  bft_printf(_("  General information associated with the restart file:\n"));
-
-  cs_io_dump(restart->fh);
-}
-
-/*----------------------------------------------------------------------------
- * Check the presence of a given section in a restart file.
- *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
- *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
-int
-cs_restart_check_section(cs_restart_t           *restart,
-                         const char             *sec_name,
-                         int                     location_id,
-                         int                     n_location_vals,
-                         cs_restart_val_type_t   val_type)
+static int
+_check_section(cs_restart_t           *restart,
+               void                   *context,
+               const char             *sec_name,
+               int                     location_id,
+               int                     n_location_vals,
+               cs_restart_val_type_t   val_type)
 {
-  cs_int_t   n_ents;
+  CS_UNUSED(context);
+
+  cs_lnum_t n_ents;
   cs_gnum_t n_glob_ents;
 
   size_t rec_id;
@@ -1739,30 +1106,32 @@ cs_restart_check_section(cs_restart_t           *restart,
   return CS_RESTART_SUCCESS;
 }
 
-/*----------------------------------------------------------------------------
- * Read a section from a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a section from a restart file.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
- *   val             --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   location_id      id of corresponding location
+ * \param[in]   n_location_vals  number of values per location (interlaced)
+ * \param[in]   val_type         value type
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
-int
-cs_restart_read_section(cs_restart_t           *restart,
-                        const char             *sec_name,
-                        int                     location_id,
-                        int                     n_location_vals,
-                        cs_restart_val_type_t   val_type,
-                        void                   *val)
+static int
+_read_section(cs_restart_t           *restart,
+              void                   *context,
+              const char             *sec_name,
+              int                     location_id,
+              int                     n_location_vals,
+              cs_restart_val_type_t   val_type,
+              void                   *val)
 {
-  double timing[2];
+  CS_UNUSED(context);
 
   cs_int_t   n_ents;
   cs_gnum_t n_glob_ents;
@@ -1774,8 +1143,6 @@ cs_restart_read_section(cs_restart_t           *restart,
 
   cs_int_t _n_location_vals = n_location_vals;
   size_t index_size = 0;
-
-  timing[0] = cs_timer_wtime();
 
   index_size = cs_io_get_index_size(restart->fh);
 
@@ -1957,35 +1324,34 @@ cs_restart_read_section(cs_restart_t           *restart,
 
 #endif /* #if defined(HAVE_MPI) */
 
-  timing[1] = cs_timer_wtime();
-  _restart_wtime[restart->mode] += timing[1] - timing[0];
-
   /* Return */
 
   return CS_RESTART_SUCCESS;
 }
 
-/*----------------------------------------------------------------------------
- * Write a section to a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write a section to a restart file.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
- *   val             <-- array of values
- *----------------------------------------------------------------------------*/
+ * \param[in]  restart          associated restart file pointer
+ * \param[in]  sec_name         section name
+ * \param[in]  location_id      id of corresponding location
+ * \param[in]  n_location_vals  number of values per location (interlaced)
+ * \param[in]  val_type         value type
+ * \param[in]  val              array of values
+ */
+/*----------------------------------------------------------------------------*/
 
-void
-cs_restart_write_section(cs_restart_t           *restart,
-                         const char             *sec_name,
-                         int                     location_id,
-                         int                     n_location_vals,
-                         cs_restart_val_type_t   val_type,
-                         const void             *val)
+static void
+_write_section(cs_restart_t           *restart,
+               void                   *context,
+               const char             *sec_name,
+               int                     location_id,
+               int                     n_location_vals,
+               cs_restart_val_type_t   val_type,
+               const void             *val)
 {
-  double timing[2];
+  CS_UNUSED(context);
 
   cs_lnum_t        n_ents;
   cs_gnum_t        n_tot_vals, n_glob_ents;
@@ -1994,8 +1360,6 @@ cs_restart_write_section(cs_restart_t           *restart,
   const cs_gnum_t  *ent_global_num;
 
   cs_int_t _n_location_vals = n_location_vals;
-
-  timing[0] = cs_timer_wtime();
 
   assert(restart != NULL);
 
@@ -2091,25 +1455,1064 @@ cs_restart_write_section(cs_restart_t           *restart,
                       val_type,
                       (const cs_byte_t *)val);
 
-  timing[1] = cs_timer_wtime();
-  _restart_wtime[restart->mode] += timing[1] - timing[0];
-
 #endif /* #if defined(HAVE_MPI) */
 }
 
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a location definition with a possible reference definition.
+ *
+ * \param[in]  restart         associated restart file pointer
+ * \param[in]  location_name   name associated with the location
+ * \param[in]  n_glob_ents     global number of entities
+ * \param[in]  n_ents          local number of entities
+ * \param[in]  ent_global_num  global entity numbers, or NULL
+ *
+ * \return  the location id assigned, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_add_location_check_ref(cs_restart_t     *restart,
+                        const char       *location_name,
+                        cs_gnum_t         n_glob_ents,
+                        cs_lnum_t         n_ents,
+                        const cs_gnum_t  *ent_global_num)
+{
+  int loc_id;
+
+  if (restart->mode == CS_RESTART_MODE_READ) {
+
+    /* Search for a reference location with the same name */
+
+    for (loc_id = 0; loc_id < (int)(_n_locations_ref); loc_id++) {
+
+      if ((strcmp((restart->location[loc_id]).name, location_name) == 0)) {
+
+        const _location_t  *_loc_ref = _location_ref + loc_id;
+
+        n_glob_ents = _loc_ref->n_glob_ents;
+        n_ents = _loc_ref->n_ents;
+        ent_global_num =_loc_ref->ent_global_num;
+
+      }
+
+    }
+
+  }
+
+  return cs_restart_add_location(restart, location_name,
+                                 n_glob_ents, n_ents,
+                                 ent_global_num);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public Fortran function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
+ * Indicate if a restart directory is present.
+ *
+ * Fortran interface
+ *
+ * subroutine dflsui (ntsuit, ttsuit, wtsuit)
+ * *****************
+ *
+ * integer          ntsuit      : <-- : > 0: checkpoint time step interval
+ *                              :     : 0: default interval
+ *                              :     : -1: checkpoint at end
+ *                              :     : -2: no checkpoint
+ * double precision ttsuit      : <-- : if> 0, checkpoint time interval
+ * double precision wtsuit      : <-- : if> 0, checkpoint wall time interval
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (dflsui, DFLSUI)
+(
+ cs_int_t   *ntsuit,
+ cs_real_t  *ttsuit,
+ cs_real_t  *wtsuit
+)
+{
+  cs_restart_checkpoint_set_defaults(*ntsuit, *ttsuit, *wtsuit);
+}
+
+/*----------------------------------------------------------------------------
+ * Check if checkpointing is recommended at a given time.
+ *
+ * Fortran interface
+ *
+ * subroutine reqsui (iisuit)
+ * *****************
+ *
+ * integer          iisuit      : --> : 0 if no restart required, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (reqsui, REQSUI)
+(
+ cs_int_t   *iisuit
+)
+{
+  if (cs_restart_checkpoint_required(cs_glob_time_step))
+    *iisuit = 1;
+  else
+    *iisuit = 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Indicate checkpointing has been done at a given time.
+ *
+ * This updates the status for future checks to determine
+ * if checkpointing is recommended at a given time.
+ *
+ * Fortran interface
+ *
+ * subroutine indsui
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (stusui, STUSUI)
+(
+ void
+)
+{
+  cs_restart_checkpoint_done(cs_glob_time_step);
+}
+
+/*----------------------------------------------------------------------------
+ * Save output mesh for turbomachinery if needed
+ *
+ * Fortran interface
+ *
+ * subroutine trbsui
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (trbsui, TRBSUI)
+(
+ void
+)
+{
+  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh");
+}
+
+/*----------------------------------------------------------------------------
+ * Indicate if a restart directory is present.
+ *
+ * Fortran interface
+ *
+ * subroutine indsui (isuite)
+ * *****************
+ *
+ * integer          isuite      : --> : 1 for restart, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (indsui, INDSUI)
+(
+ cs_int_t   *isuite
+)
+{
+  *isuite = cs_restart_present();
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define default checkpoint interval.
+ *
+ * \param[in]  nt_interval  if > 0 time step interval for checkpoint
+ *                          if 0, default of 4 checkpoints per run
+ *                          if -1, checkpoint at end
+ *                          if -2, no checkpointing
+ * \param[in]  t_interval   if > 0, time value interval for checkpoint
+ * \param[in]  wt_interval  if > 0, wall-clock interval for checkpoints
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_defaults(int     nt_interval,
+                                   double  t_interval,
+                                   double  wt_interval)
+{
+  _checkpoint_nt_interval = nt_interval;
+  _checkpoint_t_interval = t_interval;
+  _checkpoint_wt_interval = wt_interval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define last forced checkpoint time step.
+ *
+ * \param[in]  nt_last  last time step for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_last_ts(int  nt_last)
+{
+  _checkpoint_nt_last = nt_last;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define next forced checkpoint time step.
+ *
+ * \param[in]  nt_next  next time step for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_ts(int  nt_next)
+{
+  _checkpoint_nt_next = nt_next;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define next forced checkpoint time value.
+ *
+ * \param[in]  t_next  next time value for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_tv(double  t_next)
+{
+  _checkpoint_t_next = t_next;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define next forced checkpoint wall-clock time value.
+ *
+ * \param[in]  wt_next  next wall-clock time value for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_next_wt(double  wt_next)
+{
+  _checkpoint_wt_next = wt_next;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if checkpointing is recommended at a given time.
+ *
+ * \param[in]  ts  time step status structure
+ *
+ * \return  true if checkpointing is recommended, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_restart_checkpoint_required(const cs_time_step_t  *ts)
+{
+  assert(ts != NULL);
+
+  int nt = ts->nt_cur - ts->nt_prev;
+  double t = ts->t_cur - ts->t_prev;
+
+  bool retval = false;
+
+  if (_checkpoint_nt_interval > -2) {
+
+    if (ts->nt_cur == ts->nt_max)
+      retval = true;
+
+    else if (_checkpoint_nt_interval == 0) {
+      /* default interval: current number of expected time_steps for this run,
+         with a minimum of 10. */
+      int nt_def = (ts->nt_max - ts->nt_prev)/4;
+      if (nt_def < 10)
+        nt_def = 10;
+      if (nt % nt_def == 0)
+        retval = true;
+    }
+
+    else if (_checkpoint_nt_interval > 0 && nt % _checkpoint_nt_interval == 0)
+      retval = true;
+
+    else if (_checkpoint_nt_interval > 0 && _checkpoint_nt_last > -1) {
+      if (ts->nt_cur >= _checkpoint_nt_interval + _checkpoint_nt_last)
+        retval = true;
+    }
+
+  }
+
+  if (_checkpoint_t_interval > 0
+      && _checkpoint_t_last + _checkpoint_t_interval <= t)
+    retval = true;
+
+  else if (_checkpoint_wt_next >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt >= _checkpoint_wt_next)
+      retval = true;
+  }
+
+  else if (   (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= ts->nt_cur)
+           || (_checkpoint_t_next >= 0 && _checkpoint_t_next <= ts->t_cur))
+    retval = true;
+
+  else if (_checkpoint_wt_interval >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
+      retval = true;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Indicate checkpointing has been done at a given time.
+ *
+ * This updates the status for future checks to determine
+ * if checkpointing is recommended at a given time.
+ *
+ * \param[in]  ts  time step status structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_done(const cs_time_step_t  *ts)
+{
+  assert(ts != NULL);
+
+  double t = ts->t_cur - ts->t_prev;
+
+  if (_checkpoint_nt_next >= 0 && _checkpoint_nt_next <= ts->nt_cur)
+    _checkpoint_nt_next = -1;
+
+  if (_checkpoint_t_next >= 0 && _checkpoint_t_next <= ts->t_cur)
+    _checkpoint_t_next = -1.;
+
+  if (_checkpoint_wt_next >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt >= _checkpoint_wt_next)
+      _checkpoint_wt_next = -1.;
+  }
+
+  if (_checkpoint_t_interval > 0
+      && _checkpoint_t_last + _checkpoint_t_interval <= t)
+    _checkpoint_t_last = ts->t_cur;
+
+  if (_checkpoint_wt_interval >= 0) {
+    double wt = cs_timer_wtime();
+    if (wt - _checkpoint_wt_last >= _checkpoint_wt_interval)
+      _checkpoint_wt_last = cs_timer_wtime();
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if we have a restart directory.
+ *
+ * \return  1 if a restart directory is present, 0 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_present(void)
+{
+  if (! _restart_present) {
+     if (cs_file_isdir("restart"))
+       _restart_present = 1;
+  }
+
+  return _restart_present;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize a restart file.
+ *
+ * \param[in]  name  file name
+ * \param[in]  path  optional directory name for output, or NULL for default
+ *                   (directory automatically created if necessary)
+ * \param[in]  mode  read or write
+ *
+ * \returns  pointer to initialized restart file structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_restart_t *
+cs_restart_create(const char         *name,
+                  const char         *path,
+                  cs_restart_mode_t   mode)
+{
+  cs_restart_t  * restart;
+
+  double timing[2];
+
+  char *_name = NULL;
+  size_t  ldir, lname;
+
+  const char  *_path = path;
+  const char _restart[] = "restart";
+  const char _checkpoint[] = "checkpoint";
+
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+
+  /* Initializations */
+
+  timing[0] = cs_timer_wtime();
+
+  if (_path != NULL) {
+    if (strlen(_path) == 0)
+      _path = NULL;
+  }
+
+  if (_path == NULL) {
+    if (mode == CS_RESTART_MODE_WRITE)
+      _path = _checkpoint;
+    else
+      _path = _restart;
+  }
+
+  /* Create 'checkpoint' directory or read from 'restart' directory */
+
+  if (mode == CS_RESTART_MODE_WRITE) {
+    if (cs_file_mkdir_default(_path) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("The %s directory cannot be created"), _path);
+  }
+  else if (mode == CS_RESTART_MODE_READ) {
+    if (cs_file_isdir(_path) == 0) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("The %s directory cannot be found"), _path);
+    }
+  }
+
+  ldir = strlen(_path);
+  lname = strlen(name);
+
+  BFT_MALLOC(_name, ldir + lname + 2, char);
+
+  strcpy(_name, _path);
+  _name[ldir] = _dir_separator;
+  _name[ldir+1] = '\0';
+  strcat(_name, name);
+  _name[ldir+lname+1] = '\0';
+
+  /* Allocate and initialize base structure */
+
+  BFT_MALLOC(restart, 1, cs_restart_t);
+
+  BFT_MALLOC(restart->name, strlen(_name) + 1, char);
+
+  strcpy(restart->name, _name);
+
+  BFT_FREE(_name);
+
+  /* Initialize other fields */
+
+  restart->mode = mode;
+
+  restart->fh = NULL;
+
+  restart->rank_step = 1;
+  restart->min_block_size = 0;
+
+  /* Initialize location data */
+
+  restart->n_locations = 0;
+  restart->location = NULL;
+
+  /* Open associated file, and build an index of sections in read mode */
+
+  _add_file(restart);
+
+  /* Add basic location definitions */
+
+  _add_location_check_ref(restart, "cells",
+                          mesh->n_g_cells, mesh->n_cells,
+                          mesh->global_cell_num);
+  _add_location_check_ref(restart, "interior_faces",
+                          mesh->n_g_i_faces, mesh->n_i_faces,
+                          mesh->global_i_face_num);
+  _add_location_check_ref(restart, "boundary_faces",
+                          mesh->n_g_b_faces, mesh->n_b_faces,
+                          mesh->global_b_face_num);
+  _add_location_check_ref(restart, "vertices",
+                          mesh->n_g_vertices, mesh->n_vertices,
+                          mesh->global_vtx_num);
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[mode] += timing[1] - timing[0];
+
+  return restart;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy structure associated with a restart file (and close the file).
+ *
+ * \param[in, out]  restart  pointer to restart file structure pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_destroy(cs_restart_t  **restart)
+{
+  cs_restart_mode_t   mode;
+
+  cs_restart_t *r = *restart;
+
+  double timing[2];
+
+  timing[0] = cs_timer_wtime();
+
+  assert(restart != NULL);
+
+  mode = r->mode;
+
+  if (r->fh != NULL)
+    cs_io_finalize(&(r->fh));
+
+  /* Free locations array */
+
+  if (r->n_locations > 0) {
+    size_t loc_id;
+    for (loc_id = 0; loc_id < r->n_locations; loc_id++) {
+      BFT_FREE((r->location[loc_id]).name);
+      BFT_FREE((r->location[loc_id])._ent_global_num);
+    }
+  }
+  if (r->location != NULL)
+    BFT_FREE(r->location);
+
+  /* Free remaining memory */
+
+  BFT_FREE(r->name);
+
+  BFT_FREE(*restart);
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[mode] += timing[1] - timing[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the locations associated with a restart file.
+ *
+ * For each type of entity, the corresponding flag is set to true if the
+ * associated number of entities matches the current value (and so that we
+ * consider the mesh locations are the same), false otherwise.
+ *
+ * \param[out]  restart       associated restart file pointer
+ * \param[out]  match_cell    matching cells flag
+ * \param[out]  match_i_face  matching interior faces flag
+ * \param[out]  match_b_face  matching boundary faces flag
+ * \param[out]  match_vertex  matching vertices flag
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_check_base_location(const cs_restart_t  *restart,
+                               bool                *match_cell,
+                               bool                *match_i_face,
+                               bool                *match_b_face,
+                               bool                *match_vertex)
+{
+  size_t location_id;
+
+  *match_cell = false;
+  *match_i_face = false;
+  *match_b_face = false;
+  *match_vertex = false;
+
+  assert(restart != NULL);
+
+  for (location_id = 0; location_id < 4; location_id++) {
+
+    const _location_t *loc = restart->location + location_id;
+
+    if (loc->n_glob_ents_f == loc->n_glob_ents) {
+      if (location_id == 0)
+        *match_cell = true;
+      else if (location_id == 1)
+        *match_i_face = true;
+      else if (location_id == 2)
+        *match_b_face = true;
+      else if (location_id == 3)
+        *match_vertex = true;
+    }
+
+    else if (cs_glob_rank_id <= 0) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_("The size of location \"%s\" associated with\n"
+                   "the restart file \"%s\" is %llu and does not\n"
+                   "correspond to that of the current mesh (%llu).\n"),
+                 loc->name, restart->name,
+                 (unsigned long long)loc->n_glob_ents_f,
+                 (unsigned long long)loc->n_glob_ents);
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a location definition.
+ *
+ * \param[in]  restart         associated restart file pointer
+ * \param[in]  location_name   name associated with the location
+ * \param[in]  n_glob_ents     global number of entities
+ * \param[in]  n_ents          local number of entities
+ * \param[in]  ent_global_num  global entity numbers, or NULL
+ *
+ * \return  the location id assigned, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_add_location(cs_restart_t     *restart,
+                        const char       *location_name,
+                        cs_gnum_t         n_glob_ents,
+                        cs_lnum_t         n_ents,
+                        const cs_gnum_t  *ent_global_num)
+{
+  double timing[2];
+
+  int loc_id;
+
+  timing[0] = cs_timer_wtime();
+
+  if (restart->mode == CS_RESTART_MODE_READ) {
+
+    /* Search for a location with the same name */
+
+    for (loc_id = 0; loc_id < (int)(restart->n_locations); loc_id++) {
+
+      if ((strcmp((restart->location[loc_id]).name, location_name) == 0)) {
+
+        (restart->location[loc_id]).n_glob_ents = n_glob_ents;
+
+        (restart->location[loc_id]).n_ents  = n_ents;
+        (restart->location[loc_id]).ent_global_num = ent_global_num;
+        (restart->location[loc_id])._ent_global_num = NULL;
+
+        timing[1] = cs_timer_wtime();
+        _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+        return loc_id + 1;
+
+      }
+    }
+
+    if (loc_id >= ((int)(restart->n_locations)))
+      bft_error(__FILE__, __LINE__, 0,
+                _("The restart file \"%s\" references no\n"
+                  "location named \"%s\"."),
+                restart->name, location_name);
+
+  }
+
+  else {
+
+    cs_datatype_t gnum_type
+      = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
+
+    /* Create a new location */
+
+    restart->n_locations += 1;
+
+    BFT_REALLOC(restart->location, restart->n_locations, _location_t);
+    BFT_MALLOC((restart->location[restart->n_locations-1]).name,
+               strlen(location_name)+1,
+               char);
+
+    strcpy((restart->location[restart->n_locations-1]).name, location_name);
+
+    (restart->location[restart->n_locations-1]).id = restart->n_locations;
+    (restart->location[restart->n_locations-1]).n_glob_ents    = n_glob_ents;
+    (restart->location[restart->n_locations-1]).n_glob_ents_f  = n_glob_ents;
+    (restart->location[restart->n_locations-1]).n_ents         = n_ents;
+    (restart->location[restart->n_locations-1]).ent_global_num = ent_global_num;
+    (restart->location[restart->n_locations-1])._ent_global_num = NULL;
+
+    cs_io_write_global(location_name, 1, restart->n_locations, 0, 0,
+                       gnum_type, &n_glob_ents,
+                       restart->fh);
+
+    timing[1] = cs_timer_wtime();
+    _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+    return restart->n_locations;
+  }
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a reference location definition with a private copy.
+ *
+ * \param[in]  location_name   name associated with the location
+ * \param[in]  n_glob_ents     global number of entities
+ * \param[in]  n_ents          local number of entities
+ * \param[in]  ent_global_num  global entity numbers, or NULL
+ *
+ * \return  the location id assigned, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_add_location_ref(const char       *location_name,
+                            cs_gnum_t         n_glob_ents,
+                            cs_lnum_t         n_ents,
+                            const cs_gnum_t  *ent_global_num)
+{
+  /* Create a new location */
+
+  _n_locations_ref += 1;
+
+  BFT_REALLOC(_location_ref, _n_locations_ref, _location_t);
+  BFT_MALLOC((_location_ref[_n_locations_ref-1]).name,
+             strlen(location_name)+1,
+             char);
+
+  strcpy((_location_ref[_n_locations_ref-1]).name, location_name);
+
+  if (ent_global_num != NULL) {
+    BFT_MALLOC((_location_ref[_n_locations_ref-1])._ent_global_num,
+               n_ents, cs_gnum_t);
+    for (cs_lnum_t i = 0; i < n_ents; i++) {
+      (_location_ref[_n_locations_ref-1])._ent_global_num[i]
+        = ent_global_num[i];
+    }
+  }
+  else
+    (_location_ref[_n_locations_ref-1])._ent_global_num = NULL;
+
+  (_location_ref[_n_locations_ref-1]).id = _n_locations_ref;
+  (_location_ref[_n_locations_ref-1]).n_glob_ents    = n_glob_ents;
+  (_location_ref[_n_locations_ref-1]).n_glob_ents_f  = n_glob_ents;
+  (_location_ref[_n_locations_ref-1]).n_ents         = n_ents;
+  (_location_ref[_n_locations_ref-1]).ent_global_num
+    = (_location_ref[_n_locations_ref-1])._ent_global_num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Clear reference location definitions with a private copy.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_clear_locations_ref(void)
+{
+  for (size_t loc_id = 0; loc_id < _n_locations_ref; loc_id++) {
+    BFT_FREE((_location_ref[loc_id]).name);
+    BFT_FREE((_location_ref[loc_id])._ent_global_num);
+  }
+  BFT_FREE(_location_ref);
+  _n_locations_ref = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a context to restart section check operations.
+ *
+ * This context may be used by the \ref cs_restart_check_section_t,
+ * \ref cs_restart_read_section_t, and \ref cs_restart_write_section_t
+ * type functions.
+ *
+ * Note that the lifecycle of the data pointed to must be handled separately
+ * (and the pointer must remain valid until the matching restart structure
+ * is destroyed.
+ *
+ * \param[in]  context  pointer to associated data, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_set_context(void  *context)
+{
+  _restart_context = context;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a function to restart section check operations.
+ *
+ * This allows defining alternate operations when checking restart sections.
+ *
+ * \param[in]  func   associated function
+ *
+ * \return   pointer to previous function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_restart_check_section_t  *
+cs_restart_set_check_section_func(cs_restart_check_section_t  *func)
+{
+  cs_restart_check_section_t  *p = _check_section_f;
+  _check_section_f = func;
+
+  return p;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a function and its input to all restart section
+ *         read operations.
+ *
+ * This allows defining alternate operations when reading restart sections.
+ *
+ * \param[in]  func   associated function
+ *
+ * \return   pointer to previous function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_restart_read_section_t  *
+cs_restart_set_read_section_func(cs_restart_read_section_t  *func)
+{
+  cs_restart_read_section_t  *p = _read_section_f;
+  _read_section_f = func;
+
+  return p;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a function and its input to all restart section
+ *         write operations.
+ *
+ * This allows defining alternate operations when writing restart sections.
+ *
+ * \param[in]  func     associated hook function
+ *
+ * \return   pointer to previous function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_restart_write_section_t  *
+cs_restart_set_write_section_func(cs_restart_write_section_t  *func)
+{
+  cs_restart_write_section_t  *p = _write_section_f;
+  _write_section_f = func;
+
+  return p;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return name of restart file
+ *
+ * \param[in]  restart  associated restart file pointer
+ *
+ * \return  base name of restart file
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_restart_get_name(const cs_restart_t  *restart)
+{
+  assert(restart != NULL);
+
+  return restart->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return local number of elements associated with a
+ *         given restart location.
+ *
+ * \param[in]  restart      associated restart file pointer
+ * \param[in]  location_id  id of corresponding location
+ *
+ * \return  number of elements associated with location.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_restart_get_n_location_elts(const cs_restart_t  *restart,
+                               int                  location_id)
+{
+  cs_lnum_t retval = 0;
+
+  assert(restart != NULL);
+
+  if (location_id > 0 && location_id <= (int)(restart->n_locations))
+    retval = restart->location[location_id-1].n_ents;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print the index associated with a restart file in read mode
+ *
+ * \param[in]  restart  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_dump_index(const cs_restart_t  *restart)
+{
+  size_t loc_id;
+
+  assert(restart != NULL);
+
+  for (loc_id = 0; loc_id < restart->n_locations; loc_id++) {
+    const _location_t *loc = &(restart->location[loc_id]);
+    bft_printf(_("  Location: %s\n"
+                 "    (number: %03d, n_glob_ents: %llu)\n"),
+               loc->name, (int)(loc->id),
+               (unsigned long long)(loc->n_glob_ents));
+  }
+  if (restart->n_locations > 0)
+    bft_printf("\n");
+
+  /* Dump general file info, including index */
+
+  bft_printf(_("  General information associated with the restart file:\n"));
+
+  cs_io_dump(restart->fh);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the presence of a given section in a restart file.
+ *
+ * \param[in]  restart          associated restart file pointer
+ * \param[in]  sec_name         section name
+ * \param[in]  location_id      id of corresponding location
+ * \param[in]  n_location_vals  number of values per location (interlaced)
+ * \param[in]  val_type         value type
+ *
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_check_section(cs_restart_t           *restart,
+                         const char             *sec_name,
+                         int                     location_id,
+                         int                     n_location_vals,
+                         cs_restart_val_type_t   val_type)
+{
+  assert(restart != NULL);
+
+  return _check_section_f(restart,
+                          _restart_context,
+                          sec_name,
+                          location_id,
+                          n_location_vals,
+                          val_type);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a section from a restart file.
+ *
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   location_id      id of corresponding location
+ * \param[in]   n_location_vals  number of values per location (interlaced)
+ * \param[in]   val_type         value type
+ * \param[out]  val              array of values
+ *
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_section(cs_restart_t           *restart,
+                        const char             *sec_name,
+                        int                     location_id,
+                        int                     n_location_vals,
+                        cs_restart_val_type_t   val_type,
+                        void                   *val)
+{
+  double timing[2];
+
+  timing[0] = cs_timer_wtime();
+
+  assert(restart != NULL);
+
+  int retval = _read_section_f(restart,
+                               _restart_context,
+                               sec_name,
+                               location_id,
+                               n_location_vals,
+                               val_type,
+                               val);
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[restart->mode] += timing[1] - timing[0];
+
+  /* Return */
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write a section to a restart file.
+ *
+ * \param[in]  restart          associated restart file pointer
+ * \param[in]  sec_name         section name
+ * \param[in]  location_id      id of corresponding location
+ * \param[in]  n_location_vals  number of values per location (interlaced)
+ * \param[in]  val_type         value type
+ * \param[in]  val              array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_section(cs_restart_t           *restart,
+                         const char             *sec_name,
+                         int                     location_id,
+                         int                     n_location_vals,
+                         cs_restart_val_type_t   val_type,
+                         const void             *val)
+{
+  double timing[2];
+
+  timing[0] = cs_timer_wtime();
+
+  assert(restart != NULL);
+
+  _write_section_f(restart,
+                   _restart_context,
+                   sec_name,
+                   location_id,
+                   n_location_vals,
+                   val_type,
+                   val);
+
+  timing[1] = cs_timer_wtime();
+  _restart_wtime[restart->mode] += timing[1] - timing[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read basic particles information from a restart file.
  *
  * This includes building a matching location and associated global numbering.
  *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   name         <-- name of particles set
- *   n_particles  --> number of particles, or NULL
+ * \param[in]   restart      associated restart file pointer
+ * \param[in]   name         name of particles set
+ * \param[out]  n_particles  number of particles, or NULL
  *
- * returns:
- *   the location id assigned to the particles, or -1 in case of error
- *----------------------------------------------------------------------------*/
+ * \return  the location id assigned to the particles, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_particles_info(cs_restart_t  *restart,
@@ -2280,19 +2683,19 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
   return loc_id + 1;
 }
 
-/*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read basic particles information from a restart file.
  *
- * parameters:
- *   restart               <-- associated restart file pointer
- *   particles_location_id <-- location id of particles set
- *   particle_cell_num     --> local cell number to which particles belong
- *                             (1 to n; 0 for "unlocated" particles)
- *   particle_coords       --> local particle coordinates (interleaved)
+ * \param[in]   restart                associated restart file pointer
+ * \param[in]   particles_location_id  location id of particles set
+ * \param[out]  particle_cell_id       local cell id to which particles belong
+ * \param[out]  particle_coords        local particle coordinates (interleaved)
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_particles(cs_restart_t  *restart,
@@ -2386,26 +2789,27 @@ cs_restart_read_particles(cs_restart_t  *restart,
   return retcode;
 }
 
-/*----------------------------------------------------------------------------
- * Write basic particles information to a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write basic particles information to a restart file.
  *
  * This includes defining a matching location and associated global numbering,
  * then writing particle coordinates and cell ids.
  *
- * parameters:
- *   restart           <-- associated restart file pointer
- *   name              <-- name of particles set
- *   number_by_coords  <-- if true, numbering is based on current coordinates;
- *                         otherwise, it is simply based on local numbers,
- *                         plus the sum of particles on lower MPI ranks
- *   n_particles       <-- local number of particles
- *   particle_cell_num <-- local cell number (1 to n) to which particles
- *                         belong; 0 for untracked particles
- *   particle_coords   <-- local particle coordinates (interleaved)
+ * \param[in]  restart            associated restart file pointer
+ * \param[in]  name               name of particles set
+ * \param[in]  number_by_coords   if true, numbering is based on current
+ *                                coordinates; otherwise, it is simply based
+ *                                on local numbers, plus the sum of particles
+ *                                on lower MPI ranks
+ * \param[in]  n_particles        local number of particles
+ * \param[in]  particle_cell_num  local cell number (1 to n) to which particles
+ *                                belong; 0 for untracked particles
+ * \param[in]  particle_coords    local particle coordinates (interleaved)
  *
- * returns:
- *   the location id assigned to the particles
- *----------------------------------------------------------------------------*/
+ * \return  the location id assigned to the particles
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_write_particles(cs_restart_t     *restart,
@@ -2518,8 +2922,9 @@ cs_restart_write_particles(cs_restart_t     *restart,
   return loc_id;
 }
 
-/*----------------------------------------------------------------------------
- * Read a referenced location id section from a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a referenced location id section from a restart file.
  *
  * The section read from file contains the global ids matching the local
  * element ids of a given location. Global id's are transformed to local
@@ -2528,17 +2933,18 @@ cs_restart_write_particles(cs_restart_t     *restart,
  * In case global referenced ids read do not match those of local elements,
  * id_base - 1 is assigned to the corresponding local ids.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of location on which id_ref is defined
- *   ref_location_id <-- id of referenced location
- *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
- *   ref_id          --> array of location entity ids
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   location_id      id of location on which id_ref is defined
+ * \param[in]   ref_location_id  id of referenced location
+ * \param[in]   ref_id_base      base of location entity id numbers
+ *                               (usually 0 or 1)
+ * \param[out]  ref_id           array of location entity ids
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_ids(cs_restart_t     *restart,
@@ -2626,20 +3032,22 @@ cs_restart_read_ids(cs_restart_t     *restart,
   return retcode;
 }
 
-/*----------------------------------------------------------------------------
- * Write a referenced location id section to a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write a referenced location id section to a restart file.
  *
  * The section written to file contains the global ids matching the
  * local element ids of a given location.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of location on which id_ref is defined
- *   ref_location_id <-- id of referenced location
- *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
- *   ref_id          <-- array of location entity ids
- *----------------------------------------------------------------------------*/
+ * \param[in]  restart          associated restart file pointer
+ * \param[in]  sec_name         section name
+ * \param[in]  location_id      id of location on which id_ref is defined
+ * \param[in]  ref_location_id  id of referenced location
+ * \param[in]  ref_id_base      base of location entity id numbers
+ *                              (usually 0 or 1)
+ * \param[in]  ref_id           array of location entity ids
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_write_ids(cs_restart_t           *restart,
@@ -2726,21 +3134,22 @@ cs_restart_write_ids(cs_restart_t           *restart,
   BFT_FREE(g_num);
 }
 
-/*----------------------------------------------------------------------------
- * Read a section from a restart file, when that section may have used a
- * different name in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a section from a restart file, when that section may have used
+ *         a different name in a previous version.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
- *   val             --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   location_id      id of corresponding location
+ * \param[in]   n_location_vals  number of values per location (interlaced)
+ * \param[in]   val_type         value type
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_section_compat(cs_restart_t           *restart,
@@ -2798,25 +3207,26 @@ cs_restart_read_section_compat(cs_restart_t           *restart,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Read a cs_real_3_t vector section from a restart file, when that
- * section may have used a different name and been non-interleaved
- * in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a cs_real_3_t vector section from a restart file, when that
+ *         section may have used a different name and been non-interleaved
+ *         in a previous version.
  *
- * This file assumes a mesh-base location (i.e. location_id > 0)
+ * This function assumes a mesh-base location (i.e. location_id > 0)
  *
- * parameters:
- *   restart     <-- associated restart file pointer
- *   sec_name    <-- section name
- *   old_name_x  <-- old name, x component
- *   old_name_y  <-- old name, y component
- *   old_name_y  <-- old name, z component
- *   location_id <-- id of corresponding location (> 0)
- *   val         --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   old_name_x       old name, x component
+ * \param[in]   old_name_y       old name, y component
+ * \param[in]   old_name_y       old name, z component
+ * \param[in]   location_id      id of corresponding location
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
@@ -2908,28 +3318,29 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Read a cs_real_6_t vector section from a restart file, when that
- * section may have used a different name and been non-interleaved
- * in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a cs_real_6_t tensor section from a restart file, when that
+ *         section may have used a different name and been non-interleaved
+ *         in a previous version.
  *
- * This file assumes a mesh-base location (i.e. location_id > 0)
+ * This function assumes a mesh-base location (i.e. location_id > 0)
  *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   sec_name     <-- section name
- *   old_name_xx  <-- old name, xx component
- *   old_name_yy  <-- old name, yy component
- *   old_name_zz  <-- old name, zz component
- *   old_name_xy  <-- old name, xy component
- *   old_name_yz  <-- old name, xy component
- *   old_name_xz  <-- old name, xy component
- *   location_id  <-- id of corresponding location (> 0)
- *   val          --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   old_name_xx      old name, xx component
+ * \param[in]   old_name_yy      old name, yy component
+ * \param[in]   old_name_zz      old name, zz component
+ * \param[in]   old_name_xy      old name, xy component
+ * \param[in]   old_name_yz      old name, yz component
+ * \param[in]   old_name_xz      old name, xz component
+ * \param[in]   location_id      id of corresponding location
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
@@ -3049,28 +3460,29 @@ cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Read a cs_real_66_t vector section from a restart file, when that
- * section may have used a different name and been non-interleaved
- * in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a cs_real_66_t tensor section from a restart file, when that
+ *         section may have used a different name and been non-interleaved
+ *         in a previous version.
  *
- * This file assumes a mesh-base location (i.e. location_id > 0)
+ * This function assumes a mesh-base location (i.e. location_id > 0)
  *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   sec_name     <-- section name
- *   old_name_xx  <-- old name, xx component
- *   old_name_yy  <-- old name, yy component
- *   old_name_zz  <-- old name, zz component
- *   old_name_xy  <-- old name, xy component
- *   old_name_yz  <-- old name, xy component
- *   old_name_xz  <-- old name, xy component
- *   location_id  <-- id of corresponding location (> 0)
- *   val          --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   old_name_xx      old name, xx component
+ * \param[in]   old_name_yy      old name, yy component
+ * \param[in]   old_name_zz      old name, zz component
+ * \param[in]   old_name_xy      old name, xy component
+ * \param[in]   old_name_yz      old name, yz component
+ * \param[in]   old_name_xz      old name, xz component
+ * \param[in]   location_id      id of corresponding location
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
@@ -3188,9 +3600,12 @@ cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
 
   return retval;
 }
-/*----------------------------------------------------------------------------
- * Print statistics associated with restart files
- *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print statistics associated with restart files
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_print_stats(void)

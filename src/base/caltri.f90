@@ -160,6 +160,24 @@ interface
     implicit none
   end subroutine cs_gui_profile_output
 
+  !=============================================================================
+
+  subroutine cs_restart_map_build()  &
+    bind(C, name='cs_restart_map_build')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_restart_map_build
+
+  !=============================================================================
+
+  subroutine cs_restart_map_free()  &
+    bind(C, name='cs_restart_map_free')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_restart_map_free
+
+  !=============================================================================
+
 end interface
 
 !===============================================================================
@@ -547,6 +565,8 @@ if (isuite.eq.1) then
 
   call timer_stats_start(restart_stats_id)
 
+  call cs_restart_map_build
+
   call lecamo
 
   ! Using ALE, geometric parameters must be recalculated
@@ -567,6 +587,18 @@ if (isuite.eq.1) then
 
   endif
 
+  ! Radiative module restart */
+  if (iirayo.gt.0) then
+    call cs_rad_transfer_read
+  endif
+
+  ! Lagrangian module restart (particles) */
+  if (iilagr.gt.0) then
+    call laglec()
+  endif
+
+  call cs_restart_map_free
+
   call timer_stats_stop(restart_stats_id)
 
 endif
@@ -577,22 +609,6 @@ endif
 !===============================================================================
 
 call inivar(nvar, nscal)
-
-!===============================================================================
-! Radiative transfer: possible restart
-!===============================================================================
-
-if (iirayo.gt.0) then
-   call cs_rad_transfer_read
-endif
-
-!===============================================================================
-! Initialize particles for Lagrangian module
-!===============================================================================
-
-if (iilagr.gt.0) then
-  call laglec()
-endif
 
 !===============================================================================
 ! Initializations for the 1D thermal wall module
@@ -622,17 +638,12 @@ if (nfpt1t.gt.0) then
 
   else
 
-!     Creation du maillage, initialisation de la temperature.
+    ! Create mesh, initialize temperature.
     call cs_1d_wall_thermal_mesh_create
 
   endif
 
 endif
-
-!     Les infos sur l'epaisseur de la paroi, le nombre de points de
-!     discretisation et la raison geometrique ont ete transmises a
-!     la structure C. Elles sont maintenant inutiles dans le Fortran.
-!     -> on libere la memoire.
 
 !===============================================================================
 ! Initialization for the Synthetic turbulence Inlets
@@ -646,7 +657,8 @@ if (isuisy.eq.1) then
   call lecsyn('les_inflow'//c_null_char)
 endif
 
-! ATMO MODULE : INITIALIZATION FOR THE SOIL MODEL (ippmo(iatmos) = 2)
+!===============================================================================
+! Initialization for the atmospheric soil model
 !===============================================================================
 
 if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
@@ -701,10 +713,7 @@ if (ivrtex.eq.1) then
 
   iappel = 1
 
-  call usvort &
- ( nvar   , nscal  , iappel ,                                     &
-   dt     )
-
+  call usvort(nvar, nscal, iappel, dt)
   call vorver (nfabor, iappel)
 
   call init_vortex

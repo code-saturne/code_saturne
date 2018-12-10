@@ -51,6 +51,8 @@
 #include "cs_preprocess.h"
 #include "cs_probe.h"
 #include "cs_prototypes.h"
+#include "cs_restart.h"
+#include "cs_restart_map.h"
 #include "cs_rotation.h"
 #include "cs_selector.h"
 #include "cs_stokes_model.h"

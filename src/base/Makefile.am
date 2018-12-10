@@ -142,6 +142,7 @@ cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
 cs_restart_default.h \
+cs_restart_map.h \
 cs_rotation.h \
 cs_sat_coupling.h \
 cs_search.h \
@@ -297,6 +298,7 @@ cs_range_set.c \
 cs_resource.c \
 cs_restart.c \
 cs_restart_default.c \
+cs_restart_map.c \
 cs_rotation.c \
 cs_sat_coupling.c \
 cs_search.c \

@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add cs_restart_map_set_mesh_input function to allow mapping restarts
+  from computation using a different mesh.
+
 - Add option --create-xml to studymanager command allowing to generate a xml
   studymanager parameter file automatically from within a study directory.
 
