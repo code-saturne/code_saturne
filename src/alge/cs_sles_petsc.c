@@ -189,6 +189,93 @@ static PetscLogStage _log_stage[2];
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Export the linear system using PETSc Viewer mechanism
+ *
+ * parameters:
+ *   name <-- name of the related linear system
+ *   ksp  <-- Pointer to PETSc KSP structure
+ *   rhs  <-- PETSc vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_export_petsc_system(const char   *name,
+                     KSP           ksp,
+                     Vec           b)
+{
+  const char *p = getenv("CS_PETSC_SYSTEM_VIEWER");
+
+  if (p == NULL)
+    return;
+
+  /* Get system and preconditioner matrixes */
+
+  Mat a, pa;
+  KSPGetOperators(ksp, &a, &pa);
+
+  char  *filename = NULL;
+  int len = strlen(name) + strlen("_matrix.dat") + 1;
+  BFT_MALLOC(filename, len, char);
+
+  if (strcmp(p, "BINARY") == 0) {
+
+    PetscViewer viewer;
+
+    /* Matrix */
+    sprintf(filename, "%s_matrix.dat", name);
+    PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename, FILE_MODE_WRITE, &viewer);
+    MatView(a, viewer);
+    PetscViewerDestroy(&viewer);
+
+    /* Right-hand side */
+    sprintf(filename, "%s_rhs.dat", name);
+    PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename, FILE_MODE_WRITE, &viewer);
+    VecView(b, viewer);
+    PetscViewerDestroy(&viewer);
+
+  }
+  else if (strcmp(p, "ASCII") == 0) {
+
+    PetscViewer viewer;
+
+    /* Matrix */
+    sprintf(filename, "%s_matrix.txt", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    MatView(a, viewer);
+    PetscViewerDestroy(&viewer);
+
+    /* Right-hand side */
+    sprintf(filename, "%s_rhs.txt", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    VecView(b, viewer);
+    PetscViewerDestroy(&viewer);
+
+  }
+  else if (strcmp(p, "MATLAB") == 0) {
+
+    PetscViewer viewer;
+
+    /* Matrix */
+    sprintf(filename, "%s_matrix.m", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+    MatView(a, viewer);
+    PetscViewerPopFormat(viewer);
+    PetscViewerDestroy(&viewer);
+
+    /* Right-hand side */
+    sprintf(filename, "%s_rhs.m", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+    VecView(b, viewer);
+    PetscViewerPopFormat(viewer);
+    PetscViewerDestroy(&viewer);
+
+  }
+
+  BFT_FREE(filename);
+}
+
+/*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with shell matrix.
  *
  * parameters:
@@ -1305,6 +1392,9 @@ cs_sles_petsc_solve(void                *context,
   /* Resolution */
 
   KSPSolve(sd->ksp, b, x);
+
+  if (getenv("CS_PETSC_SYSTEM_VIEWER") != NULL)
+    _export_petsc_system(name, sd->ksp, b);
 
   VecDestroy(&x);
   VecDestroy(&b);

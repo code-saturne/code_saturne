@@ -120,52 +120,6 @@ _dump_petsc_setup(KSP          ksp)
 }
 
 /*----------------------------------------------------------------------------
- * \brief Add visualization of the matrix graph
- *
- * \param[in]  ksp     Krylov SubSpace structure
- *----------------------------------------------------------------------------*/
-
-static inline void
-_add_view(KSP          ksp)
-{
-  const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
-
-  if (p != NULL) {
-
-    /* Get system and preconditioner matrixes */
-
-    Mat a, pa;
-    KSPGetOperators(ksp, &a, &pa);
-
-    /* Output matrix in several ways depending on
-       CS_USER_PETSC_MAT_VIEW environment variable */
-
-    if (strcmp(p, "DEFAULT") == 0)
-      MatView(a, PETSC_VIEWER_DEFAULT);
-
-    else if (strcmp(p, "DRAW_WORLD") == 0)
-      MatView(a, PETSC_VIEWER_DRAW_WORLD);
-
-    else if (strcmp(p, "DRAW") == 0) {
-
-      PetscViewer viewer;
-      PetscDraw draw;
-      PetscViewerDrawOpen(PETSC_COMM_WORLD, NULL, "PETSc View",
-                          0, 0, 600, 600, &viewer);
-      PetscViewerDrawGetDraw(viewer, 0, &draw);
-      PetscViewerDrawSetPause(viewer, -1);
-      MatView(a, viewer);
-      PetscDrawPause(draw);
-
-      PetscViewerDestroy(&viewer);
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * \brief Set PETSc solver and preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
@@ -226,10 +180,10 @@ _petsc_setup_hook(void   *context,
   PetscInt  maxit;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(ksp,
-                   info.eps,          // relative convergence tolerance
-                   abstol,            // absolute convergence tolerance
-                   dtol,              // divergence tolerance
-                   info.n_max_iter);  // max number of iterations
+                   info.eps,          /* relative convergence tolerance */
+                   abstol,            /* absolute convergence tolerance */
+                   dtol,              /* divergence tolerance */
+                   info.n_max_iter);  /* max number of iterations */
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
@@ -260,10 +214,10 @@ _petsc_setup_hook(void   *context,
     PCSetType(pc, PCNONE);
     break;
   case CS_PARAM_PRECOND_DIAG:
-    PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
+    PCSetType(pc, PCJACOBI);    /* Jacobi (diagonal) preconditioning */
     break;
   case CS_PARAM_PRECOND_BJACOB:
-    PCSetType(pc, PCBJACOBI);  /* Block-Jacobi (diagonal) preconditioning */
+    PCSetType(pc, PCBJACOBI);   /* Block-Jacobi (diagonal) preconditioning */
 #if PETSC_VERSION_GE(3,7,0)
     PetscOptionsSetValue(NULL, "-sub_pc_factor_levels", "2");
 #else
@@ -354,8 +308,6 @@ _petsc_setup_hook(void   *context,
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-
-  _add_view(ksp);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook((void *)eqp, ksp);
