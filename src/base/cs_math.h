@@ -122,6 +122,62 @@ cs_math_binom(short int  n,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the absolute value of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the real of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_fabs(cs_real_t  x)
+{
+  cs_real_t ret = (x <  0) ? -x : x;
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the min value of two real values.
+ *
+ * \param[in]  x, y  values
+ *
+ * \return the min value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_fmin(cs_real_t  x,
+             cs_real_t  y)
+{
+  cs_real_t ret = (x <  y) ? x : y;
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the max value of two real values.
+ *
+ * \param[in]  x, y  values
+ *
+ * \return the max value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_fmax(cs_real_t  x,
+             cs_real_t  y)
+{
+  cs_real_t ret = (x <  y) ? y : x;
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the square of a real value.
  *
  * \param[in]  x  value
