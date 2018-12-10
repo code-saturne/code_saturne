@@ -80,9 +80,6 @@ static cs_tree_node_t *_notebook = NULL;
 void
 cs_notebook_load_from_file(void)
 {
-  if (_notebook == NULL)
-    _notebook = cs_tree_node_create("cs_notebook");
-
   _notebook = cs_tree_get_node(cs_glob_tree, "physical_properties/notebook/var");
 }
 
@@ -116,7 +113,6 @@ cs_notebook_parameter_value_by_name(const char *name)
   cs_real_t val = atof(c_value);
   return val;
 }
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -137,7 +133,6 @@ cs_notebook_parameter_value_by_name(const char *name)
 int
 cs_notebook_parameter_get_openturns_status(char *name)
 {
-
   cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook,
                                                         "name",
                                                         name);
@@ -175,7 +170,6 @@ cs_notebook_parameter_get_openturns_status(char *name)
 const char *
 cs_notebook_parameter_get_description(char *name)
 {
-
   cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook,
                                                         "name",
                                                         name);
@@ -189,7 +183,7 @@ cs_notebook_parameter_get_description(char *name)
   const char *d = cs_tree_node_get_tag(n, "description");
   return d;
 }
-/*----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

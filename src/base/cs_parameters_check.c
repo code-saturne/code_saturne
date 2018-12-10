@@ -121,10 +121,13 @@ static int  _param_check_errors = 0;
 
 /*----------------------------------------------------------------------------*
  * Build section description based on field label.
+ *
+ * The caller is responsible for freeing the returned array.
  *----------------------------------------------------------------------------*/
 
 inline static char *
-_field_section_desc(cs_field_t *f, const char *section_desc_b)
+_field_section_desc(cs_field_t  *f,
+                    const char  *section_desc_b)
 {
   const char *f_label = cs_field_get_label(f);
 
@@ -951,6 +954,8 @@ cs_parameters_check(void)
                                     "NVD scheme",
                                     limiter_choice,
                                     CS_NVD_GAMMA, CS_NVD_VOF_HRIC);
+
+      BFT_FREE(f_desc);
     }
   }
 
@@ -1487,6 +1492,7 @@ cs_parameters_check(void)
                                       "var_cal_opt.relaxv",
                                       var_cal_opt.relaxv,
                                       1.);
+        BFT_FREE(f_desc);
       } else { /* ikecou = 0 */
         f_desc = _field_section_desc(f, "while reading numerical "
                                         "parameters for variable");
@@ -1496,6 +1502,7 @@ cs_parameters_check(void)
                                          "var_cal_opt.relaxv",
                                          var_cal_opt.relaxv,
                                          0, 1);
+        BFT_FREE(f_desc);
       }
     }
   }
@@ -1515,6 +1522,7 @@ cs_parameters_check(void)
                                        "var_cal_opt.relaxv",
                                        var_cal_opt.relaxv,
                                        0, 1);
+      BFT_FREE(f_desc);
   }
 
   /* checks for RSM models */
@@ -2061,8 +2069,9 @@ cs_parameters_check(void)
                                   t_ext,
                                   -1,
                                   3);
-    }
 
+    BFT_FREE(f_desc);
+  }
 
   /* Check the consistency of the restart_file key */
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
