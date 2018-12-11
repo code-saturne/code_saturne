@@ -395,6 +395,7 @@ class domain(base_domain):
         # Directories, and files in case structure
 
         self.restart_input = None
+        self.restart_mesh_input = None
         self.mesh_input = None
         self.partition_input = None
 
@@ -672,6 +673,21 @@ class domain(base_domain):
             else:
                 self.symlink(restart_input,
                              os.path.join(self.exec_dir, 'restart'))
+
+        if self.restart_mesh_input != None and err_str == None:
+
+            restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
+            if not os.path.isabs(restart_mesh_input):
+                restart_mesh_input = os.path.join(self.case_dir,
+                                                  restart_mesh_input)
+
+            if not os.path.exists(restart_mesh_input):
+                err_str = restart_mesh_input + ' does not exist.\n\n'
+            elif not os.path.isfile(restart_mesh_input):
+                err_str = restart_mesh_input + ' is not a file.\n\n.'
+            else:
+                self.symlink(restart_mesh_input,
+                             os.path.join(self.exec_dir, 'restart_mesh_input'))
 
         # Partition input files
 

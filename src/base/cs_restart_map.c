@@ -283,16 +283,30 @@ _read_section_interpolate(cs_restart_t           *restart,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_map_set_mesh_input(const char  *mesh_path,
-                              float        tolerance_base,
-                              float        tolerance_fraction)
+cs_restart_map_set_mesh_input(const char  *mesh_path)
 {
   size_t n = strlen(mesh_path);
   BFT_REALLOC(_mesh_input_path, n + 1, char);
 
   strncpy(_mesh_input_path, mesh_path, n);
   _mesh_input_path[n] = '\0';
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set options relative to restart file mapping to a given mesh input.
+ *
+ * \param[in]  tolerance_base      associated base tolerance (used for bounding
+ *                                 box check only, not for location test)
+ * \param[in]  tolerance_fraction  associated fraction of element bounding
+ *                                 boxes added to tolerance
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_map_set_options(float  tolerance_base,
+                           float  tolerance_fraction)
+{
   _tolerance[0] = tolerance_base;
   _tolerance[1] = tolerance_fraction;
 }

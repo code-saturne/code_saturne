@@ -104,6 +104,31 @@ class StartRestartModel(Model):
 
 
     @Variables.noUndo
+    def getRestartMeshPath(self):
+        """
+        Return restart mesh path if applicable
+        """
+        node = self.node_start.xmlInitNode('restart_mesh', 'path')
+        restart_mesh = node['path']
+        if not restart_mesh:
+            restart_mesh = None
+            self.setRestartMeshPath(restart_mesh)
+        return restart_mesh
+
+
+    @Variables.undoLocal
+    def setRestartMeshPath(self, v):
+        """
+        Set restart mesh path if applicable
+        """
+        node = self.node_start.xmlInitNode('restart_mesh', 'path')
+        if v:
+            node['path'] = v
+        else:
+            node.xmlRemoveNode()
+
+
+    @Variables.noUndo
     def getFrozenField(self):
         """
         Return if the velocity and the pressure are solved

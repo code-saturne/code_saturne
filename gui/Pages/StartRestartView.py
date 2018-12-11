@@ -92,7 +92,8 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         self.modelFreq   = ComboModel(self.comboBoxFreq, 4, 1)
 
         self.modelFreq.addItem(self.tr("Never"), 'Never')
-        self.modelFreq.addItem(self.tr("Only at the end of the calculation"), 'At the end')
+        self.modelFreq.addItem(self.tr("Only at the end of the calculation"),
+                               'At the end')
         self.modelFreq.addItem(self.tr("4 restart checkpoints"), '4 output')
         self.modelFreq.addItem(self.tr("Checkpoints frequency :"), 'Frequency')
 
@@ -237,14 +238,17 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         self.radioButtonYes.clicked.connect(self.slotStartRestart)
         self.radioButtonNo.clicked.connect(self.slotStartRestart)
         self.toolButton.pressed.connect(self.slotSearchRestartDirectory)
+        self.toolButtonRestartMesh.pressed.connect(self.slotSearchRestartMesh)
         self.checkBox.clicked.connect(self.slotFrozenField)
         self.toolButtonAdvanced.pressed.connect(self.slotAdvancedOptions)
+        self.checkBoxRestartMesh.stateChanged.connect(self.slotRestartMesh)
 
         self.model = StartRestartModel(self.case)
 
         # Widget initialization
 
         self.restart_path = self.model.getRestartPath()
+        self.restart_mesh_path = self.model.getRestartMeshPath()
 
         if self.restart_path:
             if not os.path.isdir(os.path.join(self.case['case_path'],
@@ -255,10 +259,12 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
             self.radioButtonYes.setChecked(True)
             self.radioButtonNo.setChecked(False)
+            self.checkBoxRestartMesh.show()
 
         else:
             self.radioButtonYes.setChecked(False)
             self.radioButtonNo.setChecked(True)
+            self.checkBoxRestartMesh.hide()
 
         self.slotStartRestart()
 
@@ -267,7 +273,25 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         else:
             self.checkBox.setChecked(False)
 
+        self.updateRestartMeshView()
+
         self.case.undoStartGlobal()
+
+
+    def updateRestartMeshView(self):
+        """
+        Upate restart mesh path view
+        """
+        if self.restart_mesh_path:
+            self.checkBoxRestartMesh.setChecked(True)
+            self.lineEditRestartMesh.setText(self.restart_mesh_path)
+            self.lineEditRestartMesh.show()
+            self.toolButtonRestartMesh.show()
+        else:
+            self.checkBoxRestartMesh.setChecked(False)
+            self.lineEditRestartMesh.setText("")
+            self.lineEditRestartMesh.hide()
+            self.toolButtonRestartMesh.hide()
 
 
     @pyqtSlot()
@@ -275,7 +299,6 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         """
         Search restart file (directory) in list of directories
         """
-        title    = self.tr("Select checkpoint/restart directory")
 
         default = None
         l_restart_dirs = []
@@ -290,19 +313,21 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         if not default:
             default = self.case['case_path']
 
-        if hasattr(QFileDialog, 'ReadOnly'):
-            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
-        else:
-            options  = QFileDialog.DontUseNativeDialog
+        title = self.tr("Select checkpoint/restart directory")
+        options = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly | QFileDialog.ShowDirsOnly
 
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
         dialog.setDirectory(default)
 
-        if hasattr(dialog, 'setOptions'):
-            dialog.setOptions(options)
+        dialog.setOptions(options)
         dialog.setSidebarUrls(l_restart_dirs)
         dialog.setFileMode(QFileDialog.Directory)
+
+        name_filter = str(self.tr("Checkpoint directory (checkpoint*)"))
+        dialog.setNameFilter(name_filter)
+
+        dialog.setLabelText(QFileDialog.Accept, str(self.tr("Select")))
 
         if dialog.exec_() == 1:
 
@@ -316,6 +341,55 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.lineEdit.setText(self.restart_path)
 
             log.debug("slotSearchRestartDirectory-> %s" % self.restart_path)
+
+
+    @pyqtSlot()
+    def slotSearchRestartMesh(self):
+        """
+        Search restart mesh (file) in list of directories
+        """
+        title    = self.tr("Select checkpoint/restart mesh_input/output")
+
+        default = None
+        l_restart_dirs = []
+        for d in [os.path.join(os.path.split(self.case['case_path'])[0],
+                               'RESU_COUPLING'),
+                  os.path.join(self.case['case_path'], 'RESU')]:
+            if os.path.isdir(d):
+                l_restart_dirs.append(QUrl.fromLocalFile(d))
+                if not default:
+                    default = d
+
+        if not default:
+            default = self.case['case_path']
+
+        options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+
+        dialog.setOptions(options)
+        dialog.setSidebarUrls(l_restart_dirs)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+
+        name_filter = str(self.tr("Imported or preprocessed meshes (mesh_input mesh_output)"))
+        dialog.setNameFilter(name_filter)
+
+        dialog.setLabelText(QFileDialog.Accept, str(self.tr("Select")))
+
+        if dialog.exec_() == 1:
+
+            s = dialog.selectedFiles()
+
+            path = str(s[0])
+            path = os.path.abspath(path)
+
+            self.restart_mesh_path = RelOrAbsPath(path, self.case['case_path'])
+            self.model.setRestartMeshPath(self.restart_mesh_path)
+            self.lineEditRestartMesh.setText(self.restart_mesh_path)
+
+            log.debug("slotSearchRestartDirectory-> %s" % self.restart_mesh_path)
 
 
     @pyqtSlot()
@@ -338,12 +412,32 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.lineEdit.setText(self.restart_path)
         else:
             self.model.setRestartPath(None)
+            self.model.setRestartMeshPath(None)
             self.model.setFrozenField("off")
             self.radioButtonYes.setChecked(False)
             self.radioButtonNo.setChecked(True)
-
+            self.checkBoxRestartMesh.setChecked(False)
             self.frameRestart.hide()
             self.lineEdit.setText("")
+
+        self.updateRestartMeshView()
+
+
+    @pyqtSlot()
+    def slotRestartMesh(self):
+        """
+        Input different restart mesh.
+        """
+        if self.checkBoxRestartMesh.isChecked():
+            if not self.restart_mesh_path:
+                self.slotSearchRestartMesh()
+
+        else:
+            self.restart_mesh_path = None
+
+        self.model.setRestartMeshPath(self.restart_mesh_path)
+
+        self.updateRestartMeshView()
 
 
     @pyqtSlot()

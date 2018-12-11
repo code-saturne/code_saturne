@@ -866,7 +866,7 @@ class MeshInputDialog(QFileDialog):
         self.name_filter = str(self.tr("Imported or preprocessed meshes (mesh_input mesh_output)"))
         self.setNameFilter(self.name_filter)
 
-        self.select_label = str(self.tr("Choose"))
+        self.select_label = str(self.tr("Select"))
         self.setLabelText(QFileDialog.Accept, self.select_label)
 
         if hasattr(QFileDialog, 'ReadOnly'):

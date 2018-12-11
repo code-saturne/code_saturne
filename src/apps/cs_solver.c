@@ -98,6 +98,7 @@
 #include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_restart.h"
+#include "cs_restart_map.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_sat_coupling.h"
@@ -253,6 +254,10 @@ cs_run(void)
     cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
 
     cs_base_fortran_bft_printf_to_f();
+
+    const char default_restart_mesh[] = "restart_mesh_input";
+    if (cs_file_isreg(default_restart_mesh))
+      cs_restart_map_set_mesh_input(default_restart_mesh);
 
     cs_gui_init();
 

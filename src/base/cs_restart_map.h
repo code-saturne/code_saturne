@@ -66,6 +66,16 @@ BEGIN_C_DECLS
  * \brief  Indicate restart files should be mapped to a given mesh input
  *
  * \param[in]  mesh_path           path to mesh input
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_map_set_mesh_input(const char  *mesh_path);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set options relative to restart file mapping to a given mesh input.
+ *
  * \param[in]  tolerance_base      associated base tolerance (used for bounding
  *                                 box check only, not for location test)
  * \param[in]  tolerance_fraction  associated fraction of element bounding
@@ -74,9 +84,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_map_set_mesh_input(const char  *mesh_path,
-                              float        tolerance_base,
-                              float        tolerance_fraction);
+cs_restart_map_set_options(float  tolerance_base,
+                           float  tolerance_fraction);
 
 /*----------------------------------------------------------------------------*/
 /*!
