@@ -48,8 +48,9 @@
 
 #include "mei_evaluate.h"
 
-#include "cs_base.h"
 #include "cs_ale.h"
+#include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_boundary_zone.h"
 #include "cs_convection_diffusion.h"
 #include "cs_field_pointer.h"
@@ -381,6 +382,38 @@ _get_ale_boundary_nature(cs_tree_node_t  *tn_w)
     nature = ale_boundary_nature_fixed_displacement;
 
   return nature;
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the ale boundary type of a given boundary condition
+ *
+ * parameters:
+ *   tn_w <-- pointer to tree node for a given wall BC
+ *
+ * return:
+ *   associated boundary type
+ *----------------------------------------------------------------------------*/
+
+static cs_boundary_type_t
+_get_ale_boundary_type(cs_tree_node_t  *tn_w)
+{
+  cs_tree_node_t *tn = cs_tree_get_node(tn_w, "ale/choice");
+  const char *nat = cs_tree_node_get_value_str(tn);
+
+  if (cs_gui_strcmp(nat, "fixed_boundary"))
+    return CS_BOUNDARY_ALE_FIXED;
+  else if (cs_gui_strcmp(nat, "sliding_boundary"))
+    return CS_BOUNDARY_ALE_SLIDING;
+  else if (cs_gui_strcmp(nat, "internal_coupling"))
+    return CS_BOUNDARY_ALE_INTERNAL_COUPLING;
+  else if (cs_gui_strcmp(nat, "external_coupling"))
+    return CS_BOUNDARY_ALE_EXTERNAL_COUPLING;
+  else if (cs_gui_strcmp(nat, "fixed_velocity"))
+    return CS_BOUNDARY_ALE_IMPOSED_VEL;
+  else if (cs_gui_strcmp(nat, "fixed_displacement"))
+    return CS_BOUNDARY_ALE_IMPOSED_DISP;
+  else
+    return CS_BOUNDARY_N_TYPES;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1051,6 +1084,89 @@ cs_gui_mesh_viscosity(void)
     }
   }
   mei_tree_destroy(ev);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Translate the user settings for the domain boundaries into a
+ *         structure storing the ALE boundaries (New mechanism used in CDO)
+ *
+ * \param[in, out]  domain   pointer to a \ref cs_domain_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain)
+{
+  assert(domain != NULL);
+
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  /* Loop on wall boundary zones */
+
+  for (cs_tree_node_t *tn_w = cs_tree_node_get_child(tn_b0, "wall");
+       tn_w != NULL;
+       tn_w = cs_tree_node_get_next_of_name(tn_w)) {
+
+    const char *label = cs_tree_node_get_tag(tn_w, "label");
+
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      continue;
+
+    cs_boundary_type_t  ale_bdy = _get_ale_boundary_type(tn_w);
+
+    if (ale_bdy == CS_BOUNDARY_N_TYPES)
+      continue;
+
+    cs_boundary_add(domain->ale_boundaries,
+                    ale_bdy,
+                    z->name);
+
+  } /* Loop on wall boundary zones */
+
+    /* TODO */
+    /* else if (nature == ale_boundary_nature_fixed_displacement) { */
+    /*   t0 = cs_timer_wtime(); */
+    /*   for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) { */
+    /*     cs_lnum_t ifbr = faces_list[ifac]; */
+    /*     _uialcl_fixed_displacement(tn_w, */
+    /*                                m->b_face_vtx_idx[ifbr], */
+    /*                                m->b_face_vtx_idx[ifbr+1], */
+    /*                                m->b_face_vtx_lst, impale, disale, */
+    /*                                cs_glob_time_step->dt_ref, */
+    /*                                cs_glob_time_step->t_cur, */
+    /*                                cs_glob_time_step->nt_cur); */
+    /*   } */
+    /*   cs_gui_add_mei_time(cs_timer_wtime() - t0); */
+    /* } */
+    /* else if (nature == ale_boundary_nature_fixed_velocity) { */
+    /*   t0 = cs_timer_wtime(); */
+    /*   _uialcl_fixed_velocity(tn_w, *iuma, *ivma, *iwma, *ivimpo, */
+    /*                          m->n_b_faces, n_faces, faces_list, */
+    /*                          ialtyb, rcodcl, */
+    /*                          cs_glob_time_step->dt_ref, */
+    /*                          cs_glob_time_step->t_cur, */
+    /*                          cs_glob_time_step->nt_cur); */
+    /*   cs_gui_add_mei_time(cs_timer_wtime() - t0); */
+    /* } */
+
+  /* Loop on free surface boundary zones */
+
+  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_b0, "free_surface");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+
+    const char *label = cs_tree_node_get_tag(tn, "label");
+
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      continue;
+
+    cs_boundary_add(domain->ale_boundaries,
+                    CS_BOUNDARY_ALE_FREE_SURFACE,
+                    z->name);
+
+  } /* Loop on free surface boundaries */
 }
 
 /*----------------------------------------------------------------------------*/

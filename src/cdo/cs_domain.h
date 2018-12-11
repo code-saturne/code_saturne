@@ -96,6 +96,7 @@ typedef struct {
 
   /* Boundary of the computational domain */
   cs_boundary_t                 *boundaries;
+  cs_boundary_t                 *ale_boundaries;
 
   /* Time step management */
   bool                      only_steady;

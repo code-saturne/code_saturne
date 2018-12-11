@@ -46,12 +46,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct {
-
-  const char         *z_name;
-
-} cs_ale_bc_input_t;
-
 /*----------------------------------------------------------------------------
  * ALE type
  *----------------------------------------------------------------------------*/
@@ -185,32 +179,29 @@ cs_ale_is_activated(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_init_setup(cs_domain_t *domain);
+cs_ale_init_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Setup the equations solving the mesh velocity
  *
- * \param[in, out]   domain     pointer to a cs_domain_t structure
+ * \param[in]   domain       pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_setup_boundaries(const int           impale[],
-                        const int           ale_bc_type[]);
+cs_ale_setup_boundaries(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Finalize the setup stage for the equation of the mesh velocity
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_finalize_setup(const cs_cdo_connect_t       *connect,
-                      const cs_cdo_quantities_t    *cdoq);
+cs_ale_finalize_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

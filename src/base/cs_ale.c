@@ -98,10 +98,19 @@ cs_f_ale_get_pointers(int **iale)
  * Static global variables
  *============================================================================*/
 
-static cs_ale_bc_input_t *_input_bc = NULL;
 static cs_real_3_t *_vtx_coord0 = NULL;
 
 static bool cs_ale_active = false;
+
+
+/*----------------------------------------------------------------------------
+ * Deprecated ALE boundary condition types
+ *----------------------------------------------------------------------------*/
+ enum {
+   CS_ALE_FIXED = 1,
+   CS_ALE_SLIDING = 2,
+   CS_ALE_IMPOSED_VEL = 3
+ };
 
 /*============================================================================
  * Static function pointers
@@ -135,10 +144,10 @@ _fixed_velocity(cs_real_t           time,
   CS_UNUSED(time);
 
   cs_real_3_t vel = {0., 0., 0.};
-  cs_ale_bc_input_t *input_bc = (cs_ale_bc_input_t *)input;
+  const char *z_name = (const char *)input;
 
   /* Retrieving mesh velocity from GUI */
-  cs_gui_mobile_mesh_get_fixed_velocity(input_bc->z_name, vel);
+  cs_gui_mobile_mesh_get_fixed_velocity(z_name, vel);
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
     const cs_lnum_t  id = (pt_ids != NULL) ? 3*pt_ids[p] : 3*p;
@@ -226,10 +235,10 @@ _free_surface(cs_real_t           time,
   CS_UNUSED(xyz);
   CS_UNUSED(time);
 
-  cs_ale_bc_input_t *bc_input = (cs_ale_bc_input_t *)input;
+  const char *z_name = (const char *)input;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
-  const cs_zone_t *z = cs_boundary_zone_by_name(bc_input->z_name);
+  const cs_zone_t *z = cs_boundary_zone_by_name(z_name);
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_real_3_t *restrict vtx_coord
     = (const cs_real_3_t *restrict)m->vtx_coord;
@@ -345,32 +354,18 @@ _free_surface(cs_real_t           time,
  *
  * \param[in]     domain        domain quantities
  * \param[in]     impale        Indicator for fixed node displacement
- * \param[in]     ale_bc_type   Type of boundary for ALE
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _ale_solve_poisson_cdo(const cs_domain_t  *domain,
-                       const int           impale[],
-                       const int           ale_bc_type[])
+                       const int           impale[])
 {
-  cs_real_3_t *disale, *disala;
-
   const cs_mesh_t  *m = domain->mesh;
 
   /* Retrieving fields */
-  disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
-  disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
-
-  if (_vtx_coord0 == NULL) {
-
-    BFT_MALLOC(_vtx_coord0, m->n_vertices, cs_real_3_t);
-
-    memcpy(_vtx_coord0, m->vtx_coord, m->n_vertices * sizeof(cs_real_3_t));
-
-    cs_ale_setup_boundaries(impale, ale_bc_type);
-
-  }
+  cs_real_3_t  *disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
+  cs_real_3_t  *disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
 
   /* Build and solve equation on the mesh velocity */
   cs_equation_t *eq = cs_equation_by_name("mesh_velocity");
@@ -392,7 +387,7 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
 
   for (cs_lnum_t v = 0; v < m->n_vertices; v++) {
     if (impale[v] == 0) {
-      for (cs_lnum_t c_id = 0; c_id < 3; c_id++) {
+      for (int c_id = 0; c_id < 3; c_id++) {
         disale[v][c_id] =  disala[v][c_id]
                          + m_vel[v][c_id]*cs_glob_time_step->dt_ref;
       }
@@ -988,7 +983,7 @@ cs_ale_solve_mesh_velocity(const int   iterns,
     _ale_solve_poisson_legacy(cs_glob_domain, iterns, impale, ale_bc_type);
 
   else if (cs_glob_ale == CS_ALE_CDO)
-    _ale_solve_poisson_cdo(cs_glob_domain, impale, ale_bc_type);
+    _ale_solve_poisson_cdo(cs_glob_domain, impale);
 
 }
 
@@ -1060,7 +1055,7 @@ cs_ale_is_activated(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_init_setup(cs_domain_t *domain)
+cs_ale_init_setup(cs_domain_t   *domain)
 {
   const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
@@ -1090,131 +1085,99 @@ cs_ale_init_setup(cs_domain_t *domain)
 /*!
  * \brief Setup the equations solving the mesh velocity
  *
- * \param[in]     impale        Indicator for fixed node displacement
- * \param[in]     ale_bc_type   Type of boundary for ALE
+ * \param[in]   domain       pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_setup_boundaries(const int      impale[],
-                        const int      ale_bc_type[])
+cs_ale_setup_boundaries(const cs_domain_t   *domain)
 {
-  int face_type, imp_dis;
-
-  const cs_mesh_t *m = cs_glob_mesh;
-  const int n_zones = cs_boundary_zone_n_zones();
-
   cs_real_t bc_value = 0.;
-  cs_lnum_t _n_input_bc = 0;
-  bool is_defined = false;
-
-  /* Maximum size: n_zones */
-  BFT_MALLOC(_input_bc, n_zones, cs_ale_bc_input_t);
-
   cs_equation_param_t *eqp = cs_equation_param_by_name("mesh_velocity");
 
-  for (int iz = 0; iz < n_zones; iz++) {
+  for (int i = 0;  i < domain->ale_boundaries->n_boundaries; i++) {
 
-    const cs_zone_t *z = cs_boundary_zone_by_id(iz);
+    const int z_id = domain->ale_boundaries->zone_ids[i];
+    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
 
-    is_defined = false;
-    if (z->id > 0 && strcmp(z->name, "domain_walls") != 0) {
+    switch(domain->ale_boundaries->types[i]) {
 
-      /* User boundary conditions, already defined */
-      if (eqp->bc_defs != NULL) {
-        for (int jj = 0; jj < eqp->n_bc_defs; jj++) {
-          if (eqp->bc_defs[jj]->z_id == z->id) {
-            is_defined = true;
-            break;
-          }
-        }
-      }
+    case CS_BOUNDARY_ALE_FIXED:
 
-      if (is_defined)
-        continue;
+      cs_equation_add_bc_by_value(eqp,
+                                  CS_PARAM_BC_HMG_DIRICHLET,
+                                  z->name,
+                                  &bc_value);
 
-      /* Get face type */
-      for (cs_lnum_t ii = 0; ii < z->n_elts; ii++) {
+      break;
 
-        const cs_lnum_t  f_id = z->elt_ids[ii];
-        const cs_lnum_t  inod0 = m->b_face_vtx_lst[m->b_face_vtx_idx[f_id]];
+    case CS_BOUNDARY_ALE_IMPOSED_VEL:
+      cs_equation_add_bc_by_analytic(eqp,
+                                     CS_PARAM_BC_DIRICHLET,
+                                     z->name,
+                                     _fixed_velocity,
+                                     z->name); /* input */
 
-        face_type = ale_bc_type[f_id];
-        imp_dis = impale[inod0];
-        break;
-      }
+      break;
 
-      if (face_type == CS_ALE_FIXED) { /* Fixed boundary */
+    case CS_BOUNDARY_ALE_IMPOSED_DISP:
+      cs_equation_add_bc_by_analytic(eqp,
+                                     CS_PARAM_BC_DIRICHLET,
+                                     z->name,
+                                     _fixed_displacement,
+                                     z->name); /* input FIXME useless */
 
-        cs_equation_add_bc_by_value(eqp,
-                                    CS_PARAM_BC_HMG_DIRICHLET,
-                                    z->name,
-                                    &bc_value);
+      break;
 
-      }
-      else if (face_type == CS_ALE_IMPOSED_VEL &&
-               !imp_dis) {  /* Fixed velocity */
+    case CS_BOUNDARY_ALE_FREE_SURFACE:
+      cs_equation_add_bc_by_analytic(eqp,
+                                     CS_PARAM_BC_DIRICHLET,
+                                     z->name,
+                                     _free_surface,
+                                     z->name); /* input */
 
-        _input_bc[_n_input_bc].z_name = z->name;
+      break;
 
-        cs_equation_add_bc_by_analytic(eqp,
-                                       CS_PARAM_BC_DIRICHLET,
-                                       z->name,
-                                       _fixed_velocity,
-                                       _input_bc + _n_input_bc);
 
-        _n_input_bc++;
+    case CS_BOUNDARY_ALE_SLIDING:
+      break;                    /* TODO */
 
-      }
-      else if (face_type == CS_ALE_IMPOSED_VEL &&
-               imp_dis) {   /* Fixed displacement */
-
-        _input_bc[_n_input_bc].z_name = z->name;
-
-        cs_equation_add_bc_by_analytic(eqp,
-                                       CS_PARAM_BC_DIRICHLET,
-                                       z->name,
-                                       _fixed_displacement,
-                                       _input_bc + _n_input_bc);
-
-        _n_input_bc++;
-
-      }
-      else if (face_type == CS_FREE_SURFACE) { /* Free surface */
-
-        _input_bc[_n_input_bc].z_name = z->name;
-
-        cs_equation_add_bc_by_analytic(eqp,
-                                       CS_PARAM_BC_DIRICHLET,
-                                       z->name,
-                                       _free_surface,
-                                       _input_bc + _n_input_bc);
-
-        _n_input_bc++;
-
-      }
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Boundary for ALE not allowed  %s."),
+                __func__, z->name);
     }
 
-  } /* Loop on zones */
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Finalize the setup stage for the equation of the mesh velocity
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] domain       pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_finalize_setup(const cs_cdo_connect_t       *connect,
-                      const cs_cdo_quantities_t    *cdoq)
+cs_ale_finalize_setup(cs_domain_t     *domain)
 {
-  CS_UNUSED(connect);
-  CS_UNUSED(cdoq);
+  const cs_mesh_t  *m = domain->mesh;
 
-  return;
+  if (_vtx_coord0 == NULL) {
+
+    BFT_MALLOC(_vtx_coord0, m->n_vertices, cs_real_3_t);
+
+    memcpy(_vtx_coord0, m->vtx_coord, m->n_vertices * sizeof(cs_real_3_t));
+
+  }
+
+  /* Fill ALE boundaries */
+  cs_gui_mobile_mesh_get_boundaries(domain);
+
+  /* Set the boundary conditions */
+  cs_ale_setup_boundaries(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1227,7 +1190,6 @@ void
 cs_ale_destroy_all(void)
 {
   BFT_FREE(_vtx_coord0);
-  BFT_FREE(_input_bc);
 
   return;
 }

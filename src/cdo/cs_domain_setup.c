@@ -546,7 +546,7 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
                                     domain->time_step);
 
   if (cs_ale_is_activated())
-    cs_ale_finalize_setup(domain->connect, domain->cdo_quantities);
+    cs_ale_finalize_setup(domain);
 
   /* Last stage to define properties (when complex definition is requested) */
   cs_property_finalize_setup();

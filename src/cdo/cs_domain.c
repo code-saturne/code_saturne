@@ -198,6 +198,7 @@ cs_domain_create(void)
   /* By default a wall is defined for the whole boundary of the domain */
   cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_WALL);
   domain->boundaries = cs_glob_boundaries;
+  domain->ale_boundaries = cs_boundary_create(CS_BOUNDARY_ALE_FIXED);
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
@@ -239,6 +240,7 @@ cs_domain_free(cs_domain_t   **p_domain)
 
   /* Free arrays related to the domain boundary */
   cs_boundary_free(&(domain->boundaries));
+  cs_boundary_free(&(domain->ale_boundaries));
 
   /* Free CDO structures related to geometric quantities and connectivity */
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);

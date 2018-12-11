@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_domain.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -196,6 +197,17 @@ cs_gui_get_ale_viscosity_type(int  *type);
 
 void
 cs_gui_mesh_viscosity(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Translate the user settings for the domain boundaries into a
+ *         structure storing the ALE boundaries (New mechanism used in CDO)
+ *
+ * \param[in, out]  domain   pointer to a \ref cs_domain_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
