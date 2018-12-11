@@ -82,6 +82,9 @@ static cs_real_t  _machine_epsilon = 1.11e-16;
 
 const cs_real_t cs_math_zero_threshold = FLT_MIN;
 const cs_real_t cs_math_onethird = 1./3.;
+const cs_real_t cs_math_twothird = 2./3.;
+const cs_real_t cs_math_fourthird = 4./3.;
+const cs_real_t cs_math_fivethird = 5./3.;
 const cs_real_t cs_math_onesix = 1./6.;
 const cs_real_t cs_math_onetwelve = 1./12.;
 const cs_real_t cs_math_one24 = 1./24.;

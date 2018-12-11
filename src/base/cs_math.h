@@ -77,6 +77,9 @@ typedef enum {
 
 extern const cs_real_t cs_math_zero_threshold;
 extern const cs_real_t cs_math_onethird;
+extern const cs_real_t cs_math_twothird;
+extern const cs_real_t cs_math_fourthird;
+extern const cs_real_t cs_math_fivethird;
 extern const cs_real_t cs_math_onesix;
 extern const cs_real_t cs_math_onetwelve;
 extern const cs_real_t cs_math_one24;
