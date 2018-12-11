@@ -1351,6 +1351,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.Browser = BrowserView()
         self.ui_initialize()
 
+        # Code_Saturne doc
         self.displayCSManualAction.triggered.connect(self.displayCSManual)
         self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
         self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
@@ -1358,7 +1359,11 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
 
-        self.rename_doc_buttons()
+        # NCFD doc
+        self.displayNCManualAction.triggered.connect(self.displayNCManual)
+        self.displayNCTutorialAction.triggered.connect(self.displayNCTutorial)
+        self.displayNCTheoryAction.triggered.connect(self.displayNCTheory)
+        self.displayNCDoxygenAction.triggered.connect(self.displayNCDoxygen)
 
         self.actionUndo.triggered.connect(self.slotUndo)
         self.actionRedo.triggered.connect(self.slotRedo)
@@ -1366,8 +1371,11 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.actionCalculation.triggered.connect(self.slotCalculationMode)
 
         docdir = self.package.get_dir('docdir')
-        if os.path.isdir(docdir):
-            liste = os.listdir(docdir)
+
+        # Code_Saturne doc
+        ddcs = os.path.join(docdir, '../code_saturne')
+        if os.path.isdir(ddcs):
+            liste = os.listdir(ddcs)
         else:
             liste = []
 
@@ -1381,28 +1389,22 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:
             self.displayCSDoxygenAction.setEnabled(False)
-        self.displayNCManualAction.setVisible(False)
 
+        # NCFD doc
+        ddnc = os.path.join(docdir, '../neptune_cfd')
+        if os.path.isdir(ddnc):
+            liste = os.listdir(ddnc)
+        else:
+            liste = []
 
-    def rename_doc_buttons(self, pkg_name=None):
-
-        pn = pkg_name
-        if pn == None:
-            pn = self.package.name
-
-        if pn == 'code_saturne':
-            self.displayCSManualAction.setText("Code_Saturne")
-            self.displayCSTutorialAction.setText("Code_Saturne tutorial")
-            self.displayCSTheoryAction.setText("Code_Saturne theory")
-            self.displayCSSmgrAction.setText('Code_Saturne studymanager')
-            self.displayCSRefcardAction.setText('Code_Saturne reference card')
-            self.displayCSDoxygenAction.setText("Code_Saturne doxygen")
-
-        elif pn == 'neptune_cfd':
-            self.displayCSManualAction.setText("NEPTUNE_CFD")
-            self.displayCSTutorialAction.setText("NEPTUNE_CFD tutorial")
-            self.displayCSTheoryAction.setText("NEPTUNE_CFD theory")
-            self.displayCSDoxygenAction.setText("NEPTUNE_CFD doxygen")
+        if 'user.pdf' not in liste:
+            self.displayNCManualAction.setEnabled(False)
+        if 'tutorial.pdf' not in liste:
+            self.displayNCTutorialAction.setEnabled(False)
+        if 'theory.pdf' not in liste:
+            self.displayNCTheoryAction.setEnabled(False)
+        if 'doxygen' not in liste:
+            self.displayNCDoxygenAction.setEnabled(False)
 
 
     def initCase(self):  #Il faut rappeller cette methode des que l'on passe de CS a Neptune...
@@ -1414,12 +1416,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
             from neptune_cfd.nc_package import package as nc_package
             self.package = nc_package()
-            self.rename_doc_buttons()
             return XMLinitNeptune(self.case).initialize(self.case['prepro'])
         elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
             from code_saturne.cs_package import package as cs_package
             self.package = cs_package()
-            self.rename_doc_buttons()
             return XMLinit(self.case).initialize(self.case['prepro'])
 
 
@@ -1451,7 +1451,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the user manual
         """
-        self.displayManual(self.package, 'user')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'user')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'user')
 
 
     def displayCSTutorial(self):
@@ -1470,7 +1475,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the theory and programmer's guide
         """
-        self.displayManual(self.package, 'theory')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'theory')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'theory')
 
 
     def displayCSSmgr(self):
@@ -1479,7 +1489,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the studymanager guide
         """
-        self.displayManual(self.package, 'studymanager')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'studymanager')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'studymanager')
 
 
     def displayCSRefcard(self):
@@ -1488,7 +1503,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the quick reference card for Code_Saturne
         """
-        self.displayManual(self.package, 'refcard')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'refcard')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'refcard')
 
 
     def displayCSDoxygen(self):
@@ -1497,7 +1517,68 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the quick doxygen for Code_Saturne
         """
-        self.displayManual(self.package, 'Doxygen')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'Doxygen')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'Doxygen')
+
+
+    def displayNCManual(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'user')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'user')
+
+
+    def displayNCTutorial(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'tutorial')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'tutorial')
+
+
+    def displayNCTheory(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'theory')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'theory')
+
+
+    def displayNCDoxygen(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'doxygen')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'doxygen')
 
 
     def slotUndo(self):
