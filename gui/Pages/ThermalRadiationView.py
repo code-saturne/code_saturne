@@ -54,6 +54,8 @@ from code_saturne.Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadi
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.Pages.OutputControlModel import OutputControlModel
 
+from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -252,8 +254,16 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelAbsorption.disableItem(str_model='formula')
 
         # Initialization
-
         self.modelRadModel.setItem(str_model=self.mdl.getRadiativeModel())
+
+        # For multiphase flows, only droplet laden gas flows are accepted
+        if self.case['package'].name != 'code_saturne':
+            mfm = MainFieldsModel(self.case)
+            if mfm.getPredefinedFlow() != 'droplet_flow':
+                self.modelRadModel.setItem(str_model='off')
+                self.modelRadModel.disableItem(str_model='dom')
+                self.modelRadModel.disableItem(str_model='p-1')
+
         self.slotRadiativeTransfer()
 
         if self.mdl.getRestart() == 'on':
