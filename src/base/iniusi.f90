@@ -123,8 +123,21 @@ call parameters_read_restart_info
 iihmpr = cs_gui_file_is_loaded()
 
 !===============================================================================
-! 1. INITIALISATION DE PARAMETRES POUR LA PHASE CONTINUE
+! 1. Initialize model settings
 !===============================================================================
+
+! GUI
+
+call cs_gui_physical_model_select(ieos)
+
+! User subroutine
+
+iihmpu = iihmpr
+call usppmo(iihmpu)
+
+! User C function
+
+call cs_user_model
 
 !     Turbulence
 !     Chaleur massique variable ou non
@@ -142,6 +155,11 @@ if (iihmpr.eq.1) then
 
 endif
 
+! User subroutine
+
+iihmpu = iihmpr
+call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit, icfhgn)
+
 ! ALE parameters
 !---------------
 
@@ -150,12 +168,6 @@ endif
 if (iihmpr.eq.1) then
   call uialin (nalinf, nalimx, epalim)
 endif
-
-! User sub-routines
-! =================
-
-iihmpu = iihmpr
-call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit, icfhgn)
 
 ! Other model parameters, including user-defined scalars
 !-------------------------------------------------------
@@ -166,16 +178,9 @@ if (iihmpr.eq.1) then
   call cs_gui_user_variables
 endif
 
-! User sub-routines
-call cs_user_model
-
 !===============================================================================
 ! 2. Initialize parameters for specific physics
 !===============================================================================
-
-! GUI
-
-call cs_gui_physical_model_select(ieos)
 
 if (iihmpr.eq.1) then
   call cfnmtd(ficfpp, len(ficfpp))
@@ -192,15 +197,6 @@ endif
 
 call cs_gui_radiative_transfer_parameters
 
-! User subroutine
-
-! Initialize specific physics modules not available at the moment
-
-! User initialization
-
-iihmpu = iihmpr
-call usppmo(iihmpu)
-
 ! Define fields for variables, check and build iscapp
 if (icdo.lt.2) then
    call fldvar(nmodpp)
@@ -215,7 +211,6 @@ endif
 
 nscmax = nscamx
 nscusi = nscaus
-iihmpu = iihmpr
 
 ! ---> Physique particuliere : darcy
 
