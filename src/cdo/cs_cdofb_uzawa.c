@@ -299,10 +299,8 @@ _compute_residual(int              iter,
   /* Compute the residual related to the divergence of the velocity field */
   cs_real_t  div_res = cs_dot_wxx(quant->n_cells, quant->cell_vol, div);
 
-#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     cs_parall_sum(1, CS_REAL_TYPE, &div_res);
-#endif
 
   res = sqrt(div_res);
   cs_log_printf(CS_LOG_DEFAULT, "  Uzawa iteration #%4d >> Residual: %8.6e",
@@ -578,10 +576,9 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
   if (nsp->n_pressure_ic_defs > 0) {
     cs_real_t l2_p = sqrt(cs_dot_wxx(n_cells, quant->cell_vol, pr));
 
-#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1)
       cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
-#endif
+
     if (l2_p > 10*mom_eq->param->itsol_info.eps)
       o_norm_res =  1. / l2_p;
   } /* If needs a normalization */
@@ -1048,10 +1045,9 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
   if (nsp->n_pressure_ic_defs > 0) {
     cs_real_t l2_p = sqrt(cs_dot_wxx(n_cells, quant->cell_vol, pr));
 
-#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1)
       cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
-#endif
+
     if (l2_p > 10*mom_eq->param->itsol_info.eps)
       o_norm_res =  1. / l2_p;
 
@@ -1540,10 +1536,9 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
   if (nsp->n_pressure_ic_defs > 0) {
     cs_real_t l2_p = sqrt(cs_dot_wxx(n_cells, quant->cell_vol, pr));
 
-#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1)
       cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
-#endif
+
     if (l2_p > 10*mom_eq->param->itsol_info.eps)
       o_norm_res =  1. / l2_p;
 
