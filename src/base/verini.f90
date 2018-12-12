@@ -823,7 +823,7 @@ if (ippmod(icompf).ge.0) then
     write(nfecra,8020) viscv0
     iok = iok + 1
   endif
-  if (ieos.lt.1.or.ieos.gt.3) then
+  if (ieos.lt.1.or.ieos.gt.4) then
     write(nfecra,8030) 'IEOS (Equation of state. )',ieos
     iok = iok + 1
   endif

@@ -124,7 +124,7 @@ end subroutine usppmo
 !______________________________________________________________________________!
 
 subroutine usipph &
- ( ixmlpu, iturb , itherm, iale , ivofmt, icavit )
+ ( ixmlpu, iturb , itherm, iale , ivofmt, icavit , icfhgn )
 
 !===============================================================================
 ! Module files
@@ -140,7 +140,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu
-integer iturb, itherm, iale, ivofmt, icavit
+integer iturb, itherm, iale, ivofmt, icavit, icfhgn
 
 ! Local variables
 
@@ -431,6 +431,7 @@ use optcal
 use cstphy
 use parall
 use period
+use ppincl
 use ppppar
 use radiat
 

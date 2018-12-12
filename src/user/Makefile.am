@@ -88,6 +88,7 @@ cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_gwf.c \
 cs_user_head_losses.c \
+cs_user_hgn.c \
 cs_user_initialization.c \
 cs_user_lagr_model.c \
 cs_user_lagr_particle.c \

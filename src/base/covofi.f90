@@ -117,6 +117,7 @@ use cs_f_interfaces
 use atchem
 use darcy_module
 use cs_c_bindings
+use cs_cf_bindings
 use pointe, only: itypfb, pmapper_double_r1
 use atincl, only: kopint
 
@@ -1297,7 +1298,7 @@ call codits &
    xcpp   , rvoid  )
 
 !===============================================================================
-! 4. Writing and clipping
+! 4. clipping
 !===============================================================================
 
 call clpsca(iscal)
@@ -1311,6 +1312,14 @@ if (ippmod(idarcy).eq.1) then
   ! Treatment of precipitation for groundwater flow module.
   if (sorption_scal%imxsol.ge.0) then
     call cs_gwf_precipitation(ivarfl(ivar))
+  endif
+endif
+
+! Return to equilibrium source term step for volume, mass, energy fractions
+! in the compressible homogeneous two-phase model
+if (ippmod(icompf).ge.0.and.icfhgn.gt.0) then
+  if (icfhts.gt.0) then
+    call cs_cf_hgn_source_terms_step
   endif
 endif
 

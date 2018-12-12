@@ -87,7 +87,6 @@ double precision bc_en(nfabor), bc_pr(nfabor), bc_vel(3,nfabor)
 
 integer          iel    , ifac
 integer          ien
-integer          iflmab
 double precision und    , rund
 double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface

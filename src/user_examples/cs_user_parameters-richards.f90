@@ -131,7 +131,8 @@ end subroutine usppmo
 !______________________________________________________________________________!
 
 subroutine usipph &
- ( ixmlpu, iturb , itherm, iale , ivofmt, icavit )
+!================
+ ( ixmlpu, iturb , itherm, iale , ivofmt, icavit , icfhgn )
 
 !===============================================================================
 
@@ -144,7 +145,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu
-integer iturb, itherm, iale, ivofmt, icavit
+integer iturb, itherm, iale, ivofmt, icavit, icfhgn
 
 ! Local variables
 

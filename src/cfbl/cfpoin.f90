@@ -66,6 +66,7 @@ contains
 
   subroutine finalize_compf
 
+    use ppincl
     implicit none
 
     deallocate(ifbet, icvfli)

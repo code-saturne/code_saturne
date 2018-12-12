@@ -366,7 +366,7 @@ cs_f_field_gradient_scalar(int                    f_id,
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
-    cs_field_gradient_scalar(f,
+  cs_field_gradient_scalar(f,
                            _use_previous_t,
                            inc,
                            _recompute_cocg,

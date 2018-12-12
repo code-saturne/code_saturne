@@ -92,10 +92,13 @@ double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_pr, cvar_en, cpro_cp, cpro_cv
+double precision, dimension(:), pointer :: rvoid
 
 double precision cpi(1), cvi(1)
 
 !===============================================================================
+
+rvoid => null()
 
 !===============================================================================
 ! 0. INITIALISATION
@@ -150,11 +153,12 @@ runi  = crom(iel)     *uni
 
 l_size = 1
 
-
 call cs_cf_thermo_c_square(cpi, cvi, &
-                           bc_pr(ifac:ifac), brom(ifac:ifac), cd2, l_size)
+                           bc_pr(ifac:ifac), brom(ifac:ifac), &
+                           rvoid, rvoid, rvoid, cd2, l_size)
 call cs_cf_thermo_c_square(cpi, cvi, &
-                           cvar_pr(iel:iel), crom(iel:iel), ci2, l_size)
+                           cvar_pr(iel:iel), crom(iel:iel), &
+                           rvoid, rvoid, rvoid, ci2, l_size)
 
 cd    = sqrt(cd2(1))
 ci    = sqrt(ci2(1))

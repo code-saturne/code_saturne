@@ -105,6 +105,7 @@ cs_user_boundary_conditions(int         nvar,
                             cs_real_t   rcodcl[])
 {
   /*! [loc_var_dec] */
+  const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_real_3_t *b_face_normal
@@ -176,6 +177,8 @@ cs_user_boundary_conditions(int         nvar,
 
     cs_lnum_t nelts;
     cs_lnum_t *lstelt = NULL;
+
+    BFT_MALLOC(lstelt, m->n_b_faces, cs_lnum_t);
 
     sprintf(name, "%07d", transfo->ielecc[i]);
     cs_selector_get_b_face_list(name, &nelts, lstelt);
@@ -320,6 +323,8 @@ cs_user_boundary_conditions(int         nvar,
 
     cs_lnum_t nelts;
     cs_lnum_t *lstelt = NULL;
+
+    BFT_MALLOC(lstelt, m->n_b_faces, cs_lnum_t);
 
     sprintf(name, "%07d", transfo->ielecc[i]);
     cs_selector_get_b_face_list(name, &nelts, lstelt);

@@ -155,7 +155,7 @@ endif
 ! =================
 
 iihmpu = iihmpr
-call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
+call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit, icfhgn)
 
 ! Other model parameters, including user-defined scalars
 !-------------------------------------------------------

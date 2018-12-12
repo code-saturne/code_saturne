@@ -51,8 +51,8 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
-#include "cs_physical_constants.h"
 #include "cs_thermal_model.h"
+#include "cs_hgn_thermo.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -109,8 +109,6 @@ cs_cf_set_thermo_options(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize density, total energy and isochoric specific heat
  * according to the chosen thermodynamic law using the default parameters.
@@ -156,18 +154,21 @@ cs_cf_thermo_default_init(void)
     *ro0 = (p0 + psginf) / ((gamma-1.)*(*cv0)*t0);
     e0 = *cv0*t0 + psginf / *ro0;
   }
-  else
+  /* homogeneous two-phase TODOHGN */
+  else if (ieos == 4) {
+    *cv0 = 1.;
+    *ro0 = 1.;
+    e0 = 1.;
+  }
+  else {
     e0 = 0;
+  }
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     crom[cell_id] = *ro0;
     cvar_en[cell_id] = e0;
   }
 }
-
-/*----------------------------------------------------------------------------*/
-
-// TODO: the check function should be generalized (pass the name as argument).
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -177,6 +178,7 @@ cs_cf_thermo_default_init(void)
  * \param[in]     l_size  l_size of the array
  */
 /*----------------------------------------------------------------------------*/
+// FIXME: the check function should be generalized (pass the name as argument).
 
 void
 cs_cf_check_pressure(cs_real_t *pres,
@@ -206,8 +208,6 @@ cs_cf_check_pressure(cs_real_t *pres,
                 "Negative values of the pressure were encountered in %lu"
                 " cells.\n"), ierr);
 }
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -252,8 +252,6 @@ cs_cf_check_internal_energy(cs_real_t   *ener,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Check the positivity of the density given by the user.
  *
@@ -289,8 +287,6 @@ cs_cf_check_density(cs_real_t *dens,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Check strict positivity of temperature (Celsius) given by the user.
 
@@ -324,8 +320,6 @@ cs_cf_check_temperature(cs_real_t *temp,
                 "Negative values of the temperature were encountered in %lu"
                 " cells.\n"), ierr);
 }
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -398,8 +392,6 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute density and total energy from pressure and temperature
  *
@@ -466,9 +458,6 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
     BFT_FREE(gamma);
   }
 }
-
-/*----------------------------------------------------------------------------*/
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -547,8 +536,6 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute pressure and total energy from density and temperature
  *
@@ -615,8 +602,6 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute pressure and temperature from density and total energy.
  *
@@ -627,6 +612,9 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
  * \param[out]    pres    array of pressure values
  * \param[out]    temp    array of temperature values
  * \param[in]     vel     array of velocity component values
+ * \param[in,out] fracv   array of volume fraction values
+ * \param[in,out] fracm   array of mass fraction values
+ * \param[in,out] frace   array of energy fraction values
  * \param[in]     l_size  l_size of the array
  */
 /*----------------------------------------------------------------------------*/
@@ -639,6 +627,9 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
                         cs_real_t   *pres,
                         cs_real_t   *temp,
                         cs_real_3_t *vel,
+                        cs_real_t   *fracv,
+                        cs_real_t   *fracm,
+                        cs_real_t   *frace,
                         cs_lnum_t    l_size)
 {
   /*  Local variables */
@@ -689,9 +680,25 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
 
     BFT_FREE(gamma);
   }
-}
+  /* homogeneous two phase */
+  else if (ieos == 4) {
+    for (cs_lnum_t ii = 0; ii < l_size; ii++) {
+      cs_real_t v2 = cs_math_3_square_norm(vel[ii]);
 
-/*----------------------------------------------------------------------------*/
+      enint =  ener[ii] - 0.5*v2;
+
+      cs_real_t tau = 1./dens[ii];
+
+      cs_hgn_thermo_pt(fracv[ii],
+                       fracm[ii],
+                       frace[ii],
+                       enint,
+                       tau,
+                       &temp[ii],
+                       &pres[ii]);
+    }
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -703,12 +710,15 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
  *
  * \f[c^2  = \gamma \frac{p}{\rho}\f]
  *
- * \param[in]    cp      array of isobaric specific heat values
- * \param[in]    cv      array of isochoric specific heat values
- * \param[in]    pres    array of pressure values
- * \param[in]    dens    array of density values
- * \param[out]   c2      array of the values of the square of sound velocity
- * \param[in]    l_size  l_size of the array
+ * \param[in]     cp      array of isobaric specific heat values
+ * \param[in]     cv      array of isochoric specific heat values
+ * \param[in]     pres    array of pressure values
+ * \param[in]     dens    array of density values
+ * \param[in,out] fracv   array of volume fraction values
+ * \param[in,out] fracm   array of mass fraction values
+ * \param[in,out] frace   array of energy fraction values
+ * \param[out]    c2      array of the values of the square of sound velocity
+ * \param[in]     l_size  l_size of the array
  */
 /*----------------------------------------------------------------------------*/
 
@@ -717,6 +727,9 @@ cs_cf_thermo_c_square(cs_real_t *cp,
                       cs_real_t *cv,
                       cs_real_t *pres,
                       cs_real_t *dens,
+                      cs_real_t *fracv,
+                      cs_real_t *fracm,
+                      cs_real_t *frace,
                       cs_real_t *c2,
                       cs_lnum_t  l_size)
 {
@@ -749,9 +762,18 @@ cs_cf_thermo_c_square(cs_real_t *cp,
 
     BFT_FREE(gamma);
   }
-}
+  else if (ieos == 4){
+    for (cs_lnum_t ii = 0; ii < l_size; ii++) {
+      cs_real_t tau = 1./dens[ii];
 
-/*----------------------------------------------------------------------------*/
+      c2[ii] = cs_hgn_thermo_c2(fracv[ii],
+                                fracm[ii],
+                                frace[ii],
+                                pres[ii],
+                                tau);
+    }
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -808,8 +830,6 @@ cs_cf_thermo_beta(cs_real_t *cp,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the isochoric specific heat:
  *
@@ -842,8 +862,6 @@ cs_cf_thermo_cv(cs_real_t *cp,
       cv[ii] = cs_glob_fluid_properties->cv0;
   }
 }
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -903,8 +921,6 @@ cs_cf_thermo_s_from_dp(cs_real_t *cp,
     BFT_FREE(gamma);
   }
 }
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1007,8 +1023,6 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfa,
   }
 
 }
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1253,7 +1267,6 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
   }
 
 }
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1579,8 +1592,6 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute epsilon sup:
  *
@@ -1608,6 +1619,15 @@ cs_cf_thermo_eps_sup(cs_real_t *dens,
 
     for (cs_lnum_t ii = 0; ii < l_size; ii++)
       eps_sup[ii] = psginf / dens[ii];
+  }
+  /* TODO diffusion to be investigated for 2-phase homogeneous model */
+  else if (ieos == 4) {
+    for (cs_lnum_t ii = 0; ii < l_size; ii++)
+      eps_sup[ii] = 0.;
+  }
+  else {
+    for (cs_lnum_t ii = 0; ii < l_size; ii++)
+      eps_sup[ii] = 0.;
   }
 }
 
@@ -1661,6 +1681,9 @@ cs_cf_thermo_eps_sup(cs_real_t *dens,
  * \param[in,out] bc_pr         pressure values at boundary faces
  * \param[in,out] bc_tk         temperature values at boundary faces
  * \param[in,out] bc_vel        velocity values at boundary faces
+ * \param[in,out] bc_fracv      volume fraction values at boundary faces
+ * \param[in,out] bc_fracm      mass fraction values at boundary faces
+ * \param[in,out] bc_frace      energy fraction values at boundary faces
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1670,7 +1693,10 @@ cs_cf_thermo(const int    iccfth,
              cs_real_t   *bc_en,
              cs_real_t   *bc_pr,
              cs_real_t   *bc_tk,
-             cs_real_3_t *bc_vel)
+             cs_real_3_t *bc_vel,
+             cs_real_t   *bc_fracv,
+             cs_real_t   *bc_fracm,
+             cs_real_t   *bc_frace)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
@@ -1706,6 +1732,17 @@ cs_cf_thermo(const int    iccfth,
     if (face_id >= 0) cvb = cpro_cv[cell_id];
   }
 
+  cs_real_t *cvar_fracv, *cvar_fracm, *cvar_frace;
+  cvar_fracv = NULL;
+  cvar_fracm = NULL;
+  cvar_frace = NULL;
+
+  if (CS_F_(volume_f) != NULL){
+    cvar_fracv = (cs_real_t *)CS_F_(volume_f)->val;
+    cvar_fracm = (cs_real_t *)CS_F_(mass_f)->val;
+    cvar_frace = (cs_real_t *)CS_F_(energy_f)->val;
+  }
+
   /*  0. Initialization. */
 
   /*  Calculation of temperature and energy from pressure and density */
@@ -1737,8 +1774,13 @@ cs_cf_thermo(const int    iccfth,
   /*  Calculation of pressure and temperature from density and energy */
   else if (iccfth == 210000) {
     l_size = n_cells;
-    cs_cf_thermo_pt_from_de(cpro_cp, cpro_cv, crom, cvar_en, cvar_pr, cvar_tk,
-                            vel, l_size);
+    cs_cf_thermo_pt_from_de(cpro_cp, cpro_cv, crom,
+                            cvar_en, cvar_pr, cvar_tk,
+                            vel,
+                            cvar_fracv,
+                            cvar_fracm,
+                            cvar_frace,
+                            l_size);
   }
   /*  Calculation of temperature and energy from pressure and density
       (it is postulated that the pressure and density values are strictly
@@ -1773,8 +1815,12 @@ cs_cf_thermo(const int    iccfth,
   /*  Calculation of pressure and temperature from density and energy */
   else if (iccfth == 210900) {
     l_size = 1;
-    cs_cf_thermo_pt_from_de(&cpb, &cvb, &brom[face_id], &bc_en[face_id],
-                            &bc_pr[face_id], &bc_tk[face_id], &bc_vel[face_id],
+    cs_cf_thermo_pt_from_de(&cpb, &cvb, &brom[face_id],
+                            &bc_en[face_id], &bc_pr[face_id],
+                            &bc_tk[face_id], &bc_vel[face_id],
+                            &bc_fracv[face_id],
+                            &bc_fracm[face_id],
+                            &bc_frace[face_id],
                             l_size);
   }
 }

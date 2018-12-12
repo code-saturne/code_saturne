@@ -118,6 +118,10 @@ typedef enum {
 
   CS_ENUMF_(vism),         /*!< mesh viscosity */
 
+  CS_ENUMF_(volume_f),     /*!< homogeneous model volume fraction */
+  CS_ENUMF_(mass_f),       /*!< homogeneous model mass fraction */
+  CS_ENUMF_(energy_f),     /*!< homogeneous model energy fraction */
+
   CS_ENUMF_(pot_t),        /*!< potential temperature */
   CS_ENUMF_(totwt),        /*!< total water content */
   CS_ENUMF_(ntdrp),        /*!< total number of droplets */

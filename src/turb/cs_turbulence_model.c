@@ -307,7 +307,7 @@ BEGIN_C_DECLS
 static cs_turb_model_t  _turb_model =
 {
   .iturb  = -999,
-  .itytur = -999,
+  .itytur = -999
 };
 
 const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;

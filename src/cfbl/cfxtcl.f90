@@ -123,16 +123,18 @@ double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: wbfb, wbfa
 double precision, allocatable, dimension(:) :: bc_en, bc_pr, bc_tk
+double precision, allocatable, dimension(:) :: bc_fracv, bc_fracm, bc_frace
 double precision, allocatable, dimension(:,:) :: bc_vel
 
 double precision, dimension(:), pointer :: coefbp
 double precision, dimension(:), pointer :: crom, brom, cpro_cp, cpro_cv, cvar_en
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
+ call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
 ! 1. Initializations
@@ -145,6 +147,9 @@ allocate(w7(nfabor), wbfa(nfabor), wbfb(nfabor))
 allocate(bc_en(nfabor))
 allocate(bc_pr(nfabor))
 allocate(bc_tk(nfabor))
+allocate(bc_fracv(nfabor))
+allocate(bc_fracm(nfabor))
+allocate(bc_frace(nfabor))
 allocate(bc_vel(3,nfabor))
 
 ien = isca(ienerg)
@@ -155,8 +160,14 @@ call field_get_val_s(ibrom, brom)
 
 call field_get_val_s(ivarfl(ien), cvar_en)
 
-if (icp.ge.0) call field_get_val_s(icp, cpro_cp)
 if (icv.ge.0) call field_get_val_s(icv, cpro_cv)
+
+! mixture fractions for the homogeneous two-phase flows
+if (icfhgn.gt.0) then
+  call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
+  call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
+  call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
+endif
 
 ! list of the variables of the compressible model
 ivarcf(1) = ipr
@@ -466,6 +477,11 @@ do ifac = 1, nfabor
       rcodcl(ifac,iu,1)  = bc_vel(1,ifac)
       rcodcl(ifac,iv,1)  = bc_vel(2,ifac)
       rcodcl(ifac,iw,1)  = bc_vel(3,ifac)
+      if (icfhgn.gt.0) then ! TODO fill bc_frac...
+        rcodcl(ifac,isca(ifracv),1) = bc_fracv(ifac)
+        rcodcl(ifac,isca(ifracm),1) = bc_fracm(ifac)
+        rcodcl(ifac,isca(ifrace),1) = bc_frace(ifac)
+      endif
     else ! supersonic outlet
       rcodcl(ifac,ien,3) = 0.d0
       rcodcl(ifac,ipr,3) = 0.d0
@@ -473,7 +489,14 @@ do ifac = 1, nfabor
       rcodcl(ifac,iu,3)  = 0.d0
       rcodcl(ifac,iv,3)  = 0.d0
       rcodcl(ifac,iw,3)  = 0.d0
+      if (icfhgn.gt.0) then
+        rcodcl(ifac,isca(ifracv),3) = 0.d0
+        rcodcl(ifac,isca(ifracm),3) = 0.d0
+        rcodcl(ifac,isca(ifrace),3) = 0.d0
+      endif
     endif
+
+
 
 !===============================================================================
 ! 4.3 Boundary conditions codes (Dirichlet or Neumann)
@@ -497,6 +520,12 @@ do ifac = 1, nfabor
       icodcl(ifac,ien)   = 1
       ! temperature
       icodcl(ifac,itk)   = 1
+      ! mixture fractions
+      if (icfhgn.gt.0) then
+        icodcl(ifac,isca(ifracv))   = 1
+        icodcl(ifac,isca(ifracm))   = 1
+        icodcl(ifac,isca(ifrace))   = 1
+      endif
     else ! supersonic outlet
       icodcl(ifac,ipr)   = 3
       icodcl(ifac,iu)    = 3
@@ -504,6 +533,12 @@ do ifac = 1, nfabor
       icodcl(ifac,iw)    = 3
       icodcl(ifac,ien)   = 3
       icodcl(ifac,itk)   = 3
+      ! mixture fractions
+      if (icfhgn.gt.0) then
+        icodcl(ifac,isca(ifracv))   = 3
+        icodcl(ifac,isca(ifracm))   = 3
+        icodcl(ifac,isca(ifrace))   = 3
+      endif
     endif
 
 !-------------------------------------------------------------------------------
@@ -645,7 +680,7 @@ do ifac = 1, nfabor
 deallocate(w1, w2)
 deallocate(w4, w5, w6)
 deallocate(w7, wbfb, wbfa)
-deallocate(bc_en, bc_pr, bc_tk, bc_vel)
+deallocate(bc_en, bc_pr, bc_tk, bc_fracv, bc_fracm, bc_frace, bc_vel)
 
 !----
 ! FORMATS

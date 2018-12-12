@@ -110,11 +110,26 @@ double precision, allocatable, dimension(:) :: w1, c2
 double precision, dimension(:,:), pointer :: vela
 double precision, dimension(:), pointer :: crom, cpro_cp, cpro_cv
 double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
 !===============================================================================
 
 ! Map field arrays
 call field_get_val_prev_v(ivarfl(iu), vela)
+
+call field_get_val_s(icrom, crom)
+
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+
+if (icfhgn.gt.0) then
+   call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
+   call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
+   call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
+else
+  cvar_fracv => null()
+  cvar_fracm => null()
+  cvar_frace => null()
+endif
 
 !===============================================================================
 ! 0.  INITIALIZATION
@@ -126,10 +141,6 @@ allocate(coefbt(nfabor),cofbft(nfabor))
 
 ! Allocate work arrays
 allocate(w1(ncelet))
-
-call field_get_val_s(icrom, crom)
-
-call field_get_val_s(ivarfl(ipr), cvar_pr)
 
 !===============================================================================
 ! 1. COMPUTATION OF THE CFL CONDITION ASSOCIATED TO THE PRESSURE EQUATION
@@ -192,7 +203,8 @@ call matrdt &
 
 allocate(c2(ncelet))
 
-call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, c2, ncel)
+call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom,         &
+                           cvar_fracv, cvar_fracm, cvar_frace, c2, ncel)
 
 ! Compute the coefficient CFL/dt
 

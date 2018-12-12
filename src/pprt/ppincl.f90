@@ -555,6 +555,37 @@ module ppincl
   !> temperature deduced from the specific total energy
   integer, save :: itempk
 
+  !> \defgroup comp_homogeneous Homogeneous two-phase flow model
+
+  !> \addtogroup comp_homogeneous
+  !> \{
+
+  !> \anchor icfhgn
+  !> homogeneous model indicator
+  !>    -  0: standard compressible algorithm
+  !>    -  1: compressible homogeneous two-phase flow model
+  integer, save :: icfhgn
+
+  !> \anchor icfhts
+  !> homogeneous two-phase flow model indicator for source terms
+  !>    -  0: source terms are disabled
+  !>    -  1: source terms are enabled
+  integer, save :: icfhts
+
+  !> \anchor ifracv
+  !> homogeneous model, volume fraction \f$ \alpha \f$
+  integer, save :: ifracv
+
+  !> \anchor ifracm
+  !> homogeneous model, mass fraction \f$ y \f$
+  integer, save :: ifracm
+
+  !> \anchor ifrace
+  !> homogeneous model, energy fraction \f$ z \f$
+  integer, save :: ifrace
+
+  !> \}
+
   !> \defgroup comp_properties Physical properties
 
   !> \addtogroup comp_properties

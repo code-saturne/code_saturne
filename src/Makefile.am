@@ -150,6 +150,7 @@ pprt/ppincl.lo: pprt/ppppar.lo pprt/ppthch.lo
 pprt/ppthch.lo: base/cstphy.lo
 rayt/radiat.lo: pprt/ppppar.lo pprt/ppincl.lo base/optcal.lo pprt/ppcpfu.lo base/numvar.lo
 darc/darcy_module.lo: base/paramx.lo
+cfbl/cfpoin.lo: pprt/ppincl.lo
 
 # Additional local targets
 

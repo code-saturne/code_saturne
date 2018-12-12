@@ -482,8 +482,21 @@ cs_field_pointer_map_compressible(void)
   cs_field_pointer_map(CS_ENUMF_(t),
                        cs_field_by_name_try("temperature"));
 
+  /* map volume specific heat if it is non constant */
+
   cs_field_pointer_map(CS_ENUMF_(cv),
                        cs_field_by_name_try("specific_heat_const_vol"));
+
+  /* map fractions for homogeneous two phase model */
+
+  cs_field_pointer_map(CS_ENUMF_(volume_f),
+                       cs_field_by_name_try("volume_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(mass_f),
+                       cs_field_by_name_try("mass_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(energy_f),
+                       cs_field_by_name_try("energy_fraction"));
 }
 
 /*----------------------------------------------------------------------------*/

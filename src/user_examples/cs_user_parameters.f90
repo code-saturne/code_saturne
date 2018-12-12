@@ -436,7 +436,7 @@ end subroutine usppmo
 !______________________________________________________________________________!
 
 subroutine usipph &
- ( ixmlpu, iturb , itherm, iale , ivofmt, icavit )
+ ( ixmlpu, iturb , itherm, iale , ivofmt, icavit , icfhgn )
 
 !===============================================================================
 ! Module files
@@ -452,7 +452,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu
-integer iturb, itherm, iale, ivofmt, icavit
+integer iturb, itherm, iale, ivofmt, icavit, icfhgn
 
 ! Local variables
 
@@ -540,6 +540,14 @@ icavit = -1
 !      2: CDO solver
 
 iale = 1
+
+
+! --- Enable two phase homogeneous model
+!     (compressible module should be enabled first)
+
+
+icfhgn = 1
+
 
 !< [usipph]
 
@@ -1853,7 +1861,9 @@ implicit none
 
 ! Local variables
 
-integer :: ifcvsl
+integer :: ifcvsl, nphases
+
+double precision :: cv(2), gamma(2), pinf(2), qprim(2)
 
 !===============================================================================
 

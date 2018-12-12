@@ -214,19 +214,21 @@ else
 
   call ppiniv(nvar, nscal, dt)
 
-  if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
-                               .or.isuite.eq.1.and.ileaux.eq.0)) then
+endif
 
-    if (     ithvar.ne. 60000.and.ithvar.ne.100000                    &
-        .and.ithvar.ne.140000.and.ithvar.ne.150000.and.ithvar.ne.210000) then
-        write(nfecra,1000) ithvar
-        iok = iok + 1
-    endif
+call user_initialization()
 
-    ivoid = -1
-    call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
+if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
+                             .or.isuite.eq.1.and.ileaux.eq.0)) then
 
+  if (     ithvar.ne. 60000.and.ithvar.ne.100000                    &
+      .and.ithvar.ne.140000.and.ithvar.ne.150000.and.ithvar.ne.210000) then
+      write(nfecra,1000) ithvar
+      iok = iok + 1
   endif
+
+  ivoid = -1
+  call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
 
 endif
 

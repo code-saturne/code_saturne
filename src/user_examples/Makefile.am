@@ -87,6 +87,7 @@ cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_gwf-example.c \
 cs_user_head_losses.c \
+cs_user_hgn-relax_time_scale.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
 cs_user_lagr_model.c \

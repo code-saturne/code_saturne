@@ -124,117 +124,66 @@ integer          ifac, iok, ifvu, ii, izone, izonem
 !===============================================================================
 
 !===============================================================================
-! 1.  LISTE DES ZONES (pour n'importe quel modele)
+! 1. Zones list (for some models)
 !===============================================================================
 
-! --> Faces appartiennent toutes a une zone frontiere
+if (ippmod(icompf).lt.0) then
+  ! --> faces all belong to a boundary zone
+  iok = 0
 
-iok = 0
-
-do ifac = 1, nfabor
-  if(izfppp(ifac).le.0.or.izfppp(ifac).gt.nozppm) then
-    iok = iok + 1
-    izfppp(ifac) = min(0, izfppp(ifac))
-  endif
-enddo
-
-if (irangp.ge.0) call parcmx(iok)
-
-if (iok.gt.0) then
-  write(nfecra,1000) nozppm
-  call boundary_conditions_error(izfppp)
-endif
-
-! --> On construit une liste des numeros des zones frontieres.
-!           (liste locale au processeur, en parallele)
-nzfppp = 0
-do ifac = 1, nfabor
-  ifvu = 0
-  do ii = 1, nzfppp
-    if (ilzppp(ii).eq.izfppp(ifac)) then
-      ifvu = 1
+  do ifac = 1, nfabor
+    if(izfppp(ifac).le.0.or.izfppp(ifac).gt.nozppm) then
+      iok = iok + 1
+      izfppp(ifac) = min(0, izfppp(ifac))
     endif
   enddo
-  if(ifvu.eq.0) then
-    nzfppp = nzfppp + 1
-    if(nzfppp.le.nbzppm) then
-      ilzppp(nzfppp) = izfppp(ifac)
-    else
-      write(nfecra,1001) nbzppm
-      write(nfecra,1002)(ilzppp(ii),ii=1,nbzppm)
-      call csexit (1)
-      !==========
-    endif
+
+  if (irangp.ge.0) call parcmx(iok)
+
+  if (iok.gt.0) then
+    write(nfecra,1000) nozppm
+    call boundary_conditions_error(izfppp)
   endif
-enddo
 
-! ---> Plus grand numero de zone
+  ! a list gathering numbers of boundary zones is built
+  ! (list is local to a sub-domain in parallel)
+  nzfppp = 0
+  do ifac = 1, nfabor
+    ifvu = 0
+    do ii = 1, nzfppp
+      if (ilzppp(ii).eq.izfppp(ifac)) then
+        ifvu = 1
+      endif
+    enddo
+    if(ifvu.eq.0) then
+      nzfppp = nzfppp + 1
+      if(nzfppp.le.nbzppm) then
+        ilzppp(nzfppp) = izfppp(ifac)
+      else
+        write(nfecra,1001) nbzppm
+        write(nfecra,1002)(ilzppp(ii),ii=1,nbzppm)
+        call csexit (1)
+        !==========
+      endif
+    endif
+  enddo
 
-izonem = 0
-do ii = 1, nzfppp
-  izone = ilzppp(ii)
-  izonem = max(izonem,izone)
-enddo
-if(irangp.ge.0) then
-  call parcmx(izonem)
-  !==========
+  ! maximum zone number
+
+  izonem = 0
+  do ii = 1, nzfppp
+    izone = ilzppp(ii)
+    izonem = max(izonem,izone)
+  enddo
+  if(irangp.ge.0) then
+    call parcmx(izonem)
+    !==========
+  endif
+  nozapm = izonem
 endif
-nozapm = izonem
-
- 1000 format(                                                           &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : PHYSIQUE PARTICULIERE'                       ,/,&
-'@    ========='                                               ,/,&
-'@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES' ,/,&
-'@'                                                            ,/,&
-'@  Le numero de zone associee a certaines faces doit etre'    ,/,&
-'@    un entier strictement positif et inferieur ou egal a'    ,/,&
-'@    NOZPPM = ',I10                                           ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne peut etre execute.'                           ,/,&
-'@'                                                            ,/,&
-'@  Verifier les conditions aux limites.'                      ,/,&
-'@'                                                            ,/,&
-'@  Vous pouvez visualiser les faces de bord sorties en'       ,/,&
-'@  erreur.'                                                   ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PHYSIQUE PARTICULIERE                       ',/,&
-'@    =========                                               ',/,&
-'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
-'@                                                            ',/,&
-'@  Le nombre maximal de zones frontieres qui peuvent etre    ',/,&
-'@    definies par l''utilisateur est NBZPPM = ',I10           ,/,&
-'@    Il a ete depasse.                                       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les conditions aux limites.                      ',/,&
-'@                                                            ',/,&
-'@  Les NBZPPM premieres zones frontieres                     ',/,&
-'@    portent ici les numeros suivants :                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1002 format(i10)
-
-
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
-!                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LES SCALAIRES
-!    (selon le modele)
+! 2. Call to boundary conditions computations, model by model.
 !===============================================================================
 
 
@@ -311,6 +260,50 @@ endif
 !--------
 ! Formats
 !--------
+
+ 1000 format(                                                           &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : PHYSIQUE PARTICULIERE'                       ,/,&
+'@    ========='                                               ,/,&
+'@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES' ,/,&
+'@'                                                            ,/,&
+'@  Le numero de zone associee a certaines faces doit etre'    ,/,&
+'@    un entier strictement positif et inferieur ou egal a'    ,/,&
+'@    NOZPPM = ',I10                                           ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne peut etre execute.'                           ,/,&
+'@'                                                            ,/,&
+'@  Verifier les conditions aux limites.'                      ,/,&
+'@'                                                            ,/,&
+'@  Vous pouvez visualiser les faces de bord sorties en'       ,/,&
+'@  erreur.'                                                   ,/,&
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1001 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : PHYSIQUE PARTICULIERE                       ',/,&
+'@    =========                                               ',/,&
+'@    PROBLEME DANS LES CONDITIONS AUX LIMITES                ',/,&
+'@                                                            ',/,&
+'@  Le nombre maximal de zones frontieres qui peuvent etre    ',/,&
+'@    definies par l''utilisateur est NBZPPM = ',I10           ,/,&
+'@    Il a ete depasse.                                       ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier les conditions aux limites.                      ',/,&
+'@                                                            ',/,&
+'@  Les NBZPPM premieres zones frontieres                     ',/,&
+'@    portent ici les numeros suivants :                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1002 format(i10)
 
 !----
 ! End

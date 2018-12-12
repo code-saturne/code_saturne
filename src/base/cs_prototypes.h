@@ -725,6 +725,20 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
                      cs_real_t                   *dt);
 
+/*----------------------------------------------------------------------------
+ * Computation of the relaxation time-scale to equilibrium in the frame of
+ * the homogeneous two-phase model.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
+                              const cs_real_t *alpha_eq,
+                              const cs_real_t *y_eq,
+                              const cs_real_t *z_eq,
+                              const cs_real_t *ei,
+                              const cs_real_t *v,
+                              cs_real_t       *relax_tau);
+
 /*============================================================================
  *  CDO User function prototypes
  *============================================================================*/
