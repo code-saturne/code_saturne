@@ -183,8 +183,8 @@ _get_f2f(const cs_cdo_connect_t     *connect)
   f2f = cs_adjacency_compose(n_faces, connect->f2c, connect->c2f);
   cs_adjacency_sort(f2f);
 
-  /* Update index (v2v has a diagonal entry. We remove it since we have in
-     mind an index structure for a  matrix stored using the MSR format */
+  /* Update index (f2f has a diagonal entry. We remove it since we have in
+     mind an index structure for a matrix stored using the MSR format */
   cs_lnum_t  shift = 0;
   cs_lnum_t  prev_start = f2f->idx[0];
   cs_lnum_t  prev_end = f2f->idx[1];
