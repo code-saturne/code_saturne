@@ -811,7 +811,7 @@ class MainView(object):
 
         # Update the case and the StudyIdBar
         self.case['xmlfile'] = file_name
-        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
+        title = fn + " - " + self.tr(self.package.code_name) \
                    + " - " + self.package.version
         self.setWindowTitle(title)
 
@@ -831,26 +831,35 @@ class MainView(object):
         #Update Icon, Window Title Name and package name :
         icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
         if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-
-            icone = QIcon(QPixmap(icondir+"logoneptune.png")) #QIcon est dans QtGui / QPixmap est dans QtGui
-            self.displayLogo.setIcon(icone)
-
-            titre = self.windowTitle()
-            titre = titre.replace("Code_Saturne", "NEPTUNE_CFD")
-            self.setWindowTitle(titre)
-
             self.case['package'].name = 'NEPTUNE_CFD'
 
-        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
-
-            icone = QIcon(QPixmap(icondir+"MONO-bulle-HD.png")) #QIcon est dans QtGui / QPixmap est dans QtGui
-            self.displayLogo.setIcon(icone)
-
-            titre = self.windowTitle()
-            titre = titre.replace("NEPTUNE_CFD", "Code_Saturne")
-            self.setWindowTitle(titre)
-
+        else:
             self.case['package'].name = 'code_saturne'
+
+        self.updateTitleBar()
+
+
+    def updateTitleBar(self):
+        """
+        Update Icon, Window Title Name and package name.
+        """
+        icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
+
+        if self.case['package'].name == "NEPTUNE_CFD":
+            icon = QIcon(QPixmap(icondir+"logoneptune.png"))
+
+            title = self.windowTitle()
+            title = title.replace("Code_Saturne", "NEPTUNE_CFD")
+
+        else:
+            icon = QIcon(QPixmap(icondir+"MONO-bulle-HD.png"))
+
+            title = self.windowTitle()
+            title = title.replace("NEPTUNE_CFD", "Code_Saturne")
+
+        self.setWindowIcon(icon)
+        self.setWindowTitle(title)
+
 
     def fileOpen(self):
         """
@@ -1010,7 +1019,7 @@ class MainView(object):
                 self.updateStudyId()
                 self.case.xmlSaveDocument()
                 self.batchFileSave()
-                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
+                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) \
                      + " - " + self.package.version
                 self.setWindowTitle(title)
 

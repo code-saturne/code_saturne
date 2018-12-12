@@ -16,8 +16,9 @@
     <file>icons/22x22/x-office-address-book.png</file>
     <file>icons/22x22/help-browser.png</file>
     <file>icons/22x22/MONO-bulle-HD.png</file>
-    <file>icons/22x22/prepro-mode.png</file>
+    <file>icons/22x22/logoneptune.png</file>
     <file>icons/22x22/text-xml.png</file>
+    <file>icons/22x22/prepro-mode.png</file>
     <file>icons/22x22/calc-mode.png</file>
   </qresource>
 </RCC>

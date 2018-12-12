@@ -558,14 +558,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.init_neptune()
 
-            icone = QIcon(QPixmap(self.icondir+"logoneptune.png"))
-            self.parent.displayLogo.setIcon(icone)
-
-            title = self.parent.windowTitle()
-            title = title.replace("Code_Saturne", "NEPTUNE_CFD")
-            self.parent.setWindowTitle(title)
-
             self.case['package'].name = 'NEPTUNE_CFD'
+            self.parent.updateTitleBar()
 
         elif self.checkPrev == 'NeptuneCFD':
 
@@ -573,12 +567,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.init_saturne()
 
-            icone = QIcon(QPixmap(self.icondir+"MONO-bulle-HD.png"))
-            self.parent.displayLogo.setIcon(icone)
-
-            title = self.parent.windowTitle()
-            title = title.replace("NEPTUNE_CFD", "Code_Saturne")
-            self.parent.setWindowTitle(title)
+            self.parent.updateTitleBar()
 
             eval('self.radioButton'+checkCur+'.setChecked(True)')
 
