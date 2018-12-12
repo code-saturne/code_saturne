@@ -388,7 +388,6 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
  * \param[in, out]   mav               pointer to cs_matrix_assembler_values_t
  * \param[in, out]   rhs               right-end side of the system
  * \param[in, out]   eqc_st            source term from the context view
- *
  */
 /*----------------------------------------------------------------------------*/
 

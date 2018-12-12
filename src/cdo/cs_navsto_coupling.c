@@ -594,6 +594,152 @@ cs_navsto_ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
+ *         system is coupled using a monolithic approach
+ *
+ * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
+ *
+ * \return a pointer to the context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
+                                    cs_param_bc_type_t    bc)
+{
+  assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid a warning when compiling */
+
+  cs_navsto_monolithic_t  *nsc = NULL;
+
+  BFT_MALLOC(nsc, 1, cs_navsto_monolithic_t);
+
+  /* Add an equation for the momentum conservation */
+  nsc->momentum = cs_equation_add("momentum",
+                                  "velocity",
+                                  CS_EQUATION_TYPE_PREDEFINED,
+                                  3,
+                                  bc);
+
+  /* Set the default settings for the momentum equation */
+  {
+    cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
+
+    /* Solver settings */
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "none");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "gmres");
+  }
+
+  return nsc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the context structure related to a monolithic approach
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_navsto_monolithic_free_context(const cs_navsto_param_t    *nsp,
+                                  void                       *context)
+{
+  assert(nsp != NULL);
+  CS_UNUSED(nsp); /* Avoid a warning when compiling */
+
+  cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
+
+  BFT_FREE(nsc);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the Navier-Stokes equations when a monolithic
+ *         algorithm is used to coupled the system.
+ *         No mesh information is available at this stage
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
+                                void                       *context)
+{
+  cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
+
+  assert(nsp != NULL && nsc != NULL);
+
+  /* Handle the momentum equation */
+  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
+
+  cs_navsto_param_transfer(nsp, mom_eqp);
+
+  /* Link the time property to the momentum equation */
+  switch (nsp->time_state) {
+
+  case CS_NAVSTO_TIME_STATE_FULL_STEADY:
+    break; /* Nothing to add */
+
+  case CS_NAVSTO_TIME_STATE_UNSTEADY:
+  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid choice for the time state", __func__);
+  }
+
+  /* All considered models needs a viscous term */
+  cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the setup for the Navier-Stokes equations when a monolithic
+ *         algorithm is used to coupled the system.
+ *         Connectivity and geometric quantities are available at this stage.
+ *
+ * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_monolithic_last_setup(const cs_cdo_connect_t      *connect,
+                                const cs_cdo_quantities_t   *quant,
+                                const cs_navsto_param_t     *nsp,
+                                void                        *context)
+{
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+
+  cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
+
+  assert(nsp != NULL && nsc != NULL);
+
+  /* Set the quadrature level for BCs, if needed */
+  const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
+
+  for (short int i = 0; i < eqp->n_bc_defs; i++) {
+
+    cs_xdef_t *def = eqp->bc_defs[i];
+    if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
+      cs_xdef_set_quadrature(def, nsp->qtype);
+
+  } /* Loop on BC definitions */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an incremental Projection approach in the
  *         the rotational form (see Minev & Guermond, 2006, JCP)
  *

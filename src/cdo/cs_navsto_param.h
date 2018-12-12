@@ -104,10 +104,6 @@ typedef enum {
 /*! \enum cs_navsto_param_coupling_t
  *  \brief Choice of algorithm for solving the system
  *
- * \var CS_NAVSTO_COUPLING_UZAWA
- * The system is solved without decoupling the equations using a Uzawa algorithm
- * and an Augmented Lagrangian approach inside each sub-iteration.
- *
  * \var CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY
  * The system is solved using an artificial compressibility algorithm.
  * One vectorial equation is solved followed by a pressure update.
@@ -118,16 +114,24 @@ typedef enum {
  * Two vectorial equations are solved: a momentum-like one and another one
  * involving a grad-div operator.
  *
+ * \var CS_NAVSTO_COUPLING_MONOLITHIC
+ * The system is treated as a "monolithic" matrix
+ *
  * \var CS_NAVSTO_COUPLING_PROJECTION
  * The system is solved using an incremental projection algorithm
+ *
+ * \var CS_NAVSTO_COUPLING_UZAWA
+ * The system is solved without decoupling the equations using a Uzawa algorithm
+ * and an Augmented Lagrangian approach inside each sub-iteration.
  */
 
 typedef enum {
 
-  CS_NAVSTO_COUPLING_UZAWA,
   CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY,
   CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP,
+  CS_NAVSTO_COUPLING_MONOLITHIC,
   CS_NAVSTO_COUPLING_PROJECTION,
+  CS_NAVSTO_COUPLING_UZAWA,
 
   CS_NAVSTO_N_COUPLINGS
 
@@ -456,7 +460,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp);
 /*!
  * \brief  Retrieve the name of the coupling algorithm
  *
- * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
+ * \param[in]     coupling    a \ref cs_navsto_param_coupling_t
  *
  * \return the name
  */

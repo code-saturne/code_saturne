@@ -304,6 +304,7 @@ cs_navsto_system_init_setup(void);
 /*!
  * \brief  Last step of the setup of the Navier-Stokes system
  *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  time_step  pointer to a cs_time_step_t structure
@@ -311,7 +312,8 @@ cs_navsto_system_init_setup(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
+cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
+                                const cs_cdo_connect_t     *connect,
                                 const cs_cdo_quantities_t  *quant,
                                 const cs_time_step_t       *time_step);
 

@@ -93,10 +93,11 @@ cs_navsto_param_time_state_name[CS_NAVSTO_N_TIME_STATES][CS_BASE_STRING_LEN] =
 
 static const char
 cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
-  { N_("Uzawa-Augmented Lagrangian coupling"),
-    N_("Artificial compressibility algorithm"),
+  { N_("Artificial compressibility algorithm"),
     N_("Artificial compressibility solved with the VPP_eps algorithm"),
-    N_("Incremental projection algorithm")
+    N_("Monolithic"),
+    N_("Incremental projection algorithm"),
+    N_("Uzawa-Augmented Lagrangian coupling")
   };
 
 static const char _err_empty_nsp[] =
@@ -160,6 +161,7 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
   case CS_NAVSTO_COUPLING_UZAWA:
     return cs_equation_param_by_name("momentum");
 
@@ -319,6 +321,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->gd_scale_coef = atof(val);
       break;
 
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
     case CS_NAVSTO_COUPLING_PROJECTION:
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(" %s: Trying to set the zeta parameter with the %s\n "
@@ -570,7 +573,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 /*!
  * \brief  Retrieve the name of the coupling algorithm
  *
- * \param[in]     coupling    A \ref cs_navsto_param_coupling_t
+ * \param[in]     coupling    a \ref cs_navsto_param_coupling_t
  *
  * \return the name
  */
@@ -583,8 +586,9 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-  case CS_NAVSTO_COUPLING_UZAWA:
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
   case CS_NAVSTO_COUPLING_PROJECTION:
+  case CS_NAVSTO_COUPLING_UZAWA:
     return cs_navsto_param_coupling_name[coupling];
 
   default:

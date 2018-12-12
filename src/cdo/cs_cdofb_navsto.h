@@ -211,11 +211,11 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
 void
 cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
-                             const cs_real_t              *rhs,
-                             const cs_equation_param_t    *eqp,
-                             cs_equation_builder_t        *eqb,
-                             void                         *data,
-                             cs_real_t                    *field_val);
+                              const cs_real_t              *rhs,
+                              const cs_equation_param_t    *eqp,
+                              cs_equation_builder_t        *eqb,
+                              void                         *data,
+                              cs_real_t                    *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!

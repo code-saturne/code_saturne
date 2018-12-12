@@ -45,6 +45,7 @@
 #include <bft_mem.h>
 
 #include "cs_cdofb_ac.h"
+#include "cs_cdofb_monolithic.h"
 #include "cs_cdofb_navsto.h"
 #include "cs_cdofb_uzawa.h"
 #include "cs_hho_stokes.h"
@@ -223,10 +224,6 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {
 
-  case CS_NAVSTO_COUPLING_UZAWA:
-    navsto->coupling_context = cs_navsto_uzawa_create_context(navsto->param,
-                                                              default_bc);
-    break;
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     navsto->coupling_context = cs_navsto_ac_create_context(navsto->param,
                                                            default_bc);
@@ -235,9 +232,17 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     navsto->coupling_context = cs_navsto_ac_vpp_create_context(navsto->param,
                                                                default_bc);
     break;
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    navsto->coupling_context
+      = cs_navsto_monolithic_create_context(navsto->param, default_bc);
+    break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context =
       cs_navsto_projection_create_context(navsto->param, default_bc);
+    break;
+  case CS_NAVSTO_COUPLING_UZAWA:
+    navsto->coupling_context = cs_navsto_uzawa_create_context(navsto->param,
+                                                              default_bc);
     break;
 
   default:
@@ -278,25 +283,27 @@ cs_navsto_system_destroy(void)
   /* Free the context according to the model choice */
   switch (nsp->coupling) {
 
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    navsto->coupling_context =
+      cs_navsto_ac_free_context(nsp, navsto->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    navsto->coupling_context =
+      cs_navsto_ac_vpp_free_context(nsp, navsto->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    navsto->coupling_context =
+      cs_navsto_monolithic_free_context(nsp, navsto->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    navsto->coupling_context =
+      cs_navsto_projection_free_context(nsp, navsto->coupling_context);
+    break;
   case CS_NAVSTO_COUPLING_UZAWA:
     navsto->coupling_context =
       cs_navsto_uzawa_free_context(nsp, navsto->coupling_context);
     break;
 
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-    navsto->coupling_context =
-      cs_navsto_ac_free_context(nsp, navsto->coupling_context);
-    break;
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    navsto->coupling_context =
-      cs_navsto_ac_vpp_free_context(nsp, navsto->coupling_context);
-    break;
-
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    navsto->coupling_context =
-      cs_navsto_projection_free_context(nsp, navsto->coupling_context);
-    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
@@ -410,20 +417,20 @@ cs_navsto_system_init_setup(void)
   /* Setup data according to the type of coupling */
   switch (nsp->coupling) {
 
-  case CS_NAVSTO_COUPLING_UZAWA:
-    cs_navsto_uzawa_init_setup(nsp, ns->coupling_context);
-    break;
-
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     cs_navsto_ac_init_setup(nsp, ns->coupling_context);
     break;
-
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
     cs_navsto_ac_vpp_init_setup(nsp, ns->coupling_context);
     break;
-
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    cs_navsto_monolithic_init_setup(nsp, ns->coupling_context);
+    break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     cs_navsto_projection_init_setup(nsp, ns->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_UZAWA:
+    cs_navsto_uzawa_init_setup(nsp, ns->coupling_context);
     break;
 
   default:
@@ -438,6 +445,7 @@ cs_navsto_system_init_setup(void)
 /*!
  * \brief  Last step of the setup of the Navier-Stokes system
  *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  time_step  pointer to a cs_time_step_t structure
@@ -445,7 +453,8 @@ cs_navsto_system_init_setup(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
+cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
+                                const cs_cdo_connect_t     *connect,
                                 const cs_cdo_quantities_t  *quant,
                                 const cs_time_step_t       *time_step)
 {
@@ -473,17 +482,20 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
      space discretization scheme */
   switch (nsp->coupling) {
 
-  case CS_NAVSTO_COUPLING_UZAWA:
-    cs_navsto_uzawa_last_setup(connect, quant, nsp, ns->coupling_context);
-    break;
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     cs_navsto_ac_last_setup(connect, quant, nsp, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
     cs_navsto_ac_vpp_last_setup(connect, quant, nsp, ns->coupling_context);
     break;
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    cs_navsto_monolithic_last_setup(connect, quant, nsp, ns->coupling_context);
+    break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     cs_navsto_projection_last_setup(connect, quant, nsp, ns->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_UZAWA:
+    cs_navsto_uzawa_last_setup(connect, quant, nsp, ns->coupling_context);
     break;
 
   default:
@@ -537,6 +549,36 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
       /* ns->init = cs_cdofb_navsto_init_ac_vpp_context; */
       /* ns->compute = cs_cdofb_navsto_ac_vpp_compute; */
+      break;
+
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
+      ns->init_scheme_context = cs_cdofb_monolithic_init_scheme_context;
+      ns->free_scheme_context = cs_cdofb_monolithic_free_scheme_context;
+      ns->init_velocity = NULL;
+      ns->init_pressure = cs_cdofb_navsto_init_pressure;
+      ns->compute_steady = cs_cdofb_monolithic_compute_steady;
+
+      switch (nsp->time_scheme) {
+
+      case CS_TIME_SCHEME_STEADY:
+        ns->compute = NULL;
+        break; /* Nothing to set */
+
+      case CS_TIME_SCHEME_EULER_IMPLICIT:
+      case CS_TIME_SCHEME_THETA:
+      case CS_TIME_SCHEME_CRANKNICO:
+        ns->compute = NULL; /* TO BE DONE */
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid time scheme for the monolithic coupling",
+                  __func__);
+        break;
+
+      } /* Switch */
+
+      cs_cdofb_monolithic_init_common(mesh, quant, connect, time_step);
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
@@ -642,8 +684,9 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   switch (nsp->coupling) {
 
-  case CS_NAVSTO_COUPLING_UZAWA:
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+  case CS_NAVSTO_COUPLING_UZAWA:
     face_vel = cs_equation_get_face_values(cs_equation_by_name("momentum"));
     break;
 
