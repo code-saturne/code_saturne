@@ -284,14 +284,6 @@ do ifac = 1, nfabor
     nstvit = nstvit + 1
   endif
 
-  ! --- on interdit les parois rugueuses en compressible
-  if (icodcu.eq.6 .and. ippmod(icompf).gt.0) then
-    icodvi(1) = iu
-    icodvi(2) = icodcl(ifac,iu)
-    icodvi(3) = 1
-    nstvit = nstvit + 1
-  endif
-
 enddo
 
 ! --- Conditions admissibles pour la pression
@@ -1283,8 +1275,6 @@ if(iok.ne.0) then
     endif
     if (icodvi(3).eq.-1) then
       write(nfecra,1010) nstvit, chaine, icodvi(2)
-    elseif (icodvi(3).eq.1) then
-      write(nfecra,1015) nstvit, chaine, icodvi(2), ippmod(icompf)
     endif
   endif
 
@@ -1477,14 +1467,6 @@ endif
 '@   Nombre de faces de bord ',i10   ,'; variable ',a16        ,/,&
 '@     icodcl variable derniere face ', i10                    ,/,&
 '@                                                            '  )
- 1015 format(                                                     &
-'@                                                            ',/,&
-'@ CONDITIONS AUX LIMITES DE PAROI RUGUEUSE INCOMPATIBLES     ',/,&
-'@ AVEC LE MODULE COMPRESSIBLE                                ',/,&
-'@   Nombre de faces de bord ',i10   ,'; variable ',a16        ,/,&
-'@     icodcl variable derniere face ', i10                    ,/,&
-'@     ippmod(icompf)', i10                                    ,/,&
-'@                                                            '  )
  1020 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. COMPOSANTES DE LA VITESSE           ',/,&
@@ -1621,14 +1603,6 @@ endif
 '@ UNEXPECTED BOUNDARY CONDITIONS                             ',/,&
 '@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
 '@     icodcl variable last face ', i10                        ,/,&
-'@                                                            '  )
- 1015 format(                                                     &
-'@                                                            ',/,&
-'@ ROUGH WALL BOUNDARY CONDITIONS INCOMPATIBLE WITH THE       ',/,&
-'@ COMPRESSIBLE MODULE                                        ',/,&
-'@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
-'@     icodcl variable last face ', i10                        ,/,&
-'@     ippmod(icompf)', i10                                    ,/,&
 '@                                                            '  )
  1020 format(                                                     &
 '@                                                            ',/,&
