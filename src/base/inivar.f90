@@ -232,7 +232,6 @@ if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
 
 endif
 
-call user_initialization()
 call user_extra_operations_initialize()
 
 ! Pressure / Total pressure initialisation
