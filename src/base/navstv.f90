@@ -304,10 +304,6 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet))
 
-if (vcopt_u%iwarni.ge.1) then
-  write(nfecra,1000)
-endif
-
 ! Initialize variables to avoid compiler warnings
 
 ivar = 0
@@ -456,7 +452,7 @@ endif
 
 if (ippmod(icompf).ge.0) then
 
-  if(vcopt_u%iwarni.ge.1) then
+  if(vcopt_p%iwarni.ge.1) then
     write(nfecra,1080)
   endif
 
@@ -483,6 +479,10 @@ endif
 !===============================================================================
 ! 5. Velocity prediction step
 !===============================================================================
+
+if (vcopt_u%iwarni.ge.1) then
+  write(nfecra,1000)
+endif
 
 iappel = 1
 
