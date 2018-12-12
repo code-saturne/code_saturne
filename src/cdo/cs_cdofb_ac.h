@@ -131,32 +131,6 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the velocity values
- *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_ac_init_velocity(const cs_navsto_param_t     *nsp,
-                          void                        *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize the pressure values
- *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_ac_init_pressure(const cs_navsto_param_t     *nsp,
-                          void                        *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
  *         using a Artificial Compressibility approach and an Euler time scheme
  *

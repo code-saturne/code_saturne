@@ -463,6 +463,98 @@ cs_cdofb_navsto_get_face_pressure(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the pressure values
+ *
+ * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out]  pr     pointer to the pressure \ref cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
+                              cs_field_t                  *pr)
+{
+  /* Sanity checks */
+  assert(nsp != NULL);
+
+  /* Initial conditions for the pressure */
+  if (nsp->n_pressure_ic_defs == 0)
+    return; /* Nothing to do */
+
+  assert(nsp->pressure_ic_defs != NULL);
+
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_flag_t   dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
+
+  cs_real_t  *values = pr->val;
+
+  for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
+
+    /* Get and then set the definition of the initial condition */
+    cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
+
+    /* Initialize face-based array */
+    switch (def->type) {
+
+      /* Evaluating the integrals: the averages will be taken care of at the
+       * end when ensuring zero-mean valuedness */
+    case CS_XDEF_BY_VALUE:
+      cs_evaluate_density_by_value(dof_flag, def, values);
+      break;
+
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
+
+        switch (red) {
+        case CS_PARAM_REDUCTION_DERHAM:
+          /* Forcing BARY so that it is equivalent to DeRham (JB?)*/
+          cs_xdef_set_quadrature(def, CS_QUADRATURE_BARY);
+          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
+          /* Restoring the original */
+          cs_xdef_set_quadrature(def, nsp->qtype);
+          break;
+        case CS_PARAM_REDUCTION_AVERAGE:
+          cs_xdef_set_quadrature(def, nsp->qtype);
+          cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" %s: Incompatible reduction for the field %s.\n"),
+                    __func__, pr->name);
+
+        }  /* Switch on possible reduction types */
+
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Incompatible way to initialize the field %s.\n"),
+                __func__, pr->name);
+      break;
+
+    }  /* Switch on possible type of definition */
+
+  }  /* Loop on definitions */
+
+  /* We should ensure that the mean of the pressure is zero. Thus we compute
+   * it and subtract it from every value.
+   *
+   * NOTES:
+   *  - It could be useful to stored this average somewhere
+   *  - The procedure is not optimized (we can avoid setting the average if
+   *    it's a value), but it is the only way to allow multiple definitions
+   *    and definitions that do not cover all the domain. Moreover, we need
+   *    information (e.g. cs_cdo_quantities_t) which we do not know here
+   */
+  cs_cdofb_navsto_set_zero_mean_pressure(values);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Store solution(s) of the linear system into a field structure
  *         Update extra-field values if required (for hybrid discretization)
  *

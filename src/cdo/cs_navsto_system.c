@@ -501,38 +501,11 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
     /* Setup data according to the type of coupling */
     switch (nsp->coupling) {
 
-    case CS_NAVSTO_COUPLING_UZAWA:
-      ns->init_scheme_context = cs_cdofb_uzawa_init_scheme_context;
-      ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
-      ns->init_velocity = cs_cdofb_uzawa_init_velocity;
-      ns->init_pressure = cs_cdofb_uzawa_init_pressure;
-      ns->compute_steady = cs_cdofb_uzawa_compute_steady;
-
-      switch (nsp->time_scheme) {
-
-      case CS_TIME_SCHEME_EULER_IMPLICIT:
-        ns->compute = cs_cdofb_uzawa_compute_implicit;
-        break;
-      case CS_TIME_SCHEME_THETA:
-      case CS_TIME_SCHEME_CRANKNICO:
-        ns->compute = cs_cdofb_uzawa_compute_theta;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid time scheme for the Uzawa coupling", __func__);
-        break;
-
-      } /* Switch */
-
-      cs_cdofb_uzawa_init_common(quant, connect, time_step);
-      break;
-
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
       ns->init_scheme_context = cs_cdofb_ac_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_ac_free_scheme_context;
-      ns->init_velocity = cs_cdofb_ac_init_velocity;
-      ns->init_pressure = cs_cdofb_ac_init_pressure;
+      ns->init_velocity = NULL;
+      ns->init_pressure = cs_cdofb_navsto_init_pressure;
       ns->compute_steady = NULL;
 
       switch (nsp->time_scheme) {
@@ -569,6 +542,33 @@ cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
     case CS_NAVSTO_COUPLING_PROJECTION:
       /* ns->init = cs_cdofb_navsto_init_proj_context; */
       /* ns->compute = cs_cdofb_navsto_proj_compute; */
+      break;
+
+    case CS_NAVSTO_COUPLING_UZAWA:
+      ns->init_scheme_context = cs_cdofb_uzawa_init_scheme_context;
+      ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
+      ns->init_velocity = NULL;
+      ns->init_pressure = cs_cdofb_navsto_init_pressure;
+      ns->compute_steady = cs_cdofb_uzawa_compute_steady;
+
+      switch (nsp->time_scheme) {
+
+      case CS_TIME_SCHEME_EULER_IMPLICIT:
+        ns->compute = cs_cdofb_uzawa_compute_implicit;
+        break;
+      case CS_TIME_SCHEME_THETA:
+      case CS_TIME_SCHEME_CRANKNICO:
+        ns->compute = cs_cdofb_uzawa_compute_theta;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid time scheme for the Uzawa coupling", __func__);
+        break;
+
+      } /* Switch */
+
+      cs_cdofb_uzawa_init_common(quant, connect, time_step);
       break;
 
     default:
@@ -633,7 +633,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   /* Initial conditions for the pressure */
   if (ns->init_pressure != NULL)
-    ns->init_pressure(nsp, ns->scheme_context);
+    ns->init_pressure(nsp, ns->pressure);
 
   /* Define the advection field. Since one links the advection field to the face
      velocity this is only available for Fb schemes and should be done after

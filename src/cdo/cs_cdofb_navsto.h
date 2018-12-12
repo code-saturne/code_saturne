@@ -184,6 +184,19 @@ cs_cdofb_navsto_get_face_pressure(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the pressure values
+ *
+ * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out]  pr     pointer to the pressure \ref cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
+                              cs_field_t                  *pr);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Store solution(s) of the linear system into a field structure
  *         Update extra-field values if required (for hybrid discretization)
  *

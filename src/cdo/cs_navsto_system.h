@@ -91,17 +91,18 @@ typedef void *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize field values (pressure, velocity or temperature)
- *         according to the model, the space discretization or the model
+ * \brief  According to the model, coupling algorithm and the space
+ *         discretization, initialize the field values which are not associated
+ *         to a \ref cs_equation_t structure (which manages the initialization)
  *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]       nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out]  field    pointer to a \ref cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_navsto_init_values_t)(const cs_navsto_param_t     *nsp,
-                          void                        *scheme_context);
+                          cs_field_t                  *field);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -129,32 +129,6 @@ cs_cdofb_uzawa_free_scheme_context(void   *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the velocity values
- *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_uzawa_init_velocity(const cs_navsto_param_t     *nsp,
-                             void                        *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize the pressure values
- *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_uzawa_init_pressure(const cs_navsto_param_t     *nsp,
-                             void                        *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
  *         using a Uzawa-Lagrangian Augmented approach.
  *
