@@ -108,8 +108,10 @@ module ppincl
   !>      - ippmod(ieljou) = 4 use of complex potential and specific boundary conditions
   !>  for transformers.
   !>      - ippmod(ieljou) =-1 module not activated
-  !>   - Compressible module: indicator ippmod(icompf)
-  !>      - ippmod(icompf) = 0 module activated
+  !>   - compressible flow module: indicator ippmod(icompf)
+  !>      - ippmod(icompf) = 2 module activated: homogeneous two phase model
+  !>      - ippmod(icompf) = 1 module activated: single phase model
+  !>      - ippmod(icompf) = 0 module activated: single phase barotropic model
   !>      - ippmod(icompf) =-1 module not activated
   !>   - atmospheric flow module: indicator ippmod(iatmos)
   !>      - ippmod(iatmos) =-1 module not activated
@@ -202,8 +204,10 @@ module ppincl
   integer ::  icfuel
 
   !> pointer to specify compressible module with indicator ippmod(icompf)
-  !> - ippmod(icompf) = 0 module activated
-  !> - ippmod(icompf) =-1 module not activated
+  !>      - ippmod(icompf) = 2 module activated: homogeneous two phase model
+  !>      - ippmod(icompf) = 1 module activated: single phase model
+  !>      - ippmod(icompf) = 0 module activated: single phase barotropic model
+  !>      - ippmod(icompf) =-1 module not activated
   integer ::  icompf
 
   !> pointer to specify atmospheric flow module with indicator ippmod(iatmos)
@@ -559,18 +563,6 @@ module ppincl
 
   !> \addtogroup comp_homogeneous
   !> \{
-
-  !> \anchor icfhgn
-  !> homogeneous model indicator
-  !>    -  0: standard compressible algorithm
-  !>    -  1: compressible homogeneous two-phase flow model
-  integer, save :: icfhgn
-
-  !> \anchor icfhts
-  !> homogeneous two-phase flow model indicator for source terms
-  !>    -  0: source terms are disabled
-  !>    -  1: source terms are enabled
-  integer, save :: icfhts
 
   !> \anchor ifracv
   !> homogeneous model, volume fraction \f$ \alpha \f$

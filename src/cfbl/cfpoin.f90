@@ -27,31 +27,94 @@ module cfpoin
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   implicit none
 
   !=============================================================================
 
-  ! ithvar : initialized thermodynamic variables indicator
-  integer, save :: ithvar
+  !> \addtogroup compressible
+  !> \{
+
+  !> thermodynamic variables indicator for initialization
+  integer(c_int), pointer, save :: ithvar
+
+  !> imposed thermal flux indicator at the boundary
+  !> (some boundary contributions of the total energy eq. have to be cancelled)
+  integer, allocatable, dimension(:) :: ifbet
+
+  !> boundary convection flux indicator of a Rusanov or an analytical flux
+  !> (some boundary contributions of the momentum eq. have to be cancelled)
+  integer, allocatable, dimension(:) :: icvfli
+
+  !> \addtogroup comp_homogeneous
+  !> \{
+
+  !> \anchor hgn_relax_eq_st
+  !> homogeneous two-phase flow model indicator for source terms
+  !>    -  -1: source terms are disabled
+  !>    -   0: source terms are enabled
+  integer(c_int), pointer, save :: hgn_relax_eq_st
+
+  !> \}
+  !> \}
 
   !=============================================================================
 
-  ! Tableau Dimension       Description
-  ! ifbet  ! nfabor        ! imposed thermal flux indicator at the boundary
-  !                          (some boundary contributions of the total energy
-  !                           equation have to be cancelled)
-  ! icvfli ! nfabor        ! specific boundary convection flux indicator
-  !                          for a Rusanov or an analytical flux
-  !                          (some boundary contributions of the momentum
-  !                           equation have to be cancelled)
+  interface
 
-  integer, allocatable, dimension(:) :: ifbet , icvfli
+    !---------------------------------------------------------------------------
+
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global compressible model structure
+
+    subroutine cs_f_cf_model_get_pointers(ithvar, hgn_relax_eq_st) &
+      bind(C, name='cs_f_cf_model_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: ithvar, hgn_relax_eq_st
+    end subroutine cs_f_cf_model_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+    !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
 
 contains
 
   !=============================================================================
 
-  subroutine init_compf ( nfabor)
+  !> \brief Initialize Fortran compressible model API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine cf_model_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_ithvar, c_hgn_relax_eq_st
+
+    call cs_f_cf_model_get_pointers(c_ithvar, c_hgn_relax_eq_st)
+
+    call c_f_pointer(c_ithvar, ithvar)
+    call c_f_pointer(c_hgn_relax_eq_st, hgn_relax_eq_st)
+
+  end subroutine cf_model_init
+
+  !> \brief Allocate boundary flux indicators array
+
+  subroutine init_compf (nfabor)
 
     implicit none
 
@@ -62,15 +125,16 @@ contains
 
   end subroutine init_compf
 
-  !=============================================================================
+  !> \brief Deallocate boundary flux indicators array
 
   subroutine finalize_compf
 
-    use ppincl
     implicit none
 
     deallocate(ifbet, icvfli)
 
   end subroutine finalize_compf
+
+  !=============================================================================
 
 end module cfpoin

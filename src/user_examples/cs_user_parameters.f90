@@ -235,8 +235,9 @@ endif
 ! ==========
 
 !        if = -1   module not activated
-!        if = 0    module activated
-!        if = 1    barotropic version
+!        if =  0   module activated
+!        if =  1   barotropic version
+!        if =  2   homogeneous two phase model
 
 if (ixmlpu.eq.0) then
 
@@ -436,7 +437,7 @@ end subroutine usppmo
 !______________________________________________________________________________!
 
 subroutine usipph &
- ( ixmlpu, iturb , itherm, iale , ivofmt, icavit , icfhgn )
+ ( ixmlpu, iturb , itherm, iale , ivofmt, icavit )
 
 !===============================================================================
 ! Module files
@@ -452,7 +453,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu
-integer iturb, itherm, iale, ivofmt, icavit, icfhgn
+integer iturb, itherm, iale, ivofmt, icavit
 
 ! Local variables
 
@@ -540,13 +541,6 @@ icavit = -1
 !      2: CDO solver
 
 iale = 1
-
-
-! --- Enable two phase homogeneous model
-!     (compressible module should be enabled first)
-
-
-icfhgn = 1
 
 
 !< [usipph]

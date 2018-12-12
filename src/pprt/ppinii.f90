@@ -248,9 +248,6 @@ srrom = 1.d0
 ! Standard compressible module scalars
 ienerg = 0
 itempk = 0
-! Compressible homogeneous two-phase flow indicator
-icfhgn = 0
-icfhts = 0
 ! Compressible homogeneous two-phase flow scalars
 ifracv = 0
 ifracm = 0

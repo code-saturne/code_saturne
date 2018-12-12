@@ -120,6 +120,7 @@ use cs_c_bindings
 use cs_cf_bindings
 use pointe, only: itypfb, pmapper_double_r1
 use atincl, only: kopint
+use cfpoin, only: hgn_relax_eq_st
 
 !===============================================================================
 
@@ -1317,10 +1318,8 @@ endif
 
 ! Return to equilibrium source term step for volume, mass, energy fractions
 ! in the compressible homogeneous two-phase model
-if (ippmod(icompf).ge.0.and.icfhgn.gt.0) then
-  if (icfhts.gt.0) then
-    call cs_cf_hgn_source_terms_step
-  endif
+if (ippmod(icompf).gt.1.and.hgn_relax_eq_st.ge.0) then
+  call cs_cf_hgn_source_terms_step
 endif
 
 if (idilat.ge.4.and.itspdv.eq.1) then

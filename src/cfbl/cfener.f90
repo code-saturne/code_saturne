@@ -196,10 +196,10 @@ call field_get_val_s(ivarfl(ipr), cvar_pr)
 
 call field_get_val_s(ivisct, visct)
 
-if (icfhgn.gt.0) then
-   call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
-   call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
-   call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
+if (ippmod(icompf).gt.1) then
+  call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
+  call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
+  call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
 else
   cvar_fracv => null()
   cvar_fracm => null()
@@ -822,7 +822,7 @@ call cs_cf_thermo_pt_from_de(cpro_cp, cpro_cv, crom, cvar_energ, cvar_pr, &
 
 33 continue
 ! Barotropic version
-if (ippmod(icompf) .eq. 1) then
+if (ippmod(icompf).eq.1) then
   do iel = 1, ncel
     cvar_energ(iel) = eint0
   enddo

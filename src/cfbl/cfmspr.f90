@@ -185,7 +185,7 @@ call field_get_label(ivarfl(ipr), chaine)
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
-if (icfhgn.gt.0) then
+if (ippmod(icompf).gt.1) then
   call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
   call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
   call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)

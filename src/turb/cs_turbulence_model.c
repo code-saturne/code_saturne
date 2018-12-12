@@ -1157,9 +1157,9 @@ cs_f_turb_model_constants_get_pointers(double  **sigmae,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_turb_model
+ * \brief Provide access to global turbulence model structure cs_glob_turb_model
  *
- * needed to initialize structure with GUI
+ * It is needed to initialize structure with GUI.
  */
 /*----------------------------------------------------------------------------*/
 

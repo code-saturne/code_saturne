@@ -121,10 +121,10 @@ call field_get_val_s(icrom, crom)
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 
-if (icfhgn.gt.0) then
-   call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
-   call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
-   call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
+if (ippmod(icompf).gt.1) then
+  call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
+  call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
+  call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
 else
   cvar_fracv => null()
   cvar_fracm => null()

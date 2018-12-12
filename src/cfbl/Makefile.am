@@ -64,6 +64,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_cf_model.h \
 cs_cf_thermo.h \
 cs_hgn_thermo.h \
 cs_hgn_phase_thermo.h \
@@ -86,6 +87,7 @@ cfvarp.f90 \
 cfxtcl.f90 \
 cfmspr.f90 \
 cfmsfp.f90 \
+cs_cf_model.c \
 cs_cf_thermo.c \
 cs_hgn_thermo.c \
 cs_hgn_phase_thermo.c \

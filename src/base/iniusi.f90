@@ -158,7 +158,7 @@ endif
 ! User subroutine
 
 iihmpu = iihmpr
-call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit, icfhgn)
+call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
 
 ! ALE parameters
 !---------------

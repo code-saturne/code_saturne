@@ -58,6 +58,7 @@ use radiat
 use turbomachinery
 use cs_nz_condensation, only: nzones
 use ctincl
+use cfpoin
 
 !===============================================================================
 
@@ -158,6 +159,7 @@ call radiat_init
 call gas_mix_options_init
 call ctwr_properties_init
 call map_ale
+call cf_model_init
 
 call map_turbomachinery_model(iturbo, ityint)
 

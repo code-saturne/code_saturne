@@ -163,7 +163,7 @@ call field_get_val_s(ivarfl(ien), cvar_en)
 if (icv.ge.0) call field_get_val_s(icv, cpro_cv)
 
 ! mixture fractions for the homogeneous two-phase flows
-if (icfhgn.gt.0) then
+if (ippmod(icompf).gt.1) then
   call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
   call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
   call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
@@ -477,7 +477,7 @@ do ifac = 1, nfabor
       rcodcl(ifac,iu,1)  = bc_vel(1,ifac)
       rcodcl(ifac,iv,1)  = bc_vel(2,ifac)
       rcodcl(ifac,iw,1)  = bc_vel(3,ifac)
-      if (icfhgn.gt.0) then ! TODO fill bc_frac...
+      if (ippmod(icompf).gt.1) then ! FIXME fill bc_frac...
         rcodcl(ifac,isca(ifracv),1) = bc_fracv(ifac)
         rcodcl(ifac,isca(ifracm),1) = bc_fracm(ifac)
         rcodcl(ifac,isca(ifrace),1) = bc_frace(ifac)
@@ -489,7 +489,7 @@ do ifac = 1, nfabor
       rcodcl(ifac,iu,3)  = 0.d0
       rcodcl(ifac,iv,3)  = 0.d0
       rcodcl(ifac,iw,3)  = 0.d0
-      if (icfhgn.gt.0) then
+      if (ippmod(icompf).gt.1) then
         rcodcl(ifac,isca(ifracv),3) = 0.d0
         rcodcl(ifac,isca(ifracm),3) = 0.d0
         rcodcl(ifac,isca(ifrace),3) = 0.d0
@@ -521,7 +521,7 @@ do ifac = 1, nfabor
       ! temperature
       icodcl(ifac,itk)   = 1
       ! mixture fractions
-      if (icfhgn.gt.0) then
+      if (ippmod(icompf).gt.1) then
         icodcl(ifac,isca(ifracv))   = 1
         icodcl(ifac,isca(ifracm))   = 1
         icodcl(ifac,isca(ifrace))   = 1
@@ -534,7 +534,7 @@ do ifac = 1, nfabor
       icodcl(ifac,ien)   = 3
       icodcl(ifac,itk)   = 3
       ! mixture fractions
-      if (icfhgn.gt.0) then
+      if (ippmod(icompf).gt.1) then
         icodcl(ifac,isca(ifracv))   = 3
         icodcl(ifac,isca(ifracm))   = 3
         icodcl(ifac,isca(ifrace))   = 3
