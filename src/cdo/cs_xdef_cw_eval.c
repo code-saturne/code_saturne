@@ -180,7 +180,7 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
       for (short int f = 0; f < cm->n_fc; ++f) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int n_vf = end - start; /* #vertices (=#edges) */
@@ -294,7 +294,7 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
     for (short int f = 0; f < nf; ++f) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */
@@ -1065,8 +1065,8 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           for (int k = 0; k < 3; k++) {
             const double xef = cm->edge[e].center[k] + fq.center[k];
-            _xyz[0][k] = cs_math_onethird * (xef + cm->xv[3*v1+k]);
-            _xyz[1][k] = cs_math_onethird * (xef + cm->xv[3*v2+k]);
+            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
           }
 
           /* Evaluate the function for this time at the given coordinates */
@@ -1092,8 +1092,8 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           for (int k = 0; k < 3; k++) {
             const double xef = cm->edge[e].center[k] + fq.center[k];
-            _xyz[0][k] = cs_math_onethird * (xef + cm->xv[3*v1+k]);
-            _xyz[1][k] = cs_math_onethird * (xef + cm->xv[3*v2+k]);
+            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
           }
 
           /* Evaluate the function for this time at the given coordinates */
@@ -1278,7 +1278,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[2*e+1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_onethird *
+          _xyz[k] = cs_math_1ov3 *
             (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
@@ -1403,7 +1403,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[_2e+1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_onethird *
+          _xyz[k] = cs_math_1ov3 *
             (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */

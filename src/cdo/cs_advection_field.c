@@ -2216,9 +2216,9 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
             for (int k = 0; k < 3; k++) {
               const double  xec = cm->xc[k] + edge.center[k];
               xg[0][k] = xec + fq0.center[k];
-              xg[0][k] *= cs_math_onethird;
+              xg[0][k] *= cs_math_1ov3;
               xg[1][k] = xec + fq1.center[k];
-              xg[1][k] *= cs_math_onethird;
+              xg[1][k] *= cs_math_1ov3;
             }
 
             cs_xdef_cw_eval_at_xyz_by_analytic(cm,

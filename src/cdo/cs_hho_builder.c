@@ -679,7 +679,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; // #vertices (=#edges)
@@ -975,7 +975,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
       const cs_basis_func_t  *fbf = hhob->face_basis[f];
       const cs_real_t  *knfc = (const cs_real_t *)(kappa_nfc[f]);
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; // #vertices (=#edges)
@@ -1513,7 +1513,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; // #vertices (=#edges)
@@ -1699,7 +1699,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int n_vf = end - start; // #vertices (=#edges)

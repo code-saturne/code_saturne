@@ -957,7 +957,7 @@ _ck1_compute_projector(void                    *pbf,
       const short int n_ef = end - start; /* #vertices (= #edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
       case CS_TRIANGLE_CASE: /* Triangle */
@@ -1118,7 +1118,7 @@ _ck2_compute_projector(void                    *pbf,
       const short int n_ef = end - start; /* #vertices (= #edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
       case CS_TRIANGLE_CASE: /* Triangle */
@@ -1331,7 +1331,7 @@ _cka_compute_projector(void                    *pbf,
       const short int n_ef = end - start; /* #vertices (= #edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
       case CS_TRIANGLE_CASE: /* Triangle */

@@ -831,7 +831,7 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const double  dp_cf = p_c - p_f;
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
-    const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
+    const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  ee = 2*cm->f2e_ids[i];
@@ -928,7 +928,7 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const double  dp_cf = p_c - p_f;
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
-    const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
+    const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  ee = 2*cm->f2e_ids[i];

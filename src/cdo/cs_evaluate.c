@@ -539,7 +539,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
         const double  hfco =
-          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+          cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
@@ -630,7 +630,7 @@ _pcvd_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfc = cs_math_onethird *
+        const double hfc = cs_math_1ov3 *
                 cs_math_3_dot_product(pfq.unitv, quant->dedge_vector+3*i);
         const cs_lnum_t start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
@@ -720,7 +720,7 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
         const double  hfco =
-          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+          cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
@@ -819,7 +819,7 @@ _pcva_by_analytic(cs_real_t                        time_eval,
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
         const double hfco =
-          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+          cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 

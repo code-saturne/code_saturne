@@ -420,7 +420,7 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
     for (short int f = 0; f < cm->n_fc; ++f) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; // #vertices (=#edges)
@@ -558,7 +558,7 @@ cs_compute_fwbs_q1(short int                 f,
                       CS_CDO_LOCAL_EV));
 
   const cs_quant_t  pfq = cm->face[f];
-  const double  h_coef = cs_math_onethird * cm->hfc[f];
+  const double  h_coef = cs_math_1ov3 * cm->hfc[f];
   const double  f_coef = 0.5/pfq.meas;
 
   /* Compute geometric quantities */
@@ -599,7 +599,7 @@ cs_compute_fwbs_q2(short int                f,
   const double  f_coef = 0.5/pfq.meas;
 
   /* Compute geometric quantities */
-  _get_wvf_pefcvol(f, cm, cs_math_onethird * cm->hfc[f], f_coef, wvf, pefc_vol);
+  _get_wvf_pefcvol(f, cm, cs_math_1ov3 * cm->hfc[f], f_coef, wvf, pefc_vol);
 
   /* Compute the gradient of the Lagrange function related to xc
      which is constant inside p_{f,c} */
@@ -640,7 +640,7 @@ cs_compute_fwbs_q3(short int                 f,
 
   const cs_quant_t  pfq = cm->face[f];
   const double  hf = cm->hfc[f];
-  const double  h_coef = cs_math_onethird * hf;
+  const double  h_coef = cs_math_1ov3 * hf;
   const double  f_coef = 0.5/pfq.meas;
 
   /* Compute geometric quantities */

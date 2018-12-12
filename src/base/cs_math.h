@@ -76,13 +76,13 @@ typedef enum {
 /* Numerical constants */
 
 extern const cs_real_t cs_math_zero_threshold;
-extern const cs_real_t cs_math_onethird;
-extern const cs_real_t cs_math_twothird;
-extern const cs_real_t cs_math_fourthird;
-extern const cs_real_t cs_math_fivethird;
-extern const cs_real_t cs_math_onesix;
-extern const cs_real_t cs_math_onetwelve;
-extern const cs_real_t cs_math_one24;
+extern const cs_real_t cs_math_1ov3;
+extern const cs_real_t cs_math_2ov3;
+extern const cs_real_t cs_math_4ov3;
+extern const cs_real_t cs_math_5ov3;
+extern const cs_real_t cs_math_1ov6;
+extern const cs_real_t cs_math_1ov12;
+extern const cs_real_t cs_math_1ov24;
 extern const cs_real_t cs_math_epzero;
 extern const cs_real_t cs_math_infinite_r;
 extern const cs_real_t cs_math_big_r;

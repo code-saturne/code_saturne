@@ -291,11 +291,11 @@ _get_proj_quantities(cs_lnum_t                f_id,
   } /* Loop on face edges */
 
   projq.p1  *=  0.5;
-  projq.pa  *=  cs_math_onesix;
-  projq.pb  *= -cs_math_onesix;
-  projq.pab *=  cs_math_one24;
-  projq.pa2 *=  cs_math_onetwelve;
-  projq.pb2 *= -cs_math_onetwelve;
+  projq.pa  *=  cs_math_1ov6;
+  projq.pb  *= -cs_math_1ov6;
+  projq.pab *=  cs_math_1ov24;
+  projq.pa2 *=  cs_math_1ov12;
+  projq.pb2 *= -cs_math_1ov12;
 
   return  projq;
 }

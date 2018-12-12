@@ -1247,7 +1247,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
     cs_real_3_t  xfc;
 
     const double  *xf = cm->face[f].center;
-    const double  hf_coef = cs_math_onesix * cm->hfc[f];
+    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
 
     for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
 
@@ -1336,7 +1336,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
     cs_real_t  eval_xg[2];
 
     const double  *xf = cm->face[f].center;
-    const double  hf_coef = cs_math_onesix * cm->hfc[f];
+    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
 
     for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
 
@@ -1510,7 +1510,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       const short int  e = cm->f2e_ids[i];
       const short int  v1 = cm->e2v_ids[2*e];
       const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  half_pef_vol = cs_math_onesix * cm->tef[i] * hfc;
+      const double  half_pef_vol = cs_math_1ov6 * cm->tef[i] * hfc;
 
       pvf_vol[v1] += half_pef_vol;
       pvf_vol[v2] += half_pef_vol;
@@ -1979,7 +1979,7 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int  n_vf = end - start;  /* #vertices (=#edges) */
@@ -2199,7 +2199,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int  n_vf = end - start; // #vertices (=#edges)
@@ -2377,7 +2377,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
         for (short int f = 0; f < cm->n_fc; f++) {
 
           const cs_quant_t  pfq = cm->face[f];
-          const double  hf_coef = cs_math_onethird * cm->hfc[f];
+          const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
           const int  start = cm->f2e_idx[f];
           const int  end = cm->f2e_idx[f+1];
           const short int n_vf = end - start; /* #vertices (=#edges) */
@@ -2502,7 +2502,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */
@@ -2624,7 +2624,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */

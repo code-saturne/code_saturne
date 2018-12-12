@@ -540,7 +540,7 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
     for (int k = 0; k < 3; k++)
       grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
-    const double  tef_coef = fm->tef[e] * cs_math_onethird;
+    const double  tef_coef = fm->tef[e] * cs_math_1ov3;
     mng_ef[e][0] = _dp3(pty_nuf, grd_v1) * tef_coef;
     mng_ef[e][1] = _dp3(pty_nuf, grd_v2) * tef_coef;
     mng_ef[e][2] = _dp3(pty_nuf, grd_f)  * tef_coef;
@@ -670,7 +670,7 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
     for (int k = 0; k < 3; k++)
       grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
-    const double  tef_coef = fm->tef[e] * cs_math_onethird;
+    const double  tef_coef = fm->tef[e] * cs_math_1ov3;
     mng_ef[e][0] = _dp3(pty_nuf, grd_v1) * tef_coef;
     mng_ef[e][1] = _dp3(pty_nuf, grd_v2) * tef_coef;
     mng_ef[e][2] = _dp3(pty_nuf, grd_f)  * tef_coef;

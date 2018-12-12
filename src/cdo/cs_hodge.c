@@ -2193,7 +2193,7 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
       hi[vfj] = default_coef * fm->wvf[vfj];
 
     /* Specific diagonal contribution */
-    hi[vfi] += 2 * default_coef * cs_math_onethird;
+    hi[vfi] += 2 * default_coef * cs_math_1ov3;
 
   } /* Loop on face vertices */
 
@@ -2202,7 +2202,7 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
 
     const short int  v1 = fm->e2v_ids[2*e];
     const short int  v2 = fm->e2v_ids[2*e+1];
-    const double  extra_val = cs_math_onetwelve * fm->tef[e];
+    const double  extra_val = cs_math_1ov12 * fm->tef[e];
 
     hf->val[v1*hf->n_rows + v2] += extra_val;
     hf->val[v2*hf->n_rows + v1] += extra_val;

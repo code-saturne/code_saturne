@@ -1039,7 +1039,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 #endif
 
         /* Volume of the pyramid of base f and apex x_c */
-        cm->pfc[f] = cs_math_onethird * cm->hfc[f] * cm->face[f].meas;
+        cm->pfc[f] = cs_math_1ov3 * cm->hfc[f] * cm->face[f].meas;
 
       } /* Loop on cell faces */
 

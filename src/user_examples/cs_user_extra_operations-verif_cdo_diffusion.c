@@ -138,7 +138,7 @@ _get_sol(cs_real_t          time,
       const cs_real_t  *_xyz = xyz + 3*id;
       const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
-      retval[id] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+      retval[id] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_1ov3));
 
     }
 
@@ -149,7 +149,7 @@ _get_sol(cs_real_t          time,
       const cs_real_t  *_xyz = xyz + 3*pt_ids[p];
       const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
-      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_1ov3));
     }
 
   }
@@ -160,7 +160,7 @@ _get_sol(cs_real_t          time,
       const cs_real_t  *_xyz = xyz + 3*p;
       const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
-      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_1ov3));
     }
 
   }

@@ -688,7 +688,7 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
   /* Useful quantities are stored in cb->values and cb->vectors */
   const cs_nvec3_t  deq = fm->dedge;
   const cs_quant_t  pfq = fm->face;
-  const double  hf_coef = cs_math_onethird * cm->hfc[fm->f_id];
+  const double  hf_coef = cs_math_1ov3 * cm->hfc[fm->f_id];
   const double  pfc_vol = hf_coef * pfq.meas;
 
   /* Set the consistent part for already known part.
@@ -808,7 +808,7 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
   const int  n_sysf = fm->n_vf + 1;
   const cs_nvec3_t  deq = fm->dedge;
   const cs_quant_t  pfq = fm->face;
-  const double  hf_coef = cs_math_onethird * cm->hfc[fm->f_id];
+  const double  hf_coef = cs_math_1ov3 * cm->hfc[fm->f_id];
 
   /* Useful quantities are stored in cb->values and cb->vectors */
   cs_sdm_t  *af = cb->aux;

@@ -81,13 +81,13 @@ static cs_real_t  _machine_epsilon = 1.11e-16;
 /* Numerical constants */
 
 const cs_real_t cs_math_zero_threshold = FLT_MIN;
-const cs_real_t cs_math_onethird = 1./3.;
-const cs_real_t cs_math_twothird = 2./3.;
-const cs_real_t cs_math_fourthird = 4./3.;
-const cs_real_t cs_math_fivethird = 5./3.;
-const cs_real_t cs_math_onesix = 1./6.;
-const cs_real_t cs_math_onetwelve = 1./12.;
-const cs_real_t cs_math_one24 = 1./24.;
+const cs_real_t cs_math_1ov3 = 1./3.;
+const cs_real_t cs_math_2ov3 = 2./3.;
+const cs_real_t cs_math_4ov3 = 4./3.;
+const cs_real_t cs_math_5ov3 = 5./3.;
+const cs_real_t cs_math_1ov6 = 1./6.;
+const cs_real_t cs_math_1ov12 = 1./12.;
+const cs_real_t cs_math_1ov24 = 1./24.;
 
 /*! epsilon \f$ 10^{-12}\f$ */
 const cs_real_t cs_math_epzero = 1e-12;
@@ -227,12 +227,12 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
 
     cs_real_6_t  n;
     cs_real_t  tr = (m[0] + m[1] + m[2]);
-    cs_real_t  tr_third = cs_math_onethird * tr;
+    cs_real_t  tr_third = cs_math_1ov3 * tr;
 
     e1 = m[0] - tr_third, e2 = m[1] - tr_third, e3 = m[2] - tr_third;
     cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2.*p1;
 
-    cs_real_t  p = sqrt(p2*cs_math_onesix);
+    cs_real_t  p = sqrt(p2*cs_math_1ov6);
     assert(p > 0.);
     cs_real_t  ovp = 1./p;
 
@@ -257,8 +257,8 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
       cos_theta_2pi3 = -0.5;
     }
     else {
-      cos_theta = cos(cs_math_onethird*acos(r));
-      cos_theta_2pi3 = cos(cs_math_onethird*(acos(r) + 2.*cs_math_pi));
+      cos_theta = cos(cs_math_1ov3*acos(r));
+      cos_theta_2pi3 = cos(cs_math_1ov3*(acos(r) + 2.*cs_math_pi));
     }
 
     /* eigenvalues computed should satisfy e1 < e2 < e3 */
@@ -321,13 +321,13 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
 
     cs_real_t  theta;
     cs_real_t  n[3][3];
-    cs_real_t  tr = cs_math_onethird*(m[0][0] + m[1][1] + m[2][2]);
+    cs_real_t  tr = cs_math_1ov3*(m[0][0] + m[1][1] + m[2][2]);
 
     e1 = m[0][0] - tr, e2 = m[1][1] - tr, e3 = m[2][2] - tr;
     cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2*p1;
 
     assert(p2 > 0);
-    cs_real_t  p = sqrt(p2*cs_math_onesix);
+    cs_real_t  p = sqrt(p2*cs_math_1ov6);
     cs_real_t  ovp = 1./p;
 
     for (int  i = 0; i < 3; i++) {
@@ -343,15 +343,15 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
     cs_real_t  r = 0.5 * cs_math_33_determinant((const cs_real_t (*)[3])n);
 
     if (r <= -1)
-      theta = cs_math_onethird*cs_math_pi;
+      theta = cs_math_1ov3*cs_math_pi;
     else if (r >= 1)
       theta = 0.;
     else
-      theta = cs_math_onethird*acos(r);
+      theta = cs_math_1ov3*acos(r);
 
     // eigenvalues computed should satisfy e1 < e2 < e3
     e3 = tr + 2*p*cos(theta);
-    e1 = tr + 2*p*cos(theta + 2*cs_math_pi*cs_math_onethird);
+    e1 = tr + 2*p*cos(theta + 2*cs_math_pi*cs_math_1ov3);
     e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
 
   }
@@ -463,7 +463,7 @@ cs_math_voltet(const cs_real_t   xv[3],
   cs_math_3_length_unitv(xe, xc, &lec, uec);
   cs_math_3_cross_product(uev, uef, ucp);
 
-  return  cs_math_onesix *lev*lef*lec* fabs(cs_math_3_dot_product(ucp, uec));
+  return  cs_math_1ov6 *lev*lef*lec* fabs(cs_math_3_dot_product(ucp, uec));
 }
 
 /*----------------------------------------------------------------------------*/
