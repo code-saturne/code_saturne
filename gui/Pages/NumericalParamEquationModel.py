@@ -380,11 +380,7 @@ class NumericalParamEquationModel(Model):
         if self.darcy == "off":
             for node in self._getSolverNodesList():
                 for n in node:
-                    if self._isPressure(n):
-                        if comp_model == 'off':
-                            lst.append(n['name'])
-                    else:
-                        lst.append(n['name'])
+                    lst.append(n['name'])
         else:
             for node in self._getSolverNodesList():
                 for n in node:
