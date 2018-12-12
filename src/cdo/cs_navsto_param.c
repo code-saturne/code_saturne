@@ -386,9 +386,9 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
-                  " Valid choices are \"implicit\", \"explicit\","
-                  " \"crank_nicolson\", and \"theta_scheme\"."),
-                __func__, _val);
+                  " Valid choices are \"euler_implicit\","
+                  " \"euler_explicit\"," " \"crank_nicolson\","
+                  " and \"theta_scheme\"."), __func__, _val);
     }
     break;
 
