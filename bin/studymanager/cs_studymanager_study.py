@@ -1097,7 +1097,7 @@ class Studies(object):
         cwd = os.getcwd()
         is_study = isStudy(cwd)
 
-        studyd = None
+        studyp = None
         if is_study:
             # default study directory is current one
             studyp = cwd
@@ -1107,10 +1107,10 @@ class Studies(object):
         filename = options.filename
         if options.create_xml and is_study:
             if filename == None:
-                studyd = os.path.basename(cwd)
+                studyd = os.path.basename(studyp)
                 filename = "smgr_" + studyd + ".xml"
 
-            filepath = os.path.join(cwd, filename)
+            filepath = os.path.join(studyp, filename)
             smgr = create_base_xml_file(filepath)
 
             init_xml_file_with_study(smgr, studyp)
@@ -1150,7 +1150,8 @@ class Studies(object):
             # if current directory is a study
             # set repository as directory containing the study
             if is_study:
-                self.__parser.setRepository(os.path.join(cwd,".."))
+                studyd = os.path.basename(studyp)
+                self.__parser.setRepository(os.path.join(studyp,".."))
                 self.__repo = self.__parser.getRepository()
             else:
                 msg="Parser.getRepository() >> No repository set.\n"
@@ -1169,7 +1170,7 @@ class Studies(object):
                 # if current directory is a study
                 # set destination as a directory "../RUN_(study_name)
                 if is_study:
-                    self.__parser.setDestination(os.path.join(cwd,
+                    self.__parser.setDestination(os.path.join(studyp,
                                                               "../RUN_"+studyd))
                     self.__dest = self.__parser.getDestination()
                 else:
