@@ -103,14 +103,12 @@ static cs_real_t _eps_fraction_lim = 1.e-12;
 
 /*----------------------------------------------------------------------------
  * functional for computation of saturation temperature
- * f(T) = mu_1/T-mu-2/T
+ * f(T) = mu_1/T-mu-2/T = 0 at saturation point
  *----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-_tsat_function(cs_real_t tp, cs_real_t pr, cs_real_t *pdfunc)
+_tsat_function(cs_real_t tp, cs_real_t pr)
 {
-  cs_real_t tplus = 1.00001*tp;
-
   cs_real_t mu1 =  cs_hgn_phase_thermo_internal_energy_tp(tp, pr, 0)
                  + cs_hgn_phase_thermo_specific_volume_tp(tp, pr, 0)*pr
                  - tp * cs_hgn_phase_thermo_entropy_tp(tp, pr, 0);
@@ -118,23 +116,11 @@ _tsat_function(cs_real_t tp, cs_real_t pr, cs_real_t *pdfunc)
                  + cs_hgn_phase_thermo_specific_volume_tp(tp, pr, 1)*pr
                  - tp * cs_hgn_phase_thermo_entropy_tp(tp, pr, 1);
 
-  cs_real_t res = mu1 - mu2;
-
-  mu1 =  cs_hgn_phase_thermo_internal_energy_tp(tplus, pr, 0)
-       + cs_hgn_phase_thermo_specific_volume_tp(tplus, pr, 0)*pr
-       - tplus * cs_hgn_phase_thermo_entropy_tp(tplus, pr, 0);
-  mu2 =  cs_hgn_phase_thermo_internal_energy_tp(tplus, pr, 1)
-       + cs_hgn_phase_thermo_specific_volume_tp(tplus, pr, 1)*pr
-       - tplus * cs_hgn_phase_thermo_entropy_tp(tplus, pr, 1);
-
-  cs_real_t dfunc = ((mu1-mu2)-res) / (tplus-tp);
-
-  *pdfunc = dfunc;
-  return res;
+  return (mu1 - mu2) / tp;
 }
 
 /*----------------------------------------------------------------------------
- * Function used to compute saturation temperature with a secant method
+ * Compute saturation temperature with a secant method
  *----------------------------------------------------------------------------*/
 
 static inline cs_real_t
@@ -142,21 +128,21 @@ _secant_tsat(cs_real_t pr, cs_real_t tini)
 {
   cs_real_t dfn;
   cs_real_t tn = tini;
-  cs_real_t fn = _tsat_function(tn, pr, &dfn);
+  cs_real_t fn = _tsat_function(tn, pr);
 
   cs_real_t tnp = tini*1.0001;
-  cs_real_t fnp = _tsat_function(tnp, pr, &dfn);
+  cs_real_t fnp = _tsat_function(tnp, pr);
   dfn = (fnp - fn)/(tnp - tn);
 
   int iterm = 100;
-  cs_real_t eps = 1.0e-10;
+  cs_real_t eps = 1.e-10;
   for (int iter = 0; iter < iterm; iter++) {
     if (CS_ABS(fn) < eps) break;
     tnp = tnp - fnp / dfn;
-    fnp = _tsat_function(tnp, pr, &dfn);
+    fnp = _tsat_function(tnp, pr);
     dfn = (fnp - fn) / (tnp - tn);
-    tn=tnp;
-    fn=fnp;
+    tn = tnp;
+    fn = fnp;
   }
 
   return tn;
@@ -437,7 +423,7 @@ _dicho_eq(cs_real_t  e,
  * \f[
  *   P \rightarrow T_{sat} \/ \mu_1(T_{sat},P)=\mu_2(T_{sat},P)
  * \f]
- * This equality is solved using a Newton method.
+ * This equality is solved using a secant method.
  *
  * \param[in]     pr       pressure
  *
@@ -448,10 +434,10 @@ _dicho_eq(cs_real_t  e,
 cs_real_t
 cs_hgn_thermo_saturation_temp(cs_real_t pr)
 {
-  /* Initial guesses for the Newton algorithm.
+  /* Initial guesses for secant method.
    * tab_tsat contains 101 pressure values from 700 Pa to 25000000 Pa with an
    * increment of 249993. This small lookup table (piecewise constant) is then
-   * used as an initial guess for the Newton algorithm that compute Tsat.*/
+   * used as an initial guess for the secant method that compute Tsat.*/
   cs_real_t tab_tsat[101] = {
     275.040788823, 400.672644776, 425.0456133,440.945408602, 453.063793165,
     462.992518065, 471.461895813, 478.896713175, 485.541070517, 491.572761469,
@@ -482,10 +468,11 @@ cs_hgn_thermo_saturation_temp(cs_real_t pr)
   if (ip < 0) ip = 0;
   if (ip > 100) ip = 100;
 
-  /* Call to the Newton algorithm with tabTsat[ip] as an initial guess.*/
-  /* FIXME It should be replaced by a value computed from tabTsat[] as a piecewise
-     linear approximation. It's easy and will provide a more precise initial guess
-     and it will thus lower the number of iterations in the Newton algorithm. */
+  /* Call to a secant algorithm with tabTsat[ip] as an initial guess.*/
+  /* FIXME It should be replaced by a value computed from tabTsat[] as a
+     piecewise linear approximation. It's easy and will provide a more precise
+     initial guess and it will thus lower the number of iterations in the
+     secant algorithm. */
   cs_real_t tsat = _secant_tsat(pr, tab_tsat[ip]);
 
   if (isnan(tsat))
@@ -779,7 +766,7 @@ cs_hgn_thermo_eq(cs_real_t  e,
 
   cs_real_t alpha_eq, y_eq, z_eq;
 
-  cs_real_t pmin = 1.;
+  cs_real_t pmin = 1.e3;
 
   /* search root in [pmin,0.5(pmin+pctau)] */
   cs_real_t pa = pmin;
