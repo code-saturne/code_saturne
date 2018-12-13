@@ -182,6 +182,38 @@ cs_user_model(void)
                              1,
                              CS_MESH_LOCATION_BOUNDARY_FACES);
 
+  /* Postprocessing-related fields
+     ============================= */
+
+  /* Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
+              yplus may be saved, or a local Nusselt number may be computed using
+              the post_boundary_nusselt subroutine.
+              When postprocessing of these quantities is activated, those fields
+              are present, but if we need to compute them in the
+              cs_user_extra_operations user subroutine without postprocessing them,
+              forcing the definition of these fields to save the values computed
+              for the boundary layer is necessary. */
+
+  cs_field_t *f;
+
+  f = cs_field_by_name_try("yplus");
+  if (f != NULL)
+    cs_parameters_add_property("yplus",
+                               1,
+                               CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  f = cs_field_by_name_try("tplus");
+  if (f != NULL)
+    cs_parameters_add_property("tplus",
+                               1,
+                               CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  f = cs_field_by_name_try("tstar");
+  if (f != NULL)
+    cs_parameters_add_property("tstar",
+                               1,
+                               CS_MESH_LOCATION_BOUNDARY_FACES);
+
   /*--------------------------------------------------------------------------*/
 
   /* Example: add field to post-process the predicted-velocity divergence
@@ -289,13 +321,19 @@ cs_user_parameters(void)
   }
   /*! [param_porous_model] */
 
-  /* Example: choose a limiter for a given scalar */
+  /* Example: choose a convective scheme and
+   * a limiter for a given variable (user and non-user) */
   /*----------------------------------------------*/
 
   /*! [param_var_limiter_choice] */
   {
     /* retrieve scalar field by its name */
     cs_field_t *sca1 = cs_field_by_name("scalar1");
+
+    /* ischcv is the type of convective scheme:
+       0: second order linear upwind
+       1: centered
+       2: pure upwind gradient in SOLU */
 
     /* isstpc:
       0: swich on the slope test
@@ -307,6 +345,7 @@ cs_user_parameters(void)
     int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
+    vcopt.ischcv = 0;
     vcopt.isstpc = 3;
     cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
 
@@ -329,10 +368,47 @@ cs_user_parameters(void)
     int key_lim_id = cs_field_key_id("limiter_choice");
     cs_field_set_key_int(sca1, key_lim_id, CS_NVD_SUPERBEE);
 
+
+    /* Get the Key for the Sup and Inf for the convective scheme */
+    int kccmin = cs_field_key_id("min_scalar");
+    int kccmax = cs_field_key_id("max_scalar");
+
+    /* Set the Value for the Sup and Inf of the studied scalar
+     * for the Gamma beta limiter for the temperature */
+    cs_field_set_key_double(CS_F_(t), kccmin, 0.);
+    cs_field_set_key_double(CS_F_(t), kccmax, 1.);
+
   }
   /*! [param_var_limiter_choice] */
 
-  /* Example: put a pourcentage of upwind when the slope test is activated */
+  /* Example: Minimum and maximum admissible values for each USER scalar
+   * Results are clipped at the end of each time step.
+   *
+   * If min > max, we do not clip
+   *
+   * For a scalar jj representing the variance of another, we may
+   * abstain from defining these values
+   * (a default clipping is set in place).
+   * This is the purpose of the test on iscavr(jj) in the example below.
+   *
+   * For non-user scalars relative to specific physics (coal, combustion,
+   * electric arcs: see usppmo) implicitly defined according to the
+   * model, the information is automatically set elsewhere: we
+   * do not set min or max values here. */
+
+  {
+
+    /* We define the min and max bounds */
+    cs_field_set_key_double(CS_F_(t),
+                            cs_field_key_id("min_scalar_clipping"),
+                            0.);
+    cs_field_set_key_double(CS_F_(t),
+                            cs_field_key_id("max_scalar_clipping"),
+                            1.);
+
+  }
+
+
   /*-----------------------------------------------------------------------*/
 
   /*! [param_var_blend_st] */

@@ -594,7 +594,6 @@ integer nmodpp
 
 logical       inoprv
 integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
-integer       klimiter
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
 
 type(var_cal_opt) :: vcopt
@@ -1025,107 +1024,6 @@ xyzp0(1) = 0.d0
 xyzp0(2) = 0.d0
 xyzp0(3) = 0.d0
 
-! --- Minimum and maximum admissible values for each USER scalar:
-
-!      Results are clipped at the end of each time step.
-
-!      If min > max, we do not clip.
-
-!      For a scalar jj representing the variance of another, we may
-!        abstain from defining these values
-!        (a default clipping is set in place).
-!        This is the purpose of the test on iscavr(jj) in the example below.
-
-!      For non-user scalars relative to specific physics (coal, combustion,
-!        electric arcs: see usppmo) implicitly defined according to the
-!        model, the information is automatically set elsewhere: we
-!        do not set min or max values here.
-
-call field_get_key_id("min_scalar_clipping", kscmin)
-call field_get_key_id("max_scalar_clipping", kscmax)
-
-! Thermal scalar:
-if (iscalt.gt.0) then
-  ! We define the min and max bounds
-  call field_set_key_double(ivarfl(isca(iscalt)), kscmin, -grand)
-  call field_set_key_double(ivarfl(isca(iscalt)), kscmax, +grand)
-endif
-
-! Loop on user scalars:
-do jj = 1, nscaus
-  ! For scalars which are not variances
-  if (iscavr(jj).le.0) then
-    ! We define the min and max bounds
-    call field_set_key_double(ivarfl(isca(jj)), kscmin, -grand)
-    call field_set_key_double(ivarfl(isca(jj)), kscmax, +grand)
-  endif
-enddo
-
-! --- Convective scheme for user (and non-user) scalars
-
-! ischcv is the type of convective scheme:
-!   - 0: second order linear upwind
-!   - 1: centered
-!   - 2: pure upwind gradient in SOLU
-
-! isstpc is the slope test, Min/Max limiter or Roe and Sweby limiters
-!   - 0: swich on the slope test
-!   - 1: swich off the slope test (default)
-!   - 2: continuous limiter ensuring boundedness (beta limiter)
-!   - 3: NVD/TVD Scheme
-!        Then "limiter_choice" keyword must be set:
-!        * 0: Gamma
-!        * 1: SMART
-!        * 2: CUBISTA
-!        * 3: SUPERBEE
-!        * 4: MUSCL
-!        * 5: MINMOD
-!        * 6: CLAM
-!        * 7: STOIC
-!        * 8: OSHER
-!        * 9: WASEB
-!        * --- VOF scheme ---
-!        * 10: M-HRIC
-!        * 11: M-CICSAM
-
-! Get the Key for the Sup and Inf for the convective scheme
-call field_get_key_id("min_scalar", kccmin)
-call field_get_key_id("max_scalar", kccmax)
-
-! Thermal model:
-if (iscalt.gt.0) then
-  ivar = isca(iscalt)
-
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  vcopt%ischcv = 0
-  vcopt%isstpc = 3
-  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
-  ! Get the Key for the limiter choice of the studied scalar
-  call field_get_key_id("limiter_choice", klimiter)
-  call field_set_key_int(ivarfl(isca(iscalt)), klimiter, 3)! Set SUPERBEE
-
-  ! Set the Value for the Sup and Inf of the studied scalar
-  call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)
-  call field_set_key_double(ivarfl(ivar), kccmax, 1.d0)
-
-endif
-
-! We loop on user scalars:
-do jj = 1, nscaus
-  ivar = isca(jj)
-
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  vcopt%ischcv = 0
-  vcopt%isstpc = 2
-  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
-  ! Set the Value for the Sup and Inf of the studied scalar
-  call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)
-  call field_set_key_double(ivarfl(ivar), kccmax, 1.d0)
-enddo
-
-
 ! --- Variable diffusivity field id (ifcvsl>=0) or constant
 !     diffusivity (ifcvsl=-1) for the thermal scalar and USER scalars.
 
@@ -1226,49 +1124,6 @@ uref = 1.d0
 !       (useful only for turbulence).
 
 almax = 0.5
-
-
-! Postprocessing-related fields
-! =============================
-
-! Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
-!          yplus may be saved, or a local Nusselt number may be computed using
-!          the post_boundary_nusselt subroutine.
-!          When postprocessing of these quantities is activated, those fields
-!          are present, but if we need to compute them in the
-!          cs_user_extra_operations user subroutine without postprocessing them,
-!          forcing the definition of these fields to save the values computed
-!          for the boundary layer is necessary.
-
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-ityloc = 3 ! boundary faces
-idim1 = 1 ! dimension
-inoprv = .false. ! no previous time step values needed
-
-call field_get_id_try('yplus', f_id)
-if (f_id.lt.0) then
-  call field_create('yplus', itycat, ityloc, idim1, inoprv, f_id)
-  ! yplus postprocessed and in the log
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
-call field_get_id_try('tplus', f_id)
-if (f_id.lt.0) then
-  call field_create('tplus', itycat, ityloc, idim1, inoprv, f_id)
-  ! tplus postreated and in the log
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
-call field_get_id_try('tstar', f_id)
-if (f_id.lt.0) then
-  call field_create('tstar', itycat, ityloc, idim1, inoprv, f_id)
-  ! tstar postreated and in the log
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
 
 ! Error estimators for Navier-Stokes (non-frozen velocity field)
 
