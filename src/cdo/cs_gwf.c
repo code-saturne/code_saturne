@@ -1211,10 +1211,18 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
                                         false, /* transfer ownership */
                                         c2e->idx);
 
+        /* Set the type of advection field */
+        cs_advection_field_set_type(gw->adv_field,
+                                    CS_ADVECTION_FIELD_TYPE_FLUX);
+
       }
       else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell)) {
 
         cs_advection_field_def_by_field(gw->adv_field, cell_adv_field);
+
+        /* Set the type of advection field */
+        cs_advection_field_set_type(gw->adv_field,
+                                    CS_ADVECTION_FIELD_TYPE_VELOCITY);
 
       }
       else
