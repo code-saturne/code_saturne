@@ -44,10 +44,6 @@ subroutine iniusi
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -87,7 +83,7 @@ implicit none
 ! Local variables
 
 integer          nmodpp
-integer          nscmax, nscusi
+integer          nscmax
 integer          iihmpu, l_size
 double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)
 
@@ -173,7 +169,6 @@ endif
 !-------------------------------------------------------
 
 ! GUI
-
 if (iihmpr.eq.1) then
   call cs_gui_user_variables
 endif
@@ -198,6 +193,7 @@ endif
 call cs_gui_radiative_transfer_parameters
 
 ! Define fields for variables, check and build iscapp
+! and computes the number of user scalars (nscaus)
 if (icdo.lt.2) then
    call fldvar(nmodpp)
 endif
@@ -210,7 +206,6 @@ if (iihmpr.eq.1) then
 endif
 
 nscmax = nscamx
-nscusi = nscaus
 
 ! ---> Physique particuliere : darcy
 
