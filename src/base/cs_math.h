@@ -104,14 +104,14 @@ extern const cs_real_t cs_math_pi;
 /*----------------------------------------------------------------------------*/
 
 static inline int
-cs_math_binom(short int  n,
-              short int  k)
+cs_math_binom(int  n,
+              int  k)
 {
   int ret = 1;
   assert(n >= k);
 
-  const short int n_iter = (k > n-k) ? n-k : k;
-  for (short int j = 1; j <= n_iter; j++, n--) {
+  const int n_iter = (k > n-k) ? n-k : k;
+  for (int j = 1; j <= n_iter; j++, n--) {
     if (n % j == 0)
       ret *= n/j;
     else if (ret % j == 0)
