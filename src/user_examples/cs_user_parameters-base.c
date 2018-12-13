@@ -361,6 +361,48 @@ cs_user_parameters(void)
   /*! [param_var_is_buoyant] */
 
 
+  /* Example: Scalar with a drift (key work "drift_scalar_model">0) or without drift
+     ((key work "drift_scalar_model"=0, default option) for each USER scalar.
+       - to specify that a scalar have a drift and need the drift computation:
+         drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX
+
+     Then, for each scalar with a drift, add a flag to specify if
+     specific terms have to be taken into account:
+       - thermophoresis terms:
+         drift |= CS_DRIFT_SCALAR_THERMOPHORESIS
+       - turbophoresis terms:
+         drift |= CS_DRIFT_SCALAR_TURBOPHORESIS
+       - centrifugal force terms:
+         drift |= CS_DRIFT_SCALAR_CENTRIFUGALFORCE
+   */
+
+  /*! [param_var_drift] */
+  {
+    /* retrieve scalar field by its name */
+    cs_field_t *sca1 = cs_field_by_name("scalar1");
+
+    /* Key id for drift scalar */
+    int key_drift = cs_field_key_id("drift_scalar_model");
+
+    int drift = CS_DRIFT_SCALAR_ON;
+    drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+
+    if (false)
+      drift |= CS_DRIFT_SCALAR_THERMOPHORESIS;
+
+    if (false)
+      drift |= CS_DRIFT_SCALAR_TURBOPHORESIS;
+
+    if (false)
+      drift |= CS_DRIFT_SCALAR_CENTRIFUGALFORCE;
+
+    /* Set the key word "drift_scalar_model" into the field structure */
+    cs_field_set_key_int(sca1, key_drift, drift);
+
+  }
+  /*! [param_var_drift] */
+
+
   /* Example: add boundary values for all scalars */
   /*----------------------------------------------*/
 

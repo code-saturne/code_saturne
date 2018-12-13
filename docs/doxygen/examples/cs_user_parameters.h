@@ -67,6 +67,10 @@
 
   \snippet cs_user_parameters-base.c param_var_is_buoyant
 
+  If one wants to activate drift terms on a transported scalar:
+
+  \snippet cs_user_parameters-base.c param_var_drift
+
 
   To set options for the solving of the Stokes problem (velocity pressure coupling
   see \ref cs_stokes_model_t structure):

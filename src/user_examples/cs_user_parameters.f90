@@ -1262,49 +1262,6 @@ uref = 1.d0
 
 almax = 0.5
 
-! --- Scalar with a drift (key work "drift_scalar_model">0) or without drift
-!       ((key work "drift_scalar_model"=0, default option) for each USER scalar.
-!       - to specify that a scalar have a drift and need the drift computation:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
-!
-! --- Then, for each scalar with a drift, add a flag to specify if
-!     specific terms have to be taken into account:
-!       - thermophoresis terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
-!       - turbophoresis terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
-!       - centrifugal force terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
-
-
-! Key id for drift scalar
-call field_get_key_id("drift_scalar_model", keydri)
-
-if (nscaus.ge.1) then
-
-  iscdri = 1
-  iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
-
-  if (.false.) then
-    iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
-  endif
-
-  if (.false.) then
-    iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
-  endif
-
-  if (.false.) then
-    iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
-  endif
-
-  iscal = 1
-  f_id = ivarfl(isca(iscal))
-
-  ! Set the key word "drift_scalar_model" into the field structure
-  call field_set_key_int(f_id, keydri, iscdri)
-
-endif
-
 
 ! Postprocessing-related fields
 ! =============================
