@@ -253,14 +253,14 @@ cs_user_parameters(void)
    *                   - 3: low-Mach algorithm
    *                   - 4: algorithm for fire
    *                   - 0: boussinesq algorithm with constant
-   *                   density
+   *                   density (not yet available)
    *  iphydr: improve hydrostatic pressure algorithm
+   *                   - 0: no treatment (default)
    *                   - 1: impose the equilibrium of the hydrostaic
    *                     part of the pressure with any external force,
    *                     even head losses
    *                   - 2: compute an hydrostatic pressure due to
    *                     buoyancy forces before the prediction step
-   *                   - 0: no treatment (default)
    *  igprij: improve static pressure algorithm
    *                   - 1: take -div(rho R) in the static pressure
    *                     treatment IF iphydr=1
@@ -277,6 +277,17 @@ cs_user_parameters(void)
     stokes->arak = 0.;
   }
   /*! [param_stokes_model] */
+
+  /* Example: activate the porous model
+   * - 0 No porosity taken into account (Default)
+   * - 1 Porosity taken into account
+   *------------------------------------*/
+
+  /*! [param_porous_model] */
+  {
+    cs_glob_porous_model = 1;
+  }
+  /*! [param_porous_model] */
 
   /* Example: choose a limiter for a given scalar */
   /*----------------------------------------------*/

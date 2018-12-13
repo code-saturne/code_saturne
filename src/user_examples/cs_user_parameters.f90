@@ -660,25 +660,6 @@ dtref  = 0.01d0
 
 !     dtmax = min(Ld/Ud, sqrt(Lt/(g.Delta_rho/rho)))
 
-! --- Handling of hydrostatic pressure
-!     iphydr = 0 : ignore hydrostatic pressure (by default)
-!              1 : with hydrotatic pressure computation to handle the balance
-!                  between the pressure gradient and source terms (gravity and
-!                  head losses)
-!              2 : with hydrostatic pressure computation to handle the imbalance
-!                  between the pressure gradient and gravity source term
-
-iphydr = 1
-
-
-! --- Algorithm to take into account the density variation in time
-!
-!     idilat = 0 : Boussinesq algorithm with constant density (not available)
-!              1 : dilatable steady algorithm (default)
-!              2 : dilatable unsteady algorithm
-!              3 : low-Mach algorithm
-
-idilat = 1
 
 ! --- Algorithm to take into account the thermodynamical pressure variation in time
 !     (not used by default except if idilat = 3)
@@ -733,15 +714,6 @@ if (nscaus.gt.0) then
   enddo
 endif
 
-
-! --- Solver taking a scalar porosity into account:
-!       0 No porosity taken into account (Standard)
-!       1 Porosity taken into account
-!
-
-iporos = 1
-
-
 ! --- Calculation (restart) with frozen velocity field (1 yes, 0 no)
 
 
@@ -757,13 +729,6 @@ iccvfg = 1
 if (itytur.eq.4) then
   ivrtex = 1
 endif
-
-
-! --- Velocity/pressure coupling (0 : classical algorithm,
-!                                 1 : transient coupling)
-
-ipucou = 0
-
 
 ! --- Convective scheme
 

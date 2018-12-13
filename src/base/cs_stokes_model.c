@@ -251,7 +251,8 @@ const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
  *============================================================================*/
 
 void
-cs_f_stokes_options_get_pointers(int     **ivisse,
+cs_f_stokes_options_get_pointers(int     **iporos,
+                                 int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
@@ -282,6 +283,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
+ *   iporos  --> pointer to cs_glob_porous_model
  *   ivisse  --> pointer to cs_glob_stokes_model->ivisse
  *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
  *   iprco   --> pointer to cs_glob_stokes_model->iprco
@@ -300,7 +302,8 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_stokes_options_get_pointers(int     **ivisse,
+cs_f_stokes_options_get_pointers(int     **iporos,
+                                 int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
@@ -316,6 +319,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **icalhy,
                                  int     **irecmf)
 {
+  *iporos = &(cs_glob_porous_model);
   *ivisse = &(_stokes_model.ivisse);
   *irevmc = &(_stokes_model.irevmc);
   *iprco  = &(_stokes_model.iprco);

@@ -1045,7 +1045,7 @@ module optcal
   !> take the porosity fomulation into account
   !>    - 1: Taking porosity into account
   !>    - 0: Standard algorithm (Without porosity)
-  integer, save :: iporos
+  integer(c_int), pointer, save :: iporos
 
   !TODO move it elsewhere?
   ! Indicateur de passage dans l'initialisation des
@@ -1395,7 +1395,7 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! Stokes options structure
 
-    subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
+    subroutine cs_f_stokes_options_get_pointers(iporos, ivisse, irevmc, iprco, &
                                                 arak  ,ipucou, iccvfg,         &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
@@ -1403,7 +1403,7 @@ module optcal
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak
+      type(c_ptr), intent(out) :: iporos, ivisse, irevmc, iprco, arak
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
     end subroutine cs_f_stokes_options_get_pointers
@@ -1688,16 +1688,17 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_arak
+    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
 
 
-    call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
+    call cs_f_stokes_options_get_pointers(c_iporos, c_ivisse, c_irevmc, c_iprco ,  &
                                           c_arak  , c_ipucou, c_iccvfg, &
                                           c_idilat, c_epsdp , c_itbrrb, c_iphydr, c_igprij, &
                                           c_igpust, c_iifren, c_icalhy, c_irecmf)
 
+    call c_f_pointer(c_iporos, iporos)
     call c_f_pointer(c_ivisse, ivisse)
     call c_f_pointer(c_irevmc, irevmc)
     call c_f_pointer(c_iprco , iprco )
