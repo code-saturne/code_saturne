@@ -15,6 +15,22 @@ User changes:
 
 Physical modelling:
 
+- Add a compressible two-phase homogeneous model
+  * This model is solved using a fractional step method borrowing mass,
+    momentum, energy balance steps from the compressible algorithm (single
+    phase).
+  * Convection and source terms (relaxation towards equilibrium) step for each
+    fraction (volume, mass, energy) follow.
+  * Thermodynamic of the mixture is generic, though initial values of some
+    iterative processes (secant, dichotomy) used to solve implicit thermodynamic
+    relations remain not generic.
+  * Each phase thermodynamics follow a stiffened gas EOS which parameters are at
+    hand for the user.
+  * Relaxation time scale of return to equilibrium is also at hand for the user.
+  * The model can be activated by setting to 2 the physical model parameter
+    cs_glob_physical_model[CS_COMPRESSIBLE].
+  This integrates the work of Olivier Hurisse.
+
 - ALE module: use CDO vertex based numerical schemes (more robust) for ALE
   displacement. To activate it use "cs_glob_ale = 2" in C or "iale = 2" in
   Fortran.
