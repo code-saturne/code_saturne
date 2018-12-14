@@ -146,7 +146,6 @@ def process_cmd_line(argv, pkg):
     casedir = None
     staging_dir = None
     param = None
-    coupling= None
     compute_build = None
 
     if options.coupling and options.param:
@@ -228,7 +227,7 @@ def process_cmd_line(argv, pkg):
     n_procs = options.nprocs
     n_threads = options.nthreads
 
-    return  (casedir, staging_dir, options.id, param, coupling,
+    return  (casedir, staging_dir, options.id, param, options.coupling,
              options.id_prefix, options.id_suffix, options.suggest_id, force_id,
              n_procs, n_threads, stages, compute_build)
 

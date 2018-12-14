@@ -76,8 +76,6 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
 
     casedir = None
     staging_dir = None
-    param = None
-    coupling= None
     data = None
     src = None
 
