@@ -313,9 +313,9 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_bc_rij_transform(const cs_real_t is_sym,
-                               cs_real_t       p_lg[3][3],
-                               cs_real_t       alpha[][6]);
+cs_turbulence_bc_rij_transform(const int  is_sym,
+                               cs_real_t  p_lg[3][3],
+                               cs_real_t  alpha[][6]);
 
 /*----------------------------------------------------------------------------*/
 
