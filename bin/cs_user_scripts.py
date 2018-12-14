@@ -28,45 +28,6 @@ import os
 # Local functions
 #===============================================================================
 
-def domain_auto_restart(domain, n_add):
-    """
-    Select latest valid checkpoint for restart, and
-    create control_file to add n_add time steps.
-    """
-
-    from cs_exec_environment import get_command_output
-
-    results_dir = os.path.abspath(os.path.join(self.result_dir, '..'))
-    results = os.listdir(results_dir)
-    results.sort(reverse=True)
-    for r in results:
-        m = os.path.join(results_dir, r, 'checkpoint', 'main')
-        if os.path.isfile(m):
-            try:
-                cmd = self.package.get_io_dump()
-                cmd += ' --section nbre_pas_de_temps --extract ' + m
-                res = get_command_output(cmd)
-                n_steps = int(get_command_output(cmd))
-            except Exception:
-                print('checkpoint of result: ' + r + ' does not seem usable')
-                continue
-            info_line = 'Restart from iterations ' + str(n_steps)
-            n_steps += n_add
-            info_line += ' to ' + str(n_steps)
-            print(info_line)
-            f = open(os.path.join(self.exec_dir, 'control_file'), 'w')
-            l = ['#Target number of time steps, determined by script\n',
-                 str(n_steps)]
-            f.writelines(l)
-            f.close()
-            domain.restart_input = os.path.join('RESU',
-                                                r,
-                                                'checkpoint')
-            print('using ' + domain.restart_input)
-            break
-
-    return
-
 #===============================================================================
 # Defining parameters for a calculation domain
 #===============================================================================
@@ -78,11 +39,6 @@ def domain_prepare_data_add(domain):
     in DATA and copy of link of restart files as defined by domain).
     """
 
-    # Example: select latest valid checkpoint file for restart
-
-    if False:
-        domain_auto_restart(domain, 200)
-
     return
 
 #-------------------------------------------------------------------------------
@@ -92,16 +48,6 @@ def domain_copy_results_add(domain):
     Additional steps to copy results or cleanup execution directory
     (called at beginning of data copy stage).
     """
-
-    # Example: clean some temporary files
-
-    if False:
-        import fnmatch
-        dir_files = os.listdir(self.exec_dir)
-        tmp_files = (fnmatch.filter(dir_files, '*.tmp')
-                     + fnmatch.filter(dir_files, '*.fort'))
-        for f in tmp_files:
-            os.remove(os.path.join(self.exec_dir, f))
 
     return
 
@@ -194,7 +140,7 @@ def define_domain_parameters(domain):
 
     # Additionnal compiler flags may be passed to the C, C++, or Fortran
     # compilers, and libraries may be added, in case linking of user
-    # subroutines against external libraries is needed.
+    # functions against external libraries is needed.
 
     # Note that compiler flags will be added before the default flags;
     # this helps ensure added search paths have priority, but also implies

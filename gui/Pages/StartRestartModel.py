@@ -79,7 +79,7 @@ class StartRestartModel(Model):
     @Variables.noUndo
     def getRestartPath(self):
         """
-        Return restart path if applicable
+        Return restart path if applicable; use '*' for automatic mode.
         """
         node = self.node_start.xmlInitNode('restart', 'path')
         restart = node['path']
@@ -92,7 +92,7 @@ class StartRestartModel(Model):
     @Variables.undoLocal
     def setRestartPath(self, v):
         """
-        Set restart path if applicable
+        Set restart path if applicable; use '*' for automatic mode.
         """
         node = self.node_start.xmlInitNode('restart', 'path')
         if v:

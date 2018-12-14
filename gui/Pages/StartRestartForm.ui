@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>517</width>
+    <width>689</width>
     <height>331</height>
    </rect>
   </property>
@@ -139,6 +139,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QRadioButton" name="radioButtonAuto">
+          <property name="text">
+           <string>automatic</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -238,6 +245,19 @@
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;mesh_input&lt;/span&gt; or &lt;span style=&quot; font-weight:600;&quot;&gt;mesh_output&lt;/span&gt; from previous run matching the restart files.&lt;/p&gt;&lt;p&gt;If this file is not available (not saved in previous calculation), re-running the previous calculation in &amp;quot;preprocessing only&amp;quot; mode may allow rebuilding it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
+           </item>
+           <item row="2" column="2">
+            <spacer name="horizontalSpacerMesh">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </item>

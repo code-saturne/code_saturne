@@ -237,6 +237,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         self.radioButtonYes.clicked.connect(self.slotStartRestart)
         self.radioButtonNo.clicked.connect(self.slotStartRestart)
+        self.radioButtonAuto.clicked.connect(self.slotStartRestart)
         self.toolButton.pressed.connect(self.slotSearchRestartDirectory)
         self.toolButtonRestartMesh.pressed.connect(self.slotSearchRestartMesh)
         self.checkBox.clicked.connect(self.slotFrozenField)
@@ -251,20 +252,25 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         self.restart_mesh_path = self.model.getRestartMeshPath()
 
         if self.restart_path:
-            if not os.path.isdir(os.path.join(self.case['case_path'],
-                                              self.restart_path)):
-                title = self.tr("WARNING")
-                msg   = self.tr("Invalid path in %s!" % self.restart_path)
-                QMessageBox.warning(self, title, msg)
+            if self.restart_path == '*':
+                self.radioButtonNo.setChecked(False)
+                self.radioButtonYes.setChecked(False)
+                self.radioButtonAuto.setChecked(True)
+            else:
+                if not os.path.isdir(os.path.join(self.case['case_path'],
+                                                  self.restart_path)):
+                    title = self.tr("WARNING")
+                    msg   = self.tr("Invalid path in %s!" % self.restart_path)
+                    QMessageBox.warning(self, title, msg)
 
-            self.radioButtonYes.setChecked(True)
-            self.radioButtonNo.setChecked(False)
-            self.checkBoxRestartMesh.show()
+                self.radioButtonNo.setChecked(False)
+                self.radioButtonYes.setChecked(True)
+                self.radioButtonAuto.setChecked(False)
 
         else:
-            self.radioButtonYes.setChecked(False)
             self.radioButtonNo.setChecked(True)
-            self.checkBoxRestartMesh.hide()
+            self.radioButtonYes.setChecked(False)
+            self.radioButtonAuto.setChecked(False)
 
         self.slotStartRestart()
 
@@ -398,15 +404,27 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         Input IRESTART Code_Saturne keyword.
         """
         if self.radioButtonYes.isChecked():
-            if not self.restart_path:
+            if not self.restart_path or self.restart_path == '*':
                 self.slotSearchRestartDirectory()
-
+        elif self.radioButtonAuto.isChecked():
+            self.restart_path = '*'
         else:
             self.restart_path = None
 
         if self.restart_path:
             self.model.setRestartPath(self.restart_path)
-            self.radioButtonYes.setChecked(True)
+            if self.restart_path == '*':
+                self.radioButtonYes.setChecked(False)
+                self.radioButtonAuto.setChecked(True)
+                self.labelRestartDir.hide()
+                self.lineEdit.hide()
+                self.toolButton.hide()
+            else:
+                self.radioButtonYes.setChecked(True)
+                self.radioButtonAuto.setChecked(False)
+                self.labelRestartDir.show()
+                self.lineEdit.show()
+                self.toolButton.show()
             self.radioButtonNo.setChecked(False)
             self.frameRestart.show()
             self.lineEdit.setText(self.restart_path)
