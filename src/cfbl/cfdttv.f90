@@ -80,6 +80,7 @@ use ppincl
 use mesh
 use field
 use cs_cf_bindings
+use cfpoin
 
 !===============================================================================
 

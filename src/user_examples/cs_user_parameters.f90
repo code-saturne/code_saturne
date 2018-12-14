@@ -245,19 +245,6 @@ if (ixmlpu.eq.0) then
 
 endif
 
-! --- eos: equation of state for compressible flows
-! ========
-
-!        if = 1    ideal gas with constant gamma
-!        if = 2    stiffened gas
-!        if = 3    ideal gas mix
-
-if (ixmlpu.eq.0.and.ippmod(icompf).ge.0) then
-
-  ieos = 1
-
-endif
-
 ! --- eljou: Joule effect
 ! ==========
 

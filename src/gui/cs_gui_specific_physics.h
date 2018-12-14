@@ -196,13 +196,10 @@ void CS_PROCF (uidai1, UIDAI1) (int    *permeability,
 
 /*-----------------------------------------------------------------------------
  * Activate specific physical models based on XML settings.
- *
- * parameters:
- *   ieos    --> compressible
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_physical_model_select(cs_int_t  *ieos);
+cs_gui_physical_model_select(void);
 
 /*----------------------------------------------------------------------------
  * Electrical model: read parameters

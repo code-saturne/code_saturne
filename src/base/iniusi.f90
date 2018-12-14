@@ -128,7 +128,7 @@ iihmpr = cs_gui_file_is_loaded()
 
 ! GUI
 
-call cs_gui_physical_model_select(ieos)
+call cs_gui_physical_model_select
 
 ! User subroutine
 

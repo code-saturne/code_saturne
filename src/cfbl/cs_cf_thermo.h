@@ -39,6 +39,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_physical_constants.h"
+#include "cs_cf_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -305,7 +306,7 @@ cs_cf_thermo_gamma(cs_real_t *cp,
                    cs_lnum_t l_size)
 {
   /*  Local variables */
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /*  Gamma is supposed to be superior or equal to 1.
       It is computed at each call, even if this may seem costly,
@@ -329,7 +330,7 @@ cs_cf_thermo_gamma(cs_real_t *cp,
   /* stiffened gas - constant gamma (parameter of the law) */
   else if (ieos == 2) {
     for (cs_lnum_t ii = 0; ii < l_size; ii++)
-      gamma[ii] = cs_glob_fluid_properties->gammasg;
+      gamma[ii] = cs_glob_cf_model->gammasg;
   }
 }
 

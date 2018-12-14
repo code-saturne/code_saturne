@@ -36,7 +36,11 @@ module cfpoin
   !> \addtogroup compressible
   !> \{
 
+  !> indicator of equation of state mapping \ref cs_cf_model_t::ieos
+  integer(c_int), pointer, save :: ieos
+
   !> thermodynamic variables indicator for initialization
+  !> mapping cs_cf_model_t::ithvar
   integer(c_int), pointer, save :: ithvar
 
   !> imposed thermal flux indicator at the boundary
@@ -47,6 +51,15 @@ module cfpoin
   !> (some boundary contributions of the momentum eq. have to be cancelled)
   integer, allocatable, dimension(:) :: icvfli
 
+  !> Stiffened gas limit pressure (Pa) for single phase model
+  !> Equal to zero in perfect gas
+  !> mapping cs_cf_model_t::psginf
+  real(c_double), pointer, save :: psginf
+
+  !> Stiffened gas polytropic coefficient (dimensionless) for single phase model
+  !> mapping cs_cf_model_t::gammasg
+  real(c_double), pointer, save :: gammasg
+
   !> \addtogroup comp_homogeneous
   !> \{
 
@@ -54,6 +67,7 @@ module cfpoin
   !> homogeneous two-phase flow model indicator for source terms
   !>    -  -1: source terms are disabled
   !>    -   0: source terms are enabled
+  !> mapping cs_cf_model_t::hgn_relax_eq_st
   integer(c_int), pointer, save :: hgn_relax_eq_st
 
   !> \}
@@ -72,11 +86,15 @@ module cfpoin
     ! Interface to C function retrieving pointers to members of the
     ! global compressible model structure
 
-    subroutine cs_f_cf_model_get_pointers(ithvar, hgn_relax_eq_st) &
+    subroutine cs_f_cf_model_get_pointers(ieos,            &
+                                          ithvar,          &
+                                          psginf,          &
+                                          gammasg,         &
+                                          hgn_relax_eq_st) &
       bind(C, name='cs_f_cf_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ithvar, hgn_relax_eq_st
+      type(c_ptr), intent(out) :: ieos, ithvar, psginf, gammasg, hgn_relax_eq_st
     end subroutine cs_f_cf_model_get_pointers
 
     !---------------------------------------------------------------------------
@@ -103,11 +121,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ithvar, c_hgn_relax_eq_st
+    type(c_ptr) :: c_ieos, c_ithvar, c_psginf, c_gammasg, c_hgn_relax_eq_st
 
-    call cs_f_cf_model_get_pointers(c_ithvar, c_hgn_relax_eq_st)
+    call cs_f_cf_model_get_pointers(c_ieos,           &
+                                    c_ithvar,         &
+                                    c_psginf,         &
+                                    c_gammasg,        &
+                                    c_hgn_relax_eq_st)
 
+    call c_f_pointer(c_ieos, ieos)
     call c_f_pointer(c_ithvar, ithvar)
+    call c_f_pointer(c_psginf, psginf)
+    call c_f_pointer(c_gammasg, gammasg)
     call c_f_pointer(c_hgn_relax_eq_st, hgn_relax_eq_st)
 
   end subroutine cf_model_init

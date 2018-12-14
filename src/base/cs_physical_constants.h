@@ -62,8 +62,6 @@ typedef struct {
 
   int           ixyzp0;       /* indicator for filling of reference point for
                                  total pressure */
-  int           ieos;         /* indicator of equation of state for the
-                                 compressible module */
   int           icp;          /* property index of the isobaric specific heat */
   int           icv;          /* property index of the isochoric specific
                                  heat */
@@ -82,10 +80,6 @@ typedef struct {
   double        cv0;          /* reference specific heat */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
                                  (if ieos=1) */
-  double        psginf;       /* stiffened gas (ieos=2) limit pressure (zero in
-                                 perfect gas) (Pa) */
-  double        gammasg;      /* stiffened gas (ieos=2) polytropic coefficient,
-                                 (dimensionless) */
   int           ipthrm;       /* Uniform variable thermodynamic pressure for the
                                  low-Mach algorithm */
   double        pther;        /* uniform thermodynamic pressure for the low-Mach

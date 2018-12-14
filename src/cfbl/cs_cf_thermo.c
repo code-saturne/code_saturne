@@ -52,6 +52,7 @@
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_thermal_model.h"
+#include "cs_cf_model.h"
 #include "cs_hgn_thermo.h"
 
 /*----------------------------------------------------------------------------
@@ -94,7 +95,7 @@ void
 cs_cf_set_thermo_options(void)
 {
   cs_fluid_properties_t *fluid_properties = cs_get_glob_fluid_properties();
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
   if (ieos == 1 || ieos == 2) {
     /* Calculation options: constant Cp and Cv (perfect or stiffened gas)
        specific heat Cv0 is calculated in a subsequent section (from Cp0) */
@@ -124,7 +125,7 @@ cs_cf_thermo_default_init(void)
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   cs_real_t  r_pg  = cs_physical_constants_r;
-  cs_real_t  psginf= cs_glob_fluid_properties->psginf;
+  cs_real_t  psginf= cs_glob_cf_model->psginf;
   cs_real_t  p0    = cs_glob_fluid_properties->p0;
   cs_real_t  t0    = cs_glob_fluid_properties->t0;
   cs_real_t  cp0   = cs_glob_fluid_properties->cp0;
@@ -139,7 +140,7 @@ cs_cf_thermo_default_init(void)
   cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *cvar_en = CS_F_(e_tot)->val;
 
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* perfect gas */
   if (ieos == 1 || ieos == 3) {
@@ -150,7 +151,7 @@ cs_cf_thermo_default_init(void)
   }
   /* stiffened gas: cv0 is set by the user */
   else if (ieos == 2) {
-    cs_real_t gamma = cs_glob_fluid_properties->gammasg;
+    cs_real_t gamma = cs_glob_cf_model->gammasg;
     *ro0 = (p0 + psginf) / ((gamma-1.)*(*cv0)*t0);
     e0 = *cv0*t0 + psginf / *ro0;
   }
@@ -184,7 +185,7 @@ void
 cs_cf_check_pressure(cs_real_t *pres,
                      cs_lnum_t l_size)
 {
-  cs_real_t psginf = cs_glob_fluid_properties->psginf;
+  cs_real_t psginf = cs_glob_cf_model->psginf;
 
   /* Local variables */
   cs_gnum_t ierr;
@@ -347,7 +348,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
                         cs_lnum_t    l_size)
 {
   /* local variables */
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* calculation of temperature and energy from pressure and density */
 
@@ -356,7 +357,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
     cs_real_t gamma0;
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
     cs_real_t cv0 = cs_glob_fluid_properties->cv0;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t l_size0 = 1;
 
     cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, l_size0);
@@ -372,7 +373,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
   /* ideal gas mixture */
   else if (ieos == 3) {
     cs_real_t *gamma;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
 
     BFT_MALLOC(gamma, l_size, cs_real_t);
 
@@ -417,14 +418,14 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
                         cs_lnum_t    l_size)
 {
   /* Local variables */
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos - constant gamma */
   if (ieos == 1 || ieos == 2) {
     cs_real_t gamma0;
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
     cs_real_t cv0 = cs_glob_fluid_properties->cv0;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t l_size0 = 1;
 
     cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, l_size0);
@@ -440,7 +441,7 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
   /* ideal gas mixture */
   else if (ieos == 3) {
     cs_real_t *gamma;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
 
     BFT_MALLOC(gamma, l_size, cs_real_t);
 
@@ -486,14 +487,14 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
 {
   /* Local variables */
   cs_real_t enint;
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos - constant gamma */
   if (ieos == 1 || ieos == 2) {
     cs_real_t gamma0;
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
     cs_real_t cv0 = cs_glob_fluid_properties->cv0;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t l_size0 = 1;
 
     cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, l_size0);
@@ -513,7 +514,7 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
   /* ideal gas mixture */
   else if (ieos == 3) {
     cs_real_t *gamma;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
 
     BFT_MALLOC(gamma, l_size, cs_real_t);
 
@@ -561,14 +562,14 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
                         cs_lnum_t    l_size)
 {
   /* Local variables */
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos - constant gamma */
   if (ieos == 1 || ieos == 2) {
     cs_real_t gamma0;
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
     cs_real_t cv0 = cs_glob_fluid_properties->cv0;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t l_size0 = 1;
 
     cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, l_size0);
@@ -584,7 +585,7 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
   /* ideal gas mixture */
   else if (ieos == 3) {
     cs_real_t *gamma;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     BFT_MALLOC(gamma, l_size, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, l_size);
@@ -634,14 +635,14 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
 {
   /*  Local variables */
   cs_real_t enint;
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos - constant gamma */
   if (ieos == 1 || ieos == 2) {
     cs_real_t gamma0;
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
     cs_real_t cv0 = cs_glob_fluid_properties->cv0;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t l_size0 = 1;
 
     cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, l_size0);
@@ -661,7 +662,7 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
   /* ideal gas mixture */
   else if (ieos == 3) {
     cs_real_t *gamma;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     BFT_MALLOC(gamma, l_size, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, l_size);
@@ -734,14 +735,14 @@ cs_cf_thermo_c_square(cs_real_t *cp,
                       cs_lnum_t  l_size)
 {
   /*  Local variables */
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos - constant gamma */
   if (ieos == 1 || ieos == 2) {
     cs_real_t gamma0;
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
     cs_real_t cv0 = cs_glob_fluid_properties->cv0;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t l_size0 = 1;
 
     cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, l_size0);
@@ -752,7 +753,7 @@ cs_cf_thermo_c_square(cs_real_t *cp,
   /* ideal gas mixture */
   else if (ieos == 3) {
     cs_real_t *gamma;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     BFT_MALLOC(gamma, l_size, cs_real_t);
 
     cs_cf_thermo_gamma(cp, cv, gamma, l_size);
@@ -801,7 +802,7 @@ cs_cf_thermo_beta(cs_real_t *cp,
                   cs_lnum_t  l_size)
 {
   /*  Local variables */
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos - constant gamma */
   if (ieos == 1 || ieos == 2) {
@@ -848,7 +849,7 @@ cs_cf_thermo_cv(cs_real_t *cp,
                 cs_real_t *cv,
                 cs_lnum_t  l_size)
 {
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* Cv for a single ideal gas  or a mixture of ideal gas */
   if (ieos == 1 || ieos == 3) {
@@ -887,14 +888,14 @@ cs_cf_thermo_s_from_dp(cs_real_t *cp,
                        cs_lnum_t  l_size)
 {
   /*  Local variables */
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos - constant gamma */
   if (ieos == 1 || ieos == 2) {
     cs_real_t gamma0;
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
     cs_real_t cv0 = cs_glob_fluid_properties->cv0;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t l_size0 = 1;
 
     cs_cf_thermo_gamma(&cp0, &cv0, &gamma0, l_size0);
@@ -907,7 +908,7 @@ cs_cf_thermo_s_from_dp(cs_real_t *cp,
   /* ideal gas mixture */
   else if (ieos == 3) {
     cs_real_t *gamma;
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
 
     BFT_MALLOC(gamma, l_size, cs_real_t);
 
@@ -953,11 +954,11 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfa,
 
   cs_real_t cp, cv, gamma;
   cs_lnum_t l_size = 1;
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos  or ideal gas mixture */
   if (ieos == 1 || ieos == 2 || ieos == 3) {
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t cell_id = b_face_cells[face_id];
 
     if (ieos == 1 || ieos == 2) {
@@ -1063,11 +1064,11 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
 
   cs_real_t cp, cv;
   cs_lnum_t l_size = 1;
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos  or ideal gas mixture */
   if (ieos == 1 || ieos == 2 || ieos == 3) {
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t cell_id = b_face_cells[face_id];
 
     if (ieos == 1 || ieos == 2) {
@@ -1310,11 +1311,11 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
 
   cs_real_t cp, cv;
   cs_lnum_t l_size = 1;
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos  or ideal gas mixture */
   if (ieos == 1 || ieos == 2 || ieos == 3) {
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t cell_id = b_face_cells[face_id];
 
     if (ieos == 1 || ieos == 2) {
@@ -1610,12 +1611,12 @@ cs_cf_thermo_eps_sup(cs_real_t *dens,
                      cs_real_t *eps_sup,
                      cs_lnum_t  l_size)
 {
-  int ieos = cs_glob_fluid_properties->ieos;
+  int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos  or ideal gas mixture
      (if ideal gas, infinite pressure equals 0) */
   if (ieos == 1 || ieos == 2 || ieos == 3) {
-    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+    cs_real_t psginf = cs_glob_cf_model->psginf;
 
     for (cs_lnum_t ii = 0; ii < l_size; ii++)
       eps_sup[ii] = psginf / dens[ii];

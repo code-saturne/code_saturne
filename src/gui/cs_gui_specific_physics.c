@@ -51,6 +51,7 @@
 #include "mei_evaluate.h"
 
 #include "cs_base.h"
+#include "cs_cf_model.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
 #include "cs_gui_variables.h"
@@ -1253,13 +1254,10 @@ void CS_PROCF (uidai1, UIDAI1) (int  *permeability,
 
 /*-----------------------------------------------------------------------------
  * Activate specific physical models based on XML settings.
- *
- * parameters:
- *   ieos    --> compressible
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_physical_model_select(cs_int_t  *ieos)
+cs_gui_physical_model_select(void)
 {
   if (!cs_gui_file_is_loaded())
     return;
@@ -1369,7 +1367,8 @@ cs_gui_physical_model_select(cs_int_t  *ieos)
     else if (cs_gui_strcmp(vars->model, "compressible_model")) {
       if (cs_gui_strcmp(vars->model_value, "constant_gamma")) {
         cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 0;
-        *ieos = 1;
+        cs_cf_model_t *cf_mdl = cs_get_glob_cf_model();
+        cf_mdl->ieos = 1;
       }
       else
         bft_error(__FILE__, __LINE__, 0,

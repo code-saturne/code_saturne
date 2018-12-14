@@ -35,6 +35,7 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/elec \

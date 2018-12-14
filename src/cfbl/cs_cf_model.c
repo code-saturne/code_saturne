@@ -59,6 +59,54 @@ BEGIN_C_DECLS
   \file cs_cf_model.c
         Compressible models data.
 */
+/*----------------------------------------------------------------------------*/
+
+/*!
+  \defgroup compressible Compressible models options
+
+  @addtogroup compressible
+  @{
+
+  \struct cs_cf_model_t
+
+  \brief Compressible model general options descriptor
+
+  Members of these fluid properties are publicly accessible, to allow for
+  concise syntax, as they are expected to be used in many places.
+
+  \var  cs_cf_model_t::ieos
+        indicator of equation of state
+        -  1: ideal gas with a constant adiabatic coefficient
+        -  2: stiffened gas
+        -  3: mix of ideal gas
+        -  4: two-phase homogeneous model only, each phase is an ideal gas
+
+  \var  cs_cf_model_t::ithvar
+        indicator for thermodynamic variables initialization
+
+  \var  cs_cf_model_t::psginf
+        stiffened gas limit pressure (zero in perfect gas) for single phase
+        model in Pa
+
+  \var  cs_cf_model_t::gammasg
+        stiffened gas polytropic coefficient (dimensionless) for single phase
+        model
+
+  \defgroup comp_homogeneous Homogeneous two-phase compressible model options
+
+  @addtogroup comp_homogeneous
+  @{
+
+  \var  cs_cf_model_t::hgn_relax_eq_st
+        source term step indicator for two-phase homogeneous model:
+        - -1 disabled
+        -  0 enabled
+
+  @}
+
+  @}
+
+*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -70,7 +118,10 @@ BEGIN_C_DECLS
 
 static cs_cf_model_t  _cf_model =
 {
+  .ieos            = -1,
   .ithvar          =  10000,
+  .psginf          = 0.,
+  .gammasg         = 1.4,
   .hgn_relax_eq_st = -1
 };
 
@@ -82,8 +133,11 @@ const cs_cf_model_t  *cs_glob_cf_model = &_cf_model;
  *============================================================================*/
 
 void
-cs_f_cf_model_get_pointers(int  **ithvar,
-                           int  **hgn_relax_eq_st);
+cs_f_cf_model_get_pointers(int    **ieos,
+                           int    **ithvar,
+                           double **psginf,
+                           double **gammasg,
+                           int    **hgn_relax_eq_st);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -96,15 +150,24 @@ cs_f_cf_model_get_pointers(int  **ithvar,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
+ *   ieos             --> pointer to cs_glob_cf_model->ieos
  *   ithvar           --> pointer to cs_glob_cf_model->ithvar
+ *   psginf           --> pointer to cs_glob_cf_model->psginf
+ *   gammasg          --> pointer to cs_glob_cf_model->gammasg
  *   hgn_relax_eq_st  --> pointer to cs_glob_cf_model->hgn_relax_eq_st
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_cf_model_get_pointers(int  **ithvar,
-                           int  **hgn_relax_eq_st)
+cs_f_cf_model_get_pointers(int    **ieos,
+                           int    **ithvar,
+                           double **psginf,
+                           double **gammasg,
+                           int    **hgn_relax_eq_st)
 {
+  *ieos             = &(_cf_model.ieos);
   *ithvar           = &(_cf_model.ithvar);
+  *psginf           = &(_cf_model.psginf);
+  *gammasg          = &(_cf_model.gammasg);
   *hgn_relax_eq_st  = &(_cf_model.hgn_relax_eq_st);
 }
 

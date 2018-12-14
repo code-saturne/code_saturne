@@ -55,6 +55,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_cf_model.h"
 #include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
 #include "cs_fan.h"

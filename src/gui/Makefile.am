@@ -40,6 +40,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/turb \

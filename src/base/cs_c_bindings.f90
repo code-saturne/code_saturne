@@ -1053,11 +1053,10 @@ module cs_c_bindings
 
     ! Interface to C function selecting specific physical models.
 
-    subroutine cs_gui_physical_model_select(ieos)  &
+    subroutine cs_gui_physical_model_select()  &
       bind(C, name='cs_gui_physical_model_select')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(out) :: ieos
     end subroutine cs_gui_physical_model_select
 
     !---------------------------------------------------------------------------

@@ -75,12 +75,6 @@ module cstphy
   !> filling \ref xyzp0 indicator
   integer(c_int), pointer, save :: ixyzp0
 
-  !> indicates the equation of state for compressible module. Only perfect gas
-  !> with a constant adiabatic coefficient, \ref ieos=1 is available, but the
-  !> user can complete the file \ref cs_cf_thermo.h, which is not a user
-  !> source, to add new equations of state.
-  integer(c_int), pointer, save :: ieos
-
   !> indicates if the isobaric specific heat \f$C_p\f$ is variable:
   !>  - 0: constant, no property field is declared
   !>  - 1: variable, \f$C_p\f$ is declared as a property field\n
@@ -237,13 +231,6 @@ module cstphy
   !>
   !> Useful for the compressible module (J/kg/K)
   real(c_double), pointer, save :: cv0
-
-  !> Stiffened gas (ieos=2) limit pressure (Pa)
-  !> Equal to zero in perfect gas
-  real(c_double), pointer, save :: psginf
-
-  !> Stiffened gas (ieos=2) polytropic coefficient (dimensionless)
-  real(c_double), pointer, save :: gammasg
 
   !> Molar mass of the perfect gas in \f$ kg/mol \f$
   !> (if \ref cstphy::ieos "ieos"=1)
@@ -780,7 +767,6 @@ module cstphy
     ! global fluid properties structure
 
     subroutine cs_f_fluid_properties_get_pointers(ixyzp0,  &
-                                                  ieos,    &
                                                   icp,     &
                                                   icv,     &
                                                   irovar,  &
@@ -795,8 +781,6 @@ module cstphy
                                                   cp0,     &
                                                   cv0,     &
                                                   xmasmr,  &
-                                                  psginf,  &
-                                                  gammasg, &
                                                   ipthrm,  &
                                                   pther,   &
                                                   pthera,  &
@@ -807,9 +791,9 @@ module cstphy
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ixyzp0, ieos, icp, icv, irovar, ivivar, ivsuth
+      type(c_ptr), intent(out) :: ixyzp0, icp, icv, irovar, ivivar, ivsuth
       type(c_ptr), intent(out) :: ro0, viscl0, p0, pred0
-      type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, xmasmr, psginf, gammasg
+      type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, xmasmr
       type(c_ptr), intent(out) :: ipthrm
       type(c_ptr), intent(out) :: pther, pthera, pthermax
       type(c_ptr), intent(out) :: sleak, kleak, roref
@@ -902,26 +886,24 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ixyzp0, c_ieos, c_icp, c_icv, c_irovar, c_ivivar
+    type(c_ptr) :: c_ixyzp0, c_icp, c_icv, c_irovar, c_ivivar
     type(c_ptr) :: c_ivsuth, c_ro0, c_viscl0, c_p0
-    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr, c_psginf
-    type(c_ptr) :: c_gammasg
+    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr
     type(c_ptr) :: c_ipthrm
     type(c_ptr) :: c_pther, c_pthera, c_pthermax
     type(c_ptr) :: c_sleak, c_kleak, c_roref
 
-    call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ieos, c_icp, c_icv, &
+    call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_icp, c_icv,         &
                                             c_irovar, c_ivivar, c_ivsuth,   &
                                             c_ro0, c_viscl0, c_p0, c_pred0, &
                                             c_xyzp0, c_t0, c_cp0, c_cv0,    &
-                                            c_xmasmr, c_psginf, c_gammasg,  &
+                                            c_xmasmr,                       &
                                             c_ipthrm, c_pther, c_pthera,    &
                                             c_pthermax, c_sleak, c_kleak,   &
                                             c_roref)
 
 
     call c_f_pointer(c_ixyzp0, ixyzp0)
-    call c_f_pointer(c_ieos, ieos)
     call c_f_pointer(c_icp, icp)
     call c_f_pointer(c_icv, icv)
     call c_f_pointer(c_irovar, irovar)
@@ -936,8 +918,6 @@ contains
     call c_f_pointer(c_cp0, cp0)
     call c_f_pointer(c_cv0, cv0)
     call c_f_pointer(c_xmasmr, xmasmr)
-    call c_f_pointer(c_psginf, psginf)
-    call c_f_pointer(c_gammasg, gammasg)
     call c_f_pointer(c_ipthrm, ipthrm)
     call c_f_pointer(c_pther, pther)
     call c_f_pointer(c_pthera, pthera)

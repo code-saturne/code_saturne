@@ -51,8 +51,17 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  int           ieos;             /* indicator of equation of state */
+
   int           ithvar;           /* indicator for thermodynamic
                                      variables initialization */
+
+  double        psginf;       /* stiffened gas limit pressure (zero in
+                                 perfect gas) (Pa) for single phase model */
+
+  double        gammasg;      /* stiffened gas polytropic coefficient,
+                                 (dimensionless) for single phase model */
+
   int           hgn_relax_eq_st;  /* source term step:
                                      - -1 disabled
                                      -  0 enabled

@@ -62,6 +62,7 @@ use mesh
 use field
 use turbomachinery
 use cs_c_bindings
+use cfpoin
 
 !===============================================================================
 

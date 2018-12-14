@@ -98,14 +98,6 @@ BEGIN_C_DECLS
 
   \var  cs_fluid_properties_t::ixyzp0
         filling \ref xyzp0 indicator
-  \var  cs_fluid_properties_t::ieos
-        indicator of equation of state
-
-        useful only for the compressible module. Ideal gas with a constant
-        adiabatic coefficient (\ref ieos=1), stiffened gas (\ref ieos=2) and
-        mix of ideal gas (\ref ieos=3) are available, but the user can complete
-        the file \ref cs_cf_thermo.h, which is not a user source, to add new
-        equations of state.
   \var  cs_fluid_properties_t::icp
         indicates if the isobaric specific heat \f$C_p\f$ is variable
         - -1: uniform, no property field is declared
@@ -258,12 +250,6 @@ BEGIN_C_DECLS
         (if \ref cstphy::ieos "ieos"=1)
 
         Always useful.
-  \var  cs_fluid_properties_t::psginf
-        stiffened gas (\ref cs_fluid_properties_t::ieos "ieos"=2) limit pressure
-        (zero in perfect gas)
-  \var  cs_fluid_properties_t::gammasg
-        stiffened gas (\ref cs_fluid_properties_t::ieos "ieos"=2) polytropic coefficient
-        (dimensionless)
   \var  cs_fluid_properties_t::ipthrm
         uniform variable thermodynamic pressure:
         - 0: false (ie not variable)
@@ -309,7 +295,6 @@ static cs_physical_constants_t _physical_constants = {
 
 static cs_fluid_properties_t  _fluid_properties = {
   .ixyzp0   = -1,
-  .ieos     = -1,
   .icp      = -1,
   .icv      = -1,
   .irovar   = 0,
@@ -324,8 +309,6 @@ static cs_fluid_properties_t  _fluid_properties = {
   .cp0      = 1017.24,
   .cv0      = 0.,
   .xmasmr   = 0.028966, /* air molar mass */
-  .psginf   = 0.,
-  .gammasg  = 1.4,
   .ipthrm   = 0,
   .pther    = 1.013e5,
   .pthera   = 0.,
@@ -377,7 +360,6 @@ cs_f_physical_constants_get_pointers(double  **gx,
 
 void
 cs_f_fluid_properties_get_pointers(int     **ixyzp0,
-                                   int     **ieos,
                                    int     **icp,
                                    int     **icv,
                                    int     **irovar,
@@ -392,8 +374,6 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **cp0,
                                    double  **cv0,
                                    double  **xmasmr,
-                                   double  **psginf,
-                                   double  **gammasg,
                                    int     **ipthrm,
                                    double  **pther,
                                    double  **pthera,
@@ -443,7 +423,6 @@ cs_f_physical_constants_get_pointers(double  **gx,
  *
  * parameters:
  *   ixyzp0   --> pointer to cs_glob_fluid_properties->ixyzp0
- *   ieos     --> pointer to cs_glob_fluid_properties->ieos
  *   icp      --> pointer to cs_glob_fluid_properties->icp
  *   icv      --> pointer to cs_glob_fluid_properties->icv
  *   irovar   --> pointer to cs_glob_fluid_properties->irovar
@@ -458,8 +437,6 @@ cs_f_physical_constants_get_pointers(double  **gx,
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
  *   cv0      --> pointer to cs_glob_fluid_properties->cv0
  *   xmasmr   --> pointer to cs_glob_fluid_properties->xmasmr
- *   psginf   --> pointer to cs_glob_fluid_properties->psginf
- *   gammasg  --> pointer to cs_glob_fluid_properties->gammasg
  *   ipthrm   --> pointer to cs_glob_fluid_properties->ipthrm
  *   pther    --> pointer to cs_glob_fluid_properties->pther
  *   pthera   --> pointer to cs_glob_fluid_properties->pthera
@@ -471,7 +448,6 @@ cs_f_physical_constants_get_pointers(double  **gx,
 
 void
 cs_f_fluid_properties_get_pointers(int     **ixyzp0,
-                                   int     **ieos,
                                    int     **icp,
                                    int     **icv,
                                    int     **irovar,
@@ -486,8 +462,6 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **cp0,
                                    double  **cv0,
                                    double  **xmasmr,
-                                   double  **psginf,
-                                   double  **gammasg,
                                    int     **ipthrm,
                                    double  **pther,
                                    double  **pthera,
@@ -497,7 +471,6 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **roref)
 {
   *ixyzp0   = &(_fluid_properties.ixyzp0);
-  *ieos     = &(_fluid_properties.ieos);
   *icp      = &(_fluid_properties.icp);
   *icv      = &(_fluid_properties.icv);
   *irovar   = &(_fluid_properties.irovar);
@@ -512,8 +485,6 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *cp0      = &(_fluid_properties.cp0);
   *cv0      = &(_fluid_properties.cv0);
   *xmasmr   = &(_fluid_properties.xmasmr);
-  *psginf   = &(_fluid_properties.psginf);
-  *gammasg  = &(_fluid_properties.gammasg);
   *ipthrm   = &(_fluid_properties.ipthrm);
   *pther    = &(_fluid_properties.pther);
   *pthera   = &(_fluid_properties.pthera);

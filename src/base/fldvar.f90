@@ -59,6 +59,7 @@ use ihmpre
 use mesh
 use field
 use cs_c_bindings
+use cfpoin, only:ieos
 
 !===============================================================================
 
