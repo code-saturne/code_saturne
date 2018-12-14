@@ -45,29 +45,54 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * turbulence models
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_TURB_NONE = 0,
+  CS_TURB_MIXING_LENGTH = 10,
+  CS_TURB_K_EPSISLON = 20,
+  CS_TURB_K_EPSISLON_LIN_PROD = 21,
+  CS_TURB_K_EPSISLON_LS = 22,
+  CS_TURB_RIJ_EPSISLON_LRR = 30,
+  CS_TURB_RIJ_EPSISLON_SSG = 31,
+  CS_TURB_RIJ_EPSISLON_EBRSM = 32,
+  CS_TURB_LES_SMAGO_CONST = 40,
+  CS_TURB_LES_SMAGO_DYN = 41,
+  CS_TURB_LES_WALE = 42,
+  CS_TURB_V2F_PHI = 50,
+  CS_TURB_V2F_BL_V2K = 51,
+  CS_TURB_K_OMEGA = 60,
+  CS_TURB_SPALART_ALLMARAS = 70
+};
+
+
 /* turbulence model general options descriptor */
 /*---------------------------------------------*/
 
 typedef struct {
 
-  int           iturb;        /* turbulence model
-                                 - 0: no turbulence model (laminar flow)
-                                 - 10: mixing length model
-                                 - 20: standard k-epsilon model
-                                 - 21: k-epsilon model with Linear
-                                       Production (LP) correction
-                                 - 22: Launder-Sharma low Re k-epsilon model
-                                 - 30: Rij-epsilon (LRR)
-                                 - 31: Rij-epsilon (SSG)
-                                 - 32: Rij-epsilon (EBRSM)
-                                 - 40: LES (constant Smagorinsky model)
-                                 - 41: LES ("classical" dynamic Smagorisky
-                                       model)
-                                 - 42: LES (WALE)
-                                 - 50: v2f phi-model
-                                 - 51: v2f BL-v2-k
-                                 - 60: k-omega SST
-                                 - 70: Spalart-Allmaras model */
+  int           iturb; /* turbulence model
+                          CS_TURB_NONE: no turbulence model (laminar flow)
+                          CS_TURB_MIXING_LENGTH: mixing length model
+                          CS_TURB_K_EPSISLON: standard k-epsilon model
+                          CS_TURB_K_EPSISLON_LIN_PROD: k-epsilon model with
+                            Linear Production (LP) correction
+                          CS_TURB_K_EPSISLON_LS: Launder-Sharma low Re
+                            k-epsilon model
+                          CS_TURB_RIJ_EPSISLON_LRR: Rij-epsilon (LRR)
+                          CS_TURB_RIJ_EPSISLON_SSG: Rij-epsilon (SSG)
+                          CS_TURB_RIJ_EPSISLON_EBRSM: Rij-epsilon (EBRSM)
+                          CS_TURB_LES_SMAGO_CONST: LES
+                            (constant Smagorinsky model)
+                          CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic
+                            Smagorisky model)
+                          CS_TURB_LES_WALE: LES (WALE)
+                          CS_TURB_V2F_PHI: v2f phi-model
+                          CS_TURB_V2F_BL_V2K: v2f BL-v2-k
+                          CS_TURB_K_OMEGA: k-omega SST
+                          CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
   int           itytur;       /* class of turbulence model (integer value
                                  iturb/10) */
 } cs_turb_model_t;

@@ -466,50 +466,6 @@ integer iturb, itherm, iale, ivofmt, icavit
 
 !< [usipph]
 
-! --- Turbulence
-!       0: Laminar
-!      10: Mixing length
-!      20: k-epsilon
-!      21: k-epsilon (linear production)
-!      30: Rij-epsilon, (standard LRR)
-!      31: Rij-epsilon (SSG)
-!      32: Rij-epsilon (EBRSM)
-!      40: LES (Smagorinsky)
-!      41: LES (Dynamic)
-!      42: LES (WALE)
-!      50: v2f (phi-model)
-!      51: v2f (BL-v2/k)
-!      60: k-omega SST
-!      70: Spalart Allmaras
-!  For 10, contact the development team before use
-
-if (ixmlpu.eq.0) then
-
-  iturb = 21
-
-endif
-
-
-! Coupled solver for Rij components (when iturb=30, 31 or 32)
-
-irijco = 1
-
-! --- Thermal model
-!      0: none
-!      1: temperature
-!      2: enthalpy
-!      3: total energy (only for compressible module)
-!
-!  For temperature, the temperature scale may be set later using itpscl
-!  (1 for Kelvin, 2 for Celsius).
-!
-!  Warning: When using specific physics, this value is
-!           set automatically by the physics model.
-
-
-itherm = 1
-
-
 ! --- Cavitation module
 !    - -1: module not activated
 !    -  0: no vaporization/condensation model
@@ -519,15 +475,13 @@ itherm = 1
 !  (see example in cs_user_parameters-cavitation.f90)
 !
 
-
 icavit = -1
 
+! --- Enable two phase homogeneous model
+!     (compressible module should be enabled first)
 
-! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
-!      1: legacy solver
-!      2: CDO solver
 
-iale = 1
+icfhgn = 1
 
 
 !< [usipph]

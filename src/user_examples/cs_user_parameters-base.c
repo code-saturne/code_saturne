@@ -54,6 +54,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_ale.h"
 #include "cs_base.h"
 #include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
@@ -132,6 +133,68 @@ cs_user_model(void)
 
   if (cs_gui_file_is_loaded())
     return;
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: Chose a turbulence model
+   *   CS_TURB_NONE: no turbulence model (laminar flow)
+   *   CS_TURB_MIXING_LENGTH: mixing length model
+   *   CS_TURB_K_EPSISLON: standard k-epsilon model
+   *   CS_TURB_K_EPSISLON_LIN_PROD: k-epsilon model with
+   *     Linear Production (LP) correction
+   *   CS_TURB_K_EPSISLON_LS: Launder-Sharma low Re k-epsilon model
+   *   CS_TURB_RIJ_EPSISLON_LRR: Rij-epsilon (LRR)
+   *   CS_TURB_RIJ_EPSISLON_SSG: Rij-epsilon (SSG)
+   *   CS_TURB_RIJ_EPSISLON_EBRSM: Rij-epsilon (EBRSM)
+   *   CS_TURB_LES_SMAGO_CONST: LES (constant Smagorinsky model)
+   *   CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic Smagorisky model)
+   *   CS_TURB_LES_WALE: LES (WALE)
+   *   CS_TURB_V2F_PHI: v2f phi-model
+   *   CS_TURB_V2F_BL_V2K: v2f BL-v2-k
+   *   CS_TURB_K_OMEGA: k-omega SST
+   *   CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
+
+  cs_turb_model_t *turb_model = cs_get_glob_turb_model();
+  turb_model->iturb = CS_TURB_K_EPSISLON_LIN_PROD;
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: Coupled solver for Rij components (when iturb=30, 31 or 32)
+   *   0: switch off
+   *   1: switch on (default)
+   */
+
+  cs_turb_rans_model_t *rans_model = cs_get_glob_turb_rans_model();
+  rans_model->irijco = 1;
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: Chose a thermal model
+   *
+   * 0: none
+   * 1: temperature
+   * 2: enthalpy
+   * 3: total energy (only for compressible module)
+   *
+   *  For temperature, the temperature scale may be set later using itpscl
+   *  (1 for Kelvin, 2 for Celsius).
+   *
+   *  Warning: When using specific physics, this value is
+   *           set automatically by the physics model.
+   *
+   */
+
+  cs_thermal_model_t *thermal_model = cs_get_glob_thermal_model();
+  thermal_model->itherm = 1;
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: activate ALE (Arbitrary Lagrangian Eulerian) method
+   *   CS_ALE_NONE: switch off
+   *   CS_ALE_LEGACY: legacy solver
+   *   CS_ALE_CDO: CDO solver
+   */
+
+  cs_glob_ale = CS_ALE_LEGACY;
 
   /*--------------------------------------------------------------------------*/
 
