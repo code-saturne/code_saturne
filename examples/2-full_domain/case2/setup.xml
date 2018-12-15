@@ -198,7 +198,6 @@
 		<run_type>standard</run_type>
 		<start_restart>
 			<frozen_field status="off"/>
-			<restart path="RESU/20181012-1015/checkpoint"/>
 		</start_restart>
 	</calculation_management>
 	<lagrangian model="off"/>

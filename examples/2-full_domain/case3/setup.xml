@@ -2,7 +2,7 @@
 	<additional_scalars>
 		<variable label="scalar2" name="scalar2" type="user">
 			<blending_factor>1</blending_factor>
-			<formula zone_id="1">scalar2 = 10;</formula>
+			<formula zone_id="1">scalar2 = 10.;</formula>
 			<max_value>400</max_value>
 			<min_value>0</min_value>
 			<property choice="constant" label="Dscal1" name="scalar2_diffusivity">
@@ -13,7 +13,6 @@
 		</variable>
 	</additional_scalars>
 	<analysis_control>
-		<error_estimator/>
 		<output>
 			<listing_printing_frequency>1</listing_printing_frequency>
 			<mesh id="-1" label="Fluid domain" type="cells">
@@ -92,8 +91,6 @@
 			<property label="FourierNb" name="fourier_number">
 				<postprocessing_recording status="off"/>
 			</property>
-			<relaxation_coefficient>0.7</relaxation_coefficient>
-			<thermal_time_step status="off"/>
 			<time_passing>0</time_passing>
 			<time_step_ref>0.01</time_step_ref>
 			<zero_time_step status="off"/>
@@ -103,12 +100,12 @@
 		<boundary label="Inlet" name="1" nature="inlet">1</boundary>
 		<boundary label="Outlet" name="2" nature="outlet">34</boundary>
 		<boundary label="Symmetry" name="3" nature="symmetry">8 or 9 or 28 or 29 or 38 or 39</boundary>
-		<boundary label="Wall_1" name="4" nature="wall">24 and 0.1 &lt;x and 0.5 &gt; x</boundary>
+		<boundary label="Wall_1" name="4" nature="wall">24 and 0.1 &lt;= x and 0.5 &gt;= x</boundary>
 		<boundary label="Wall_2" name="5" nature="wall">2 or 3</boundary>
 		<boundary label="Wall_3" name="6" nature="wall">4 or 7 or 21 or 22 or 23</boundary>
 		<boundary label="Wall_4" name="7" nature="wall">6 and y &gt; 1</boundary>
-		<boundary label="Wall_5" name="8" nature="wall">6 and y &lt; 1</boundary>
-		<boundary label="wall_6" name="9" nature="wall">31 or 33</boundary>
+		<boundary label="Wall_5" name="8" nature="wall">6 and y &lt;= 1</boundary>
+		<boundary label="Wall_6" name="9" nature="wall">31 or 33</boundary>
 		<inlet field_id="none" label="Inlet">
 			<scalar choice="dirichlet" name="scalar2" type="user">
 				<dirichlet>200</dirichlet>
@@ -182,11 +179,7 @@
 			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
-			<velocity_pressure choice="off">
-				<dirichlet component="0" name="velocity">0</dirichlet>
-				<dirichlet component="1" name="velocity">0</dirichlet>
-				<dirichlet component="2" name="velocity">0</dirichlet>
-			</velocity_pressure>
+			<velocity_pressure choice="off"/>
 		</wall>
 		<wall field_id="none" label="wall_6">
 			<scalar choice="dirichlet" name="scalar2" type="user">
@@ -195,11 +188,7 @@
 			<scalar choice="neumann" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
-			<velocity_pressure choice="off">
-				<dirichlet component="0" name="velocity">0</dirichlet>
-				<dirichlet component="1" name="velocity">0</dirichlet>
-				<dirichlet component="2" name="velocity">0</dirichlet>
-			</velocity_pressure>
+			<velocity_pressure choice="off"/>
 		</wall>
 	</boundary_conditions>
 	<calculation_management>
@@ -227,7 +216,7 @@
 			<material choice="user_material"/>
 			<method choice="user_properties"/>
 			<property choice="variable" label="Density" name="density">
-				<formula># density flaw
+				<formula># density law
 #
 
 A = -4.0668e-3;
@@ -259,15 +248,8 @@ density = temperature*(A*temperature +B) + C;</formula>
 			<gravity_y>-9.81</gravity_y>
 			<gravity_z>0</gravity_z>
 		</gravity>
-		<notebook/>
-		<omega>
-			<omega_x>0</omega_x>
-			<omega_y>0</omega_y>
-			<omega_z>0</omega_z>
-		</omega>
 	</physical_properties>
 	<solution_domain>
-		<extrusion/>
 		<faces_cutting status="off"/>
 		<joining>
 			<face_joining name="1">
@@ -285,17 +267,13 @@ density = temperature*(A*temperature +B) + C;</formula>
 			<mesh name="pic.des"/>
 		</meshes_list>
 		<periodicity/>
-		<thin_walls/>
 		<volumic_conditions>
 			<zone groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
 			<zone groundwater_law="off" head_losses="on" id="2" initialization="off" label="Zone_1" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">x&gt;=0.2 and x&lt;=0.4 and y&gt;= -0.75 and y&lt;=-0.25</zone>
 		</volumic_conditions>
 	</solution_domain>
 	<thermophysical_models>
-		<ale_method status="off">
-			<formula>mesh_viscosity_1 = 1;</formula>
-			<mesh_viscosity type="isotrop"/>
-		</ale_method>
+		<ale_method status="off"/>
 		<atmospheric_flows model="off"/>
 		<compressible_model model="off"/>
 		<conjugate_heat_transfer>
@@ -322,10 +300,7 @@ density = temperature*(A*temperature +B) + C;</formula>
 			</head_loss>
 		</head_losses>
 		<joule_effect model="off"/>
-		<radiative_transfer model="off">
-			<absorption_coefficient type="constant">0</absorption_coefficient>
-			<restart status="on"/>
-		</radiative_transfer>
+		<radiative_transfer model="off"/>
 		<reference_values>
 			<pressure>101325</pressure>
 			<temperature>20</temperature>
@@ -350,19 +325,14 @@ density = temperature*(A*temperature +B) + C;</formula>
 				<turbulent_flux_model>SGDH</turbulent_flux_model>
 			</variable>
 		</thermal_scalar>
-		<turbomachinery model="off">
-			<joining/>
-		</turbomachinery>
 		<turbulence model="k-epsilon">
 			<initialization choice="reference_value" zone_id="1"/>
 			<property label="TurbVisc" name="turbulent_viscosity"/>
 			<variable label="epsilon" name="epsilon">
-				<blending_factor>0</blending_factor>
 				<listing_printing status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 			</variable>
 			<variable label="k" name="k">
-				<blending_factor>0</blending_factor>
 				<listing_printing status="off"/>
 				<rhs_reconstruction>1</rhs_reconstruction>
 			</variable>
