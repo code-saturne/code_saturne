@@ -2124,21 +2124,23 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
 
       /* Min value between IJ and
        * (Omega_i+Omega_j)/S_ij which is exactly the distance for tetras */
-      double distmax = CS_MIN(
-          cs_math_3_distance(cell_cen[cell_id1],cell_cen[cell_id2]),
-          (cell_vol[cell_id1]+cell_vol[cell_id2])/cs_math_3_norm(face_nomal));
+      cs_real_t distmax
+        = cs_math_fmin(cs_math_3_distance(cell_cen[cell_id1],
+                                          cell_cen[cell_id2]),
+                       (  (cell_vol[cell_id1] + cell_vol[cell_id2])
+                        / cs_math_3_norm(face_nomal)));
 
       /* Previous value of 0.2 sometimes leads to computation divergence */
       /* 0.01 seems better and safer for the moment */
       double critmin = 0.01;
       if (i_dist[face_id] < critmin * distmax) {
         w_count++;
-        i_dist[face_id] = CS_MAX(i_dist[face_id], 0.2 * distmax);
+        i_dist[face_id] = cs_math_fmax(i_dist[face_id], 0.2 * distmax);
       }
 
       /* Clipping of weighting */
-      weight[face_id] = CS_MAX(weight[face_id], 0.001);
-      weight[face_id] = CS_MIN(weight[face_id], 0.999);
+      weight[face_id] = cs_math_fmax(weight[face_id], 0.001);
+      weight[face_id] = cs_math_fmin(weight[face_id], 0.999);
     }
   }
 
@@ -2150,7 +2152,7 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                  "For these faces, the weight may be clipped.\n"),
                (unsigned long long)w_count);
 
-  /* Border faces */
+  /* Boundary faces */
 
   w_count = 0;
 
@@ -2176,9 +2178,6 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
           cs_math_3_distance(cell_cen[cell_id], b_face_cog[face_id]),
           cell_vol[cell_id]/cs_math_3_norm(face_nomal));
 
-      /* Previous value of 0.2 sometimes leads to computation divergence */
-      /* 0.01 seems better and safer for the moment */
-      double critmin = 0.01;
       if (b_dist[face_id] < 0.01 * distmax) {
         w_count++;
         b_dist[face_id] = CS_MAX(b_dist[face_id], 0.2 * distmax);

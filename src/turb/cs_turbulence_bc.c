@@ -1031,7 +1031,7 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_bc_rij_transform(const int  is_sym,
+cs_turbulence_bc_rij_transform(int        is_sym,
                                cs_real_t  p_lg[3][3],
                                cs_real_t  alpha[6][6])
 {
@@ -1052,20 +1052,15 @@ cs_turbulence_bc_rij_transform(const int  is_sym,
   }
 
   /* alpha(i,j)  for i in [1,3] and j in [4,6]: 9 terms */
+
+  const int _jj_to_kk[3] = {0, 1, 0};
+  const int _jj_to_pp[3] = {1, 2, 2};
+
   for (int ii = 0; ii < 3; ii++) {
     for (int jj = 0; jj < 3; jj++) {
 
-      int kk, pp;
-      if (jj == 0) {
-        kk = 0;
-        pp = 1;
-      } else if (jj == 1) {
-        kk = 1;
-        pp = 2;
-      } else if (jj == 2) {
-        kk = 0;
-        pp = 2;
-      }
+      int kk = _jj_to_kk[jj];
+      int pp = _jj_to_pp[jj];
 
       alpha[jj + 3][ii] =
         2. * (  p_lg2[0][ii] * p_lg[0][kk] * p_lg[0][pp]
@@ -1078,20 +1073,12 @@ cs_turbulence_bc_rij_transform(const int  is_sym,
   }
 
   /* alpha(i,j)  for i in [4,6] and j in [1,3]: 9 terms */
+
   for (int ii = 0; ii < 3; ii++) {
     for (int jj = 0; jj < 3; jj++) {
 
-      int kk, pp;
-      if (ii == 0) {
-        kk = 0;
-        pp = 1;
-      } else if (ii == 1) {
-        kk = 1;
-        pp = 2;
-      } else if (ii == 2) {
-        kk = 0;
-        pp = 2;
-      }
+      int kk = _jj_to_kk[jj];
+      int pp = _jj_to_pp[jj];
 
       alpha[jj][ii + 3] =
           p_lg[0][kk] * p_lg[0][pp] * p_lg2[0][jj]
@@ -1107,29 +1094,11 @@ cs_turbulence_bc_rij_transform(const int  is_sym,
   for (int ii = 0; ii < 3; ii++) {
     for (int jj = 0; jj < 3; jj++) {
 
-      int kk, pp;
-      if (ii == 0) {
-        kk = 0;
-        pp = 1;
-      } else if (ii == 1) {
-        kk = 1;
-        pp = 2;
-      } else if (ii == 2) {
-        kk = 0;
-        pp = 2;
-      }
+      int kk = _jj_to_kk[jj];
+      int pp = _jj_to_pp[jj];
 
-      int jj1, jj2;
-      if (jj == 0) {
-        jj1 = 0;
-        jj2 = 1;
-      } else if (jj == 1) {
-        jj1 = 1;
-        jj2 = 2;
-      } else if (jj == 2) {
-        jj1 = 0;
-        jj2 = 2;
-      }
+      int jj1 = _jj_to_kk[jj];
+      int jj2 = _jj_to_pp[jj];
 
       alpha[jj + 3][ii + 3] =
         2. * (  p_lg[0][kk] * p_lg[0][pp] * p_lg[0][jj1] * p_lg[0][jj2]

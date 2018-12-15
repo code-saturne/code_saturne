@@ -2134,6 +2134,8 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
                              float                   loc_tolerance,
                              int                     verbosity)
 {
+  CS_UNUSED(loc_tolerance);
+
   cs_sat_coupling_add(boundary_cpl_criteria,
                       volume_cpl_criteria,
                       boundary_loc_criteria,
