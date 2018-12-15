@@ -153,6 +153,8 @@ class MobileMeshModel(Model):
             if typ == 'fixed_mesh':
                 typ = 'transient_coordinates'
             self.__setVariablesandProperties()
+            if status and old_status != status:
+                self.out.setWriterTimeDependency("-1", typ)
         else:
             if typ == 'transient_coordinates':
                 typ = 'fixed_mesh'
