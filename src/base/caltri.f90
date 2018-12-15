@@ -826,6 +826,24 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
   endif
 endif
 
+if (ntlist.gt.0) then
+  modntl = mod(ntcabs,ntlist)
+  ! Always print 10 first iterations
+  if (ntcabs - ntpabs.le.10) then
+    modntl = 0
+  endif
+elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
+  modntl = 0
+else
+  modntl = 1
+endif
+
+if (inpdt0.eq.0 .and. itrale.gt.0) then
+  if (modntl.eq.0) then
+    write(nfecra,3001) ttcabs,ntcabs
+  endif
+endif
+
 !===============================================================================
 ! Step forward in time
 !===============================================================================
@@ -1017,23 +1035,7 @@ endif
 ! Write to "run_solver.log" every ntlist iterations
 !===============================================================================
 
-if (ntlist.gt.0) then
-  modntl = mod(ntcabs,ntlist)
-  ! Always print 10 first iterations
-  if (ntcabs - ntpabs.le.10) then
-    modntl = 0
-  endif
-elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
-  modntl = 0
-else
-  modntl = 1
-endif
-
 if (modntl.eq.0) then
-
-  if (inpdt0.eq.0 .and. itrale.gt.0) then
-    write(nfecra,3001) ttcabs,ntcabs
-  endif
 
   call ecrlis(ncelet, ncel, dt, cell_f_vol)
 
