@@ -1217,11 +1217,6 @@ cs_parameters_check(void)
 
   /* Time stepping */
   /* The number of time step could be negative : no test */
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("while reading input data"),
-                                "cs_glob_time_step_options->inpdt0",
-                                cs_glob_time_step_options->inpdt0,
-                                0, 2);
 
   if (cs_glob_time_step_options->idtvar >= 0) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
@@ -1256,7 +1251,7 @@ cs_parameters_check(void)
                                 "cs_glob_time_step_options->iptlro "
                                 "(time-step clipping related to buyoancy)",
                                 cs_glob_time_step_options->iptlro,
-                                0, 2);
+                                0, 3);
 
   /* If constant time step, the time step is left unmodified
      but we highlight the local criteria exceedances */

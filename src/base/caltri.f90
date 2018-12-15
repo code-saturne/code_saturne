@@ -761,10 +761,6 @@ if (iturbo.eq.2)  ttcmob = ttpmob
 
 write(nfecra,3000)
 
-if(inpdt0.eq.1) then
-  ntmabs = ntcabs
-endif
-
 !     Nb d'iter ALE (nb relatif a l'execution en cours)
 !     Si ITALIN=1, on fait une iteration d'initialisation
 !     (si ITALIN=-999, c'est qu'on a fait une suite de calculs
@@ -789,7 +785,7 @@ if (itrale.gt.0) then
     call cplsyn (ntmabs, ntcabs, dtref)
   endif
 
-  if (ntmabs .eq. ntcabs .and. inpdt0.eq.0) then
+  if (ntmabs .eq. ntcabs .and. ntmabs.gt.ntpabs) then
     call csexit (1)
   endif
 
@@ -810,7 +806,12 @@ call timer_stats_stop(post_stats_id)
 
  100  continue
 
-if (inpdt0.eq.0 .and. itrale.gt.0) then
+if (ttmabs.gt.0 .and. ttmabs.gt.ttcabs) then
+  ntmabs = ntcabs + (ttmabs-ttcabs)/dtref
+  if (ntmabs.le.ntcabs) ntmabs = ntcabs + 1
+endif
+
+if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
   call timer_stats_increment_time_step
   if (idtvar.eq.0.or.idtvar.eq.1) then
     call cs_time_step_increment(dt(1))
@@ -838,7 +839,7 @@ else
   modntl = 1
 endif
 
-if (inpdt0.eq.0 .and. itrale.gt.0) then
+if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
   if (modntl.eq.0) then
     write(nfecra,3001) ttcabs,ntcabs
   endif
@@ -864,7 +865,7 @@ call dmtmps(titer1)
 
 call tridim(itrale, nvar, nscal, dt)
 
-if (inpdt0.eq.0 .and. itrale.gt.0) then
+if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
 
   ! Lagrangian module
   !==================
@@ -913,7 +914,7 @@ endif
 ! Update mesh (ALE)
 !===============================================================================
 
-if (iale.ge.1 .and. inpdt0.eq.0) then
+if (iale.ge.1 .and. ntmabs.gt.ntpabs) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
     call cs_ale_update_mesh(itrale, xyzno0)
@@ -952,7 +953,7 @@ if (iisuit.eq.1) then
   if(ntcabs.lt.ntmabs) then
     write(nfecra,3020) ntcabs, ttcabs
   else if(ntcabs.eq.ntmabs) then
-    write(nfecra,3021)ntcabs,ttcabs
+    write(nfecra,3021) ntcabs,ttcabs
   endif
 
   call ecrava

@@ -264,14 +264,14 @@ endif
 
 if (iihmpr.eq.1) then
 
-!     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
+  ! Restart, read auxiliary file, frozen velocity field
 
   call csisui(ntsuit, ileaux, iccvfg)
 
-!     Pas de temps (seulement NTMABS, DTREF, INPDT0)
+  ! Time step (only ntmabs, dtref)
   call cstime()
 
-!      Options numériques locales
+  ! Local numerical options
 
   call uinum1(cdtvar)
 
@@ -291,13 +291,13 @@ if (iihmpr.eq.1) then
 
   endif
 
-!     Gravite, prop. phys
+  ! Gravity, physical properties
   call csphys(viscv0, visls0, itempk)
 
-!     Scamin, scamax, turbulent flux model
+  ! Scamin, scamax, turbulent flux model
   call cssca2(iturt)
 
-  ! Diffusivites
+  ! Diffusivities
   call cssca3(visls0)
 
   ! Init of reference values (uref, almax)

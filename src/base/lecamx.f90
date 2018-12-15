@@ -698,7 +698,7 @@ nberro = 0
 !   Si on arrive a la lire, on note qu'elle est a jour (sauf si ALE).
 
 if (ineedy.eq.1) then
-  if (icdpar.gt.0 .or. inpdt0.eq.1) then
+  if (icdpar.gt.0) then
     if (nfabok.eqv..true.) then
       call field_get_id('wall_distance', f_id)
       call restart_read_field_vals(rp, f_id, 0, ierror)

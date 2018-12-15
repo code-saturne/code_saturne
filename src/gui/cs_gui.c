@@ -2151,16 +2151,36 @@ void CS_PROCF (cstime, CSTIME) (void)
   cs_gui_node_get_child_real(tn, "time_step_min", &(time_opt->dtmin));
   cs_gui_node_get_child_real(tn, "time_step_max", &(time_opt->dtmax));
 
-  cs_gui_node_get_child_int(tn, "iterations", &(time_stp->nt_max));
+  /* Stop criterion */
 
-  cs_gui_node_get_child_status_int(tn, "zero_time_step", &(time_opt->inpdt0));
+  cs_real_t  _t_max = -1;
+
+  cs_gui_node_get_child_real(tn, "maximum_time", &_t_max);
+  if (_t_max >= 0)
+    time_stp->t_max = _t_max;
+  else {
+    cs_gui_node_get_child_real(tn, "maximum_time_add", &_t_max);
+    if (_t_max >= 0)
+      time_stp->t_max = time_stp->t_prev + _t_max;
+  }
+
+  if (_t_max < 0) {
+    int _nt_max = -1;
+    cs_gui_node_get_child_int(tn, "iterations", &_nt_max);
+    if (_nt_max > -1)
+      time_stp->nt_max = _nt_max;
+    else {
+      cs_gui_node_get_child_int(tn, "iterations_add", &_nt_max);
+      if (_nt_max > -1)
+        time_stp->nt_max = time_stp->nt_prev + _nt_max;
+    }
+  }
 
   cs_gui_node_get_child_status_int(tn, "thermal_time_step", &(time_opt->iptlro));
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--idtvar = %i\n", time_opt->idtvar);
-  bft_printf("--inpdt0 = %i\n", time_opt->inpdt0);
   bft_printf("--iptlro = %i\n", time_opt->iptlro);
   bft_printf("--ntmabs = %i\n", time_stp->nt_max);
   bft_printf("--dtref = %f\n",  time_opt->dtref);

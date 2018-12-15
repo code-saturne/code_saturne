@@ -140,7 +140,6 @@ class XMLinit(Variables):
             # Time settings
 
             TimeStepModel(self.case).getTimeStep()
-            TimeStepModel(self.case).getIterationsNumber()
             TimeStepModel(self.case).getTimePassing()
 
             # Thermodynamics definitinon
@@ -313,6 +312,8 @@ class XMLinit(Variables):
                 self.__backwardCompatibilityFrom_5_1()
             if from_vers[:3] < "5.3.0":
                 self.__backwardCompatibilityFrom_5_2()
+            if from_vers[:3] < "6.0.0":
+                self.__backwardCompatibilityFrom_5_3()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -1593,6 +1594,18 @@ class XMLinit(Variables):
             node = npr.xmlGetNode('property', name="emission")
             if node:
                 node['name'] = "rad_emission"
+
+    def __backwardCompatibilityFrom_5_3(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        XMLAnaControl = self.case.xmlGetNode('analysis_control')
+        node_time = XMLAnaControl.xmlGetNode('time_parameters')
+        if node_time:
+            node = node_time.xmlGetNode('zero_time_step')
+            if node:
+                node.xmlRemoveNode()
 
     def __backwardCompatibilityCurrentVersion(self):
         """

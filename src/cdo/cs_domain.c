@@ -176,7 +176,6 @@ cs_domain_create(void)
   domain->time_step->dt[2] = default_time_step;
 
   /* Time options () */
-  domain->time_options.inpdt0 = 0; /* standard calculation */
   domain->time_options.iptlro = 0;
   domain->time_options.idtvar = 0; /* constant time step by default */
   domain->time_options.coumax = 1.;

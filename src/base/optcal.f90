@@ -402,17 +402,6 @@ module optcal
   !> Maximum absolute time.
   real(c_double), pointer, save :: ttmabs
 
-  !> indicator "zero time step"
-  !>    - 0: standard calculation
-  !>    - 1: to simulate no time step
-  !>         - for non-restarted computations:
-  !>           only resolution (Navier-Stokes, turbulence, scalars) is skipped
-  !>         - for restarted computations:
-  !>           resolution, computation of physical properties, and definition
-  !>           of boundary conditions is skipped (values are read from
-  !>           checkpoint file)
-  integer(c_int), pointer, save :: inpdt0
-
   !> Clip the time step with respect to the buoyant effects
   !>
   !> When density gradients and gravity are present, a local thermal time
@@ -1334,14 +1323,14 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time step options structure
 
-    subroutine cs_f_time_step_options_get_pointers(inpdt0, iptlro, idtvar, &
+    subroutine cs_f_time_step_options_get_pointers(iptlro, idtvar,         &
                                                    coumax, cflmmx,         &
                                                    foumax, varrdt, dtmin,  &
                                                    dtmax, relxst)          &
       bind(C, name='cs_f_time_step_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: inpdt0, iptlro, idtvar, coumax, cflmmx
+      type(c_ptr), intent(out) :: iptlro, idtvar, coumax, cflmmx
       type(c_ptr), intent(out) :: foumax, varrdt, dtmin, dtmax, relxst
     end subroutine cs_f_time_step_options_get_pointers
 
@@ -1545,17 +1534,16 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_inpdt0, c_iptlro, c_idtvar
+    type(c_ptr) :: c_iptlro, c_idtvar
     type(c_ptr) :: c_coumax, c_cflmmx
     type(c_ptr) :: c_foumax, c_varrdt, c_dtmin
     type(c_ptr) :: c_dtmax, c_relxst
 
-    call cs_f_time_step_options_get_pointers(c_inpdt0, c_iptlro, c_idtvar, &
+    call cs_f_time_step_options_get_pointers(c_iptlro, c_idtvar,  &
                                              c_coumax, c_cflmmx,  &
                                              c_foumax, c_varrdt, c_dtmin,  &
                                              c_dtmax, c_relxst)
 
-    call c_f_pointer(c_inpdt0, inpdt0)
     call c_f_pointer(c_iptlro, iptlro)
     call c_f_pointer(c_idtvar, idtvar)
     call c_f_pointer(c_coumax, coumax)

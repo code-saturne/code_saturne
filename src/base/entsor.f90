@@ -225,14 +225,6 @@ module entsor
   !> post-processed property: Nusselt
   integer    ipstnu
   parameter (ipstfo=1, ipstyp=2, ipsttp= 3, ipstft=4, ipstnu=5)
-
-  !> margin in seconds on the remaining CPU time which is necessary to allow
-  !> the calculation to stop automatically and write all the required results
-  !> (for the machines having a queue manager).
-  !>   - -1: calculated automatically,
-  !>   - 0: margin defined by the user.
-  !> Always useful, but the default value should not be changed.
-  double precision, save :: tmarus
   !> \}
   !> \}
 

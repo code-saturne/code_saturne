@@ -226,7 +226,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
 
         self.modelTimeStepOption = ComboModel(self.comboBoxTimeStepOption, 3, 1)
         self.modelTimeStepOption.addItem(self.tr("Constant"), "constant")
-        self.modelTimeStepOption.addItem(self.tr("Adaptative"), "uniform")
+        self.modelTimeStepOption.addItem(self.tr("Adaptive"), "uniform")
         self.modelTimeStepOption.addItem(self.tr("Steady"), "steady")
 
         self.modelTimeStop = ComboModel(self.comboBoxTimeStopType, 2, 1)

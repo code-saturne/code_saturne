@@ -2354,7 +2354,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
     @pyqtSlot()
     def slotAllVariables(self):
         """
-        Input INPDT0.
+        Toggle all variables output
         """
         cindex = self.tableViewMesh.currentIndex()
         if cindex != (-1,-1):
@@ -2369,7 +2369,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
     @pyqtSlot()
     def slotAllLagrangianVariables(self):
         """
-        Input INPDT0.
+        Toggle all lagrangian variables output
         """
         cindex = self.tableViewLagrangianMesh.currentIndex()
         if cindex != (-1,-1):

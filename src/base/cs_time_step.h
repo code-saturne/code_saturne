@@ -79,17 +79,6 @@ typedef struct {
 
 typedef struct {
 
-
-  int       inpdt0; /* Indicator "zero time step"
-                       - 0: standard calculation
-                       - 1: to simulate no time step
-                       - for non-restarted computations: only resolution
-                       (Navier-Stokes, turbulence, scalars) is skipped
-                       - for restarted computations: resolution, computation
-                       of physical properties, and definition of boundary
-                       conditions is skipped (values are read from checkpoint
-                       file). */
-
   int       iptlro; /* Clip the time step with respect to the buoyant effects
                        - 0: false
                        - 1: true. */

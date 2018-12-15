@@ -242,7 +242,6 @@ write(nfecra,1520) nvar,nscal,nscaus,nscapp
 
 write(nfecra,9900)
 
-
 #if defined(_CS_LANG_FR)
 
  1500 format(                                                     &
@@ -965,14 +964,9 @@ write(nfecra,7010) isuite, ileaux, iecaux
 
 !   - Duree du calcul
 
-write(nfecra,7110) inpdt0,ntmabs
-
-!   - Marge en temps CPU
-
-write(nfecra,7210) tmarus
+write(nfecra,7110) ntpabs, ntmabs
 
 write(nfecra,9900)
-
 
 #if defined(_CS_LANG_FR)
 
@@ -992,11 +986,9 @@ write(nfecra,9900)
 '       physique simule sont des valeurs absolues',             /,&
 '       et non pas des valeurs relatives au calcul en cours.',  /,&
                                                                 /,&
-'       INPDT0 = ',4x,i10,    ' (1 : calcul a zero pas de tps)',/,&
-'       NTMABS = ',4x,i10,    ' (Pas de tps final demande    )',/)
- 7210 format(                                                     &
-' --- Marge en temps CPU',                                      /,&
-'       TMARUS = ', e14.5,    ' (Marge CPU avant arret       )',/)
+'       NTPABS = ',4x,i10,    ' (Pas de temps initial)',        /,&
+'       NTMABS = ',4x,i10,    ' (Pas de tps final demande)',    /)
+
 #else
 
  7000 format(                                                     &
@@ -1015,11 +1007,8 @@ write(nfecra,9900)
 '       physical time are absolute values, and not values',     /,&
 '       relative to the current calculation.',                  /,&
                                                                 /,&
-'       INPDT0 = ',4x,i10,    ' (1: 0 time step calcuation   )',/,&
-'       NTMABS = ',4x,i10,    ' (Final time step required    )',/)
- 7210 format(                                                     &
-' --- CPU time margin',                                         /,&
-'       TMARUS = ', e14.5,    ' (CPU time margin before stop )',/)
+'       NTPABS = ',4x,i10,    ' (Initial time step)',           /,&
+'       NTMABS = ',4x,i10,    ' (Final time step required)',    /)
 
 #endif
 

@@ -409,15 +409,13 @@ endif
 !===============================================================================
 ! 5. Temporal update of previous values (mass flux, density, ...)
 !===============================================================================
-!  on sort avant SCHTMP car sinon a l'ordre 2 en temps la valeur du
-!  flux de masse au pas de temps precedent est ecrasee par la valeur
-!  au pas de temps actuel. Dans le cas INPDT0=1 sans suite, il
-!  n'y a pas de probleme puisque tous les flux de masse sont a 0           !
-!  Si itrale=0, on est a l'iteration d'initialisation de l'ALE,
-!  on ne touche pas au flux de masse non plus
+!  We exit before SCHTMP as otherwise for 2nd order in time the value of the
+!  mass flux at the previous time is overwritten by the value at the current
+!  time step. When ntmabs = 0, there is no issue since all mass fluxes are 0.
 
+if (ntmabs.eq.ntpabs .and. isuite.eq.1) return
 
-if (inpdt0.eq.1.and.isuite.eq.1) return
+!  If itrale=0, we are initializing ALE, we do not touch the mas flux either.
 
 if (itrale.gt.0) then
   iappel = 1
@@ -1168,7 +1166,7 @@ do while (iterns.le.nterup)
 !      ON SORT ICI
 !===============================================================================
 
-  if (inpdt0.eq.1.and.isuite.eq.0) must_return = .true.
+  if (ntmabs.eq.ntpabs .and. isuite.eq.0) must_return = .true.
 
   if (iilagr.eq.3) must_return = .true.
 

@@ -251,8 +251,13 @@ if (nberro.ne.0) then
 endif
 
 ! --->  Stop si pas de temps incoherent
-if (ntpabs.ge.ntmabs.and.inpdt0.eq.0) then
-  write(nfecra,9410)ntpabs,ntmabs
+if (ttmabs.ge.0) then
+  if (ttpabs.gt.ttmabs) then
+    write(nfecra,9411) ttpabs,ttmabs
+    call csexit (1)
+  endif
+else if (ntpabs.gt.ntmabs) then
+  write(nfecra,9410) ntpabs,ntmabs
   call csexit (1)
 endif
 
@@ -573,7 +578,28 @@ return
 '@      NUMERO DU PAS DE TEMPS VISE      NTMABS = ',I10        ,/,&
 '@                                                            ',/,&
 '@    Le nombre de pas de temps (absolu) vise, NTMABS,        ',/,&
-'@      doit etre superieur au nombre de pas de temps         ',/,&
+'@      doit etre superieur ou egal au nombre de pas de temps ',/,&
+'@      (absolu) deja effectues, NTPABS.                      ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@    Verifier (augmenter) NTMABS.                            ',/,&
+'@    Verifier que le fichier suite utilise correspond bien   ',/,&
+'@        au cas traite.                                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
+'@    =========                                      PRINCIPAL',/,&
+'@      TEMPS PRECEDENT TTPABS = ',E12.4                      ,/,&
+'@      TEMPS VISE      TTMABS = ',E12.4                       ,/,&
+'@                                                            ',/,&
+'@    Le nombre de pas de temps (absolu) vise, NTMABS,        ',/,&
+'@      doit etre superieur ou egal au nombre de pas de temps ',/,&
 '@      (absolu) deja effectues, NTPABS.                      ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
@@ -747,8 +773,29 @@ return
 '@      NUMBER OF TIME STEPS WANTED       NTMABS = ',I10       ,/,&
 '@                                                            ',/,&
 '@    The number of time steps (absolute) wanted, NTMABS,     ',/,&
-'@      has to be larger than the number of time steps        ',/,&
-'@      (absolute) already done, NTPABS.                      ',/,&
+'@      has to be greater or equal to than the number of      ',/,&
+'@      time steps (absolute) already run, NTPABS.            ',/,&
+'@                                                            ',/,&
+'@    The calculation cannot be executed.                     ',/,&
+'@                                                            ',/,&
+'@    Please check (increase) NTMABS.                         ',/,&
+'@    Please make sure the file used as restart file does     ',/,&
+'@          correspond to your case                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+9411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,&
+'@    =========                                               ',/,&
+'@      PREVIOUS TIME TTPABS = ',E12.4                         ,/,&
+'@      TIME WANTED   TTMABS = ',E12.4                         ,/,&
+'@                                                            ',/,&
+'@    The number of time steps (absolute) wanted, NTMABS,     ',/,&
+'@      has to be greater or equal to than the number of      ',/,&
+'@      time steps (absolute) already run, NTPABS.            ',/,&
 '@                                                            ',/,&
 '@    The calculation cannot be executed.                     ',/,&
 '@                                                            ',/,&

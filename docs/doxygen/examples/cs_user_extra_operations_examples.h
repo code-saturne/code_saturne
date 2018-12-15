@@ -93,10 +93,8 @@
 
   To ensure calculations have physical meaning, it is best to use
   a spatially uniform time step (\ref optcal::idtvar "idtvar" = 0 or 1).
-  In addition, when restarting a calculation, the balance is
-  incorrect if \ref optcal::inpdt0 "inpdt0"= 1 (visct not initialized
-  and t(n-1) not known).
-
+  In addition, when restarting a calculation, the balance may be
+  incorrect at the first time step.
 
   Temperature variable
   - ivar = \ref isca(\ref optcal::iscalt "iscalt")

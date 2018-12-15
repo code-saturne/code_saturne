@@ -132,8 +132,8 @@ allocate(xcp(ncel))
 !===============================================================================
 
 !< [example_1]
-! The balance is not valid if inpdt0=1
-if (inpdt0.eq.0) then
+! The balance is not valid before running at least one time step.
+if (ntcabs.eq.ntpabs) then
 
   ! 2.1 Initialization
   ! ==================
@@ -550,7 +550,7 @@ if (inpdt0.eq.0) then
    '---','------',                                                    &
    '------------------------------------------------------------')
 
-endif ! End of test on inpdt0
+endif ! End of test on first time step
 !< [example_1]
 
 !< [finalize]

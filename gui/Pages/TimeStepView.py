@@ -93,20 +93,26 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.modelNTERUP.addItem(self.tr("PISO"), 'piso')
         self.comboBoxNTERUP.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
+        self.modelTimeStop = ComboModel(self.comboBoxStopCrit, 2, 1)
+        self.modelTimeStop.addItem(self.tr("Number of time steps"), "iterations")
+        self.modelTimeStop.addItem(self.tr("Physical time (s)"), "maximum_time")
+        self.modelTimeStop.addItem(self.tr("Additional time steps"), "iterations_add")
+        self.modelTimeStop.addItem(self.tr("Additional physical time (s)"), "maximum_time_add")
+
         # Connections
         self.comboBoxOptions.activated[str].connect(self.slotTimePassing)
         self.lineEditDTREF.textChanged[str].connect(self.slotTimeStep)
         self.lineEditRELXST.textChanged[str].connect(self.slotRelaxCoef)
-        self.lineEditNTMABS.textChanged[str].connect(self.slotIter)
         self.lineEditCOUMAX.textChanged[str].connect(self.slotTimeOptionCOUMAX)
         self.lineEditFOUMAX.textChanged[str].connect(self.slotTimeOptionFOUMAX)
         self.lineEditCDTMIN.textChanged[str].connect(self.slotTimeOptionCDTMIN)
         self.lineEditCDTMAX.textChanged[str].connect(self.slotTimeOptionCDTMAX)
         self.lineEditVARRDT.textChanged[str].connect(self.slotTimeOptionVARRDT)
         self.checkBoxIPTLRO.clicked.connect(self.slotThermalTimeStep)
-        self.checkBoxINPDT0.clicked.connect(self.slotZeroTimeStep)
         self.comboBoxNTERUP.activated[str].connect(self.slotNTERUP)
         self.spinBoxNTERUP.valueChanged[int].connect(self.slotNTERUP2)
+        self.comboBoxStopCrit.activated[str].connect(self.slotStopCritModel)
+        self.lineEditStop.textChanged[str].connect(self.slotStopCritValue)
 
         # Validators
 
@@ -114,7 +120,6 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         validatorDTREF.setExclusiveMin(True)
         validatorRELXST = DoubleValidator(self.lineEditRELXST, min=0.0, max=1.0)
         validatorRELXST.setExclusiveMin(True)
-        validatorNTMABS = IntValidator(self.lineEditNTMABS, min=1)
         validatorCOUMAX = DoubleValidator(self.lineEditCOUMAX, min=0.0)
         validatorCOUMAX.setExclusiveMin(True)
         validatorFOUMAX = DoubleValidator(self.lineEditFOUMAX, min=0.0)
@@ -127,12 +132,14 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         self.lineEditDTREF.setValidator(validatorDTREF)
         self.lineEditRELXST.setValidator(validatorRELXST)
-        self.lineEditNTMABS.setValidator(validatorNTMABS)
         self.lineEditCOUMAX.setValidator(validatorCOUMAX)
         self.lineEditFOUMAX.setValidator(validatorFOUMAX)
         self.lineEditCDTMIN.setValidator(validatorCDTMIN)
         self.lineEditCDTMAX.setValidator(validatorCDTMAX)
         self.lineEditVARRDT.setValidator(validatorVARRDT)
+
+        self.validatorNTABS = IntValidator(self.lineEditStop, min=0)
+        self.validatorTABS = DoubleValidator(self.lineEditStop, min=0.0)
 
         # Initialization
 
@@ -193,26 +200,18 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if idtvar_p != idtvar:
             self.mdl.setTimePassing(idtvar)
 
-        ntmabs = self.mdl.getIterationsNumber()
-        self.lineEditNTMABS.setText(str(ntmabs))
-
         if self.mdl.thermalCase():
             if self.mdl.getThermalTimeStep() == 'on':
                 self.checkBoxIPTLRO.setChecked(True)
             else:
                 self.checkBoxIPTLRO.setChecked(False)
         else:
-            self.lineIPTLRO.hide()
             self.labelIPTLRO.hide()
             self.checkBoxIPTLRO.hide()
             self.mdl.RemoveThermalTimeStepNode()
 
-        if self.mdl.getZeroTimeStep() == 'on':
-            self.checkBoxINPDT0.setChecked(True)
-        else:
-            self.checkBoxINPDT0.setChecked(False)
-
         self.__setTimePassingDisplay(idtvar)
+        self.__setStopCritDisplay()
 
         self.case.undoStartGlobal()
 
@@ -224,18 +223,35 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         self.modelTimeOptions.setItem(str_model=str(idtvar))
 
-        if idtvar == -1:
-            self.modelNTERUP.enableItem(str_model = 'simple')
-            self.modelNTERUP.disableItem(str_model = 'simplec')
+        if idtvar in (-1, 2):
+            if idtvar == -1:
+                self.modelNTERUP.enableItem(str_model = 'simple')
+                self.modelNTERUP.disableItem(str_model = 'simplec')
+            elif idtvar == 2:
+                self.modelNTERUP.disableItem(str_model = 'simple')
+                self.modelNTERUP.enableItem(str_model = 'simplec')
             self.modelNTERUP.disableItem(str_model = 'piso')
-        elif idtvar == 2:
-            self.modelNTERUP.disableItem(str_model = 'simple')
-            self.modelNTERUP.enableItem(str_model = 'simplec')
-            self.modelNTERUP.disableItem(str_model = 'piso')
+
+            m_prev, c_prev = self.mdl.getStopCriterion()
+            for m in ('maximum_time', 'maximum_time_add'):
+                if m_prev == m:
+                    dtref = self.mdl.getTimeStep()
+                    value = int(float(c_prev) / float(dtref))
+                    model = 'iterations'
+                    if m[-4:] == '_add':
+                        model += '_add'
+                    self.mdl.setStopCriterion(model, value)
+                    self.__setStopCritDisplay()
+
+                self.modelTimeStop.disableItem(str_model=m)
+
         else:
             self.modelNTERUP.disableItem(str_model = 'simple')
             self.modelNTERUP.enableItem(str_model = 'simplec')
             self.modelNTERUP.enableItem(str_model = 'piso')
+
+            self.modelTimeStop.enableItem(str_model='maximum_time')
+            self.modelTimeStop.enableItem(str_model='maximum_time_add')
 
         algo = self.mdl.getVelocityPressureAlgorithm()
         self.modelNTERUP.setItem(str_model=algo)
@@ -278,9 +294,44 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.lineEditCDTMAX.setText(str(time_step_max_factor))
             self.lineEditVARRDT.setText(str(time_step_var))
 
-            self.groupBoxLabels.show()
+            self.labelCOUMAX.show()
+            self.lineEditCOUMAX.show()
+            self.labelFOUMAX.show()
+            self.lineEditFOUMAX.show()
+            self.labelCDTMIN.show()
+            self.lineEditCDTMIN.show()
+            self.labelCDTMAX.show()
+            self.lineEditCDTMAX.show()
+            self.labelVARRDT.show()
+            self.lineEditVARRDT.show()
+
         else:
-            self.groupBoxLabels.hide()
+            self.labelCOUMAX.hide()
+            self.lineEditCOUMAX.hide()
+            self.labelFOUMAX.hide()
+            self.lineEditFOUMAX.hide()
+            self.labelCDTMIN.hide()
+            self.lineEditCDTMIN.hide()
+            self.labelCDTMAX.hide()
+            self.lineEditCDTMAX.hide()
+            self.labelVARRDT.hide()
+            self.lineEditVARRDT.hide()
+
+
+    def __setStopCritDisplay(self):
+        """
+        Stop criterion option
+        """
+
+        model, value = self.mdl.getStopCriterion()
+
+        if model in ("iterations", "iterations_add"):
+            self.lineEditStop.setValidator(self.validatorNTABS)
+        elif model in ("maximum_time", "maximum_time_add"):
+            self.lineEditStop.setValidator(self.validatorTABS)
+
+        self.modelTimeStop.setItem(str_model=str(model))
+        self.lineEditStop.setText(str(value))
 
 
     @pyqtSlot(str)
@@ -293,6 +344,47 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.mdl.setTimePassing(idtvar)
 
         self.__setTimePassingDisplay(idtvar)
+
+
+    @pyqtSlot(str)
+    def slotStopCritModel(self, text):
+        """
+        Select stop criterion model
+        """
+        m_prev, c_prev = self.mdl.getStopCriterion()
+        model = self.modelTimeStop.dicoV2M[text]
+
+        value = c_prev
+        if m_prev in ("iterations", "iterations_add"):
+            if model in ("maximum_time", "maximum_time_add"):
+                dtref = self.mdl.getTimeStep()
+                value = float(c_prev) * float(dtref)
+        elif m_prev in ("maximum_time", "maximum_time_add"):
+            if model in ("iterations", "iterations_add"):
+                dtref = self.mdl.getTimeStep()
+                value = int(float(c_prev) / float(dtref))
+
+        self.mdl.setStopCriterion(model, value)
+
+        self.__setStopCritDisplay()
+
+
+    @pyqtSlot(str)
+    def slotStopCritValue(self, text):
+        """
+        Input stop criterion
+        """
+        if self.lineEditStop.validator().state == QValidator.Acceptable:
+
+            model, c_prev = self.mdl.getStopCriterion()
+
+            value = c_prev
+            if model in ("iterations", "iterations_add"):
+                value = from_qvariant(text, int)
+                self.mdl.setStopCriterion(model, value)
+            elif model in ("maximum_time", "maximum_time_add"):
+                value = from_qvariant(text, float)
+                self.mdl.setStopCriterion(model, value)
 
 
     @pyqtSlot(str)
@@ -339,16 +431,6 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if self. lineEditRELXST.validator().state == QValidator.Acceptable:
             relax_coef = from_qvariant(text, float)
             self.mdl.setRelaxCoefficient(relax_coef)
-
-
-    @pyqtSlot(str)
-    def slotIter(self, text):
-        """
-        Input NTMABS.
-        """
-        if self.lineEditNTMABS.validator().state == QValidator.Acceptable:
-            iteration = from_qvariant(text, int)
-            self.mdl.setIterationsNumber(iteration)
 
 
     @pyqtSlot(str)
@@ -410,17 +492,6 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setThermalTimeStep("on")
         else:
             self.mdl.setThermalTimeStep("off")
-
-
-    @pyqtSlot()
-    def slotZeroTimeStep(self):
-        """
-        Input INPDT0.
-        """
-        if self.checkBoxINPDT0.isChecked():
-            self.mdl.setZeroTimeStep("on")
-        else:
-            self.mdl.setZeroTimeStep("off")
 
 
     def tr(self, text):

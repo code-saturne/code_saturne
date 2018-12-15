@@ -105,8 +105,6 @@ write(nfecra, 900)
 
 #endif
 
-
-
 !===============================================================================
 ! 0. Global field keys
 !===============================================================================
@@ -252,14 +250,6 @@ ipstdv(ipstyp) = 1
 ipstdv(ipsttp) = 0
 ipstdv(ipstft) = 1
 ipstdv(ipstnu) = 0
-
-! ---> CPU
-!      TMARUS : marge (Arret du calcul avant limite CPU)
-!        Si TMARUS negatif, le code calcule une marge seul
-!        Sinon, il utilise TMARUS (donnee en secondes)
-
-tmarus = -1.d0
-
 
 ! Ici entsor.f90 est completement initialise
 
@@ -528,51 +518,14 @@ isuit1 = -1
 isuivo = -1
 isuisy = -1
 
-! --- Reperage du temps
-
-ntpabs = 0
-ntcabs = ntpabs
-ntmabs = 10
-ntinit = 2
-
-inpdt0 = 0
-
-ttpabs = 0.d0
-ttcabs = ttpabs
+! Time stepping (value not already in C)
 
 ttpmob = 0.d0
 ttcmob = ttpmob
 
-! --- Marche en temps
-!       Par defaut pas de temps uniforme et constant,
-!         sans coef multiplicatif
-!       Dans les cas a pas de temps variable, par defaut
-!         COUMAX = FOUMAX = 0.5 et variation max 10%
-!       Les autres grandeurs sont a renseigner par l'utilisateur
-!       Pour DTMIN et DTMAX, si on impose DTMIN > DTMAX,
-!         les bornes sont prises egales a +/-1D12
-
-idtvar = 0
-
-coumax = 1.d0
-foumax = 10.d0
-cflmmx = 0.99d0
-dtmin  = -grand*10.d0
-dtmax  = -grand*10.d0
-varrdt = 0.1d0
-
-dtref  = -grand*10.d0
-
 do ii = 1, nvarmx
   cdtvar(ii) = 1.d0
 enddo
-relxst = 0.7d0
-
-
-!     Par defaut, pas de limitation du pas de temps liee aux
-!     effets de densite
-
-iptlro = 0
 
 ! --- Thermique
 
@@ -981,15 +934,11 @@ cthebdfm = 0.22d0
 xclt   = 0.305d0
 rhebdfm = 0.5d0
 
-
 ! --- Ici tout cstphy a ete initialise
 
 !===============================================================================
 ! 9. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
 !===============================================================================
-
-!     Par defaut, pas de fichier IHM consulte (on regarde ensuite si on
-!       en trouve un a partir de la ligne de commande)
 
 iihmpr = 0
 

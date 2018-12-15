@@ -84,7 +84,6 @@ class TimeStepModel(Model):
         default['time_step_max_factor']   = 1000.0
         default['time_step_var']          = 0.1
         default['thermal_time_step']      = 'off'
-        default['zero_time_step']         = 'off'
         from code_saturne.Pages.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             default['piso_sweep_number'] = 1
@@ -115,7 +114,7 @@ class TimeStepModel(Model):
         if gx == 0.0 and gy  == 0.0 and gz == 0.0:
             thermal_case = 0
 
-        # rho variable
+        # variable rho
         if FluidCharacteristicsModel(self.case).getPropertyMode('density') == 'constant':
             thermal_case = 0
 
@@ -252,7 +251,7 @@ class TimeStepModel(Model):
         v = self.node_time.xmlGetDouble(tag)
         if v == None:
             v = self.defaultValues()[tag]
-            self.setTimeStep(v)
+            self.setRelaxCoefficient(v)
 
         return v
 
@@ -291,25 +290,47 @@ class TimeStepModel(Model):
 
 
     @Variables.noUndo
-    def getIterationsNumber(self):
+    def getStopCriterion(self):
         """
-        Get number of iterations for node "time_parameters"
+        Get stop criterion type and value for node "time_parameters"
         """
-        tag = 'iterations'
-        v = self.node_time.xmlGetInt(tag)
-        if v == None:
-            v = self.defaultValues()[tag]
-            self.setIterationsNumber(v)
-        return v
+        crit_type = None
+        value = None
+
+        for tag in ('iterations', 'iterations_add'):
+            v = self.node_time.xmlGetInt(tag)
+            if v != None:
+                crit_type = tag
+                value = v
+
+        if not crit_type:
+            for tag in ('maximum_time', 'maximum_time_add'):
+                v = self.node_time.xmlGetDouble(tag)
+                if v != None:
+                    crit_type = tag
+                    value = v
+
+        if not crit_type:
+            crit_type = 'iterations'
+            value = self.defaultValues()[crit_type]
+
+        return crit_type, value
 
 
     @Variables.undoLocal
-    def setIterationsNumber(self, val):
+    def setStopCriterion(self, type, val):
         """
         Put number of iterations for node "time_parameters"
         """
-        self.isPositiveInt(val)
-        self.node_time.xmlSetData('iterations', val)
+
+        for tag in ('iterations', 'iterations_add',
+                    'maximum_time', 'maximum_time_add'):
+            if tag == type:
+                self.node_time.xmlSetData(tag, val)
+            else:
+                n = self.node_time.xmlGetNode(tag)
+                if n:
+                    n.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -464,29 +485,6 @@ class TimeStepModel(Model):
         node['status'] = status
 
 
-    @Variables.noUndo
-    def getZeroTimeStep(self):
-        """
-        Get status of zero_time_step for node "time_parameters"
-        """
-        node = self.node_time.xmlInitNode('zero_time_step', 'status')
-        s = node['status']
-        if not s:
-            s = self.defaultValues()['zero_time_step']
-            self.setZeroTimeStep(s)
-        return s
-
-
-    @Variables.undoLocal
-    def setZeroTimeStep(self, status):
-        """
-        Get status of zero_time_step for node "time_parameters"
-        """
-        self.isOnOff(status)
-        node = self.node_time.xmlInitChildNode('zero_time_step', 'status')
-        node['status'] = status
-
-
     def RemoveThermalTimeStepNode(self):
         """
         Remove Thermal time step node for node "time_parameters"
@@ -588,7 +586,7 @@ class TimeStepModelTestCase(ModelTest):
     def checkSetandGetIterationsNumber(self):
         """Check whether the TimeStepModel class could be set and get number of iterations"""
         mdl = TimeStepModel(self.case)
-        mdl.setIterationsNumber(50)
+        mdl.setStopCriterion('iterations', 50)
         doc = '''<time_parameters>
                     <property label="Courant nb" name="courant_number"/>
                     <property label="Fourier nb" name="fourier_number"/>
@@ -598,7 +596,7 @@ class TimeStepModelTestCase(ModelTest):
                  </time_parameters>'''
         assert mdl.node_time == self.xmlNodeFromString(doc),\
             'Could not set number of iterations in TimeStepModel'
-        assert mdl.getIterationsNumber() == 50,\
+        assert mdl.getStopCriterion()[1] == 50,\
             'Could not get number of iterations in TimeStepModel'
 
     def checkSetandGetMaxCourant(self):
@@ -694,23 +692,6 @@ class TimeStepModelTestCase(ModelTest):
             'Could not set thermal time step in TimeStepModel'
         assert mdl.getThermalTimeStep() == 'on',\
             'Could not get thermal time step in TimeStepModel'
-
-    def checkSetandGetZeroTimeStep(self):
-        """Check whether the TimeStepModel class could be set and get zero time step"""
-        mdl = TimeStepModel(self.case)
-        mdl.setZeroTimeStep('on')
-        doc = '''<time_parameters>
-                    <property label="Courant nb" name="courant_number"/>
-                    <property label="Fourier nb" name="fourier_number"/>
-                    <time_step_ref>0.1</time_step_ref>
-                    <iterations>10</iterations>
-                    <time_passing>0</time_passing>
-                    <zero_time_step status="on"/>
-                 </time_parameters>'''
-        assert mdl.node_time == self.xmlNodeFromString(doc),\
-            'Could not set zero time step in TimeStepModel'
-        assert mdl.getZeroTimeStep() == 'on',\
-            'Could not get zero time step in TimeStepModel'
 
     def checkRemoveThermalTimeStepNode(self):
         """Check whether the TimeStepModel class could be removed thermal time step node"""

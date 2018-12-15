@@ -128,16 +128,6 @@ BEGIN_C_DECLS
   Members of this time step options descriptor are publicly accessible, to
   allow for concise syntax.
 
-  \var  cs_time_step_options_t::inpdt0
-        Indicator "zero time step"
-        - 0: standard calculation
-        - 1: to simulate no time step
-        - for non-restarted computations: only resolution (Navier-Stokes,
-          turbulence, scalars) is skipped
-        - for restarted computations: resolution, computation of physical
-          properties, and definition of boundary conditions is skipped
-          (values are read from checkpoint file).
-
   \var  cs_time_step_options_t::iptlro
         Clip the time step with respect to the buoyant effects\n
 
@@ -238,9 +228,7 @@ static cs_time_step_t  _time_step = {
   .dt_next = 0.1
 };
 
-static cs_time_step_options_t  _time_step_options =
-{
-  .inpdt0 = 0,
+static cs_time_step_options_t  _time_step_options = {
   .iptlro = 0,
   .idtvar = 0,
   .coumax = 1.,
@@ -274,8 +262,7 @@ cs_f_time_step_get_pointers(int     **nt_prev,
                             double  **t_max);
 
 void
-cs_f_time_step_options_get_pointers(int    **inpdt0,
-                                    int    **iptlro,
+cs_f_time_step_options_get_pointers(int    **iptlro,
                                     int    **idtvar,
                                     double **coumax,
                                     double **cflmmx,
@@ -337,7 +324,6 @@ cs_f_time_step_get_pointers(int      **nt_prev,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   inpdt0 --> pointer to cs_glob_time_step_options->inpdt0
  *   iptlro --> pointer to cs_glob_time_step_options->iptlro
  *   idtvar --> pointer to cs_glob_time_step_options->idtvar
  *   coumax --> pointer to cs_glob_time_step_options->coumax
@@ -350,8 +336,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_time_step_options_get_pointers(int    **inpdt0,
-                                    int    **iptlro,
+cs_f_time_step_options_get_pointers(int    **iptlro,
                                     int    **idtvar,
                                     double **coumax,
                                     double **cflmmx,
@@ -361,7 +346,6 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
                                     double **dtmax,
                                     double **relxst)
 {
-  *inpdt0 = &(_time_step_options.inpdt0);
   *iptlro = &(_time_step_options.iptlro);
   *idtvar = &(_time_step_options.idtvar);
   *coumax = &(_time_step_options.coumax);
@@ -593,8 +577,10 @@ cs_time_step_log_setup(void)
        _("   Frozen velocity field\n\n"
          "    iccvfg:      %14d (1: Frozen velocity field)\n"),
          cs_glob_stokes_model->iccvfg);
-  } else {
+  }
+
   /* Unsteady */
+  else {
     cs_log_printf
       (CS_LOG_SETUP,
        _("  Unsteady algorithm\n\n"
