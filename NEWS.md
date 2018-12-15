@@ -3,7 +3,10 @@ Release 5.3.2 (unreleased)
 
 Bug fixes:
 
-- Marjor fix in BCs for the pressure (excluding compressible and GWF
+- Fix use of unitalized values impacting cases with head losses without
+  improved pressure interpolation option (iphydr=0).
+
+- Major fix in BCs for the pressure (excluding compressible and GWF
   modules). Mainly impacting free-surface BCs.
   The pressure when imposed by the user (Dirichlet or radiative outlet)
   has to be specified in term of TOTAL pressure P_tot (containing the

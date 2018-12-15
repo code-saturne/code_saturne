@@ -107,9 +107,9 @@ do ielpdc = 1, ncepdp
   vit2   = vela(2,iel)
   vit3   = vela(3,iel)
 
-  trav(1,iel) = romvom*(cpdc11*vit1 + cpdc12*vit2 + cpdc13*vit3)
-  trav(2,iel) = romvom*(cpdc12*vit1 + cpdc22*vit2 + cpdc23*vit3)
-  trav(3,iel) = romvom*(cpdc13*vit1 + cpdc23*vit2 + cpdc33*vit3)
+  trav(1,ielpdc) = romvom*(cpdc11*vit1 + cpdc12*vit2 + cpdc13*vit3)
+  trav(2,ielpdc) = romvom*(cpdc12*vit1 + cpdc22*vit2 + cpdc23*vit3)
+  trav(3,ielpdc) = romvom*(cpdc13*vit1 + cpdc23*vit2 + cpdc33*vit3)
 
 enddo
 

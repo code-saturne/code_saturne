@@ -801,22 +801,24 @@ if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
   !   est faite directement dans coditv.
   if (iterns.eq.1) then
 
-    allocate(hl_exp(3, ncelet))
+    allocate(hl_exp(3, ncepdp))
 
     call tspdcv(ncepdp, icepdc, vela, ckupdc, hl_exp)
 
     ! If PISO-like sub-iterations, we use trava, otherwise trav
     if(nterup.gt.1) then
-      do iel = 1, ncel
-        trava(1,iel) = trava(1,iel) + hl_exp(1,iel)
-        trava(2,iel) = trava(2,iel) + hl_exp(2,iel)
-        trava(3,iel) = trava(3,iel) + hl_exp(3,iel)
+      do ielpdc = 1, ncepdp
+        iel    = icepdc(ielpdc)
+        trava(1,iel) = trava(1,iel) + hl_exp(1,ielpdc)
+        trava(2,iel) = trava(2,iel) + hl_exp(2,ielpdc)
+        trava(3,iel) = trava(3,iel) + hl_exp(3,ielpdc)
       enddo
     else
-      do iel = 1, ncel
-        trav(1,iel) = trav(1,iel) + hl_exp(1,iel)
-        trav(2,iel) = trav(2,iel) + hl_exp(2,iel)
-        trav(3,iel) = trav(3,iel) + hl_exp(3,iel)
+      do ielpdc = 1, ncepdp
+        iel    = icepdc(ielpdc)
+        trav(1,iel) = trav(1,iel) + hl_exp(1,ielpdc)
+        trav(2,iel) = trav(2,iel) + hl_exp(2,ielpdc)
+        trav(3,iel) = trav(3,iel) + hl_exp(3,ielpdc)
       enddo
     endif
 
