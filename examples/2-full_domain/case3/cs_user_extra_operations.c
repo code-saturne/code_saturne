@@ -4,7 +4,7 @@
  *  (i.e. anything that does not have another dedicated user function)
  *============================================================================*/
 
-/* Code_Saturne version 5.3-alpha */
+/* VERS */
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
@@ -112,7 +112,7 @@ BEGIN_C_DECLS
 static FILE *file = NULL;
 
 void
-cs_user_extra_operations(void)
+cs_user_extra_operations(cs_domain_t     *domain)
 {
   /* Variables declaration */
   /* Get pointers to the mesh and mesh quantities structures */
