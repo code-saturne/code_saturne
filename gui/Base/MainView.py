@@ -990,6 +990,15 @@ class MainView(object):
         msg = self.tr("%s saved" % file_name)
         self.statusbar.showMessage(msg, 2000)
 
+        if self.case['current_page'] == 'Prepare batch calculation':
+            p = displaySelectedPage(self.case['current_page'],
+                                    self,
+                                    self.case,
+                                    stbar=self.statusbar,
+                                    study=self.Id,
+                                    tree=self.Browser)
+            self.scrollArea.setWidget(p)
+
 
     def fileSaveAs(self):
         """

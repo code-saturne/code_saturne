@@ -419,6 +419,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.class_list = None
 
+        self.__updateRunButton__()
+
         if self.jmdl.batch.rm_type != None:
 
             validatorSimpleName = RegExpValidator(self.lineEditJobName,
@@ -428,7 +430,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.lineEditJobName.setValidator(validatorSimpleName)
             self.lineEditJobAccount.setValidator(validatorAccountName)
             self.lineEditJobWCKey.setValidator(validatorAccountName)
-            self.pushButtonRunSubmit.setText("Submit job")
 
         else:
 
@@ -441,6 +442,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                     self.mdl.setString('n_procs', None)
                 except Exception:
                     pass
+
         validatorRunId = RegExpValidator(self.lineEditRunId,
                                          QRegExp("[_A-Za-z0-9]*"))
         self.lineEditRunId.setValidator(validatorRunId)
@@ -523,6 +525,45 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.displayScriptInfo()
 
         self.case.undoStartGlobal()
+
+
+    def __caseIsSaved__(self):
+        """
+        Launch Code_Saturne batch running.
+        """
+        # Is the file saved?
+
+        xml_current = os.path.basename(self.case['xmlfile'])
+        xml_param = None
+        if self.case['runcase']:
+            xml_param = self.case['runcase'].get_parameters()
+        if not xml_current or xml_current != xml_param:
+            self.case['saved'] = "no"
+
+        is_saved = True
+        if self.case['saved'] == "no":
+            is_saved = False
+        if len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
+            is_saved = False
+
+        return is_saved
+
+
+    def __updateRunButton__(self):
+        """
+        Update push button for run
+        """
+        if self.__caseIsSaved__():
+            if self.jmdl.batch.rm_type != None:
+                self.pushButtonRunSubmit.setText("Submit job")
+            else:
+                self.pushButtonRunSubmit.setText("Run calculation")
+
+        else:
+            if self.jmdl.batch.rm_type != None:
+                self.pushButtonRunSubmit.setText("Save case and submit job")
+            else:
+                self.pushButtonRunSubmit.setText("Save case and run calculation")
 
 
     @pyqtSlot(str)
@@ -723,18 +764,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         # Is the file saved?
 
-        xml_current = os.path.basename(self.case['xmlfile'])
-        xml_param = None
-        if self.case['runcase']:
-            xml_param = self.case['runcase'].get_parameters()
-        if not xml_current or xml_current != xml_param:
-            self.case['saved'] = "no"
+        if not self.__caseIsSaved__():
+            self.parent.fileSave()
+            self.__updateRunButton__
 
-        if self.case['saved'] == "no" or len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
-
+        if not self.__caseIsSaved__():
             title = self.tr("Warning")
             msg   = self.tr("The current case must be saved before "\
-                            "running the ") + self.tr(self.case['package']).code_name + self.tr(" script.")
+                            "running the computation script.")
             QMessageBox.information(self, title, msg)
             return
 
