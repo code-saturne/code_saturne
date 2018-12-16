@@ -348,8 +348,6 @@ class MainView(object):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
-        self.setWindowTitle(self.package.code_name + " GUI" + " - " + self.package.version)
-
         self.Id = IdView()
         self.dockWidgetIdentity.setWidget(self.Id)
 
@@ -652,16 +650,13 @@ class MainView(object):
             self.case = QtCase.QtCase(package=self.package)
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
-            title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
-                     + " - " + self.package.version
-            self.setWindowTitle(title)
+            self.updateTitleBar()
 
             self.Browser.configureTree(self.case)
             self.dockWidgetBrowserDisplay(True)
 
             self.case['salome'] = self.salome
-            self.scrollArea.setWidget(self.displayFisrtPage())
+            self.scrollArea.setWidget(self.displayFirstPage())
             self.case['saved'] = "yes"
 
             self.case.undo_signal.connect(self.slotUndoRedoView)
@@ -683,16 +678,13 @@ class MainView(object):
                 self.case = QtCase.QtCase(package=self.package)
                 self.case.root()['version'] = self.XML_DOC_VERSION
                 self.initCase()
-                title = self.tr("New parameters set") + \
-                         " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
-                         + " - " + self.package.version
-                self.setWindowTitle(title)
+                self.updateTitleBar()
 
                 self.Browser.configureTree(self.case)
                 self.dockWidgetBrowserDisplay(True)
 
                 self.case['salome'] = self.salome
-                self.scrollArea.setWidget(self.displayFisrtPage())
+                self.scrollArea.setWidget(self.displayFirstPage())
                 self.case['saved'] = "yes"
 
                 self.actionPrepro.setEnabled(True)
@@ -811,14 +803,11 @@ class MainView(object):
 
         # Update the case and the StudyIdBar
         self.case['xmlfile'] = file_name
-        title = fn + " - " + self.tr(self.package.code_name) \
-                   + " - " + self.package.version
-        self.setWindowTitle(title)
 
         msg = self.tr("Loaded: %s" % fn)
         self.statusbar.showMessage(msg, 2000)
 
-        self.scrollArea.setWidget(self.displayFisrtPage())
+        self.scrollArea.setWidget(self.displayFirstPage())
 
         self.case['saved'] = "yes"
 
@@ -845,17 +834,23 @@ class MainView(object):
         """
         icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
 
+        title = ""
+        case_name = self.case.root().xmlGetAttribute('case')
+        if case_name:
+            title += case_name + ' : '
+        file_name = self.case['xmlfile']
+        if file_name:
+            file_name = os.path.basename(file_name)
+        else:
+            file_name = '<new parameters set>'
+        title += file_name
+        title +=   " - " + self.tr(self.case['package'].name)
+
         if self.case['package'].name == "NEPTUNE_CFD":
             icon = QIcon(QPixmap(icondir+"logoneptune.png"))
 
-            title = self.windowTitle()
-            title = title.replace("Code_Saturne", "NEPTUNE_CFD")
-
         else:
             icon = QIcon(QPixmap(icondir+"MONO-bulle-HD.png"))
-
-            title = self.windowTitle()
-            title = title.replace("NEPTUNE_CFD", "Code_Saturne")
 
         self.setWindowIcon(icon)
         self.setWindowTitle(title)
@@ -1019,9 +1014,7 @@ class MainView(object):
                 self.updateStudyId()
                 self.case.xmlSaveDocument()
                 self.batchFileSave()
-                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) \
-                     + " - " + self.package.version
-                self.setWindowTitle(title)
+                self.updateTitleBar()
 
                 # force to blank after save
                 self.case['undo'] = []
@@ -1440,7 +1433,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.scrollArea.setWidget(self.page)
 
 
-    def displayFisrtPage(self):
+    def displayFirstPage(self):
         """
         Display the first page if a file of parameters (new or previous) is loaded
         """
