@@ -293,18 +293,20 @@ class Parser:
             return
 
         sr_node = getChildNode(calc_node, 'start_restart')
+
         if sr_node != None:
             node = getChildNode(sr_node, 'restart')
-        if node != None:
-            path = str(node.getAttribute('path'))
-            if path:
-                self.dict['restart_input'] = path
+            if node != None:
+                path = str(node.getAttribute('path'))
+                if path:
+                    self.dict['restart_input'] = path
+
         if sr_node != None:
             node = getChildNode(sr_node, 'restart_mesh')
-        if node != None:
-            path = str(node.getAttribute('path'))
-            if path:
-                self.dict['restart_mesh_input'] = path
+            if node != None:
+                path = str(node.getAttribute('path'))
+                if path:
+                    self.dict['restart_mesh_input'] = path
 
         node = getChildNode(calc_node, 'partitioning')
         if node != None:
