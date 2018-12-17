@@ -791,6 +791,9 @@ cs_navsto_system_compute(const cs_mesh_t       *mesh)
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
+  if (ns->param->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
+    return;
+
   /* Build and solve the Navier-Stokes system */
   ns->compute(mesh, ns->param, ns->scheme_context);
 
