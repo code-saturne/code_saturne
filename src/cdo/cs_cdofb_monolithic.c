@@ -826,7 +826,6 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
   cs_real_t  *pr = sc->pressure->val;
   cs_field_t  *vel_fld = sc->velocity;
   cs_real_t  *vel_c = vel_fld->val;
-  cs_real_t  *div = sc->divergence->val;
 
   /*----------------------------------------------------------------------------
    *
@@ -1047,6 +1046,14 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
                                         mom_eqc->rc_tilda,
                                         mom_eqc->acf_tilda,
                                         vel_f, vel_c);
+
+  /* Update the divergence of the velocity field */
+  cs_real_t  *div = sc->divergence->val;
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
+                                                quant, connect->c2f, vel_f);
 
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
