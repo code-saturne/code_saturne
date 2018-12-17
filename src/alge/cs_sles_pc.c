@@ -405,6 +405,41 @@ _sles_pc_poly_setup(void               *context,
 }
 
 /*----------------------------------------------------------------------------
+ * Function for setup when poly_degree < 0
+ *
+ * parameters:
+ *   context   <-> pointer to preconditioner context
+ *   name      <-- pointer to name of associated linear system
+ *   a         <-- matrix
+ *   verbosity <-- associated verbosity
+ *----------------------------------------------------------------------------*/
+
+static void
+_sles_pc_poly_setup_none(void               *context,
+                         const char         *name,
+                         const cs_matrix_t  *a,
+                         int                 verbosity)
+{
+  CS_UNUSED(name);
+  CS_UNUSED(verbosity);
+
+  cs_sles_pc_poly_t  *c = context;
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+
+  c->n_rows = cs_matrix_get_n_rows(a)*db_size[0];
+  c->n_cols = cs_matrix_get_n_columns(a)*db_size[0];
+
+  c->a = a;
+
+  c->ad_inv = NULL;
+  c->_ad_inv = NULL;
+
+  c->n_aux = 0;
+  c->aux = NULL;
+}
+
+/*----------------------------------------------------------------------------
  * Function for application of a null-preconditioner.
  *
  * In cases where it is desired that the preconditioner modify a vector
@@ -993,7 +1028,7 @@ cs_sles_pc_none_create(void)
 
   cs_sles_pc_t *pc = cs_sles_pc_define(pcp,
                                        _sles_pc_poly_get_type,
-                                       _sles_pc_poly_setup,
+                                       _sles_pc_poly_setup_none,
                                        NULL,
                                        _sles_pc_poly_apply_none,
                                        _sles_pc_poly_free,
