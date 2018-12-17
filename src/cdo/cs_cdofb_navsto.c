@@ -1,5 +1,6 @@
 /*============================================================================
- * Build an algebraic CDO face-based system for the Navier--Stokes system
+ * Routines shared among all face-based schemes for the discretization of the
+ * Navier--Stokes system
  *============================================================================*/
 
 /*
@@ -45,19 +46,14 @@
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
-#include "cs_cdofb_priv.h"
-#include "cs_cdofb_scaleq.h"
-#include "cs_cdofb_vecteq.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_equation_priv.h"
+#include "cs_evaluate.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_navsto_coupling.h"
 #include "cs_navsto_param.h"
 #include "cs_post.h"
-#include "cs_source_term.h"
-#include "cs_static_condensation.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -77,91 +73,14 @@ BEGIN_C_DECLS
 /*!
  * \file cs_cdofb_navsto.c
  *
- * \brief Routines for building and solving Stokes and Navier-Stokes problem
- *        with CDO face-based schemes
+ * \brief Shared routines among all face-based schemes for building and solving
+ *        Stokes and Navier-Stokes problem
  *
  */
 
 /*=============================================================================
  * Local structure definitions
  *============================================================================*/
-
-/*! \struct cs_cdofb_navsto_t
- *  \brief Context related to CDO face-based discretization when dealing with
- *         vector-valued unknowns
- */
-
-typedef struct {
-
-  /*!
-   * @name Main field variables
-   * Fields for every main variable of the equation. Got from cs_navsto_system_t
-   */
-
-  /*! \var velocity
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the velocity
-   */
-
-  cs_field_t *velocity;
-
-  /*! \var pressure
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the pressure
-   */
-
-  cs_field_t *pressure;
-
-  /*!
-   * @}
-   * @name Arrays storing face unknowns
-   * @{
-   */
-
-  /*! \var face_velocity
-   *  Degrees of freedom for the velocity at faces
-   */
-
-  cs_real_t  *face_velocity;
-
-  /*! \var face_pressure
-   *  Degrees of freedom for the pressure at faces. Not always allocated.
-   *  It depends on the type of algorithm used to couple the Navier-Stokes
-   *  system.
-   */
-
-  cs_real_t  *face_pressure;
-
-  /*!
-   * @}
-   * @name Parameters of the algorithm
-   * Easy access to useful features and parameters of the algorithm
-   * @{
-   */
-
-  /*! \var is_zeta_uniform
-   *  Bool telling if the auxiliary parameter zeta is uniform. Not always
-   *  necessary: zeta is tipically used in Artificial Compressibility algos
-   */
-
-  bool is_zeta_uniform;
-
-  /*!
-   * @}
-   * @name Performance monitoring
-   * Monitoring the efficiency of the algorithm used to solve the Navier-Stokes
-   * system
-   * @{
-   */
-
-  /*! \var timer
-   *  Cumulated elapsed time for building and solving the Navier--Stokes system
-   */
-  cs_timer_counter_t  timer;
-
-  /*! @} */
-
-} cs_cdofb_navsto_t;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -175,53 +94,9 @@ typedef struct {
  * Private variables
  *============================================================================*/
 
-/* Pointer to shared structures */
-static const cs_cdo_quantities_t    *cs_shared_quant;
-static const cs_cdo_connect_t       *cs_shared_connect;
-static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_scal_ms;
-static const cs_matrix_structure_t  *cs_shared_vect_ms;
-
-static cs_cdofb_navsto_t  *cs_cdofb_navsto_context = NULL;
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate a \ref cs_cdofb_navsto_t structure by default
- *
- * \param[in] nsp    pointer to a \ref cs_navsto_param_t structure
- *
- * \return a pointer to a new allocated \ref cs_cdofb_navsto_t strcuture
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_cdofb_navsto_t *
-_create_navsto_context(const cs_navsto_param_t  *nsp)
-{
-  cs_cdofb_navsto_t  *nssc = NULL;
-
-  if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n",
-              __func__);
-
-  BFT_MALLOC(nssc, 1, cs_cdofb_navsto_t);
-
-  nssc->velocity = cs_field_by_name("velocity");
-  nssc->pressure = cs_field_by_name("pressure");
-
-  nssc->face_velocity = NULL;
-  nssc->face_pressure = NULL;
-
-  nssc->is_zeta_uniform = true;
-
-  /* Monitoring */
-  CS_TIMER_COUNTER_INIT(nssc->timer);
-
-  return nssc;
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -231,247 +106,90 @@ _create_navsto_context(const cs_navsto_param_t  *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers from the main domain members for CDO face-based
- *         schemes
+ * \brief  Add the grad-div part to the local matrix (i.e. for the current
+ *         cell)
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a \ref cs_time_step_t structure
- * \param[in]  sms         pointer to a \ref cs_matrix_structure_t structure
- *                         (scalar)
- * \param[in]  vms         pointer to a \ref cs_matrix_structure_t structure
- *                         (vector)
+ * \param[in]      n_fc       local number of faces for the current cell
+ * \param[in]      zeta       scalar coefficient for the grad-div operator
+ * \param[in]      div        divergence
+ * \param[in, out] mat        local system matrix to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_init_common(const cs_cdo_quantities_t     *quant,
-                            const cs_cdo_connect_t        *connect,
-                            const cs_time_step_t          *time_step,
-                            const cs_matrix_structure_t   *sms,
-                            const cs_matrix_structure_t   *vms)
+cs_cdofb_navsto_add_grad_div(short int          n_fc,
+                             const cs_real_t    zeta,
+                             const cs_real_t    div[],
+                             cs_sdm_t          *mat)
 {
-  /* Assign static const pointers */
-  cs_shared_quant = quant;
-  cs_shared_connect = connect;
-  cs_shared_time_step = time_step;
+  cs_sdm_t  *b = NULL;
 
-  /*
-    Matrix structure related to the algebraic system for scalar-valued equation
-  */
-  cs_shared_scal_ms = sms;
+  /* Avoid dealing with cell DoFs which are not impacted */
+  for (short int bi = 0; bi < n_fc; bi++) {
 
-  /*
-    Matrix structure related to the algebraic system for vector-valued equation
-  */
-  cs_shared_vect_ms = vms;
-}
+    const cs_real_t  *divi = div + 3*bi;
+    const cs_real_t  zt_di[3] = {zeta*divi[0], zeta*divi[1], zeta*divi[2]};
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
- *         an Artificial Compressibility - VPP approach
- *
- * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a \ref cs_navsto_uzawa_t structure
- */
-/*----------------------------------------------------------------------------*/
+    /* Begin with the diagonal block */
+    b = cs_sdm_get_block(mat, bi, bi);
+    assert(b->n_rows == b->n_cols && b->n_rows == 3);
+    for (short int l = 0; l < 3; l++) {
+      cs_real_t *m_l = b->val + 3*l;
+      for (short int m = 0; m < 3; m++)
+        m_l[m] += zt_di[l] * divi[m];
+    }
 
-void
-cs_cdofb_navsto_init_ac_vpp_context(const cs_navsto_param_t   *nsp,
-                                    const void                *nsc_input)
-{
-  /* Sanity checks */
-  assert(nsp != NULL && nsc_input != NULL);
+    /* Continue with the extra-diag. blocks */
+    for (short int bj = bi+1; bj < n_fc; bj++) {
 
-  /* Navier-Stokes scheme context (NSSC) */
-  cs_cdofb_navsto_t  *nssc = _create_navsto_context(nsp);
+      b = cs_sdm_get_block(mat, bi, bj);
+      assert(b->n_rows == b->n_cols && b->n_rows == 3);
+      cs_real_t *mij  = b->val;
+      b = cs_sdm_get_block(mat, bj, bi);
+      assert(b->n_rows == b->n_cols && b->n_rows == 3);
+      cs_real_t *mji  = b->val;
 
-  const cs_navsto_ac_vpp_t  *nsc = (const cs_navsto_ac_vpp_t *)nsc_input;
+      const cs_real_t *divj = div + 3*bj;
 
-  cs_cdofb_navsto_context = nssc;
+      for (short int l = 0; l < 3; l++) {
 
-  /* No scalar equation */
-  cs_equation_t *mom_eq = nsc->momentum, *grd_eq = nsc->graddiv;
+        /* Diagonal: 3*l+l = 4*l */
+        const cs_real_t  gd_coef_ll = zt_di[l]*divj[l];
+        mij[4*l] += gd_coef_ll;
+        mji[4*l] += gd_coef_ll;
 
-  nssc->is_zeta_uniform = cs_property_is_uniform(nsc->zeta);
+        /* Extra-diagonal: Use the symmetry of the grad-div */
+        for (short int m = l+1; m < 3; m++) {
+          const short int  lm = 3*l+m, ml = 3*m+l;
+          const cs_real_t  gd_coef_lm = zt_di[l]*divj[m];
+          mij[lm] += gd_coef_lm;
+          mji[ml] += gd_coef_lm;
+          const cs_real_t  gd_coef_ml = zt_di[m]*divj[l];
+          mij[ml] += gd_coef_ml;
+          mji[lm] += gd_coef_ml;
+        }
+      }
 
-  /* TODO: face_velocity? */
-  BFT_MALLOC(nssc->face_velocity, 3*cs_shared_quant->n_faces, cs_real_t);
+    } /* Loop on column blocks: bj */
+  } /* Loop on row blocks: bi */
 
-  CS_UNUSED(grd_eq);
-  CS_UNUSED(mom_eq);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
- *         an incremental Projection approach
- *
- * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a \ref cs_navsto_uzawa_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_init_proj_context(const cs_navsto_param_t    *nsp,
-                                  const void                 *nsc_input)
-{
-  /* Sanity checks */
-  assert(nsp != NULL && nsc_input != NULL);
-
-  /* Navier-Stokes scheme context (NSSC) */
-  cs_cdofb_navsto_t  *nssc = _create_navsto_context(nsp);
-
-  const cs_navsto_projection_t *nsc = (const cs_navsto_projection_t *)nsc_input;
-
-  cs_cdofb_navsto_context = nssc;
-
-  /* No auxiliary vector equation */
-  cs_equation_t *pre_eq = nsc->prediction, *cor_eq = nsc->correction;
-
-  /* Set pointers to face values */
-  nssc->face_velocity =
-    ((cs_cdofb_vecteq_t *)pre_eq->scheme_context)->face_values;
-  nssc->face_pressure =
-    ((cs_cdofb_scaleq_t *)cor_eq->scheme_context)->face_values;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Destroy a \ref cs_cdofb_navsto_t structure
- *
- * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp)
-{
-  CS_UNUSED(nsp);
-
-  cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-
-  if (nssc == NULL)
-    return;
-
-  /* Free temporary buffers */
-  if (nssc->face_velocity != NULL) BFT_FREE(nssc->face_velocity);
-  if (nssc->face_pressure != NULL) BFT_FREE(nssc->face_pressure);
-
-  BFT_FREE(nssc);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         an Artificial Compressibility - VPP approach.
- *
- * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
- *                             structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
-                               const cs_navsto_param_t      *nsp,
-                               void                         *nsc_input)
-{
-  cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-  cs_navsto_ac_vpp_t  *nscc = (cs_navsto_ac_vpp_t *)nsc_input;
-  cs_equation_t *mom_eq = nscc->momentum;
-
-  CS_UNUSED(nsp);
-  CS_UNUSED(mesh);
-  CS_UNUSED(mom_eq);
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* TODO */
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(nssc->timer), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         an incremental correction-projection approach.
- *
- * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
- *                             structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
-                             const cs_navsto_param_t      *nsp,
-                             void                         *nsc_input)
-{
-  cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
-  cs_navsto_projection_t  *nscc = (cs_navsto_projection_t *)nsc_input;
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* TODO */
-  CS_UNUSED(mesh);
-  CS_UNUSED(nsp);
-  CS_UNUSED(nscc);
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(nssc->timer), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the velocity on the faces
- *
- * \return a pointer to an array of \ref cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_navsto_get_face_velocity(void)
-{
-  if (cs_cdofb_navsto_context == NULL)
-    return NULL;
-  else
-    return cs_cdofb_navsto_context->face_velocity;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the pressure on the faces
- *
- * \return a pointer to an array of  \ref cs_real_t. (warning: may be NULL)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_navsto_get_face_pressure(void)
-{
-  if (cs_cdofb_navsto_context == NULL)
-    return NULL;
-  else
-    return cs_cdofb_navsto_context->face_pressure;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize the pressure values
  *
- * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in, out]  pr     pointer to the pressure \ref cs_field_t structure
+ * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts      pointer to a \ref cs_time_step_t structure
+ * \param[in, out]  pr      pointer to the pressure \ref cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
+                              const cs_cdo_quantities_t   *quant,
+                              const cs_time_step_t        *ts,
                               cs_field_t                  *pr)
 {
   /* Sanity checks */
@@ -483,9 +201,8 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
   assert(nsp->pressure_ic_defs != NULL);
 
-  const cs_time_step_t *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
-  const cs_flag_t   dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
+  const cs_flag_t  dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
 
   cs_real_t  *values = pr->val;
 
@@ -550,43 +267,7 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
    *    and definitions that do not cover all the domain. Moreover, we need
    *    information (e.g. cs_cdo_quantities_t) which we do not know here
    */
-  cs_cdofb_navsto_set_zero_mean_pressure(values);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Store solution(s) of the linear system into a field structure
- *         Update extra-field values if required (for hybrid discretization)
- *
- * \param[in]      solu       solution array
- * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] data       pointer to \ref cs_cdofb_navsto_t structure
- * \param[in, out] field_val  pointer to the current value of the field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
-                              const cs_real_t              *rhs,
-                              const cs_equation_param_t    *eqp,
-                              cs_equation_builder_t        *eqb,
-                              void                         *data,
-                              cs_real_t                    *field_val)
-{
-  CS_UNUSED(rhs);
-  CS_UNUSED(solu);
-  CS_UNUSED(field_val);
-  CS_UNUSED(eqp);
-
-  cs_cdofb_navsto_t  *eqc = (cs_cdofb_navsto_t *)data;
-  cs_timer_t  t0 = cs_timer_time();
-
-  CS_UNUSED(eqc);
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+  cs_cdofb_navsto_set_zero_mean_pressure(quant, values);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -594,12 +275,14 @@ cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
  * \brief  Update the pressure field in order to get a field with a zero-mean
  *         average
  *
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
  * \param[in, out]  values    pressure field values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_set_zero_mean_pressure(cs_real_t   values[])
+cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
+                                       cs_real_t                   values[])
 {
   /* We should ensure that the mean of the pressure is zero. Thus we compute
    * it and subtract it from every value. */
@@ -609,7 +292,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(cs_real_t   values[])
    *    it's a value), but it is the only way to allow multiple definitions
    *    and definitions that do not cover all the domain. */
 
-  const cs_lnum_t  n_cells = cs_shared_quant->n_cells;
+  const cs_lnum_t  n_cells = quant->n_cells;
  /*
   * The algorithm used for summing is l3superblock60, based on the article:
   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
@@ -619,9 +302,10 @@ cs_cdofb_navsto_set_zero_mean_pressure(cs_real_t   values[])
   */
 
   const cs_real_t  intgr = cs_sum(n_cells, values);
-  const cs_real_t  g_avg = intgr / cs_shared_quant->vol_tot;
+  assert(quant->vol_tot > 0.);
+  const cs_real_t  g_avg = intgr / quant->vol_tot;
 
-  const cs_real_t *cv = cs_shared_quant->cell_vol;
+  const cs_real_t *cv = quant->cell_vol;
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)

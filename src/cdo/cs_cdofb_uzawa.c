@@ -56,7 +56,6 @@
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
 #include "cs_log.h"
-#include "cs_navsto_utilities.h"
 #include "cs_navsto_coupling.h"
 #include "cs_math.h"
 #include "cs_parall.h"
@@ -241,7 +240,7 @@ _update_pr_div_rhs(const cs_property_t          *relax,
 
     /* Compute divergence and store it */
     const cs_real_t  div_c =
-      cs_navsto_get_cell_divergence(c_id, quant, c2f, vel_f);
+      cs_cdofb_navsto_cell_divergence(c_id, quant, c2f, vel_f);
 
     /* Compute the increment for the pressure */
     const cs_real_t  delta_pc = rlx * div_c;
@@ -561,7 +560,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
       /* 2- PRESSURE (SCALAR) EQUATION */
       /* ============================= */
-      cs_navsto_get_divergence_vect(cm, cb->aux->val);
+      cs_cdofb_navsto_divergence_vect(cm, cb->aux->val);
 
       const cs_real_t *l_div = cb->aux->val, ovol = 1. / cm->vol_c;
 
@@ -582,7 +581,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
       if ( !(sc->is_gdscale_uniform) )
         zeta_c = cs_property_value_in_cell(cm, zeta, time_eval);
 
-      cs_navsto_add_grad_div(n_fc, zeta_c*ovol, l_div, csys->mat);
+      cs_cdofb_navsto_add_grad_div(n_fc, zeta_c*ovol, l_div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1039,7 +1038,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 2- PRESSURE (SCALAR) EQUATION */
       /* ============================= */
-      cs_navsto_get_divergence_vect(cm, cb->aux->val);
+      cs_cdofb_navsto_divergence_vect(cm, cb->aux->val);
 
       const cs_real_t *l_div = cb->aux->val, ovol = 1. / cm->vol_c;
 
@@ -1060,7 +1059,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
       if ( !(sc->is_gdscale_uniform) )
         zeta_c = cs_property_value_in_cell(cm, zeta, time_eval);
 
-      cs_navsto_add_grad_div(n_fc, zeta_c*ovol, l_div, csys->mat);
+      cs_cdofb_navsto_add_grad_div(n_fc, zeta_c*ovol, l_div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1537,7 +1536,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
       /* 2- PRESSURE (SCALAR) EQUATION */
       /* ============================= */
-      cs_navsto_get_divergence_vect(cm, cb->aux->val);
+      cs_cdofb_navsto_divergence_vect(cm, cb->aux->val);
 
       const cs_real_t *l_div = cb->aux->val, ovol = 1. / cm->vol_c;
 
@@ -1559,7 +1558,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
       if ( !(sc->is_gdscale_uniform) )
         zeta_c = cs_property_value_in_cell(cm, zeta, time_eval);
 
-      cs_navsto_add_grad_div(n_fc, zeta_c*ovol, l_div, csys->mat);
+      cs_cdofb_navsto_add_grad_div(n_fc, zeta_c*ovol, l_div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))

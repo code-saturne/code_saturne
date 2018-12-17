@@ -624,18 +624,6 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
   } /* Face-based schemes (CDO or HHO) */
 
-  if (cs_flag_test(cc->fb_scheme_flag, CS_FLAG_SCHEME_NAVSTO)) {
-
-    /* Solve Navier--Stokes with CDO-Fb schemes */
-    cs_cdofb_navsto_init_common(quant, connect, time_step,
-                                cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP0],
-                                cs_equation_common_ms[CS_CDO_CONNECT_FACE_VP0]);
-
-  }
-
-  /* TODO: Solve Navier--Stokes with HHO schemes */
-  /* if (cs_flag_test(cc->hho_scheme_flag, CS_FLAG_SCHEME_NAVSTO)) */
-
   /* Assign static const pointers: shared pointers with a cs_domain_t */
   cs_shared_quant = quant;
   cs_shared_connect = connect;

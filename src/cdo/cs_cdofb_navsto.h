@@ -2,7 +2,8 @@
 #define __CS_CDOFB_NAVSTO_H__
 
 /*============================================================================
- * Build an algebraic CDO face-based system for the Navier--Stokes system
+ * Routines shared among all face-based schemes for the discretization of the
+ * Navier--Stokes system
  *============================================================================*/
 
 /*
@@ -40,14 +41,13 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_equation_common.h"
-#include "cs_equation_param.h"
 #include "cs_field.h"
+#include "cs_math.h"
 #include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_navsto_param.h"
-#include "cs_source_term.h"
 #include "cs_time_step.h"
+#include "cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -62,172 +62,145 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the divergence of a cell using the \ref cs_cdo_quantities_t
+ *         structure
+ *
+ * \param[in]     c_id         cell ID
+ * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
+ * \param[in]     c2f          pointer to cell-to-face \ref cs_adjacency_t
+ * \param[in]     f_dof        values of the face DoFs
+ *
+ * \return the divergence for the corresponding cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
+                                const cs_cdo_quantities_t    *quant,
+                                const cs_adjacency_t         *c2f,
+                                const cs_real_t              *f_dof)
+{
+  cs_real_t  div = 0.0;
+
+  for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
+
+    const cs_lnum_t  f_id = c2f->ids[f];
+    const cs_real_t  *_val = f_dof + 3*f_id;
+
+    if (f_id < quant->n_i_faces) {
+      const cs_real_t *_nuf = quant->i_face_normal + 3*f_id;
+
+      div += c2f->sgn[f]*quant->i_face_surf[f_id]*
+        cs_math_3_dot_product(_val, _nuf) / cs_math_3_norm(_nuf);
+
+    }
+    else {
+
+      const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
+      const cs_real_t  *_nuf = quant->b_face_normal + 3*bf_id;
+
+      div += c2f->sgn[f]*quant->b_face_surf[bf_id]*
+        cs_math_3_dot_product(_val, _nuf) / cs_math_3_norm(_nuf);
+
+    } /* Boundary face */
+
+  } /* Loop on cell faces */
+
+  div /= quant->cell_vol[c_id];
+
+  return div;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the divergence vector associated to the current cell.
+ *         WARNING: mind that, differently form the original definition, the
+ *         result here is not divided by the cell volume
+ *
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out] div        array related to the divergence operator
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cdofb_navsto_divergence_vect(const cs_cell_mesh_t  *cm,
+                                cs_real_t              div[])
+{
+  /* D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f
+   * But, when integrating [[ p, q ]]_{P_c} = |c| p_c q_c
+   * Thus, the volume in the divergence drops
+   */
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const cs_quant_t  pfq = cm->face[f];
+    const cs_real_t  i_f = cm->f_sgn[f] * pfq.meas;
+
+    cs_real_t  *_div_f = div + 3*f;
+    _div_f[0] = i_f * pfq.unitv[0];
+    _div_f[1] = i_f * pfq.unitv[1];
+    _div_f[2] = i_f * pfq.unitv[2];
+
+  } /* Loop on cell faces */
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers from the main domain members for CDO face-based
- *         schemes
+ * \brief  Add the grad-div part to the local matrix (i.e. for the current
+ *         cell)
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a \ref cs_time_step_t structure
- * \param[in]  sms         pointer to a \ref cs_matrix_structure_t structure
- *                         (scalar)
- * \param[in]  vms         pointer to a \ref cs_matrix_structure_t structure
- *                         (vector)
+ * \param[in]      n_fc       local number of faces for the current cell
+ * \param[in]      zeta       scalar coefficient for the grad-div operator
+ * \param[in]      div        divergence
+ * \param[in, out] mat        local system matrix to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_init_common(const cs_cdo_quantities_t     *quant,
-                            const cs_cdo_connect_t        *connect,
-                            const cs_time_step_t          *time_step,
-                            const cs_matrix_structure_t   *sms,
-                            const cs_matrix_structure_t   *vms);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
- *         an Artificial Compressibility - VPP approach
- *
- * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a \ref cs_navsto_uzawa_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_init_ac_vpp_context(const cs_navsto_param_t   *nsp,
-                                    const void                *nsc_input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a \ref cs_cdofb_navsto_t structure storing in the case of
- *         an incremental Projection approach
- *
- * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a \ref cs_navsto_uzawa_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_init_proj_context(const cs_navsto_param_t    *nsp,
-                                  const void                 *nsc_input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Destroy a \ref cs_cdofb_navsto_t structure
- *
- * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_free_context(const cs_navsto_param_t      *nsp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         an Artificial Compressibility - VPP approach.
- *
- * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
- *                             structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
-                               const cs_navsto_param_t      *nsp,
-                               void                         *nsc_input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         an incremental correction-projection approach.
- *
- * \param[in]      mesh        pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] nsc_input   Navier-Stokes coupling context: pointer to a
- *                             structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_proj_compute(const cs_mesh_t              *mesh,
-                             const cs_navsto_param_t      *nsp,
-                             void                         *nsc_input);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the velocity on the faces
- *
- * \return a pointer to an array of \ref cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_navsto_get_face_velocity(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the pressure on the faces
- *
- * \return a pointer to an array of  \ref cs_real_t. (warning: may be NULL)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_navsto_get_face_pressure(void);
+cs_cdofb_navsto_add_grad_div(short int          n_fc,
+                             const cs_real_t    zeta,
+                             const cs_real_t    div[],
+                             cs_sdm_t          *mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize the pressure values
  *
- * \param[in]       nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in, out]  pr     pointer to the pressure \ref cs_field_t structure
+ * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts      pointer to a \ref cs_time_step_t structure
+ * \param[in, out]  pr      pointer to the pressure \ref cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
+                              const cs_cdo_quantities_t   *quant,
+                              const cs_time_step_t        *ts,
                               cs_field_t                  *pr);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Store solution(s) of the linear system into a field structure
- *         Update extra-field values if required (for hybrid discretization)
- *
- * \param[in]      solu       solution array
- * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] data       pointer to \ref cs_cdofb_navsto_t structure
- * \param[in, out] field_val  pointer to the current value of the field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_update_fields(const cs_real_t              *solu,
-                              const cs_real_t              *rhs,
-                              const cs_equation_param_t    *eqp,
-                              cs_equation_builder_t        *eqb,
-                              void                         *data,
-                              cs_real_t                    *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update the pressure field in order to get a field with a zero-mean
  *         average
  *
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
  * \param[in, out]  values    pressure field values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_set_zero_mean_pressure(cs_real_t   values[]);
+cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
+                                       cs_real_t                   values[]);
 
 /*----------------------------------------------------------------------------*/
 

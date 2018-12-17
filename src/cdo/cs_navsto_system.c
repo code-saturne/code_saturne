@@ -654,8 +654,6 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  CS_UNUSED(ts);
 
   cs_navsto_system_t  *ns = cs_navsto_system;
   const cs_navsto_param_t *nsp = ns->param;
@@ -671,11 +669,11 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   /* Initial conditions for the velocity */
   if (ns->init_velocity != NULL)
-    ns->init_velocity(nsp, ns->scheme_context);
+    ns->init_velocity(nsp, quant, ts, ns->scheme_context);
 
   /* Initial conditions for the pressure */
   if (ns->init_pressure != NULL)
-    ns->init_pressure(nsp, ns->pressure);
+    ns->init_pressure(nsp, quant, ts, ns->pressure);
 
   /* Define the advection field. Since one links the advection field to the face
      velocity this is only available for Fb schemes and should be done after

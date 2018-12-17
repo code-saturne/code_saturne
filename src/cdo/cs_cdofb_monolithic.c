@@ -63,7 +63,6 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_navsto_coupling.h"
-#include "cs_navsto_utilities.h"
 #include "cs_param.h"
 #include "cs_post.h"
 #include "cs_source_term.h"
@@ -912,8 +911,6 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
                                        dir_values, vel_c, time_eval,
                                        csys, cb);
 
-      const short int  n_fc = cm->n_fc, f_dofs = 3*n_fc;
-
       /* 1- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
 
@@ -928,7 +925,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
       /* 2- PRESSURE (SCALAR) EQUATION */
       /* ============================= */
 
-      cs_navsto_get_divergence_vect(cm, cb->aux->val);
+      cs_cdofb_navsto_divergence_vect(cm, cb->aux->val);
 
       const cs_real_t *_div = cb->aux->val;
 

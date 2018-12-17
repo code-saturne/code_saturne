@@ -67,7 +67,6 @@
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
-#include "cs_navsto_utilities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -231,8 +230,8 @@ _update_pr_div(const cs_property_t          *zeta,
       t_pty = cs_property_get_cell_value(c_id, time_eval, eqp->time_property);
 
     /* Compute divergence and store it */
-    const cs_real_t  div_c =
-      cs_navsto_get_cell_divergence(c_id, quant, c2f, vel_f);
+    const cs_real_t  div_c
+      = cs_cdofb_navsto_cell_divergence(c_id, quant, c2f, vel_f);
 
     /* Compute the increment for the pressure */
     const cs_real_t  delta_pc = t_pty * dt_cur * o_zeta_c * div_c;
@@ -486,7 +485,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 2- PRESSURE (SCALAR) EQUATION */
       /* ============================= */
-      cs_navsto_get_divergence_vect(cm, cb->aux->val);
+      cs_cdofb_navsto_divergence_vect(cm, cb->aux->val);
 
       const cs_real_t *l_div = cb->aux->val, ovol = 1. / cm->vol_c;
 
@@ -507,9 +506,9 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
       if ( !(sc->is_zeta_uniform) )
         o_zeta_c = 1. / cs_property_value_in_cell(cm, zeta, time_eval);
 
-      cs_navsto_add_grad_div(n_fc,
-                             cb->tpty_val * dt_cur * o_zeta_c * ovol,
-                             l_div, csys->mat);
+      cs_cdofb_navsto_add_grad_div(n_fc,
+                                   cb->tpty_val * dt_cur * o_zeta_c * ovol,
+                                   l_div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -816,7 +815,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
       /* 2- PRESSURE (SCALAR) EQUATION */
       /* ============================= */
-      cs_navsto_get_divergence_vect(cm, cb->aux->val);
+      cs_cdofb_navsto_divergence_vect(cm, cb->aux->val);
 
       const cs_real_t *l_div = cb->aux->val, ovol = 1. / cm->vol_c;
 
@@ -838,9 +837,9 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
       if ( !(sc->is_zeta_uniform) )
         o_zeta_c = 1. / cs_property_value_in_cell(cm, zeta, time_eval);
 
-      cs_navsto_add_grad_div(n_fc,
-                             cb->tpty_val * dt_cur * o_zeta_c * ovol,
-                             l_div, csys->mat);
+      cs_cdofb_navsto_add_grad_div(n_fc,
+                                   cb->tpty_val * dt_cur * o_zeta_c * ovol,
+                                   l_div, csys->mat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))

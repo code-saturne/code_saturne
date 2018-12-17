@@ -96,12 +96,16 @@ typedef void *
  *         to a \ref cs_equation_t structure (which manages the initialization)
  *
  * \param[in]       nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts       pointer to a \ref cs_time_step_t structure
  * \param[in, out]  field    pointer to a \ref cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_navsto_init_values_t)(const cs_navsto_param_t     *nsp,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_time_step_t        *ts,
                           cs_field_t                  *field);
 
 /*----------------------------------------------------------------------------*/
