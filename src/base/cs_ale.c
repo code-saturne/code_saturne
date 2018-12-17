@@ -339,6 +339,10 @@ _free_surface(cs_real_t           time,
       resv[off][i] = _mesh_vel[v_id][i]; //FIXME  v_id or off ?
     }
   }
+
+  /* Free memory */
+  BFT_FREE(_mesh_vel);
+
 }
 
 /*============================================================================
