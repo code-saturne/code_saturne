@@ -2634,17 +2634,6 @@ cs_internal_coupling_setup(void)
       if (var_cal_opt.icoupl > 0) {
 
         if (coupling_id == 0) {
-          /* Definition of var_cal_opt options
-           * (needed for matrix.vector multiply) */
-          /* cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt); */
-
-          /* Check the case is without hydrostatic pressure */
-          cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-          if (stokes->iphydr == 1)
-            bft_error(__FILE__, __LINE__, 0,
-                      "Hydrostatic pressure "
-                      "not implemented with internal coupling.");
-
           /* Update user information */
           BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char);
           // FIXME:= Leaves the name of the first coupled scalar
