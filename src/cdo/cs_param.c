@@ -205,20 +205,8 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
 {
   switch (solver) {
 
-  case CS_PARAM_ITSOL_JACOBI:
-    return  "Jacobi";
-    break;
-  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
-    return  "Gauss.Seidel";
-    break;
-  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
-    return  "Symmetric.Gauss.Seidel";
-    break;
-  case CS_PARAM_ITSOL_CG:
-    return  "CG";
-    break;
-  case CS_PARAM_ITSOL_FCG:
-    return  "Flexible.CG";
+  case CS_PARAM_ITSOL_AMG:
+    return "Algebraic.Multigrid";
     break;
   case CS_PARAM_ITSOL_BICG:
     return "BiCG";
@@ -226,15 +214,31 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_BICGSTAB2:
     return "BiCGstab2";
     break;
+  case CS_PARAM_ITSOL_CG:
+    return  "CG";
+    break;
   case CS_PARAM_ITSOL_CR3:
     return "Conjugate.Residual.3Layers";
+    break;
+  case CS_PARAM_ITSOL_FCG:
+    return  "Flexible.CG";
+    break;
+  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
+    return  "Gauss.Seidel";
     break;
   case CS_PARAM_ITSOL_GMRES:
     return "GMRES";
     break;
-  case CS_PARAM_ITSOL_AMG:
-    return "Algebraic.Multigrid";
+  case CS_PARAM_ITSOL_JACOBI:
+    return  "Jacobi";
     break;
+  case CS_PARAM_ITSOL_MINRES:
+    return  "MinRes";
+    break;
+  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
+    return  "Symmetric.Gauss.Seidel";
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Invalid solver. Stop execution."), __func__);

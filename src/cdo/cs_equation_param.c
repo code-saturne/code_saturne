@@ -159,6 +159,14 @@ _petsc_setup_hook(void   *context,
   /* Set the solver */
   switch (info.solver) {
 
+  case CS_PARAM_ITSOL_BICG: /* Improved Bi-CG stab */
+    KSPSetType(ksp, KSPIBCGS);
+    break;
+
+  case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
+    KSPSetType(ksp, KSPBCGSL);
+    break;
+
   case CS_PARAM_ITSOL_CG:    /* Preconditioned Conjugate Gradient */
     KSPSetType(ksp, KSPCG);
     break;
@@ -181,12 +189,8 @@ _petsc_setup_hook(void   *context,
     }
     break;
 
-  case CS_PARAM_ITSOL_BICG: /* Improved Bi-CG stab */
-    KSPSetType(ksp, KSPIBCGS);
-    break;
-
-  case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
-    KSPSetType(ksp, KSPBCGSL);
+  case CS_PARAM_ITSOL_MINRES:
+    KSPSetType(ksp, KSPMINRES);
     break;
 
   default:
@@ -547,22 +551,24 @@ _set_key(const char            *label,
     break;
 
   case CS_EQKEY_ITSOL:
-    if (strcmp(keyval, "jacobi") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
-    else if (strcmp(keyval, "cg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
-    else if (strcmp(keyval, "fcg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_FCG;
+    if (strcmp(keyval, "amg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
     else if (strcmp(keyval, "bicg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
     else if (strcmp(keyval, "bicgstab2") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_BICGSTAB2;
+    else if (strcmp(keyval, "cg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
     else if (strcmp(keyval, "cr3") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_CR3;
+    else if (strcmp(keyval, "fcg") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_FCG;
     else if (strcmp(keyval, "gmres") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
-    else if (strcmp(keyval, "amg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
+    else if (strcmp(keyval, "jacobi") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
+    else if (strcmp(keyval, "minres") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_MINRES;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
