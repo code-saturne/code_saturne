@@ -422,6 +422,7 @@ typedef struct {
   cs_param_amg_type_t      amg_type;   /*!< type of AMG algorithm if needed  */
   int                      n_max_iter; /*!< max. number of iterations */
   double                   eps;        /*!< stopping criterion on accuracy */
+  _Bool                    setup_done; /*!< setup step has been done */
 
   /*! \var resid_normalized
    *  normalized or not the norm of the residual used for the stopping criterion

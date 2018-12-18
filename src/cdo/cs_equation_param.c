@@ -95,6 +95,31 @@ static const char _err_empty_eqp[] =
 #if defined(HAVE_PETSC)
 
 /*----------------------------------------------------------------------------
+ * \brief Output the settings of a KSP structure
+ *
+ * \param[in]  ksp     Krylov SubSpace structure
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dump_petsc_setup(KSP          ksp)
+{
+  PetscViewer  v;
+  PetscErrorCode  ierr;
+
+  ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);
+  CHKERRQ(ierr);
+  ierr = PetscViewerSetType(v, PETSCVIEWERASCII);
+  CHKERRQ(ierr);
+  ierr = PetscViewerFileSetMode(v, FILE_MODE_APPEND);
+  CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(v, "petsc_setup.log");
+  CHKERRQ(ierr);
+
+  KSPView(ksp, v);
+  PetscViewerDestroy(&v);
+}
+
+/*----------------------------------------------------------------------------
  * \brief Add visualization of the matrix graph
  *
  * \param[in]  ksp     Krylov SubSpace structure
@@ -151,8 +176,6 @@ static void
 _petsc_setup_hook(void   *context,
                   KSP     ksp)
 {
-  PC pc;
-
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_itsol_t  info = eqp->itsol_info;
 
@@ -208,7 +231,12 @@ _petsc_setup_hook(void   *context,
                    dtol,              // divergence tolerance
                    info.n_max_iter);  // max number of iterations
 
+  /* Apply modifications to the KSP structure */
+  KSPSetFromOptions(ksp);
+
   /* Set the preconditioner */
+  PC pc;
+
   KSPGetPC(ksp, &pc);
 
   if (cs_glob_n_ranks > 1) {
@@ -335,6 +363,12 @@ _petsc_setup_hook(void   *context,
   /* Update with the new defined options */
   KSPSetFromOptions(ksp);
   PCSetFromOptions(pc);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!info.setup_done) {
+    _dump_petsc_setup(ksp);
+    eqp->itsol_info.setup_done = true;
+  }
 }
 
 #endif /* defined(HAVE_PETSC) */
