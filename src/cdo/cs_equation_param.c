@@ -169,9 +169,14 @@ _petsc_setup_hook(void   *context,
 
   case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
     {
-      const int  n_max_restart = 30;
+      const int  n_max_restart = 40;
 
-      KSPSetType(ksp, KSPGMRES);
+#if PETSC_VERSION_GE(3,7,0)
+      PetscOptionsSetValue(NULL, "-ksp_gmres_modifiedgramschmidt", "1");
+#else
+      PetscOptionsSetValue("-ksp_gmres_modifiedgramschmidt", "1");
+#endif
+      KSPSetType(ksp, KSPLGMRES);
       KSPGMRESSetRestart(ksp, n_max_restart);
     }
     break;
