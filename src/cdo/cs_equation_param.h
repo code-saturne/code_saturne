@@ -475,7 +475,7 @@ typedef struct {
  *
  * \var CS_EQKEY_SOLVER_FAMILY
  * Specify which class of solver are possible. Available choices are:
- * - "none" --> (default) List of possible iterative solvers are those of
+ * - "cs" --> (default) List of possible iterative solvers are those of
  *   Code_Saturne,
  * - "petsc" --> List of possible iterative solvers are those of the PETSc
  *   library. WARNING: one needs to install Code_Saturne with PETSc in this case
