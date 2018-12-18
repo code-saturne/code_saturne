@@ -110,6 +110,7 @@ typedef enum {
   CS_ENUMF_(mu_t),         /*!< turbulent dynamic viscosity */
 
   CS_ENUMF_(poro),         /*!< porosity */
+  CS_ENUMF_(if_poro),      /*!< internal faces porosity */
   CS_ENUMF_(t_poro),       /*!< tensorial porosity */
 
   /* Specific physics variables and properties */
