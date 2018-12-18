@@ -477,13 +477,6 @@ integer iturb, itherm, iale, ivofmt, icavit
 
 icavit = -1
 
-! --- Enable two phase homogeneous model
-!     (compressible module should be enabled first)
-
-
-icfhgn = 1
-
-
 !< [usipph]
 
 !----
