@@ -379,7 +379,7 @@ _cs_ksp_converged(KSP                  ksp,
  * This function is called the end of the setup stage for a KSP solver.
  *
  * Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
- * this also allows setting furthur function pointers for pre and post-solve
+ * this also allows setting further function pointers for pre and post-solve
  * operations (see the PETSc documentation).
  *
  * Note: if the context pointer is non-NULL, it must point to valid data
