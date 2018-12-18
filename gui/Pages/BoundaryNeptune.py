@@ -1732,7 +1732,7 @@ class WallBoundaryTestCase(ModelTest):
         mdl = Boundary('wall','',self.case)
         mdl.setEnthalpyChoice('none','flux')
         doc = '''<wall field_id="none" label="">
-                         <variable choice="flux" name="Enthalpy"/>
+                         <variable choice="flux" name="enthalpy"/>
                  </wall>'''
         assert mdl.boundNode == self.xmlNodeFromString(doc),\
             'Could not set EnthalpyChoice'

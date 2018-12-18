@@ -115,9 +115,9 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                     node.xmlRemoveChild('formula')
             # add node enthalpy if needed
             XMLNodeVariable = self.XMLNodethermo.xmlGetNode('variables')
-            node = XMLNodeVariable.xmlGetNode('variable', field_id=fieldId, name="Enthalpy")
+            node = XMLNodeVariable.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
             if not node:
-                Variables(self.case).setNewVariableProperty("variable", "", XMLNodeVariable, fieldId, "Enthalpy", "enthalpy"+str(fieldId))
+                Variables(self.case).setNewVariableProperty("variable", "", XMLNodeVariable, fieldId, "enthalpy", "enthalpy"+str(fieldId))
 
             if self.getPredefinedFlow() == 'None' or self.getPredefinedFlow() == 'particles_flow':
                 if oldMaterial == "user_material" and (str(fieldId) == '1' or str(fieldId) == '2'):
