@@ -52,12 +52,12 @@ BEGIN_C_DECLS
 enum {
   CS_TURB_NONE = 0,
   CS_TURB_MIXING_LENGTH = 10,
-  CS_TURB_K_EPSISLON = 20,
-  CS_TURB_K_EPSISLON_LIN_PROD = 21,
-  CS_TURB_K_EPSISLON_LS = 22,
-  CS_TURB_RIJ_EPSISLON_LRR = 30,
-  CS_TURB_RIJ_EPSISLON_SSG = 31,
-  CS_TURB_RIJ_EPSISLON_EBRSM = 32,
+  CS_TURB_K_EPSILON = 20,
+  CS_TURB_K_EPSILON_LIN_PROD = 21,
+  CS_TURB_K_EPSILON_LS = 22,
+  CS_TURB_RIJ_EPSILON_LRR = 30,
+  CS_TURB_RIJ_EPSILON_SSG = 31,
+  CS_TURB_RIJ_EPSILON_EBRSM = 32,
   CS_TURB_LES_SMAGO_CONST = 40,
   CS_TURB_LES_SMAGO_DYN = 41,
   CS_TURB_LES_WALE = 42,
@@ -76,14 +76,14 @@ typedef struct {
   int           iturb; /* turbulence model
                           CS_TURB_NONE: no turbulence model (laminar flow)
                           CS_TURB_MIXING_LENGTH: mixing length model
-                          CS_TURB_K_EPSISLON: standard k-epsilon model
-                          CS_TURB_K_EPSISLON_LIN_PROD: k-epsilon model with
+                          CS_TURB_K_EPSILON: standard k-epsilon model
+                          CS_TURB_K_EPSILON_LIN_PROD: k-epsilon model with
                             Linear Production (LP) correction
-                          CS_TURB_K_EPSISLON_LS: Launder-Sharma low Re
+                          CS_TURB_K_EPSILON_LS: Launder-Sharma low Re
                             k-epsilon model
-                          CS_TURB_RIJ_EPSISLON_LRR: Rij-epsilon (LRR)
-                          CS_TURB_RIJ_EPSISLON_SSG: Rij-epsilon (SSG)
-                          CS_TURB_RIJ_EPSISLON_EBRSM: Rij-epsilon (EBRSM)
+                          CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
+                          CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
+                          CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)
                           CS_TURB_LES_SMAGO_CONST: LES
                             (constant Smagorinsky model)
                           CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic

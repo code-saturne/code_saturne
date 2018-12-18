@@ -139,13 +139,13 @@ cs_user_model(void)
   /* Example: Chose a turbulence model
    *   CS_TURB_NONE: no turbulence model (laminar flow)
    *   CS_TURB_MIXING_LENGTH: mixing length model
-   *   CS_TURB_K_EPSISLON: standard k-epsilon model
-   *   CS_TURB_K_EPSISLON_LIN_PROD: k-epsilon model with
+   *   CS_TURB_K_EPSILON: standard k-epsilon model
+   *   CS_TURB_K_EPSILON_LIN_PROD: k-epsilon model with
    *     Linear Production (LP) correction
-   *   CS_TURB_K_EPSISLON_LS: Launder-Sharma low Re k-epsilon model
-   *   CS_TURB_RIJ_EPSISLON_LRR: Rij-epsilon (LRR)
-   *   CS_TURB_RIJ_EPSISLON_SSG: Rij-epsilon (SSG)
-   *   CS_TURB_RIJ_EPSISLON_EBRSM: Rij-epsilon (EBRSM)
+   *   CS_TURB_K_EPSILON_LS: Launder-Sharma low Re k-epsilon model
+   *   CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
+   *   CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
+   *   CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)
    *   CS_TURB_LES_SMAGO_CONST: LES (constant Smagorinsky model)
    *   CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic Smagorisky model)
    *   CS_TURB_LES_WALE: LES (WALE)
@@ -155,7 +155,7 @@ cs_user_model(void)
    *   CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
 
   cs_turb_model_t *turb_model = cs_get_glob_turb_model();
-  turb_model->iturb = CS_TURB_K_EPSISLON_LIN_PROD;
+  turb_model->iturb = CS_TURB_K_EPSILON_LIN_PROD;
 
   /*--------------------------------------------------------------------------*/
 
