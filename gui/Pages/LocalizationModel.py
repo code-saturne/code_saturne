@@ -47,7 +47,12 @@ import sys, unittest, types
 from code_saturne.Base.XMLvariables import Model, Variables
 from code_saturne.Base.XMLmodel import ModelTest
 from code_saturne.Base.XMLengine import *
-from code_saturne.Pages.Boundary import Boundary
+
+try:
+    from code_saturne.Pages.BoundaryNeptune import Boundary as BoundaryNCFD
+    from code_saturne.Pages.Boundary import Boundary
+except:
+    from code_saturne.Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 #
@@ -921,11 +926,17 @@ class BoundaryLocalizationModel(LocalizationModel):
         oldNature = node['nature']
         node['nature'] = str(nature)
 
-        # Delete oldNature boundary
-        Boundary(oldNature, label, self.case).delete()
+        if self.case['package'].name == 'code_saturne':
+            # Delete oldNature boundary
+            Boundary(oldNature, label, self.case).delete()
+            # Create nature boundary
+            Boundary(nature, label, self.case)
+        else:
+            # Delete oldNature boundary
+            BoundaryNCFD(oldNature, label, self.case).delete()
+            # Create nature boundary
+            BoundaryNCFD(nature, label, self.case)
 
-        # Create nature boundary
-        Boundary(nature, label, self.case)
 
 
     @Variables.undoGlobal
@@ -943,7 +954,10 @@ class BoundaryLocalizationModel(LocalizationModel):
         node.xmlSetTextNode(newZone.getLocalization())
 
         # Create nature boundary
-        Boundary(newZone.getNature(), newZone.getLabel(), self.case)
+        if self.case['package'].name == 'code_saturne':
+            Boundary(newZone.getNature(), newZone.getLabel(), self.case)
+        else:
+            BoundaryNCFD(newZone.getNature(), newZone.getLabel(), self.case)
 
         return newZone
 
@@ -954,7 +968,10 @@ class BoundaryLocalizationModel(LocalizationModel):
         Replace a zone by another in the XML file
         """
         if (new_zone.getNature() != old_zone.getNature()):
-            Boundary(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
+            if self.case['package'].name == 'code_saturne':
+                Boundary(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
+            else:
+                BoundaryNCFD(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
             newLabel, newCodeNumber, newLocal = LocalizationModel.replaceZone(self, old_zone, new_zone)
 
             newNature = new_zone.getNature()
@@ -968,7 +985,10 @@ class BoundaryLocalizationModel(LocalizationModel):
             node['nature'] = newNature
             node.xmlSetTextNode(newLocal)
 
-            Boundary(new_zone.getNature(), new_zone.getLabel(), self.case)
+            if self.case['package'].name == 'code_saturne':
+                Boundary(new_zone.getNature(), new_zone.getLabel(), self.case)
+            else:
+                BoundaryNCFD(new_zone.getNature(), new_zone.getLabel(), self.case)
         else:
             label      = old_zone.getLabel()
             codeNumber = old_zone.getCodeNumber()
@@ -1001,7 +1021,10 @@ class BoundaryLocalizationModel(LocalizationModel):
         node.xmlRemoveNode()
 
         # Delete nature boundary
-        Boundary(nature, label, self.case).delete()
+        if self.case['package'].name == 'code_saturne':
+            Boundary(nature, label, self.case).delete()
+        else:
+            BoundaryNCFD(nature, label, self.case).delete()
 
         self.renumberZones()
 
@@ -1024,7 +1047,10 @@ class BoundaryLocalizationModel(LocalizationModel):
                                                             name = z + 1)
             label = n['label']
             nature = n['nature']
-            Boundary(nature, label, self.case).delete()
+            if self.case['package'].name == 'code_saturne':
+                Boundary(nature, label, self.case).delete()
+            else:
+                BoundaryNCFD(nature, label, self.case).delete()
             n.xmlRemoveNode()
 
         self.renumberZones()
