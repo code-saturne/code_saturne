@@ -710,7 +710,7 @@ class domain(base_domain):
 
             print(' Restart from ' + self.restart_input + '\n')
 
-        if self.restart_mesh_input != None and err_str == None:
+        if self.restart_mesh_input != None and err_str == '':
 
             restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
             if not os.path.isabs(restart_mesh_input):
