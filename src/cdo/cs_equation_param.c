@@ -36,11 +36,8 @@
 #include <string.h>
 
 #if defined(HAVE_PETSC)
-
 #include <petscversion.h>
-#include <petscdraw.h>
 #include <petscviewer.h>
-
 #endif
 
 /*----------------------------------------------------------------------------
@@ -104,16 +101,11 @@ static inline void
 _dump_petsc_setup(KSP          ksp)
 {
   PetscViewer  v;
-  PetscErrorCode  ierr;
 
-  ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);
-  CHKERRQ(ierr);
-  ierr = PetscViewerSetType(v, PETSCVIEWERASCII);
-  CHKERRQ(ierr);
-  ierr = PetscViewerFileSetMode(v, FILE_MODE_APPEND);
-  CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(v, "petsc_setup.log");
-  CHKERRQ(ierr);
+  PetscViewerCreate(PETSC_COMM_WORLD, &v);
+  PetscViewerSetType(v, PETSCVIEWERASCII);
+  PetscViewerFileSetMode(v, FILE_MODE_APPEND);
+  PetscViewerFileSetName(v, "petsc_setup.log");
 
   KSPView(ksp, v);
   PetscViewerDestroy(&v);
@@ -123,11 +115,13 @@ _dump_petsc_setup(KSP          ksp)
  * \brief Set PETSc solver and preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _petsc_setup_hook(void   *context,
+                  Mat     a,
                   KSP     ksp)
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
@@ -310,11 +304,11 @@ _petsc_setup_hook(void   *context,
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook((void *)eqp, ksp);
+  cs_user_sles_petsc_hook((void *)eqp, a, ksp);
 
   /* Update with the new defined options */
-  KSPSetFromOptions(ksp);
   PCSetFromOptions(pc);
+  KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!info.setup_done) {

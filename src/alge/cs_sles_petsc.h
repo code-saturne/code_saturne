@@ -69,11 +69,13 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
+ *   a       <-> PETSc matrix context
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 typedef void
 (cs_sles_petsc_setup_hook_t) (void               *context,
+                              Mat                 a,
                               KSP                 ksp);
 
 /* Iterative linear solver context (opaque) */
@@ -103,11 +105,13 @@ typedef struct _cs_sles_petsc_t  cs_sles_petsc_t;
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
+ *   a       <-> PETSc matrix context
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
+                        Mat                 a,
                         KSP                 ksp);
 
 /*=============================================================================

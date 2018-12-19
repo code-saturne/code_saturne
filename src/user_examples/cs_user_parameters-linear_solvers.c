@@ -267,13 +267,17 @@ _petsc_p_setup_hook_view(const void  *context,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
+ *   a       <-> PETSc matrix context
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
+                        Mat                 a,
                         KSP                 ksp)
 {
+  CS_UNUSED(a);
+
   /*! [sles_petsc_cdo_hook] */
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
 
