@@ -1267,7 +1267,8 @@ cs_equation_set_sles(void)
       cs_timer_stats_start(eq->main_ts_id);
 
     /* Initialize cs_sles_t structure */
-    cs_equation_param_set_sles(eqp, eq->field_id);
+    if (eqp->type != CS_EQUATION_TYPE_NAVSTO)
+      cs_equation_param_set_sles(eqp, eq->field_id);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

@@ -37,7 +37,6 @@
 
 #if defined(HAVE_PETSC)
 #include <petscversion.h>
-#include <petscviewer.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -90,27 +89,6 @@ static const char _err_empty_eqp[] =
  *============================================================================*/
 
 #if defined(HAVE_PETSC)
-
-/*----------------------------------------------------------------------------
- * \brief Output the settings of a KSP structure
- *
- * \param[in]  ksp     Krylov SubSpace structure
- *----------------------------------------------------------------------------*/
-
-static inline void
-_dump_petsc_setup(KSP          ksp)
-{
-  PetscViewer  v;
-
-  PetscViewerCreate(PETSC_COMM_WORLD, &v);
-  PetscViewerSetType(v, PETSCVIEWERASCII);
-  PetscViewerFileSetMode(v, FILE_MODE_APPEND);
-  PetscViewerFileSetName(v, "petsc_setup.log");
-
-  KSPView(ksp, v);
-  PetscViewerDestroy(&v);
-}
-
 /*----------------------------------------------------------------------------
  * \brief Set PETSc solver and preconditioner
  *
@@ -312,7 +290,7 @@ _petsc_setup_hook(void   *context,
 
   /* Dump the setup related to PETSc in a specific file */
   if (!info.setup_done) {
-    _dump_petsc_setup(ksp);
+    cs_sles_petsc_log_setup(ksp);
     eqp->sles_param.setup_done = true;
   }
 }
@@ -1325,18 +1303,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
     {
 #if defined(HAVE_PETSC)
 
-      /* Initialization must be called before setting options;
-         it does not need to be called before calling
-         cs_sles_petsc_define(), as this is handled automatically. */
-
-      PetscBool is_initialized;
-      PetscInitialized(&is_initialized);
-      if (is_initialized == PETSC_FALSE) {
-#if defined(HAVE_MPI)
-        PETSC_COMM_WORLD = cs_glob_mpi_comm;
-#endif
-        PetscInitializeNoArguments();
-      }
+      cs_sles_petsc_init();
 
       cs_sles_petsc_setup_hook_t  *_setup_hook = _petsc_setup_hook;
 

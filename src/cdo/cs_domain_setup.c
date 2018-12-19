@@ -426,6 +426,12 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* Last step: Proceed to the settings of a cs_equation_t structure. Setup the
      structure related to cs_sles_*
   */
+
+  /* Navier-Stokes system */
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_set_sles();
+
+  /* Set the remaining equations */
   cs_equation_set_sles();
 }
 

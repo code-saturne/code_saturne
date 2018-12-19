@@ -131,6 +131,21 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Start setting-up the Navier-Stokes equations when an AC algorithm
+ *         is used to couple the system.
+ *         No mesh information is available at this stage
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
+                     void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
  *         using a Artificial Compressibility approach and an Euler time scheme
  *

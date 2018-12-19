@@ -208,18 +208,21 @@ cs_navsto_param_create(cs_navsto_param_model_t        model,
   param->time_scheme =   CS_TIME_SCHEME_EULER_IMPLICIT;
   param->theta = 1.0;
   param->space_scheme = CS_SPACE_SCHEME_CDOFB;
+
   param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+  param->qtype = CS_QUADRATURE_BARY;
 
   /* Which equations are solved and which terms are needed */
   param->model = model;
   param->has_gravity = false;
   param->gravity[0] = param->gravity[1] = param->gravity[2] = 0.;
   param->time_state = time_state;
+
+  /* Resolution parameters */
+  param->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+  param->residual_tolerance = 1e-10;
   param->coupling = algo_coupling;
   param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
-  param->qtype = CS_QUADRATURE_BARY;
-
-  param->residual_tolerance = 1e-10;
   param->max_algo_iter = 20;
 
   /* Main set of properties */
@@ -313,6 +316,20 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   switch(key) {
 
+  case CS_NSKEY_DOF_REDUCTION:
+    if (strcmp(val, "derham") == 0)
+      nsp->dof_reduction_mode = CS_PARAM_REDUCTION_DERHAM;
+    else if (strcmp(val, "average") == 0)
+      nsp->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid val %s related to key CS_NSKEY_DOF_REDUCTION\n"
+                  " Choice between \"derham\" or \"average\"."),
+                __func__, _val);
+    }
+    break;
+
   case CS_NSKEY_GD_SCALE_COEF:
     switch (nsp->coupling) {
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
@@ -334,16 +351,61 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     } /* End of switch */
     break;
 
-  case CS_NSKEY_DOF_REDUCTION:
-    if (strcmp(val, "derham") == 0)
-      nsp->dof_reduction_mode = CS_PARAM_REDUCTION_DERHAM;
-    else if (strcmp(val, "average") == 0)
-      nsp->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+  case CS_NSKEY_MAX_ALGO_ITER:
+    nsp->max_algo_iter = atoi(val);
+    break;
+
+  case CS_NSKEY_QUADRATURE:
+    {
+      nsp->qtype = CS_QUADRATURE_NONE;
+
+      if (strcmp(val, "bary") == 0)
+        nsp->qtype = CS_QUADRATURE_BARY;
+      else if (strcmp(val, "bary_subdiv") == 0)
+        nsp->qtype = CS_QUADRATURE_BARY_SUBDIV;
+      else if (strcmp(val, "higher") == 0)
+        nsp->qtype = CS_QUADRATURE_HIGHER;
+      else if (strcmp(val, "highest") == 0)
+        nsp->qtype = CS_QUADRATURE_HIGHEST;
+      else {
+        const char *_val = val;
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
+                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
+                    " and \"highest\"."), __func__, _val);
+      }
+
+    }
+    break; /* Quadrature */
+
+  case CS_NSKEY_RESIDUAL_TOLERANCE:
+    nsp->residual_tolerance = atof(val);
+    if (nsp->residual_tolerance < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the residual tolerance\n", __func__);
+    break;
+
+  case CS_NSKEY_SLES_STRATEGY:
+    if (strcmp(val, "no_block") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+    }
+    else if (strcmp(val, "block_amg_cg") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
+    }
+    else if (strcmp(val, "additive_gmres") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
+    }
+    else if (strcmp(val, "diag_schur_gmres") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_DIAG_SCHUR_GMRES;
+    }
+    else if (strcmp(val, "upper_schur_gmres") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GMRES;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid val %s related to key CS_NSKEY_DOF_REDUCTION\n"
-                  " Choice between \"derham\" or \"average\"."),
+                _(" %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
+                  " Choice between hho_{p0, p1, p2} or cdo_fb"),
                 __func__, _val);
     }
     break;
@@ -405,40 +467,6 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   case CS_NSKEY_VERBOSITY:
     nsp->verbosity = atoi(val);
-    break;
-
-  case CS_NSKEY_QUADRATURE:
-    {
-      nsp->qtype = CS_QUADRATURE_NONE;
-
-      if (strcmp(val, "bary") == 0)
-        nsp->qtype = CS_QUADRATURE_BARY;
-      else if (strcmp(val, "bary_subdiv") == 0)
-        nsp->qtype = CS_QUADRATURE_BARY_SUBDIV;
-      else if (strcmp(val, "higher") == 0)
-        nsp->qtype = CS_QUADRATURE_HIGHER;
-      else if (strcmp(val, "highest") == 0)
-        nsp->qtype = CS_QUADRATURE_HIGHEST;
-      else {
-        const char *_val = val;
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
-                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
-                    " and \"highest\"."), __func__, _val);
-      }
-
-    }
-    break; /* Quadrature */
-
-  case CS_NSKEY_RESIDUAL_TOLERANCE:
-    nsp->residual_tolerance = atof(val);
-    if (nsp->residual_tolerance < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value for the residual tolerance\n", __func__);
-    break;
-
-  case CS_NSKEY_MAX_ALGO_ITER:
-    nsp->max_algo_iter = atoi(val);
     break;
 
   default:

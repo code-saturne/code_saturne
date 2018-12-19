@@ -38,6 +38,11 @@
 #include <assert.h>
 #include <string.h>
 
+#if defined(HAVE_PETSC)
+#include <petscversion.h>
+#include <petscksp.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -61,6 +66,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_sles.h"
+#include "cs_sles_petsc.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
@@ -196,6 +202,91 @@ static const cs_matrix_structure_t   *cs_shared_ms;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+#if defined(HAVE_PETSC)
+/*----------------------------------------------------------------------------
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of additive block preconditioner for a CG
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_amg_block_hook(void     *context,
+                Mat       a,
+                KSP       ksp)
+{
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  KSPSetType(ksp, KSPFCG);
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(ksp,
+                   slesp.eps,         /* relative convergence tolerance */
+                   abstol,            /* absolute convergence tolerance */
+                   dtol,              /* divergence tolerance */
+                   slesp.n_max_iter); /* max number of iterations */
+
+  /* Try to have "true" norm */
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+
+  /* Apply modifications to the KSP structure */
+  PetscInt  id, n_split;
+  KSP  *uvw_subksp, _ksp;
+  PC pc, _pc;
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCFIELDSPLIT);
+  PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
+
+  PCFieldSplitSetBlockSize(pc, 3);
+  id = 0;
+  PCFieldSplitSetFields(pc, "u", 1, &id, &id);
+  id = 1;
+  PCFieldSplitSetFields(pc, "v", 1, &id, &id);
+  id = 2;
+  PCFieldSplitSetFields(pc, "w", 1, &id, &id);
+
+  PCSetFromOptions(pc);
+  PCSetUp(pc);
+
+  PCFieldSplitGetSubKSP(pc, &n_split, &uvw_subksp);
+  assert(n_split == 3);
+
+  for (id = 0; id < 3; id++) {
+
+    _ksp = uvw_subksp[id];
+    KSPSetType(_ksp, KSPPREONLY);
+    KSPGetPC(_ksp, &_pc);
+    PCSetType(_pc, PCHYPRE);
+    PCHYPRESetType(_pc, "boomeramg");
+
+    PCSetFromOptions(_pc);
+    PCSetUp(_pc);
+
+  }
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, a, ksp);
+
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp.setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp.setup_done = true;
+  }
+
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -409,6 +500,61 @@ cs_cdofb_uzawa_free_scheme_context(void   *scheme_context)
   BFT_FREE(sc);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the Navier-Stokes equations when an ALU algorithm
+ *         is used to couple the system.
+ *         No mesh information is available at this stage
+ *
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_uzawa_set_sles(const cs_navsto_param_t    *nsp,
+                        void                       *context)
+{
+  cs_navsto_uzawa_t  *nsc = (cs_navsto_uzawa_t *)context;
+
+  assert(nsp != NULL && nsc != NULL);
+
+  cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
+  int  field_id = cs_equation_get_field_id(nsc->momentum);
+
+  switch (nsp->sles_strategy) {
+
+  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
+    cs_equation_param_set_sles(mom_eqp, field_id);
+    break;
+
+#if defined(HAVE_PETSC)
+  case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _amg_block_hook,
+                         (void *)mom_eqp);
+    break;
+#else
+  case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " PETSc is required with this option.\n"
+              " Please build a version of Code_Saturne with the PETSc support.",
+              __func__, mom_eqp->name);
+    break;
+#endif /* HAVE_PETSC */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n",
+              __func__, mom_eqp->name);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

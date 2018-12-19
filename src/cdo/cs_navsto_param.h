@@ -76,6 +76,58 @@ typedef enum {
 
 } cs_navsto_param_model_t;
 
+/*! \enum cs_navsto_param_sles_t
+ *  \brief High-level information about the Way of settings the SLES
+ *  for solving the Navier-Stokes system
+ *
+ * \var CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
+ * Use the same mechanism as for stand-alone equation relying on the function
+ * \ref cs_equation_set_sles
+ *
+ * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
+ * The Navier-Stokes system of equations is solved using a multigrid on each
+ * diagonal block as a preconditioner and applying a conjugate gradient as
+ * solver. Use this strategy when the saddle-point problem has been reformulated
+ * into a "classical" linear system. For instance when a Uzawa or an Artificial
+ * Compressibility coupling algorithm is used. This option is only available
+ * with the support to the PETSc library up to now.
+ *
+ * \var CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
+ * The Navier-Stokes system of equations is solved an additive preconditioner
+ * (block diagonal matrix where the block 00 is A_{00} preconditionned by one
+ * multigrid iteration and the block 11 is set to the identity. This option
+ * is only available with the support to the PETSc library up to now.
+ * Available choice when a monolithic approach is used.
+ *
+ * \var CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
+ *
+ * The Navier-Stokes system of equations is solved using a block diagonal
+ * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
+ * iteration and the block 11 is an approximation of the Schur complement
+ * preconditionned with one multigrid iteration. The main iterative solver is a
+ * flexible GMRES. Available choice when a monolithic approach is used.
+ *
+ * \var CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
+ *
+ * The Navier-Stokes system of equations is solved using a upper triangular
+ * block preconditioner where the block 00 is A_{00} preconditioned with one
+ * multigrid iteration and the block 11 is an approximation of the Schur
+ * complement preconditionned with a minres. The main iterative solver is a
+ * flexible GMRES. Available choice when a monolithic approach is used.
+ */
+
+typedef enum {
+
+  CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
+  CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
+  CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
+  CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
+  CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
+
+  CS_NAVSTO_SLES_N_TYPES
+
+} cs_navsto_param_sles_t;
+
 /*! \enum cs_navsto_param_time_state_t
  *  \brief Status of the time for the Navier-Stokes system of equations
  *
@@ -188,6 +240,11 @@ typedef struct {
    * Status of the time for the Navier-Stokes system of equations
    */
   cs_navsto_param_time_state_t  time_state;
+
+  /*! \var sles_strategy
+   * Choice of strategy for solving the SLES system
+   */
+  cs_navsto_param_sles_t        sles_strategy;
 
   /*! \var coupling
    * Choice of algorithm for solving the system
@@ -321,8 +378,13 @@ typedef struct {
  * Tolerance at which the Navier--Stokes is resolved (apply to the residual
  * of the coupling algorithm chosen to solve the Navier--Stokes system)
  *
+ * \var CS_NSKEY_SLES_STRATEGY
+ * Strategy for solving the SLES arising from the discretization of the
+ * Navier-Stokes system
+ *
  * \var CS_NSKEY_SPACE_SCHEME
- * Numerical scheme for the space discretization
+ * Numerical scheme for the space discretization. Available choices are:
+ * - "cdo_fb"  for CDO face-based scheme
  *
  * \var CS_NSKEY_TIME_SCHEME
  * Numerical scheme for the time discretization
@@ -344,6 +406,7 @@ typedef enum {
   CS_NSKEY_MAX_ALGO_ITER,
   CS_NSKEY_QUADRATURE,
   CS_NSKEY_RESIDUAL_TOLERANCE,
+  CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_TIME_SCHEME,
   CS_NSKEY_TIME_THETA,

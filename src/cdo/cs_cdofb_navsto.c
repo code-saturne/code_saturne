@@ -1,6 +1,6 @@
 /*============================================================================
  * Routines shared among all face-based schemes for the discretization of the
- * Navier--Stokes system
+ * Navier-Stokes system
  *============================================================================*/
 
 /*
@@ -311,7 +311,6 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     values[c_id] = values[c_id] / cv[c_id] - g_avg;
 }
-
 
 /*----------------------------------------------------------------------------*/
 

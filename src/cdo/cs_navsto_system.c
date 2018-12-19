@@ -304,7 +304,6 @@ cs_navsto_system_destroy(void)
       cs_navsto_uzawa_free_context(nsp, navsto->coupling_context);
     break;
 
-
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
     break;
@@ -438,6 +437,53 @@ cs_navsto_system_init_setup(void)
     break;
 
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the settings for SLES related to the Navier-Stokes system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_sles(void)
+{
+  cs_navsto_system_t  *ns = cs_navsto_system;
+  void  *nscc = ns->coupling_context;
+
+  const cs_navsto_param_t *nsp = ns->param;
+
+  switch (nsp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    switch (nsp->coupling) {
+
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
+      cs_cdofb_monolithic_set_sles(nsp, nscc);
+      break;
+
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+      cs_cdofb_ac_set_sles(nsp, nscc);
+      break;
+
+    case CS_NAVSTO_COUPLING_UZAWA:
+      cs_cdofb_uzawa_set_sles(nsp, nscc);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+      break;
+
+    } /* Switch algo. for coupling velocity/pressure */
+    break; /* Face-based scheme family */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
+
+  } /* Switch space scheme */
 
 }
 
