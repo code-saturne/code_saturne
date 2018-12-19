@@ -1077,8 +1077,8 @@ cs_turbulence_bc_rij_transform(int        is_sym,
   for (int ii = 0; ii < 3; ii++) {
     for (int jj = 0; jj < 3; jj++) {
 
-      int kk = _jj_to_kk[jj];
-      int pp = _jj_to_pp[jj];
+      int kk = _jj_to_kk[ii];
+      int pp = _jj_to_pp[ii];
 
       alpha[jj][ii + 3] =
           p_lg[0][kk] * p_lg[0][pp] * p_lg2[0][jj]
@@ -1094,8 +1094,8 @@ cs_turbulence_bc_rij_transform(int        is_sym,
   for (int ii = 0; ii < 3; ii++) {
     for (int jj = 0; jj < 3; jj++) {
 
-      int kk = _jj_to_kk[jj];
-      int pp = _jj_to_pp[jj];
+      int kk = _jj_to_kk[ii];
+      int pp = _jj_to_pp[ii];
 
       int jj1 = _jj_to_kk[jj];
       int jj2 = _jj_to_pp[jj];
