@@ -29,10 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_advection_field.h"
 #include "cs_param.h"
 #include "cs_param_cdo.h"
 #include "cs_property.h"
-#include "cs_advection_field.h"
 #include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
@@ -114,18 +114,23 @@ BEGIN_C_DECLS
  * \var CS_EQUATION_TYPE_USER
  * User-defined equation
  *
- * \var CS_EQUATION_TYPE_GROUNDWATER,
+ * \var CS_EQUATION_TYPE_GROUNDWATER
  * Equation related to the groundwater flow module
+ *
+ * \var CS_EQUATION_TYPE_NAVSTO
+ * Equation related to the resolution of the Navier-Stokes system
+ * - Example: momentum, prediction, correction, energy...
  *
  * \var CS_EQUATION_TYPE_PREDEFINED
  * Predefined equation (most part of the setting is already done)
- * - Example: equation for the wall distance
+ * - Example: equation for the wall distance or ALE
  */
 
 typedef enum {
 
   CS_EQUATION_TYPE_USER,
   CS_EQUATION_TYPE_GROUNDWATER,
+  CS_EQUATION_TYPE_NAVSTO,
   CS_EQUATION_TYPE_PREDEFINED,
   CS_EQUATION_N_TYPES
 

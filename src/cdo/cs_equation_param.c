@@ -1405,17 +1405,21 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   const char *eqname = eqp->name;
 
+  cs_log_printf(CS_LOG_SETUP, "  <%s/type> ", eqname);
   switch (eqp->type) {
-  case CS_EQUATION_TYPE_USER:
-    cs_log_printf(CS_LOG_SETUP, "  <%s/type> User-defined\n", eqname);
+  case CS_EQUATION_TYPE_GROUNDWATER:
+    cs_log_printf(CS_LOG_SETUP, "Associated to groundwater flows\n");
+    break;
+  case CS_EQUATION_TYPE_NAVSTO:
+    cs_log_printf(CS_LOG_SETUP, "Associated to the Navier-Stokes system\n");
     break;
   case CS_EQUATION_TYPE_PREDEFINED:
-    cs_log_printf(CS_LOG_SETUP, "  <%s/type> Predefined\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "Predefined\n");
     break;
-  case CS_EQUATION_TYPE_GROUNDWATER:
-    cs_log_printf(CS_LOG_SETUP, "  <%s/type> Associated to groundwater flows\n",
-                  eqname);
+  case CS_EQUATION_TYPE_USER:
+    cs_log_printf(CS_LOG_SETUP, "User-defined\n");
     break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " Eq. %s has no type.\n Please check your settings.", eqname);

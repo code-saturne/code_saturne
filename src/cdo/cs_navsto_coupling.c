@@ -120,7 +120,7 @@ cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
   /* Add an equation for the momentum conservation */
   nsc->momentum = cs_equation_add("momentum",
                                   "velocity",
-                                  CS_EQUATION_TYPE_PREDEFINED,
+                                  CS_EQUATION_TYPE_NAVSTO,
                                   3,
                                   bc);
 
@@ -285,7 +285,7 @@ cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
 
   nsc->momentum = cs_equation_add("momentum",
                                   "velocity",
-                                  CS_EQUATION_TYPE_PREDEFINED,
+                                  CS_EQUATION_TYPE_NAVSTO,
                                   3,
                                   bc);
 
@@ -440,7 +440,7 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
 
   nsc->momentum = cs_equation_add("momentum",
                                   "Utilda",
-                                  CS_EQUATION_TYPE_PREDEFINED,
+                                  CS_EQUATION_TYPE_NAVSTO,
                                   3,
                                   bc);
 
@@ -455,7 +455,7 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
   /* The grad-div equation is usually always with homogeneous Dirichlet */
   nsc->graddiv = cs_equation_add("graddiv",
                                  "Uhat",
-                                 CS_EQUATION_TYPE_PREDEFINED,
+                                 CS_EQUATION_TYPE_NAVSTO,
                                  3,
                                  CS_PARAM_BC_HMG_DIRICHLET);
 
@@ -617,7 +617,7 @@ cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
   /* Add an equation for the momentum conservation */
   nsc->momentum = cs_equation_add("momentum",
                                   "velocity",
-                                  CS_EQUATION_TYPE_PREDEFINED,
+                                  CS_EQUATION_TYPE_NAVSTO,
                                   3,
                                   bc);
 
@@ -763,7 +763,7 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
 
   nsc->prediction = cs_equation_add("velocity_prediction",
                                     "velocity",
-                                    CS_EQUATION_TYPE_PREDEFINED,
+                                    CS_EQUATION_TYPE_NAVSTO,
                                     3,
                                     bc);
 
@@ -777,7 +777,7 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
 
   nsc->correction = cs_equation_add("pressure_correction",
                                     "phi",
-                                    CS_EQUATION_TYPE_PREDEFINED,
+                                    CS_EQUATION_TYPE_NAVSTO,
                                     1,
                                     CS_PARAM_BC_HMG_NEUMANN);
 
