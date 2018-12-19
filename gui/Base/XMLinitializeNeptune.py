@@ -311,16 +311,16 @@ class XMLinitNeptune(Variables):
         # Add the choice between SGDH and GGDH turbulent thermal flux models
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
+        tvn   = tnode.xmlGetNode('variables')
 
         thermo_node = self.case.xmlGetNode('thermophysical_models')
-
         fnode = thermo_node.xmlGetNode('fields')
+
         for node in tnode.xmlGetNodeList('field'):
             if node['turb_flux'] == None:
                 node['turb_flux'] = 'sgdh'
 
             # Renaming of Rij tensor
-            tvn = tnode.xmlGetNode('variables')
             for node in fnode.xmlGetNodeList('field'):
                 fieldId = node['field_id']
 
@@ -337,10 +337,21 @@ class XMLinitNeptune(Variables):
                                            name="ReynoldsStress"+comp,
                                            field_id=fieldId)
 
+        # Renaming k and espilon
+        turb_dico = {'TurbDissip':'epsilon',
+                     'TurbKineEner_k':'k'}
+        for node in tvn.xmlGetNodeList("variable"):
+            fieldId = node['field_id']
+            for tv in turb_dico.keys():
+                if tv in node['name']:
+                    node['name']  = turb_dico[tv]
+                    node['label'] = turb_dico[tv]+str(fieldId)
+
+
+
         # Modify the rad transfer xml node name for particles to allow a correct
         # workflow with the RTE SOLVER
         tpnode = self.case.xmlGetNode('thermophysical_models')
-        fnode  = tpnode.xmlGetNode('fields')
         if fnode != None:
             for node in fnode.xmlGetNodeList('field'):
                 rn = node.xmlGetNode('radiative_transfer')
@@ -350,7 +361,7 @@ class XMLinitNeptune(Variables):
                     node.xmlInitChildNode('particles_radiative_transfer', status=st)
 
         # Renaming of Pressure
-        vnode = tpnode.xmlGetNode('variables')
+        vnode = thermo_node.xmlGetNode('variables')
         rdico = {'Enthalpy':'enthalpy',
                  'Pressure':'pressure',
                  'Velocity':'velocity',
@@ -452,13 +463,14 @@ class XMLinitNeptune(Variables):
         # Add the choice between SGDH and GGDH turbulent thermal flux models
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
+        tvn = tnode.xmlGetNode('variables')
+
         if tnode != None:
             for node in tnode.xmlGetNodeList('field'):
                 if node['turb_flux'] == None:
                     node['turb_flux'] = 'sgdh'
 
             # Renaming of Rij tensor
-            tvn = tnode.xmlGetNode('variables')
             for node in self.__XMLNodefields.xmlGetNodeList('field'):
                 fieldId = node['field_id']
 
@@ -474,6 +486,16 @@ class XMLinitNeptune(Variables):
                         tvn.xmlRemoveChild("variable",
                                            name="ReynoldsStress"+comp,
                                            field_id=fieldId)
+
+        # Renaming k and espilon
+        turb_dico = {'TurbDissip':'epsilon',
+                     'TurbKineEner_k':'k'}
+        for node in tvn.xmlGetNodeList("variable"):
+            fieldId = node['field_id']
+            for tv in turb_dico.keys():
+                if tv in node['name']:
+                    node['name']  = turb_dico[tv]
+                    node['label'] = turb_dico[tv]+str(fieldId)
 
         # Modify the rad transfer xml node name for particles to allow a correct
         # workflow with the RTE SOLVER
