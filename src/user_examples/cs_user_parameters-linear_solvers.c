@@ -284,8 +284,8 @@ cs_user_sles_petsc_hook(void               *context,
   if (cs_equation_param_has_name(eqp, "Name_Of_The_Equation")) {
 
     /* Assume a PETSc version greater or equal to 3.7.0 */
-    if (eqp->itsol_info.precond == CS_PARAM_PRECOND_AMG) {
-      if (eqp->itsol_info.amg_type == CS_PARAM_AMG_BOOMER) {
+    if (eqp->sles_param.precond == CS_PARAM_PRECOND_AMG) {
+      if (eqp->sles_param.amg_type == CS_PARAM_AMG_BOOMER) {
 
         PetscOptionsSetValue(NULL,
                              "-pc_hypre_boomeramg_strong_threshold", "0.7");

@@ -125,7 +125,7 @@ _petsc_setup_hook(void   *context,
                   KSP     ksp)
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_itsol_t  info = eqp->itsol_info;
+  cs_param_sles_t  info = eqp->sles_param;
 
   /* Set the solver */
   switch (info.solver) {
@@ -313,7 +313,7 @@ _petsc_setup_hook(void   *context,
   /* Dump the setup related to PETSc in a specific file */
   if (!info.setup_done) {
     _dump_petsc_setup(ksp);
-    eqp->itsol_info.setup_done = true;
+    eqp->sles_param.setup_done = true;
   }
 }
 
@@ -461,9 +461,9 @@ _set_key(const char            *label,
 
   case CS_EQKEY_SOLVER_FAMILY:
     if (strcmp(keyval, "cs") == 0)
-      eqp->solver_class = CS_EQUATION_SOLVER_CLASS_CS;
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
     else if (strcmp(keyval, "petsc") == 0)
-      eqp->solver_class = CS_EQUATION_SOLVER_CLASS_PETSC;
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -473,22 +473,22 @@ _set_key(const char            *label,
 
   case CS_EQKEY_AMG_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "") == 0)
-      eqp->itsol_info.amg_type = CS_PARAM_AMG_NONE;
+      eqp->sles_param.amg_type = CS_PARAM_AMG_NONE;
     else if (strcmp(keyval, "v_cycle") == 0) {
-      eqp->itsol_info.amg_type = CS_PARAM_AMG_HOUSE_V;
-      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS);
+      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_V;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
     }
     else if (strcmp(keyval, "k_cycle") == 0) {
-      eqp->itsol_info.amg_type = CS_PARAM_AMG_HOUSE_K;
-      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS);
+      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
     }
     else if (strcmp(keyval, "boomer") == 0) {
-      eqp->itsol_info.amg_type = CS_PARAM_AMG_BOOMER;
-      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC);
+      eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
     }
     else if (strcmp(keyval, "gamg") == 0) {
-      eqp->itsol_info.amg_type = CS_PARAM_AMG_GAMG;
-      assert(eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC);
+      eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
     }
     else {
       const char *_val = keyval;
@@ -499,30 +499,30 @@ _set_key(const char            *label,
 
   case CS_EQKEY_PRECOND:
     if (strcmp(keyval, "none") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
     else if (strcmp(keyval, "jacobi") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_DIAG;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(keyval, "block_jacobi") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_BJACOB;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB;
     else if (strcmp(keyval, "poly1") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_POLY1;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_POLY1;
     else if (strcmp(keyval, "poly2") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_POLY2;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_POLY2;
     else if (strcmp(keyval, "ssor") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_SSOR;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_SSOR;
     else if (strcmp(keyval, "ilu0") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_ILU0;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_ILU0;
     else if (strcmp(keyval, "icc0") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_ICC0;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_ICC0;
     else if (strcmp(keyval, "amg") == 0) {
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_AMG;
-      if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS)
-        eqp->itsol_info.amg_type = CS_PARAM_AMG_HOUSE_K; /* Default choice */
-      if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC)
-        eqp->itsol_info.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
+      eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;
+      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
+        eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K; /* Default choice */
+      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
+        eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
     }
     else if (strcmp(keyval, "as") == 0)
-      eqp->itsol_info.precond = CS_PARAM_PRECOND_AS;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_AS;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -532,23 +532,23 @@ _set_key(const char            *label,
 
   case CS_EQKEY_ITSOL:
     if (strcmp(keyval, "amg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_AMG;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_AMG;
     else if (strcmp(keyval, "bicg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_BICG;
     else if (strcmp(keyval, "bicgstab2") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_BICGSTAB2;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_BICGSTAB2;
     else if (strcmp(keyval, "cg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_CG;
     else if (strcmp(keyval, "cr3") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_CR3;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_CR3;
     else if (strcmp(keyval, "fcg") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_FCG;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_FCG;
     else if (strcmp(keyval, "gmres") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_GMRES;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(keyval, "jacobi") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_JACOBI;
     else if (strcmp(keyval, "minres") == 0)
-      eqp->itsol_info.solver = CS_PARAM_ITSOL_MINRES;
+      eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -557,18 +557,18 @@ _set_key(const char            *label,
     break;
 
   case CS_EQKEY_ITSOL_MAX_ITER:
-    eqp->itsol_info.n_max_iter = atoi(keyval);
+    eqp->sles_param.n_max_iter = atoi(keyval);
     break;
 
   case CS_EQKEY_ITSOL_EPS:
-    eqp->itsol_info.eps = atof(keyval);
+    eqp->sles_param.eps = atof(keyval);
     break;
 
   case CS_EQKEY_ITSOL_RESNORM:
     if (strcmp(keyval, "true") == 0)
-      eqp->itsol_info.resid_normalized = true;
+      eqp->sles_param.resid_normalized = true;
     else
-      eqp->itsol_info.resid_normalized = false;
+      eqp->sles_param.resid_normalized = false;
     break;
 
   case CS_EQKEY_VERBOSITY: /* "verbosity" */
@@ -576,7 +576,7 @@ _set_key(const char            *label,
     break;
 
   case CS_EQKEY_SLES_VERBOSITY: /* "verbosity" for SLES structures */
-    eqp->sles_verbosity = atoi(keyval);
+    eqp->sles_param.verbosity = atoi(keyval);
     break;
 
   case CS_EQKEY_BC_ENFORCEMENT:
@@ -768,7 +768,6 @@ cs_equation_create_param(const char            *name,
 
   /* Other default settings */
   eqp->verbosity = 2;
-  eqp->sles_verbosity = 0;
   eqp->flag = 0;
   eqp->process_flag = 0;
 
@@ -845,15 +844,17 @@ cs_equation_create_param(const char            *name,
   eqp->enforced_dof_values = NULL;
 
   /* Settings for driving the linear algebra */
-  eqp->solver_class = CS_EQUATION_SOLVER_CLASS_CS;
-  eqp->itsol_info = (cs_param_itsol_t) {
-    .precond = CS_PARAM_PRECOND_DIAG, /* preconditioner */
-    .solver = CS_PARAM_ITSOL_GMRES,   /* iterative solver */
-    .amg_type = CS_PARAM_AMG_NONE,    /* No predefined AMG type */
-    .n_max_iter = 10000,              /* max. number of iterations */
-    .eps = 1e-8,                      /* stopping criterion on the accuracy */
-    .resid_normalized = false         /* normalization of the residual (true or
-                                         false) */
+  eqp->sles_param = (cs_param_sles_t) {
+
+    .verbosity = 0,                         /* SLES verbosity */
+    .solver_class = CS_PARAM_SLES_CLASS_CS, /* in-house solverq */
+    .precond = CS_PARAM_PRECOND_DIAG,       /* preconditioner */
+    .solver = CS_PARAM_ITSOL_GMRES,         /* iterative solver */
+    .amg_type = CS_PARAM_AMG_NONE,          /* no predefined AMG type */
+    .n_max_iter = 10000,                    /* max. number of iterations */
+    .eps = 1e-8,               /* stopping criterion on the accuracy */
+    .resid_normalized = false  /* normalization of the residual (true or false)
+                                */
   };
 
   return eqp;
@@ -877,7 +878,6 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   dst->type = ref->type;
   dst->dim = ref->dim;
   dst->verbosity = ref->verbosity;
-  dst->sles_verbosity = ref->sles_verbosity;
   dst->process_flag = ref->process_flag;
   dst->flag = ref->flag;
   dst->space_scheme = ref->space_scheme;
@@ -957,13 +957,14 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   }
 
   /* Settings for driving the linear algebra */
-  dst->solver_class = ref->solver_class;
-  dst->itsol_info.precond = ref->itsol_info.precond;
-  dst->itsol_info.solver = ref->itsol_info.solver;
-  dst->itsol_info.amg_type = ref->itsol_info.amg_type;
-  dst->itsol_info.n_max_iter = ref->itsol_info.n_max_iter;
-  dst->itsol_info.eps = ref->itsol_info.eps;
-  dst->itsol_info.resid_normalized = ref->itsol_info.resid_normalized;
+  dst->sles_param.verbosity = ref->sles_param.verbosity;
+  dst->sles_param.solver_class = ref->sles_param.solver_class;
+  dst->sles_param.precond = ref->sles_param.precond;
+  dst->sles_param.solver = ref->sles_param.solver;
+  dst->sles_param.amg_type = ref->sles_param.amg_type;
+  dst->sles_param.n_max_iter = ref->sles_param.n_max_iter;
+  dst->sles_param.eps = ref->sles_param.eps;
+  dst->sles_param.resid_normalized = ref->sles_param.resid_normalized;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1082,16 +1083,16 @@ void
 cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                            int                       field_id)
 {
-  cs_param_itsol_t  itsol = eqp->itsol_info;
+  cs_param_sles_t  slesp = eqp->sles_param;
 
-  switch (eqp->solver_class) {
-  case CS_EQUATION_SOLVER_CLASS_CS: /* Code_Saturne solvers */
+  switch (slesp.solver_class) {
+  case CS_PARAM_SLES_CLASS_CS: /* Code_Saturne solvers */
     {
       /* Define the preconditioner */
       int  poly_degree;
       cs_sles_pc_t *pc = NULL;
 
-      switch (itsol.precond) {
+      switch (slesp.precond) {
 
       case CS_PARAM_PRECOND_DIAG:
         poly_degree = 0;
@@ -1107,14 +1108,14 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
 
       case CS_PARAM_PRECOND_AMG:
         poly_degree = -1;
-        switch (itsol.amg_type) {
+        switch (slesp.amg_type) {
 
         case CS_PARAM_AMG_HOUSE_V:
           pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
           break;
         case CS_PARAM_AMG_HOUSE_K:
-          if (itsol.solver == CS_PARAM_ITSOL_CG)
-            itsol.solver = CS_PARAM_ITSOL_FCG;
+          if (slesp.solver == CS_PARAM_ITSOL_CG)
+            slesp.solver = CS_PARAM_ITSOL_FCG;
           pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
           break;
 
@@ -1137,74 +1138,74 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
       cs_sles_it_t  *it = NULL;
       cs_multigrid_t  *mg = NULL;
 
-      switch (itsol.solver) {
+      switch (slesp.solver) {
 
       case CS_PARAM_ITSOL_JACOBI:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_JACOBI,
                                -1, /* Not useful to apply a preconditioner */
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_GAUSS_SEIDEL:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_P_GAUSS_SEIDEL,
                                -1, /* Not useful to apply a preconditioner */
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_P_SYM_GAUSS_SEIDEL,
                                -1, /* Not useful to apply a preconditioner */
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_CG:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_PCG,
                                poly_degree,
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_FCG:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_IPCG,
                                poly_degree,
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_BICG:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_BICGSTAB,
                                poly_degree,
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_BICGSTAB2:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_BICGSTAB2,
                                poly_degree,
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_CR3:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_PCR3,
                                poly_degree,
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_GMRES:
         it = cs_sles_it_define(field_id,
                                NULL,
                                CS_SLES_GMRES,
                                poly_degree,
-                               itsol.n_max_iter);
+                               slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_AMG:
         {
-          switch (itsol.amg_type) {
+          switch (slesp.amg_type) {
 
           case CS_PARAM_AMG_HOUSE_V:
             mg = cs_multigrid_define(field_id, NULL, CS_MULTIGRID_V_CYCLE);
@@ -1215,7 +1216,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                CS_SLES_JACOBI,   /* descent smoother type (CS_SLES_PCG) */
                CS_SLES_JACOBI,   /* ascent smoother type (CS_SLES_PCG) */
                CS_SLES_PCG,      /* coarse solver type (CS_SLES_PCG) */
-               itsol.n_max_iter, /* n max cycles (100) */
+               slesp.n_max_iter, /* n max cycles (100) */
                5,                /* n max iter for descent (10) */
                5,                /* n max iter for asscent (10) */
                1000,             /* n max iter coarse solver (10000) */
@@ -1235,7 +1236,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
                CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
                CS_SLES_PCG,                /* coarse smoothe */
-               itsol.n_max_iter,           /* n_max_cycles */
+               slesp.n_max_iter,           /* n_max_cycles */
                1,                          /* n_max_iter_descent, */
                1,                          /* n_max_iter_ascent */
                100,                        /* n_max_iter_coarse */
@@ -1280,7 +1281,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* coarse solver */
-             itsol.n_max_iter,           /* n_max_cycles */
+             slesp.n_max_iter,           /* n_max_cycles */
              2,                          /* n_max_iter_descent, */
              1,                          /* n_max_iter_ascent */
              1,                          /* n_max_iter_coarse */
@@ -1293,7 +1294,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
 
           /* If this is a K-cycle multigrid. Change the defaukt aggregation
              algorithm */
-          if (eqp->itsol_info.amg_type == CS_PARAM_AMG_HOUSE_K)
+          if (slesp.amg_type == CS_PARAM_AMG_HOUSE_K)
             cs_multigrid_set_coarsening_options(mg,
                                                 8,   /* aggregation_limit*/
                                                 CS_GRID_COARSENING_SPD_DX,
@@ -1306,7 +1307,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
       }
 
       /* Define the level of verbosity for SLES structure */
-      if (eqp->sles_verbosity > 3) {
+      if (slesp.verbosity > 3) {
 
         cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
         cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
@@ -1320,7 +1321,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
     } /* Solver provided by Code_Saturne */
     break;
 
-  case CS_EQUATION_SOLVER_CLASS_PETSC: /* PETSc solvers */
+  case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
     {
 #if defined(HAVE_PETSC)
 
@@ -1337,9 +1338,11 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
         PetscInitializeNoArguments();
       }
 
-      if (itsol.precond == CS_PARAM_PRECOND_SSOR ||
-          itsol.precond == CS_PARAM_PRECOND_ILU0 ||
-          itsol.precond == CS_PARAM_PRECOND_ICC0) {
+      cs_sles_petsc_setup_hook_t  *_setup_hook = _petsc_setup_hook;
+
+      if (slesp.precond == CS_PARAM_PRECOND_SSOR ||
+          slesp.precond == CS_PARAM_PRECOND_ILU0 ||
+          slesp.precond == CS_PARAM_PRECOND_ICC0) {
 
         if (cs_glob_n_ranks > 1)
           bft_error(__FILE__, __LINE__, 0,
@@ -1349,7 +1352,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
         cs_sles_petsc_define(field_id,
                              NULL,
                              MATSEQAIJ, /* Warning SEQ not MPI */
-                             _petsc_setup_hook,
+                             _setup_hook,
                              (void *)eqp);
 
       }
@@ -1357,7 +1360,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
         cs_sles_petsc_define(field_id,
                              NULL,
                              MATMPIAIJ,
-                             _petsc_setup_hook,
+                             _setup_hook,
                              (void *)eqp);
 #else
       bft_error(__FILE__, __LINE__, 0,
@@ -1378,12 +1381,12 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
   } /* end switch on algorithms */
 
   /* Define the level of verbosity for SLES structure */
-  if (eqp->sles_verbosity > 1) {
+  if (slesp.verbosity > 1) {
 
     cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
 
     /* Set verbosity */
-    cs_sles_set_verbosity(sles, eqp->sles_verbosity);
+    cs_sles_set_verbosity(sles, slesp.verbosity);
 
   }
 
@@ -1619,36 +1622,36 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   } /* Source terms */
 
   /* Iterative solver information */
-  const cs_param_itsol_t   itsol = eqp->itsol_info;
+  const cs_param_sles_t   slesp = eqp->sles_param;
 
   cs_log_printf(CS_LOG_SETUP, "\n  <%s/Sparse Linear Equation Solver (SLES)"
                 " family>", eqname);
-  if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_CS)
+  if (slesp.solver_class == CS_PARAM_SLES_CLASS_CS)
     cs_log_printf(CS_LOG_SETUP, " Code_Saturne\n");
-  else if (eqp->solver_class == CS_EQUATION_SOLVER_CLASS_PETSC)
+  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC)
     cs_log_printf(CS_LOG_SETUP, " PETSc\n");
 
   cs_log_printf(CS_LOG_SETUP, "  <%s/SLES Verbosity>  %d\n",
-                eqname, eqp->sles_verbosity);
+                eqname, slesp.verbosity);
   cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.MaxIter     %d\n",
-                eqname, itsol.n_max_iter);
+                eqname, slesp.n_max_iter);
 
   cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Name        %s\n",
-                eqname, cs_param_get_solver_name(itsol.solver));
-  if (itsol.solver == CS_PARAM_ITSOL_AMG)
+                eqname, cs_param_get_solver_name(slesp.solver));
+  if (slesp.solver == CS_PARAM_ITSOL_AMG)
     cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> AMG.Type           %s\n",
-                  eqname, cs_param_get_amg_type_name(itsol.amg_type));
+                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
 
   cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Precond     %s\n",
-                eqname, cs_param_get_precond_name(itsol.precond));
-  if (itsol.precond == CS_PARAM_PRECOND_AMG)
+                eqname, cs_param_get_precond_name(slesp.precond));
+  if (slesp.precond == CS_PARAM_PRECOND_AMG)
     cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> AMG.Type           %s\n",
-                  eqname, cs_param_get_amg_type_name(itsol.amg_type));
+                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
 
   cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Eps        % -10.6e\n",
-                eqname, itsol.eps);
+                eqname, slesp.eps);
   cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
-                eqname, cs_base_strtf(itsol.resid_normalized));
+                eqname, cs_base_strtf(slesp.resid_normalized));
 
 }
 

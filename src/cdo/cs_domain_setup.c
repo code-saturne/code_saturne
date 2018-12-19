@@ -423,10 +423,10 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* Set the scheme flag for the computational domain */
   _set_scheme_flags(domain);
 
-  /* Proceed to the settings of a cs_equation_t structure. Setup the structure
-     related to cs_sles_*
+  /* Last step: Proceed to the settings of a cs_equation_t structure. Setup the
+     structure related to cs_sles_*
   */
-  cs_equation_set_linear_solvers();
+  cs_equation_set_sles();
 }
 
 /*----------------------------------------------------------------------------*/

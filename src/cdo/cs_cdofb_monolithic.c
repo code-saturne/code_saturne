@@ -629,12 +629,12 @@ _solve_system(cs_sles_t                     *sles,
 
   /* Solve the linear solver */
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
-  const cs_param_itsol_t  itsol_info = eqp->itsol_info;
+  const cs_param_sles_t  sles_param = eqp->sles_param;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
-                                                    itsol_info.eps,
+                                                    sles_param.eps,
                                                     r_norm,
                                                     &n_iters,
                                                     &residual,
@@ -644,7 +644,7 @@ _solve_system(cs_sles_t                     *sles,
                                                     NULL);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
-  if (eqp->sles_verbosity > 0)
+  if (sles_param.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
                   " residual % -8.4e nnz %lu\n",
                   eqp->name, code, n_iters, residual, nnz);

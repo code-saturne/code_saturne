@@ -344,9 +344,30 @@ typedef enum {
 
 /*!
  * @}
- * @name Settings for the linear solvers
+ * @name Settings for the linear solvers or SLES (Sparse Linear Equation Solver)
  * @{
  *
+ * \enum cs_param_sles_class_t
+ * \brief Class of iterative solvers to consider for solver the linear system
+ *
+ * \var CS_PARAM_SLES_CLASS_CS
+ * Iterative solvers available in Code_Saturne
+ *
+ * \var CS_PARAM_SLES_CLASS_PETSC
+ * Solvers available in Code_Saturne
+ *
+ * \var CS_PARAM_SLES_N_CLASSES
+ */
+
+typedef enum {
+
+  CS_PARAM_SLES_CLASS_CS,
+  CS_PARAM_SLES_CLASS_PETSC,
+  CS_PARAM_SLES_N_CLASSES
+
+} cs_param_sles_class_t;
+
+/*!
  * \enum cs_param_amg_type_t
  * Type of AMG (Algebraic MultiGrid) algorithm to use (either as a
  * preconditionnerwith or a solver).
@@ -410,26 +431,29 @@ typedef enum {
 } cs_param_itsol_type_t;
 
 /*!
- * \struct cs_param_itsol_t
+ * \struct cs_param_sles_t
  * \brief Structure storing all metadata related to the resolution of a linear
  *        system with an iterative solver.
  */
 
 typedef struct {
 
-  cs_param_precond_type_t  precond;    /*!< type of preconditioner */
-  cs_param_itsol_type_t    solver;     /*!< type of solver */
-  cs_param_amg_type_t      amg_type;   /*!< type of AMG algorithm if needed  */
-  int                      n_max_iter; /*!< max. number of iterations */
-  double                   eps;        /*!< stopping criterion on accuracy */
-  _Bool                    setup_done; /*!< setup step has been done */
+  _Bool                    setup_done;   /*!< SLES setup step has been done */
+  int                      verbosity;    /*!< SLES verbosity */
+
+  cs_param_sles_class_t    solver_class; /*!< class of SLES to consider  */
+  cs_param_precond_type_t  precond;      /*!< type of preconditioner */
+  cs_param_itsol_type_t    solver;       /*!< type of solver */
+  cs_param_amg_type_t      amg_type;     /*!< type of AMG algorithm if needed */
 
   /*! \var resid_normalized
    *  normalized or not the norm of the residual used for the stopping criterion
    */
   bool         resid_normalized;
+  int          n_max_iter;        /*!< max. number of iterations */
+  double       eps;               /*!< stopping criterion on accuracy */
 
-} cs_param_itsol_t;
+} cs_param_sles_t;
 
 /*============================================================================
  * Global variables

@@ -436,9 +436,9 @@ cs_user_linear_solvers(void)
 
     /* In case of a in-house K-cylcle multigrid as a preconditioner of a
        linear iterative solver */
-    if (eqp->itsol_info.precond == CS_PARAM_PRECOND_AMG) {
+    if (eqp->sles_param.precond == CS_PARAM_PRECOND_AMG) {
       /* If multigrid is the chosen preconditioner */
-      if (eqp->itsol_info.amg_type == CS_PARAM_AMG_HOUSE_K) {
+      if (eqp->sles_param.amg_type == CS_PARAM_AMG_HOUSE_K) {
         /* If this is a K-cycle multigrid */
 
         /* Retrieve the different context structures to apply additional

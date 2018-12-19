@@ -136,26 +136,6 @@ typedef enum {
 
 } cs_equation_type_t;
 
-/*! \enum cs_equation_solver_class_t
- *  \brief Class of iterative solvers to consider for solver the linear system
- *
- * \var CS_EQUATION_SOLVER_CLASS_CS
- * Iterative solvers available in Code_Saturne
- *
- * \var CS_EQUATION_SOLVER_CLASS_PETSC
- * Solvers available in Code_Saturne
- *
- * \var CS_EQUATION_N_SOLVER_CLASSES
- */
-
-typedef enum {
-
-  CS_EQUATION_SOLVER_CLASS_CS,
-  CS_EQUATION_SOLVER_CLASS_PETSC,
-  CS_EQUATION_N_SOLVER_CLASSES
-
-} cs_equation_solver_class_t;
-
 /*! \struct cs_equation_param_t
  *  \brief Set of parameters to handle an unsteady convection-diffusion-reaction
  *         equation with term sources
@@ -171,7 +151,6 @@ typedef struct {
   cs_equation_type_t   type;           /*!< type of equation: predefined... */
   int                  dim;            /*!< Dimension of the unknown */
   int                  verbosity;      /*!< Level of detail for output */
-  int                  sles_verbosity; /*!< Level of detail for SLES output */
 
   /*! \var flag
    *  Flag to know if unsteady or diffusion or convection or reaction
@@ -381,18 +360,14 @@ typedef struct {
    * @name Settings related to the resolution of the algebraic system
    * @{
    *
-   * \var solver_class
-   * Class of solver available to solve the algebraic system
-   *
-   * \var itsol_info
+   * \var sles_param
    * Set of parameters to specify how to to solve the algebraic
    * - iterative solver
    * - preconditionner
    * - tolerance...
    */
 
-  cs_equation_solver_class_t    solver_class;
-  cs_param_itsol_t              itsol_info;
+  cs_param_sles_t              sles_param;
 
   /*! @} */
 

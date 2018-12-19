@@ -376,7 +376,7 @@ cs_equation_set_default_param(cs_equation_key_t      key,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_linear_solvers(void);
+cs_equation_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

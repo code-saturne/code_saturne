@@ -461,7 +461,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
     if (cs_glob_n_ranks > 1)
       cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
 
-    if (l2_p > 10*mom_eq->param->itsol_info.eps)
+    if (l2_p > 10*mom_eq->param->sles_param.eps)
       o_norm_res =  1. / l2_p;
   } /* If needs a normalization */
 
@@ -930,7 +930,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
     if (cs_glob_n_ranks > 1)
       cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
 
-    if (l2_p > 10*mom_eq->param->itsol_info.eps)
+    if (l2_p > 10*mom_eq->param->sles_param.eps)
       o_norm_res =  1. / l2_p;
 
   } /* If needs a normalization */
@@ -1421,7 +1421,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
     if (cs_glob_n_ranks > 1)
       cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
 
-    if (l2_p > 10*mom_eq->param->itsol_info.eps)
+    if (l2_p > 10*mom_eq->param->sles_param.eps)
       o_norm_res =  1. / l2_p;
 
   } /* If needs a normalization */

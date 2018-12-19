@@ -1253,7 +1253,7 @@ cs_equation_set_default_param(cs_equation_key_t      key,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_linear_solvers(void)
+cs_equation_set_sles(void)
 {
   if (_n_equations == 0)
     return;
@@ -2005,7 +2005,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   const cs_equation_param_t  *eqp = eq->param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
-  const cs_param_itsol_t  itsol_info = eqp->itsol_info;
+  const cs_param_sles_t  sles_param = eqp->sles_param;
 
   /* Sanity checks (up to now, only scalar field are handled) */
   assert(eq->n_sles_gather_elts <= eq->n_sles_scatter_elts);
@@ -2028,7 +2028,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    eq->matrix,
                                                    CS_HALO_ROTATION_IGNORE,
-                                                   itsol_info.eps,
+                                                   sles_param.eps,
                                                    r_norm,
                                                    &n_iters,
                                                    &residual,
@@ -2037,7 +2037,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
                                                    0,      // aux. size
                                                    NULL);  // aux. buffers
 
-  if (eq->param->sles_verbosity > 0) {
+  if (sles_param.verbosity > 0) {
 
     const cs_lnum_t  size = eq->n_sles_gather_elts;
     const cs_lnum_t  *row_index, *col_id;
