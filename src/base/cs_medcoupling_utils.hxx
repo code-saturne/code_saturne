@@ -76,34 +76,46 @@ typedef struct {
 } cs_medcoupling_mesh_t;
 
 /*=============================================================================
- * Semi-private function prototypes
+ * Public functions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Create a cs_medcoupling_mesh_t structure.
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief   create a new cs_medcoupling_mesh_t instance
  *
- * parameters:
- *   name            <-- mesh name
- *   select_criteria <-- Selection criteria
- *   elt_dim         <-- Element type (3: cells, 2: faces)
- *----------------------------------------------------------------------------*/
+ * \param[in] name                name of the mesh
+ * \param[in] selection_criteria  selection criteria (entire mesh or part of it)
+ * \param[in] elt_dim             dimension of elements.
+ *                                2: faces
+ *                                3: cells
+ *
+ * \return  pointer to the newly created cs_medcoupling_mesh_t struct
+ */
+/* -------------------------------------------------------------------------- */
 
 cs_medcoupling_mesh_t *
 cs_medcoupling_mesh_create(const char  *name,
                            const char  *select_criteria,
                            int          elt_dim);
 
-/*----------------------------------------------------------------------------
- * Copy a base mesh to a medcoupling mesh structure.
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief copy a cs_mesh_t into a cs_medcoupling_mesh_t
  *
- * parameters:
- *   csmesh  <-- Code_Saturne FVM format mesh structure
- *   pmmesh  <-> partially ParaMEDMEM mesh coupling structure
- *----------------------------------------------------------------------------*/
+ * \param[in] csmesh    pointer to the cs_mesh_t struct to copy data from
+ * \param[in] pmmesh    pointer to the cs_medcoupling_mesh_t for copy
+ * \param[in] use_bbox  flag indicating if a reduced bounding is used. Usefull
+ *                      for interpolation to reduce the matrix sice.
+ *                      0: Do not use a reduced bbox
+ *                      1: Use a reduced bbox
+ *
+ */
+/* -------------------------------------------------------------------------- */
 
 void
 cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
-                                   cs_medcoupling_mesh_t  *pmmesh);
+                                   cs_medcoupling_mesh_t  *pmmesh,
+                                   int                     use_bbox);
 
 /*----------------------------------------------------------------------------*/
 

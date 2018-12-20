@@ -173,10 +173,9 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 
     CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
 
-    cs_paramedmem_l0="-lparamedmem"
     cs_paramedmem_l1="-lparamedmem -lparamedloader"
 
-    for cs_paramedmem_libs in "$cs_paramedmem_l0" "$cs_paramedmem_l1"
+    for cs_paramedmem_libs in "$cs_paramedmem_l1"
     do
 
       if test "x$cs_have_paramedmem" = "xno" ; then

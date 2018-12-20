@@ -186,7 +186,7 @@ _init_mesh_coupling(cs_paramedmem_coupling_t  *coupling,
   assert(mesh != NULL);
 
   /* Building the MED representation of the internal mesh */
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, mesh->mesh);
+  cs_medcoupling_mesh_copy_from_base(parent_mesh, mesh->mesh, 0);
 
   /* Linking the pointers in order to simplify the calls*/
   mesh->sel_criteria = mesh->mesh->sel_criteria;

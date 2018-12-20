@@ -80,16 +80,22 @@ using namespace MEDCoupling;
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------
- * Assign vertex coordinates to MEDCoupling structures
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief   Assign vertex coordinates to a MEDCoupling mesh structure
  *
- * parameters:
- *   mesh     <-- pointer to parent mesh structure that should be written.
- *   n_vtx    <-- number of vertices to assign.
- *   vtx_id   <-- id of initial vertices in new (sub) mesh, or -1
- *                (size: mesh->n_vtx).
- *   med_mesh <-> pointer to associated MEDCoupling mesh structure.
- *----------------------------------------------------------------------------*/
+ * \param[in] mesh      pointer to cs_mesh_t structure from which data is copied
+ * \param[in] n_vtx     number of vertices to assign
+ * \param[in] vtx_id    pointer to vertices id's used for assigning
+ * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the
+ *                      coordinates
+ *
+ */
+/* -------------------------------------------------------------------------- */
 
 static void
 _assign_vertex_coords(const cs_mesh_t    *mesh,
@@ -132,16 +138,17 @@ _assign_vertex_coords(const cs_mesh_t    *mesh,
   return;
 }
 
-/*----------------------------------------------------------------------------
- * Assign boundary faces to a MEDCoupling structure
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief   Assign boundary faces to a MEDCoupling mesh structure
  *
- * parameters:
- *   mesh      <-- parent mesh structure
- *   n_elts    <-- number of selected elements
- *   elts_list <-- list of selected elements (1 to n numbering),
- *                 or NULL (if all are selected)
- *   med_mesh  <-> associated MEDCouplingUMesh structure
- *----------------------------------------------------------------------------*/
+ * \param[in] mesh      pointer to cs_mesh_t structure from which data is copie
+ * \param[in] n_elts    number of faces to copy
+ * \param[in] elts_list list of faces to copy
+ * \param[in] med_mesh  pointer to MEDCouplingUMesh to which we copy the faces
+ *
+ */
+/* -------------------------------------------------------------------------- */
 
 static void
 _assign_face_mesh(const cs_mesh_t   *mesh,
@@ -252,16 +259,18 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
   BFT_FREE(vtx_id);
 }
 
-/*----------------------------------------------------------------------------
- * Assign cells to a MEDCoupling structure
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief   Assign cells to a MEDCoupling mesh structure
  *
- * parameters:
- *   mesh      <-- parent mesh structure
- *   n_elts    <-- number of selected elements
- *   elts_list <-- list of selected elements (1 to n numbering),
- *                 or NULL (if all are selected)
- *   med_mesh  <-> associated MEDCouplingUMesh structure
- *----------------------------------------------------------------------------*/
+ * \param[in] mesh        pointer to cs_mesh_t structure from which data is copied
+ * \param[in] n_elts      number of cells to assign
+ * \param[in] elts_list   list of cells to assign
+ * \param[in] med_mesh    pointer to MEDCouplingUMesh to which we copy the cells
+ * \param[in] new_to_old  indirection array between local mesh connectivity
+ *                        and MEDCouplingUMesh connectivity
+ */
+/* -------------------------------------------------------------------------- */
 
 static void
 _assign_cell_mesh(const cs_mesh_t   *mesh,
@@ -481,17 +490,22 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 }
 
 /*=============================================================================
- * Semi-private function definitions
+ * Public functions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Create a cs_medcoupling_mesh_t structure.
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief   create a new cs_medcoupling_mesh_t instance
  *
- * parameters:
- *   name            <-- mesh name
- *   select_criteria <-- Selection criteria
- *   elt_dim         <-- Element type (3: cells, 2: faces)
- *----------------------------------------------------------------------------*/
+ * \param[in] name                name of the mesh
+ * \param[in] selection_criteria  selection criteria (entire mesh or part of it)
+ * \param[in] elt_dim             dimension of elements.
+ *                                2: faces
+ *                                3: cells
+ *
+ * \return  pointer to the newly created cs_medcoupling_mesh_t struct
+ */
+/* -------------------------------------------------------------------------- */
 
 cs_medcoupling_mesh_t *
 cs_medcoupling_mesh_create(const char  *name,
@@ -520,17 +534,24 @@ cs_medcoupling_mesh_create(const char  *name,
   return m;
 }
 
-/*----------------------------------------------------------------------------
- * Copy a base mesh to a medcoupling mesh structure.
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief copy a cs_mesh_t into a cs_medcoupling_mesh_t
  *
- * parameters:
- *   csmesh  <-- Code_Saturne FVM format mesh structure
- *   pmmesh  <-> partially ParaMEDMEM mesh coupling structure
- *----------------------------------------------------------------------------*/
+ * \param[in] csmesh    pointer to the cs_mesh_t struct to copy data from
+ * \param[in] pmmesh    pointer to the cs_medcoupling_mesh_t for copy
+ * \param[in] use_bbox  flag indicating if a reduced bounding is used. Usefull
+ *                      for interpolation to reduce the matrix sice.
+ *                      0: Do not use a reduced bbox
+ *                      1: Use a reduced bbox
+ *
+ */
+/* -------------------------------------------------------------------------- */
 
 void
 cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
-                                   cs_medcoupling_mesh_t  *pmmesh)
+                                   cs_medcoupling_mesh_t  *pmmesh,
+                                   int                     use_bbox)
 {
   if (pmmesh->elt_dim == 3) {
 
@@ -553,11 +574,12 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
                       pmmesh->new_to_old);
 
     // BBOX
-    if (pmmesh->bbox == NULL) {
-      BFT_MALLOC(pmmesh->bbox, 6, cs_real_t);
+    if (use_bbox) {
+      if (pmmesh->bbox == NULL) {
+        BFT_MALLOC(pmmesh->bbox, 6, cs_real_t);
+      }
+      pmmesh->med_mesh->getBoundingBox(pmmesh->bbox);
     }
-
-    pmmesh->med_mesh->getBoundingBox(pmmesh->bbox);
 
   } else if (pmmesh->elt_dim == 2) {
 

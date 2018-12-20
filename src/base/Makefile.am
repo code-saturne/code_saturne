@@ -398,6 +398,7 @@ if HAVE_PARAMEDMEM
 
 pkginclude_HEADERS += \
 cs_paramedmem_coupling.hxx \
+cs_paramedmem_remapper.hxx \
 cs_medcoupling_remapper.hxx \
 cs_medcoupling_utils.hxx
 
@@ -417,6 +418,7 @@ $(MPI_CPPFLAGS)
 pkglib_LTLIBRARIES += cs_paramedmem.la
 cs_paramedmem_la_SOURCES = \
 cs_paramedmem_coupling.cxx \
+cs_paramedmem_remapper.cxx \
 cs_medcoupling_remapper.cxx \
 cs_medcoupling_utils.cxx
 cs_paramedmem_la_LDFLAGS = -module -avoid-version
@@ -439,6 +441,7 @@ $(HDF5_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 libcs_paramedmem_la_SOURCES = \
 cs_paramedmem_coupling.cxx \
+cs_paramedmem_remapper.cxx \
 cs_medcoupling_remapper.cxx \
 cs_medcoupling_utils.cxx
 libcs_paramedmem_la_LIBADD = \
