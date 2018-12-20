@@ -108,6 +108,7 @@ integer          imucpp, idftnp, iswdyp
 integer          key_t_ext_id
 integer          iroext
 integer          iviext
+integer          kclipp, clip_w_id, clip_k_id
 
 integer          icvflb, imasac
 integer          ivoid(1)
@@ -158,6 +159,8 @@ double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_divukw, cpro_s2kw
 double precision, dimension(:), pointer :: ddes_fd_coeff
 double precision, dimension(:), pointer :: w_dist
+double precision, dimension(:), pointer :: cpro_k_clipped
+double precision, dimension(:), pointer :: cpro_w_clipped
 
 type(var_cal_opt) :: vcopt_w, vcopt_k
 
@@ -1156,6 +1159,25 @@ do ii = 1, 2
 enddo
 
 ! On clippe simplement k et omega par valeur absolue
+call field_get_key_id("clipping_id", kclipp)
+
+call field_get_key_int(ivarfl(ik), kclipp, clip_k_id)
+if (clip_k_id.ge.0) then
+  call field_get_val_s(clip_k_id, cpro_k_clipped)
+endif
+
+call field_get_key_int(ivarfl(iomg), kclipp, clip_w_id)
+if (clip_w_id.ge.0) then
+  call field_get_val_s(clip_w_id, cpro_w_clipped)
+endif
+
+do iel = 1, ncel
+  if (clip_k_id.ge.0) &
+    cpro_k_clipped(iel) = 0.d0
+  if (clip_w_id.ge.0) &
+    cpro_w_clipped(iel) = 0.d0
+enddo
+
 iclipk(1) = 0
 iclipw = 0
 do iel = 1, ncel
@@ -1163,16 +1185,24 @@ do iel = 1, ncel
   xw = cvar_omg(iel)
   if (abs(xk).le.epz2) then
     iclipk(1) = iclipk(1) + 1
-    cvar_k(iel) = max(cvar_k(iel),epz2)
+    if (clip_k_id.ge.0) &
+      cpro_k_clipped(iel) = epz2 - xk
+    cvar_k(iel) = epz2
   elseif (xk.le.0.d0) then
     iclipk(1) = iclipk(1) + 1
+    if (clip_k_id.ge.0) &
+      cpro_k_clipped(iel) = - xk
     cvar_k(iel) = -xk
   endif
   if (abs(xw).le.epz2) then
     iclipw = iclipw + 1
-    cvar_omg(iel) = max(cvar_omg(iel),epz2)
+    if (clip_w_id.ge.0) &
+      cpro_w_clipped(iel) = epz2 - xw
+    cvar_omg(iel) = epz2
   elseif (xw.le.0.d0) then
     iclipw = iclipw + 1
+    if (clip_w_id.ge.0) &
+      cpro_w_clipped(iel) = - xw
     cvar_omg(iel) = -xw
   endif
 enddo
