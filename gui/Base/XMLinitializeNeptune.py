@@ -308,6 +308,17 @@ class XMLinitNeptune(Variables):
 
     def __backwardCompatibilityFrom_5_0(self):
 
+        # For versions prior to 5.0,renaming of wall_temperature as boundary_temperature
+        for node in self.case.xmlGetNodeList('property'):
+            if node['name'] == 'wall_temperature':
+                node['name']  = 'boundary_temperature'
+
+            if node['name'] == 'wall_friction_velocity':
+                self.case.xmlRemoveChild('property',
+                                         name='wall_friction_velocity',
+                                         field_id='none')
+
+
         # Add the choice between SGDH and GGDH turbulent thermal flux models
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
@@ -460,12 +471,19 @@ class XMLinitNeptune(Variables):
             if node['name'] == 'wall_temperature':
                 node['name']  = 'boundary_temperature'
 
+            if node['name'] == 'wall_friction_velocity':
+                self.case.xmlRemoveChild('property',
+                                         name='wall_friction_velocity',
+                                         field_id='none')
+
+
         # Add the choice between SGDH and GGDH turbulent thermal flux models
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
-        tvn = tnode.xmlGetNode('variables')
 
         if tnode != None:
+            tvn = tnode.xmlGetNode('variables')
+
             for node in tnode.xmlGetNodeList('field'):
                 if node['turb_flux'] == None:
                     node['turb_flux'] = 'sgdh'
@@ -487,15 +505,15 @@ class XMLinitNeptune(Variables):
                                            name="ReynoldsStress"+comp,
                                            field_id=fieldId)
 
-        # Renaming k and espilon
-        turb_dico = {'TurbDissip':'epsilon',
-                     'TurbKineEner_k':'k'}
-        for node in tvn.xmlGetNodeList("variable"):
-            fieldId = node['field_id']
-            for tv in turb_dico.keys():
-                if tv in node['name']:
-                    node['name']  = turb_dico[tv]
-                    node['label'] = turb_dico[tv]+str(fieldId)
+            # Renaming k and espilon
+            turb_dico = {'TurbDissip':'epsilon',
+                         'TurbKineEner_k':'k'}
+            for node in tvn.xmlGetNodeList("variable"):
+                fieldId = node['field_id']
+                for tv in turb_dico.keys():
+                    if tv in node['name']:
+                        node['name']  = turb_dico[tv]
+                        node['label'] = turb_dico[tv]+str(fieldId)
 
         # Modify the rad transfer xml node name for particles to allow a correct
         # workflow with the RTE SOLVER

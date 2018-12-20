@@ -95,7 +95,6 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
         self.node_profile    = self.node_anal.xmlInitNode('profiles')
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, "none", "pressure", "Pressure", post = True)
         Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "porosity", "porosity")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_friction_velocity", "wall_friction_velocity", support = "boundary")
 
 
     def defaultValues(self):
