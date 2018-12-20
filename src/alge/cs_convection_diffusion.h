@@ -129,48 +129,49 @@ typedef enum {
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_slope_test(const cs_real_t     pi,
-              const cs_real_t     pj,
-              const cs_real_t     distf,
-              const cs_real_t     srfan,
-              const cs_real_3_t   i_face_normal,
-              const cs_real_3_t   gradi,
-              const cs_real_3_t   gradj,
-              const cs_real_3_t   grdpai,
-              const cs_real_3_t   grdpaj,
-              const cs_real_t     i_massflux,
-              double             *testij,
-              double             *tesqck)
+cs_slope_test(const cs_real_t   pi,
+              const cs_real_t   pj,
+              const cs_real_t   distf,
+              const cs_real_t   srfan,
+              const cs_real_t   i_face_normal[3],
+              const cs_real_t   gradi[3],
+              const cs_real_t   gradj[3],
+              const cs_real_t   grdpai[3],
+              const cs_real_t   grdpaj[3],
+              const cs_real_t   i_massflux,
+              cs_real_t        *testij,
+              cs_real_t        *tesqck)
 {
-  double testi, testj;
-  double dcc, ddi, ddj;
+  cs_real_t testi, testj;
+  cs_real_t dcc, ddi, ddj;
 
-  /* Slope test
-     ----------*/
+  /* Slope test */
 
-  testi = grdpai[0]*i_face_normal[0]
-        + grdpai[1]*i_face_normal[1]
-        + grdpai[2]*i_face_normal[2];
-  testj = grdpaj[0]*i_face_normal[0]
-        + grdpaj[1]*i_face_normal[1]
-        + grdpaj[2]*i_face_normal[2];
-  *testij = grdpai[0]*grdpaj[0]
-          + grdpai[1]*grdpaj[1]
-          + grdpai[2]*grdpaj[2];
+  testi =   grdpai[0]*i_face_normal[0]
+          + grdpai[1]*i_face_normal[1]
+          + grdpai[2]*i_face_normal[2];
+  testj =   grdpaj[0]*i_face_normal[0]
+          + grdpaj[1]*i_face_normal[1]
+          + grdpaj[2]*i_face_normal[2];
+
+  *testij =   grdpai[0]*grdpaj[0]
+            + grdpai[1]*grdpaj[1]
+            + grdpai[2]*grdpaj[2];
 
   if (i_massflux>0.) {
-    dcc = gradi[0]*i_face_normal[0]
-        + gradi[1]*i_face_normal[1]
-        + gradi[2]*i_face_normal[2];
+    dcc =   gradi[0]*i_face_normal[0]
+          + gradi[1]*i_face_normal[1]
+          + gradi[2]*i_face_normal[2];
     ddi = testi;
     ddj = (pj-pi)/distf *srfan;
   } else {
-    dcc = gradj[0]*i_face_normal[0]
-        + gradj[1]*i_face_normal[1]
-        + gradj[2]*i_face_normal[2];
+    dcc =   gradj[0]*i_face_normal[0]
+          + gradj[1]*i_face_normal[1]
+          + gradj[2]*i_face_normal[2];
     ddi = (pj-pi)/distf *srfan;
     ddj = testj;
   }
+
   *tesqck = cs_math_sq(dcc) - cs_math_sq(ddi-ddj);
 }
 
@@ -194,26 +195,26 @@ cs_slope_test(const cs_real_t     pi,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_slope_test_vector(const cs_real_3_t   pi,
-                     const cs_real_3_t   pj,
-                     const cs_real_t     distf,
-                     const cs_real_t     srfan,
-                     const cs_real_3_t   i_face_normal,
-                     const cs_real_33_t  gradi,
-                     const cs_real_33_t  gradj,
-                     const cs_real_33_t  gradsti,
-                     const cs_real_33_t  gradstj,
-                     const cs_real_t     i_massflux,
-                     cs_real_t          *testij,
-                     cs_real_t          *tesqck)
+cs_slope_test_vector(const cs_real_t   pi[3],
+                     const cs_real_t   pj[3],
+                     const cs_real_t   distf,
+                     const cs_real_t   srfan,
+                     const cs_real_t   i_face_normal[3],
+                     const cs_real_t   gradi[3][3],
+                     const cs_real_t   gradj[3][3],
+                     const cs_real_t   gradsti[3][3],
+                     const cs_real_t   gradstj[3][3],
+                     const cs_real_t   i_massflux,
+                     cs_real_t        *testij,
+                     cs_real_t        *tesqck)
 {
-  double testi[3], testj[3];
-  double dcc[3], ddi[3], ddj[3];
+  cs_real_t testi[3], testj[3];
+  cs_real_t dcc[3], ddi[3], ddj[3];
   *testij = 0.;
   *tesqck = 0.;
 
-  /* Slope test
-     ----------*/
+  /* Slope test */
+
   for (int i = 0; i < 3; i++) {
     *testij += gradsti[i][0]*gradstj[i][0]
              + gradsti[i][1]*gradstj[i][1]
@@ -242,7 +243,6 @@ cs_slope_test_vector(const cs_real_3_t   pi,
   }
 
   *tesqck = cs_math_3_square_norm(dcc) - cs_math_3_square_distance(ddi, ddj);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -279,8 +279,8 @@ cs_slope_test_vector_old(const cs_real_3_t   pi,
                          cs_real_t         testij[3],
                          cs_real_t         tesqck[3])
 {
-  double testi[3], testj[3];
-  double dcc[3], ddi[3], ddj[3];
+  cs_real_t testi[3], testj[3];
+  cs_real_t dcc[3], ddi[3], ddj[3];
 
   /* Slope test
      ----------*/
@@ -333,21 +333,22 @@ cs_slope_test_vector_old(const cs_real_3_t   pi,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_slope_test_tensor(const cs_real_6_t   pi,
-                     const cs_real_6_t   pj,
-                     const cs_real_t     distf,
-                     const cs_real_t     srfan,
-                     const cs_real_3_t   i_face_normal,
-                     const cs_real_63_t  gradi,
-                     const cs_real_63_t  gradj,
-                     const cs_real_63_t  gradsti,
-                     const cs_real_63_t  gradstj,
-                     const cs_real_t     i_massflux,
-                     cs_real_t          *testij,
-                     cs_real_t          *tesqck)
+cs_slope_test_tensor(const cs_real_t   pi[6],
+                     const cs_real_t   pj[6],
+                     const cs_real_t   distf,
+                     const cs_real_t   srfan,
+                     const cs_real_t   i_face_normal[3],
+                     const cs_real_t   gradi[6][3],
+                     const cs_real_t   gradj[6][3],
+                     const cs_real_t   gradsti[6][3],
+                     const cs_real_t   gradstj[6][3],
+                     const cs_real_t   i_massflux,
+                     cs_real_t        *testij,
+                     cs_real_t        *tesqck)
 {
-  double testi[6], testj[6];
-  double dcc[6], ddi[6], ddj[6];
+  cs_real_t testi[6], testj[6];
+  cs_real_t dcc[6], ddi[6], ddj[6];
+
   *testij = 0.;
   *tesqck = 0.;
 
@@ -631,17 +632,17 @@ cs_i_relax_c_val_vector(const double       relaxp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_relax_c_val_tensor(const double       relaxp,
-                        const cs_real_6_t  pia,
-                        const cs_real_6_t  pja,
-                        const cs_real_6_t  recoi,
-                        const cs_real_6_t  recoj,
-                        const cs_real_6_t  pi,
-                        const cs_real_6_t  pj,
-                        cs_real_t          pir[6],
-                        cs_real_t          pjr[6],
-                        cs_real_t          pipr[6],
-                        cs_real_t          pjpr[6])
+cs_i_relax_c_val_tensor(const cs_real_t  relaxp,
+                        const cs_real_t  pia[6],
+                        const cs_real_t  pja[6],
+                        const cs_real_t  recoi[6],
+                        const cs_real_t  recoj[6],
+                        const cs_real_t  pi[6],
+                        const cs_real_t  pj[6],
+                        cs_real_t        pir[6],
+                        cs_real_t        pjr[6],
+                        cs_real_t        pipr[6],
+                        cs_real_t        pjpr[6])
 {
   for (int isou = 0; isou < 6; isou++) {
     pir[isou] = pi[isou] /relaxp - (1.-relaxp)/relaxp * pia[isou];
@@ -988,12 +989,12 @@ inline static void
 cs_i_conv_flux_vector(const int         iconvp,
                       const cs_real_t   thetap,
                       const int         imasac,
-                      const cs_real_3_t pi,
-                      const cs_real_3_t pj,
-                      const cs_real_3_t pifri,
-                      const cs_real_3_t pifrj,
-                      const cs_real_3_t pjfri,
-                      const cs_real_3_t pjfrj,
+                      const cs_real_t   pi[3],
+                      const cs_real_t   pj[3],
+                      const cs_real_t   pifri[3],
+                      const cs_real_t   pifrj[3],
+                      const cs_real_t   pjfri[3],
+                      const cs_real_t   pjfrj[3],
                       const cs_real_t   i_massflux,
                       cs_real_t         fluxi[3],
                       cs_real_t         fluxj[3])
@@ -1036,12 +1037,12 @@ inline static void
 cs_i_conv_flux_tensor(const int         iconvp,
                       const cs_real_t   thetap,
                       const int         imasac,
-                      const cs_real_6_t pi,
-                      const cs_real_6_t pj,
-                      const cs_real_6_t pifri,
-                      const cs_real_6_t pifrj,
-                      const cs_real_6_t pjfri,
-                      const cs_real_6_t pjfrj,
+                      const cs_real_t   pi[6],
+                      const cs_real_t   pj[6],
+                      const cs_real_t   pifri[6],
+                      const cs_real_t   pifrj[6],
+                      const cs_real_t   pjfri[6],
+                      const cs_real_t   pjfrj[6],
                       const cs_real_t   i_massflux,
                       cs_real_t         fluxi[6],
                       cs_real_t         fluxj[6])
@@ -1075,14 +1076,14 @@ cs_i_conv_flux_tensor(const int         iconvp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_diff_flux(const int       idiffp,
-               const cs_real_t thetap,
-               const cs_real_t pip,
-               const cs_real_t pjp,
-               const cs_real_t pipr,
-               const cs_real_t pjpr,
-               const cs_real_t i_visc,
-               cs_real_2_t     fluxij)
+cs_i_diff_flux(const int        idiffp,
+               const cs_real_t  thetap,
+               const cs_real_t  pip,
+               const cs_real_t  pjp,
+               const cs_real_t  pipr,
+               const cs_real_t  pjpr,
+               const cs_real_t  i_visc,
+               cs_real_2_t      fluxij)
 {
   fluxij[0] += idiffp*thetap*i_visc*(pipr -pjp);
   fluxij[1] += idiffp*thetap*i_visc*(pip -pjpr);
@@ -1107,10 +1108,10 @@ cs_i_diff_flux(const int       idiffp,
 inline static void
 cs_i_diff_flux_vector(const int         idiffp,
                       const cs_real_t   thetap,
-                      const cs_real_3_t pip,
-                      const cs_real_3_t pjp,
-                      const cs_real_3_t pipr,
-                      const cs_real_3_t pjpr,
+                      const cs_real_t   pip[3],
+                      const cs_real_t   pjp[3],
+                      const cs_real_t   pipr[3],
+                      const cs_real_t   pjpr[3],
                       const cs_real_t   i_visc,
                       cs_real_t         fluxi[3],
                       cs_real_t         fluxj[3])
@@ -1138,15 +1139,15 @@ cs_i_diff_flux_vector(const int         idiffp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_diff_flux_tensor(const int         idiffp,
-                      const cs_real_t   thetap,
-                      const cs_real_6_t pip,
-                      const cs_real_6_t pjp,
-                      const cs_real_6_t pipr,
-                      const cs_real_6_t pjpr,
-                      const cs_real_t   i_visc,
-                      cs_real_t         fluxi[6],
-                      cs_real_t         fluxj[6])
+cs_i_diff_flux_tensor(const int        idiffp,
+                      const cs_real_t  thetap,
+                      const cs_real_t  pip[6],
+                      const cs_real_t  pjp[6],
+                      const cs_real_t  pipr[6],
+                      const cs_real_t  pjpr[6],
+                      const cs_real_t  i_visc,
+                      cs_real_t        fluxi[6],
+                      cs_real_t        fluxj[6])
 {
   for (int isou = 0; isou < 6; isou++) {
     fluxi[isou] += idiffp*thetap*i_visc*(pipr[isou] -pjp[isou]);
@@ -1181,24 +1182,24 @@ cs_i_diff_flux_tensor(const int         idiffp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_upwind(const int          ircflp,
-                      const cs_real_t    relaxp,
-                      const cs_real_3_t  diipf,
-                      const cs_real_3_t  djjpf,
-                      const cs_real_3_t  gradi,
-                      const cs_real_3_t  gradj,
-                      const cs_real_t    pi,
-                      const cs_real_t    pj,
-                      const cs_real_t    pia,
-                      const cs_real_t    pja,
-                      cs_real_t         *pifri,
-                      cs_real_t         *pifrj,
-                      cs_real_t         *pjfri,
-                      cs_real_t         *pjfrj,
-                      cs_real_t         *pip,
-                      cs_real_t         *pjp,
-                      cs_real_t         *pipr,
-                      cs_real_t         *pjpr)
+cs_i_cd_steady_upwind(const int         ircflp,
+                      const cs_real_t   relaxp,
+                      const cs_real_t   diipf[3],
+                      const cs_real_t   djjpf[3],
+                      const cs_real_t   gradi[3],
+                      const cs_real_t   gradj[3],
+                      const cs_real_t   pi,
+                      const cs_real_t   pj,
+                      const cs_real_t   pia,
+                      const cs_real_t   pja,
+                      cs_real_t        *pifri,
+                      cs_real_t        *pifrj,
+                      cs_real_t        *pjfri,
+                      cs_real_t        *pjfrj,
+                      cs_real_t        *pip,
+                      cs_real_t        *pjp,
+                      cs_real_t        *pipr,
+                      cs_real_t        *pjpr)
 {
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
@@ -1264,27 +1265,27 @@ cs_i_cd_steady_upwind(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_upwind_vector(const int          ircflp,
-                             const cs_real_t    relaxp,
-                             const cs_real_3_t  diipf,
-                             const cs_real_3_t  djjpf,
-                             const cs_real_33_t gradi,
-                             const cs_real_33_t gradj,
-                             const cs_real_3_t  pi,
-                             const cs_real_3_t  pj,
-                             const cs_real_3_t  pia,
-                             const cs_real_3_t  pja,
-                             cs_real_t          pifri[3],
-                             cs_real_t          pifrj[3],
-                             cs_real_t          pjfri[3],
-                             cs_real_t          pjfrj[3],
-                             cs_real_t          pip[3],
-                             cs_real_t          pjp[3],
-                             cs_real_t          pipr[3],
-                             cs_real_t          pjpr[3])
+cs_i_cd_steady_upwind_vector(const int        ircflp,
+                             const cs_real_t  relaxp,
+                             const cs_real_t  diipf[3],
+                             const cs_real_t  djjpf[3],
+                             const cs_real_t  gradi[3][3],
+                             const cs_real_t  gradj[3][3],
+                             const cs_real_t  pi[3],
+                             const cs_real_t  pj[3],
+                             const cs_real_t  pia[3],
+                             const cs_real_t  pja[3],
+                             cs_real_t        pifri[3],
+                             cs_real_t        pifrj[3],
+                             cs_real_t        pjfri[3],
+                             cs_real_t        pjfrj[3],
+                             cs_real_t        pip[3],
+                             cs_real_t        pjp[3],
+                             cs_real_t        pipr[3],
+                             cs_real_t        pjpr[3])
 {
-  cs_real_3_t pir, pjr;
-  cs_real_3_t recoi, recoj;
+  cs_real_t pir[3], pjr[3];
+  cs_real_t recoi[3], recoj[3];
 
   cs_i_compute_quantities_vector(ircflp,
                                  diipf,
@@ -1318,7 +1319,6 @@ cs_i_cd_steady_upwind_vector(const int          ircflp,
                          pjfri);
   cs_upwind_f_val_vector(pjr,
                          pjfrj);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1348,24 +1348,24 @@ cs_i_cd_steady_upwind_vector(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_upwind_tensor(const int          ircflp,
-                             const cs_real_t    relaxp,
-                             const cs_real_3_t  diipf,
-                             const cs_real_3_t  djjpf,
-                             const cs_real_63_t gradi,
-                             const cs_real_63_t gradj,
-                             const cs_real_6_t  pi,
-                             const cs_real_6_t  pj,
-                             const cs_real_6_t  pia,
-                             const cs_real_6_t  pja,
-                             cs_real_t          pifri[6],
-                             cs_real_t          pifrj[6],
-                             cs_real_t          pjfri[6],
-                             cs_real_t          pjfrj[6],
-                             cs_real_t          pip[6],
-                             cs_real_t          pjp[6],
-                             cs_real_t          pipr[6],
-                             cs_real_t          pjpr[6])
+cs_i_cd_steady_upwind_tensor(const int        ircflp,
+                             const cs_real_t  relaxp,
+                             const cs_real_t  diipf[3],
+                             const cs_real_t  djjpf[3],
+                             const cs_real_t  gradi[6][3],
+                             const cs_real_t  gradj[6][3],
+                             const cs_real_t  pi[6],
+                             const cs_real_t  pj[6],
+                             const cs_real_t  pia[6],
+                             const cs_real_t  pja[6],
+                             cs_real_t        pifri[6],
+                             cs_real_t        pifrj[6],
+                             cs_real_t        pjfri[6],
+                             cs_real_t        pjfrj[6],
+                             cs_real_t        pip[6],
+                             cs_real_t        pjp[6],
+                             cs_real_t        pipr[6],
+                             cs_real_t        pjpr[6])
 {
   cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
@@ -1424,17 +1424,17 @@ cs_i_cd_steady_upwind_tensor(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_upwind(const int          ircflp,
-                        const cs_real_3_t  diipf,
-                        const cs_real_3_t  djjpf,
-                        const cs_real_3_t  gradi,
-                        const cs_real_3_t  gradj,
-                        const cs_real_t    pi,
-                        const cs_real_t    pj,
-                        cs_real_t         *pif,
-                        cs_real_t         *pjf,
-                        cs_real_t         *pip,
-                        cs_real_t         *pjp)
+cs_i_cd_unsteady_upwind(const int         ircflp,
+                        const cs_real_t   diipf[3],
+                        const cs_real_t   djjpf[3],
+                        const cs_real_t   gradi[3],
+                        const cs_real_t   gradj[3],
+                        const cs_real_t   pi,
+                        const cs_real_t   pj,
+                        cs_real_t        *pif,
+                        cs_real_t        *pjf,
+                        cs_real_t        *pip,
+                        cs_real_t        *pjp)
 {
   cs_real_t recoi, recoj;
 
@@ -1474,17 +1474,17 @@ cs_i_cd_unsteady_upwind(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_upwind_vector(const int           ircflp,
-                               const cs_real_3_t   diipf,
-                               const cs_real_3_t   djjpf,
-                               const cs_real_33_t  gradi,
-                               const cs_real_33_t  gradj,
-                               const cs_real_3_t   pi,
-                               const cs_real_3_t   pj,
-                               cs_real_t           pif[3],
-                               cs_real_t           pjf[3],
-                               cs_real_t           pip[3],
-                               cs_real_t           pjp[3])
+cs_i_cd_unsteady_upwind_vector(const int        ircflp,
+                               const cs_real_t  diipf[3],
+                               const cs_real_t  djjpf[3],
+                               const cs_real_t  gradi[3][3],
+                               const cs_real_t  gradj[3][3],
+                               const cs_real_t  pi[3],
+                               const cs_real_t  pj[3],
+                               cs_real_t        pif[3],
+                               cs_real_t        pjf[3],
+                               cs_real_t        pip[3],
+                               cs_real_t        pjp[3])
 {
   cs_real_3_t recoi, recoj;
 
@@ -1502,7 +1502,6 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
 
   cs_upwind_f_val_vector(pi, pif);
   cs_upwind_f_val_vector(pj, pjf);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1525,17 +1524,17 @@ cs_i_cd_unsteady_upwind_vector(const int           ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
-                               const cs_real_3_t   diipf,
-                               const cs_real_3_t   djjpf,
-                               const cs_real_63_t  gradi,
-                               const cs_real_63_t  gradj,
-                               const cs_real_6_t   pi,
-                               const cs_real_6_t   pj,
-                               cs_real_t           pif[6],
-                               cs_real_t           pjf[6],
-                               cs_real_t           pip[6],
-                               cs_real_t           pjp[6])
+cs_i_cd_unsteady_upwind_tensor(const int        ircflp,
+                               const cs_real_t  diipf[3],
+                               const cs_real_t  djjpf[3],
+                               const cs_real_t  gradi[6][3],
+                               const cs_real_t  gradj[6][3],
+                               const cs_real_t  pi[6],
+                               const cs_real_t  pj[6],
+                               cs_real_t        pif[6],
+                               cs_real_t        pjf[6],
+                               cs_real_t        pip[6],
+                               cs_real_t        pjp[6])
 {
   cs_real_6_t recoi, recoj;
 
@@ -1592,32 +1591,32 @@ cs_i_cd_unsteady_upwind_tensor(const int           ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady(const int          ircflp,
-               const int          ischcp,
-               const double       relaxp,
-               const double       blencp,
-               const cs_real_t    weight,
-               const cs_real_3_t  cell_ceni,
-               const cs_real_3_t  cell_cenj,
-               const cs_real_3_t  i_face_cog,
-               const cs_real_3_t  diipf,
-               const cs_real_3_t  djjpf,
-               const cs_real_3_t  gradi,
-               const cs_real_3_t  gradj,
-               const cs_real_3_t  gradupi,
-               const cs_real_3_t  gradupj,
-               const cs_real_t    pi,
-               const cs_real_t    pj,
-               const cs_real_t    pia,
-               const cs_real_t    pja,
-               cs_real_t         *pifri,
-               cs_real_t         *pifrj,
-               cs_real_t         *pjfri,
-               cs_real_t         *pjfrj,
-               cs_real_t         *pip,
-               cs_real_t         *pjp,
-               cs_real_t         *pipr,
-               cs_real_t         *pjpr)
+cs_i_cd_steady(const int         ircflp,
+               const int         ischcp,
+               const double      relaxp,
+               const double      blencp,
+               const cs_real_t   weight,
+               const cs_real_t   cell_ceni[3],
+               const cs_real_t   cell_cenj[3],
+               const cs_real_t   i_face_cog[3],
+               const cs_real_t   diipf[3],
+               const cs_real_t   djjpf[3],
+               const cs_real_t   gradi[3],
+               const cs_real_t   gradj[3],
+               const cs_real_t   gradupi[3],
+               const cs_real_t   gradupj[3],
+               const cs_real_t   pi,
+               const cs_real_t   pj,
+               const cs_real_t   pia,
+               const cs_real_t   pja,
+               cs_real_t        *pifri,
+               cs_real_t        *pifrj,
+               cs_real_t        *pjfri,
+               cs_real_t        *pjfrj,
+               cs_real_t        *pip,
+               cs_real_t        *pjp,
+               cs_real_t        *pipr,
+               cs_real_t        *pjpr)
 {
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
