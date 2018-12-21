@@ -233,6 +233,9 @@ typedef enum {
   CS_ENUMF_(disp_t),         /*!< Turbulent dispersion */
   CS_ENUMF_(drift_vel),      /*!< Particles drift velocity */
   CS_ENUMF_(yplus),          /*!< Wall distance: y+ */
+  CS_ENUMF_(vel_mean),       /*!< Mean velocity (for dispersed phases) */
+  CS_ENUMF_(vel_rel),        /*!< Relative velocity (for dispersed phases) */
+  CS_ENUMF_(dt_dp),          /*!< dtemp/dpress derivative */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
