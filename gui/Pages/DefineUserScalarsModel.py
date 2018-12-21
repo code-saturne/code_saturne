@@ -254,7 +254,7 @@ class DefineUserScalarsModel(Variables, Model):
         """Public method.
         Return the User scalar name list (thermal scalar included)"""
         lst = []
-        for node in self.scalar_node.xmlGetNodeList('variable'):
+        for node in self.scalar_node.xmlGetChildNodeList('variable'):
             lst.append(node['name'])
         return lst
 

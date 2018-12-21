@@ -1596,6 +1596,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for user arrays
+
+    subroutine cs_gui_user_arrays()  &
+      bind(C, name='cs_gui_user_arrays')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_user_arrays
+
+    !---------------------------------------------------------------------------
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for physical model options
 
     subroutine cs_user_model()  &

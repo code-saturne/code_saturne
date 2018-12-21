@@ -1021,7 +1021,7 @@ Calculation management
         # Calculation control
 
         self.setRowShow(self.tr('Time averages'), True)
-        self.setRowShow(self.tr('Additional user arrays'), is_ncfd)
+        self.setRowShow(self.tr('Additional user arrays'))
         self.setRowShow(self.tr('Output control'), True)
         self.setRowShow(self.tr('Volume solution control'), True)
         self.setRowShow(self.tr('Surface solution control'), True)

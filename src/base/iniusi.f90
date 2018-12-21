@@ -133,6 +133,7 @@ call usppmo(iihmpu)
 
 ! User C function
 
+call cs_gui_user_arrays
 call cs_user_model
 
 !     Turbulence

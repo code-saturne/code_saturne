@@ -5725,6 +5725,44 @@ cs_gui_user_variables(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Define user arrays through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_user_arrays(void)
+{
+
+  int i = 0;
+
+  const char path_s[] = "additional_scalars/users/variable";
+  cs_tree_node_t *tn_s = cs_tree_get_node(cs_glob_tree, path_s);
+
+  for (cs_tree_node_t *tn = tn_s;
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), i++) {
+
+    const char *name = cs_gui_node_get_tag(tn, "name");
+
+    int array_dim = 1;
+    cs_tree_node_t *dtn = cs_tree_get_node(tn, "dimension");
+    cs_gui_node_get_int(dtn, &array_dim);
+
+    const char *location_name = cs_gui_node_get_tag(tn, "support");
+
+    if (strcmp(location_name, "cells") == 0)
+      cs_parameters_add_property(name, array_dim, CS_MESH_LOCATION_CELLS);
+
+    else if (strcmp(location_name, "internal") == 0)
+      cs_parameters_add_property(name, array_dim, CS_MESH_LOCATION_INTERIOR_FACES);
+
+    else if (strcmp(location_name, "boundary") == 0)
+      cs_parameters_add_property(name, array_dim, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
  * Define volume and boundary zones through the GUI.
  *----------------------------------------------------------------------------*/
 

@@ -170,6 +170,52 @@ class SupportDelegate(QItemDelegate):
 
 
 #-------------------------------------------------------------------------------
+# Dimension delegate
+#-------------------------------------------------------------------------------
+
+class UserDimensionDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table for the user array dimension.
+    """
+
+    def __init__(self, parent):
+        super(UserDimensionDelegate, self).__init__(parent)
+        self.parent = parent
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        self.modelCombo = ComboModel(editor, 5, 1)
+
+        self.modelCombo.addItem(self.tr("1"), "1")
+        self.modelCombo.addItem(self.tr("2"), "2")
+        self.modelCombo.addItem(self.tr("3"), "3")
+        self.modelCombo.addItem(self.tr("6"), "6")
+        self.modelCombo.addItem(self.tr("9"), "9")
+
+        editor.installEventFilter(self)
+        return editor
+
+    def setEditorData(self, comboBox, index):
+        row = index.row()
+        col = index.column()
+        string = index.model().getData(index)[col]
+        self.modelCombo.setItem(str_model=string)
+
+    def setModelData(self, comboBox, model, index):
+        txt = str(comboBox.currentText())
+        value = self.modelCombo.dicoV2M[txt]
+        log.debug("UserDimensionDelegate value = %s"%value)
+
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+
+    def tr(self, text):
+        return text
+
+
+#-------------------------------------------------------------------------------
 # StandardItemModelUsersControl class
 #-------------------------------------------------------------------------------
 
@@ -181,7 +227,8 @@ class StandardItemModelUsersControl(QStandardItemModel):
         QStandardItemModel.__init__(self)
 
         self.headers = [ self.tr("Label"),
-                         self.tr("Support")]
+                         self.tr("Support"),
+                         self.tr("Dimension")]
 
         self.setColumnCount(len(self.headers))
         self.parent = parent
@@ -233,16 +280,18 @@ class StandardItemModelUsersControl(QStandardItemModel):
         col = index.column()
         name = row + 1
 
+        new_val = from_qvariant(value, to_text_string)
+        self._data[row][col] = new_val
+
         # Label
         if col == 0:
-            new_label = from_qvariant(value, to_text_string)
-            self._data[row][col] = new_label
-            self.mdl.setUsersLabel(name, new_label)
+            self.mdl.setUsersLabel(name, new_val)
         # support
         elif col == 1:
-            new_sup = from_qvariant(value, to_text_string)
-            self._data[row][col] = new_sup
-            self.mdl.setUsersSupport(name, new_sup)
+            self.mdl.setUsersSupport(name, new_val)
+        # dimension
+        elif col == 2:
+            self.mdl.setUsersDim(name, new_val)
 
         return True
 
@@ -265,8 +314,9 @@ class StandardItemModelUsersControl(QStandardItemModel):
             name = existing_users
         label   = self.mdl.getUsersLabel(name)
         support = self.mdl.getUsersSupport(name)
+        dim     = self.mdl.getUsersDim(name)
 
-        scalar = [label, support]
+        scalar = [label, support, dim]
 
         self._data.append(scalar)
         self.setRowCount(row + 1)
@@ -301,6 +351,12 @@ class UsersControlView(QWidget, Ui_UsersControl):
 
         self.case = case
         self.case.undoStopGlobal()
+
+#        if self.case['package'].name == 'code_saturne':
+#            from UsersControlModelCS import UsersControlModelCS as UsersControlMdl
+#        else:
+#            from UsersControlModelNCFD import UsersControlModelNCFD as UsersControlMdl
+
         self.mdl = UsersControlModel(self.case)
 
 
@@ -309,9 +365,11 @@ class UsersControlView(QWidget, Ui_UsersControl):
         if QT_API == "PYQT4":
             self.tableViewUsers.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
             self.tableViewUsers.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
+            self.tableViewUsers.horizontalHeader().setResizeMode(2,QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableViewUsers.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
             self.tableViewUsers.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
+            self.tableViewUsers.horizontalHeader().setSectionResizeMode(2,QHeaderView.Stretch)
         self.tableViewUsers.resizeColumnsToContents()
         self.tableViewUsers.resizeRowsToContents()
         self.tableViewUsers.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -319,9 +377,11 @@ class UsersControlView(QWidget, Ui_UsersControl):
 
         delegateLabel   = LabelDelegate(self.tableViewUsers)
         delegateSupport = SupportDelegate(self.tableViewUsers)
+        delegateDim     = UserDimensionDelegate(self.tableViewUsers)
 
         self.tableViewUsers.setItemDelegateForColumn(0, delegateLabel)
         self.tableViewUsers.setItemDelegateForColumn(1, delegateSupport)
+        self.tableViewUsers.setItemDelegateForColumn(2, delegateDim)
 
         # Connections
         self.pushButtonAdd.clicked.connect(self.slotAddUsers)

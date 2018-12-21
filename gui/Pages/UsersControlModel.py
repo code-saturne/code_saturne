@@ -26,10 +26,9 @@ import sys, unittest
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
 from code_saturne.Base.XMLmodelNeptune import *
-from code_saturne.Pages.MainFieldsModel import *
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
 
-class UsersControlModel(MainFieldsModel, Variables, Model):
+class UsersControlModel(Variables, Model):
 
     """
     This class manages the users objects in the XML file
@@ -41,7 +40,6 @@ class UsersControlModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
         self.case          = case
         self.XMLUserScalar = self.case.xmlGetNode('additional_scalars')
         self.XMLUser       = self.XMLUserScalar.xmlInitNode('users')
@@ -51,6 +49,7 @@ class UsersControlModel(MainFieldsModel, Variables, Model):
         default = {}
 
         default['support'] = "cells"
+        default['dim'] = "1"
         return default
 
 
@@ -83,10 +82,17 @@ class UsersControlModel(MainFieldsModel, Variables, Model):
         label = "User_" + str(userId)
         # TODO control les names et labels pour noms differents
 
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLUser, "none", name, label)
+        Variables(self.case).setNewVariableProperty("variable",
+                                                    "",
+                                                    self.XMLUser,
+                                                    "none",
+                                                    name,
+                                                    label,
+                                                    dim = self.defaultValues()['dim'])
 
         n = self.XMLUser.xmlGetNode('variable', name = name)
-        n['support'] = self.defaultValues()['support']
+        n['support']   = self.defaultValues()['support']
+        n['dimension'] = self.defaultValues()['dim']
 
         return name
 
@@ -178,6 +184,17 @@ class UsersControlModel(MainFieldsModel, Variables, Model):
         return label
 
 
+    @Variables.noUndo
+    def getUsersSupport(self, name):
+        """
+        Get support
+        """
+        node = self.XMLUser.xmlGetNode('variable', name = name)
+        if node:
+            support = node['support']
+        return support
+
+
     @Variables.undoLocal
     def setUsersSupport(self, idx, support):
         """
@@ -191,14 +208,27 @@ class UsersControlModel(MainFieldsModel, Variables, Model):
 
 
     @Variables.noUndo
-    def getUsersSupport(self, name):
+    def getUsersDim(self, name):
         """
-        Get support
+        Get array dimension
         """
+        dim = 1
         node = self.XMLUser.xmlGetNode('variable', name = name)
         if node:
-            support = node['support']
-        return support
+            dim = node['dimension']
+        return dim
+
+
+    @Variables.undoLocal
+    def setUsersDim(self, idx, dim):
+        """
+        Set array dimension
+        """
+        self.isInList(dim, ("1", "2", "3", "6", "9"))
+        name = "User_" + str(idx)
+        node = self.XMLUser.xmlGetNode('variable', name = name)
+        if node:
+            node['dimension'] = dim
 
 
 #-------------------------------------------------------------------------------
