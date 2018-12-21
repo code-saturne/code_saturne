@@ -579,7 +579,7 @@ _define_cm_tetra_ref(double            a,
     CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |CS_CDO_LOCAL_EFQ  |
     CS_CDO_LOCAL_DIAM;
 
-  cm->vol_c = cs_math_onesix*a*a*a;
+  cm->vol_c = cs_math_1ov6*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
 
   /* VERTICES */
@@ -768,7 +768,7 @@ _define_cm_tetra_ref(double            a,
   /* Compute dual cell volume */
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const double  hf_coef = cs_math_onesix * cm->hfc[f];
+    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
