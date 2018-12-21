@@ -76,7 +76,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
     # 'page_name' is the name of the page
     #
 
-    if page_name == tr("Identity and paths"):
+    if page_name == tr("Calculation environment"):
         import code_saturne.Pages.IdentityAndPathesView as Page
         thisPage = Page.IdentityAndPathesView(root, case, study)
 
@@ -88,7 +88,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.NotebookView as Page
         thisPage = Page.NotebookView(root, case)
 
-    elif page_name == tr("Volume regions definition"):
+    elif page_name == tr("Volume zones"):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.VolumeLocalizationView(root, case, tree)
 
@@ -160,7 +160,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.GroundwaterLawView as Page
         thisPage = Page.GroundwaterLawView(root, case)
 
-    elif page_name == tr("Reference values"):
+    elif page_name == tr("Physical properties"):
         import code_saturne.Pages.ReferenceValuesView as Page
         thisPage = Page.ReferenceValuesView(root, case)
 
@@ -192,7 +192,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.GroundwaterView as Page
         thisPage = Page.GroundwaterView(root, case)
 
-    elif page_name == tr("Global settings"):
+    elif page_name == tr("Particles and droplets tracking"):
         import code_saturne.Pages.LagrangianView as Page
         thisPage = Page.LagrangianView(root, case)
 
@@ -208,6 +208,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.CathareCouplingView as Page
         thisPage = Page.CathareCouplingView(root, case)
 
+    elif page_name == tr("Boundary zones"):
+        import code_saturne.Pages.LocalizationView as Page
+        thisPage = Page.BoundaryLocalizationView(root, case, tree)
+
     elif page_name == tr("Boundary conditions"):
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             import code_saturne.Pages.BoundaryConditionsViewNeptune as Page
@@ -215,10 +219,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         else:
             import code_saturne.Pages.BoundaryConditionsView as Page
             thisPage = Page.BoundaryConditionsView(root, case)
-
-    elif page_name == tr("Boundary regions definition"):
-        import code_saturne.Pages.LocalizationView as Page
-        thisPage = Page.BoundaryLocalizationView(root, case, tree)
 
     elif page_name == tr("Particle boundary conditions"):
         import code_saturne.Pages.LagrangianBoundariesView as Page
@@ -240,7 +240,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
             import code_saturne.Pages.TimeStepView as Page
             thisPage = Page.TimeStepView(root, case, tree)
 
-    elif page_name == tr("Output control"):
+    elif page_name == tr("Postprocessing"):
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
             import code_saturne.Pages.OutputControlViewNeptune as Page
             thisPage = Page.OutputControlView(root, case, tree)
@@ -284,7 +284,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
             import code_saturne.Pages.NumericalParamEquationView as Page
             thisPage = Page.NumericalParamEquationView(root, case)
 
-    elif page_name == tr("Global parameters"):
+    elif page_name == tr("Numerical parameters"):
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
             import code_saturne.Pages.GlobalNumericalParametersView as Page
             thisPage = Page.GlobalNumericalParametersView(root, case)
@@ -292,7 +292,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
             import code_saturne.Pages.NumericalParamGlobalView as Page
             thisPage = Page.NumericalParamGlobalView(root, case, tree)
 
-    elif page_name == tr("Start/Restart"):
+    elif page_name == tr("Calculation management"):
         import code_saturne.Pages.StartRestartView as Page
         thisPage = Page.StartRestartView(root, case)
 
@@ -324,7 +324,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.ThermodynamicsView as Page
         thisPage = Page.ThermodynamicsView(root, case)
 
-    elif page_name == tr("Interfacial momentum transfer"):
+    elif page_name == tr("Closure modeling"):
         import code_saturne.Pages.InterfacialForcesView as Page
         thisPage = Page.InterfacialForcesView(root, case, tree)
 

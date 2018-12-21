@@ -182,7 +182,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The SRC directories contains user subroutines used for non-standard computation setup.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>User subroutines</string>
+             <string>User sources</string>
             </property>
            </widget>
           </item>
@@ -208,7 +208,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The SCRIPTS directory contains the runcase script which allows to run computations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Running scripts</string>
+             <string>Run scripts</string>
             </property>
            </widget>
           </item>

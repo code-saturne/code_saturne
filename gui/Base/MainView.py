@@ -1181,8 +1181,6 @@ class MainView(object):
 
         # stop if the entry is a folder or a file
 
-        if self.Browser.isFolder(): return
-
         # warning and stop if is no case
         if not hasattr(self, 'case'):
             log.debug("displayNewPage(): no attr. 'case', return ")
@@ -1448,7 +1446,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         self.case['current_tab'] = 0
         self.case['current_index'] = None
-        return displaySelectedPage('Identity and paths',
+        return displaySelectedPage('Calculation environment',
                                     self,
                                     self.case,
                                     stbar=self.statusbar,

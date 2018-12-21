@@ -405,16 +405,15 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
     def _browser(self):
         tree ="""
-    Identity and paths
 Calculation environment
     Meshes selection
     Notebook
-Thermophysical models
-    Calculation features
+Calculation features
     Main fields
     Deformable mesh
     Turbulence models
     Thermal model
+    Gravity
     Gas combustion
     Pulverized fuel combustion
     Electrical models
@@ -428,21 +427,16 @@ Thermophysical models
     Non condensable gases
     Thermodynamics
 Closure modeling
-    Interfacial momentum transfer
     Interfacial area
     Interfacial enthalpy transfer
     Nucleate boiling parameters
     Droplet condensation-evaporation
     Particles interactions
 Physical properties
-    Reference values
     Fluid properties
-    Gravity
 Particles and droplets tracking
-    Global settings
     Statistics
-Volume conditions
-    Volume regions definition
+Volume zones
     Main fields initialization
     Initialization
     Head losses
@@ -450,27 +444,23 @@ Volume conditions
     Source terms
     Coriolis Source Terms
     Groundwater laws
-Boundary conditions
-    Boundary regions definition
+Boundary zones
     Boundary conditions
     Particle boundary conditions
     Fluid structure interaction
     Cathare Coupling
 Numerical parameters
-    Global parameters
     Equation parameters
     Time settings
-Calculation control
+Postprocessing
     Time averages
     Additional user arrays
-    Output control
     Volume solution control
     Surface solution control
     Lagrangian solution control
     Profiles
     Balance by zone
 Calculation management
-    Start/Restart
     Performance tuning
     OpenTurns study
     Prepare batch calculation
@@ -685,9 +675,8 @@ Calculation management
 
         self.setRowClose(self.tr('Notebook'))
 
-        self.setRowClose(self.tr('Thermophysical models'))
-        """
         self.setRowClose(self.tr('Calculation features'))
+        """
         self.setRowClose(self.tr('Main fields'))
         self.setRowClose(self.tr('Deformable mesh'))
         self.setRowClose(self.tr('Turbulence models'))
@@ -708,7 +697,6 @@ Calculation management
 
         self.setRowClose(self.tr('Closure modeling'))
         """
-        self.setRowClose(self.tr('Interfacial momentum transfer'))
         self.setRowClose(self.tr('Interfacial area'))
         self.setRowClose(self.tr('Interfacial enthalpy transfer'))
         self.setRowClose(self.tr('Nucleate boiling parameters'))
@@ -718,20 +706,17 @@ Calculation management
 
         self.setRowClose(self.tr('Physical properties'))
         """
-        self.setRowClose(self.tr('Reference values'))
         self.setRowClose(self.tr('Fluid properties'))
         self.setRowClose(self.tr('Gravity'))
         """
 
         self.setRowClose(self.tr('Particles and droplets tracking'))
         """
-        self.setRowClose(self.tr('Global settings'))
         self.setRowClose(self.tr('Statistics'))
         """
 
-        self.setRowShow(self.tr('Volume conditions'), False)
+        self.setRowShow(self.tr('Volume zones'), False)
         """
-        self.setRowClose(self.tr('Volume regions definition'))
         self.setRowClose(self.tr('Main fields initialization'))
         self.setRowClose(self.tr('Initialization'))
         self.setRowClose(self.tr('Head losses'))
@@ -741,28 +726,25 @@ Calculation management
         self.setRowClose(self.tr('Groundwater laws'))
         """
 
-        self.setRowClose(self.tr('Boundary conditions'))
+        self.setRowClose(self.tr('Boundary_conditions '))
         self.setRowClose(self.tr('Particle boundary conditions'))
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Cathare Coupling'))
 
         self.setRowClose(self.tr('Numerical parameters'))
         """
-        self.setRowClose(self.tr('Global parameters'))
         self.setRowClose(self.tr('Equation parameters'))
         self.setRowClose(self.tr('Time settings'))
         """
 
         self.setRowClose(self.tr('Time averages'))
         self.setRowClose(self.tr('Additional user arrays'))
-        self.setRowShow(self.tr('Output control'))
         self.setRowClose(self.tr('Volume solution control'))
         self.setRowClose(self.tr('Surface solution control'))
         self.setRowClose(self.tr('Lagrangian solution control'))
         self.setRowClose(self.tr('Profiles'))
         self.setRowClose(self.tr('Balance by zone'))
 
-        self.setRowClose(self.tr('Start/Restart'))
         self.setRowClose(self.tr('OpenTurns study'))
 
         self.__hideRow()
@@ -924,12 +906,12 @@ Calculation management
 
         # Thermophysical Models
 
-        self.setRowShow(self.tr('Thermophysical models'), True)
         self.setRowShow(self.tr('Calculation features'), True)
         self.setRowShow(self.tr('Main fields'), (p_module == 'neptune_cfd'))
         self.setRowShow(self.tr('Deformable mesh'), (m_ale > -1))
         self.setRowShow(self.tr('Turbulence models'))
         self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
+        self.setRowShow(self.tr('Gravity'), (not m_gwf))
         self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
         self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)
         self.setRowShow(self.tr('Electrical models'), m_elec)
@@ -947,7 +929,6 @@ Calculation management
         # Closure modeling
 
         self.setRowShow(self.tr('Closure modeling'), (ncfd_fields > 1))
-        self.setRowShow(self.tr('Interfacial momentum transfer'), (ncfd_fields > 1))
         self.setRowShow(self.tr('Interfacial enthalpy transfer'), m_ncfd['itf_h_transfer'])
         self.setRowShow(self.tr('Interfacial area'), m_ncfd['itf_area'])
         self.setRowShow(self.tr('Nucleate boiling parameters'), m_ncfd['nucleate_boiling'])
@@ -956,21 +937,17 @@ Calculation management
 
         # Physical properties
 
-        self.setRowShow(self.tr('Physical properties'), (not m_gwf))
-        self.setRowShow(self.tr('Reference values'), (not (m_gwf or is_ncfd)))
+        self.setRowShow(self.tr('Physical properties'), (not (m_gwf or is_ncfd)))
         self.setRowShow(self.tr('Fluid properties'), (not (m_gwf or is_ncfd)))
-        self.setRowShow(self.tr('Gravity'), (not m_gwf))
 
         # Particles and droplets tracking
 
         self.setRowShow(self.tr('Particles and droplets tracking'), m_lagr)
-        self.setRowShow(self.tr('Global settings'), m_lagr)
         self.setRowShow(self.tr('Statistics'), m_lagr)
 
-        # Volume conditions
+        # Volume zones
 
-        self.setRowShow(self.tr('Volume conditions'), True)
-        self.setRowShow(self.tr('Volume regions definition'), True)
+        self.setRowShow(self.tr('Volume zones'), True)
 
         node_domain = case.xmlGetNode('solution_domain')
         node_vol = node_domain.xmlGetNode('volumic_conditions')
@@ -1003,10 +980,9 @@ Calculation management
         self.setRowShow(self.tr('Coriolis Source Terms'), (not (m_gwf or is_ncfd)))
         self.setRowShow(self.tr('Groundwater laws'), z_groundwater)
 
-        # Boundary conditions
+        # Boundary zones
 
-        self.setRowShow(self.tr('Boundary conditions'))
-        self.setRowShow(self.tr('Boundary regions definition'), True)
+        self.setRowShow(self.tr('Boundary conditions '))
         self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
         self.setRowShow(self.tr('Fluid structure interaction'), (m_ale > 0))
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
@@ -1014,15 +990,13 @@ Calculation management
         # Numerical parameters
 
         self.setRowShow(self.tr('Numerical parameters'))
-        self.setRowShow(self.tr('Global parameters'))
         self.setRowShow(self.tr('Equation parameters'))
         self.setRowShow(self.tr('Time settings'))
 
-        # Calculation control
+        # Postprocessing
 
         self.setRowShow(self.tr('Time averages'), True)
         self.setRowShow(self.tr('Additional user arrays'))
-        self.setRowShow(self.tr('Output control'), True)
         self.setRowShow(self.tr('Volume solution control'), True)
         self.setRowShow(self.tr('Surface solution control'), True)
         self.setRowShow(self.tr('Lagrangian solution control'), m_lagr)
@@ -1031,7 +1005,6 @@ Calculation management
 
         # Calculation management
 
-        self.setRowShow(self.tr('Start/Restart'), True)
         self.setRowShow(self.tr('Performance tuning'), True)
         self.setRowShow(self.tr('Prepare batch calculation'), True)
         self.setRowShow(self.tr('OpenTurns study'), case['salome'])
