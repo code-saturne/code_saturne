@@ -223,6 +223,7 @@ typedef enum {
   CS_ENUMF_(d32),            /*!< Sauter diameter */
   CS_ENUMF_(drag),           /*!< Phases drag */
   CS_ENUMF_(ad_mass),        /*!< Added mass */
+  CS_ENUMF_(wlubr),          /*!< Wall lubrication */
   CS_ENUMF_(lambda),         /*!< Thermal conductivity */
   CS_ENUMF_(th_diff),        /*!< Thermal diffusivity */
   CS_ENUMF_(th_diff_t),      /*!< Turbulent thermal diffusivity */
