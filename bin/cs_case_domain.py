@@ -1251,8 +1251,9 @@ class syrthes_domain(base_domain):
         if self.n_procs != None and self.n_procs != 1:
             args += ' -n ' + str(self.n_procs)
 
-        if self.n_procs_radiation > 0:
-            args += ' -r ' + str(self.n_procs_radiation)
+        if self.n_procs_radiation != None:
+            if self.n_procs_radiation > 0:
+                args += ' -r ' + str(self.n_procs_radiation)
 
         if part_tool_name:
             args += ' -t ' + part_tool_name
