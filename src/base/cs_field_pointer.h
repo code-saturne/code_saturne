@@ -218,20 +218,21 @@ typedef enum {
   CS_ENUMF_(qfpzy),          /*!< ZY component of qfp */
   CS_ENUMF_(qfpzz),          /*!< ZZ component of qfp */
   CS_ENUMF_(gamma),          /*!< Interfacial mass transfer */
-  CS_ENUMF_(ia),             /*!< Interfacial area    */
-  CS_ENUMF_(x2),             /*!< x2 for droplets     */
-  CS_ENUMF_(d32),            /*!< Sauter diameter     */
-  CS_ENUMF_(drag),           /*!< Phases drag         */
-  CS_ENUMF_(ad_mass),        /*!< Added mass          */
+  CS_ENUMF_(ia),             /*!< Interfacial area */
+  CS_ENUMF_(x2),             /*!< x2 for droplets */
+  CS_ENUMF_(d32),            /*!< Sauter diameter */
+  CS_ENUMF_(drag),           /*!< Phases drag */
+  CS_ENUMF_(ad_mass),        /*!< Added mass */
   CS_ENUMF_(lambda),         /*!< Thermal conductivity */
   CS_ENUMF_(th_diff),        /*!< Thermal diffusivity */
   CS_ENUMF_(th_diff_t),      /*!< Turbulent thermal diffusivity */
-  CS_ENUMF_(drho_dp),        /*!< drho over dp        */
-  CS_ENUMF_(drho_dh),        /*!< drho over dh        */
-  CS_ENUMF_(tau12_t),        /*!< turbulent tau12     */
-  CS_ENUMF_(lift),           /*!< Particles lift      */
+  CS_ENUMF_(drho_dp),        /*!< drho over dp */
+  CS_ENUMF_(drho_dh),        /*!< drho over dh */
+  CS_ENUMF_(tau12_t),        /*!< turbulent tau12 */
+  CS_ENUMF_(lift),           /*!< Particles lift */
   CS_ENUMF_(disp_t),         /*!< Turbulent dispersion */
   CS_ENUMF_(drift_vel),      /*!< Particles drift velocity */
+  CS_ENUMF_(yplus),          /*!< Wall distance: y+ */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
