@@ -767,13 +767,6 @@ cs_parall_max_loc_vals(int         n,
   }
 
 #endif
-
-  if (cs_glob_n_ranks == 1) {
-
-    for (int i = 0; i < n; i++)
-      max_loc_vals[i] = max[i];
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -812,13 +805,6 @@ cs_parall_min_loc_vals(int         n,
   }
 
 #endif
-
-  if (cs_glob_n_ranks == 1) {
-
-    for (int i = 0; i < n; i++)
-      min_loc_vals[i] = min[i];
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/
