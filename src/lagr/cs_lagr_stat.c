@@ -1810,6 +1810,7 @@ _cs_lagr_stat_update_all(void)
   const cs_time_step_t  *ts = cs_glob_time_step;
   cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
   const cs_real_t *dt_val = _dt_val();
+  cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 
   _t_prev_iter = ts->t_prev;
 
@@ -1947,7 +1948,7 @@ _cs_lagr_stat_update_all(void)
                                    particle,
                                    p_set->p_am,
                                    &p_weight);
-                p_weight *= dt_val[cell_id];
+                p_weight *= dt_val[cell_id*dt_mult];
 
                 if (mt->p_data_func == NULL)
                   pval = cs_lagr_particle_attr(particle, p_set->p_am, attr_id);
