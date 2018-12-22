@@ -184,8 +184,8 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         Show the widget
         """
         if self.__model.getMethod() != "off":
-            self.__boundary = Boundary("mobile_boundary", b.getLabel(), self.__case)
-            modelData = self.__boundary.getALEChoice()
+            self.__boundary = b
+            modelData = b.getALEChoice()
             self.__comboModel.setItem(str_model=modelData)
             if modelData in ["fixed_velocity", "fixed_displacement"]:
                 self.pushButtonMobilBoundary.show()

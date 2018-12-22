@@ -78,10 +78,8 @@ class Boundary(object) :
             from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
             Model().isNotInList(ThermalRadiationModel(case).getRadiativeModel(), ("off",))
             return RadiativeWallBoundary.__new__(RadiativeWallBoundary, label, case)
-        elif nature == 'mobile_boundary':
-            return MobilWallBoundary.__new__(MobilWallBoundary, label, case)
         elif nature == 'coupling_mobile_boundary':
-            return CouplingMobilWallBoundary.__new__(CouplingMobilWallBoundary, label, case)
+            return CouplingMobilBoundary.__new__(CouplingMobilBoundary, label, case)
         elif nature == 'meteo_inlet' or nature == 'meteo_outlet':
             return MeteoBoundary.__new__(MeteoBoundary, label, case)
         elif nature == 'joule_inlet' or nature == 'joule_outlet' or nature == 'joule_wall':
@@ -115,7 +113,6 @@ class Boundary(object) :
         if nature not in ["coal_inlet",
                           "compressible_outlet",
                           "radiative_wall",
-                          "mobile_boundary",
                           "coupling_mobile_boundary",
                           "meteo_inlet",
                           "meteo_outlet",
@@ -132,7 +129,6 @@ class Boundary(object) :
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label, field_id='none')
 
             elif nature in ["radiative_wall",
-                            "mobile_boundary",
                             "coupling_mobile_boundary"]:
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label, field_id='none')
 
@@ -152,6 +148,7 @@ class Boundary(object) :
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label)
 
         self._initBoundary()
+        self._initALEBoundary()
 
 
     def _initBoundary(self):
@@ -159,6 +156,93 @@ class Boundary(object) :
         Initialize the boundary, add nodes in the boundary node (vitual method)
         """
         pass
+
+    def _initALEBoundary(self):
+        """
+        Initialize the possible choices.
+        """
+        self.__ALEChoices = ["fixed_boundary",
+                             "sliding_boundary",
+                             "internal_coupling",
+                             "external_coupling",
+                             "fixed_velocity",
+                             "fixed_displacement"]
+
+        self._defaultValues = {}
+        self._defaultValues['ale_choice'] = self.__ALEChoices[0]
+
+        formula_velocity = 'ale_formula_' + "fixed_velocity"
+        formula_displacement = 'ale_formula_' + "fixed_displacement"
+        self._defaultValues[formula_velocity] = 'mesh_velocity_U = 0;\nmesh_velocity_V = 0;\nmesh_velocity_W = 0;'
+        self._defaultValues[formula_displacement] = 'mesh_x = 0;\nmesh_y = 0;\nmesh_z = 0;'
+
+
+    @Variables.noUndo
+    def getALEChoice(self):
+        """
+        Get the choice ALE
+        """
+        node = self.boundNode.xmlInitNode('ale', 'choice')
+        choice = node['choice']
+
+        # Create a defaut choice if it does not exist
+        if not node['choice']:
+            choice = self._defaultValues['ale_choice']
+            self.setALEChoice(choice)
+
+        return choice
+
+
+    @Variables.undoGlobal
+    def setALEChoice(self, value):
+        """
+        Set the ALE according to choice
+        """
+        Model().isInList(value, self.__ALEChoices)
+        node = self.boundNode.xmlInitNode('ale')
+
+        # if something has changed
+        if node['choice'] != value:
+            node['choice'] = value
+            if  value in ["fixed_velocity", "fixed_displacement"]:
+                self.setFormula(self._getDefaultFormula())
+            else:
+                node.xmlRemoveChild('formula')
+
+
+    @Variables.noUndo
+    def getFormula(self):
+        """
+        Get the formula from the xml
+        """
+        node = self.boundNode.xmlInitChildNode('ale')
+        value = node.xmlGetChildString('formula')
+
+        if not value:
+            value = self._getDefaultFormula()
+            self.setFormula(value)
+
+        return value
+
+
+    @Variables.undoLocal
+    def setFormula(self, value):
+        """
+        Set the formula into the xml
+        """
+        node = self.boundNode.xmlInitChildNode('ale')
+        node.xmlSetData('formula', value)
+
+
+    def _getDefaultFormula(self):
+        """
+        Return the default value for the formula
+        """
+        if  self.getALEChoice() in ["fixed_velocity", "fixed_displacement"]:
+            aleChoice = self.getALEChoice()
+            return self._defaultValues[ 'ale_formula_' + aleChoice ]
+        else:
+            return ''
 
 
     def updateScalarTypeAndName(self, scalarNode, scalarName):
@@ -3361,112 +3445,10 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond.xmlSetData(rayvar, val)
 
 #-------------------------------------------------------------------------------
-# Mobil wall boundary
+# CouplingMobilBoundary
 #-------------------------------------------------------------------------------
 
-class MobilWallBoundary(Boundary) :
-    """
-    Boundary class for mobil wall.
-    """
-    def __new__(cls, label, case):
-        """
-        Constructor
-        """
-        return object.__new__(cls)
-
-
-    def _initBoundary(self):
-        """
-        Initialize the possible choices.
-        """
-        self.__ALEChoices = ["fixed_boundary",
-                             "sliding_boundary",
-                             "internal_coupling",
-                             "external_coupling",
-                             "fixed_velocity",
-                             "fixed_displacement"]
-
-        self._defaultValues = {}
-        self._defaultValues['ale_choice'] = self.__ALEChoices[0]
-
-        formula_velocity = 'ale_formula_' + "fixed_velocity"
-        formula_displacement = 'ale_formula_' + "fixed_displacement"
-        self._defaultValues[ formula_velocity ] = 'mesh_velocity_U = 0;\nmesh_velocity_V = 0;\nmesh_velocity_W = 0;'
-        self._defaultValues[ formula_displacement  ] = 'mesh_x=0;\nmesh_y=0;\nmesh_z=0;'
-
-
-    @Variables.noUndo
-    def getALEChoice(self):
-        """
-        Get the choice ALE
-        """
-        node = self.boundNode.xmlInitNode('ale', 'choice')
-        choice = node['choice']
-
-        # Create a defaut choice if it does not exist.
-        if not node['choice']:
-            choice = self._defaultValues['ale_choice']
-            self.setALEChoice(choice)
-
-        return choice
-
-
-    @Variables.undoGlobal
-    def setALEChoice(self, value):
-        """
-        Set the ALE according to choice
-        """
-        Model().isInList(value, self.__ALEChoices)
-        node = self.boundNode.xmlInitNode('ale')
-
-        # if something has changed
-        if node['choice'] != value:
-            node['choice'] = value
-            if  value in ["fixed_velocity", "fixed_displacement"]:
-                self.setFormula(self._getDefaultFormula())
-            else:
-                node.xmlRemoveChild('formula')
-
-
-    @Variables.noUndo
-    def getFormula(self):
-        """
-        Get the formula from the xml
-        """
-        node = self.boundNode.xmlInitChildNode('ale')
-        value = node.xmlGetChildString('formula')
-
-        if not value:
-            value = self._getDefaultFormula()
-            self.setFormula(value)
-
-        return value
-
-
-    @Variables.undoLocal
-    def setFormula(self, value):
-        """
-        Set the formula into the xml
-        """
-        node = self.boundNode.xmlInitChildNode('ale')
-        node.xmlSetData('formula', value)
-
-
-    def _getDefaultFormula(self):
-        """
-        Return the default value for the formula
-        """
-        if  self.getALEChoice() in ["fixed_velocity", "fixed_displacement"]:
-            aleChoice = self.getALEChoice()
-            return self._defaultValues[ 'ale_formula_' + aleChoice ]
-        else:
-            return ''
-
-#-------------------------------------------------------------------------------
-# CouplingMobilWallBoundary
-#-------------------------------------------------------------------------------
-
-class CouplingMobilWallBoundary(Boundary) :
+class CouplingMobilBoundary(Boundary) :
     """
     Boundary class for coupling mobil wall.
     """
@@ -4776,87 +4758,18 @@ def runTest5():
     runner = unittest.TextTestRunner()
     runner.run(suite5())
 
+
 #-------------------------------------------------------------------------------
-# MobilWallBoundary test case for mobils boundaries conditions
+# CouplingMobilBoundary test case for coupling mobil wall boundary
 #-------------------------------------------------------------------------------
 
-class MobilWallBoundaryTestCase(ModelTest):
+class CouplingMobilBoundaryTestCase(ModelTest):
     """
     Unittest.
     """
-    def checkMobilWallBoundaryInstantiation(self):
+    def checkCouplingMobilBoundaryInstantiation(self):
         """
-        Check whether the MobilWallBoundary class could be instantiated
-        """
-        model = None
-        model = Boundary("mobile_boundary", "wall_1", self.case)
-        assert model != None, 'Could not instantiate '
-
-
-    def checkSetAndGetALEChoice(self):
-        """Check whether the ale choice could be set and get for mobil wall boundary."""
-        model = Boundary("mobile_boundary", "Wall_1", self.case)
-        model.setALEChoice("fixed_wall")
-
-        node =  model._XMLBoundaryConditionsNode
-
-        doc = '''<boundary_conditions>
-                <wall label="Wall_1">
-                <ale choice="fixed_wall"/>
-                </wall>
-                </boundary_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not set reference ale choice for mobil wall boundary'
-
-        assert model.getALEChoice() == "fixed_wall",\
-           'Could not get ale choice for mobil wall boundary'
-
-
-    def checkSetAndGetFormula(self):
-        """Check whether the formula could be set and get for mobil wall boundary."""
-        model = Boundary("mobile_boundary", "Wall_1", self.case)
-        model.setFormula("mesh_velocity_U = 1000;")
-
-        node =  model._XMLBoundaryConditionsNode
-
-        doc = '''<boundary_conditions>
-                    <wall label="Wall_1">
-                        <ale>
-                            <formula>
-                                mesh_veclocity_U = 1000;
-                            </formula>
-                        </ale>
-                    </wall>
-                </boundary_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not set reference formula for mobil wall boundary'
-        assert model.getFormula() == "mesh_velocity_U = 1000;",\
-           'Could not get formula for mobil wall boundary'
-
-
-def suite6():
-    testSuite = unittest.makeSuite(MobilWallBoundaryTestCase, "check")
-    return testSuite
-
-
-def runTest6():
-    print("MobilWallBoundaryTestCase")
-    runner = unittest.TextTestRunner()
-    runner.run(suite6())
-
-#-------------------------------------------------------------------------------
-# CouplingMobilWallBoundary test case for coupling mobil wall boundary
-#-------------------------------------------------------------------------------
-
-class CouplingMobilWallBoundaryTestCase(ModelTest):
-    """
-    Unittest.
-    """
-    def checkCouplingMobilWallBoundaryInstantiation(self):
-        """
-        Check whether the MobilWallBoundary class could be instantiated
+        Check whether the MobilBoundary class could be instantiated
         """
         model = None
         model = Boundary("coupling_mobile_boundary", "Wall_1", self.case)
@@ -5027,12 +4940,12 @@ class CouplingMobilWallBoundaryTestCase(ModelTest):
 
 
 def suite7():
-    testSuite = unittest.makeSuite(CouplingMobilWallBoundaryTestCase, "check")
+    testSuite = unittest.makeSuite(CouplingMobilBoundaryTestCase, "check")
     return testSuite
 
 
 def runTest7():
-    print("CouplingMobilWallBoundaryTestCase")
+    print("CouplingMobilBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite7())
 

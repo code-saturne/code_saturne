@@ -1606,6 +1606,22 @@ class XMLinit(Variables):
             if node:
                 node.xmlRemoveNode()
 
+        # Place ALE boundary definitions in the correct type of node
+        # instead of a wall node
+
+        XMLBoundaryNode = self.case.xmlInitNode('boundary_conditions')
+        for node in XMLBoundaryNode.xmlGetNodeList('wall'):
+            nn = node.xmlGetNode("ale")
+            if nn:
+                label = node['label']
+                for nature in ('inlet', 'outlet', 'symmetry',
+                               'free_inlet_outlet', 'groundwater'):
+                    for nc in XMLBoundaryNode.xmlGetNodeList(nature):
+                        if nc['label'] == label:
+                            nc.xmlChildsCopy(node)
+                            node.xmlRemoveNode()
+
+
     def __backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
