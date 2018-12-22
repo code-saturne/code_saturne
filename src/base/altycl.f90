@@ -84,7 +84,7 @@ use entsor
 use parall
 use mesh
 use field
-use albase, only: fdiale
+use albase, only: fdiale, iale
 use cs_c_bindings
 
 !===============================================================================
@@ -144,8 +144,13 @@ enddo
 !===============================================================================
 ! 2. Check the consistency of BC types (IALTYB) given in USALCL
 !===============================================================================
-!  (valeur 0 autorisee)
 
+! When using CDO solver, no need of checks.
+if (iale.eq.2) then
+  return
+endif
+
+!  (valeur 0 autorisee)
 do ifac = 1, nfabor
   if (ialtyb(ifac).ne.0      .and.                                &
       ialtyb(ifac).ne.ibfixe .and.                                &

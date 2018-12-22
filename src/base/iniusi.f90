@@ -151,19 +151,18 @@ if (iihmpr.eq.1) then
 
 endif
 
-! User subroutine
-
-iihmpu = iihmpr
-call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
-
 ! ALE parameters
 !---------------
 
 ! GUI
-
 if (iihmpr.eq.1) then
   call uialin (nalinf, nalimx, epalim)
 endif
+
+! User subroutine
+
+iihmpu = iihmpr
+call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
 
 ! Other model parameters, including user-defined scalars
 !-------------------------------------------------------
