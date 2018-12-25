@@ -549,9 +549,8 @@ class StandardItemModelMeshes(QStandardItemModel):
         """
         Delete the row in the model
         """
+        self.setRowCount(self.rowCount() - 1)
         del self.dataMeshes[row]
-        row = self.rowCount()
-        self.setRowCount(row-1)
 
 
     def __disableData(self, row):
