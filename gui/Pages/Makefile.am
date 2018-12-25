@@ -202,8 +202,6 @@ BoundaryConditionsWallView.py \
 BoundaryConditionsInterfacialAreaView.py \
 TimeStepModelNeptune.py \
 TimeStepViewNeptune.py \
-ThermalRadiationModelNeptune.py \
-ThermalRadiationViewNeptune.py \
 BalanceViewNeptune.py \
 BalanceModelNeptune.py
 

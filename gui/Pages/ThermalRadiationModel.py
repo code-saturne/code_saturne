@@ -42,8 +42,7 @@ import unittest
 
 from code_saturne.Base.Common import *
 from code_saturne.Base.XMLmodel import ModelTest
-from code_saturne.Base.XMLvariables import Variables, Model
-from code_saturne.Pages.OutputControlModel import OutputControlModel
+from code_saturne.Base.XMLvariables import Model, Variables
 
 #-------------------------------------------------------------------------------
 # ThermalRadiation model class

@@ -52,7 +52,6 @@ from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, 
 from code_saturne.Pages.ThermalRadiationForm import Ui_ThermalRadiationForm
 from code_saturne.Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
-from code_saturne.Pages.OutputControlModel import OutputControlModel
 
 from code_saturne.Pages.MainFieldsModel import MainFieldsModel
 
@@ -234,10 +233,11 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
 
         coal_or_gas = "off"
-        from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-        coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
-        del CoalCombustionModel
+
         if case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+            coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
+            del CoalCombustionModel
             if coal_or_gas == "off":
                 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
                 coal_or_gas = GasCombustionModel(self.case).getGasCombustionModel()
@@ -254,6 +254,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelAbsorption.disableItem(str_model='formula')
 
         # Initialization
+
         self.modelRadModel.setItem(str_model=self.mdl.getRadiativeModel())
 
         # For multiphase flows, only droplet laden gas flows are accepted
