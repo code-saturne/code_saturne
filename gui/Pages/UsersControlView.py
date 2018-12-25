@@ -26,8 +26,8 @@
 This module defines the 'Users control' page.
 
 This module contains the following classes:
-- LabelDelegate
-- SupportDelegate
+- NameDelegate
+- LocationDelegate
 - StandardItemModelUsersControl
 - UsersControlView
 """
@@ -67,22 +67,22 @@ log = logging.getLogger("UsersControl")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# lineEdit delegate for the label
+# lineEdit delegate for the name
 #-------------------------------------------------------------------------------
 
-class LabelDelegate(QItemDelegate):
+class NameDelegate(QItemDelegate):
     """
     Use of a QLineEdit in the table.
     """
     def __init__(self, parent=None):
         QItemDelegate.__init__(self, parent)
         self.parent = parent
-        self.old_plabel = ""
+        self.old_pname = ""
 
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        self.old_label = ""
+        self.old_name = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
         self.regExp = QRegExp(rx)
         v = RegExpValidator(editor, self.regExp)
@@ -93,7 +93,7 @@ class LabelDelegate(QItemDelegate):
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        self.old_plabel = str(value)
+        self.old_pname = str(value)
         editor.setText(value)
 
 
@@ -102,12 +102,12 @@ class LabelDelegate(QItemDelegate):
             return
 
         if editor.validator().state == QValidator.Acceptable:
-            new_plabel = str(editor.text())
+            new_pname = str(editor.text())
 
-            if new_plabel in model.mdl.getUserLabelList():
+            if new_pname in model.mdl.getUserNamesList():
                 default = {}
-                default['label']  = self.old_plabel
-                default['list']   = model.mdl.getUserLabelList()
+                default['name']  = self.old_pname
+                default['list']   = model.mdl.getUserNamesList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
@@ -115,33 +115,34 @@ class LabelDelegate(QItemDelegate):
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
-                    new_plabel = result['label']
+                    new_pname = result['name']
                     log.debug("setModelData -> result = %s" % result)
                 else:
-                    new_plabel = self.old_plabel
+                    new_pname = self.old_pname
 
-            model.setData(index, to_qvariant(new_plabel), Qt.DisplayRole)
+            model.setData(index, to_qvariant(new_pname), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
-# Support delegate
+# Location delegate
 #-------------------------------------------------------------------------------
 
-class SupportDelegate(QItemDelegate):
+class LocationDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
     def __init__(self, parent):
-        super(SupportDelegate, self).__init__(parent)
+        super(LocationDelegate, self).__init__(parent)
         self.parent = parent
 
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        self.modelCombo = ComboModel(editor, 3, 1)
+        self.modelCombo = ComboModel(editor, 4, 1)
         self.modelCombo.addItem(self.tr("cells"), "cells")
-        self.modelCombo.addItem(self.tr("internal faces"), "internal")
+        self.modelCombo.addItem(self.tr("interior faces"), "interior_faces")
         self.modelCombo.addItem(self.tr("boundary faces"), "boundary")
+        self.modelCombo.addItem(self.tr("vertices"), "vertices")
 
         editor.installEventFilter(self)
         return editor
@@ -157,7 +158,7 @@ class SupportDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        log.debug("SupportDelegate value = %s"%value)
+        log.debug("LocationDelegate value = %s"%value)
 
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
@@ -226,9 +227,9 @@ class StandardItemModelUsersControl(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
 
-        self.headers = [ self.tr("Label"),
-                         self.tr("Support"),
-                         self.tr("Dimension")]
+        self.headers = [self.tr("Name"),
+                        self.tr("Location"),
+                        self.tr("Dimension")]
 
         self.setColumnCount(len(self.headers))
         self.parent = parent
@@ -237,6 +238,12 @@ class StandardItemModelUsersControl(QStandardItemModel):
 
         self._data  = []
         self.mdl    = mdl
+
+        self.loc_dict = {}
+        self.loc_dict['cells'] = 'cells'
+        self.loc_dict['interior_faces'] = 'interior faces'
+        self.loc_dict['boundary'] = 'boundary faces'
+        self.loc_dict['vertices'] = 'vertices'
 
 
     def data(self, index, role):
@@ -252,9 +259,6 @@ class StandardItemModelUsersControl(QStandardItemModel):
                 return to_qvariant(data)
             else:
                 return to_qvariant()
-
-        elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
 
         return to_qvariant()
 
@@ -278,20 +282,22 @@ class StandardItemModelUsersControl(QStandardItemModel):
         # Update the row in the table
         row = index.row()
         col = index.column()
-        name = row + 1
 
+        name = self._data[row][0]
         new_val = from_qvariant(value, to_text_string)
-        self._data[row][col] = new_val
 
-        # Label
+        # Name
         if col == 0:
-            self.mdl.setUsersLabel(name, new_val)
-        # support
+            self.mdl.setUsersName(name, new_val)
+            self._data[row][col] = new_val
+        # location
         elif col == 1:
-            self.mdl.setUsersSupport(name, new_val)
+            self.mdl.setUsersLocation(name, new_val)
+            self._data[row][col] = self.loc_dict[new_val]
         # dimension
         elif col == 2:
             self.mdl.setUsersDim(name, new_val)
+            self._data[row][col] = new_val
 
         return True
 
@@ -301,22 +307,18 @@ class StandardItemModelUsersControl(QStandardItemModel):
         return self._data[row]
 
 
-    def newItem(self, existing_users=None):
+    def newItem(self, name=None):
         """
         Add/load a scalar in the model.
         """
         row = self.rowCount()
 
-        name = ""
-        if existing_users == None :
-            name = self.mdl.addUser(row + 1)
-        else :
-            name = existing_users
-        label   = self.mdl.getUsersLabel(name)
-        support = self.mdl.getUsersSupport(name)
-        dim     = self.mdl.getUsersDim(name)
+        if name == None:
+            name = self.mdl.addUser("User_" + str(row + 1))
+        location = self.loc_dict[self.mdl.getUsersLocation(name)]
+        dim      = self.mdl.getUsersDim(name)
 
-        scalar = [label, support, dim]
+        scalar = [name, location, dim]
 
         self._data.append(scalar)
         self.setRowCount(row + 1)
@@ -326,8 +328,9 @@ class StandardItemModelUsersControl(QStandardItemModel):
         """
         Delete the row in the model.
         """
+        name = self._data[row][0]
         del self._data[row]
-        self.mdl.deleteUser(row + 1)
+        self.mdl.deleteUser(name)
         row = self.rowCount()
         self.setRowCount(row - 1)
 
@@ -352,13 +355,7 @@ class UsersControlView(QWidget, Ui_UsersControl):
         self.case = case
         self.case.undoStopGlobal()
 
-#        if self.case['package'].name == 'code_saturne':
-#            from UsersControlModelCS import UsersControlModelCS as UsersControlMdl
-#        else:
-#            from UsersControlModelNCFD import UsersControlModelNCFD as UsersControlMdl
-
         self.mdl = UsersControlModel(self.case)
-
 
         self.tableModelUsers = StandardItemModelUsersControl(self, self.mdl)
         self.tableViewUsers.setModel(self.tableModelUsers)
@@ -375,12 +372,12 @@ class UsersControlView(QWidget, Ui_UsersControl):
         self.tableViewUsers.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewUsers.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        delegateLabel   = LabelDelegate(self.tableViewUsers)
-        delegateSupport = SupportDelegate(self.tableViewUsers)
-        delegateDim     = UserDimensionDelegate(self.tableViewUsers)
+        delegateName     = NameDelegate(self.tableViewUsers)
+        delegateLocation = LocationDelegate(self.tableViewUsers)
+        delegateDim      = UserDimensionDelegate(self.tableViewUsers)
 
-        self.tableViewUsers.setItemDelegateForColumn(0, delegateLabel)
-        self.tableViewUsers.setItemDelegateForColumn(1, delegateSupport)
+        self.tableViewUsers.setItemDelegateForColumn(0, delegateName)
+        self.tableViewUsers.setItemDelegateForColumn(1, delegateLocation)
         self.tableViewUsers.setItemDelegateForColumn(2, delegateDim)
 
         # Connections
@@ -388,7 +385,7 @@ class UsersControlView(QWidget, Ui_UsersControl):
         self.pushButtonDelete.clicked.connect(self.slotDeleteUsers)
 
         # load values
-        for user in self.mdl.getUsersList():
+        for user in self.mdl.getUserNamesList():
             self.tableModelUsers.newItem(user)
 
         self.case.undoStartGlobal()

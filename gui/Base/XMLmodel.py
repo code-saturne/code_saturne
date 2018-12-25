@@ -61,7 +61,8 @@ class XMLmodel(Variables):
         self.root = self.case.root()
         self.node_models = self.case.xmlGetNode('thermophysical_models')
 
-    #FIXME: see getTurbulenceModel in Turbulence.py (node should be declared from start)
+    # FIXME: see getTurbulenceModel in Turbulence.py
+    # (node should be declared from start)
     def getTurbModel(self):
         """
         This method return the turbilence model, but does not manage
@@ -128,7 +129,6 @@ class XMLmodel(Variables):
         return nodeList
 
 
-
 #-------------------------------------------------------------------------------
 # XMLmodel test case
 #-------------------------------------------------------------------------------
@@ -162,7 +162,6 @@ class ModelTest(unittest.TestCase):
 # XMLmodel test case
 #-------------------------------------------------------------------------------
 
-
 class XMLmodelTestCase(unittest.TestCase):
     """
     """
@@ -190,35 +189,11 @@ class XMLmodelTestCase(unittest.TestCase):
         xmldoc = XMLmodel(self.case)
         assert xmldoc != None, 'Could not instantiate XMLmodel'
 
-##    def checkGetThermalModel(self):
-##        """
-##        Check whether the thermal model could be get.
-##        """
-##        doc = XMLmodel(self.case)
-##        node_coal = self.case.xmlGetNode('solid_fuels', 'model')
-##        node_coal['model'] = "toto"
-##        nodeThermal, model = doc.getThermalModel()
-##
-##        assert nodeThermal == node_coal, \
-##               'Could not use the getThermalModel method'
-##        assert model == "toto", \
-##               'Could not use the getThermalModel method'
-
-##    def checkGetThermoPhysicalModel(self):
-##        """
-##        Check whether the specific thermophysical model could be get.
-##        """
-##        doc = XMLmodel(self.case)
-##        node_coal = self.case.xmlGetNode('solid_fuels', 'model')
-##        node_coal['model'] = "toto"
-##        model = doc.getThermoPhysicalModel()
-##
-##        assert model == node_coal.el.tagName, \
-##               'Could not use the getTermoPhysicalModel method'
 
 def suite():
     testSuite = unittest.makeSuite(XMLmodelTestCase, "check")
     return testSuite
+
 
 def runTest():
     print("XMLmodelTestCase to be completed...")

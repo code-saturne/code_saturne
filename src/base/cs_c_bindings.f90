@@ -1606,8 +1606,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !---------------------------------------------------------------------------
-
     ! Interface to C user function for physical model options
 
     subroutine cs_user_model()  &

@@ -5731,15 +5731,12 @@ cs_gui_user_variables(void)
 void
 cs_gui_user_arrays(void)
 {
-
-  int i = 0;
-
-  const char path_s[] = "additional_scalars/users/variable";
+  const char path_s[] = "additional_scalars/users/property";
   cs_tree_node_t *tn_s = cs_tree_get_node(cs_glob_tree, path_s);
 
   for (cs_tree_node_t *tn = tn_s;
        tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn), i++) {
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char *name = cs_gui_node_get_tag(tn, "name");
 
@@ -5758,8 +5755,10 @@ cs_gui_user_arrays(void)
     else if (strcmp(location_name, "boundary") == 0)
       cs_parameters_add_property(name, array_dim, CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  }
+    else if (strcmp(location_name, "vertices") == 0)
+      cs_parameters_add_property(name, array_dim, CS_MESH_LOCATION_VERTICES);
 
+  }
 }
 
 /*----------------------------------------------------------------------------

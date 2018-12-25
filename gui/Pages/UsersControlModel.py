@@ -25,7 +25,7 @@
 import sys, unittest
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *
+from code_saturne.Base.XMLmodel import *
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
 
 class UsersControlModel(Variables, Model):
@@ -38,11 +38,15 @@ class UsersControlModel(Variables, Model):
         """
         Constuctor.
         """
-        #
-        # XML file parameters
-        self.case          = case
-        self.XMLUserScalar = self.case.xmlGetNode('additional_scalars')
-        self.XMLUser       = self.XMLUserScalar.xmlInitNode('users')
+        # XML file parameters (TODO: rename matching tree nodes)
+        self.case     = case
+        XMLUserScalar = self.case.xmlInitNode('additional_scalars')
+        self.XMLUser  = XMLUserScalar.xmlInitNode('users')
+        # TODO move all variants to "property" or simply "field" with user type
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            self.f_type = "variable"
+        else:
+            self.f_type  = "property"
 
 
     def defaultValues(self):
@@ -53,156 +57,123 @@ class UsersControlModel(Variables, Model):
         return default
 
 
-    def getUsersList(self):
+    def getUsersList(self, location=None):
         """
         Return the user array list
         """
-        llst = {}
-        for node in self.XMLUser.xmlGetNodeList('variable'):
-            idx = node['name'].split('_')[1]
-            tmp = idx.zfill(4)
-            llst[tmp] = node['name']
-
-        keys = list(llst.keys())
-        keys.sort()
-
         lst = []
-        for key in keys:
-            lst.append(llst[key])
+        for node in self.XMLUser.xmlGetNodeList(self.f_type):
+            if location:
+                if node['support'] == location:
+                    lst.append(node)
+            else:
+                lst.append(node)
+
         return lst
 
 
     @Variables.undoGlobal
-    def addUser(self, userId):
+    def addUser(self, name):
         """
-        add a new user
+        add a new user field
         """
-        self.isInt(userId)
-        name  = "User_" + str(userId)
-        label = "User_" + str(userId)
-        # TODO control les names et labels pour noms differents
+        if name not in self.getUserNamesList():
+            self.XMLUser.xmlInitNode(self.f_type, name=name, type="user", label=name)
 
-        Variables(self.case).setNewVariableProperty("variable",
-                                                    "",
-                                                    self.XMLUser,
-                                                    "none",
-                                                    name,
-                                                    label,
-                                                    dim = self.defaultValues()['dim'])
-
-        n = self.XMLUser.xmlGetNode('variable', name = name)
+        n = self.XMLUser.xmlGetNode(self.f_type, name=name)
         n['support']   = self.defaultValues()['support']
         n['dimension'] = self.defaultValues()['dim']
 
         return name
 
 
-
     @Variables.noUndo
-    def deleteUser(self, userId):
+    def deleteUser(self, name):
         """
-        delete a user
+        delete a user field
         """
         # delete user
-        self.isInt(userId)
-        name  = "User_" + str(userId)
-        for node in self.XMLUser.xmlGetNodeList('variable'):
+        for node in self.XMLUser.xmlGetNodeList(self.f_type):
             try :
-               if node['name'] == name :
+               if node['name'] == name:
                   node.xmlRemoveNode()
             except :
                pass
 
-        #suppress profile
-        for node in reversed(self.node_profile.xmlGetNodeList('profile')):
-            suppress = 0
-            for child in node.xmlGetNodeList('var_prop'):
-                if (child['name'] == name):
-                    suppress = 1
-            if suppress == 1:
-                label = node['label']
-                ProfilesModel(self.case).deleteProfile(label)
+        # suppress in profiles and averages
+        node_profile = None
+        node_moments = None
+        node_ac = self.case.xmlGetNode('analysis_control')
+        if node_ac:
+            node_profile = node_ac.xmlGetNode('profiles')
+        if node_profile:
+            for node in reversed(node_profile.xmlGetNodeList('profile')):
+                suppress = False
+                for child in node.xmlGetNodeList('var_prop'):
+                    if (child['name'] == name):
+                        child.xmlRemoveNode()
 
         #suppress average
-        for node in reversed(self.node_average.xmlGetNodeList('time_average')):
-            suppress = 0
-            for child in node.xmlGetNodeList('var_prop'):
-                if (child['name'] == name):
-                    suppress = 1
+        if node_ac:
+            node_m = node_ac.xmlGetNode('time_averages')
+        if node_m:
+            for node in reversed(node_m.xmlGetNodeList('time_average')):
+                suppress = False
+                for child in node.xmlGetNodeList('var_prop'):
+                    if (child['name'] == name):
+                        suppress = True
                     break
-            if suppress == 1:
-                label = node['label']
-                TimeAveragesModel(self.case).deleteTimeAverage(label)
-
-        # update name for other scalar in XML file
-        index = 1
-        for node in self.XMLUser.xmlGetNodeList('variable'):
-            try :
-               if index >= userId :
-                  oldname = "User_" + str(index + 1)
-                  name = "User_" + str(index)
-                  node['name'] = name
-            except :
-               pass
-            index += 1
+                if suppress:
+                    node.xmlRemoveNode()
 
 
     @Variables.noUndo
-    def getUserLabelList(self):
+    def getUserNamesList(self, location=None):
         """
         Get label list
         """
         lst = []
-        for node in self.XMLUser.xmlGetNodeList('variable'):
-            if node['label']:
-                lst.append(node['label'])
+        for node in self.XMLUser.xmlGetNodeList(self.f_type):
+            if location:
+                if node['support'] == location:
+                    lst.append(node['name'])
+            else:
+                lst.append(node['name'])
         return lst
 
 
     @Variables.undoLocal
-    def setUsersLabel(self, idx, label):
+    def setUsersName(self, old_name, new_name):
         """
         Put label
         """
-        label_new = label[:LABEL_LENGTH_MAX]
-        name  = "User_" + str(idx)
-        if label_new not in self.getUserLabelList():
-            node = self.XMLUser.xmlGetNode('variable', name = name)
-            if node :
-               node['label'] = label
+        if new_name not in self.getUserNamesList():
+            node = self.XMLUser.xmlGetNode(self.f_type, name=old_name)
+            if node:
+               node['name'] = new_name
+               node['label'] = new_name
 
 
     @Variables.noUndo
-    def getUsersLabel(self, name):
+    def getUsersLocation(self, name):
         """
-        Get label
+        Get location
         """
-        label = ""
-        node = self.XMLUser.xmlGetNode('variable', name = name)
+        node = self.XMLUser.xmlGetNode(self.f_type, name=name)
         if node:
-            label = node['label']
-        return label
-
-
-    @Variables.noUndo
-    def getUsersSupport(self, name):
-        """
-        Get support
-        """
-        node = self.XMLUser.xmlGetNode('variable', name = name)
-        if node:
-            support = node['support']
-        return support
+            location = node['support']
+        if not location:
+            location = self.defaultValues()['support']
+        return location
 
 
     @Variables.undoLocal
-    def setUsersSupport(self, idx, support):
+    def setUsersLocation(self, name, support):
         """
-        Put support
+        Set location
         """
-        self.isInList(support, ('cells', 'internal', 'boundary'))
-        name  = "User_" + str(idx)
-        node = self.XMLUser.xmlGetNode('variable', name = name)
+        self.isInList(support, ('cells', 'internal', 'boundary', 'vertices'))
+        node = self.XMLUser.xmlGetNode(self.f_type, name=name)
         if node :
             node['support'] = support
 
@@ -213,20 +184,19 @@ class UsersControlModel(Variables, Model):
         Get array dimension
         """
         dim = 1
-        node = self.XMLUser.xmlGetNode('variable', name = name)
+        node = self.XMLUser.xmlGetNode(self.f_type, name = name)
         if node:
             dim = node['dimension']
         return dim
 
 
     @Variables.undoLocal
-    def setUsersDim(self, idx, dim):
+    def setUsersDim(self, name, dim):
         """
         Set array dimension
         """
         self.isInList(dim, ("1", "2", "3", "6", "9"))
-        name = "User_" + str(idx)
-        node = self.XMLUser.xmlGetNode('variable', name = name)
+        node = self.XMLUser.xmlGetNode(self.f_type, name=name)
         if node:
             node['dimension'] = dim
 
@@ -234,6 +204,7 @@ class UsersControlModel(Variables, Model):
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case
 #-------------------------------------------------------------------------------
+
 class AdditionalUserTestCase(ModelTest):
     """
     """

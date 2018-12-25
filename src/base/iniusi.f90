@@ -133,7 +133,6 @@ call usppmo(iihmpu)
 
 ! User C function
 
-call cs_gui_user_arrays
 call cs_user_model
 
 !     Turbulence
@@ -169,9 +168,9 @@ endif
 ! Other model parameters, including user-defined scalars
 !-------------------------------------------------------
 
-! GUI
 if (iihmpr.eq.1) then
   call cs_gui_user_variables
+  call cs_gui_user_arrays
 endif
 
 !===============================================================================
