@@ -39,9 +39,9 @@ import os, sys, types
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.XMLvariablesNeptune import Variables
+from code_saturne.Base.XMLvariables import Variables
 from code_saturne.Base.XMLvariables import Model
-from code_saturne.Base.XMLmodelNeptune import XMLmodel, ModelTest
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
 from code_saturne.Pages.OutputVolumicVariablesModelNeptune import OutputVolumicVariablesModelNeptune
 from code_saturne.Pages.BalanceModel import *
 

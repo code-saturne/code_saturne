@@ -55,8 +55,7 @@ from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from TurbulenceNeptune import Ui_Turbulence
-from TurbulenceNeptuneModel import TurbulenceModel
-from code_saturne.Base.XMLmodelNeptune import TurbulenceModelsDescribing  #A changer !
+from TurbulenceNeptuneModel import TurbulenceModel, TurbulenceModelsDescription
 
 #-------------------------------------------------------------------------------
 # log config
@@ -88,13 +87,13 @@ class TurbulenceDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         fieldId = index.row() + 1
         if self.mdl.getCriterion(fieldId) == "continuous" :
-           for turb in TurbulenceModelsDescribing.continuousTurbulenceModels :
+           for turb in TurbulenceModelsDescription.continuousTurbulenceModels :
                self.modelCombo.addItem(self.tr(self.dicoM2V[turb]), turb)
         else:
            carrier = self.mdl.getCarrierField(fieldId)
            if self.mdl.getTurbulenceModel(carrier) != "none" or \
               self.mdl.getFieldNature(fieldId) == "solid":
-               for turb in TurbulenceModelsDescribing.dispersedTurbulenceModels :
+               for turb in TurbulenceModelsDescription.dispersedTurbulenceModels :
                    self.modelCombo.addItem(self.tr(self.dicoM2V[turb]), turb)
            else:
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
@@ -211,11 +210,11 @@ class TurbFluxDelegate(QItemDelegate):
 
         if self.mdl.getEnergyResolution(fieldId) == 'on':
             if self.mdl.useAdvancedThermalFluxes(fieldId) == True:
-                for turbFlux in TurbulenceModelsDescribing.ThermalTurbFluxModels:
+                for turbFlux in TurbulenceModelsDescription.ThermalTurbFluxModels:
                     self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
 
             else:
-                turb_flux = TurbulenceModelsDescribing.ThermalTurbFluxModels[0]
+                turb_flux = TurbulenceModelsDescription.ThermalTurbFluxModels[0]
                 self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
                 self.modelCombo.disableItem(index=0)
         else:

@@ -25,7 +25,7 @@
 import sys, unittest
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *
+from code_saturne.Base.XMLmodel import *
 from code_saturne.Pages.NonCondensableModel import NonCondensableModel
 import copy
 
@@ -111,6 +111,7 @@ class DropletCondensationEvaporationModel(NonCondensableModel, Variables, Model)
 #-------------------------------------------------------------------------------
 # DropletCondensationEvaporation test case
 #-------------------------------------------------------------------------------
+
 class DropletCondensationEvaporationTestCase(ModelTest):
     """
     """

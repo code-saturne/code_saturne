@@ -22,11 +22,11 @@
 
 #-------------------------------------------------------------------------------
 
-import sys, unittest
+import sys, unittest, copy
+
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *
-import copy
+from code_saturne.Base.XMLmodel import *
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
 from code_saturne.Pages.ProfilesModel import ProfilesModel
 from code_saturne.Pages.TimeAveragesModel import TimeAveragesModel
@@ -55,17 +55,32 @@ class PredefinedFlowsModel:
 
     fieldsCoupleProperties = {}
     fieldsCoupleProperties[fieldsCouple[0]] = ("","")
-    fieldsCoupleProperties[fieldsCouple[1]] = (("continuous", "continuous"),("liquid","gas"))
-    fieldsCoupleProperties[fieldsCouple[2]] = (("continuous", "dispersed"), ("liquid","gas"))
-    fieldsCoupleProperties[fieldsCouple[3]] = (("continuous", "dispersed"), ("gas","liquid"))
-    fieldsCoupleProperties[fieldsCouple[4]] = (("continuous", "dispersed"), ("gas","solid"))
+    fieldsCoupleProperties[fieldsCouple[1]] = (("continuous", "continuous"),
+                                               ("liquid", "gas"))
+    fieldsCoupleProperties[fieldsCouple[2]] = (("continuous", "dispersed"),
+                                               ("liquid", "gas"))
+    fieldsCoupleProperties[fieldsCouple[3]] = (("continuous", "dispersed"),
+                                               ("gas", "liquid"))
+    fieldsCoupleProperties[fieldsCouple[4]] = (("continuous", "dispersed"),
+                                               ("gas", "solid"))
 
 
 #-------------------------------------------------------------------------------
-# Constructor
+# Description of fields attribute
 #-------------------------------------------------------------------------------
 
-class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
+class FieldAttributesDescription:
+    """
+    """
+    typeChoiceValues = ['continuous', 'dispersed', 'auto']
+    phaseValues = ['liquid', 'gas', 'particle']
+
+
+#-------------------------------------------------------------------------------
+# Model for main fields
+#-------------------------------------------------------------------------------
+
+class MainFieldsModel(Variables, Model):
     """
     This class manages the Field objects in the XML file
     """
@@ -74,7 +89,6 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
         """
         Constuctor.
         """
-        #
         # XML file parameters
         self.case = case
         #~ if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
@@ -93,8 +107,19 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
         self.node_anal       = self.case.xmlInitNode('analysis_control')
         self.node_average    = self.node_anal.xmlInitNode('time_averages')
         self.node_profile    = self.node_anal.xmlInitNode('profiles')
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, "none", "pressure", "Pressure", post = True)
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "porosity", "porosity")
+        Variables(self.case).setNewVariableProperty("variable",
+                                                    "",
+                                                    self.XMLNodeVariable,
+                                                    "none",
+                                                    "pressure",
+                                                    "Pressure",
+                                                    post = True)
+        Variables(self.case).setNewVariableProperty("property",
+                                                    "",
+                                                    self.XMLNodeproperty,
+                                                    "none",
+                                                    "porosity",
+                                                    "porosity")
 
 
     def defaultValues(self):
@@ -103,8 +128,8 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
         default['label']                      = "defaultLabel"
         default['enthalpyResolutionStatus']   = "on"
         default['enthalpyResolutionModel']    = "total_enthalpy"
-        default['typeChoice']                 = FieldAttributesDescribing.typeChoiceValues[0]
-        default['phase']                      = FieldAttributesDescribing.phaseValues[0]
+        default['typeChoice']                 = FieldAttributesDescription.typeChoiceValues[0]
+        default['phase']                      = FieldAttributesDescription.phaseValues[0]
         default['carrierField']               = "off"
         default['compressibleStatus']         = "off"
         default['defaultPredefinedFlow']      = "None"
@@ -150,13 +175,21 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
             compressible = self.defaultValues()['compressibleStatus']
             carrierfield = self.defaultValues()['carrierField']
 
-            self.addDefinedField(fieldId, label, type, phase, carrierfield, hmodel, compressible, labNum)
+            self.addDefinedField(fieldId,
+                                 label,
+                                 type,
+                                 phase,
+                                 carrierfield,
+                                 hmodel,
+                                 compressible,
+                                 labNum)
 
         return fieldId
 
 
     @Variables.undoGlobal
-    def addDefinedField(self,fieldId, label, typeChoice, phase, carrierField, hmodel, compressible, labNum):
+    def addDefinedField(self, fieldId, label, typeChoice, phase, carrierField,
+                        hmodel, compressible, labNum):
         """
         add field for predefined flow
         """
@@ -356,6 +389,7 @@ class MainFieldsModel(FieldAttributesDescribing, Variables, Model):
                        node.xmlRemoveNode()
                except :
                    pass
+
         # TODO mettre en coherence pour les aires interf., tout ce qui est closure law a faire aussi pour la nature.
         if self.getCriterion(fieldId) == "dispersed":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Diameter", "Diam"+str(fieldId))

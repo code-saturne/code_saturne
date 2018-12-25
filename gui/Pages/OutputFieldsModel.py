@@ -25,7 +25,7 @@
 import sys, unittest
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *
+from code_saturne.Base.XMLmodel import *
 from code_saturne.Pages.MainFieldsModel import MainFieldsModel
 from code_saturne.Pages.TimeAveragesModelNeptune import TimeAveragesModel
 
@@ -360,6 +360,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case
 #-------------------------------------------------------------------------------
+
 class OutputFieldsTestCase(ModelTest):
     """
     """

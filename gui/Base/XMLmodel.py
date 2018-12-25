@@ -30,6 +30,7 @@ the current options selected by the user.
 
 This module contains the following classes and function:
 - XMLmodel
+- ModelTest
 - XMLmodelTestCase
 """
 
@@ -59,17 +60,24 @@ class XMLmodel(Variables):
         """
         self.case = case
         self.root = self.case.root()
-        self.node_models = self.case.xmlGetNode('thermophysical_models')
+
 
     # FIXME: see getTurbulenceModel in Turbulence.py
     # (node should be declared from start)
     def getTurbModel(self):
         """
-        This method return the turbilence model, but does not manage
+        This method returns the turbilence model, but does not manage
         default values. Therefore...
         """
-        nodeTurb = self.node_models.xmlGetNode('turbulence', 'model')
-        return nodeTurb, nodeTurb['model']
+        nodeTurb = None
+        node_models = self.case.xmlGetNode('thermophysical_models')
+        if node_models:
+            nodeTurb = node_models.xmlGetNode('turbulence', 'model')
+
+        if nodeTurb:
+            return nodeTurb, nodeTurb['model']
+        else:
+            return None, 'off'
 
 
     def getTurbVariable(self):
@@ -118,7 +126,7 @@ class XMLmodel(Variables):
 
         return nodeList
 
-#FIXME: A METTRE en commentaire  mais aussi getTurbVariable et getTurbProperty
+
     def getTurbNodeList(self):
         """
         """
@@ -199,7 +207,6 @@ def runTest():
     print("XMLmodelTestCase to be completed...")
     runner = unittest.TextTestRunner()
     runner.run(suite())
-
 
 #-------------------------------------------------------------------------------
 # End of XMLmodel

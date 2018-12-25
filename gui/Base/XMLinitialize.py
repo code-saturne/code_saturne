@@ -132,7 +132,7 @@ class XMLinit(Variables):
                 if zone.getLabel() == 'all_cells':
                     iok = 1
             if iok == 0:
-                zone = Zone("VolumicZone", self.case, label = 'all_cells', localization = 'all[]')
+                zone = Zone("VolumicZone", case=self.case, label='all_cells', localization='all[]')
                 LocalizationModel("VolumicZone", self.case).addZone(zone)
                 zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
                 InitializationModel(self.case).getInitialTurbulenceChoice(zone)
@@ -174,10 +174,10 @@ class XMLinit(Variables):
                    'calculation_management')
         if not prepro :
             tagList += ('thermophysical_models',
-                       'numerical_parameters',
-                       'physical_properties',
                        'additional_scalars',
-                       'boundary_conditions')
+                       'physical_properties',
+                       'boundary_conditions',
+                       'numerical_parameters')
 
         for tag in tagList:
             nodeList = self.case.root().xmlInitChildNodeList(tag)

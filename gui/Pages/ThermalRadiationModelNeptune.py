@@ -41,9 +41,8 @@ import unittest
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Common import *
-from code_saturne.Base.XMLmodelNeptune import ModelTest
-from code_saturne.Base.XMLvariablesNeptune import Variables
-from code_saturne.Base.XMLvariables import  Model
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
 from code_saturne.Pages.OutputControlModelNeptune import OutputControlModel
 
 #-------------------------------------------------------------------------------

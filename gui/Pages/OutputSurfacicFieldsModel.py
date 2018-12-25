@@ -24,7 +24,7 @@
 
 import sys, unittest
 from code_saturne.Base.XMLvariables import Model, Variables
-from code_saturne.Base.XMLmodelNeptune import *
+from code_saturne.Base.XMLmodel import *
 
 
 class OutputSurfacicFieldsModel(Model):

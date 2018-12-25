@@ -25,7 +25,7 @@
 import sys, unittest
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *
+from code_saturne.Base.XMLmodel import *
 
 
 class GlobalNumericalParametersModel(Model):
@@ -529,6 +529,7 @@ class GlobalNumericalParametersModel(Model):
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case
 #-------------------------------------------------------------------------------
+
 class GlobalNumericalParametersTestCase(ModelTest):
     """
     """

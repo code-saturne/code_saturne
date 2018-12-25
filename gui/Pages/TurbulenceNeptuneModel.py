@@ -25,9 +25,71 @@
 import sys, unittest
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *        # TODO change
 from code_saturne.Pages.MainFieldsModel import *       # TODO change
 import copy
+
+#-------------------------------------------------------------------------------
+# Turbulence model description
+#-------------------------------------------------------------------------------
+
+class TurbulenceModelsDescription:
+    """
+    """
+    continuousTurbulenceModels = ['none', 'mixing_length',
+                                  'k-epsilon', 'k-epsilon_linear_production',
+                                  'rij-epsilon_ssg', 'rij-epsilon_ebrsm',
+                                  'les_smagorinsky', 'les_wale']
+
+    dispersedTurbulenceModels  = ['none','tchen','q2-q12', 'r2-q12', 'r2-r12-tchen']
+
+    continuousCouplingModels = ['none','separate_phase','separate_phase_cond']
+    dispersedCouplingModels  = ['none','small_inclusions','large_inclusions']
+
+    ThermalTurbFluxModels = ['sgdh', 'ggdh']
+
+    turbulenceVariables = {}
+    turbulenceVariables['none'] = []
+    turbulenceVariables['mixing_length'] = []
+    turbulenceVariables['k-epsilon'] = ['TurbKineEner_k', 'TurbDissip']
+    turbulenceVariables['k-epsilon_linear_production'] = ['TurbKineEner_k', 'TurbDissip']
+    turbulenceVariables['rij-epsilon_ssg'] = ['ReynoldsStress', 'TurbDissip']
+    turbulenceVariables['rij-epsilon_ebrsm'] = ['ReynoldsStress', 'TurbDissip']
+    turbulenceVariables['les_smagorinsky'] = []
+    turbulenceVariables['les_wale'] = []
+    turbulenceVariables['tchen'] = []
+    turbulenceVariables['q2-q12'] = ['TurbKineEner_q2', 'Covariance_q12']
+    turbulenceVariables['r2-q12'] = ['ReynoldsStress','Covariance_q12']
+    turbulenceVariables['r2-r12-tchen'] = ['ReynoldsStress',
+                                           'R12XX','R12XY','R12XZ','R12YY','R12YZ','R12ZZ']
+
+    turbulenceVariables['all'] = turbulenceVariables['k-epsilon'] \
+                               + turbulenceVariables['k-epsilon_linear_production'] \
+                               + turbulenceVariables['rij-epsilon_ssg'] \
+                               + turbulenceVariables['rij-epsilon_ebrsm'] \
+                               + turbulenceVariables['les_smagorinsky'] \
+                               + turbulenceVariables['les_wale'] \
+                               + turbulenceVariables['q2-q12'] \
+                               + turbulenceVariables['r2-q12'] \
+                               + turbulenceVariables['r2-r12-tchen']
+
+    turbulenceProperties = {}
+    turbulenceProperties['none'] = []
+    turbulenceProperties['mixing_length'] = ["turb_viscosity"]
+    turbulenceProperties['k-epsilon'] = ["turb_viscosity"]
+    turbulenceProperties['k-epsilon_linear_production'] = ["turb_viscosity"]
+    turbulenceProperties['rij-epsilon_ssg'] = ["turb_viscosity"]
+    turbulenceProperties['rij-epsilon_ebrsm'] = ["turb_viscosity"]
+    turbulenceProperties['les_smagorinsky'] = ["turb_viscosity"]
+    turbulenceProperties['les_wale'] = ["turb_viscosity"]
+    turbulenceProperties['tchen'] = ["TurbKineEner_q2", "Covariance_q12", "turb_viscosity"]
+    turbulenceProperties['q2-q12'] = ["turb_viscosity"]
+    turbulenceProperties['r2-q12'] = ["turb_viscosity"]
+    turbulenceProperties['r2-r12-tchen'] = ["turb_viscosity"]
+
+
+#-------------------------------------------------------------------------------
+# Main turbulence model class
+#-------------------------------------------------------------------------------
 
 class TurbulenceModel(MainFieldsModel):
     """
@@ -53,8 +115,8 @@ class TurbulenceModel(MainFieldsModel):
 
         default['length_scale']     = 1.0
         default['two_way_coupling'] = "none"
-        default['model']            = TurbulenceModelsDescribing.continuousTurbulenceModels[0]
-        default['turb_flux']        = TurbulenceModelsDescribing.ThermalTurbFluxModels[0]
+        default['model']            = TurbulenceModelsDescription.continuousTurbulenceModels[0]
+        default['turb_flux']        = TurbulenceModelsDescription.ThermalTurbFluxModels[0]
         default['length']           = 10.0
         return default
 
@@ -68,9 +130,9 @@ class TurbulenceModel(MainFieldsModel):
 
         criterion = self.getCriterion(fieldId)
         if criterion == "continuous":
-           self.isInList(model, TurbulenceModelsDescribing.continuousTurbulenceModels)
+           self.isInList(model, TurbulenceModelsDescription.continuousTurbulenceModels)
         else:
-           self.isInList(model, TurbulenceModelsDescribing.dispersedTurbulenceModels)
+           self.isInList(model, TurbulenceModelsDescription.dispersedTurbulenceModels)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         oldmodel = ""
@@ -82,12 +144,12 @@ class TurbulenceModel(MainFieldsModel):
                 self.XMLturbulence.xmlInitChildNode('field', field_id = fieldId,
                                                     model = model,
                                                     turb_flux = self.defaultValues()['turb_flux'],
-                                                    two_way_coupling = TurbulenceModelsDescribing.continuousCouplingModels[0])
+                                                    two_way_coupling = TurbulenceModelsDescription.continuousCouplingModels[0])
             else:
                 self.XMLturbulence.xmlInitChildNode('field', field_id = fieldId,
                                                     model = model,
                                                     turb_flux = self.defaultValues()['turb_flux'],
-                                                    two_way_coupling = TurbulenceModelsDescribing.dispersedCouplingModels[0])
+                                                    two_way_coupling = TurbulenceModelsDescription.dispersedCouplingModels[0])
         else:
             oldmodel = node['model']
             node['model'] = model
@@ -95,14 +157,14 @@ class TurbulenceModel(MainFieldsModel):
         if oldmodel != model:
            if oldmodel != "":
                # erase old variables and properties from XML
-               for var in TurbulenceModelsDescribing.turbulenceVariables[oldmodel]:
+               for var in TurbulenceModelsDescription.turbulenceVariables[oldmodel]:
                    Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, var)
 
-               for var in TurbulenceModelsDescribing.turbulenceProperties[oldmodel]:
+               for var in TurbulenceModelsDescription.turbulenceProperties[oldmodel]:
                    Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, var)
 
            # add new variables and properties from XML
-           for var in TurbulenceModelsDescribing.turbulenceVariables[model]:
+           for var in TurbulenceModelsDescription.turbulenceVariables[model]:
              if var == "ReynoldsStress":
                  Variables(self.case).setNewVariableProperty("variable", "",
                                                              self.XMLNodeVariable,
@@ -117,7 +179,7 @@ class TurbulenceModel(MainFieldsModel):
                                                              var,
                                                              var+str(fieldId))
 
-           for var in TurbulenceModelsDescribing.turbulenceProperties[model]:
+           for var in TurbulenceModelsDescription.turbulenceProperties[model]:
                Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, var, var+str(fieldId))
 
            if oldmodel == "mixing_length":
@@ -130,11 +192,11 @@ class TurbulenceModel(MainFieldsModel):
                for id in self.getFieldIdList():
                    if self.getCriterion(id) == "dispersed":
                        if self.getCarrierField(id) == str(fieldId):
-                           self.setTurbulenceModel(id, TurbulenceModelsDescribing.dispersedTurbulenceModels[0])
+                           self.setTurbulenceModel(id, TurbulenceModelsDescription.dispersedTurbulenceModels[0])
                            if criterion == "continuous":
-                               self.setTwoWayCouplingModel(id, TurbulenceModelsDescribing.continuousCouplingModels[0])
+                               self.setTwoWayCouplingModel(id, TurbulenceModelsDescription.continuousCouplingModels[0])
                            else:
-                               self.setTwoWayCouplingModel(id, TurbulenceModelsDescribing.continuousCouplingModels[0])
+                               self.setTwoWayCouplingModel(id, TurbulenceModelsDescription.continuousCouplingModels[0])
 
 
     @Variables.noUndo
@@ -150,9 +212,9 @@ class TurbulenceModel(MainFieldsModel):
         if node == None:
             model = ""
             if criterion == "continuous":
-               model = TurbulenceModelsDescribing.continuousTurbulenceModels[0]
+               model = TurbulenceModelsDescription.continuousTurbulenceModels[0]
             else:
-               model = TurbulenceModelsDescribing.dispersedTurbulenceModels[0]
+               model = TurbulenceModelsDescription.dispersedTurbulenceModels[0]
             self.setTurbulenceModel(fieldId, model)
             node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         model = node['model']
@@ -164,7 +226,7 @@ class TurbulenceModel(MainFieldsModel):
 
         self.isInList(str(fieldId), self.getFieldIdList())
 
-        self.isInList(model,TurbulenceModelsDescribing.ThermalTurbFluxModels)
+        self.isInList(model,TurbulenceModelsDescription.ThermalTurbFluxModels)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
 
@@ -175,13 +237,13 @@ class TurbulenceModel(MainFieldsModel):
                                                     field_id = fieldId,
                                                     model = self.defaultValues()['model'],
                                                     turb_flux = model,
-                                                    two_way_coupling = TurbulenceModelsDescribing.continuousCouplingModels[0])
+                                                    two_way_coupling = TurbulenceModelsDescription.continuousCouplingModels[0])
             else:
                 self.XMLturbulence.xmlInitChildNode('field',
                                                     field_id = fieldId,
                                                     model = self.defaultValues()['model'],
                                                     turb_flux = model,
-                                                    two_way_coupling = TurbulenceModelsDescribing.dispersedCouplingModels[0])
+                                                    two_way_coupling = TurbulenceModelsDescription.dispersedCouplingModels[0])
 
         node['turb_flux'] = model
 
@@ -215,7 +277,7 @@ class TurbulenceModel(MainFieldsModel):
         put two way coupling model for fieldId dispersed field
         """
         self.isInList(str(fieldId),self.getDispersedFieldList())
-        self.isInList(model, TurbulenceModelsDescribing.dispersedCouplingModels)
+        self.isInList(model, TurbulenceModelsDescription.dispersedCouplingModels)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node == None:
@@ -245,7 +307,7 @@ class TurbulenceModel(MainFieldsModel):
         """
         put two way coupling model for continuous fields
         """
-        self.isInList(model, TurbulenceModelsDescribing.continuousCouplingModels)
+        self.isInList(model, TurbulenceModelsDescription.continuousCouplingModels)
 
         node = self.XMLturbulence.xmlGetNode('continuous_field_coupling')
         if node == None:

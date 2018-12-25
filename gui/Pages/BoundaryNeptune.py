@@ -25,11 +25,12 @@
 import sys, unittest
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *
+from code_saturne.Base.XMLmodel import *
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Pages.MainFieldsModel import *
 from code_saturne.Pages.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.Pages.TurbulenceNeptuneModel import TurbulenceModel
+from code_saturne.Pages.TurbulenceNeptuneModel import TurbulenceModelsDescription
 
 #-------------------------------------------------------------------------------
 # log config
@@ -175,7 +176,7 @@ class InletBoundary(Boundary):
         dico['scalar'] = 0.
 
         turb_model =  TurbulenceModel(self.case).getTurbulenceModel(fieldId)
-        if turb_model in TurbulenceModelsDescribing.dispersedTurbulenceModels:
+        if turb_model in TurbulenceModelsDescription.dispersedTurbulenceModels:
             dico['turbulenceChoice'] = 'formula'
         return dico
 

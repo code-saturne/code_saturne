@@ -41,7 +41,7 @@ import os, sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.XMLvariablesNeptune import Variables
+from code_saturne.Base.XMLvariables import Variables
 import code_saturne.Base.Toolbox
 from code_saturne.Pages.LocalizationModel import Zone, LocalizationModel
 from code_saturne.Pages.OutputControlModel import OutputControlModel
@@ -64,7 +64,7 @@ else :
 
 class XMLinitNeptune(Variables):
     """
-    This class initialize the XML contents of the case.
+    This class initializes the XML contents of the case.
     """
     def __init__(self, case):
         """
@@ -74,12 +74,15 @@ class XMLinitNeptune(Variables):
 
     def initialize(self, prepro = False):
         """
-        Verify that all Heading exist only once in the XMLDocument and create
-        the missing heading.
+        Verify that all Headings exist only once in the XMLDocument and
+        create the missing heading.
         """
         msg = self.__initHeading(prepro)
         if msg:
             return msg
+
+        OutputControlModel(self.case).addDefaultWriter()
+        OutputControlModel(self.case).addDefaultMesh()
 
         if not prepro:
             self.__backwardCompatibility()
@@ -105,7 +108,7 @@ class XMLinitNeptune(Variables):
                 if zone.getLabel() == 'all_cells':
                     iok = 1
             if iok == 0:
-                zone = Zone("VolumicZone", case = self.case, label = 'all_cells', localization = 'all[]')
+                zone = Zone("VolumicZone", case=self.case, label='all_cells', localization='all[]')
                 LocalizationModel("VolumicZone", self.case).addZone(zone)
                 zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
 
@@ -149,16 +152,16 @@ class XMLinitNeptune(Variables):
             nodeList = self.case.root().xmlInitChildNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. "\
-                      "There is more than one occurence of the tag: \n\n" + tag + \
+                msg = "There is an error with the use of the initHeading method. " \
+                      "There is more than one occurence of the tag: \n\n" + tag +  \
                       "\n\nThe application will finish. Sorry."
 
         for tag in tagList:
             nodeList = self.case.xmlInitNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. "\
-                      "There is more than one occurence of the tag: \n\n" + tag + \
+                msg = "There is an error with the use of the initHeading method. " \
+                      "There is more than one occurence of the tag: \n\n" + tag +  \
                       "\n\nThe application will finish. Sorry."
 
         return msg
@@ -553,12 +556,9 @@ class XMLinitNeptune(Variables):
                             nv['name'] = rdico[nv['name']]
 
 
-        # ------------------------------------------------------------
-
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------
-
 
 class XMLinitTestCaseNeptune(unittest.TestCase):
     """

@@ -39,9 +39,8 @@ import unittest
 from code_saturne.Base.Common import *
 import code_saturne.Base.Toolbox as Tool
 
-from code_saturne.Base.XMLmodelNeptune import XMLmodel, ModelTest
-from code_saturne.Base.XMLvariablesNeptune import Variables
-from code_saturne.Base.XMLvariables import Model
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
 
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel

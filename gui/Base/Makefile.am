@@ -49,8 +49,6 @@ XMLengine.py \
 XMLinitialize.py \
 XMLmodel.py \
 XMLvariables.py \
-XMLvariablesNeptune.py \
-XMLmodelNeptune.py \
 XMLinitializeNeptune.py
 
 if HAVE_QT5

@@ -35,8 +35,7 @@ import unittest
 
 from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
-from code_saturne.Base.XMLmodelNeptune import *
-
+from code_saturne.Pages.TurbulenceNeptuneModel import TurbulenceModelsDescription
 
 class NumericalParamEquatModel(Model):
 
@@ -130,7 +129,7 @@ class NumericalParamEquatModel(Model):
         """
         Return : 1 if name of node is a turbulence variable, 0 if not
         """
-        if node and node['name'] in TurbulenceModelsDescribing.turbulenceVariables['all'] :
+        if node and node['name'] in TurbulenceModelsDescription.turbulenceVariables['all'] :
             return 1
         else:
             return 0
