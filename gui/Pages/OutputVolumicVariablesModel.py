@@ -54,20 +54,32 @@ class OutputVolumicVariablesModel(Variables, Model):
         Constuctor.
         """
         self.case = case
-        self.node_models    = self.case.xmlInitNode('thermophysical_models')
-        self.analysis_ctrl  = self.case.xmlInitNode('analysis_control')
-        self.fluid_prop     = self.case.xmlInitNode('physical_properties')
-        self.node_model_vp  = self.node_models.xmlInitNode('velocity_pressure')
-        self.node_ale       = self.node_models.xmlGetChildNode('ale_method')
-        self.node_output    = self.analysis_ctrl.xmlInitNode('output')
-        self.node_probe     = self.node_output.xmlGetNodeList('probe','name')
-        self.node_means     = self.analysis_ctrl.xmlInitNode('time_averages')
-        self.node_error     = self.analysis_ctrl.xmlInitNode('error_estimator')
+        self.node_models    = self.case.xmlGetNode('thermophysical_models')
+        self.analysis_ctrl  = self.case.xmlGetNode('analysis_control')
+        self.fluid_prop     = self.case.xmlGetNode('physical_properties')
+        if self.node_models:
+            self.node_model_vp  = self.node_models.xmlGetNode('velocity_pressure')
+            self.node_ale       = self.node_models.xmlGetChildNode('ale_method')
+        else:
+            self.node_model_vp  = None
+            self.node_ale       = None
+        if self.analysis_ctrl:
+            self.node_output    = self.analysis_ctrl.xmlInitNode('output')
+            self.node_means     = self.analysis_ctrl.xmlGetNode('time_averages')
+            self.node_error     = self.analysis_ctrl.xmlGetNode('error_estimator')
+        else:
+            self.node_output    = None
+            self.node_means     = None
+            self.node_error     = None
+        if self.node_output:
+            self.node_probe     = self.node_output.xmlGetNodeList('probe','name')
+        else:
+            elf.node_probe     = None
 
         self.updateList()
 
 
-# Following private methods: (to see for gathering eventually)
+    # Following private methods: (to see for gathering eventually)
 
     def _defaultValues(self):
         """
@@ -80,137 +92,288 @@ class OutputVolumicVariablesModel(Variables, Model):
         return default
 
 
+    def getVolumeFieldsNodeList(self, constant=False, time_averages=True):
+        """
+        Returns the list of active volume fields (variables, propeties,
+        and possibly postprocessing fields).
+        """
+
+        tags = ['variable', 'property', 'scalar']
+        if time_averages:
+            tags.append('time_average')
+
+        l = []
+        for tag in tags:
+            for node in self.case.xmlGetNodeList(tag):
+                if node['support']:
+                    if node['support'] == 'boundary':
+                        continue
+                if tag == 'property':
+                    if not constant:
+                        choice = node['choice']
+                        if choice and choice == 'constant':
+                            continue
+                    # elif node.xmlGetParentName() == 'error_estimator':
+                    #    continue
+                l.append(node)
+
+        return l
+
+
+    def getVolumeFieldsLabel2Name(self, constant=False, time_averages=True):
+        """
+        Returns a dictionnary to relate name and label to volume fields
+        (variables, properties) for time averages and profiles.
+        """
+
+        dicoLabel2Name = {}
+
+        for node in self.getVolumeFieldsNodeList(constant, time_averages):
+
+            name = self.__nodeName__(node)
+            label = node['label']
+            if not label:
+                label = name
+
+            dim = node['dimension']
+            if dim and int(dim) > 1:
+                # If we consider the Rij tensor, the user will see
+                # R11, R22, ... in the GUI instead of Rij[0], Rij[1], ...
+                # This choice was considered as the clearest.
+                if name == 'rij':
+                    rij_lbls = ['R11', 'R22', 'R33', 'R12', 'R23', 'R13']
+                    for ii in range(int(dim)):
+                        label1 = rij_lbls[ii]
+                        if not (node['support'] and node['support'] == "boundary"):
+                            dicoLabel2Name[label1] = (name, str(ii))
+                    if not (node['support'] and node['support'] == "boundary"):
+                        dicoLabel2Name[name] = (name, str(-1))
+                else:
+                    for ii in range(int(dim)):
+                        label1 = label + "[" + str(ii) + "]"
+                        if not (node['support'] and node['support'] == "boundary"):
+                            dicoLabel2Name[label1] = (name, str(ii))
+                    if not (node['support'] and node['support'] == "boundary"):
+                        dicoLabel2Name[name] = (name, str(-1))
+            else:
+                if not (node['support'] and node['support'] == "boundary"):
+                    dicoLabel2Name[name] = (name, str(0))
+
+        return dicoLabel2Name
+
+
+    def __updateListFilter(self, node_list, category, remain_list=None):
+        """
+        Update name list using a location filter
+        """
+        self.listNodeVolum = self.getVolumeFieldsNodeList()
+
+        list_nodes = self.getVolumeFieldsNodeList()
+
+        # Main/known categories
+
+        for node in node_list:
+            if node['support']:
+                if node['support'] == 'boundary':
+                    continue
+            name = self.__nodeName__(node)
+            label = node['label']
+            if not label:
+                label = name
+            self.dicoLabelName[name] = label
+            self.list_name.append([self.__nodeName__(node), category])
+
+            if remain_list:
+                for node in node_list:
+                    try:
+                        remain_list.remove(node)
+                    except Exception:
+                        pass
+
+
     def updateList(self):
         """
+        Update list of volume nodes and matching names and category
         """
-        model = XMLmodel(self.case)
+        self.listNodeVolum = self.getVolumeFieldsNodeList()
 
-        self.listNodeVolum = (self._getListOfVelocityPressureVariables(),
-                              model.getTurbNodeList(),
-                              self.getThermalScalar(),
-                              self.getAdditionalScalar(),
-                              self.getAdditionalScalarProperty(),
-                              self.getFluidProperty(),
-                              self.getTimeProperty(),
-                              self.getMeteoScalProper(),
-                              self.getElecScalProper(),
-                              self.getPuCoalScalProper(),
-                              self.getGasCombScalProper(),
-                              self._getWeightMatrixProperty(),
-                              self.getListOfTimeAverage(),
-                              self._getListOfAleMethod(),
-                              self._getThermalRadiativeProperties(),
-                              self._getListOfEstimator())
-
-        self.listNode = []
-        for part in self._getListOfVelocityPressureVariables():
-            self.listNode.append([part, 'base'])
-        for part in model.getTurbNodeList():
-            self.listNode.append([part, 'turbulence'])
-        for part in self.getThermalScalar():
-            self.listNode.append([part, 'thermal'])
-        for part in self._getThermalRadiativeProperties():
-            self.listNode.append([part, 'thermal'])
-        for part in self.getPuCoalScalProper():
-            self.listNode.append([part, 'coal'])
-        for part in self.getGasCombScalProper():
-            self.listNode.append([part, 'gas'])
-        for part in self.getMeteoScalProper():
-            self.listNode.append([part, 'atmospheric'])
-        for part in self.getElecScalProper():
-            self.listNode.append([part, 'electric'])
-        for part in self.getAdditionalScalar():
-            self.listNode.append([part, 'other'])
-        for part in self.getAdditionalScalarProperty():
-            self.listNode.append([part, 'other'])
-        for part in self.getFluidProperty():
-            self.listNode.append([part, 'physical_properties'])
-        for part in self.getTimeProperty():
-            self.listNode.append([part, 'other'])
-        for part in self.getListOfTimeAverage():
-            self.listNode.append([part, 'other'])
-        for part in self._getListOfAleMethod():
-            self.listNode.append([part, 'other'])
-        for part in self._getListOfEstimator():
-            self.listNode.append([part, 'estimator'])
+        list_remain = self.getVolumeFieldsNodeList()
 
         self.dicoLabelName = {}
         self.list_name = []
-        self._updateDictLabelName()
 
+        # Main/known categories
 
-    def _updateDictLabelName(self, dico_parent=None):
-        """
-        Update dictionaries of labels for all variables, properties .....
-        """
-        for nodeList in self.listNode:
-            node = nodeList[0]
-            tpe  = nodeList[1]
+        self.__updateListFilter(self.__getListOfVelocityPressureVariables__(),
+                                'Base', list_remain)
+        self.__updateListFilter(self.__getListOfTurbulenceVariables__(),
+                                'Turbulence', list_remain)
+        self.__updateListFilter(self.getThermalScalar(),
+                                'Thermal', list_remain)
+        self.__updateListFilter(self.__getThermalRadiativeProperties__(),
+                                'Thermal', list_remain)
+        self.__updateListFilter(self.__getPuCoalScalProper__(),
+                                'Coal', list_remain)
+        self.__updateListFilter(self.__getGasCombScalProper__(),
+                                'Gas', list_remain)
+        self.__updateListFilter(self.__getMeteoScalProper__(),
+                                'Atmospheric', list_remain)
+        self.__updateListFilter(self.__getElecScalProper__(),
+                                'Electric', list_remain)
+        self.__updateListFilter(self.getAdditionalScalar(),
+                                'Other', list_remain)
+        self.__updateListFilter(self.__getAdditionalScalarProperty__(),
+                                'Other', list_remain)
+        self.__updateListFilter(self.__getFluidProperty__(),
+                                'Physical properties', list_remain)
+        self.__updateListFilter(self.__getTimeProperty__(),
+                                'Other', list_remain)
+        self.__updateListFilter(self.__getListOfTimeAverage__(),
+                                'Time moments', list_remain)
+        self.__updateListFilter(self.__getListOfAleMethod__(),
+                                'Other', list_remain)
+        self.__updateListFilter(self.__getListOfEstimator__(),
+                                'Estimator', list_remain)
 
-            name = node['name']
+        # Remaining nodes
 
-            if dico_parent and name:
-                name = dico_parent[tpe][name]
+        for node in list_remain:
 
-            if not name:
+            # location filter
+
+            if node['support']:
+                if node['support'] == 'boundary':
+                    continue
+
+            # Name and label
+
+            if node['name']:
+                name = self.__nodeName__(node)
+            else:
                 name = node['label']
+            if not name:
+                continue
             if not node['label']:
-                msg = "xml node named "+ name +" has no label"
-                raise ValueError(msg)
+                node['label'] = name
+
             self.dicoLabelName[name] = node['label']
-            self.list_name.append([name, tpe])
+
+            # Category based on parent node
+            # (could also be based on dictionary)
+
+            category = node.xmlGetParentName()
+            category = category.replace('_', ' ').capitalize()
+
+            if node['field_id']:
+                if node['field_id'] != 'none':
+                    category = node['field_id']
+
+            self.list_name.append([self.__nodeName__(node), category])
 
 
-    def _getListOfVelocityPressureVariables(self):
+    def __getNode__(self, name):
+        """
+        Return a node matching a given name
+        """
+
+        for node in self.listNodeVolum:
+            n_name = node['name']
+            if node['field_id']:
+                if node['field_id'] != 'none':
+                    n_name += '_' + str(node['field_id'])
+            if n_name == name:
+                return node
+
+        return None
+
+
+    def __nodeName__(self, node):
+        """
+        Return a node matching a given name
+        """
+
+        n_name = node['name']
+        if not n_name:
+            n_name = node['label']
+        else:
+            if node['field_id']:
+                if node['field_id'] != 'none':
+                    n_name += '_' + str(node['field_id'])
+
+        return n_name
+
+
+    def __getListOfVelocityPressureVariables__(self):
         """
         Private method: return node of properties of weight matrix
         """
         nodeList = []
-        for tag in ('variable', 'property'):
-            for node in self.node_model_vp.xmlGetNodeList(tag):
-                if not node['support']:
+        if self.node_model_vp:
+            for tag in ('variable', 'property'):
+                for node in self.node_model_vp.xmlGetNodeList(tag):
                     nodeList.append(node)
         return nodeList
 
 
-    def _getListOfEstimator(self):
+    def __getListOfTurbulenceVariables__(self):
+        """
+        Private method: return node of properties of weight matrix
+        """
+        node_models = self.case.xmlGetNode('thermophysical_models')
+        if node_models:
+            node_turb = node_models.xmlGetNode('turbulence', 'model')
+
+        nodeList = []
+        if node_turb:
+            for tag in ('variable', 'property'):
+                for node in node_turb.xmlGetNodeList(tag):
+                    if node['name'] == 'rij':
+                        node['dimension'] = 6
+                    nodeList.append(node)
+        return nodeList
+
+
+    def __getListOfEstimator__(self):
         """
         Private method: return node of properties of weight matrix
         """
         nodeList = []
-        for node in self.node_error.xmlGetNodeList('property'):
-            if not node['support']:
+        if self.node_error:
+            for node in self.node_error.xmlGetNodeList('property'):
                 nodeList.append(node)
         return nodeList
 
 
-    def _getWeightMatrixProperty(self):
+    def __getWeightMatrixProperty__(self):
         """
         Private method: return node of properties of weight matrix
         """
         nodeList = []
+
         node0 = self.case.xmlGetNode('numerical_parameters')
-        node1 = node0.xmlGetNode('velocity_pressure_coupling', 'status')
-        if node1:
-            if node1['status'] == 'on':
-                nodeList = node0.xmlGetNodeList('property')
+        if node0:
+            node1 = node0.xmlGetNode('velocity_pressure_coupling', 'status')
+            if node1:
+                if node1['status'] == 'on':
+                    nodeList = node0.xmlGetNodeList('property')
         return nodeList
 
 
-    def _getListOfAleMethod(self):
+    def __getListOfAleMethod__(self):
         """
-        Private method: return list of variables and properties for ale method if it's activated
+        Private method: return list of variables and properties for ALE method
         """
         nodeList = []
-        if self.node_ale['status'] == 'on':
-            for tag in ('variable', 'property'):
-                for node in self.node_ale.xmlGetChildNodeList(tag):
-                    nodeList.append(node)
+        if self.node_ale:
+            if self.node_ale['status'] == 'on':
+                for tag in ('variable', 'property'):
+                    for node in self.node_ale.xmlGetChildNodeList(tag):
+                        nodeList.append(node)
 
         return nodeList
 
 
-    def _getThermalRadiativeProperties(self):
+    def __getThermalRadiativeProperties__(self):
         """
         Private method: return list of volumic properties for thermal radiation
         """
@@ -218,12 +381,9 @@ class OutputVolumicVariablesModel(Variables, Model):
         if ThermalRadiationModel(self.case).getRadiativeModel() != "off":
             self.node_ray = self.node_models.xmlGetNode('radiative_transfer')
             for node in self.node_ray.xmlGetChildNodeList('property'):
-                if not node['support']:
-                    nodeList.append(node)
+                nodeList.append(node)
         return nodeList
 
-
-# Following methods also called by ProfilesModel and TimeAveragesModel
 
     @Variables.noUndo
     def getThermalScalar(self):
@@ -232,97 +392,98 @@ class OutputVolumicVariablesModel(Variables, Model):
         """
         node_models = self.case.xmlGetNode('thermophysical_models')
         node = node_models.xmlGetNode('thermal_scalar')
-        return node.xmlGetNodeList('variable', type='thermal')
+        if node:
+            return node.xmlGetNodeList('variable', type='thermal')
+        else:
+            return []
 
 
     @Variables.noUndo
-    def getPuCoalScalProper(self):
+    def __getPuCoalScalProper__(self):
         """
         Return list fo nodes of pulverized coal.
-        Also called by ProfilesModel and TimeAveragesModel
         """
-        nodList = []
-        node = self.node_models.xmlGetNode('solid_fuels', 'model')
-        model = node['model']
         varList = []
-        if model != 'off':
-            for var in ('variable', 'property'):
-                nodList = node.xmlGetNodeList(var)
-                for nodvar in nodList:
-                    varList.append(nodvar)
+        if self.node_models:
+            node = self.node_models.xmlGetNode('solid_fuels', 'model')
+            if node:
+                model = node['model']
+                if model != 'off':
+                    for var in ('variable', 'property'):
+                        nodList = node.xmlGetNodeList(var)
+                        for nodvar in nodList:
+                            varList.append(nodvar)
         return varList
 
 
     @Variables.noUndo
-    def getGasCombScalProper(self):
+    def __getGasCombScalProper__(self):
         """
         Return list of nodes of gas combustion.
-        Also called by ProfilesModel and TimeAveragesModel
         """
-        nodList = []
-        node = self.node_models.xmlGetNode('gas_combustion', 'model')
-        model = node['model']
         varList = []
-        if model != 'off':
-            for var in ('variable', 'property'):
-                nodList = node.xmlGetNodeList(var)
-                for nodvar in nodList:
-                    varList.append(nodvar)
+        if self.node_models:
+            node = self.node_models.xmlGetNode('gas_combustion', 'model')
+            if node:
+                model = node['model']
+                if model != 'off':
+                    for var in ('variable', 'property'):
+                        nodList = node.xmlGetNodeList(var)
+                        for nodvar in nodList:
+                            varList.append(nodvar)
         return varList
 
 
     @Variables.noUndo
-    def getMeteoScalProper(self):
+    def __getMeteoScalProper__(self):
         """
         Return list fo nodes of atmospheric flows.
-        Also called by ProfilesModel and TimeAveragesModel
         """
-        nodList = []
-        node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
-        if not node: return []
-        model = node['model']
         varList = []
-        if model != 'off':
-            for var in ('variable', 'property'):
-                nodList = node.xmlGetNodeList(var)
-                for nodvar in nodList:
-                    varList.append(nodvar)
+        if self.node_models:
+            node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
+            if node:
+                model = node['model']
+                if model != 'off':
+                    for var in ('variable', 'property'):
+                        nodList = node.xmlGetNodeList(var)
+                        for nodvar in nodList:
+                            varList.append(nodvar)
         return varList
 
 
     @Variables.noUndo
-    def getElecScalProper(self):
+    def __getElecScalProper__(self):
         """
         Return list fo nodes of electric flows.
-        Also called by ProfilesModel and TimeAveragesModel
         """
-        nodList = []
-        node = self.node_models.xmlGetNode('joule_effect', 'model')
-        if not node: return []
-        model = node['model']
         varList = []
-        if model != 'off':
-            for var in ('variable', 'property'):
-                nodList = node.xmlGetNodeList(var)
-                for nodvar in nodList:
-                    varList.append(nodvar)
+        if self.node_models:
+            node = self.node_models.xmlGetNode('joule_effect', 'model')
+            if not node: return []
+            model = node['model']
+            if model != 'off':
+                for var in ('variable', 'property'):
+                    nodList = node.xmlGetNodeList(var)
+                    for nodvar in nodList:
+                        varList.append(nodvar)
         return varList
 
 
     @Variables.noUndo
-    def getModelVariables(self, model_name):
+    def __getModelVariables__(self, model_name):
         """
         Return list of variable nodes for a given model.
         """
-        nodList = []
-        node = self.node_models.xmlGetNode(model_name, 'model')
-        if not node: return []
-        model = node['model']
         varList = []
-        if model != 'off':
-            nodList = node.xmlGetNodeList('variable')
-            for nodvar in nodList:
-                varList.append(nodvar)
+        if self.node_models:
+            node = self.node_models.xmlGetNode(model_name, 'model')
+            if node:
+                model = node['model']
+                if model != 'off':
+                    nodList = node.xmlGetNodeList('variable')
+                    for nodvar in nodList:
+                        varList.append(nodvar)
         return varList
 
 
@@ -330,18 +491,18 @@ class OutputVolumicVariablesModel(Variables, Model):
     def getAdditionalScalar(self):
         """
         Return list of nodes of user scalars
-        Also called by ProfilesModel and TimeAveragesModel
-        (idem ds NumericalParamEquationModel named getAdditionalScalarNodes)
         """
         node = self.case.xmlGetNode('additional_scalars')
-        return node.xmlGetNodeList('variable', type='user')
+        if node:
+            return node.xmlGetNodeList('variable', type='user')
+        else:
+            return []
 
 
     @Variables.noUndo
-    def getAdditionalScalarProperty(self):
+    def __getAdditionalScalarProperty__(self):
         """
         Return list of nodes of properties of user scalars
-        Also called by ProfilesModel and TimeAveragesModel
         """
         nodeList = []
         for node in self.getAdditionalScalar():
@@ -352,36 +513,37 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getFluidProperty(self):
+    def __getFluidProperty__(self):
         """
         Return list of nodes of fluid properties
-        Also called by ProfilesModel and TimeAveragesModel
         """
         nodeList = []
-        model = self.getThermalScalar()
 
-        node = self.fluid_prop.xmlGetNode('fluid_properties')
-        if node:
-            for prop in ('density',
-                         'molecular_viscosity',
-                         'specific_heat',
-                         'thermal_conductivity'):
-                L = node.xmlGetNode('property', name=prop, choice='variable')
-                if L:
-                    nodeList.append(L)
+        if self.fluid_prop:
+            node = self.fluid_prop.xmlGetNode('fluid_properties')
+            if node:
+                for prop in ('density',
+                             'molecular_viscosity',
+                             'specific_heat',
+                             'thermal_conductivity'):
+                    L = node.xmlGetNode('property', name=prop, choice='variable')
+                    if L:
+                        nodeList.append(L)
 
         return nodeList
 
 
     @Variables.noUndo
-    def getTimeProperty(self):
+    def __getTimeProperty__(self):
         """
         Return list fo nodes of properties of time_parameters.
-        Also called by ProfilesModel and TimeAveragesModel
         """
         nodeList = []
 
-        node1 = self.analysis_ctrl.xmlGetNode('time_parameters')
+        if self.analysis_ctrl:
+            node1 = self.analysis_ctrl.xmlGetNode('time_parameters')
+        else:
+            node1 = None
 
         if node1:
             if node1.xmlGetInt('time_passing'):
@@ -397,28 +559,27 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getListOfTimeAverage(self):
+    def __getListOfTimeAverage__(self):
         """
         Return list of time averages variables
-        Also called by ProfilesModel
         """
         nodeList = []
-        for node in self.node_means.xmlGetNodeList('time_average'):
-            nodeList.append(node)
+        if self.node_means:
+            for node in self.node_means.xmlGetNodeList('time_average'):
+                nodeList.append(node)
 
         return nodeList
 
 
-#Following methods only called by the View
+    #Following methods only called by the View
     @Variables.noUndo
     def getLabelsList(self):
         """
         Return list of labels for all variables, properties .....Only for the View
         """
         lst = []
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                lst.append(node['label'])
+        for node in self.listNodeVolum:
+            lst.append(node['label'])
         return lst
 
 
@@ -428,9 +589,8 @@ class OutputVolumicVariablesModel(Variables, Model):
         Return list of names for all variables, properties .....Only for the View
         """
         lst = []
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                lst.append(node['name'])
+        for node in self.listNodeVolum:
+            lst.append(self.__nodeName__(node))
         return lst
 
 
@@ -439,62 +599,60 @@ class OutputVolumicVariablesModel(Variables, Model):
         """ Return list of node for probes """
         probeList = []
         for node in self.node_probe:
-            probeList.append(node['name'])
+            probeList.append(self.__nodeName__(node))
         return probeList
 
 
     @Variables.noUndo
-    def getPrintingStatus(self, name, fieldId=None):
+    def getPrintingStatus(self, name):
         """
         Return status of markup printing from node with name. Only for the View
         """
         self.isInList(name, self.getNamesList())
         status = self._defaultValues()['status']
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['name'] == name:
-                    node_printing = node.xmlGetChildNode('listing_printing', 'status')
-                    if node_printing:
-                        status = node_printing['status']
+        node = self.__getNode__(name)
+        if node:
+            node_printing = node.xmlGetChildNode('listing_printing', 'status')
+            if node_printing:
+                status = node_printing['status']
         return status
 
 
     @Variables.noUndo
-    def getPostStatus(self, name, fieldId=None):
+    def getPostStatus(self, name):
         """
         Return status of markup  post processing from node with name. Only for the View
         """
         self.isInList(name, self.getNamesList())
         status = self._defaultValues()['status']
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['name'] == name:
-                    node_post = node.xmlGetChildNode('postprocessing_recording', 'status')
-                    if node_post:
-                        status = node_post['status']
+        node = self.__getNode__(name)
+        if node:
+            node_post = node.xmlGetChildNode('postprocessing_recording', 'status')
+            if node_post:
+                status = node_post['status']
         return status
 
 
     @Variables.noUndo
-    def getMonitorStatus(self, name, fiel_id=None):
+    def getMonitorStatus(self, name):
         """
         Return status of markup monitoring from node with name. Only for the View
         """
         self.isInList(name, self.getNamesList())
         status = self._defaultValues()['status']
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['name'] == name:
-                    node_post = node.xmlGetChildNode('probes_recording', 'status')
-                    if node_post:
-                        status = node_post['status']
+        node = self.__getNode__(name)
+        if node:
+            node_post = node.xmlGetChildNode('probes_recording', 'status')
+            if node_post:
+                status = node_post['status']
         return status
 
 
     @Variables.undoLocal
     def setVariableLabel(self, old_label, new_label):
         """
-        Replace old_label by new_label for node with name and old_label. Only for the View
+        Replace old_label by new_label for node with name and old_label.
+        Only for the View
         """
         # fusion de cette methode avec DefineUserScalarsModel.renameScalarLabel
         self.isInList(old_label, self.getLabelsList())
@@ -502,12 +660,11 @@ class OutputVolumicVariablesModel(Variables, Model):
 
         if old_label != new_label:
             self.isNotInList(new_label, self.getLabelsList())
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['label'] == old_label:
-                    node['label'] = new_label
+        for node in self.listNodeVolum:
+            if node['label'] == old_label:
+                node['label'] = new_label
 
-        self._updateDictLabelName()
+        self.updateList()
         self._updateBoundariesNodes(old_label, new_label)
 
         for node in self.case.xmlGetNodeList('formula'):
@@ -519,7 +676,8 @@ class OutputVolumicVariablesModel(Variables, Model):
 
     def _updateBoundariesNodes(self, old_label, new_label):
         """
-        Update good label for boundaries nodes with name and label. Only for the View
+        Update good label for boundaries nodes with name and label.
+        Only for the View
         """
         self.node_bc  = self.case.xmlInitNode('boundary_conditions')
         self.node_var = self.node_bc.xmlInitNodeList('variable')
@@ -530,20 +688,19 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setPrintingStatus(self, name, status, fieldId=None):
+    def setPrintingStatus(self, name, status):
         """
         Put status for printing from node with name and label
         """
         self.isOnOff(status)
         self.isInList(name, self.getNamesList())
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['name'] == name:
-                    if status == 'off':
-                        node.xmlInitChildNode('listing_printing')['status'] = status
-                    else:
-                        if node.xmlGetChildNode('listing_printing'):
-                            node.xmlRemoveChild('listing_printing')
+        node = self.__getNode__(name)
+        if node:
+            if status == 'off':
+                node.xmlInitChildNode('listing_printing')['status'] = status
+            else:
+                if node.xmlGetChildNode('listing_printing'):
+                    node.xmlRemoveChild('listing_printing')
 
 
     @Variables.noUndo
@@ -565,37 +722,36 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setPostStatus(self, name, status, fieldId=None):
+    def setPostStatus(self, name, status):
         """
         Put status for postprocessing from node with name and label
         """
         self.isOnOff(status)
         self.isInList(name, self.getNamesList())
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['name'] == name:
-                    if status == 'off':
-                        node.xmlInitChildNode('postprocessing_recording')['status'] = status
-                    else:
-                        if node.xmlGetChildNode('postprocessing_recording'):
-                            node.xmlRemoveChild('postprocessing_recording')
+        self.isInList(name, self.getNamesList())
+        node = self.__getNode__(name)
+        if node:
+            if status == 'off':
+                node.xmlInitChildNode('postprocessing_recording')['status'] = status
+            else:
+                if node.xmlGetChildNode('postprocessing_recording'):
+                    node.xmlRemoveChild('postprocessing_recording')
 
 
     @Variables.undoLocal
-    def setMonitorStatus(self, name, status, fieldId=None):
+    def setMonitorStatus(self, name, status):
         """
         Put status for monitoring from node with name and label
         """
         self.isOnOff(status)
         self.isInList(name, self.getNamesList())
-        for nodeList in self.listNodeVolum:
-            for node in nodeList:
-                if node['name'] == name:
-                    if status == 'off':
-                        node.xmlInitChildNode('probes_recording')['status'] = status
-                    else:
-                        if node.xmlGetChildNode('probes_recording'):
-                            node.xmlRemoveChild('probes_recording')
+        node = self.__getNode__(name)
+        if node:
+            if status == 'off':
+                node.xmlInitChildNode('probes_recording')['status'] = status
+            else:
+                if node.xmlGetChildNode('probes_recording'):
+                    node.xmlRemoveChild('probes_recording')
 
 
     @Variables.noUndo
@@ -606,9 +762,10 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.isInList(name, ["Correction", "Drift", "Prediction", "Total"])
         status = self._defaultValues()['estimator']
 
-        nn = self.node_error.xmlGetChildNode(name, 'model')
-        if nn:
-            status = nn['model']
+        if self.node_error:
+            nn = self.node_error.xmlGetChildNode(name, 'model')
+            if nn:
+                status = nn['model']
 
         return status
 
@@ -621,6 +778,11 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.isInList(model, ['0', '1', '2'])
         self.isInList(name, ["Correction", "Drift", "Prediction", "Total"])
         status = self._defaultValues()['estimator']
+
+        if not self.analysis_ctrl:
+            self.analysis_ctrl = self.case.xmlInitNode('analysis_control')
+        if not self.node_error:
+            self.node_error = self.analysis_ctrl.xmlInitNode('error_estimator')
 
         if model != status:
             if self.node_error.xmlGetChildNode(name):

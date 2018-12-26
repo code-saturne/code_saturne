@@ -349,21 +349,14 @@ class Variables:
         return p1
 
 
-#Copie des methode de Variables pour Neptune (surcharge):
+    #Copie des methode de Variables pour Neptune (surcharge):
 
-    def setOutputControl(self, variable, post=False):
+    def __setOutputControl__(self, variable, post=False):
         """
         Update the output markups <probe_recording name="XX">,
         <postprocessing_recording status='on'> and
         <listing_printing status='on'> for the new 'variable' markup.
         """
-        analysis_ctrl = self.case.xmlGetNode('analysis_control')
-        node_output   = analysis_ctrl.xmlInitChildNode('output')
-        if not (variable['support'] and variable['support'] == "boundary"):
-            for node in node_output.xmlGetChildNodeList('probe', 'name'):
-                num = node['name']
-                variable.xmlInitChildNode('probe_recording', name=num)
-
         variable.xmlInitChildNode('listing_printing', status='on')
         if post:
             variable.xmlInitChildNode('postprocessing_recording', status='on')
@@ -371,21 +364,27 @@ class Variables:
             variable.xmlInitChildNode('postprocessing_recording', status='off')
 
 
-    def setNewVariableProperty(self, type, choice, node, num, name, label, dim=None, support=None, post=False):
+    def setNewVariableProperty(self, type, choice, node, num, name, label,
+                               dim=None, support=None, post=False):
         id = str(num)
         label = label
         if not node.xmlGetNode(type, field_id=id,  name=name):
             if type != 'property' :
                 if dim != None:
-                    n = node.xmlInitNode(type, field_id=id, name=name, label=label, dimension=dim)
+                    n = node.xmlInitNode(type, field_id=id, name=name, label=label,
+                                         dimension=dim)
                 else:
-                    n = node.xmlInitNode(type, field_id=id, name=name, label=label, dimension='1')
+                    n = node.xmlInitNode(type, field_id=id, name=name, label=label,
+                                         dimension='1')
             else :
                 if support != None:
-                    n = node.xmlInitNode(type, field_id=id, choice=choice, name=name, label=label, dimension='1', support = support)
+                    n = node.xmlInitNode(type, field_id=id, choice=choice,
+                                         name=name, label=label,
+                                         dimension='1', support = support)
                 else:
-                    n = node.xmlInitNode(type, field_id=id, choice=choice, name=name, label=label, dimension='1')
-            self.setOutputControl(n, post=post)
+                    n = node.xmlInitNode(type, field_id=id, choice=choice,
+                                         name=name, label=label, dimension='1')
+            self.__setOutputControl__(n, post=post)
             self.updateLabel(n)
 
 
@@ -420,7 +419,7 @@ class Variables:
             self.updateLabel(v1)
 
 
-    def getVariablesPropertiesList(self, average, constant, user) :
+    def getVariablesPropertiesList(self, average, constant) :
         """
         return list of variables, properties (and scalar)
         for Output field, profiles and averages
@@ -458,13 +457,13 @@ class Variables:
             # Warning average node is different
             for node in self.XMLNodeAverage.xmlGetNodeList('time_average'):
                 list.append(node)
-        if user == 'yes' and self.XMLUsers:
+        if self.XMLUsers:
             for node in self.XMLUsers.xmlGetNodeList('variable'):
                 list.append(node)
 
         return list
 
-#Copie des methode de Variables pour Neptune (surcharge) FIN
+    #Copie des methode de Variables pour Neptune (surcharge) FIN
 
 
 #-------------------------------------------------------------------------------
@@ -580,7 +579,6 @@ def runTest():
 ##        <postprocessing_recording status='on'> and
 ##        <listing_printing status='on'> markups could be set.  """
 ##        node = self.case.root().xmlAddChild('variable')
-##        Variables(self.case).setOutputControl(node)
 ##        doc = '<variable/>'
 ##        assert node == self.xmlNodeFromString(doc),\
 ##            'Could not set the output control markups'

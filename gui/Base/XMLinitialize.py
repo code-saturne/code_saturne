@@ -89,8 +89,7 @@ class XMLinit(Variables):
         if not prepro:
             self.__backwardCompatibility()
 
-            # Initialization (order is important,
-            # see turbulenceModelsList method)
+            # Initialization (order is important)
 
             grdflow = GroundwaterModel(self.case).getGroundwaterModel()
 
@@ -161,7 +160,7 @@ class XMLinit(Variables):
             AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
             LagrangianModel(self.case).getLagrangianModel()
 
-            return msg
+        return msg
 
 
     def __initHeading(self, prepro):
@@ -172,7 +171,7 @@ class XMLinit(Variables):
         tagList = ('solution_domain',
                    'analysis_control',
                    'calculation_management')
-        if not prepro :
+        if not prepro:
             tagList += ('thermophysical_models',
                        'additional_scalars',
                        'physical_properties',
@@ -1615,7 +1614,6 @@ class XMLinit(Variables):
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------
-
 
 class XMLinitTestCase(unittest.TestCase):
     """

@@ -42,11 +42,7 @@ class UsersControlModel(Variables, Model):
         self.case     = case
         XMLUserScalar = self.case.xmlInitNode('additional_scalars')
         self.XMLUser  = XMLUserScalar.xmlInitNode('users')
-        # TODO move all variants to "property" or simply "field" with user type
-        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
-            self.f_type = "variable"
-        else:
-            self.f_type  = "property"
+        self.f_type  = "property"
 
 
     def defaultValues(self):
@@ -113,7 +109,7 @@ class UsersControlModel(Variables, Model):
                     if (child['name'] == name):
                         child.xmlRemoveNode()
 
-        #suppress average
+        # suppress average
         if node_ac:
             node_m = node_ac.xmlGetNode('time_averages')
         if node_m:

@@ -27,7 +27,7 @@ from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
 from code_saturne.Base.XMLmodel import *
 from code_saturne.Pages.MainFieldsModel import MainFieldsModel
-from code_saturne.Pages.TimeAveragesModelNeptune import TimeAveragesModel
+from code_saturne.Pages.TimeAveragesModel import TimeAveragesModel
 
 #-------------------------------------------------------------------------------
 # Constructor
@@ -100,7 +100,6 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
                 node['label'] = label
             else:
                 TimeAveragesModel(self.case).setLabel(node['label'], label)
-
 
         else :
             msg = "This variable " + oldlabel + " doesn't exist"

@@ -930,6 +930,13 @@ class XMLElement:
             return None
 
 
+    def xmlGetParentName(self):
+        """
+        Return the name of a node's parent
+        """
+        return str(str(self.el.parentNode.nodeName))
+
+
     def xmlInitNodeList(self, tag, *attrList, **kwargs):
         """
         Each element of the returned list is an instance
@@ -984,7 +991,7 @@ class XMLElement:
             for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
         else:
             if len(nodeList) > 1:
-                msg = "There is an error in with the use of the xmlInitNode method. "\
+                msg = "There is an error with the use of the xmlInitNode method. "\
                       "There is more than one occurence of the tag: " + tag
                 for n in nodeList: msg += "\n" + self._inst(n).__str__()
                 self._errorExit(msg)

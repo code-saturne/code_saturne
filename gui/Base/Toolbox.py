@@ -225,12 +225,8 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         thisPage = Page.LagrangianBoundariesView(root, case)
 
     elif page_name == tr("Time averages"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-            import code_saturne.Pages.TimeAveragesViewNeptune as Page
-            thisPage = Page.TimeAveragesView(root, case, stbar)
-        else :
-            import code_saturne.Pages.TimeAveragesView as Page
-            thisPage = Page.TimeAveragesView(root, case, stbar)
+        import code_saturne.Pages.TimeAveragesView as Page
+        thisPage = Page.TimeAveragesView(root, case, stbar)
 
     elif page_name == tr("Time settings"):
         if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
@@ -265,12 +261,8 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         thisPage = Page.LagrangianOutputView(root, case)
 
     elif page_name == tr("Profiles"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-            import code_saturne.Pages.ProfilesViewNeptune as Page
-            thisPage = Page.ProfilesView(root, case, stbar)
-        else :
-            import code_saturne.Pages.ProfilesView as Page
-            thisPage = Page.ProfilesView(root, case, stbar)
+        import code_saturne.Pages.ProfilesView as Page
+        thisPage = Page.ProfilesView(root, case, stbar)
 
     elif page_name == tr("Balance by zone"):
         import code_saturne.Pages.BalanceView as Page

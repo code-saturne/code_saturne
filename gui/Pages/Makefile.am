@@ -156,10 +156,6 @@ InterfacialAreaModel.py \
 InterfacialAreaView.py \
 MainFieldsView.py \
 MainFieldsModel.py \
-ProfilesViewNeptune.py \
-ProfilesModelNeptune.py \
-TimeAveragesModelNeptune.py \
-TimeAveragesViewNeptune.py \
 NucleateBoilingModel.py \
 NucleateBoilingView.py \
 InterfacialEnthalpyModel.py \

@@ -35,14 +35,14 @@ This module contains the following classe:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, unittest
+import sys, unittest
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.XMLvariables import Variables
-import code_saturne.Base.Toolbox
+from code_saturne.Base import Toolbox
 from code_saturne.Pages.LocalizationModel import Zone, LocalizationModel
 from code_saturne.Pages.OutputControlModel import OutputControlModel
 
@@ -59,7 +59,7 @@ else :
    import eosAva
 
 #-------------------------------------------------------------------------------
-# class XMLinit
+# class XMLinitNeptune
 #-------------------------------------------------------------------------------
 
 class XMLinitNeptune(Variables):
@@ -87,8 +87,7 @@ class XMLinitNeptune(Variables):
         if not prepro:
             self.__backwardCompatibility()
 
-
-            # Initialization (order is important, see turbulenceModelsList method)
+            # Initialization (order is important)
 
             self.XMLNodeAna      = self.case.xmlGetNode('analysis_control')
             self.XMLNodeAverage  = self.XMLNodeAna.xmlInitNode('time_averages')
@@ -121,7 +120,7 @@ class XMLinitNeptune(Variables):
                 for fieldId in MainFieldsModel(self.case).getFieldIdList():
                     if ThermodynamicsModel(self.case).getMaterials(fieldId) != "user_material":
                         msg = "The current GUI does not found EOS, but this file of parameters has" \
-                              " been generated with EOS. \n\n Please check the disponibility of "  \
+                              " been generated with EOS. \n\n Please check the availability of "  \
                               "the prerequisite EOS."
 
             # Initialize fields
@@ -427,13 +426,34 @@ class XMLinitNeptune(Variables):
                     timelst.append(node['name'])
                     # now name = label
                     node['name'] = node['label']
+                if node['field_id'] == "None":
+                    node['field_id'] = "none"
+                if not node['name']:
+                    node['name'] = node['label']
 
-        for node in self.case.xmlGetNodeList('profiles'):
+                for nodevar in node.xmlGetNodeList('var_prop'):
+                    name = nodevar['name']
+                    if nodevar['field_id'] and nodevar['field_id'] != "none":
+                        name += '_' + nodevar['field_id']
+                    component = nodevar['component']
+                    nodevar.xmlRemoveNode()
+                    newnode = node.xmlInitNode('var_prop', name=name)
+                    if component:
+                       newnode['component'] = component
+
+        for node in self.case.xmlGetNodeList('profile'):
             if node:
                 for nodevar in node.xmlGetNodeList('var_prop'):
                     if nodevar['name'] in timelst:
                         nodevar['name'] = timetup[nodevar['name']]
-
+                    name = nodevar['name']
+                    if nodevar['field_id'] and nodevar['field_id'] != "none":
+                        name += '_' + nodevar['field_id']
+                    component = nodevar['component']
+                    nodevar.xmlRemoveNode()
+                    newnode = node.xmlInitNode('var_prop', name=name)
+                    if component:
+                       newnode['component'] = component
 
         # suppress gradient and flux reconstruction if needed
         for node in self.case.xmlGetNodeList('variable'):
@@ -457,15 +477,6 @@ class XMLinitNeptune(Variables):
 
                 for n in self.case.xmlGetNodeList('wall'):
                     n.xmlInitChildNode('wall_model', field_id = fieldId, model = mdl)
-
-        for node in self.case.xmlGetNodeList('time_average'):
-            if node:
-                if node['field_id'] == "None":
-                    node['field_id'] = "none"
-                if not node['name']:
-                    node['name'] = node['label']
-                node.xmlInitChildNode('listing_printing')
-                node.xmlInitChildNode('postprocessing_recording')
 
         # ------------------------------------------------------------
         # FIXME: TO REMOVE ONCE NCFD 5.0 is out!
@@ -555,6 +566,20 @@ class XMLinitNeptune(Variables):
                         if nv['name'] in rdico.keys():
                             nv['name'] = rdico[nv['name']]
 
+            # User arrays should be properties, not scalars
+
+            XMLUserScalar = self.case.xmlGetNode('additional_scalars')
+            if XMLUserScalar:
+               XMLUser = XMLUserScalar.xmlInitNode('users')
+               if XMLUser:
+                  for node in XMLUser.xmlGetNodeList('variable'):
+                     newnode = XMLUser.xmlInitNode('property', name=node['name'])
+                     newnode.xmlChildsCopy(node)
+                     for tag in ('dimension', 'field_id', 'label', 'support'):
+                        if node[tag]:
+                           newnode[tag] = node[tag]
+                     node.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
@@ -567,7 +592,7 @@ class XMLinitTestCaseNeptune(unittest.TestCase):
         """
         This method is executed before all "check" methods.
         """
-        import XMLengine
+        from code_saturne.Base import XMLengine
         Toolbox.GuiParam.lang = 'en'
         self.doc = XMLengine.XMLDocument("")
         self.case = XMLengine.Case(None)

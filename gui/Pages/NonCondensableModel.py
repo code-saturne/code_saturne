@@ -28,8 +28,8 @@ from code_saturne.Base.XMLengine import *
 from code_saturne.Base.XMLmodel import *
 from code_saturne.Pages.MainFieldsModel import MainFieldsModel
 
-from code_saturne.Pages.ProfilesModelNeptune import ProfilesModel
-from code_saturne.Pages.TimeAveragesModelNeptune import TimeAveragesModel
+from code_saturne.Pages.ProfilesModel import ProfilesModel
+from code_saturne.Pages.TimeAveragesModel import TimeAveragesModel
 
 #-------------------------------------------------------------------------------
 # Constructor
@@ -400,8 +400,8 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
                 if (child['name'] == name) :
                     suppress = 1
             if suppress == 1 :
-                label = node['label']
-                ProfilesModel(self.case).deleteProfile(label)
+                name = node['name']
+                ProfilesModel(self.case).deleteProfile(name)
 
         #suppress average
         for node in reversed(self.node_average.xmlGetNodeList('time_average')) :
@@ -411,8 +411,8 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
                     suppress = 1
                     break
             if suppress == 1 :
-                label = node['label']
-                TimeAveragesModel(self.case).deleteTimeAverage(label)
+                name = node['name']
+                TimeAveragesModel(self.case).deleteTimeAverage(name)
 
         # update name for other non condensable in XML file
         index = 1
@@ -431,6 +431,7 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case
 #-------------------------------------------------------------------------------
+
 class NonCondensableTestCase(ModelTest):
     """
     """

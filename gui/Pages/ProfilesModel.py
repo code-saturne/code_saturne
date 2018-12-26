@@ -93,51 +93,9 @@ class ProfilesModel(Model):
         Creates a dictionnary to connect name and label from
         variables and properties.
         """
-        # FIXME: merge this method with the same one in TimeAveragesView
-        self.dicoLabel2Name = {}
-        model = XMLmodel(self.case)
-        output = OutputVolumicVariablesModel(self.case)
-        for nodeList in [self.node_var_vp,
-                         self.node_pro_vp,
-                         model.getTurbNodeList(),
-                         output.getFluidProperty(),
-                         output.getAdditionalScalarProperty(),
-                         output.getTimeProperty(),
-                         output.getListOfTimeAverage(),
-                         output.getPuCoalScalProper(),
-                         output.getGasCombScalProper(),
-                         output.getMeteoScalProper(),
-                         output.getElecScalProper(),
-                         output.getThermalScalar(),
-                         output.getAdditionalScalar()]:
+        mdl = OutputVolumicVariablesModel(self.case)
 
-            for node in nodeList:
-                name = node['name']
-                label = node['label']
-                if not label:
-                    raise ValueError("Node has no label")
-
-                dim = node['dimension']
-                if dim and int(dim) > 1:
-                    # If we consider the Rij tensor, the user will see
-                    # R11, R22, ... in the GUI instead of Rij[0], Rij[1], ...
-                    # This choice was considered as the clearest.
-                    # CK
-                    if name == 'rij':
-                        rij_lbls = ['R11', 'R22', 'R33', 'R12', 'R23', 'R13']
-                        for ii in range(int(dim)):
-                            label1 = rij_lbls[ii]
-                            if not (node['support'] and node['support'] == "boundary"):
-                                self.dicoLabel2Name[label1] = (name, str(ii))
-                    else:
-                        for ii in range(int(dim)):
-                            label1 = label + "[" + str(ii) + "]"
-                            if not (node['support'] and node['support'] == "boundary"):
-                                self.dicoLabel2Name[label1] = (name, str(ii))
-                else:
-                    if not (node['support'] and node['support'] == "boundary"):
-                        if name != 'local_time_step':
-                            self.dicoLabel2Name[label] = (name, str(0))
+        self.dicoLabel2Name = mdl.getVolumeFieldsLabel2Name(time_averages=False)
 
         return list(self.dicoLabel2Name.keys())
 

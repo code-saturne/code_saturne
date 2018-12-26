@@ -53,7 +53,6 @@ from code_saturne.Base.QtPage import PYQT_API_1
 from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from code_saturne.Pages.OutputControlModel import OutputControlModel
 from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-from code_saturne.Pages.OutputVolumicVariablesModelNeptune import OutputVolumicVariablesModelNeptune
 
 #-------------------------------------------------------------------------------
 # log config
@@ -354,13 +353,13 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             row = self.rowCount()
             parentItem = self.noderoot[value]
             label = self.mdl.dicoLabelName[name]
-            printing = self.mdl.getPrintingStatus(name, value)
+            printing = self.mdl.getPrintingStatus(name)
 
             if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                 post = "off"
                 self.mdl.setPostStatus(name, post)
             else:
-                post = self.mdl.getPostStatus(name, value)
+                post = self.mdl.getPostStatus(name)
 
             if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
                 from code_saturne.Pages.TimeStepModel import TimeStepModel
@@ -370,7 +369,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                         self.disabledItem.append((row, 4))
                 del TimeStepModel
 
-            monitor = self.mdl.getMonitorStatus(name, value)
+            monitor = self.mdl.getMonitorStatus(name)
 
             # StandardItemModel data
             item = item_class(name, label, printing, post, monitor, value)
@@ -417,8 +416,6 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
     def setData(self, index, value, role=None):
         item = index.internalPointer()
 
-        field_id = item.item.value
-
         if index.column() == 0:
             label = str(from_qvariant(value, to_text_string))
             if label == "":
@@ -440,11 +437,11 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             if item not in self.noderoot.values():
 
                 if c_id == 0:
-                    self.mdl.setPrintingStatus(item.item.name, item.item.status[0], field_id)
+                    self.mdl.setPrintingStatus(item.item.name, item.item.status[0])
                 elif c_id == 1:
-                    self.mdl.setPostStatus(item.item.name, item.item.status[1], field_id)
+                    self.mdl.setPostStatus(item.item.name, item.item.status[1])
                 elif c_id == 2:
-                    self.mdl.setMonitorStatus(item.item.name, item.item.status[2], field_id)
+                    self.mdl.setMonitorStatus(item.item.name, item.item.status[2])
                 # count for parent item
                 size = len(item.parentItem.childItems)
                 active = 0
@@ -461,11 +458,11 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             else:
                 for itm in item.childItems:
                     if c_id == 0:
-                        self.mdl.setPrintingStatus(itm.item.name, item.item.status[0], field_id)
+                        self.mdl.setPrintingStatus(itm.item.name, item.item.status[0])
                     elif c_id == 1:
-                        self.mdl.setPostStatus(itm.item.name, item.item.status[1], field_id)
+                        self.mdl.setPostStatus(itm.item.name, item.item.status[1])
                     elif c_id == 2:
-                        self.mdl.setMonitorStatus(itm.item.name, item.item.status[2], field_id)
+                        self.mdl.setMonitorStatus(itm.item.name, item.item.status[2])
                     itm.item.status[c_id] = item.item.status[c_id]
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
@@ -494,10 +491,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.case.undoStopGlobal()
         self.info_turb_name = []
 
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-            self.mdl = OutputVolumicVariablesModelNeptune(self.case)
-        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
-            self.mdl = OutputVolumicVariablesModel(self.case)
+        self.mdl = OutputVolumicVariablesModel(self.case)
 
         self.modelOutput = VolumicOutputStandardItemModel(parent, self.case, self.mdl)
         self.treeViewOutput.setModel(self.modelOutput)
