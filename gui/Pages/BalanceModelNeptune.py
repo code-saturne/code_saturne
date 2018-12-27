@@ -41,8 +41,6 @@ import os, sys, types
 
 from code_saturne.Base.XMLvariables import Variables
 from code_saturne.Base.XMLvariables import Model
-from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
-from code_saturne.Pages.OutputVolumicVariablesModelNeptune import OutputVolumicVariablesModelNeptune
 from code_saturne.Pages.BalanceModel import *
 
 #-------------------------------------------------------------------------------
@@ -61,6 +59,28 @@ class BalanceModelNeptune(BalanceModel, Variables, Model):
         """
         BalanceModel.__init__(self, case)
 
+
+    @Variables.noUndo
+    def __getVariables__(self):
+
+        # Get fields:
+        fd = []
+        fd.append('none')
+        thermo = self.case.xmlGetNode('thermophysical_models')
+        fields = thermo.xmlGetNode('fields')
+        for node in fields.xmlInitChildNodeList('field'):
+            field_id = node.xmlGetAttribute('field_id')
+            fd.append(field_id)
+
+        l = []
+        for variableType in ('variable', 'property', 'scalar'):
+            for field in fd:
+                for node in self.case.xmlGetNodeList(variableType, field_id = field):
+                    l.append(node)
+
+        return l
+
+
     @Variables.noUndo
     def getScalarVariables(self):
         """
@@ -68,9 +88,8 @@ class BalanceModelNeptune(BalanceModel, Variables, Model):
         scalar variables (different pressure).
         """
         self.dicoLabel2Name = {}
-        model = XMLmodel(self.case)
-        output = OutputVolumicVariablesModelNeptune(self.case)
-        for nodeList in [output.getVariables()]:
+
+        for nodeList in [self.getVariables()]:
 
             for node in nodeList:
 

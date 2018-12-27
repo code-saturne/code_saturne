@@ -104,7 +104,6 @@ OutputControlView.py \
 OutputSurfacicVariablesModel.py \
 OutputSurfacicVariablesView.py \
 OutputVolumicVariablesModel.py \
-OutputVolumicVariablesModelNeptune.py \
 OutputVolumicVariablesView.py \
 PreProcessingInformationsView.py \
 PerformanceTuningModel.py \
@@ -177,10 +176,7 @@ OutputFieldsModel.py \
 OutputFieldsView.py \
 OpenTurnsModel.py \
 OpenTurnsView.py \
-OutputControlViewNeptune.py \
-OutputControlModelNeptune.py \
 OutputSurfacicFieldsModel.py \
-OutputSurfacicFieldsView.py \
 SolidModel.py \
 SolidView.py \
 ThermodynamicsModel.py \

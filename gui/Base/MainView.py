@@ -95,7 +95,6 @@ from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

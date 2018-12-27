@@ -237,12 +237,8 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
             thisPage = Page.TimeStepView(root, case, tree)
 
     elif page_name == tr("Postprocessing"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-            import code_saturne.Pages.OutputControlViewNeptune as Page
-            thisPage = Page.OutputControlView(root, case, tree)
-        else:
-            import code_saturne.Pages.OutputControlView as Page
-            thisPage = Page.OutputControlView(root, case, tree)
+        import code_saturne.Pages.OutputControlView as Page
+        thisPage = Page.OutputControlView(root, case, tree)
 
     elif page_name == tr("Additional user arrays"):
         import code_saturne.Pages.UsersControlView as Page

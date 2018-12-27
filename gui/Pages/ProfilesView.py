@@ -23,8 +23,6 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the 'Meshes and Enveloppe' page.
-
 This module contains the following classes:
 - ProfilesView
 """
@@ -407,7 +405,12 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         self.modelDrop.setStringList(liste)
 
-        self.pushButtonFormula.setStyleSheet("background-color: red")
+        exp = self.mdl.getFormula(self.label_select)
+        if exp:
+            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setToolTip(exp)
+        else:
+            self.pushButtonFormula.setStyleSheet("background-color: red")
 
 
     @pyqtSlot()

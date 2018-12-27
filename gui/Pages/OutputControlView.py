@@ -2732,10 +2732,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         steady = 0
 
-        from code_saturne.Pages.TimeStepModel import TimeStepModel
-        idtvar = TimeStepModel(self.case).getTimePassing()
-        if idtvar in [-1, 2]:
-            steady = 1
+        if self.case.xmlRootNode().tagName != "NEPTUNE_CFD_GUI" :
+            from code_saturne.Pages.TimeStepModel import TimeStepModel
+            idtvar = TimeStepModel(self.case).getTimePassing()
+            if idtvar in [-1, 2]:
+                steady = 1
 
         return steady
 

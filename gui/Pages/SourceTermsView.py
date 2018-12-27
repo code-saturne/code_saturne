@@ -55,7 +55,6 @@ from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, Local
 from code_saturne.Pages.SourceTermsModel import SourceTermsModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-from code_saturne.Pages.OutputVolumicVariablesModelNeptune import OutputVolumicVariablesModelNeptune
 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 from code_saturne.Pages.NotebookModel import NotebookModel
 
@@ -92,11 +91,6 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
-        if self.case['package'].name == 'code_saturne':
-            self.m_out   = OutputVolumicVariablesModel(self.case)
-        else:
-            self.m_out   = OutputVolumicVariablesModelNeptune(self.case)
-
 
         # 0/ Read label names from XML file
 

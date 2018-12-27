@@ -54,7 +54,7 @@ from code_saturne.Base.XMLmodel import ModelTest
 
 class OutputControlModel(Model):
     """
-    Class for Variables and Scalar model initialization.
+    Class for countrol of postprocessing output and data.
     """
     def __init__(self, case):
         """
