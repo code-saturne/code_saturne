@@ -788,6 +788,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
        * Apply a part of BC before the time scheme */
       cs_cdofb_vecteq_apply_bc_partly(time_eval, mom_eqp, mom_eqc,
                                       cm, fm, csys, cb);
+      cs_cdofb_navsto_pressure_nitsche(mom_eqp, cm, pr[c_id], csys);
 
       /* 4- TIME CONTRIBUTION */
       /* ==================== */
@@ -1253,6 +1254,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
        * Apply a part of BC before the time scheme */
       cs_cdofb_vecteq_apply_bc_partly(time_eval, mom_eqp, mom_eqc,
                                       cm, fm, csys, cb);
+      cs_cdofb_navsto_pressure_nitsche(mom_eqp, cm, pr[c_id], csys);
 
       /* 4- TIME CONTRIBUTION */
       /* ==================== */
@@ -1759,6 +1761,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
        * Apply a part of BC before the time scheme */
       cs_cdofb_vecteq_apply_bc_partly(time_eval, mom_eqp, mom_eqc,
                                       cm, fm, csys, cb);
+      cs_cdofb_navsto_pressure_nitsche(mom_eqp, cm, pr[c_id], csys);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */

@@ -98,6 +98,50 @@ cs_cdofb_navsto_divergence_vect(const cs_cell_mesh_t  *cm,
   } /* Loop on cell faces */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add contribution related to the pressure if Nitsche's method for the
+ *         boundary conditions is requested
+ *
+ * \param[in]       eqp         pointer to \ref cs_equation_param_t structure
+ * \param[in]       cm          pointer to \ref cs_cell_mesh_t structure
+ * \param[in]       prs_c       value of the pressure at the current cell
+ * \param[in, out]  csys        pointer to \ref cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cdofb_navsto_pressure_nitsche(const cs_equation_param_t *eqp,
+                                 const cs_cell_mesh_t      *cm,
+                                 const cs_real_t            prs_c,
+                                 cs_cell_sys_t             *csys)
+{
+  /* Boundary condition contribution to the algebraic system
+   * Operations that have to be performed BEFORE the static condensation */
+  if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)           &&
+      cs_equation_param_has_diffusion(eqp)                        &&
+      (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+       eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+     ) {
+    for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+      /* Get the boundary face in the cell numbering */
+      const short int  f = csys->_f_ids[i];
+
+      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
+        const cs_quant_t pfq = cm->face[f];
+        const cs_real_t f_prs = pfq.meas * prs_c;
+        cs_real_t *f_rhs = csys->rhs + 3*f;
+        f_rhs[0] -= f_prs * pfq.unitv[0];
+        f_rhs[1] -= f_prs * pfq.unitv[1];
+        f_rhs[2] -= f_prs * pfq.unitv[2];
+      } /* If Dirichlet boundary face */
+
+    } /* Loop on i */
+
+  } /* Boundary cell */
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
