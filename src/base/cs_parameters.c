@@ -923,6 +923,9 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
   cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */
 
+  cs_field_define_key_int("diffusion_coef_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_double("diffusion_coef_ref",
+                             -1.e12*10., CS_FIELD_VARIABLE);
   cs_field_define_key_int("diffusivity_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_double("diffusivity_ref",
                              -1.e12*10., CS_FIELD_VARIABLE); /* visls0(iscal) */
