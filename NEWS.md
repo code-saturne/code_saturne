@@ -3,6 +3,8 @@ Release 5.3.2 (unreleased)
 
 Bug fixes:
 
+- Lagrangian Module: fix crash in some cases with no deposition model.
+
 - Fix use of unitalized values impacting cases with head losses without
   improved pressure interpolation option (iphydr=0).
 
