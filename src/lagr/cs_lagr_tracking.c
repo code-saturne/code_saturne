@@ -1226,8 +1226,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                                 p_am,
                                                 CS_LAGR_CELL_NUM);
 
-    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                              CS_LAGR_PART_DEPOSITED);
+    if (cs_glob_lagr_model->deposition == 1)
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                CS_LAGR_PART_DEPOSITED);
 
     if (cs_glob_lagr_model->resuspension == 0) {
 
