@@ -907,7 +907,7 @@ cs_equation_prepare_system(int                   stride,
 #endif
 
   cs_gnum_t  nnz = row_index[n_gather_elts];
-  if (cs_glob_n_ranks > 1) cs_parall_counter(&nnz, 1);
+  cs_parall_counter(&nnz, 1);
 
   return nnz;
 }

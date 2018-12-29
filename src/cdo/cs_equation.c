@@ -2052,7 +2052,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 #endif
 
     cs_gnum_t  nnz = row_index[size];
-    if (cs_glob_n_ranks > 1) cs_parall_counter(&nnz, 1);
+    cs_parall_counter(&nnz, 1);
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
                   " residual % -8.4e nnz %lu\n",
                   eqp->name, code, n_iters, residual, nnz);
