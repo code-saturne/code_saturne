@@ -5,7 +5,7 @@ Bug fixes:
 
 - Lagrangian Module: fix crash in some cases with no deposition model.
 
-- Fix use of unitalized values impacting cases with head losses without
+- Fix use of unitialized values impacting cases with head losses without
   improved pressure interpolation option (iphydr=0).
 
 - Major fix in BCs for the pressure (excluding compressible and GWF
