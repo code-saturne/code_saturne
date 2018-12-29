@@ -602,25 +602,27 @@ _compressible_physical_property(const char       *param,
  * Return the value of choice for user scalar's property
  *
  * parameters:
- *   scalar_num <-- number of scalar
+ *   f_name     <-- field name
  *   choice     <-> choice for property
  *----------------------------------------------------------------------------*/
 
 static int
-_scalar_properties_choice(int  scalar_num,
+_scalar_properties_choice(const char *f_name,
                           int *choice)
 {
   const char *buff = NULL;
   int   ichoice;
 
-  cs_tree_node_t *tn
-    = cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
-  int i;
-  for (i = 1;
-       tn != NULL && i < scalar_num ;
-       i++) {
-    tn = cs_tree_node_get_next_of_name(tn);
+  cs_tree_node_t *tn;
+
+  for (tn = cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
+      tn != NULL;) {
+    if (!cs_gui_strcmp(f_name, cs_tree_node_get_tag(tn, "name")))
+      tn = cs_tree_node_get_next_of_name(tn);
+    else
+      break;
   }
+
   tn = cs_tree_get_node(tn, "property/choice");
   buff = cs_tree_node_get_value_str(tn);
 
@@ -1936,7 +1938,7 @@ void CS_PROCF (uithsc, UITHSC) (void)
 }
 
 /*----------------------------------------------------------------------------
- * Constant or variable indicator for the user scalar laminar viscosity.
+ * Constant or variable indicator for the user scalar molecular diffusivity
  *
  * Fortran Interface:
  *
@@ -1983,15 +1985,15 @@ void CS_PROCF (csivis, CSIVIS) (void)
 
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)) {
-      int i = cs_field_get_key_int(f, keysca) - 1;
-      if (i > -1) {
+      int iscal = cs_field_get_key_int(f, keysca);
+      if (iscal > 0) {
         if (cs_field_get_key_int(f, kscavr) < 0) {
-          if (_scalar_properties_choice(i+1, &choice1))
-            if (iscalt != i+1)
+          if (_scalar_properties_choice(f->name, &choice1))
+            if (iscalt != iscal)
               cs_field_set_key_int(f, kivisl, choice1 - 1);
           // for groundwater we impose variable property
           if (cs_gui_strcmp(vars->model, "groundwater_model"))
-            if (iscalt != i+1)
+            if (iscalt != iscal)
               cs_field_set_key_int(f, kivisl, 0);
         }
       }
