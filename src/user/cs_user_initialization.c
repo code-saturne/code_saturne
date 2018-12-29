@@ -106,11 +106,13 @@ BEGIN_C_DECLS
  *
  * This is intended to initialize or modify (when restarted)
  * variable and time step values.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_initialization(void)
+cs_user_initialization(cs_domain_t     *domain)
 {
 
 }

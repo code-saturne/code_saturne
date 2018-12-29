@@ -78,7 +78,6 @@ cs_user_1d_wall_thermal.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
-cs_user_extra_operations-verif_cdo_diffusion.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
 cs_user_coupling.c \
@@ -86,9 +85,11 @@ cs_user_electric_scaling.c \
 cs_user_extra_operations-balance_by_zone.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
+cs_user_extra_operations-verif_cdo_diffusion.c \
 cs_user_gwf-example.c \
 cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
+cs_user_initialization-base.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
 cs_user_lagr_model.c \
@@ -148,7 +149,6 @@ cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization-atmospheric.f90 \
-cs_user_initialization-base.f90 \
 cs_user_initialization-compressible.f90 \
 cs_user_initialization-cooling_towers.f90 \
 cs_user_initialization-electric_arcs.f90 \

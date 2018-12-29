@@ -624,6 +624,13 @@ cs_user_extra_operations_wrapper(void)
   cs_user_extra_operations(cs_glob_domain);
 }
 
+void
+cs_user_initialization_wrapper(void)
+{
+  cs_user_initialization(cs_glob_domain);
+}
+
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

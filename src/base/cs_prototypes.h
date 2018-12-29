@@ -343,12 +343,16 @@ cs_user_extra_operations(cs_domain_t     *domain);
 void
 cs_user_extra_operations_finalize(cs_domain_t     *domain);
 
-/*----------------------------------------------------------------------------
- * This function is called one time step to initialize problem.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called one time step to initialize problem.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_initialization(void);
+cs_user_initialization(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

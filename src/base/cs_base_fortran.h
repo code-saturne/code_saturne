@@ -237,6 +237,9 @@ cs_user_extra_operations_initialize_wrapper(void);
 void
 cs_user_extra_operations_wrapper(void);
 
+void
+cs_user_extra_operations_wrapper(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

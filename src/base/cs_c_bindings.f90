@@ -1589,7 +1589,7 @@ module cs_c_bindings
     ! Interface to C user function for initialization
 
     subroutine user_initialization()  &
-      bind(C, name='cs_user_initialization')
+      bind(C, name='cs_user_initialization_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_initialization

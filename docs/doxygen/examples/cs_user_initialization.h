@@ -80,31 +80,16 @@
 
   \subsection user_initialization_base_loc_var_dec Local variables to be added
 
-  The following local variables need to be defined for the examples
-  in this section:
-
-  \snippet cs_user_initialization-base.f90 loc_var_dec
-
-  \subsection alloc Allocation
-
-  Before user initialization, work arrays must be allocated.
-
-  \snippet cs_user_initialization-base.f90 alloc
-
   \subsection user_initialization_base_s_init Initialization
 
-   isca(1) is the number related to the first user-defined scalar variable.
-   rtp(iel,isca(1)) is the value of this variable in cell number iel.
+  One can get any field using \ref cs_field_by_name function (use
+  \ref cs_field_by_name_try if one is not sure the field exists).
+  "scalar1" is the name related to the first user-defined scalar variable.
+  \c f->val[\c cell_id] is the value of this variable in cell number \c cell_id.
 
-   ONLY done if there is no restart computation.
+  ONLY done if there is no restart computation.
 
-  \snippet cs_user_initialization-base.f90 init
-
-  \subsection user_initialization_base_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array:
-
-  \snippet cs_user_initialization-base.f90 finalize
+  \snippet cs_user_initialization-base.c init
 
 */
 // __________________________________________________________________________________
@@ -391,8 +376,8 @@
 /*!
 
   \page user_initialization_unified_combustion Unified combustion coal example
-  isca(1) is the number related to the first user-defined scalar variable.
-  rtp(iel,isca(1)) is the value of this variable in cell number iel.
+  One can get any field using \ref field_get_val_s_by_name function.
+  \c cvar_*(iel) is the value of this variable in cell number \c iel.
   ONLY done if there is no restart computation
 
   \section unified_combustion Unified combustion coal example
