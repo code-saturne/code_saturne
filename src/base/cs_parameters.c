@@ -121,8 +121,8 @@ BEGIN_C_DECLS
         extended support of the neighboring cells.
   \var  cs_space_disc_t::iflxmw
         method to compute interior mass flux due to ALE mesh velocity
-        - 1: based on cell center mesh velocity
         - 0: based on nodes displacement
+        - 1: based on cell center mesh velocity
 */
 
 /*----------------------------------------------------------------------------*/
@@ -529,7 +529,7 @@ static cs_space_disc_t  _space_disc =
   .imvisf = 0,
   .imrgra = 0,
   .anomax = -1e12*10.,
-  .iflxmw = 1
+  .iflxmw = 0
 };
 
 const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;

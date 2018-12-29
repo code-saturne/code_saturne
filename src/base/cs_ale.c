@@ -257,31 +257,36 @@ _free_surface(cs_real_t           time,
 
   /* Transform face flux to vertex displacement */
   cs_real_3_t *_mesh_vel = NULL;
+  cs_real_t *_v_surf = NULL;
 
   BFT_MALLOC(_mesh_vel, m->n_vertices, cs_real_3_t);
+  BFT_MALLOC(_v_surf, m->n_vertices, cs_real_t);
 
   for (cs_lnum_t v_id = 0; v_id < m->n_vertices; v_id++) {
     _mesh_vel[v_id][0] = 0;
     _mesh_vel[v_id][1] = 0;
     _mesh_vel[v_id][2] = 0;
+    _v_surf[v_id] = 0;
   }
 
   for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
 
     const cs_lnum_t face_id = z->elt_ids[elt_id];
-    const cs_real_t mf_inv_rho_g_dot_s = b_mass_flux[face_id] /
-      (cs_math_3_dot_product(grav, b_face_normal[face_id])
-       * CS_F_(rho_b)->val[face_id]);
-    const cs_real_t inv_surf = 1. / mq->b_face_surf[face_id];
-
-    cs_real_3_t f_vel = {
-      grav[0] * mf_inv_rho_g_dot_s,
-      grav[1] * mf_inv_rho_g_dot_s,
-      grav[2] * mf_inv_rho_g_dot_s
-    };
 
     cs_real_3_t normal;
-    cs_math_3_normalise(b_face_normal[face_id], normal);
+    /* Normal direction is given by the gravity */
+    cs_math_3_normalise(grav, normal);
+
+    const cs_real_t mf_inv_rho_n_dot_s = b_mass_flux[face_id] /
+      (cs_math_3_dot_product(normal, b_face_normal[face_id])
+       * CS_F_(rho_b)->val[face_id]);
+
+    cs_real_3_t f_vel = {
+      normal[0] * mf_inv_rho_n_dot_s,
+      normal[1] * mf_inv_rho_n_dot_s,
+      normal[2] * mf_inv_rho_n_dot_s
+    };
+
 
     const cs_lnum_t s = m->b_face_vtx_idx[face_id];
     const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
@@ -311,9 +316,13 @@ _free_surface(cs_real_t           time,
         b_face_cog[face_id][2] - vtx_coord[v_id1][2],
       };
 
-      cs_real_t portion_surf = 0.25 * inv_surf * (
+      /* Portion of the surface associated to the vertex
+       * projected in the normal direction */
+      cs_real_t portion_surf = -0.25 * (
           cs_math_3_triple_product(v0v1, v1_cog, normal)
           + cs_math_3_triple_product(v1v2, v1_cog, normal));
+
+      _v_surf[v_id1] += portion_surf;
 
       for (int i = 0; i < 3; i++)
         _mesh_vel[v_id1][i] += f_vel[i] * portion_surf;
@@ -321,13 +330,21 @@ _free_surface(cs_real_t           time,
   }
 
   /* Handle parallelism */
-  if (m->vtx_interfaces != NULL)
+  if (m->vtx_interfaces != NULL) {
     cs_interface_set_sum(m->vtx_interfaces,
                          m->n_vertices,
                          3,
                          true,
                          CS_REAL_TYPE,
                          _mesh_vel);
+
+    cs_interface_set_sum(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         _v_surf);
+  }
 
   cs_real_3_t *resv = (cs_real_3_t *)res;
 
@@ -336,12 +353,13 @@ _free_surface(cs_real_t           time,
     const cs_lnum_t  off = (compact) ? p : v_id;
 
     for (int i = 0; i < 3; i++) {
-      resv[off][i] = _mesh_vel[v_id][i]; //FIXME  v_id or off ?
+      resv[off][i] = _mesh_vel[v_id][i]/_v_surf[v_id]; //FIXME  v_id or off ?
     }
   }
 
   /* Free memory */
   BFT_FREE(_mesh_vel);
+  BFT_FREE(_v_surf);
 
 }
 
@@ -1144,7 +1162,9 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
 
 
     case CS_BOUNDARY_ALE_SLIDING:
-      break;                    /* TODO */
+      cs_equation_add_sliding_condition(eqp,
+                                        z->name);
+      break;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
