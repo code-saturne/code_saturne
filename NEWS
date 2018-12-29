@@ -5,6 +5,8 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Lagrangian Module: fix crash in some cases with no deposition model.
+
 - Fix missing free surface boundary movement in some cases depending on
   which pages were visited in the GUI (GitHub issue #27).
 
