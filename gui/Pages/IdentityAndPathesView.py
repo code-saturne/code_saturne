@@ -171,7 +171,7 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
 
         if dir_name:
             self.case_path = dir_name
-            self.lineEditCasePath.setText(self.case_path)
+            self.mdl.setCasePath(self.case_path)
             self.__getAbsolutePath()
             self.__updateId(dir_name)
 
