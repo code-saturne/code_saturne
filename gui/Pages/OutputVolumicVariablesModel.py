@@ -471,7 +471,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def __getModelVariables__(self, model_name):
+    def getModelVariables(self, model_name):
         """
         Return list of variable nodes for a given model.
         """
