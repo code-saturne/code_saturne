@@ -315,7 +315,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Update view
         """
         mdl = self.mdl.getTurboMachineryModel()
-        self.modelTurboMachineryType.setItem(str_model = mdl)
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
 
         if mdl != "off":

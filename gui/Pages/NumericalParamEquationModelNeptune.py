@@ -33,7 +33,8 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.XMLvariables import Model
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Base.XMLmodel     import ModelTest
 from code_saturne.Base.XMLengine import *
 from code_saturne.Pages.TurbulenceNeptuneModel import TurbulenceModelsDescription
 
@@ -344,6 +345,7 @@ class NumericalParamEquatModel(Model):
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case
 #-------------------------------------------------------------------------------
+
 class NumericalParamEquatTestCase(ModelTest):
     """
     """
