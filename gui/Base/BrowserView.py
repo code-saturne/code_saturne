@@ -406,8 +406,9 @@ class BrowserView(QWidget, Ui_BrowserForm):
     def _browser(self):
         tree ="""
 Calculation environment
-    Meshes selection
     Notebook
+Mesh
+    Preprocessing
 Calculation features
     Main fields
     Deformable mesh

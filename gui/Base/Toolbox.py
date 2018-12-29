@@ -80,9 +80,13 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.IdentityAndPathesView as Page
         thisPage = Page.IdentityAndPathesView(root, case)
 
-    elif page_name == tr("Meshes selection"):
+    elif page_name == tr("Mesh"):
         import code_saturne.Pages.SolutionDomainView as Page
         thisPage = Page.SolutionDomainView(root, case, stbar)
+
+    elif page_name == tr("Preprocessing"):
+        import code_saturne.Pages.PreprocessingView as Page
+        thisPage = Page.PreprocessingView(root, case, stbar)
 
     elif page_name == tr("Notebook"):
         import code_saturne.Pages.NotebookView as Page

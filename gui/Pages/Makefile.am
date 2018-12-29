@@ -110,6 +110,7 @@ PerformanceTuningModel.py \
 PerformanceTuningView.py \
 PorosityModel.py \
 PorosityView.py \
+PreprocessingView.py \
 ProfilesModel.py \
 ProfilesView.py \
 QMeiEditorView.py \
@@ -261,6 +262,7 @@ PorosityForm.ui \
 ProfilesForm.ui \
 QMeiEditorForm.ui \
 ReferenceValuesForm.ui \
+PreprocessingForm.ui \
 SolutionDomainForm.ui \
 SourceTermsForm.ui \
 StartRestartAdvancedDialogForm.ui \
