@@ -71,7 +71,6 @@ except:
     sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
     from code_saturne.studymanager_gui.MainForm import Ui_MainForm
 
-from code_saturne.Base.IdView import IdView
 from code_saturne.Base import XMLengine
 from code_saturne.Base.XMLmodel import *
 from code_saturne.Base.Toolbox import GuiParam
@@ -132,9 +131,12 @@ class MainView(object):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
-        self.setWindowTitle(self.package.code_name + " STUDYMANAGER GUI" + " - " + self.package.version)
+        iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
+        iconpath = os.path.join(iconpath, "Base", "MONO-bulle-HD.png")
+        icon = QIcon(QPixmap(iconpath))
+        self.setWindowIcon(icon)
 
-        self.Id = IdView()
+        self.setWindowTitle(self.package.code_name + " STUDYMANAGER GUI" + " - " + self.package.version)
 
         self.dockWidgetBrowser.setWidget(self.Browser)
 
@@ -584,10 +586,9 @@ class MainView(object):
         """
         private method
 
-        update the Study Identity dock widget
+        update the XML file name
         """
         file_name = XMLengine._encode(self.case['xmlfile'])
-        self.Id.setXMLFileName(file_name)
 
 
     def fileSave(self):
@@ -696,7 +697,6 @@ class MainView(object):
         self.page = self.Browser.display(self,
                                          self.case,
                                          self.statusbar,
-                                         self.Id,
                                          self.Browser)
 
         if self.page is not None:
@@ -723,7 +723,7 @@ class MainView(object):
               self.package.bugreport + "\n\n"               +\
               "Please visit our site:\n"                    +\
               self.package.url
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name + ' study manager', msg)
 
 
     def displayLicence(self):
@@ -732,7 +732,7 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
+        QMessageBox.about(self, self.package.code_name + ' study manager', "see COPYING file") # TODO
 
 
     def displayConfig(self):
@@ -741,7 +741,7 @@ class MainView(object):
 
         configuration information window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
+        QMessageBox.about(self, self.package.code_name + ' study manager', "see config.py") # TODO
 
 
     def setColor(self):
@@ -905,7 +905,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the tutorial for Code_Saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name + ' study manager', msg)
 
 
     def displayCSTheory(self):

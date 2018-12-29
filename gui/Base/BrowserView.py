@@ -586,7 +586,7 @@ Calculation management
         return
 
 
-    def display(self, root, case, stbar, study, tree):
+    def display(self, root, case, stbar, tree):
         """
         """
         index = self.treeView.currentIndex()
@@ -594,7 +594,7 @@ Calculation management
         name  = item.itemData[0]
         case['current_tab'] = 0
         case['current_index'] = index
-        return displaySelectedPage(name, root, case, stbar, study, tree)
+        return displaySelectedPage(name, root, case, stbar, tree)
 
 
     def isFolder(self):
@@ -726,10 +726,14 @@ Calculation management
         self.setRowClose(self.tr('Groundwater laws'))
         """
 
-        self.setRowClose(self.tr('Boundary_conditions '))
+        self.setRowShow(self.tr('Boundary zones'), False)
+
+        """
+        self.setRowClose(self.tr('Boundary_conditions'))
         self.setRowClose(self.tr('Particle boundary conditions'))
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Cathare Coupling'))
+        """
 
         self.setRowClose(self.tr('Numerical parameters'))
         """
@@ -982,7 +986,8 @@ Calculation management
 
         # Boundary zones
 
-        self.setRowShow(self.tr('Boundary conditions '))
+        self.setRowShow(self.tr('Boundary zones'))
+        self.setRowShow(self.tr('Boundary conditions'))
         self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
         self.setRowShow(self.tr('Fluid structure interaction'), (m_ale > 0))
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)

@@ -94,7 +94,7 @@ Define plotter
         return
 
 
-    def display(self, root, case, stbar, study, tree):
+    def display(self, root, case, stbar, tree):
         """
         """
         index = self.treeView.currentIndex()
@@ -102,7 +102,7 @@ Define plotter
         name  = item.itemData[0]
         case['current_tab'] = 0
         case['current_index'] = index
-        return displaySelectedPage(name, root, case, stbar, study, tree)
+        return displaySelectedPage(name, root, case, stbar, tree)
 
 
     def configureTree(self, case):

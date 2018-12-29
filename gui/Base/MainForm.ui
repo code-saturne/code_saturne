@@ -12,7 +12,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Interface Code_Saturne</string>
+   <string>Code_Saturne</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resource_base.qrc">
@@ -94,7 +94,6 @@
     <property name="title">
      <string>&amp;Window</string>
     </property>
-    <addaction name="IdentityAction"/>
     <addaction name="BrowserAction"/>
     <addaction name="separator"/>
     <addaction name="backgroundColorAction"/>
@@ -183,13 +182,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="openXtermAction"/>
    <addaction name="displayCaseAction"/>
-  </widget>
-  <widget class="QDockWidget" name="dockWidgetIdentity">
-   <attribute name="dockWidgetArea">
-    <number>4</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetIdentityContents"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetBrowser">
    <attribute name="dockWidgetArea">
@@ -482,23 +476,6 @@
    </property>
    <property name="shortcut">
     <string>F10</string>
-   </property>
-  </action>
-  <action name="IdentityAction">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Identity</string>
-   </property>
-   <property name="statusTip">
-    <string>Show/Hide the identity window.</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+I</string>
    </property>
   </action>
   <action name="BrowserAction">

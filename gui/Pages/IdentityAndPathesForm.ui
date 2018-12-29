@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>402</width>
-    <height>291</height>
+    <width>443</width>
+    <height>324</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,12 +20,12 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the case directory. Please give the absolute path of the case directory or use the dialog box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Directory of the case</string>
+      <string>Study and case directories</string>
      </property>
      <layout class="QGridLayout">
-      <item row="0" column="0">
-       <layout class="QHBoxLayout">
-        <item>
+      <item row="1" column="0">
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="1" column="0">
          <spacer>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -38,23 +38,27 @@
           </property>
          </spacer>
         </item>
-        <item>
-         <widget class="QLineEdit" name="lineEditCasePath">
-          <property name="minimumSize">
+        <item row="1" column="4">
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
            <size>
-            <width>310</width>
-            <height>0</height>
+            <width>16</width>
+            <height>22</height>
            </size>
           </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the case directory. Please give the absolute path of the case directory or use the dialog box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="statusTip">
-           <string>Please give the absolute path of the case directory or use the dialog box.</string>
+         </spacer>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLineEdit" name="lineEditStudyPath">
+          <property name="enabled">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
-        <item>
+        <item row="1" column="3">
          <widget class="QToolButton" name="toolButton">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the case directory. Please give the absolute path of the case directory or use the dialog box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -80,18 +84,35 @@
           </property>
          </widget>
         </item>
-        <item>
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
+        <item row="1" column="2">
+         <widget class="QLineEdit" name="lineEditCasePath">
+          <property name="minimumSize">
            <size>
-            <width>16</width>
-            <height>22</height>
+            <width>310</width>
+            <height>0</height>
            </size>
           </property>
-         </spacer>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the case directory. Please give the absolute path of the case directory or use the dialog box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="statusTip">
+           <string>Please give the absolute path of the case directory or use the dialog box.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="labelCase">
+          <property name="text">
+           <string>Case</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="labelStudy">
+          <property name="text">
+           <string>Study</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -104,7 +125,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Associated sub-directories of the case. This is filled automatically.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Associated sub-directories of the case</string>
+      <string>Associated case sub-directories</string>
      </property>
      <layout class="QGridLayout">
       <item row="0" column="0">
@@ -136,9 +157,12 @@
           </item>
           <item row="0" column="1">
            <widget class="QLineEdit" name="lineEditData">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimumSize">
              <size>
-              <width>215</width>
+              <width>180</width>
               <height>0</height>
              </size>
             </property>
@@ -162,9 +186,12 @@
           </item>
           <item row="1" column="1">
            <widget class="QLineEdit" name="lineEditResults">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimumSize">
              <size>
-              <width>215</width>
+              <width>180</width>
               <height>0</height>
              </size>
             </property>
@@ -188,9 +215,12 @@
           </item>
           <item row="2" column="1">
            <widget class="QLineEdit" name="lineEditUserSrc">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimumSize">
              <size>
-              <width>215</width>
+              <width>180</width>
               <height>0</height>
              </size>
             </property>
@@ -214,9 +244,12 @@
           </item>
           <item row="3" column="1">
            <widget class="QLineEdit" name="lineEditScripts">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimumSize">
              <size>
-              <width>215</width>
+              <width>180</width>
               <height>0</height>
              </size>
             </property>

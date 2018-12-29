@@ -64,7 +64,6 @@ class package:
         self.runsolver = "run_solver" + self.config.shext
         self.configfile = "code_saturne" + self.config.cfgext
         self.scratchdir = 'tmp_Saturne'
-        self.srcdir = 'src_saturne'
 
         # Installation directories
 

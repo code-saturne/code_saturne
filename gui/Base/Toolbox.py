@@ -66,7 +66,7 @@ class GuiParam(object):
 # displaySelectedPage direct to the good page with its name
 #-------------------------------------------------------------------------------
 
-def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None):
+def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
     """
     This function enables to display a new page when the TreeNavigator
     send the order.
@@ -78,7 +78,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     if page_name == tr("Calculation environment"):
         import code_saturne.Pages.IdentityAndPathesView as Page
-        thisPage = Page.IdentityAndPathesView(root, case, study)
+        thisPage = Page.IdentityAndPathesView(root, case)
 
     elif page_name == tr("Meshes selection"):
         import code_saturne.Pages.SolutionDomainView as Page

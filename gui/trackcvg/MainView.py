@@ -552,6 +552,11 @@ class MainView(object):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
+        iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
+        iconpath = os.path.join(iconpath, "Base", "MONO-bulle-HD.png")
+        icon = QIcon(QPixmap(iconpath))
+        self.setWindowIcon(icon)
+
         self.setWindowTitle(self.package.code_name + " TRACKING CONVERGENCE" + " - " + self.package.version)
 
         # Validator
@@ -725,7 +730,7 @@ class MainView(object):
               self.package.bugreport + "\n\n"               +\
               "Please visit our site:\n"                    +\
               self.package.url
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name + ' convergence plot', msg)
 
 
     def displayLicence(self):
@@ -734,7 +739,7 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file")
+        QMessageBox.about(self, self.package.code_name + ' convergence plot', "see COPYING file")
 
 
     def displayConfig(self):
@@ -743,7 +748,7 @@ class MainView(object):
 
         configuration information window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py")
+        QMessageBox.about(self, self.package.code_name + ' convergence plot', "see config.py")
 
 
     def setColor(self):
@@ -1289,7 +1294,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the tutorial for Code_Saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name + ' convergence plot', msg)
 
 
     def displayCSTheory(self):

@@ -40,7 +40,6 @@ PYFILES = \
 BrowserView.py \
 CommandMgrDialogView.py \
 Common.py \
-IdView.py \
 MainView.py \
 QtCase.py \
 QtPage.py \
@@ -63,7 +62,6 @@ UIFILES = \
 BrowserForm.ui \
 CommandMgrLinesDisplayedDialogForm.ui \
 CommandMgrDialogForm.ui \
-IdForm.ui \
 MainForm.ui \
 NewCaseDialogForm.ui
 

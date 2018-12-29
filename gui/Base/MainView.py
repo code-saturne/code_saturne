@@ -74,7 +74,6 @@ except:
     from code_saturne.Base.MainForm import Ui_MainForm
     from code_saturne.Base.NewCaseDialogForm import Ui_NewCaseDialogForm
 
-from code_saturne.Base.IdView import IdView
 from code_saturne.Base.BrowserView import BrowserView
 from code_saturne.Base import XMLengine, QtCase
 from code_saturne.Base.XMLinitialize import *
@@ -264,7 +263,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         Method called when user clicks 'OK'
         """
         if self.caseName == None or self.caseName == "":
-            msg = "name case not defined"
+            msg = "case name not defined"
             sys.stderr.write(msg + '\n')
         elif self.copyFrom == True and self.copyFromName == None:
             msg = "copy from case not defined"
@@ -327,11 +326,7 @@ class MainView(object):
         Factory
         """
 
-        #~ if cmd_package.name == 'code_saturne':
         return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case, cmd_salome)
-        #~ elif cmd_package.name == 'neptune_cfd':
-            #~ return MainViewNeptune.__new__(MainViewNeptune, cmd_package, cmd_case, cmd_salome)
-
 
     @staticmethod
     def updateInstances(qobj):
@@ -346,9 +341,6 @@ class MainView(object):
     def ui_initialize(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
-
-        self.Id = IdView()
-        self.dockWidgetIdentity.setWidget(self.Id)
 
         self.dockWidgetBrowser.setWidget(self.Browser)
 
@@ -378,7 +370,6 @@ class MainView(object):
         self.openXtermAction.triggered.connect(self.openXterm)
         self.displayCaseAction.triggered.connect(self.displayCase)
 
-        self.IdentityAction.toggled.connect(self.dockWidgetIdentityDisplay)
         self.BrowserAction.toggled.connect(self.dockWidgetBrowserDisplay)
 
         self.displayAboutAction.triggered.connect(self.displayAbout)
@@ -488,21 +479,6 @@ class MainView(object):
         else:
             self.displayWelcomePage()
             self.dockWidgetBrowserDisplay(False)
-
-
-    def dockWidgetIdentityDisplay(self, bool=True):
-        """
-        Private slot.
-
-        Show or hide the  the identity dock window.
-
-        @type bool: C{True} or C{False}
-        @param bool: if C{True}, shows the identity dock window
-        """
-        if bool:
-            self.dockWidgetIdentity.show()
-        else:
-            self.dockWidgetIdentity.hide()
 
 
     def dockWidgetBrowserDisplay(self, bool=True):
@@ -649,7 +625,6 @@ class MainView(object):
             self.case = QtCase.QtCase(package=self.package)
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
-            self.updateTitleBar()
 
             self.Browser.configureTree(self.case)
             self.dockWidgetBrowserDisplay(True)
@@ -661,6 +636,7 @@ class MainView(object):
             self.case.undo_signal.connect(self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
+        self.updateTitleBar()
         self.actionPrepro.setEnabled(True)
         self.actionCalculation.setEnabled(True)
 
@@ -816,14 +792,6 @@ class MainView(object):
         self.actionPrepro.setEnabled(True)
         self.actionCalculation.setEnabled(True)
 
-        #Update Icon, Window Title Name and package name :
-        icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
-        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
-            self.case['package'].name = 'NEPTUNE_CFD'
-
-        else:
-            self.case['package'].name = 'code_saturne'
-
         self.updateTitleBar()
 
 
@@ -834,23 +802,39 @@ class MainView(object):
         icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
 
         title = ""
-        case_name = self.case.root().xmlGetAttribute('case')
+
+        file_name = ''
+        datadir = ''
+        if hasattr(self, 'case'):
+            file_name = self.case['xmlfile']
+            if file_name:
+                file_name = os.path.basename(file_name)
+                datadir = os.path.split(file_name)[0]
+            else:
+                file_name = '<new parameters set>'
+        if not datadir:
+            datadir = os.getcwd()
+        (casedir, data) = os.path.split(datadir)
+        if data != 'DATA': # inconsistent paramaters location.
+            casedir = ''
+        case_name = os.path.basename(casedir)
+
         if case_name:
             title += case_name + ' : '
-        file_name = self.case['xmlfile']
         if file_name:
-            file_name = os.path.basename(file_name)
+            title += file_name + ' - '
+
+        if hasattr(self, 'case'):
+            package = self.case['package']
         else:
-            file_name = '<new parameters set>'
-        title += file_name
-        title +=   " - " + self.tr(self.case['package'].name)
+            package = self.package
 
-        if self.case['package'].name == "NEPTUNE_CFD":
+        title += self.tr(package.code_name)
+
+        if package.code_name == "NEPTUNE_CFD":
             icon = QIcon(QPixmap(icondir+"logoneptune.png"))
-
         else:
             icon = QIcon(QPixmap(icondir+"MONO-bulle-HD.png"))
-
         self.setWindowIcon(icon)
         self.setWindowTitle(title)
 
@@ -927,20 +911,6 @@ class MainView(object):
             dialog.show()
 
 
-    def updateStudyId(self):
-        """
-        private method
-
-        update the Study Identity dock widget
-        """
-        study     = self.case.root().xmlGetAttribute('study')
-        case      = self.case.root().xmlGetAttribute('case')
-        file_name = XMLengine._encode(self.case['xmlfile'])
-        self.Id.setStudyName(study)
-        self.Id.setCaseName(case)
-        self.Id.setXMLFileName(file_name)
-
-
     def fileSave(self):
         """
         public slot
@@ -974,7 +944,7 @@ class MainView(object):
             self.statusbar.showMessage(msg, 2000)
             return
 
-        self.updateStudyId()
+        self.updateTitleBar()
         self.case.xmlSaveDocument()
         self.batchFileSave()
 
@@ -994,7 +964,6 @@ class MainView(object):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
@@ -1019,7 +988,7 @@ class MainView(object):
                 self.case['xmlfile'] = f
                 self.addRecentFile(f)
                 self.fileSave()
-                self.updateStudyId()
+                self.updateTitleBar()
                 self.case.xmlSaveDocument()
                 self.batchFileSave()
                 self.updateTitleBar()
@@ -1141,7 +1110,7 @@ class MainView(object):
                                                   package=self.package)
         del IdentityAndPathesModel
 
-        self.updateStudyId()
+        self.updateTitleBar()
 
 
     @pyqtSlot()
@@ -1196,7 +1165,6 @@ class MainView(object):
         self.page = self.Browser.display(self,
                                          self.case,
                                          self.statusbar,
-                                         self.Id,
                                          self.Browser)
 
         if self.page is not None:
@@ -1223,7 +1191,7 @@ class MainView(object):
               self.package.bugreport + "\n\n"               +\
               "Please visit our site:\n"                    +\
               self.package.url
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name, msg)
 
 
     def displayLicence(self):
@@ -1232,7 +1200,7 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
+        QMessageBox.about(self, self.package.code_name, "see COPYING file") # TODO
 
 
     def displayConfig(self):
@@ -1241,7 +1209,7 @@ class MainView(object):
 
         configuration information window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
+        QMessageBox.about(self, self.package.code_name, "see config.py") # TODO
 
 
     def setColor(self):
@@ -1414,8 +1382,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         if 'doxygen' not in liste:
             self.displayNCDoxygenAction.setEnabled(False)
 
+        self.updateTitleBar()
 
-    def initCase(self):  #Il faut rappeller cette methode des que l'on passe de CS a Neptune...
+
+    def initCase(self):
         """
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
@@ -1449,7 +1419,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
 
 
@@ -1474,7 +1443,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the tutorial for Code_Saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name, msg)
 
 
     def displayCSTheory(self):
@@ -1619,7 +1588,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
@@ -1654,7 +1622,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
@@ -1675,7 +1642,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
@@ -1695,7 +1661,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
@@ -1713,7 +1678,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 

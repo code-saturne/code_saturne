@@ -558,8 +558,15 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.init_neptune()
 
-            self.case['package'].name = 'NEPTUNE_CFD'
-            self.parent.updateTitleBar()
+            try:
+                from neptune_cfd.nc_package import package as nc_package
+                self.case['package'] = nc_package()
+            except Exception:
+                self.case['package'] = cs_package()
+                self.case['package'].code_name = 'NEPTUNE_CFD'
+
+            if hasattr(self.parent, 'updateTitleBar'):
+                self.parent.updateTitleBar()
 
         elif self.checkPrev == 'NeptuneCFD':
 
@@ -567,7 +574,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.init_saturne()
 
-            self.parent.updateTitleBar()
+            if hasattr(self.parent, 'updateTitleBar'):
+                self.parent.updateTitleBar()
 
             eval('self.radioButton'+checkCur+'.setChecked(True)')
 

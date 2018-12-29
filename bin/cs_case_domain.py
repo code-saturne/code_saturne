@@ -608,7 +608,7 @@ class domain(base_domain):
                                      + fnmatch.filter(dir_files, '*.hxx')
                                      + fnmatch.filter(dir_files, '*.hpp'))
 
-            exec_src = os.path.join(self.exec_dir, self.package.srcdir)
+            exec_src = os.path.join(self.exec_dir, 'src')
 
             # Copy source files to execution directory
 
@@ -640,7 +640,7 @@ class domain(base_domain):
             else:
                 # In case of error, copy source to results directory now,
                 # as no calculation is possible, then raise exception
-                for f in [self.package.srcdir, 'compile.log']:
+                for f in ['src', 'compile.log']:
                     self.copy_result(f)
                 self.error = 'compile or link'
 
@@ -997,7 +997,7 @@ class domain(base_domain):
 
         # Copy user sources, compile log, and xml file if present
 
-        for f in [self.package.srcdir, 'compile.log', self.param]:
+        for f in ['src', 'compile.log', self.param]:
             if f in dir_files:
                 valid_dir = True
                 self.copy_result(f, purge)
