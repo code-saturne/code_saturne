@@ -155,11 +155,11 @@ class TreeModel(QAbstractItemModel):
             if column == 0:
                 style = QWidget().style()
                 if item.itemType == "folder-new":
-                    icon = style.standardIcon(QStyle.SP_FileDialogNewFolder)
+                    icon = style.standardIcon(QStyle.SP_FileLinkIcon)
                 elif item.itemType == "folder-close":
-                    icon = style.standardIcon(QStyle.SP_DirClosedIcon)
+                    icon = style.standardIcon(QStyle.SP_FileIcon)
                 elif item.itemType == "folder-open":
-                    icon = style.standardIcon(QStyle.SP_DirOpenIcon)
+                    icon = style.standardIcon(QStyle.SP_FileIcon)
                 elif item.itemType == "file-open":
                     icon = style.standardIcon(QStyle.SP_FileIcon)
                 elif item.itemType == "file-new":
