@@ -86,7 +86,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         # Combo models
         self.modelEXTRAG = ComboModel(self.comboBoxEXTRAG,2,1)
-        self.modelIMRGRA = ComboModel(self.comboBoxIMRGRA,5,1)
+        self.modelIMRGRA = ComboModel(self.comboBoxIMRGRA,7,1)
 
         self.modelEXTRAG.addItem(self.tr("Neumann 1st order"), 'neumann')
         self.modelEXTRAG.addItem(self.tr("Extrapolation"), 'extrapolation')
@@ -96,6 +96,8 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelIMRGRA.addItem(self.tr("Least squares method over extended cell neighborhood"),'2')
         self.modelIMRGRA.addItem(self.tr("Least squares method over partial extended cell neighborhood"),'3')
         self.modelIMRGRA.addItem(self.tr("Iterative method with least squares initialization"),'4')
+        self.modelIMRGRA.addItem(self.tr("Iterative method with least squares initialization and extended neighbordood"),'5')
+        self.modelIMRGRA.addItem(self.tr("Iterative method with least squares initialization and partial extended neighbordood"),'6')
 
         self.comboBoxEXTRAG.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 

@@ -184,7 +184,7 @@ class NumericalParamGlobalModel(Model):
     @Variables.noUndo
     def getGradientReconstruction(self):
         """
-        Return IMRGRA value : 0, 1, 2, 3, 4 or 5
+        Return IMRGRA value : 0, 1, 2, 3, 4, 5, or 6
         """
         node = self.node_np.xmlInitNode('gradient_reconstruction', 'choice')
         choice = node['choice']
@@ -286,7 +286,7 @@ class NumericalParamGlobalModel(Model):
         Put value of gradient_reconstruction
         """
         self.isInt(value)
-        self.isInList(value, (0, 1, 2, 3, 4, 5))
+        self.isInList(value, (0, 1, 2, 3, 4, 5, 6))
         node = self.node_np.xmlInitNode('gradient_reconstruction', 'choice')
         node['choice'] = value
 
