@@ -228,7 +228,7 @@ void
 cs_base_fortran_bft_printf_to_f(void);
 
 /*----------------------------------------------------------------------------
- * Wrappers to cs_user_extra_operations
+ * Wrappers for Fortran C
  *----------------------------------------------------------------------------*/
 
 void
@@ -238,7 +238,7 @@ void
 cs_user_extra_operations_wrapper(void);
 
 void
-cs_user_extra_operations_wrapper(void);
+cs_user_initialization_wrapper(void);
 
 /*----------------------------------------------------------------------------*/
 
