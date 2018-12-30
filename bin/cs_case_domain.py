@@ -412,7 +412,7 @@ class domain(base_domain):
 
         self.exec_solver = True
 
-        self.param = param
+        self.param = os.path.basename(param)
         self.logging_args = logging_args
         self.solver_args = None
 
