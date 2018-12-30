@@ -133,11 +133,13 @@ cs_user_model(void)
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(void)
+cs_user_parameters(cs_domain_t   *domain)
 {
   /*
    * We define a cooling tower zone

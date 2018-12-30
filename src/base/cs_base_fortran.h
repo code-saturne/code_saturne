@@ -240,6 +240,9 @@ cs_user_extra_operations_wrapper(void);
 void
 cs_user_initialization_wrapper(void);
 
+void
+cs_user_finalize_setup_wrapper(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

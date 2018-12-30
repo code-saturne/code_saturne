@@ -516,7 +516,7 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
    * --> Source term
    */
 
-  cs_user_cdo_finalize_setup(cs_glob_domain);
+  cs_user_finalize_setup(cs_glob_domain);
 
   /* Assign to a cs_equation_t structure a list of function to manage this
    * structure during the computation.

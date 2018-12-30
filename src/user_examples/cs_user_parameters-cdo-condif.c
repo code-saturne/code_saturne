@@ -370,11 +370,13 @@ cs_user_model(void)
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(void)
+cs_user_parameters(cs_domain_t   *domain)
 {
   /* ─────────────────────────────────────────────────────────────────────────
    *  Modify the setting of an equation using a generic process
@@ -475,16 +477,16 @@ cs_user_linear_solvers(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  - Specify the elements such as properties, advection fields,
- *           user-defined equations and modules which have been previously
- *           added.
+ * \brief  Specify the elements such as properties, advection fields,
+ *         user-defined equations and modules which have been previously
+ *         added.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
 */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 

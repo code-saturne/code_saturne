@@ -303,7 +303,7 @@ cs_user_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  - Specify the elements such as properties, advection fields,
+ * \brief  Specify the elements such as properties, advection fields,
  *           user-defined equations and modules which have been previously
  *           added.
  *
@@ -312,7 +312,7 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 

@@ -309,11 +309,15 @@ cs_user_model(void)
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
+ * At this step, mesh quantities and connectivities are built.
+ *
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(void)
+cs_user_parameters(cs_domain_t *domain)
 {
   /* Example: force presence of boundary temperature field */
   /*-------------------------------------------------------*/

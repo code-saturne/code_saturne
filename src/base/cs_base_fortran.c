@@ -630,6 +630,11 @@ cs_user_initialization_wrapper(void)
   cs_user_initialization(cs_glob_domain);
 }
 
+void
+cs_user_finalize_setup_wrapper(void)
+{
+  cs_user_finalize_setup(cs_glob_domain);
+}
 
 /*----------------------------------------------------------------------------*/
 

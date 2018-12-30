@@ -434,11 +434,13 @@ cs_user_linear_solvers(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define or modify output user parameters.
+ * For CDO schemes, specify the elements such as properties, advection fields,
+ * user-defined equations and modules which have been previously added.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_output(void);
+cs_user_finalize_setup(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------
  * Tag bad cells within the mesh based on geometric criteria.
@@ -542,12 +544,12 @@ cs_user_matrix_tuning(void);
  * Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
- * and other fields have been defined, so speciic settings related to those
+ * and other fields have been defined, so specific settings related to those
  * fields may be set here.
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(void);
+cs_user_parameters(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------
  * User function for input of radiative transfer module options.
@@ -746,44 +748,6 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
 /*============================================================================
  *  CDO User function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  After the first step: cs_user_cdo_init_setup(), this second step
- *         concludes the setup of properties, equations, source terms...
- *         At this step, mesh quantities and connectivities are build as well
- *         as the field arrays.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Additional user-defined operations on results provided by the CDO
- *         kernel. Define advanced post-processing and analysis for example.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_extra_op(cs_domain_t     *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Final step for user-defined operations on results provided by the
- *         CDO kernel.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_end_extra_op(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

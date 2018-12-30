@@ -68,11 +68,11 @@ interface
     implicit none
   end subroutine gui_output
 
-  subroutine user_output()  &
-      bind(C, name='cs_user_output')
+  subroutine user_finalize_setup_wrapper()  &
+      bind(C, name='cs_user_finalize_setup_wrapper')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine user_output
+  end subroutine user_finalize_setup_wrapper
 
   subroutine user_syrthes_coupling()  &
       bind(C, name='cs_user_syrthes_coupling')
@@ -172,7 +172,7 @@ if (icdo.lt.2) then
 endif
 
 call usipes(nmodpp)
-call user_output
+call user_finalize_setup_wrapper
 
 !===============================================================================
 ! 5. Coherency checks

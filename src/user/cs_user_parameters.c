@@ -137,27 +137,14 @@ cs_user_model(void)
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
+ * At this step, mesh quantities and connectivities are built.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(void)
-{
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  - Specify the elements such as properties, advection fields,
- *           user-defined equations and modules which have been previously
- *           added.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain)
+cs_user_parameters(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 }
@@ -165,13 +152,17 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define or modify output user parameters.
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_output(void)
+cs_user_finalize_setup(cs_domain_t   *domain)
 {
-
+  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -117,11 +117,13 @@ BEGIN_C_DECLS
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so speciic settings related to those
  * fields may be set here.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(void)
+cs_user_parameters(cs_domain_t   *domain)
 {
   /*
    * We define a fan, which will be handled as an automatic
