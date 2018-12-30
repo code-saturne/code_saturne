@@ -570,6 +570,8 @@ cs_run(void)
 
   cs_base_time_summary();
   cs_base_mem_finalize();
+
+  cs_log_printf_flush(CS_LOG_N_TYPES);
 }
 
 /*============================================================================
