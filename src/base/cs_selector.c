@@ -198,15 +198,16 @@ cs_selector_get_cell_num_list(const char  *criteria,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Fill a list of boundary faces verifying a given selection criteria.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of boundary faces verifying a given selection criteria.
  *
- * parameters:
- *   criteria    <-- selection criteria string
- *   n_b_faces   --> number of selected interior faces
- *   b_face_list --> list of selected boundary faces
- *                   (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
- *----------------------------------------------------------------------------*/
+ * \param[in]   criteria   selection criteria string
+ * \param[out]  n_i_faces  number of selected boundary faces
+ * \param[out]  cell_list  list of selected boundary faces
+ *                         (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_selector_get_b_face_list(const char  *criteria,
@@ -275,15 +276,16 @@ cs_selector_get_b_face_list(const char  *criteria,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Fill a list of interior faces verifying a given selection criteria.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of interior faces verifying a given selection criteria.
  *
- * parameters:
- *   criteria    <-- selection criteria string
- *   n_i_faces   --> number of selected interior faces
- *   i_face_list --> list of selected interior faces
- *                   (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
- *----------------------------------------------------------------------------*/
+ * \param[in]   criteria   selection criteria string
+ * \param[out]  n_i_faces  number of selected interior faces
+ * \param[out]  cell_list  list of selected interior faces
+ *                         (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_selector_get_i_face_list(const char  *criteria,
@@ -352,15 +354,16 @@ cs_selector_get_i_face_list(const char  *criteria,
 
 }
 
-/*----------------------------------------------------------------------------
- * Fill a list of cells verifying a given selection criteria.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of cells verifying a given selection criteria.
  *
- * parameters:
- *   criteria  <-- selection criteria string
- *   n_cells   --> number of selected cells
- *   cell_list --> list of selected cells
- *                 (0 to n-1, preallocated to cs_glob_mesh->n_cells)
- *----------------------------------------------------------------------------*/
+ * \param[in]   criteria   selection criteria string
+ * \param[out]  n_cells    number of selected cells
+ * \param[out]  cell_list  list of selected cells
+ *                         (0 to n-1, preallocated to cs_glob_mesh->n_cells)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_selector_get_cell_list(const char  *criteria,
@@ -444,19 +447,130 @@ cs_selector_get_cell_list(const char  *criteria,
 
 }
 
-/*----------------------------------------------------------------------------
- * Fill lists of faces at the boundary of a set of cells verifying a given
- * selection criteria.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of cells verifying a given selection criteria.
  *
- * parameters:
- *   criteria  <-- selection criteria string
- *   n_i_faces --> number of selected interior faces
- *   n_b_faces --> number of selected interior faces
- *   i_face_id --> list of selected interior faces
- *                 (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
- *   b_face_id --> list of selected boundary faces
- *                 (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
- *----------------------------------------------------------------------------*/
+ * \param[in]   criteria    selection criteria string
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_cell_vertices_list(const char  *criteria,
+                                   cs_lnum_t   *n_vertices,
+                                   cs_lnum_t    vtx_ids[])
+{
+  cs_lnum_t  n_cells = 0;
+  cs_lnum_t  *cell_ids = NULL;
+
+  BFT_MALLOC(cell_ids, cs_glob_mesh->n_cells, cs_lnum_t);
+
+  cs_selector_get_cell_list(criteria, &n_cells, cell_ids);
+  cs_selector_get_cell_vertices_list_by_ids(n_cells,
+                                            cell_ids,
+                                            n_vertices,
+                                            vtx_ids);
+
+  BFT_FREE(cell_ids);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of vertices belonging to a given list of cells.
+ *
+ * \param[in]   criteria    selection criteria string
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_cell_vertices_list_by_ids(cs_lnum_t         n_cells,
+                                          const cs_lnum_t   cell_ids[],
+                                          cs_lnum_t        *n_vertices,
+                                          cs_lnum_t         vtx_ids[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t _n_vertices = m->n_vertices;
+
+  char *cell_flag;
+  BFT_MALLOC(cell_flag, m->n_cells, char);
+
+  for (cs_lnum_t i = 0; i < m->n_cells; i++)
+    cell_flag[i] = 0;
+
+  if (cell_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      cell_flag[cell_ids[i]] = 1;
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      cell_flag[i] = 1;
+  }
+
+  for (cs_lnum_t i = 0; i < _n_vertices; i++)
+    vtx_ids[i] = -1;
+
+  /* Now mark associated vertices using main connectivty
+     (could be faster when some adjacencies are available) */
+
+  for (cs_lnum_t i = 0; i < m->n_i_faces; i++) {
+    for (cs_lnum_t j = 0; j < 2; j++) {
+      cs_lnum_t c_id = m->i_face_cells[i][j];
+      if (c_id < m->n_cells) {
+        if (cell_flag[c_id] != 0) {
+          cs_lnum_t s_id = m->i_face_vtx_idx[i];
+          cs_lnum_t e_id = m->i_face_vtx_idx[i+1];
+          for (cs_lnum_t k = s_id; k < e_id; k++)
+            vtx_ids[m->i_face_vtx_lst[k]] = 1;
+        }
+      }
+    }
+  }
+
+  for (cs_lnum_t i = 0; i < m->n_b_faces; i++) {
+    cs_lnum_t c_id = m->b_face_cells[i];
+    if (cell_flag[c_id] != 0) {
+      cs_lnum_t s_id = m->b_face_vtx_idx[i];
+      cs_lnum_t e_id = m->b_face_vtx_idx[i+1];
+      for (cs_lnum_t k = s_id; k < e_id; k++)
+        vtx_ids[m->b_face_vtx_lst[k]] = 1;
+    }
+  }
+
+  BFT_FREE(cell_flag);
+
+  /* Now compact list */
+
+  cs_lnum_t n = 0;
+  for (cs_lnum_t i = 0; i < _n_vertices; i++) {
+    if (vtx_ids[i] != -1) {
+      vtx_ids[n] = i;
+      n++;
+    }
+  }
+
+  *n_vertices = n;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill lists of faces at the boundary of a set of cells verifying
+ *        a given selection criteria.
+ *
+ * \param[in]   criteria   selection criteria string
+ * \param[out]  n_i_faces  number of selected interior faces
+ * \param[out]  n_b_faces  number of selected boundary faces
+ * \param[out]  i_face_id  list of selected interior faces
+ *                         (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
+ * \param[out]  b_face_id  list of selected boundary faces
+ *                         (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_selector_get_cells_boundary(const char  *criteria,
@@ -512,15 +626,16 @@ cs_selector_get_cells_boundary(const char  *criteria,
   BFT_FREE(cell_flag);
 }
 
-/*----------------------------------------------------------------------------
- * Fill a list of interior faces belonging to a given periodicity.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of interior faces belonging to a given periodicity.
  *
- * parameters:
- *   perio_num <-- periodicity number
- *   n_i_faces --> number of selected interior faces
- *   i_face_id --> list of selected interior faces
- *                 (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
- *----------------------------------------------------------------------------*/
+ * \param[in]   perio_num  periodicity number
+ * \param[out]  n_i_faces  number of selected interior faces
+ * \param[out]  i_face_id  list of selected interior faces
+ *                         (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_selector_get_perio_face_list(int         perio_num,
@@ -545,15 +660,16 @@ cs_selector_get_perio_face_list(int         perio_num,
   BFT_FREE(face_perio_num);
 }
 
-/*----------------------------------------------------------------------------
- * Fill a list of families verifying a given selection criteria.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of families verifying a given selection criteria.
  *
- * parameters:
- *   criteria    <-- selection criteria string
- *   n_families  --> number of selected families
- *   family_list --> list of selected families faces
- *                   (0 to n-1, preallocated to cs_glob_mesh->n_families + 1)
- *----------------------------------------------------------------------------*/
+ * \param[in]   criteria     selection criteria string
+ * \param[out]  n_families   number of selected families
+ * \param[out]  family_list  list of selected families faces (0 to n-1,
+ *                           preallocated to cs_glob_mesh->n_families + 1)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_selector_get_family_list(const char  *criteria,
