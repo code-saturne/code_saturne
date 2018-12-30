@@ -190,8 +190,8 @@ class SolutionDomainModel(MeshModel, Model):
 
         self.node_ecs        = self.case.xmlGetNode('solution_domain')
         self.node_meshes     = self.node_ecs.xmlInitNode('meshes_list')
-        self.node_cut        = self.node_ecs.xmlInitNode('faces_cutting', "status")
-        self.node_smooth     = self.node_ecs.xmlInitNode('mesh_smoothing', "status")
+        self.node_cut        = self.node_ecs.xmlInitNode('faces_cutting')
+        self.node_smooth     = self.node_ecs.xmlInitNode('mesh_smoothing')
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
         self.node_thinwall   = self.node_ecs.xmlInitNode('thin_walls')
