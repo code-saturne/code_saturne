@@ -52,6 +52,7 @@ $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(MPI_CPPFLAGS)
 pkginclude_HEADERS = \
 fvm_defs.h \
 fvm_group.h \
+fvm_headers.h \
 fvm_io_num.h \
 fvm_neighborhood.h \
 fvm_nodal.h \

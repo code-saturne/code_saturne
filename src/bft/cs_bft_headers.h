@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_HEADERS_H__
-#define __CS_ATMO_HEADERS_H__
+#ifndef __BFT_HEADERS_H__
+#define __BFT_HEADERS_H__
 
 /*============================================================================
  * Global Code_Saturne headers file for easier include
@@ -29,10 +29,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_backtrace.h"
 #include "bft_error.h"
 #include "bft_mem.h"
+#include "bft_mem_usage.h"
 #include "bft_printf.h"
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_ATMO_HEADERS_H__ */
+#endif /* __BFT_HEADERS_H__ */

@@ -71,6 +71,7 @@ cs_mesh_extrude.h \
 cs_mesh_from_builder.h \
 cs_mesh_group.h \
 cs_mesh_halo.h \
+cs_mesh_headers.h \
 cs_mesh_location.h \
 cs_mesh_quality.h \
 cs_mesh_quantities.h \

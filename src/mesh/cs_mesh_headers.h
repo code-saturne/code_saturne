@@ -1,5 +1,5 @@
-#ifndef __CS_HEADERS_H__
-#define __CS_HEADERS_H__
+#ifndef __CS_MESH_HEADERS_H__
+#define __CS_MESH_HEADERS_H__
 
 /*============================================================================
  * Global Code_Saturne headers file for easier include
@@ -29,20 +29,40 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_bft_headers.h"
-#include "cs_base_headers.h"
-#include "fvm_headers.h"
-#include "cs_mesh_headers.h"
-#include "cs_atmo_headers.h"
-#include "cs_bft_headers.h"
-#include "cs_cdo_headers.h"
-#include "cs_ctwr_headers.h"
-#include "cs_darc_headers.h"
-#include "cs_elec_headers.h"
-#include "cs_gui_headers.h"
-#include "cs_lagr_headers.h"
-#include "cs_rad_headers.h"
+#include "cs_geom.h"
+#include "cs_join.h"
+#include "cs_join_intersect.h"
+#include "cs_join_merge.h"
+#include "cs_join_mesh.h"
+#include "cs_join_perio.h"
+#include "cs_join_post.h"
+#include "cs_join_set.h"
+#include "cs_join_split.h"
+#include "cs_join_update.h"
+#include "cs_join_util.h"
+#include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
+#include "cs_mesh_bad_cells.h"
+#include "cs_mesh_boundary.h"
+#include "cs_mesh_boundary_layer.h"
+#include "cs_mesh_builder.h"
+#include "cs_mesh_coherency.h"
+#include "cs_mesh_connect.h"
+#include "cs_mesh_extrude.h"
+#include "cs_mesh_from_builder.h"
+#include "cs_mesh_group.h"
+#include "cs_mesh_halo.h"
+#include "cs_mesh_location.h"
+#include "cs_mesh_quality.h"
+#include "cs_mesh_quantities.h"
+#include "cs_mesh_refine.h"
+#include "cs_mesh_save.h"
+#include "cs_mesh_thinwall.h"
+#include "cs_mesh_to_builder.h"
+#include "cs_mesh_warping.h"
+#include "cs_mesh_smoother.h"
+#include "cs_partition.h"
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_HEADERS_H__ */
+#endif /* __CS_MESH_HEADERS_H__ */
