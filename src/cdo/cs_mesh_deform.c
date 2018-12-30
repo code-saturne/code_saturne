@@ -98,6 +98,11 @@ static cs_lnum_t     _vd_size = 0;
 static cs_real_3_t  *_vd = NULL;
 static cs_lnum_t     _cs_comp_id[] = {0, 1, 2};
 
+static bool          _fixed_vertices = false;
+static cs_lnum_t     _n_fixed_vertices = 0;
+static cs_lnum_t    *_fixed_vtx_ids = NULL;
+static cs_real_3_t  *_fixed_vtx_values = NULL;
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -279,6 +284,28 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
                                      _cs_comp_id + i);
     }
 
+    if (_fixed_vertices) {
+      cs_real_t  *fixed_vtx_values;
+      BFT_MALLOC(fixed_vtx_values, _n_fixed_vertices, cs_real_t);
+      if (_fixed_vtx_values != NULL) {
+#       pragma omp parallel for if (_n_fixed_vertices > CS_THR_MIN)
+        for (cs_lnum_t j = 0; j < _n_fixed_vertices; j++)
+          fixed_vtx_values[j] = _fixed_vtx_values[j][i];
+      }
+      else {
+#       pragma omp parallel for if (_n_fixed_vertices > CS_THR_MIN)
+        for (cs_lnum_t j = 0; j < _n_fixed_vertices; j++)
+          fixed_vtx_values[j] = 0;
+      }
+
+      cs_equation_enforce_vertex_dofs(eqp,
+                                      _n_fixed_vertices,
+                                      _fixed_vtx_ids,
+                                      fixed_vtx_values);
+
+      BFT_FREE(fixed_vtx_values);
+    }
+
     cs_equation_add_diffusion(eqp, conductivity);
 
   }
@@ -291,6 +318,10 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
  * Only those values at vertices matching boundary zones with prescribed
  * displacement will really be used, as defined by
  * \ref cs_mesh_deform_define_dirichlet_bc_zones.
+ *
+ * When calling this function multiple times for different vertex sets,
+ * the most recently defined values are used for vertices belonging to
+ * multiple sets.
  *
  * \param[in]  n_vertices         number of vertices at which to prescribe
  *                                displacements
@@ -332,6 +363,65 @@ cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
     for (cs_lnum_t i = 0; i < n_vertices; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         _vd[i][j] = displacement[i][j];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a fixed displacement vector for given vertices.
+ *
+ * This displacement is enforced at all given vertices, including interior
+ * vertices.
+ *
+ * If this function is called multiple times, the previous definitions
+ * are overwritten, so all displacements of this type must be defined
+ * in a single call to this function.
+ *
+ * \param[in]  n_vertices         number of vertices at which to prescribe
+ *                                displacements
+ * \param[in]  vertex_ids         ids of vertices at which to prescribe
+ *                                displacements, or NULL if
+ *                                [0, ... n_vertices-1]
+ * \param[in]  displacement       pointer to prescribed displacements,
+ *                                or NULL for no displacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_deform_force_displacements(cs_lnum_t          n_vertices,
+                                   const cs_lnum_t    vertex_ids[],
+                                   const cs_real_3_t  displacement[])
+{
+  BFT_REALLOC(_fixed_vtx_ids, n_vertices, cs_lnum_t);
+
+  if (displacement != NULL)
+    BFT_REALLOC(_fixed_vtx_values, n_vertices, cs_real_3_t);
+  else
+    BFT_FREE(_fixed_vtx_values);
+
+  _n_fixed_vertices = n_vertices;
+
+  cs_gnum_t n_g_v = n_vertices;
+  cs_parall_counter(&n_g_v, 1);
+  _fixed_vertices = (n_g_v > 0) ? true : false;
+
+  if (vertex_ids != NULL) {
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_vertices; i++)
+      _fixed_vtx_ids[i] = vertex_ids[i];
+  }
+  else {
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_vertices; i++)
+      _fixed_vtx_ids[i] = i;
+  }
+
+  if (displacement != NULL) {
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_vertices; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        _fixed_vtx_values[i][j] = displacement[i][j];
     }
   }
 }
@@ -419,6 +509,11 @@ cs_mesh_deform_finalize(void)
 
   BFT_FREE(_vd);
   _vd_size = 0;
+
+  BFT_FREE(_fixed_vtx_ids);
+  BFT_FREE(_fixed_vtx_values);
+  _n_fixed_vertices = 0;
+  _fixed_vertices = false;
 }
 
 /*---------------------------------------------------------------------------*/

@@ -45,29 +45,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
-#include "fvm_defs.h"
-#include "fvm_selector.h"
-
-#include "cs_base.h"
-#include "cs_mesh_boundary.h"
-#include "cs_mesh_group.h"
-#include "cs_join.h"
-#include "cs_join_perio.h"
-#include "cs_mesh.h"
-#include "cs_mesh_bad_cells.h"
-#include "cs_mesh_boundary_layer.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_extrude.h"
-#include "cs_mesh_smoother.h"
-#include "cs_mesh_warping.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_preprocessor_data.h"
-#include "cs_selector.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -280,7 +258,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_mesh_extrude_face_info_destroy(&efi);
 
-    cs_mesh_boundary_layer_insert(mesh, e, 0.2, false);
+    cs_mesh_boundary_layer_insert(mesh, e, 0.2, false, 0, NULL);
 
     cs_mesh_extrude_vectors_destroy(&e);
   }
