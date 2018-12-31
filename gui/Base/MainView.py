@@ -911,7 +911,7 @@ class MainView(object):
             dialog.show()
 
 
-    def fileSave(self):
+    def fileSave(self, renew_page=True):
         """
         public slot
 
@@ -959,17 +959,18 @@ class MainView(object):
         msg = self.tr("%s saved" % file_name)
         self.statusbar.showMessage(msg, 2000)
 
-        if self.case['current_page'] == 'Prepare batch calculation':
-            p = displaySelectedPage(self.case['current_page'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    tree=self.Browser)
-            # Side effects of page display may mark as not saved
-            # based on queried models, so force saved here to avoid
-            # issues with saved state detection.
-            self.case['saved'] = 'yes'
-            self.scrollArea.setWidget(p)
+        if renew_page:
+            if self.case['current_page'] == 'Prepare batch calculation':
+                p = displaySelectedPage(self.case['current_page'],
+                                        self,
+                                        self.case,
+                                        stbar=self.statusbar,
+                                        tree=self.Browser)
+                # Side effects of page display may mark as not saved
+                # based on queried models, so force saved here to avoid
+                # issues with saved state detection.
+                self.case['saved'] = 'yes'
+                self.scrollArea.setWidget(p)
 
 
     def fileSaveAs(self):
