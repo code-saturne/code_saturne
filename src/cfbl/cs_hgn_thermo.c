@@ -662,12 +662,12 @@ cs_hgn_thermo_c2(cs_real_t alpha,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computation of the specific internal energy with respect to the
- *        volume (\f$\alpha\f$), mass (\f$y\f$) and energy (\f$\z\f$) fractions,
+ *        volume (\f$\alpha\f$), mass (\f$y\f$) and energy (\f$z\f$) fractions,
  *        as well as the pressure and the specific volume \f$\tau\f$.
  *
  * It uses a quasi-Newton method to solve:
  * \f[
- *   \mcal{P}(\alpha, y, z, e, \tau) = P
+ *   \mathcal{P}(\alpha, y, z, e, \tau) = P
  * \f]
  *
  * \param[in]     alpha     the volume fraction
