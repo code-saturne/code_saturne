@@ -114,7 +114,6 @@ cs_user_turbomachinery.c \
 cs_user_zones.c \
 cs_user_boundary_conditions_ale.f90 \
 usatch.f90 \
-usctdz.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90
