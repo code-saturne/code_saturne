@@ -795,7 +795,7 @@ module cs_c_bindings
     !> \brief  General user parameters
 
     subroutine user_parameters()  &
-      bind(C, name='cs_user_parameters')
+      bind(C, name='cs_user_parameters_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_parameters

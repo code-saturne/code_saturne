@@ -631,6 +631,12 @@ cs_user_initialization_wrapper(void)
 }
 
 void
+cs_user_parameters_wrapper(void)
+{
+  cs_user_parameters(cs_glob_domain);
+}
+
+void
 cs_user_finalize_setup_wrapper(void)
 {
   cs_user_finalize_setup(cs_glob_domain);

@@ -83,7 +83,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 cs_domain_t  *cs_glob_domain = NULL; /* Pointer to the main computational
-                                        domain used in CDO/HHO schemes */
+                                        domain */
 
 /*============================================================================
  * Local structure definitions
