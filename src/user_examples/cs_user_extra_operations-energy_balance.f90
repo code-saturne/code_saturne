@@ -479,7 +479,7 @@ if (ntcabs.eq.ntpabs) then
 
   if (ncetsm.gt.0) then
     do ieltsm = 1, ncetsm
-      ! depending on the type of injection we use the 'smacell' value
+      ! depending on the type of injection we use the 'smacel' value
       ! or the ambient temperature
       iel = icetsm(ieltsm)
       xgamma = smacel(ieltsm,ipr)
