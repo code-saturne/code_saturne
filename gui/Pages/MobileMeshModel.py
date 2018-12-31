@@ -54,18 +54,13 @@ from code_saturne.Pages.LocalizationModel import LocalizationModel
 
 class MobileMeshModel(Model):
     """
-    Manage the input/output markups in the xml doc about mobil mesh
+    Manage the input/output markups in the xml doc about mobile mesh
     """
     def __init__(self, case):
         """
         Constructor.
         """
         self.case = case
-
-        self.node_models = self.case.xmlGetNode('thermophysical_models')
-        self.node_ale    = self.node_models.xmlInitChildNode('ale_method', 'status')
-
-        self.out = OutputControlModel(self.case)
 
 
     def __defaultInitialValues(self):
@@ -82,15 +77,54 @@ class MobileMeshModel(Model):
         return default
 
 
+    def __getMobileMeshNode(self):
+        """
+        Return ALE node, creating it if needed.
+        """
+        node_models = self.case.xmlInitNode('thermophysical_models')
+        node_ale = node_models.xmlInitChildNode('ale_method', 'status')
+
+        return node_ale
+
+
+    def __getMobileMeshNodeTry(self):
+        """
+        Return ALE node if present
+        """
+        node_ale = None
+        node_models = self.case.xmlGetNode('thermophysical_models')
+        if node_models:
+            node_ale = node_models.xmlGetChildNode('ale_method', 'status')
+
+        return node_ale
+
+
+    def isMobileMeshCompatible(self):
+        """
+        Indicate if the ALE method may be used
+        """
+        compat = True
+        node_pm = self.case.xmlGetNode('thermophysical_models')
+        if node_pm:
+            node = node_pm.xmlGetNode('groundwater_model',  'model')
+            if node and node['model'] != 'off':
+                compat = False
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            compat = False
+
+        return compat
+
+
     def __setVariablesandProperties(self):
         """
         Set variables and properties if ALE method is activated.
         """
-        self.node_ale.xmlInitChildNode('variable', name='mesh_velocity', label='Mesh Velocity', dimension=3)
-        self.node_ale.xmlInitChildNode('property', name='mesh_viscosity_1', label='mesh_vi1')
+        node_ale = self.__getMobileMeshNode()
+        node_ale.xmlInitChildNode('variable', name='mesh_velocity', label='Mesh Velocity', dimension=3)
+        node_ale.xmlInitChildNode('property', name='mesh_viscosity_1', label='mesh_vi1')
 
         # find node for property / choice and set to default value if require
-        node = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
+        node = node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
 
         self.__updateNodeViscosity()
 
@@ -99,20 +133,21 @@ class MobileMeshModel(Model):
         """
         Update properties beyond mesh visosity is isotrope or not.
         """
+        node_ale = self.__getMobileMeshNode()
         if self.getViscosity() == 'orthotrop':
-            self.node_ale.xmlInitChildNode('property', name='mesh_viscosity_2', label='mesh_vi2')
-            self.node_ale.xmlInitChildNode('property', name='mesh_viscosity_3', label='mesh_vi3')
+            node_ale.xmlInitChildNode('property', name='mesh_viscosity_2', label='mesh_vi2')
+            node_ale.xmlInitChildNode('property', name='mesh_viscosity_3', label='mesh_vi3')
 
             # find choice for mesh_viscosity_1, create default value if require
-            node = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
+            node = node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
 
             # Syncrhonize other properties
             for n in ('mesh_viscosity_2', 'mesh_viscosity_3'):
-                node = self.node_ale.xmlGetChildNode('property', name=n)
+                node = node_ale.xmlGetChildNode('property', name=n)
 
         else:
-            node1 = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_2')
-            node2 = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_3')
+            node1 = node_ale.xmlGetChildNode('property', name='mesh_viscosity_2')
+            node2 = node_ale.xmlGetChildNode('property', name='mesh_viscosity_3')
 
             if node1:
                 node1.xmlRemoveNode()
@@ -124,18 +159,23 @@ class MobileMeshModel(Model):
         """
         Remove variables and properties if ALE method is disabled.
         """
-        self.node_ale.xmlRemoveChild('variable')
-        self.node_ale.xmlRemoveChild('property')
+        node_ale = self.__getMobileMeshNodeTry()
+        if node_ale:
+            node_ale.xmlRemoveChild('variable')
+            node_ale.xmlRemoveChild('property')
+
 
     @Variables.noUndo
     def getMethod(self):
         """
-        Get status on balise "ALE" from xml file
+        Get status on tag "ALE" from xml file
         """
-        status = self.node_ale['status']
+        status = None
+        node_ale = self.__getMobileMeshNodeTry()
+        if node_ale:
+            status = node_ale['status']
         if not status:
             status = self.__defaultInitialValues()['ale_method']
-            self.setMethod(status)
         return status
 
 
@@ -145,16 +185,18 @@ class MobileMeshModel(Model):
         Put status on balise "ALE" in xml file
         """
         self.isOnOff(status)
-        typ = ''
-        typ = self.out.getWriterTimeDependency("-1")
-        old_status = self.node_ale['status']
-        self.node_ale['status'] = status
+
+        node_out = OutputControlModel(self.case)
+        typ = node_out.getWriterTimeDependency("-1")
+        node_ale = self.__getMobileMeshNode()
+        old_status = node_ale['status']
+        node_ale['status'] = status
         if status == 'on':
             if typ == 'fixed_mesh':
                 typ = 'transient_coordinates'
             self.__setVariablesandProperties()
             if status and old_status != status:
-                self.out.setWriterTimeDependency("-1", typ)
+                node_out.setWriterTimeDependency("-1", typ)
         else:
             if typ == 'transient_coordinates':
                 typ = 'fixed_mesh'
@@ -165,7 +207,7 @@ class MobileMeshModel(Model):
                     Boundary("free_surface", zone.getLabel(), self.case).deleteFreeSurface()
                     LocalizationModel('BoundaryZone', self.case).deleteZone(zone.getLabel())
             if old_status and old_status != status:
-                self.out.setWriterTimeDependency("-1", typ)
+                node_out.setWriterTimeDependency("-1", typ)
 
 
     @Variables.undoLocal
@@ -175,7 +217,9 @@ class MobileMeshModel(Model):
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_ale.xmlSetData('fluid_initialization_sub_iterations', value)
+
+        node_ale = self.__getMobileMeshNode()
+        node_ale.xmlSetData('fluid_initialization_sub_iterations', value)
 
 
     @Variables.noUndo
@@ -183,10 +227,12 @@ class MobileMeshModel(Model):
         """
         Get value of fluid initialization sub iterations from xml file.
         """
-        nalinf = self.node_ale.xmlGetInt('fluid_initialization_sub_iterations')
+        nalinf = None
+        node_ale = self.__getMobileMeshNodeTry()
+        if node_ale:
+            nalinf = node_ale.xmlGetInt('fluid_initialization_sub_iterations')
         if not nalinf:
             nalinf = self.__defaultInitialValues()['nalinf']
-            self.setSubIterations(nalinf)
         return nalinf
 
 
@@ -196,7 +242,8 @@ class MobileMeshModel(Model):
         Set value of mesh viscosity into xml file.
         """
         self.isInList(value, ['isotrop', 'orthotrop'])
-        node = self.node_ale.xmlInitChildNode('mesh_viscosity')
+        node_ale = self.__getMobileMeshNode()
+        node = node_ale.xmlInitChildNode('mesh_viscosity')
         node['type'] = value
         self.__updateNodeViscosity()
 
@@ -207,11 +254,11 @@ class MobileMeshModel(Model):
         Get value of mesh viscosity from xml file.
         """
         iortvm = self.__defaultInitialValues()['iortvm']
-        node = self.node_ale.xmlGetChildNode('mesh_viscosity')
+        node_ale = self.__getMobileMeshNodeTry()
+        if node_ale:
+            node = node_ale.xmlGetChildNode('mesh_viscosity')
         if node :
             iortvm = node['type']
-        else:
-            self.setViscosity(iortvm)
 
         return iortvm
 
@@ -221,7 +268,8 @@ class MobileMeshModel(Model):
         """
         Set the formula for the viscosity of mesh
         """
-        self.node_ale.xmlSetData('formula', value)
+        node_ale = self.__getMobileMeshNode()
+        node_ale.xmlSetData('formula', value)
 
 
     @Variables.noUndo
@@ -229,10 +277,12 @@ class MobileMeshModel(Model):
         """
         Get the formula for the viscosity of mesh
         """
-        formula = self.node_ale.xmlGetString('formula')
+        formula = None
+        node_ale = self.__getMobileMeshNodeTry()
+        if node_ale:
+            formula = node_ale.xmlGetString('formula')
         if not formula:
             formula = self.getDefaultFormula()
-            self.setFormula(formula)
         return formula
 
 
@@ -248,7 +298,6 @@ class MobileMeshModel(Model):
 #-------------------------------------------------------------------------------
 # MobileMesh Model test case
 #-------------------------------------------------------------------------------
-
 
 class MobileMeshTestCase(ModelTest):
     """

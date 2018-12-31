@@ -66,6 +66,7 @@ from code_saturne.Pages.MainFieldsModel import MainFieldsModel
 
 from code_saturne.Pages.LagrangianModel import LagrangianModel
 from code_saturne.Pages.TurboMachineryModel import TurboMachineryModel
+from code_saturne.Pages.MobileMeshModel import MobileMeshModel
 from code_saturne.Pages.FansModel import FansStatus
 
 #-------------------------------------------------------------------------------
@@ -187,6 +188,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxSinglePhase.activated[str].connect(self.slotSinglePhase)
         self.comboBoxGroundwater.activated[str].connect(self.slotGroundwater)
         self.comboBoxNeptuneCFD.activated[str].connect(self.slotNeptuneCFD)
+        self.checkBoxALE.stateChanged.connect(self.slotALE)
         self.checkBoxFans.stateChanged.connect(self.slotFans)
 
         self.comboBoxLagrangian.activated[str].connect(self.slotLagrangian)
@@ -226,6 +228,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.init_neptune()
 
         self.tbm = TurboMachineryModel(self.case)
+        self.ale = MobileMeshModel(self.case)
         self.fans = FansStatus(self.case)
 
         self.init_common()
@@ -382,6 +385,13 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         elif darcy != 'off':
             self.modelGroundwater.setItem(str_model=darcy)
 
+            self.labelLagrangian.hide()
+            self.comboBoxLagrangian.hide()
+            self.labelTurboMachinery.hide()
+            self.comboBoxTurboMachinery.hide()
+            self.checkBoxALE.hide()
+            self.checkBoxFans.hide()
+
         else:
             self.modelSinglePhase.setItem(str_model=compressible)
 
@@ -496,6 +506,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.comboBoxLagrangian.setEnabled(True)
 
+        # Other features
+
+        self.checkBoxALE.hide()
+        self.checkBoxFans.hide()
+
 
     def init_common(self):
 
@@ -505,6 +520,18 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         mdl = self.tbm.getTurboMachineryModel()
         self.modelTurboMachinery.setItem(str_model = mdl)
+
+        # ALE
+
+        ale_status = self.ale.getMethod()
+        if ale_status == 'on':
+            self.checkBoxALE.setChecked(True)
+        else:
+            self.checkBoxALE.setChecked(False)
+            if self.ale.isMobileMeshCompatible():
+                self.checkBoxALE.show()
+            else:
+                self.checkBoxALE.hide()
 
         # Fans
 
@@ -543,7 +570,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 combo.show()
                 model_expr = 'self.slot'+ind+'(model)'
                 checkCur = ind
-            else :
+            else:
                 combo.hide()
                 model.setItem(0)
 
@@ -551,6 +578,18 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         # what is necessary.
         if self.checkPrev == checkCur:
             return
+
+        # Restore visibility of features which may be masked with
+        # some models.
+
+        self.labelLagrangian.show()
+        self.comboBoxLagrangian.show()
+        self.labelTurboMachinery.show()
+        self.comboBoxTurboMachinery.show()
+        self.checkBoxALE.show()
+        self.checkBoxFans.show()
+
+        # Update
 
         if checkCur == 'NeptuneCFD':
 
@@ -562,6 +601,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 from neptune_cfd.nc_package import package as nc_package
                 self.case['package'] = nc_package()
             except Exception:
+                from code_saturne.cs_package import package as cs_package
                 self.case['package'] = cs_package()
                 self.case['package'].code_name = 'NEPTUNE_CFD'
 
@@ -590,8 +630,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 self.elect.setElectricalModel('off')
             if self.checkPrev == 'Groundwater':
                 self.darc.setGroundwaterModel('off')
+                self.labelLagrangian.show()
                 self.comboBoxLagrangian.show()
+                self.labelTurboMachinery.show()
                 self.comboBoxTurboMachinery.show()
+                self.checkBoxALE.show()
+                self.checkBoxFans.show()
             if self.checkPrev == 'ReactiveFlows':
                 self.gas.setGasCombustionModel('off')
                 self.pcoal.setCoalCombustionModel('off')
@@ -675,8 +719,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         model = self.__stringModelFromCombo('Groundwater')
         self.darc.setGroundwaterModel(model)
 
+        self.labelLagrangian.hide()
         self.comboBoxLagrangian.hide()
+        self.labelTurboMachinery.hide()
         self.comboBoxTurboMachinery.hide()
+        self.checkBoxALE.hide()
+        self.checkBoxFans.hide()
 
         self.browser.configureTree(self.case)
 
@@ -688,6 +736,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         """
         model = self.__stringModelFromCombo('NeptuneCFD')
         self.nept.setPredefinedFlow(model)
+
+        self.checkBoxALE.hide()
+        self.checkBoxFans.hide()
 
         self.browser.configureTree(self.case)
 
@@ -754,6 +805,17 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         """
         mdl = self.modelTurboMachinery.dicoV2M[str(text)]
         self.tbm.setTurboMachineryModel(mdl)
+
+        self.browser.configureTree(self.case)
+
+
+    @pyqtSlot(int)
+    def slotALE(self, val):
+
+        if val == 0:
+            self.ale.setMethod ("off")
+        else:
+            self.ale.setMethod ("on")
 
         self.browser.configureTree(self.case)
 

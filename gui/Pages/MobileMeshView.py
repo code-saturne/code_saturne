@@ -137,7 +137,6 @@ if (xray2 < xr2) {
         self.modelVISCOSITY.addItem(self.tr("orthotropic"), 'orthotrop')
 
         # Connections
-        self.groupBoxALE.clicked.connect(self.slotMethod)
         self.lineEditNALINF.textChanged[str].connect(self.slotNalinf)
         self.comboBoxVISCOSITY.activated[str].connect(self.slotViscosityType)
         self.pushButtonFormula.clicked.connect(self.slotFormula)
@@ -146,48 +145,19 @@ if (xray2 < xr2) {
         validatorNALINF = IntValidator(self.lineEditNALINF, min=0)
         self.lineEditNALINF.setValidator(validatorNALINF)
 
-        if self.mdl.getMethod() == 'on':
-            self.groupBoxALE.setChecked(True)
-            checked = True
-        else:
-            self.groupBoxALE.setChecked(False)
-            checked = False
-
-        self.slotMethod(checked)
-
-        # Enable / disable formula state
-        self.pushButtonFormula.setStyleSheet("background-color: None")
-
-        self.case.undoStartGlobal()
-
-
-    @pyqtSlot(bool)
-    def slotMethod(self, checked):
-        """
-        Private slot.
-
-        Activates ALE method.
-
-        @type checked: C{True} or C{False}
-        @param checked: if C{True}, shows the QGroupBox ALE parameters
-        """
-        self.groupBoxALE.setFlat(not checked)
-        if checked:
-            self.frame.show()
-            self.mdl.setMethod ("on")
-            nalinf = self.mdl.getSubIterations()
-            self.lineEditNALINF.setText(str(nalinf))
-            value = self.mdl.getViscosity()
-            self.modelVISCOSITY.setItem(str_model=value)
-        else:
-            self.frame.hide()
-            self.mdl.setMethod("off")
+        # Settings
+        nalinf = self.mdl.getSubIterations()
+        self.lineEditNALINF.setText(str(nalinf))
+        value = self.mdl.getViscosity()
+        self.modelVISCOSITY.setItem(str_model=value)
         exp = self.mdl.getFormula()
         if exp:
             self.pushButtonFormula.setStyleSheet("background-color: green")
             self.pushButtonFormula.setToolTip(exp)
         else:
             self.pushButtonFormula.setStyleSheet("background-color: red")
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSlot(str)

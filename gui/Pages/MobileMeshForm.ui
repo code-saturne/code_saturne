@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>463</width>
-    <height>218</height>
+    <height>228</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,13 +29,13 @@
       <bool>false</bool>
      </property>
      <property name="title">
-      <string>Mobile mesh (ALE method)</string>
+      <string>Deformable mesh (ALE method)</string>
      </property>
      <property name="flat">
       <bool>false</bool>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
@@ -104,7 +104,7 @@
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the mesh viscosity type between orthotropic and isotropic. Mesh viscosity allows to control mesh deformations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IORTVM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
-              <string>Type of the viscosity of mesh</string>
+              <string>Type of mesh viscosity</string>
              </property>
             </widget>
            </item>
@@ -147,7 +147,7 @@
              </property>
              <property name="text">
               <string>Spatial distribution of
-the viscosity of the mesh</string>
+the mesh viscosity</string>
              </property>
             </widget>
            </item>

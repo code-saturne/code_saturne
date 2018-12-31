@@ -774,7 +774,7 @@ Calculation management
         m_tbm = False
         m_fans = False
         m_lagr = False
-        m_ale = 0
+        m_ale = False
         m_thermal = 0
         m_cht = False
         m_gas_comb = False
@@ -791,7 +791,7 @@ Calculation management
 
             node = node_pm.xmlGetNode('ale_method', 'status')
             if node and node['status'] == 'on':
-                m_ale = 1
+                m_ale = True
             node = node_pm.xmlGetNode('turbomachinery', 'model')
             if node and node['model'] != "off":
                 m_tbm = True
@@ -839,7 +839,6 @@ Calculation management
             if node and node['model'] != 'off':
                 m_gwf = True
                 m_thermal = -1
-                m_ale = -1
                 m_fans = False
 
             if m_thermal > 0:
@@ -864,7 +863,6 @@ Calculation management
 
         if p_module == 'neptune_cfd' and node_pm:
 
-            m_ale = -1
             m_fans = False
             m_thermal = -1
             m_rad = True
@@ -913,7 +911,7 @@ Calculation management
 
         self.setRowShow(self.tr('Calculation features'), True)
         self.setRowShow(self.tr('Main fields'), (p_module == 'neptune_cfd'))
-        self.setRowShow(self.tr('Deformable mesh'), (m_ale > -1))
+        self.setRowShow(self.tr('Deformable mesh'), m_ale)
         self.setRowShow(self.tr('Turbulence models'))
         self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
         self.setRowShow(self.tr('Gravity'), (not m_gwf))
@@ -990,7 +988,7 @@ Calculation management
         self.setRowShow(self.tr('Boundary zones'))
         self.setRowShow(self.tr('Boundary conditions'))
         self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
-        self.setRowShow(self.tr('Fluid structure interaction'), (m_ale > 0))
+        self.setRowShow(self.tr('Fluid structure interaction'), m_ale)
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
 
         # Numerical parameters
