@@ -411,7 +411,7 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
     if (impale[v] == 0) {
       for (int c_id = 0; c_id < 3; c_id++) {
         disale[v][c_id] =  disala[v][c_id]
-                         + m_vel[v][c_id]*cs_glob_time_step->dt_ref;
+                         + m_vel[v][c_id] * domain->time_step->dt_ref;
       }
     }
   }

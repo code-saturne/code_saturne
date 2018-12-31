@@ -260,7 +260,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   /* Example 2: extraction of a velocity profile in cylindrical corordinates
      ======================================================================= */
 
-  if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max){
+  if (domain->time_step->nt_cur == domain->time_step->nt_max){
 
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
