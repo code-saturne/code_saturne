@@ -965,6 +965,10 @@ class MainView(object):
                                     self.case,
                                     stbar=self.statusbar,
                                     tree=self.Browser)
+            # Side effects of page display may mark as not saved
+            # based on queried models, so force saved here to avoid
+            # issues with saved state detection.
+            self.case['saved'] = 'yes'
             self.scrollArea.setWidget(p)
 
 
