@@ -678,10 +678,7 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cvar_k      = cs_field_by_name_try("TurbKineEner_k_1");
     _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon_1");
     _lagr_extra_module.cvar_omg    = NULL;
-    _lagr_extra_module.cvar_r11    = cs_field_by_name_try("lagr_r11");
-    _lagr_extra_module.cvar_r22    = cs_field_by_name_try("lagr_r22");
-    _lagr_extra_module.cvar_r33    = cs_field_by_name_try("lagr_r33");
-    _lagr_extra_module.cvar_rij    = cs_field_by_name_try("lagr_rij");
+    _lagr_extra_module.cvar_rij    = cs_field_by_name_try("rij_1");
     _lagr_extra_module.viscl       = cs_field_by_name_try
                                        ("molecular_viscosity_1");
     _lagr_extra_module.scal_t      = cs_field_by_name_try("enthalpy_1");

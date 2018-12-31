@@ -278,7 +278,7 @@ cs_lagr_car(int              iprev,
     else if (extra->itytur == 3) {
 
       if (extra->cvar_rij == NULL) {
-        /* irijco = 0 */
+        /* Deprecated irijco = 0 */
 
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
@@ -437,6 +437,7 @@ cs_lagr_car(int              iprev,
 
             if (extra->itytur == 3) {
 
+              /* Deprecated irijco = 0 */
               if (extra->cvar_rij == NULL) {
                 cs_real_t r11  = extra->cvar_r11->vals[iprev][cell_id];
                 cs_real_t r22  = extra->cvar_r22->vals[iprev][cell_id];

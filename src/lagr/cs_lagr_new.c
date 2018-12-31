@@ -670,6 +670,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
     else if (extra->cvar_rij != NULL)
       cvar_rij = (const cs_real_6_t *) extra->cvar_rij->vals[time_id];
 
+    /* Deprecated irijco = 0 */
     else if (extra->cvar_r11 != NULL) {
       cvar_r11 = (const cs_real_t *)extra->cvar_r11->vals[time_id];
       cvar_r22 = (const cs_real_t *)extra->cvar_r22->vals[time_id];
@@ -730,6 +731,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
         w = cvar_k[iel];
       else if (cvar_rij != NULL)
         w = 0.5*(cvar_rij[iel][0] + cvar_rij[iel][1] + cvar_rij[iel][2]);
+      /* Deprecated irijco = 0 */
       else if (cvar_r11 != NULL)
         w = 0.5 * (cvar_r11[iel] + cvar_r22[iel] + cvar_r33[iel]);
     }
