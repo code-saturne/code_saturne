@@ -232,7 +232,7 @@
   of coordinates).
 
   The box criterion can be used as follows:
-  box[\f$x_{min}\f$, \f$y_{min}\f$, \f$z_{min}\f$, \f$x_{max}\f$, \f$y_{max}\f$, \f$z_{max}\f$].
+  box[\f$ x_{min}\f$, \f$ y_{min}\f$, \f$ z_{min}\f$, \f$ x_{max}\f$, \f$ y_{max}\f$, \f$ z_{max}\f$].
 
   Here is the corresponding code:
 

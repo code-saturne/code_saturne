@@ -245,61 +245,6 @@ cs_user_model(void)
                              1,
                              CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  /* Postprocessing-related fields
-     ============================= */
-
-  /* Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
-              yplus may be saved, or a local Nusselt number may be computed using
-              the post_boundary_nusselt subroutine.
-              When postprocessing of these quantities is activated, those fields
-              are present, but if we need to compute them in the
-              cs_user_extra_operations user subroutine without postprocessing them,
-              forcing the definition of these fields to save the values computed
-              for the boundary layer is necessary. */
-
-  cs_field_t *f;
-
-  f = cs_field_by_name_try("yplus");
-  if (f != NULL)
-    cs_parameters_add_property("yplus",
-                               1,
-                               CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  f = cs_field_by_name_try("tplus");
-  if (f != NULL)
-    cs_parameters_add_property("tplus",
-                               1,
-                               CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  f = cs_field_by_name_try("tstar");
-  if (f != NULL)
-    cs_parameters_add_property("tstar",
-                               1,
-                               CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  /*--------------------------------------------------------------------------*/
-
-  /* Example: add field to post-process the predicted-velocity divergence
-   * and the pressure gradient in the momentum equation.
-   */
-
-  cs_parameters_add_property("predicted_vel_divergence",
-                             1,
-                             CS_MESH_LOCATION_CELLS);
-
-  cs_parameters_add_property("pressure_gradient",
-                             3,
-                             CS_MESH_LOCATION_CELLS);
-  /*--------------------------------------------------------------------------*/
-
-  /* Example: add field to post-process the Reynolds stress production tensor
-   * (for DRSM models only)
-   */
-
-  cs_parameters_add_property("rij_production",
-                             6,
-                             CS_MESH_LOCATION_CELLS);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -319,15 +264,6 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t *domain)
 {
-  /* Example: force presence of boundary temperature field */
-  /*-------------------------------------------------------*/
-
-  /*! [param_force_b_temperature] */
-  {
-    cs_parameters_add_boundary_temperature();
-  }
-
-  /*! [param_force_b_temperature] */
 
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/
@@ -387,6 +323,29 @@ cs_user_parameters(cs_domain_t *domain)
     cs_glob_porous_model = 1;
   }
   /*! [param_porous_model] */
+
+  /* Example: log verbosity */
+  /*------------------------*/
+
+  /*! [param_log_verbosity] */
+  {
+    int n_fields = cs_field_n_fields();
+
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+
+      cs_field_t  *f = cs_field_by_id(f_id);
+
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_var_cal_opt_t vcopt;
+        int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+        cs_field_get_key_struct(f, key_cal_opt_id, &vcopt);
+        vcopt.iwarni = 2;
+        cs_field_set_key_struct(f, key_cal_opt_id, &vcopt);
+      }
+    }
+  }
+  /*! [param_log_verbosity] */
 
   /* Example: choose a convective scheme and
    * a limiter for a given variable (user and non-user) */
@@ -556,6 +515,89 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_drift] */
 
+  /* Example: activate mesh robustness options */
+  /*-------------------------------------------*/
+
+  /*! [mesh_tag_bad_cells_correction] */
+
+  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_WARPED_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_REGULARISATION;
+  cs_glob_mesh_quantities_flag |= CS_CELL_FACE_CENTER_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_CELL_CENTER_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_FACE_DISTANCE_CLIP;
+  cs_glob_mesh_quantities_flag |= CS_FACE_RECONSTRUCTION_CLIP;
+  cs_glob_mesh_quantities_flag |= CS_CELL_VOLUME_RATIO_CORRECTION;
+
+  /*! [mesh_tag_bad_cells_correction] */
+
+
+  /* Postprocessing-related fields
+     ============================= */
+
+  /* Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
+              yplus may be saved, or a local Nusselt number may be computed using
+              the post_boundary_nusselt subroutine.
+              When postprocessing of these quantities is activated, those fields
+              are present, but if we need to compute them in the
+              cs_user_extra_operations user subroutine without postprocessing them,
+              forcing the definition of these fields to save the values computed
+              for the boundary layer is necessary. */
+
+  /*! [param_force_yplus] */
+  cs_field_t *f;
+
+  f = cs_field_by_name_try("yplus");
+  if (f != NULL)
+    cs_parameters_add_property("yplus",
+                               1,
+                               CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  f = cs_field_by_name_try("tplus");
+  if (f != NULL)
+    cs_parameters_add_property("tplus",
+                               1,
+                               CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  f = cs_field_by_name_try("tstar");
+  if (f != NULL)
+    cs_parameters_add_property("tstar",
+                               1,
+                               CS_MESH_LOCATION_BOUNDARY_FACES);
+  /*! [param_force_yplus] */
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add field to post-process the predicted-velocity divergence
+   * and the pressure gradient in the momentum equation.
+   */
+
+  cs_parameters_add_property("predicted_vel_divergence",
+                             1,
+                             CS_MESH_LOCATION_CELLS);
+
+  cs_parameters_add_property("pressure_gradient",
+                             3,
+                             CS_MESH_LOCATION_CELLS);
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add field to post-process the Reynolds stress production tensor
+   * (for DRSM models only)
+   */
+
+  cs_parameters_add_property("rij_production",
+                             6,
+                             CS_MESH_LOCATION_CELLS);
+
+
+  /* Example: force presence of boundary temperature field */
+  /*-------------------------------------------------------*/
+
+  /*! [param_force_b_temperature] */
+  {
+    cs_parameters_add_boundary_temperature();
+  }
+
+  /*! [param_force_b_temperature] */
 
   /* Example: add boundary values for all scalars */
   /*----------------------------------------------*/
@@ -575,20 +617,22 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_boundary_vals_1] */
 
-  /* Example: activate mesh robustness options */
-  /*-------------------------------------------*/
+  /* Example: post-process clippings for slope test */
+  /*------------------------------------------------*/
 
-  /*! [mesh_tag_bad_cells_correction] */
+  /*! [param_post_slop_test] */
+  {
+    int n_fields = cs_field_n_fields();
 
-  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_WARPED_CORRECTION;
-  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_REGULARISATION;
-  cs_glob_mesh_quantities_flag |= CS_CELL_FACE_CENTER_CORRECTION;
-  cs_glob_mesh_quantities_flag |= CS_CELL_CENTER_CORRECTION;
-  cs_glob_mesh_quantities_flag |= CS_FACE_DISTANCE_CLIP;
-  cs_glob_mesh_quantities_flag |= CS_FACE_RECONSTRUCTION_CLIP;
-  cs_glob_mesh_quantities_flag |= CS_CELL_VOLUME_RATIO_CORRECTION;
+    for (int f_id = 0; f_id < n_fields; f_id++) {
 
-  /*! [mesh_tag_bad_cells_correction] */
+      cs_field_t  *f = cs_field_by_id(f_id);
+
+      if (f->type & CS_FIELD_VARIABLE)
+        cs_field_set_key_int(f, cs_field_key_id("slope_test_upwind_id"), 0);
+    }
+  }
+  /*! [param_post_slop_test] */
 
   /* Example: post-process clippings for Rij tensor */
   /*------------------------------------------------*/
@@ -657,5 +701,54 @@ cs_user_internal_coupling(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ *  \brief Define or modify log user parameters.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_finalize_setup(cs_domain_t     *domain)
+{
+
+  /* Frequency of log output */
+  /*! [setup_log] */
+  cs_glob_log_frequency = 1;
+  /*! [setup_log] */
+
+  /* Change a property's label
+     (here for specific heat, first checking if it is variable) */
+  /*! [setup_label] */
+  if (CS_F_(cp) != NULL)
+    cs_field_set_key_str(CS_F_(cp), cs_field_key_id("label"), "Cp");
+  /*! [setup_label] */
+
+  /* Probes for variables and properties
+   * (example for velocity) */
+  /*! [setup_post] */
+  cs_field_set_key_int_bits(CS_F_(vel),
+                            cs_field_key_id("post_vis"),
+                            CS_POST_MONITOR);
+  /*! [setup_post] */
+
+  /* Probes for Radiative Transfer
+   * (Luminance and radiative density flux vector) */
+
+  /*! [setup_post_lum] */
+   cs_field_t *f = cs_field_by_name_try('luminance');
+   if (f != NULL)
+     cs_field_set_key_int_bits(f,
+                               cs_field_key_id("post_vis"),
+                               CS_POST_MONITOR);
+
+   f = cs_field_by_name_try('radiative_flux');
+   if (f != NULL)
+     cs_field_set_key_int_bits(f,
+                               cs_field_key_id("post_vis"),
+                               CS_POST_MONITOR);
+  /*! [setup_post_lum] */
+
+
+
+}
 
 END_C_DECLS
