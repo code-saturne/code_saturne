@@ -475,6 +475,7 @@ _create_particle_set(cs_lnum_t                       n_particles_max,
 
   new_set->n_particles = 0;
   new_set->n_part_new = 0;
+  new_set->n_part_merged = 0;
   new_set->n_part_out = 0;
   new_set->n_part_dep = 0;
   new_set->n_part_fou = 0;
@@ -855,6 +856,11 @@ cs_lagr_particle_attr_initialize(void)
   if (lagr_model->n_stat_classes > 0) {
     attr_keys[CS_LAGR_STAT_CLASS][0] = CS_LAGR_P_IPRP;
     attr_keys[CS_LAGR_STAT_CLASS][1] = ++loc_count;
+  }
+
+  if (lagr_model->n_particle_aggregates > 0) {
+    attr_keys[CS_LAGR_PARTICLE_AGGREGATE][0] = CS_LAGR_P_IPRP;
+    attr_keys[CS_LAGR_PARTICLE_AGGREGATE][1] = ++loc_count;
   }
 
   if (lagr_model->n_user_variables > 0) {

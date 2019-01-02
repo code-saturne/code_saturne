@@ -17,6 +17,9 @@ User changes:
 
 Physical modelling:
 
+- Lagrangian module:
+  * Add agglomeration and fragmentation algorithms.
+
 - Add a compressible two-phase homogeneous model
   * This model is solved using a fractional step method borrowing mass,
     momentum, energy balance steps from the compressible algorithm (single

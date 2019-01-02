@@ -89,6 +89,7 @@
 #include "cs_lagr_gradients.h"
 #include "cs_lagr_car.h"
 #include "cs_lagr_coupling.h"
+#include "cs_lagr_new.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_resuspension.h"
 #include "cs_lagr_stat.h"
@@ -99,6 +100,8 @@
 #include "cs_lagr_sde.h"
 #include "cs_lagr_sde_model.h"
 #include "cs_lagr_prototypes.h"
+#include "cs_lagr_agglo.h"
+#include "cs_lagr_fragmentation.h"
 
 #include "cs_random.h"
 
@@ -177,6 +180,7 @@ static cs_lagr_model_t  _lagr_model
      .precipitation = 0,
      .fouling = 0,
      .n_stat_classes = 0,
+     .n_particle_aggregates = 0,
      .n_user_variables = 0};
 
 /* particle counter structure and associated pointer */
@@ -186,6 +190,7 @@ static cs_lagr_particle_counter_t _lagr_particle_counter
      .n_g_cumulative_failed = 0,
      .n_g_total = 0,
      .n_g_new = 0,
+     .n_g_merged = 0,
      .n_g_exit = 0,
      .n_g_deposited = 0,
      .n_g_fouling = 0,
@@ -219,13 +224,25 @@ cs_lagr_precipitation_model_t *cs_glob_lagr_precipitation_model
 /* lagr clogging model structure and associated pointer */
 static cs_lagr_clogging_model_t _cs_glob_lagr_clogging_model = {0, 0, 0, 0};
 cs_lagr_clogging_model_t *cs_glob_lagr_clogging_model
-   = &_cs_glob_lagr_clogging_model;
+  = &_cs_glob_lagr_clogging_model;
+
+/* lagr agglomeration model structure and associated pointer */
+static cs_lagr_agglomeration_model_t _cs_glob_lagr_agglomeration_model
+  = {0, 0, NULL};
+cs_lagr_agglomeration_model_t *cs_glob_lagr_agglomeration_model
+  = &_cs_glob_lagr_agglomeration_model;
+
+/* lagr fragmentation model structure and associated pointer */
+static cs_lagr_fragmentation_model_t _cs_glob_lagr_fragmentation_model
+  = {0, 0, NULL};
+cs_lagr_fragmentation_model_t *cs_glob_lagr_fragmentation_model
+  = &_cs_glob_lagr_fragmentation_model;
 
 /* lagr clogging model structure and associated pointer */
 static cs_lagr_consolidation_model_t _cs_glob_lagr_consolidation_model
-   = {0, 0, 0, 0};
+  = {0, 0, 0, 0};
 cs_lagr_consolidation_model_t *cs_glob_lagr_consolidation_model
-   = &_cs_glob_lagr_consolidation_model;
+  = &_cs_glob_lagr_consolidation_model;
 
 /*! current time step status */
 
@@ -254,6 +271,7 @@ static cs_lagr_source_terms_t _cs_glob_lagr_source_terms
      .vmax = 0,
      .tmamax = 0,
      .st_val = NULL};
+
 cs_lagr_source_terms_t *cs_glob_lagr_source_terms
 = &_cs_glob_lagr_source_terms;
 
@@ -650,7 +668,6 @@ cs_f_lagr_coal_comb(cs_int_t   *ih2o,
   cs_glob_lagr_coal_comb->xwatch = xwatch;
   cs_glob_lagr_coal_comb->xashch = xashch;
   cs_glob_lagr_coal_comb->thcdch = thcdch;
-
 }
 
 /*=============================================================================
@@ -919,6 +936,138 @@ _update_boundary_face_type(void)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Obtain the number of mesh cells occupied by at least one particle.
+ *
+ * \param[in]   p_set   pointer to particle data structure
+ * \param[in]   start   start position in p_set
+ * \param[in]   end     end position in p_set
+ *
+ * \return
+ *   integer that gives the number of cells occupied by at least one particle
+ *   in a particle sub-set
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_get_n_occupied_cells(const cs_lagr_particle_set_t  *p_set,
+                      cs_lnum_t                      start,
+                      cs_lnum_t                      end)
+{
+  /*Initialization:
+    counter for number of cells that contain particles */
+  cs_lnum_t counter_particle_cells = 0;
+
+  /* Main loop to update the counter */
+  if (end - start > 1) {
+    counter_particle_cells = 1;
+    cs_lnum_t prev_cell_num
+      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_NUM);
+    cs_lnum_t curr_cell_num = prev_cell_num;
+    for (cs_lnum_t p = start + 1; p < end; ++p) {
+      curr_cell_num = cs_lagr_particles_get_lnum(p_set, p, CS_LAGR_CELL_NUM);
+      if (prev_cell_num != curr_cell_num) {
+        counter_particle_cells++;
+      }
+      prev_cell_num = curr_cell_num;
+    }
+  }
+  else if (p_set->n_particles == 1) {
+    counter_particle_cells = 1;
+  }
+
+  return counter_particle_cells;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Obtain the index of cells that are occupied by at least one
+ *         particle and the list of indices of the particle set that contain
+ *         the first element in a cell
+ *
+ * The two arrays that contain this information need to be pre-allocated to
+ * size n_occupied_cells and n_occupied_cells+1 respectively.
+ *
+ * The value of particle_gaps at index i contains the first particle in
+ * in cell[i+1]. The last element of particle_gaps contains the size of p_set.
+ *
+ * \param[in]   p_set              id of associated location
+ * \param[in]   start              id of associated zone
+ * \param[in]   end                id of requested class
+ * \param[in]   n_occupied_cells   number of cells that are occupied by particles
+ * \param[out]  occupied_cell_ids  occupied_cell ids
+ * \param[out]  particle_gaps      preallocated list of size n_occupied_cells+1
+ *                                 that will contain the starting indices of
+ *                                 particles that are in the current cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_occupied_cells(cs_lagr_particle_set_t  *p_set,
+                cs_lnum_t                start,
+                cs_lnum_t                end,
+                cs_lnum_t                n_occupied_cells,
+                cs_lnum_t                occupied_cell_ids[],
+                cs_lnum_t                particle_gaps[])
+{
+  if (end - start >= 1) {
+    /* Initialization */
+    cs_lnum_t prev_cell_id
+      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_NUM) - 1;
+    cs_lnum_t curr_cell_id = prev_cell_id;
+    cs_lnum_t counter = 0;
+    occupied_cell_ids[0] = curr_cell_id;
+    particle_gaps[0] = 0;
+
+    counter = 1;
+
+    /* Update lists */
+    for (cs_lnum_t part = start + 1; part < end; ++part) {
+      curr_cell_id
+        = cs_lagr_particles_get_lnum(p_set, part, CS_LAGR_CELL_NUM) - 1;
+      if (prev_cell_id != curr_cell_id) {
+        occupied_cell_ids[counter] = curr_cell_id;
+        particle_gaps[counter] = part;
+        counter++;
+      }
+      prev_cell_id = curr_cell_id;
+    }
+    particle_gaps[n_occupied_cells] = p_set->n_particles;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Obtain the number of particles to be deleted
+ *
+ * \param[in]        p_set             pointer to particle data structure
+ * \param[in]        start             start position in p_set
+ * \param[in]        end               end position in p_se
+ *
+ * \return:
+ *   integer that gives the number of particles to be deleted in a particle sub-set
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_get_n_deleted(cs_lagr_particle_set_t  *p_set,
+               cs_lnum_t                start,
+               cs_lnum_t                end)
+{
+  cs_lnum_t res = 0;
+
+  for (cs_lnum_t idx = start; idx < end; ++idx) {
+    cs_lnum_t cell_num = cs_lagr_particles_get_lnum(p_set, idx, CS_LAGR_CELL_NUM);
+
+    /* Check for negative cells (bin flag) */
+    if (cell_num < 0) {
+      res++;
+    }
+  }
+  return res;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1081,6 +1230,8 @@ cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
 
   zis->cluster              =  0;
 
+  zis->particle_aggregate = 1;
+
   zis->velocity_magnitude   = - cs_math_big_r;
 
   for (int  i = 0; i < 3; i++)
@@ -1130,8 +1281,9 @@ cs_lagr_update_particle_counter(void)
   cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
   cs_lagr_particle_counter_t *pc = &_lagr_particle_counter;
 
-  cs_gnum_t gcount[7] = {p_set->n_particles,
+  cs_gnum_t gcount[] = {p_set->n_particles,
                          p_set->n_part_new,
+                         p_set->n_part_merged,
                          p_set->n_part_out,
                          p_set->n_part_dep,
                          p_set->n_part_fou,
@@ -1145,16 +1297,21 @@ cs_lagr_update_particle_counter(void)
                        p_set->weight_fou,
                        p_set->weight_resusp};
 
-  cs_parall_counter(gcount, 7);
+  cs_lnum_t size_count = sizeof(gcount) / sizeof(gcount[0]);
+
+  cs_parall_counter(gcount, size_count);
   cs_parall_sum(6, CS_REAL_TYPE, wsum);
 
-  pc->n_g_total = gcount[0];
-  pc->n_g_new = gcount[1];
-  pc->n_g_exit = gcount[2];
-  pc->n_g_deposited = gcount[3];
-  pc->n_g_fouling = gcount[4];
-  pc->n_g_resuspended = gcount[5];
-  pc->n_g_failed = gcount[6];
+  cs_lnum_t iter = 0;
+
+  pc->n_g_total = gcount[iter++];
+  pc->n_g_new = gcount[iter++];
+  pc->n_g_merged = gcount[iter++];
+  pc->n_g_exit = gcount[iter++];
+  pc->n_g_deposited = gcount[iter++];
+  pc->n_g_fouling = gcount[iter++];
+  pc->n_g_resuspended = gcount[iter++];
+  pc->n_g_failed = gcount[iter++];
 
   pc->w_total = wsum[0];
   pc->w_new = wsum[1];
@@ -1461,7 +1618,7 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 
     int n_fields = cs_field_n_fields();
 
-    for (int f_id = 0; f_id < n_fields; f_id++){
+    for (int f_id = 0; f_id < n_fields; f_id++) {
 
       cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE)
@@ -1642,6 +1799,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   part_c->n_g_total = 0;
   part_c->n_g_new = 0;
+  part_c->n_g_merged = 0;
   part_c->n_g_exit = 0;
   part_c->n_g_deposited = 0;
   part_c->n_g_fouling = 0;
@@ -1755,6 +1913,22 @@ cs_lagr_solve_time_step(const int         itypfb[],
     iprev = 1;
 
   cs_lagr_injection(iprev, itypfb, vislen);
+
+  /* Initialization for the agglomeration/fragmentation models
+     --------------------------------------------------------- */
+
+  /* The algorithms are based on discrete values of particle radii (CS_LAGR_DIAMETER).
+     It uses a minimum diameter, corresponding to monomers (unbreakable particles).
+     Aggregates are formed of multiples of these monomers. */
+
+  /* Evaluation of the minimum diameter */
+  cs_real_t minimum_particle_diam = 0., rho = 0.;
+
+  if (cs_glob_lagr_model->agglomeration)
+    minimum_particle_diam = cs_glob_lagr_agglomeration_model->base_diameter;
+
+  if (cs_glob_lagr_model->fragmentation)
+    minimum_particle_diam = cs_glob_lagr_fragmentation_model->base_diameter;
 
   /* Management of advancing time
      ---------------------------- */
@@ -1953,6 +2127,152 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       if (cs_glob_lagr_model->n_user_variables > 0)
         cs_user_lagr_sde(dt, taup, tlag, tempct);
+
+      /* Integration of agglomeration and fragmentation
+         ----------------------------------------------*/
+
+      /* Agglomeration and fragmentation preparation */
+
+      /* Preparation: find cells occupied by particles (number)
+                      generate lists of these cells
+                      generate list particles indexes (sublists within a cell) */
+
+      cs_lnum_t n_occupied_cells;
+
+      cs_lnum_t *occupied_cell_ids = NULL;
+      cs_lnum_t *particle_list = NULL;
+
+      if (   cs_glob_lagr_model->agglomeration
+          || cs_glob_lagr_model->fragmentation) {
+
+        n_occupied_cells
+          = _get_n_occupied_cells(p_set, 0, p_set->n_particles);
+
+        BFT_MALLOC(occupied_cell_ids, n_occupied_cells, cs_lnum_t);
+        BFT_MALLOC(particle_list, n_occupied_cells+1, cs_lnum_t);
+
+        _occupied_cells(p_set, 0, p_set->n_particles,
+                        n_occupied_cells,
+                        occupied_cell_ids,
+                        particle_list);
+
+      }
+
+      /* Compute agglomeration and fragmentation
+         (avoid second pass if second order scheme is used) */
+      if (   cs_glob_lagr_time_step->nor == 1
+          && ((cs_glob_lagr_model->agglomeration == 1) ||
+             (cs_glob_lagr_model->fragmentation == 1))) {
+
+        /* Initialize lists (ids of cells and particles) */
+        cs_lnum_t *cell_particle_idx;
+
+        BFT_MALLOC(cell_particle_idx, n_occupied_cells+1, cs_lnum_t);
+        cell_particle_idx[0] = 0;
+
+        cs_lnum_t enter_parts = p_set->n_particles;
+
+        /* Loop on all cells that contain at least one particle */
+        for (cs_lnum_t iep = 0; iep < n_occupied_cells; ++iep) {
+
+          cs_lnum_t cell_id = occupied_cell_ids[iep];
+          cs_real_t mass_part
+            = cs_lagr_particles_get_real(p_set, cell_id, CS_LAGR_MASS);
+          cs_real_t diam_part
+            = cs_lagr_particles_get_real(p_set, cell_id, CS_LAGR_DIAMETER);
+          cs_real_t rho = 6. * mass_part / (cs_math_pi * cs_math_pow3(diam_part));
+
+          /* Particle indices: between start_part and end_part (list) */
+          cs_lnum_t start_part = particle_list[iep];
+          cs_lnum_t end_part = particle_list[iep+1];
+
+          cs_lnum_t init_particles = p_set->n_particles;
+
+          /* Treat agglomeration */
+          if (cs_glob_lagr_model->agglomeration == 1) {
+
+            cs_lagr_agglomeration(cell_id,
+                                  dt[0],
+                                  minimum_particle_diam,
+                                  rho,
+                                  start_part,
+                                  end_part);
+          }
+
+          /* Save number of created particles */
+
+          cs_lnum_t inserted_parts_agglo = p_set->n_particles - init_particles;
+
+          /* Create local buffer (deleted particles at the end) */
+
+          cs_lnum_t local_size = end_part - start_part;
+          cs_lnum_t deleted_parts = _get_n_deleted(p_set, start_part, end_part);
+          size_t swap_buffer_size = p_set->p_am->extents * (local_size - deleted_parts);
+          size_t swap_buffer_deleted = p_set->p_am->extents * deleted_parts;
+
+          /* Create buffers for deleted particles */
+          unsigned char * swap_buffer, *deleted_buffer;
+          BFT_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
+          BFT_MALLOC(deleted_buffer, swap_buffer_deleted, unsigned char);
+
+          /* Update buffer for existing particles */
+          cs_lnum_t count_del = 0, count_swap = 0;
+          for (cs_lnum_t i = 0; i < local_size; ++i) {
+            cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set,
+                                                           i+start_part,
+                                                           CS_LAGR_CELL_NUM);
+            if (cell_id < 0) {
+              memcpy(deleted_buffer + p_set->p_am->extents * count_del,
+                     p_set->p_buffer + p_set->p_am->extents * (i+start_part),
+                     p_set->p_am->extents);
+              count_del++;
+            }
+            else {
+              memcpy(swap_buffer + p_set->p_am->extents * count_swap,
+                     p_set->p_buffer + p_set->p_am->extents * (i+start_part),
+                     p_set->p_am->extents);
+              count_swap++;
+            }
+          }
+
+          memcpy(p_set->p_buffer + p_set->p_am->extents * start_part,
+                 swap_buffer, swap_buffer_size);
+          memcpy(  p_set->p_buffer
+                 + p_set->p_am->extents * (local_size-deleted_parts+start_part),
+                 deleted_buffer, swap_buffer_deleted);
+
+          BFT_FREE(deleted_buffer);
+          BFT_FREE(swap_buffer);
+
+          /* Treat fragmentation */
+          init_particles = p_set->n_particles;
+
+          if (cs_glob_lagr_model->fragmentation == 1) {
+            cs_lagr_fragmentation(dt[0],
+                                  minimum_particle_diam, rho,
+                                  start_part, end_part - deleted_parts,
+                                  init_particles, p_set->n_particles);
+          }
+          cs_lnum_t inserted_parts_frag = p_set->n_particles - init_particles;
+
+          cell_particle_idx[iep+1] =   cell_particle_idx[iep]
+                                     + inserted_parts_agglo + inserted_parts_frag;
+        }
+
+        p_set->n_particles = enter_parts;
+
+        /* Introduce new particles (uniformly in the cell) */
+        cs_lagr_new_v(p_set,
+                      n_occupied_cells,
+                      occupied_cell_ids,
+                      cell_particle_idx);
+        p_set->n_particles += cell_particle_idx[n_occupied_cells];
+
+        BFT_FREE(cell_particle_idx);
+      }
+
+      BFT_FREE(occupied_cell_ids);
+      BFT_FREE(particle_list);
 
       /* Reverse coupling: compute source terms
          -------------------------------------- */

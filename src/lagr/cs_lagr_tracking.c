@@ -115,6 +115,7 @@ typedef enum {
   CS_LAGR_PART_TO_SYNC,
   CS_LAGR_PART_TREATED,
   CS_LAGR_PART_STUCK,
+  CS_LAGR_PART_MERGED,
   CS_LAGR_PART_OUT,
   CS_LAGR_PART_ERR
 } cs_lagr_tracking_state_t;
@@ -2726,6 +2727,8 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   cs_lnum_t  n_recv_particles = 0;
   cs_lnum_t  particle_count = 0;
 
+  cs_lnum_t  n_merged_particles = 0;
+
   cs_lnum_t  n_exit_particles = 0;
   cs_lnum_t  n_failed_particles = 0;
 
@@ -2914,6 +2917,10 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
     /* Particle remains in domain */
 
+    else if (cur_part_state == CS_LAGR_PART_MERGED) {
+      n_merged_particles++;
+    }
+
     else if (cur_part_state < CS_LAGR_PART_OUT) {
 
       if (particle_count < i)
@@ -2948,6 +2955,8 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
   particles->n_failed_part += n_failed_particles;
   particles->weight_failed += fail_weight;
+
+  particles->n_part_merged += n_merged_particles;
 
   /* Exchange particles, then update set */
 
@@ -3019,14 +3028,22 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
       }
     }
 
-    if (cur_part_cell_num < 0)
-      _tracking_info(particles, i)->state = CS_LAGR_PART_STUCK;
+    if (cur_part_cell_num < 0) {
+      cs_real_t particle_weight
+        = cs_lagr_particles_get_real(particles, i, CS_LAGR_STAT_WEIGHT);
+      if (particle_weight <= 0.) {
+        _tracking_info(particles, i)->state = CS_LAGR_PART_MERGED;
+      }
+      else {
+        _tracking_info(particles, i)->state = CS_LAGR_PART_STUCK;
+      }
+    }
     else if (r_truncate > 1.9) /* from previous displacement */
       _tracking_info(particles, i)->state = CS_LAGR_PART_ERR;
     else {
       _tracking_info(particles, i)->state = CS_LAGR_PART_TO_SYNC;
       if (am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
-        if(    cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
+        if (    cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
             == CS_LAGR_PART_DEPOSITED)
           _tracking_info(particles, i)->state = CS_LAGR_PART_TREATED;
       }

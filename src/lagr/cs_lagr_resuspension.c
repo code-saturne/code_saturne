@@ -160,7 +160,7 @@ cs_lagr_resuspension(void)
                           CS_TEMPERATURE_SCALE_KELVIN)
         temp = extra->scal_t->val[iel];
 
-      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
+      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
         cs_lnum_t mode = 1;
         CS_PROCF (usthht,USTHHT)(&mode, &(extra->scal_t->val[iel]), &temp);

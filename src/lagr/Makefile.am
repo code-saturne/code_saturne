@@ -56,6 +56,8 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_lagr.h \
 cs_lagr_clogging.h \
+cs_lagr_agglo.h \
+cs_lagr_fragmentation.h \
 cs_lagr_head_losses.h \
 cs_lagr_roughness.h \
 cs_lagr_dlvo.h \
@@ -91,6 +93,8 @@ cs_lagr_headers.h
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
 cs_lagr_clogging.c \
+cs_lagr_agglo.c \
+cs_lagr_fragmentation.c \
 cs_lagr_roughness.c \
 cs_lagr.c \
 cs_lagr_dlvo.c \

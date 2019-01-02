@@ -68,9 +68,6 @@
 #include "cs_field_pointer.h"
 #include "cs_random.h"
 
-#include "cs_gui_particles.h"
-#include "cs_gui_util.h"
-
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_geom.h"
@@ -348,6 +345,18 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
                   "  for zone %d and set %d."),
                 (int)zis->cluster,
                 (int)cs_glob_lagr_model->n_stat_classes,
+                z_id,
+                set_id);
+  }
+
+  if (cs_glob_lagr_model->n_particle_aggregates > 0) {
+    if (zis->particle_aggregate < 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian module: \n"
+                  "  number of particles = %d is either not defined (negative)\n"
+                  "  or smaller than 1 than \n"
+                  "  for zone %d and set %d."),
+                (int)zis->particle_aggregate,
                 z_id,
                 set_id);
   }
@@ -745,6 +754,10 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
       if (cs_glob_lagr_model->n_stat_classes > 0)
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_STAT_CLASS,
                                   zis->cluster);
+
+      if (cs_glob_lagr_model->n_particle_aggregates > 0)
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_PARTICLE_AGGREGATE,
+                                  zis->particle_aggregate);
 
       /* used for 2nd order only */
       if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)

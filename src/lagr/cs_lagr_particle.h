@@ -129,6 +129,8 @@ typedef enum {
 
   CS_LAGR_STAT_CLASS,
 
+  CS_LAGR_PARTICLE_AGGREGATE,
+
   /* User attributes */
 
   CS_LAGR_USER,
@@ -180,6 +182,7 @@ typedef struct {
 
   cs_lnum_t  n_particles;                     /* number of particle in domain */
   cs_lnum_t  n_part_new;
+  cs_lnum_t  n_part_merged;                   /* number of merged particles */
   cs_lnum_t  n_part_out;
   cs_lnum_t  n_part_dep;
   cs_lnum_t  n_part_fou;

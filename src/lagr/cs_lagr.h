@@ -273,7 +273,19 @@ typedef struct {
   int  precipitation;
   int  fouling;
 
+  /*! - 0: no agglomeration model
+      - 1: agglomeration model used */
+  int agglomeration;
+
+  /*! - 0: no fragmentation model
+      - 1: fragmentation model used */
+  int fragmentation;
+
   int  n_stat_classes;
+
+  /*! number of aggregates that form the particle */
+  int n_particle_aggregates;
+
   int  n_user_variables;
 
 } cs_lagr_model_t;
@@ -296,6 +308,9 @@ typedef struct {
 
   /*! total number of particles*/
   cs_gnum_t   n_g_new;
+
+  /*! number of merged particles*/
+  cs_gnum_t   n_g_merged;
 
   /*! number of exited particles*/
   cs_gnum_t   n_g_exit;
@@ -427,6 +442,28 @@ typedef struct {
 
 } cs_lagr_clogging_model_t;
 
+/*! Parameters of the particle agglomeration model */
+/* ------------------------------------------ */
+
+typedef struct {
+
+  cs_real_t          scalar_kernel;
+  cs_real_t          base_diameter;
+  cs_real_t          (*function_kernel)(cs_lnum_t, cs_lnum_t);
+
+} cs_lagr_agglomeration_model_t;
+
+/*! Parameters of the particle fragmentation model */
+/* ------------------------------------------ */
+
+typedef struct {
+
+  cs_real_t          scalar_kernel;
+  cs_real_t          base_diameter;
+  cs_real_t          (*function_kernel)(cs_lnum_t);
+
+} cs_lagr_fragmentation_model_t;
+
 /*! Parameters of the particle consolidation model */
 /* ----------------------------------------------- */
 
@@ -491,6 +528,8 @@ typedef struct {
                                       (if \ref physical_model=2) */
 
   int         cluster;              /*!< statistical cluster id */
+
+  int         particle_aggregate;
 
   cs_real_t   velocity_magnitude;   /*!< particle velocity magnitude */
   cs_real_t   velocity[3];          /*!< particle velocity components */
@@ -1031,6 +1070,10 @@ extern cs_lagr_specific_physics_t            *cs_glob_lagr_specific_physics;
 extern cs_lagr_reentrained_model_t           *cs_glob_lagr_reentrained_model;
 extern cs_lagr_precipitation_model_t         *cs_glob_lagr_precipitation_model;
 extern cs_lagr_clogging_model_t              *cs_glob_lagr_clogging_model;
+
+extern cs_lagr_agglomeration_model_t         *cs_glob_lagr_agglomeration_model;
+extern cs_lagr_fragmentation_model_t         *cs_glob_lagr_fragmentation_model;
+
 extern cs_lagr_consolidation_model_t         *cs_glob_lagr_consolidation_model;
 extern cs_lagr_time_step_t                   *cs_glob_lagr_time_step;
 extern cs_lagr_source_terms_t                *cs_glob_lagr_source_terms;

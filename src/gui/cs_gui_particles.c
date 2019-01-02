@@ -340,6 +340,8 @@ cs_gui_particles_model(void)
     _attr_post_status(tn_o, CS_LAGR_DIAMETER, "diameter");
     _attr_post_status(tn_o, CS_LAGR_TEMPERATURE, "temperature");
     _attr_post_status(tn_o, CS_LAGR_MASS, "mass");
+    _attr_post_status(tn_o, CS_LAGR_PARTICLE_AGGREGATE, "parcel_class");
+    _attr_post_status(tn_o, CS_LAGR_STAT_WEIGHT, "stat_weight");
 
     if (cs_glob_lagr_model->physical_model == 2) {
       _attr_post_status(tn_o, CS_LAGR_SHRINKING_DIAMETER,
