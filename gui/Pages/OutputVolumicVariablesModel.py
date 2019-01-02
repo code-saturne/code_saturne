@@ -92,7 +92,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         return default
 
 
-    def getVolumeFieldsNodeList(self, constant=False, time_averages=True):
+    def __getVolFieldsNodeList(self, root, constant, time_averages):
         """
         Returns the list of active volume fields (variables, propeties,
         and possibly postprocessing fields).
@@ -104,7 +104,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
         l = []
         for tag in tags:
-            for node in self.case.xmlGetNodeList(tag):
+            for node in root.xmlGetNodeList(tag):
                 if node['support']:
                     if node['support'] == 'boundary':
                         continue
@@ -113,9 +113,24 @@ class OutputVolumicVariablesModel(Variables, Model):
                         choice = node['choice']
                         if choice and choice == 'constant':
                             continue
-                    # elif node.xmlGetParentName() == 'error_estimator':
-                    #    continue
                 l.append(node)
+
+        return l
+
+
+    def getVolumeFieldsNodeList(self, constant=False, time_averages=True):
+        """
+        Returns the list of active volume fields (variables, propeties,
+        and possibly postprocessing fields).
+        """
+
+        l = self.__getVolFieldsNodeList(self.case, constant, time_averages)
+
+        n_bc = self.case.xmlGetNode('boundary_conditions')
+        if n_bc:
+            l_c = self.__getVolFieldsNodeList(n_bc, constant, time_averages)
+            for n in l_c:
+                l.remove(n)
 
         return l
 
