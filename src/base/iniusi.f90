@@ -100,6 +100,12 @@ interface
     integer(c_int) :: iihmpr
   end function cs_gui_file_is_loaded
 
+  subroutine cs_gui_porous_model()  &
+       bind(C, name='cs_gui_porous_model')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_porous_model
+
   subroutine cs_gui_radiative_transfer_parameters()  &
        bind(C, name='cs_gui_radiative_transfer_parameters')
     use, intrinsic :: iso_c_binding
@@ -297,7 +303,8 @@ if (iihmpr.eq.1) then
   ! Init of reference values (uref, almax)
   call cstini()
 
-  call uiipsu(iporos)
+  ! Porosity model
+  call cs_gui_porous_model()
 
   ! Init fan
   call uifans()
@@ -349,7 +356,7 @@ endif
 call comcoc(imrgra)
 
 ! Choose the porous model
-call compor(iporos)
+call cs_mesh_quantities_set_porous_model(iporos)
 
 ! --- Varpos
 ! If CDO mode only, skip this stage

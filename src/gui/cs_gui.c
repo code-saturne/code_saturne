@@ -64,6 +64,7 @@
 #include "cs_geom.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
 #include "cs_multigrid.h"
 #include "cs_order.h"
@@ -2670,42 +2671,6 @@ void CS_PROCF (cstini, CSTINI) (void)
 }
 
 /*----------------------------------------------------------------------------
- * Solver taking a scalar porosity into account
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIIPSU
- * *****************
- *
- * INTEGER          IPOROS     -->   porosity
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
-{
-  int n_zones = cs_volume_zone_n_zones();
-
-  cs_tree_node_t *tn_p
-    = cs_tree_get_node(cs_glob_tree,
-                       "thermophysical_models/porosities/porosity");
-
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
-
-    if (z->type & CS_VOLUME_ZONE_POROSITY) {
-      cs_tree_node_t *tn = _add_zone_id_test_attribute(tn_p, z->id);
-      tn = cs_tree_get_node(tn, "model");
-      const char *mdl = cs_tree_node_get_value_str(tn);
-
-      *iporos = CS_MAX(1, *iporos);
-      if (mdl) {
-        if (cs_gui_strcmp(mdl, "anisotropic"))
-          *iporos = 2;
-      }
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Define porosity.
  *
  * Fortran Interface:
@@ -5048,6 +5013,36 @@ cs_gui_partition(void)
   if (n_add_parts > 0) {
     cs_partition_add_partitions(n_add_parts, add_parts);
     BFT_FREE(add_parts);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Determine porosity model type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_porous_model(void)
+{
+  int n_zones = cs_volume_zone_n_zones();
+
+  cs_tree_node_t *tn_p
+    = cs_tree_get_node(cs_glob_tree,
+                       "thermophysical_models/porosities/porosity");
+
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+
+    if (z->type & CS_VOLUME_ZONE_POROSITY) {
+      cs_tree_node_t *tn = _add_zone_id_test_attribute(tn_p, z->id);
+      tn = cs_tree_get_node(tn, "model");
+      const char *mdl = cs_tree_node_get_value_str(tn);
+
+      cs_glob_porous_model = CS_MAX(1, cs_glob_porous_model);
+      if (mdl) {
+        if (cs_gui_strcmp(mdl, "anisotropic"))
+          cs_glob_porous_model = 2;
+      }
+    }
   }
 }
 

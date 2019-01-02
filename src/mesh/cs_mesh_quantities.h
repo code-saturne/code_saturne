@@ -190,20 +190,6 @@ extern int cs_glob_porous_model;
 void
 CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra);
 
-/*----------------------------------------------------------------------------
- * Set porous model
- *
- * Fortran interface :
- *
- * subroutine compor (iporos)
- * *****************
- *
- * integer          iporos        : <-- : porous model
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -253,7 +239,7 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option);
  * Compute Fluid volumes and fluid surface in addition to cell volume and surfaces.
  *
  * parameters:
- *   porous_model <-- gradient option (Fortran iporos)
+ *   porous_model <-- porous model option (> 0 for porosity)
  *----------------------------------------------------------------------------*/
 
 void

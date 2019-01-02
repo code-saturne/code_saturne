@@ -2300,6 +2300,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Set porosity model.
+
+    subroutine cs_mesh_quantities_set_porous_model(iporos)   &
+      bind(C, name='cs_mesh_quantities_set_porous_model')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: iporos
+    end subroutine cs_mesh_quantities_set_porous_model
+
+    !---------------------------------------------------------------------------
+
     ! Read turbomachinery metadata from restart file.
 
     subroutine turbomachinery_restart_read(r)  &

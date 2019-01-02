@@ -99,7 +99,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Compute the porosity (volume factor \f$ \epsilon \f$
  *        when the porosity model is activated
- *        (iporos greater than 1 in cs_user_parameters.f90).
+ *        (\ref cs_glob_porous_model > 0).
  *
  * This function is called at the begin of the simulation only.
  */

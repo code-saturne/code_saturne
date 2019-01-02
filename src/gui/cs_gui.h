@@ -248,19 +248,6 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0);
 void CS_PROCF (cstini, CSTINI) (void);
 
 /*----------------------------------------------------------------------------
- * Solver taking a scalar porosity into account
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIIPSU
- * *****************
- *
- * INTEGER          IPOROS     -->   porosity
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiipsu, UIIPSU) (int *iporos);
-
-/*----------------------------------------------------------------------------
  * Define porosity.
  *
  * Fortran Interface:
@@ -495,6 +482,13 @@ cs_gui_parallel_io(void);
 
 void
 cs_gui_partition(void);
+
+/*----------------------------------------------------------------------------
+ * Determine porosity model type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_porous_model(void);
 
 /*----------------------------------------------------------------------------
  * 1D profile postprocessing

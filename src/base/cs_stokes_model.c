@@ -251,8 +251,7 @@ const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
  *============================================================================*/
 
 void
-cs_f_stokes_options_get_pointers(int     **iporos,
-                                 int     **ivisse,
+cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
@@ -269,10 +268,6 @@ cs_f_stokes_options_get_pointers(int     **iporos,
                                  int     **irecmf);
 
 /*============================================================================
- * Private function definitions
- *============================================================================*/
-
-/*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
@@ -283,7 +278,6 @@ cs_f_stokes_options_get_pointers(int     **iporos,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   iporos  --> pointer to cs_glob_porous_model
  *   ivisse  --> pointer to cs_glob_stokes_model->ivisse
  *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
  *   iprco   --> pointer to cs_glob_stokes_model->iprco
@@ -302,8 +296,7 @@ cs_f_stokes_options_get_pointers(int     **iporos,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_stokes_options_get_pointers(int     **iporos,
-                                 int     **ivisse,
+cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irevmc,
                                  int     **iprco,
                                  double  **arak,
@@ -319,7 +312,6 @@ cs_f_stokes_options_get_pointers(int     **iporos,
                                  int     **icalhy,
                                  int     **irecmf)
 {
-  *iporos = &(cs_glob_porous_model);
   *ivisse = &(_stokes_model.ivisse);
   *irevmc = &(_stokes_model.irevmc);
   *iprco  = &(_stokes_model.iprco);
@@ -336,6 +328,10 @@ cs_f_stokes_options_get_pointers(int     **iporos,
   *icalhy = &(_stokes_model.icalhy);
   *irecmf = &(_stokes_model.irecmf);
 }
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

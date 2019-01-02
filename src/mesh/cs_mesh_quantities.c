@@ -122,6 +122,34 @@ int cs_glob_porous_model = 0;
 
 static int _n_computations = 0;
 
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_mesh_quantities_get_pointers(int   **iporos);
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Get pointers to global variables.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   iporos  --> pointer to cs_glob_porous_model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_mesh_quantities_get_pointers(int   **iporos)
+{
+  *iporos = &(cs_glob_porous_model);
+}
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2552,23 +2580,6 @@ CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra)
   cs_mesh_quantities_set_cocg_options(*imrgra);
 }
 
-/*----------------------------------------------------------------------------
- * Set porous model
- *
- * Fortran interface :
- *
- * subroutine compor (iporos)
- * *****************
- *
- * integer          iporos        : <-- : porous model
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos)
-{
-  cs_mesh_quantities_set_porous_model(*iporos);
-}
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -2675,7 +2686,7 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
  * cell volumes and surfaces.
  *
  * parameters:
- *   porous_model <-- gradient option (Fortran iporos)
+ *   porous_model <-- porous model option (> 0 for porosity)
  *----------------------------------------------------------------------------*/
 
 void

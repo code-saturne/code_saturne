@@ -1392,10 +1392,19 @@ module optcal
       type(c_ptr), intent(out) :: idries, ivrtex
     end subroutine cs_f_turb_les_model_get_pointers
 
+    ! Interface to C function retrieving pointers to mesh quantity options
+
+    subroutine cs_f_mesh_quantities_get_pointers(iporos)  &
+      bind(C, name='cs_f_mesh_quantities_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iporos
+    end subroutine cs_f_mesh_quantities_get_pointers
+
     ! Interface to C function retrieving pointers to members of the
     ! Stokes options structure
 
-    subroutine cs_f_stokes_options_get_pointers(iporos, ivisse, irevmc, iprco, &
+    subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco,         &
                                                 arak  ,ipucou, iccvfg,         &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
@@ -1403,7 +1412,7 @@ module optcal
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iporos, ivisse, irevmc, iprco, arak
+      type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
     end subroutine cs_f_stokes_options_get_pointers
@@ -1692,11 +1701,12 @@ contains
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
 
-
-    call cs_f_stokes_options_get_pointers(c_iporos, c_ivisse, c_irevmc, c_iprco ,  &
-                                          c_arak  , c_ipucou, c_iccvfg, &
-                                          c_idilat, c_epsdp , c_itbrrb, c_iphydr, c_igprij, &
-                                          c_igpust, c_iifren, c_icalhy, c_irecmf)
+    call cs_f_mesh_quantities_get_pointers(c_iporos)
+    call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
+                                          c_arak  , c_ipucou, c_iccvfg,  &
+                                          c_idilat, c_epsdp , c_itbrrb,  &
+                                          c_iphydr, c_igprij, c_igpust,  &
+                                          c_iifren, c_icalhy, c_irecmf)
 
     call c_f_pointer(c_iporos, iporos)
     call c_f_pointer(c_ivisse, ivisse)
