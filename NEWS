@@ -5,6 +5,8 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Lagrangian module: fix division by 0 in boundary stats.
+
 - Lagrangian Module: fix crash in some cases with no deposition model.
 
 - Fix missing free surface boundary movement in some cases depending on
@@ -28,7 +30,7 @@ Bug fixes
   * sigmae (for all RSM models)
   * csrij (EB-RSM model).
 
-- Fix allocation of pmappers to scalar fields in atmospheric aerosols model. 
+- Fix allocation of pmappers to scalar fields in atmospheric aerosols model.
 
 - Fix allocation size for values at injection in case of mass source terms
   with coupled Reynolds stress solver.
