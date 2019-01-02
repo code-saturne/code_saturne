@@ -152,8 +152,7 @@ typedef struct {
 
   int                       class;        /* Class number */
 
-  char                     *name;         /* Associated name, if f_id < 0 */
-  double                   *val;          /* Associated value, if f_id < 0 */
+  char                     *name;         /* Associated name, while f_id < 0 */
 
   int                       nt_cur;      /* Time step number of last update */
 
@@ -701,16 +700,15 @@ _check_restart(const char                     *name,
   int prev_id = -1;
   int prev_wa_id = -1;
 
-  if (   (*nt_start > -1 && *nt_start >= ri->nt_prev)
-      || (*t_start >= 0  && *t_start >= ri->t_prev))
+  if (   (*nt_start > -1 && *nt_start > ri->nt_prev)
+      || (*t_start >= 0  && *t_start > ri->t_prev))
     return prev_id;
 
   /* Adjust accumulator info if moment should be restarted */
 
   if (restart_mode == CS_LAGR_MOMENT_RESTART_RESET) {
-    *nt_start = ri->nt_prev + 1;
+    *nt_start = ri->nt_prev;
     *t_start = ri->t_prev;
-    return prev_id;
   }
 
   /* If we reach here, restart info is required */
@@ -783,10 +781,6 @@ _check_restart(const char                     *name,
 
       if (matching_restart == false)
         prev_id = -1;
-      /* else { */
-      /*   *nt_start = ri->wa_nt_start[prev_wa_id]; */
-      /*   *t_start = ri->wa_t_start[prev_wa_id]; */
-      /* } */
 
       break;
     }
@@ -1129,17 +1123,13 @@ _cs_lagr_moment_restart_read(void)
     cs_lagr_moment_t *mt = _lagr_stats + i;
     if (mt->restart_id > -1) {
       _ensure_init_moment(mt);
-      cs_real_t *val = mt->val;
-      if (mt->f_id > -1) {
-        cs_field_t *f = cs_field_by_id(mt->f_id);
-        val = f->val;
-      }
+      cs_field_t *f = cs_field_by_id(mt->f_id);
       retcode = cs_restart_read_section(cs_lag_stat_restart,
                                         ri->name[mt->restart_id],
-                                        mt->location_id,
-                                        mt->dim,
+                                        f->location_id,
+                                        f->dim,
                                         CS_TYPE_cs_real_t,
-                                        val);
+                                        f->val);
       _assert_restart_success(retcode);
     }
   }
@@ -1278,22 +1268,31 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
 
   if (   location_id == CS_MESH_LOCATION_CELLS
       && p_data_func == NULL
-      && m_data_func == NULL
-      && nt_start == 0) {
+      && m_data_func == NULL) {
 
-    char name[64];
-    _statistical_weight_name(class_id, name);
-
-    if (cs_field_by_name_try(name) == NULL) {
-      cs_field_t *f
-        = cs_field_create(name,
-                          CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
-                          location_id,
-                          1,
-                          false);
-      mwa->f_id = f->id;
+    bool create = false;
+    if (_restart_info != NULL) {
+      if (nt_start == _restart_info->nt_prev)
+        create = true;
     }
+    else if (nt_start == 0)
+      create = true;
 
+    if (create) {
+      char name[64];
+      _statistical_weight_name(class_id, name);
+
+      if (cs_field_by_name_try(name) == NULL) {
+        cs_field_t *f
+          = cs_field_create(name,
+                            CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
+                            location_id,
+                            1,
+                            false);
+        mwa->f_id = f->id;
+      }
+
+    }
   }
 
   mwa->val0 = 0.;
@@ -1446,7 +1445,6 @@ _find_or_add_moment(int                       location_id,
   mt->component_id = component_id;
 
   mt->name = NULL;
-  mt->val = NULL;
 
   mt->nt_cur = -1;
 
@@ -1715,11 +1713,8 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
 
   mt->m_data_func(mt->data_input, mt->location_id, mt->class, x);
 
-  cs_real_t *restrict val = mt->val;
-  if (mt->f_id > -1) {
-    cs_field_t *f = cs_field_by_id(mt->f_id);
-    val = f->val;
-  }
+  cs_field_t *f = cs_field_by_id(mt->f_id);
+  cs_real_t *restrict val = f->val;
 
   if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
 
@@ -1728,11 +1723,8 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
     cs_lagr_moment_t *mt_mean = _lagr_stats + mt->l_id;
 
     _ensure_init_moment(mt_mean);
-    cs_real_t *restrict m = mt_mean->val;
-    if (mt_mean->f_id > -1) {
-      cs_field_t *f_mean = cs_field_by_id(mt_mean->f_id);
-      m = f_mean->val;
-    }
+    cs_field_t *f_mean = cs_field_by_id(mt_mean->f_id);
+    cs_real_t *restrict m = f_mean->val;
 
     if (mt->dim == 6) { /* variance-covariance matrix */
       assert(mt->data_dim == 3);
@@ -1886,12 +1878,8 @@ _cs_lagr_stat_update_all(void)
 
           if (mt->m_data_func == NULL) {
 
-            cs_real_t *restrict val = mt->val;
-
-            if (mt->f_id > -1) {
-              cs_field_t *f = cs_field_by_id(mt->f_id);
-              val = f->val;
-            }
+            cs_field_t *f = cs_field_by_id(mt->f_id);
+            cs_real_t *restrict val = f->val;
 
             /* prepare submoment definition */
 
@@ -1901,18 +1889,12 @@ _cs_lagr_stat_update_all(void)
             /* Check if lower moment is defined and attached */
 
             if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
-
               assert(mt->l_id > -1);
               mt_mean = _lagr_stats + mt->l_id;
               _ensure_init_moment(mt_mean);
 
-              mean_val = mt_mean->val;
-
-              if (mt_mean->f_id > -1) {
-                cs_field_t *f_mean = cs_field_by_id(mt_mean->f_id);
-                mean_val = f_mean->val;
-              }
-
+              cs_field_t *f_mean = cs_field_by_id(mt_mean->f_id);
+              mean_val = f_mean->val;
             }
 
             cs_real_t *pval = NULL;
@@ -2102,12 +2084,8 @@ _free_all_moments(void)
   int i;
 
   for (i = 0; i < _n_lagr_stats; i++) {
-
     cs_lagr_moment_t *mt = _lagr_stats + i;
     BFT_FREE(mt->name);
-    BFT_FREE(mt->val);
-    //TODO
-    /* field associated with moments are destroyed in cs_field_destroy_all */
   }
 
   BFT_FREE(_lagr_stats);
@@ -2343,6 +2321,7 @@ _stat_define(const char                *name,
                                    wa_id,
                                    prev_id);
 
+    mt = _lagr_stats + moment_id;
     mt->l_id = l_id;
     mt = _lagr_stats + l_id;
 
@@ -2872,6 +2851,25 @@ cs_lagr_stat_initialize(void)
 
     }
 
+  }
+
+  /* Now ensure fields are created for all moments
+     (as this should only concern automatically created
+     means when variances need thme; the field dimension
+     and moment dimension are identical). */
+
+  for (int i = 0; i < _n_lagr_stats; i++) {
+    cs_lagr_moment_t *mt = _lagr_stats + i;
+    if (mt->f_id < 0) {
+      cs_field_t *f
+        = cs_field_create(mt->name,
+                          CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
+                          mt->location_id,
+                          mt->dim,
+                          false);
+      mt->f_id = f->id;
+      BFT_FREE(mt->name);
+    }
   }
 
   /* Activation status not needed after this stage */
