@@ -169,10 +169,11 @@ endif
 ! are not defined anymore)
 if (icdo.lt.2) then
    call fldini
-endif
+   call usipes(nmodpp)
 
-call usipes(nmodpp)
-call user_finalize_setup_wrapper
+   ! Avoid a second spurious call to this function
+   call user_finalize_setup_wrapper
+endif
 
 !===============================================================================
 ! 5. Coherency checks
