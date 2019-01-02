@@ -60,6 +60,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
+#include "cs_parameters_check.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 
@@ -89,12 +90,11 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static void
-_porcel(cs_real_t   mdiam[],
-        cs_real_t   porosi[],
-        cs_lnum_t   itypfb[])
+_porcel(cs_real_t         mdiam[],
+        cs_real_t         porosi[],
+        const cs_lnum_t   bc_type[])
 {
-  /* Initialization
-   *----------------*/
+  /* Initialization */
 
   const cs_mesh_t  *m = cs_glob_mesh;
 
@@ -120,7 +120,7 @@ _porcel(cs_real_t   mdiam[],
 
   for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
 
-    if (   (itypfb[ifac] == CS_SMOOTHWALL || itypfb[ifac] == CS_ROUGHWALL)
+    if (   (bc_type[ifac] == CS_SMOOTHWALL || bc_type[ifac] == CS_ROUGHWALL)
         && bound_stat[ifac + lag_bdy_i->ihdepm * nfabor] > 0.0) {
       indic = 1;
       itytmp[ifac] = CS_INLET;
@@ -159,9 +159,8 @@ _porcel(cs_real_t   mdiam[],
   if (indic > 0)
     CS_PROCF(distpr, DISTPR)(itytmp, distpw);
 
-  /* ====================================================================
-   * 2. Compute  n = Grad(DISTPW)/|Grad(DISTPW)|
-   * ====================================================================   */
+  /* Compute  n = Grad(DISTPW)/|Grad(DISTPW)|
+   * ======================================== */
 
   /* Distance to wall is 0 at the wall by definition, zero flux elsewhere   */
 
@@ -211,7 +210,7 @@ _porcel(cs_real_t   mdiam[],
                      NULL, /* internal coupling */
                      q);
 
-  /* Normalisation (attention, le gradient peut etre nul, parfois) */
+  /* Normalisation (caution, gradient can be zero sometimes) */
 
   for (cs_lnum_t iel = 0; iel < ncel; iel++) {
 
@@ -231,9 +230,8 @@ _porcel(cs_real_t   mdiam[],
     cs_halo_perio_sync_var_vect(m->halo, CS_HALO_STANDARD,
                                 (cs_real_t *)q, 3);
 
-  /* ====================================================================
-   * 3. Compute  porosity
-   * ==================================================================== */
+  /* Compute  porosity
+   * ================= */
 
   cs_real_t epsi = 1e-06;
 
@@ -266,7 +264,7 @@ _porcel(cs_real_t   mdiam[],
 
   }
 
-  /* Paralellism and periodicity    */
+  /* Paralellism and periodicity */
 
   cs_parall_counter_max(&indic, 1);
 
@@ -283,10 +281,10 @@ _porcel(cs_real_t   mdiam[],
       cs_lnum_t iel1  = cs_glob_mesh->i_face_cells[ifac][0];
       cs_lnum_t iel2  = cs_glob_mesh->i_face_cells[ifac][1];
 
-      for (cs_lnum_t ii = 0; ii < 3; ii++){
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
 
-        prod1 +=   q[iel1][ii] * cs_glob_mesh_quantities->i_face_normal[ifac * 3 + ii];
-        prod2 += - q[iel2][ii] * cs_glob_mesh_quantities->i_face_normal[ifac * 3 + ii];
+        prod1 += q[iel1][ii] * cs_glob_mesh_quantities->i_face_normal[ifac * 3 + ii];
+        prod2 -= q[iel2][ii] * cs_glob_mesh_quantities->i_face_normal[ifac * 3 + ii];
 
       }
 
@@ -295,8 +293,10 @@ _porcel(cs_real_t   mdiam[],
 
       else {
 
-        masflu[iel1] += - (porosi[iel1] - cs_glob_lagr_clogging_model->mporos) / dt * volume[iel1];
-        masflu[iel2] +=   (porosi[iel1] - cs_glob_lagr_clogging_model->mporos) / dt * volume[iel1];
+        masflu[iel1] -=   (porosi[iel1] - cs_glob_lagr_clogging_model->mporos)
+                        / dt * volume[iel1];
+        masflu[iel2] +=   (porosi[iel1] - cs_glob_lagr_clogging_model->mporos)
+                        / dt * volume[iel1];
         mdiam[iel2]   = mdiam[iel1];
 
       }
@@ -306,8 +306,10 @@ _porcel(cs_real_t   mdiam[],
 
       else {
 
-        masflu[iel2] += - (porosi[iel2] - cs_glob_lagr_clogging_model->mporos) / dt * volume[iel2];
-        masflu[iel1] +=   (porosi[iel2] - cs_glob_lagr_clogging_model->mporos) / dt * volume[iel2];
+        masflu[iel2] -=   (porosi[iel2] - cs_glob_lagr_clogging_model->mporos)
+                        / dt * volume[iel2];
+        masflu[iel1] +=   (porosi[iel2] - cs_glob_lagr_clogging_model->mporos)
+                        / dt * volume[iel2];
         mdiam[iel1]   = mdiam[iel2];
 
       }
@@ -348,7 +350,7 @@ _porcel(cs_real_t   mdiam[],
 
   }
 
-  /* Free memory     */
+  /* Free memory */
 
   BFT_FREE(masflu);
   BFT_FREE(depvol);
@@ -357,11 +359,7 @@ _porcel(cs_real_t   mdiam[],
   BFT_FREE(coefbp);
   BFT_FREE(distpw);
   BFT_FREE(itytmp);
-
-  return;
-
 }
-
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -369,16 +367,22 @@ _porcel(cs_real_t   mdiam[],
  * Public function definitions
  *============================================================================*/
 
-/*-------------------------------------------------------------------*/
-/*! \brief Define Head losses to take into account deposit in the flow
+/*----------------------------------------------------------------------------*/
+/*!
+ *  \brief Define Head losses to take into account deposit in the flow
+ *
+ * \param[in]   n_hl_cells  number of cells on which to apply head losses
+ * \param[in]   cell_ids    ids of cells on which to apply head losses
+ * \param[in]   bc_type     boundary face type
+ * \param[out]  cku         head loss coefficients at matchin cells
  */
-/*-------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
-                         cs_lnum_t *icepdc,
-                         cs_lnum_t  itypfb[],
-                         cs_real_t  ckupdc[])
+cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
+                    const cs_lnum_t  cell_ids[],
+                    const cs_lnum_t  bc_type[],
+                    cs_real_t        cku[][6])
 {
   cs_lnum_t ncel   = cs_glob_mesh->n_cells;
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
@@ -388,20 +392,15 @@ CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   /* Check that head loss zone definitions are consistent */
-  if (*ncepdc != ncel)
-    bft_error(__FILE__, __LINE__, 0,
-              _("@\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                "@\n"
-                "@ @@ ERROR:\n"
-                "@    ======\n"
-                "@   TO BE COMPATIBLE WITH THE LAGRANGIAN DEPOSITION MODEL,\n"
-                "@     HEAD LOSS ZONES MUST COVER THE WHOLE MESH\n"
-                "@ Head loss coefficients may be locally zero.\n"
-                "@ Check your case setup.\n"
-                "@\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n@"));
+  if (n_hl_cells != ncel)
+    cs_parameters_error
+      (CS_ABORT_IMMEDIATE,
+       _("in Lagrangian module"),
+       _("The number of cells in the head loss zones must cover\n"
+         "the whole mesh (though the local head loss may be zero).\n"));
 
   /* ==================================================================
-   * ckupdc: compute head loss coefficients in the calculation coordinates,
+   * cku: compute head loss coefficients in the calculation coordinates,
    *            organized in order k11, k22, k33, k12, k13, k23
    * Note:
    *     - make sure diagonal coefficients are positive. The calculation
@@ -409,37 +408,35 @@ CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
    *      be done
    * ==================================================================*/
 
-
-   /* ===================================================================
+  /* ===================================================================
    * Porosity calculation for the influence of the deposit on the flow
    * by head losses
    * ====================================================================*/
+
   cs_real_t *mdiam;
   BFT_MALLOC(mdiam, ncelet, cs_real_t);
 
   /* cs_lnum_t poro_id; */
   /* field_get_id_try ("clogging_porosity", &poro_id); */
 
-  /* TODO ce champ n'est jamais cree */
+  /* TODO this field is never built */
   cs_field_t *f_poro = cs_field_by_name_try("clogging_porosity");
 
   cs_real_t *lporo;
   if (f_poro == NULL)
     BFT_MALLOC(lporo, ncelet, cs_real_t);
-
   else
     lporo = f_poro->val;
 
-  _porcel(mdiam, lporo, itypfb);
+  _porcel(mdiam, lporo, bc_type);
 
-  /* ====================================================================
-   * Calculation of the head loss term with the Ergun law
+  /* Calculation of the head loss term with the Ergun law
    * mdiam :  mean diameter of deposited particles
-   * lcell :  characteristic length in the flow direction    */
+   * lcell :  characteristic length in the flow direction */
 
-  for (cs_lnum_t ielpdc = 0; ielpdc < *ncepdc; ielpdc++) {
+  for (cs_lnum_t ielpdc = 0; ielpdc < n_hl_cells; ielpdc++) {
 
-    cs_lnum_t iel = icepdc[ielpdc];
+    cs_lnum_t iel = cell_ids[ielpdc];
 
     if (mdiam[iel] > 0.0) {
 
@@ -454,12 +451,12 @@ CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
                     * lcell / mdiam[iel]
                     +  (lcell * 150.0 * visccf) / (romf * pow(mdiam[iel], 2))
                      * pow((1 - lporo[iel]), 2) / lporo[iel] * 3;
-      ckupdc[iel * 6 + 0] = ck;
-      ckupdc[iel * 6 + 1] = ck;
-      ckupdc[iel * 6 + 2] = ck;
-      ckupdc[iel * 6 + 3] = 0.0;
-      ckupdc[iel * 6 + 4] = 0.0;
-      ckupdc[iel * 6 + 5] = 0.0;
+      cku[iel][0] = ck;
+      cku[iel][1] = ck;
+      cku[iel][2] = ck;
+      cku[iel][3] = 0.0;
+      cku[iel][4] = 0.0;
+      cku[iel][5] = 0.0;
 
     }
 
@@ -469,9 +466,6 @@ CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
     BFT_FREE(lporo);
 
   BFT_FREE(mdiam);
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -65,6 +65,8 @@
 
 #include "cs_lagr_sde.h"
 
+#include "cs_prototypes.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -839,7 +841,7 @@ _lagitp(const cs_real_t  tempct[])
                     + tcarac[npt] * srad / p_cp / p_mass;
 
         }
-        else{
+        else {
 
           cs_real_t p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_DIAMETER);
           cs_real_t p_temp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE);
@@ -888,10 +890,9 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   BFT_MALLOC(auxl1, p_set->n_particles, cs_real_t);
   BFT_MALLOC(tempf, mesh->n_cells_with_ghosts, cs_real_t);
 
-  /* Initialize variables to avoid compiler warnings    */
+  /* Initialize variables to avoid compiler warnings */
 
   cs_real_t ct   = 1.0;
-  cs_lnum_t mode = 1;
 
   int ltsvar = 0;
 
@@ -900,9 +901,8 @@ _lagitf(cs_lagr_attribute_t  *iattr)
       ltsvar   = 1;
   }
 
-  /* =========================================================================
-   * Mean fluid temperature in degrees C
-   * =========================================================================*/
+  /* Mean fluid temperature in degrees C
+   * =================================== */
 
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
@@ -937,23 +937,24 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   }
   else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
+    int mode = 1;
+
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      CS_PROCF(usthht,USTHHT) (&mode,
-                               &extra->scal_t->val[cell_id],
-                               &tempf[cell_id]);
+      CS_PROCF(usthht,USTHHT)(&mode,
+                              &extra->scal_t->val[cell_id],
+                              &tempf[cell_id]);
 
   }
 
-  /* =========================================================================
-   * 3. INTEGRATION DE L'EDS SUR LES PARTICULES
-   * =========================================================================*/
+  /* Integration of the SDE over particles
+   * ===================================== */
 
   for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
     cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
 
-    if (cell_id >= 0){
+    if (cell_id >= 0) {
 
       if (   extra->itytur == 2 || extra->itytur == 3
           || extra->iturb == 50 || extra->iturb == 60) {

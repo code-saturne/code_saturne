@@ -1161,7 +1161,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     }
 
   }
-  else{
+  else {
 
     cs_glob_lagr_specific_physics->itpvar = 0;
     cs_glob_lagr_specific_physics->impvar = 0;
@@ -1538,8 +1538,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Lagrangian module"),
                                 "cs_glob_lagr_time_scheme->isttio",
-                                  lagr_time_scheme->isttio,
-                                  0, 2);
+                                lagr_time_scheme->isttio,
+                                0, 2);
 
   if (lagr_time_scheme->iilagr == 2) {
 
@@ -1701,7 +1701,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     }
 
   }
-  else{
+  else {
 
     cs_glob_lagr_source_terms->ltsdyn = 0;
     cs_glob_lagr_source_terms->ltsmas = 0;
@@ -2016,7 +2016,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
 
   }
-  else{
+  else {
 
     cs_glob_lagr_boundary_interactions->iencnbbd = 0;
     cs_glob_lagr_boundary_interactions->iencmabd = 0;
@@ -2272,7 +2272,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   cs_glob_lagr_source_terms->itsco = 0;
   cs_glob_lagr_source_terms->itsfp4 = 0;
 
-  /* Dynamique : Vitesse + Turbulence    */
+  /* Dynamics: velocity + turbulence */
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
     _define_st_field("velocity_st_lagr", 3);
@@ -2414,6 +2414,13 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                             false); /* has previous */
 
   /* Now activate basic statistics */
+
+#if 0
+  if (   cs_glob_lagr_time_scheme->modcpl > 0
+      || cs_glob_lagr_time_scheme->ilapoi == 1)
+    cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
+#endif
+
   cs_lagr_stat_initialize();
 }
 

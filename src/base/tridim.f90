@@ -200,8 +200,7 @@ interface
 
   end subroutine navstv
 
-  subroutine richards &
- (icvrge, dt)
+  subroutine richards(icvrge, dt)
 
     use dimens, only: ndimfb
     use mesh, only: nfabor
@@ -213,8 +212,17 @@ interface
 
   end subroutine richards
 
-end interface
+  subroutine cs_lagr_head_losses(n_hl_cells, cell_ids, bc_type, cku) &
+    bind(C, name='cs_lagr_head_losses')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: n_hl_cells
+    integer(c_int), dimension(*), intent(in) :: cell_ids
+    integer(c_int), dimension(*) :: bc_type
+    real(kind=c_double), dimension(*) :: cku
+  end subroutine cs_lagr_head_losses
 
+end interface
 
 !===============================================================================
 
@@ -465,7 +473,7 @@ if (ncpdct.gt.0) then
   call cs_head_losses_compute(ckupdc)
 
  if (iflow .eq.1) then
-   call laghlo(ncepdc, icepdc, itypfb, ckupdc)
+   call cs_lagr_head_losses(ncepdc, icepdc, itypfb, ckupdc)
  endif
 
 endif

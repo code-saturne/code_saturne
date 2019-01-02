@@ -51,15 +51,20 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define Head losses to take into account deposit in the flow
+ *  \brief Define Head losses to take into account deposit in the flow
+ *
+ * \param[in]   n_hl_cells  number of cells on which to apply head losses
+ * \param[in]   cell_ids    ids of cells on which to apply head losses
+ * \param[in]   bc_type     boundary face type
+ * \param[out]  cku         head loss coefficients at matchin cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
-                         cs_lnum_t *icepdc,
-                         cs_lnum_t  itypfb[],
-                         cs_real_t  ckupdc[]);
+cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
+                    const cs_lnum_t  cell_ids[],
+                    const cs_lnum_t  bc_type[],
+                    cs_real_t        cku[][6]);
 
 /*----------------------------------------------------------------------------*/
 

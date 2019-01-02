@@ -315,7 +315,7 @@ _lages1(cs_real_t           dtp,
                               CS_TEMPERATURE_SCALE_KELVIN)
             tempf = extra->scal_t->val[cell_id];
 
-          else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
+          else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
             cs_lnum_t mode  = 1;
             CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
@@ -1278,7 +1278,7 @@ _lagesd(cs_real_t           dtp,
                                      - adhes_force -grav_force[0] ),
                             0.001);
           if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-              == CS_LAGR_PART_DEPOSITED ){
+              == CS_LAGR_PART_DEPOSITED ) {
             vpart[1] = 0.0;
             vpart[2] = 0.0;
           }
@@ -1698,7 +1698,7 @@ _lagesd(cs_real_t           dtp,
                             * CS_ABS(-lift_force[0] - drag_force[0]
                                      - adhes_force -grav_force[0] ),
                             0.001);
-          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 1 ){
+          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 1 ) {
             vpart[1] = 0.0;
             vpart[2] = 0.0;
           }
@@ -2166,7 +2166,7 @@ _lagdep(cs_real_t           dtp,
                && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
         tempf = extra->scal_t->val[cell_id];
 
-      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
+      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
         cs_lnum_t mode  = 1;
         CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);

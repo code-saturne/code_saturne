@@ -69,8 +69,6 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 
-#include "cs_gui_particles.h"
-
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 
@@ -350,7 +348,7 @@ cs_lagr_car(int              iprev,
           cs_real_t tl  = cl * energi[cell_id] / dissip[cell_id];
           tl  = CS_MAX(tl, cs_math_epzero);
 
-          for (cs_lnum_t i = 0; i < 3; i++){
+          for (cs_lnum_t i = 0; i < 3; i++) {
 
             vpart[i] = part_vel[i];
             vflui[i] = part_vel_seen[i];
@@ -372,7 +370,7 @@ cs_lagr_car(int              iprev,
 
             if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
 
-              for (cs_lnum_t i = 0; i < 3; i++){
+              for (cs_lnum_t i = 0; i < 3; i++) {
                 vpart[i] = stat_vel->val[cell_id * 3 + i];
                 vflui[i] = extra->vel->vals[iprev][cell_id * 3 + i];
               }
@@ -460,9 +458,10 @@ cs_lagr_car(int              iprev,
 
             for (cs_lnum_t id = 0; id < 3; id++) {
 
-              cs_real_t bxi = dissip[cell_id] * (  (c0  * bbi[id] * ktil / energi[cell_id])
-                                                 + (  (bbi[id] * ktil / energi[cell_id] - 1.0)
-                                                    * 2.0 / 3.0));
+              cs_real_t bxi
+                = dissip[cell_id] * (  (c0  * bbi[id] * ktil / energi[cell_id])
+                                     + (  (bbi[id] * ktil / energi[cell_id] - 1.0)
+                                        * 2.0 / 3.0));
               if (bxi > 0.0)
                 bx[ip][id][nor-1] = sqrt(bxi);
               else
@@ -496,7 +495,7 @@ cs_lagr_car(int              iprev,
 
         else {
 
-          for (cs_lnum_t id = 0; id < 3; id++ ){
+          for (cs_lnum_t id = 0; id < 3; id++ ) {
 
             tlag[ip][id]    = cs_math_epzero;
             bx[ip][id][nor-1] = 0.0;
@@ -519,7 +518,7 @@ cs_lagr_car(int              iprev,
 
       if (cs_lagr_particle_get_cell_id(particle, p_am) >= 0) {
 
-        for (cs_lnum_t id = 0; id < 3; id++ ){
+        for (cs_lnum_t id = 0; id < 3; id++ ) {
 
           tlag[ip][id] = cs_math_epzero;
           bx[ip][id][nor-1] = 0.0;
@@ -536,37 +535,37 @@ cs_lagr_car(int              iprev,
   /* 4. CALCUL DE PII     */
   /* ====================================================================   */
 
-  for (cs_lnum_t id = 0; id < 3; id++) {
+  if (   cs_glob_lagr_time_scheme->modcpl > 0
+      &&   cs_glob_time_step->nt_cur
+         > cs_glob_lagr_time_scheme->modcpl) {
 
-    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+    int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+    cs_field_t *stat_vel
+      = cs_lagr_stat_get_moment(stat_type,
+                                CS_LAGR_MOMENT_MEAN,
+                                0,
+                                -1);
 
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+    cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
 
-      if (cell_id >= 0) {
+    for (cs_lnum_t id = 0; id < 3; id++) {
 
-        /* -->   Compute: II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) + g )
-         *       or
-         *       Compute: II = ( -grad(P)/Rom(f) + g) */
+      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-        cs_real_t romf = extra->cromf->val[cell_id];
+        unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-        piil[ip][id] = -gradpr[cell_id][id] / romf + grav[id];
+        cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
 
-        if (   cs_glob_lagr_time_scheme->modcpl > 0
-            &&   cs_glob_time_step->nt_cur
-               > cs_glob_lagr_time_scheme->modcpl) {
+        if (cell_id >= 0) {
 
-          int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
+          /* -->   Compute: II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) + g )
+           *       or
+           *       Compute: II = ( -grad(P)/Rom(f) + g) */
 
-          cs_field_t *stat_vel
-            = cs_lagr_stat_get_moment(stat_type,
-                                      CS_LAGR_MOMENT_MEAN,
-                                      0,
-                                      -1);
+          cs_real_t romf = extra->cromf->val[cell_id];
 
-          cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
+          piil[ip][id] = -gradpr[cell_id][id] / romf + grav[id];
 
           if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
 
@@ -585,8 +584,6 @@ cs_lagr_car(int              iprev,
       }
     }
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
