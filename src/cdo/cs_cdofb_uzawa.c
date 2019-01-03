@@ -285,6 +285,7 @@ _amg_block_hook(void     *context,
     slesp.setup_done = true;
   }
 
+  PetscFree(uvw_subksp);
 }
 #endif
 

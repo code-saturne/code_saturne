@@ -327,10 +327,6 @@ _additive_amg_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   KSP  u_ksp = up_subksp[0];
-  /* KSPSetType(u_ksp, KSPPREONLY); */
-  /* KSPGetPC(u_ksp, &u_pc); */
-  /* PCSetType(u_pc, PCHYPRE); */
-  /* PCHYPRESetType(u_pc, "boomeramg"); */
   KSPSetType(u_ksp, KSPCG);
   KSPGetPC(u_ksp, &u_pc);
   PCSetType(u_pc, PCHYPRE);
@@ -360,6 +356,7 @@ _additive_amg_gmres_hook(void     *context,
     slesp.setup_done = true;
   }
 
+  PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
 }
@@ -464,6 +461,7 @@ _diag_schur_gmres_hook(void     *context,
     slesp.setup_done = true;
   }
 
+  PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
 }
@@ -568,6 +566,7 @@ _upper_schur_gmres_hook(void     *context,
     slesp.setup_done = true;
   }
 
+  PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
 }
