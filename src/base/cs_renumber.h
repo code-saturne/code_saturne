@@ -74,7 +74,7 @@ typedef enum {
 
   CS_RENUMBER_B_FACES_THREAD,        /* No cell shared between threads */
   CS_RENUMBER_B_FACES_SIMD,          /* Renumber for vector (SIMD) operations */
-  CS_RENUMBER_B_FACES_NONE           /* No interior face numbering */
+  CS_RENUMBER_B_FACES_NONE           /* No boundary face numbering */
 
 } cs_renumber_b_faces_type_t;
 
