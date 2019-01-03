@@ -196,7 +196,14 @@ class MainFieldsModel(Variables, Model):
 
         self.isInList(phase,['solid','liquid','gas'])
         self.isInList(typeChoice,['dispersed','continuous'])
-        self.__XMLNodefields.xmlInitChildNode('field', field_id = fieldId, label = label)
+
+        # Check that the field does not allreay exist
+        nf = self.__XMLNodefields.xmlGetNode('field', field_id=fieldId)
+        if nf == None:
+            self.__XMLNodefields.xmlInitChildNode('field', field_id = fieldId, label = label)
+        else:
+            nf['label'] = label
+
         self.setCriterion(fieldId, typeChoice)
         self.setFieldNature(fieldId, phase)
         self.setEnergyModel(fieldId, hmodel)
