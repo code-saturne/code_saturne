@@ -210,27 +210,30 @@ class MainFieldsModel(Variables, Model):
         """
         add XML variable and properties
         """
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "volume_fraction", "alpha"+str(labNum), post = True)
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity", "U"+str(labNum), dim='3', post = True)
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy"+str(labNum), post = True)
 
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "density", "density"+str(labNum))
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "Lam_vis"+str(labNum))
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "specific_heat", "Sp_heat"+str(labNum))
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "Th_cond"+str(labNum))
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "mass_trans", "mass_trans"+str(labNum))
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "wall_distance", "y_plus"+str(labNum), support = "boundary")
+        field_name = self.getFieldLabelsList()[int(fieldNumber)-1]
+
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "volume_fraction", "alpha_"+field_name, post = True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity", "U_"+field_name, dim='3', post = True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy_"+field_name, post = True)
+
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "Lam_vis_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "specific_heat", "Sp_heat_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "Th_cond_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "mass_trans", "mass_trans_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "wall_distance", "y_plus_"+field_name, support = "boundary")
         if self.getCompressibleStatus(fieldNumber) == "on":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodp", "drodp"+str(labNum))
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodh", "drodh"+str(labNum))
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodp", "drodp_"+field_name)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodh", "drodh_"+field_name)
         if self.getFieldNature(fieldNumber) == "solid":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "emissivity", "emissivity"+str(labNum))
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "elasticity", "elasticity"+str(labNum))
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "emissivity", "emissivity_"+field_name)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "elasticity", "elasticity_"+field_name)
         if self.getEnergyResolution(fieldNumber) == "on":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "Temperature", "Temp"+str(labNum), post = True)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "Temperature", "Temp_"+field_name, post = True)
         if self.getCriterion(fieldNumber) == "dispersed":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "Diameter", "Diam"+str(labNum))
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "DriftComponent", "DriftComponent"+str(labNum), dim='3')
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "Diameter", "Diam_"+field_name)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "DriftComponent", "DriftComponent_"+field_name, dim='3')
 
 
     def getFieldLabelsList(self):
@@ -331,11 +334,20 @@ class MainFieldsModel(Variables, Model):
         """
         self.isInList(str(fieldId),self.getFieldIdList())
 
+        old_label = label
         label_new = label[:LABEL_LENGTH_MAX]
         if label_new not in self.getFieldLabelsList():
             node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
             if node :
+               old_label = node['label']
                node['label'] = label
+
+        # Renaming of variables and properties after field label change
+        for node in self.case.xmlGetNodeList('variable') \
+                + self.case.xmlGetNodeList('property'):
+            if node['field_id'] == str(fieldId):
+                li = node['label'].rsplit(old_label, 1)
+                node['label'] = label.join(li)
 
 
     @Variables.noUndo
@@ -358,6 +370,8 @@ class MainFieldsModel(Variables, Model):
         Put type of field
         """
         self.isInList(str(fieldId),self.getFieldIdList())
+
+        field_name = self.getFieldLabelsList()[int(fieldId)-1]
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         childNode = node.xmlInitChildNode('type')
@@ -392,8 +406,8 @@ class MainFieldsModel(Variables, Model):
 
         # TODO mettre en coherence pour les aires interf., tout ce qui est closure law a faire aussi pour la nature.
         if self.getCriterion(fieldId) == "dispersed":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Diameter", "Diam"+str(fieldId))
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "DriftComponent", "DriftComponent"+str(fieldId), dim='3')
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Diameter", "Diam_"+field_name)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "DriftComponent", "DriftComponent_"+field_name, dim='3')
         else :
            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "Diameter")
            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "DriftComponent")
@@ -425,14 +439,16 @@ class MainFieldsModel(Variables, Model):
         self.isInList(str(fieldId),self.getFieldIdList())
         self.isInList(phase,('liquid','solid','gas'))
 
+        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         childNode = node.xmlInitChildNode('phase')
         if childNode != None:
             oldstatus = childNode['choice']
             if phase != oldstatus:
                if phase == "solid":
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "emissivity", "emissivity"+str(fieldId))
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "elasticity", "elasticity"+str(fieldId))
+                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "emissivity", "emissivity_"+field_name)
+                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "elasticity", "elasticity_"+field_name)
                   self.setCriterion(fieldId, "dispersed")
                else :
                   Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "emissivity")
@@ -466,14 +482,16 @@ class MainFieldsModel(Variables, Model):
         self.isInList(str(fieldId),self.getFieldIdList())
         self.isOnOff(status)
 
+        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         childNode = node.xmlInitChildNode('hresolution')
         if childNode != None:
             oldstatus = childNode['status']
             if status != oldstatus:
                if status == "on":
-                  Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "enthalpy", "enthalpy"+str(fieldId), post = True)
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Temperature", "Temp"+str(fieldId), post = True)
+                  Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name, post = True)
+                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Temperature", "Temp_"+field_name, post = True)
                else :
                   Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "enthalpy")
                   Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "Temperature")
@@ -539,14 +557,16 @@ class MainFieldsModel(Variables, Model):
         self.isInList(str(fieldId),self.getFieldIdList())
         self.isOnOff(status)
 
+        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         childNode = node.xmlInitChildNode('compressible')
         if childNode != None:
             oldstatus = childNode['status']
             if status != oldstatus:
                if status == "on":
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_P", "drho_dP"+str(fieldId))
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_h", "drho_dh"+str(fieldId))
+                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_P", "drho_dP_"+field_name)
+                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_h", "drho_dh_"+field_name)
                else :
                   Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_P")
                   Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_h")

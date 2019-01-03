@@ -324,7 +324,7 @@ class StandardItemModelNonCondensable(QStandardItemModel):
         # Update the row in the table
         row = index.row()
         col = index.column()
-        name = "MassFractionNonCondensableGas_" + str(row + 1)
+        name = "mass_fraction_non_condensable_gas_" + str(row + 1)
 
         # Label
         if col == 0:
@@ -397,7 +397,7 @@ class StandardItemModelNonCondensable(QStandardItemModel):
         update item
         """
         row = index.row()
-        name = "MassFractionNonCondensableGas_" + str(row + 1)
+        name = "mass_fraction_non_condensable_gas_" + str(row + 1)
         self._data[row][3] = self.mdl.getNonCondMassMol(name)
         self._data[row][4] = self.mdl.getNonCondCobin1(name)
         self._data[row][5] = self.mdl.getNonCondCobin2(name)

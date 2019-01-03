@@ -128,6 +128,8 @@ class TurbulenceModel(MainFieldsModel):
         """
         self.isInList(str(fieldId),self.getFieldIdList())
 
+        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+
         criterion = self.getCriterion(fieldId)
         if criterion == "continuous":
            self.isInList(model, TurbulenceModelsDescription.continuousTurbulenceModels)
@@ -170,17 +172,17 @@ class TurbulenceModel(MainFieldsModel):
                                                              self.XMLNodeVariable,
                                                              fieldId,
                                                              var,
-                                                             var+str(fieldId),
+                                                             var+"_"+field_name,
                                                              dim=6)
              else:
                  Variables(self.case).setNewVariableProperty("variable", "",
                                                              self.XMLNodeVariable,
                                                              fieldId,
                                                              var,
-                                                             var+str(fieldId))
+                                                             var+"_"+field_name)
 
            for var in TurbulenceModelsDescription.turbulenceProperties[model]:
-               Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, var, var+str(fieldId))
+               Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, var, var+"_"+field_name)
 
            if oldmodel == "mixing_length":
                node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)

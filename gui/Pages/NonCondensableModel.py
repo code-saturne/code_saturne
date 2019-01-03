@@ -159,16 +159,17 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         Add a non condensable
         """
         fieldId = self.getFirstGasField()
+        field_name = self.getFieldLabelsList()[int(fieldId)-1]
         type = self.defaultValues()['typeNonCond']
-        label   = type + "_" + str(fieldId)
+        label   = type + "_1" + "_" + field_name
         if label in self.getNonCondensableLabelList() :
            labelNumber = 1
-           label = type + "_" + str(labelNumber)
+           label = type + "_" + str(labelNumber) + "_" + field_name
            while label in self.getNonCondensableLabelList() :
                labelNumber += 1
-               label = type + "_" + str(labelNumber)
+               label = type + "_" + str(labelNumber)+ "_" + field_name
 
-        name = "MassFractionNonCondensableGas_" + str(len(self.getNonCondensableNameList())+1)
+        name = "mass_fraction_non_condensable_gas_" + str(len(self.getNonCondensableNameList())+1)
 
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeNonCondensable, fieldId, name, label)
 
@@ -382,7 +383,7 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         """
         Suppress non condensable from list
         """
-        name = "MassFractionNonCondensableGas_" + str(number)
+        name = "mass_fraction_non_condensable_gas_" + str(number)
         self.isInList(name,self.getNonCondensableNameList())
 
         # delete non condensable
@@ -419,8 +420,8 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             try :
                if index >= number :
-                  oldname = "MassFractionNonCondensableGas_" + str(index+1)
-                  name = "MassFractionNonCondensableGas_" + str(index)
+                  oldname = "mass_fraction_non_condensable_gas_" + str(index+1)
+                  name = "mass_fraction_non_condensable_gas_" + str(index)
                   node['name'] = name
                   for n in self.case.xmlGetNodeList('var_prop', name=oldname):
                       n['name'] = name
@@ -456,7 +457,7 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        assert mdl.getNonCondensableNameList() == ['MassFractionNonCondensableGas_1'],\
+        assert mdl.getNonCondensableNameList() == ['mass_fraction_non_condensable_gas_1'],\
             'Could not get NonCondensableNameList'
 
 
@@ -465,7 +466,7 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        assert mdl.getNonCondensableByFieldId('1') == ['MassFractionNonCondensableGas_1'],\
+        assert mdl.getNonCondensableByFieldId('1') == ['mass_fraction_non_condensable_gas_1'],\
             'Could not get NonCondensableByFieldId'
 
 
@@ -475,7 +476,7 @@ class NonCondensableTestCase(ModelTest):
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -489,16 +490,16 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        mdl.setNonCondLabel('MassFractionNonCondensableGas_1','example_label')
+        mdl.setNonCondLabel('mass_fraction_non_condensable_gas_1','example_label')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="example_label" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="example_label" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
                  </non_condensable_list>'''
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not set NonCondLabel'
-        assert mdl.getNonCondLabel('MassFractionNonCondensableGas_1') == 'example_label',\
+        assert mdl.getNonCondLabel('mass_fraction_non_condensable_gas_1') == 'example_label',\
             'Could not get NonCondLabel'
 
 
@@ -507,16 +508,16 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        mdl.setNonCondFieldId('MassFractionNonCondensableGas_1','field1')
+        mdl.setNonCondFieldId('mass_fraction_non_condensable_gas_1','field1')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
                  </non_condensable_list>'''
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not set NonCondFieldId'
-        assert mdl.getNonCondFieldId('MassFractionNonCondensableGas_1') == '1',\
+        assert mdl.getNonCondFieldId('mass_fraction_non_condensable_gas_1') == '1',\
             'Could not get NonCondFieldId'
 
 
@@ -525,9 +526,9 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        mdl.setNonCondType('MassFractionNonCondensableGas_1','N2')
+        mdl.setNonCondType('mass_fraction_non_condensable_gas_1','N2')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <Type choice="N2"/>
@@ -544,7 +545,7 @@ class NonCondensableTestCase(ModelTest):
                  </non_condensable_list>'''
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not set NonCondType'
-        assert mdl.getNonCondType('MassFractionNonCondensableGas_1') == 'N2',\
+        assert mdl.getNonCondType('mass_fraction_non_condensable_gas_1') == 'N2',\
             'Could not get NonCondType'
 
 
@@ -553,9 +554,9 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        mdl.setNonCondMassMol('MassFractionNonCondensableGas_1',8510.1)
+        mdl.setNonCondMassMol('mass_fraction_non_condensable_gas_1',8510.1)
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <MolarMass>
@@ -565,7 +566,7 @@ class NonCondensableTestCase(ModelTest):
                  </non_condensable_list>'''
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not set NonCondMassMol'
-        assert mdl.getNonCondMassMol('MassFractionNonCondensableGas_1') == 8510.1,\
+        assert mdl.getNonCondMassMol('mass_fraction_non_condensable_gas_1') == 8510.1,\
             'Could not get NonCondMassMol'
 
 
@@ -574,10 +575,10 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        mdl.setNonCondCobin1('MassFractionNonCondensableGas_1',5.5)
-        mdl.setNonCondCobin2('MassFractionNonCondensableGas_1',6.6)
+        mdl.setNonCondCobin1('mass_fraction_non_condensable_gas_1',5.5)
+        mdl.setNonCondCobin2('mass_fraction_non_condensable_gas_1',6.6)
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <Cobin1>
@@ -590,9 +591,9 @@ class NonCondensableTestCase(ModelTest):
                  </non_condensable_list>'''
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not set NonCondCobin1and2'
-        assert mdl.getNonCondCobin1('MassFractionNonCondensableGas_1') == (5.5),\
+        assert mdl.getNonCondCobin1('mass_fraction_non_condensable_gas_1') == (5.5),\
             'Could not get NonCondCobin1'
-        assert mdl.getNonCondCobin2('MassFractionNonCondensableGas_1') == (6.6),\
+        assert mdl.getNonCondCobin2('mass_fraction_non_condensable_gas_1') == (6.6),\
             'Could not get NonCondCobin2'
 
 
@@ -604,7 +605,7 @@ class NonCondensableTestCase(ModelTest):
         mdl.addNonCondensable()
         mdl.deleteNonCondensable(1)
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_2" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_2" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -618,9 +619,9 @@ class NonCondensableTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
-        mdl.setIncTyp('MassFractionNonCondensableGas_1','N2')
+        mdl.setIncTyp('mass_fraction_non_condensable_gas_1','N2')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <MolarMass>
@@ -637,9 +638,9 @@ class NonCondensableTestCase(ModelTest):
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not setIncTyp for N2'
 
-        mdl.setIncTyp('MassFractionNonCondensableGas_1','H2')
+        mdl.setIncTyp('mass_fraction_non_condensable_gas_1','H2')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <MolarMass>
@@ -656,9 +657,9 @@ class NonCondensableTestCase(ModelTest):
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not setIncTyp for H2'
 
-        mdl.setIncTyp('MassFractionNonCondensableGas_1','HE')
+        mdl.setIncTyp('mass_fraction_non_condensable_gas_1','HE')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <MolarMass>
@@ -675,9 +676,9 @@ class NonCondensableTestCase(ModelTest):
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not setIncTyp for HE'
 
-        mdl.setIncTyp('MassFractionNonCondensableGas_1','O2')
+        mdl.setIncTyp('mass_fraction_non_condensable_gas_1','O2')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <MolarMass>
@@ -694,9 +695,9 @@ class NonCondensableTestCase(ModelTest):
         assert mdl.XMLNodeNonCondensable == self.xmlNodeFromString(doc),\
             'Could not setIncTyp for O2'
 
-        mdl.setIncTyp('MassFractionNonCondensableGas_1','Air')
+        mdl.setIncTyp('mass_fraction_non_condensable_gas_1','Air')
         doc = '''<non_condensable_list>
-                         <variable field_id="1" label="Air_1" name="MassFractionNonCondensableGas_1">
+                         <variable field_id="1" label="Air_1" name="mass_fraction_non_condensable_gas_1">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <MolarMass>

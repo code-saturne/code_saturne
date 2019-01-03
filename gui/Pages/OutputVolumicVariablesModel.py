@@ -57,6 +57,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.node_models    = self.case.xmlGetNode('thermophysical_models')
         self.analysis_ctrl  = self.case.xmlGetNode('analysis_control')
         self.fluid_prop     = self.case.xmlGetNode('physical_properties')
+
         if self.node_models:
             self.node_model_vp  = self.node_models.xmlGetNode('velocity_pressure')
             self.node_ale       = self.node_models.xmlGetChildNode('ale_method')
@@ -217,6 +218,9 @@ class OutputVolumicVariablesModel(Variables, Model):
         self.dicoLabelName = {}
         self.list_name = []
 
+        fields_node = None
+        fields_list = []
+
         # Main/known categories
 
         self.__updateListFilter(self.__getListOfVelocityPressureVariables__(),
@@ -279,9 +283,17 @@ class OutputVolumicVariablesModel(Variables, Model):
             category = node.xmlGetParentName()
             category = category.replace('_', ' ').capitalize()
 
+            # For NCFD multiphase, use the field_id as a parent category
             if node['field_id']:
                 if node['field_id'] != 'none':
-                    category = node['field_id']
+                    if fields_node == None:
+                        fields_node = self.node_models.xmlGetNode('fields')
+                        for nf in fields_node.xmlGetNodeList('field'):
+                            fields_list.append(nf['label'])
+
+                    category = fields_list[int(node['field_id'])-1]
+
+
 
             self.list_name.append([self.__nodeName__(node), category])
 

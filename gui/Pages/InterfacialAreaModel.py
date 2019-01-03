@@ -139,7 +139,8 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
                 Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
                 Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
             else:
-                Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "Xd", "Xd_"+str(fieldId))
+                field_name = self.getFieldLabelsList()[int(fieldId)-1]
+                Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "Xd", "Xd_"+field_name)
 
 
     @Variables.noUndo
@@ -175,9 +176,10 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         childNode = node.xmlInitChildNode('source_term')
         childNode.xmlSetAttribute(model = model)
 
+        field_name = self.getFieldLabelsList()[int(fieldId)-1]
         if oldmodel != model :
             if model == 'kamp_colin' :
-                Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "X2", "X2_"+str(fieldId))
+                Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "X2", "X2_"+field_name)
             else:
                 Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
 

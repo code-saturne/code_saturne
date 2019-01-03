@@ -213,6 +213,19 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             if tpe not in self.prtlist:
                 self.prtlist.append(tpe)
 
+        # Reordering categories order for NCFD multiphase solver
+        if 'Properties' in self.prtlist:
+            rlist = []
+            rlist.append(self.prtlist.index('Properties'))
+            rlist.append(self.prtlist.index('Variables'))
+
+            for i in range(len(self.prtlist)):
+                if self.prtlist[i] != 'Properties' and self.prtlist[i] != 'Variables':
+                    rlist.append(i)
+
+            self.prtlist = [self.prtlist[j] for j in rlist]
+
+
         self.rootItem = TreeItem(None, "ALL", None)
         self.parents = {0 : self.rootItem}
 
