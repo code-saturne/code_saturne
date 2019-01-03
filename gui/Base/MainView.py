@@ -1179,6 +1179,9 @@ class MainView(object):
             log.debug("displayNewPage() self.page == None")
             raise
 
+        # Auto expand nodes in the Browser view when clicked
+        self.Browser.treeView.setExpanded(index, True)
+
 
     def displayAbout(self):
         """
