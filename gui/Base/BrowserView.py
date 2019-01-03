@@ -49,6 +49,7 @@ from code_saturne.Base.BrowserForm import Ui_BrowserForm
 from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
+import resource_base_rc
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -57,6 +58,16 @@ logging.basicConfig()
 log = logging.getLogger("BrowserView")
 log.setLevel(GuiParam.DEBUG)
 
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+try:
+    _fromUtf8 = QString.fromUtf8
+except AttributeError:
+    def _fromUtf8(s):
+        return s
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -153,8 +164,48 @@ class TreeModel(QAbstractItemModel):
         elif role == Qt.DecorationRole:
             # return icon for first column
             if column == 0:
+                page_name = item.itemData[0]
+
                 style = QWidget().style()
-                if item.itemType == "folder-new":
+
+                if page_name == 'Mesh':
+                    img_path = ":/icons/22x22/prepro-mode.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Calculation features':
+                    img_path = ":/icons/22x22/calculation_features.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Physical properties':
+                    img_path = ":/icons/22x22/physical_properties.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Volume zones':
+                    img_path = ":/icons/22x22/volume_zones.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Boundary zones':
+                    img_path = ":/icons/22x22/boundary_conditions.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Numerical parameters':
+                    img_path = ":/icons/22x22/numerical_params.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Postprocessing':
+                    img_path = ":/icons/22x22/postprocessing.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Closure modeling':
+                    img_path = ":/icons/22x22/closure_modeling.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Calculation management':
+                    img_path = ":/icons/22x22/run_button.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+
+                elif item.itemType == "folder-new":
                     icon = style.standardIcon(QStyle.SP_FileLinkIcon)
                 elif item.itemType == "folder-close":
                     icon = style.standardIcon(QStyle.SP_FileIcon)
@@ -169,6 +220,7 @@ class TreeModel(QAbstractItemModel):
                         icon = style.standardIcon(QStyle.SP_ToolBarHorizontalExtensionButton)
                     elif item.itemType == "file-new":
                         icon = style.standardIcon(QStyle.SP_ToolBarHorizontalExtensionButton)
+
                 return to_qvariant(icon)
 
         return to_qvariant()
