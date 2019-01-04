@@ -178,7 +178,7 @@ if (iscalt.gt.0) then
   endif
 
   if (vcopt%icoupl.gt.0) then
-     call field_get_coupled_faces(ivarfl(ivar), cpl_faces)
+    call field_get_coupled_faces(ivarfl(ivar), cpl_faces)
     allocate(dist_theipb(nfabor))
     call cs_ic_field_dist_data_by_face_id(ivarfl(ivar), 1, theipb, dist_theipb)
   endif

@@ -1781,6 +1781,8 @@ cs_field_map_values(cs_field_t   *f,
  *                                are added
  * \param[in]       have_conv_bc  if true, convection BC coefficients (ac and bc)
  *                                are added
+ * \param[in]       have_exch_bc  if true, exchange boundary coefficients (hint
+ *                                and hext) are added
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1788,7 +1790,8 @@ void
 cs_field_allocate_bc_coeffs(cs_field_t  *f,
                             bool         have_flux_bc,
                             bool         have_mom_bc,
-                            bool         have_conv_bc)
+                            bool         have_conv_bc,
+                            bool         have_exch_bc)
 {
   /* Add boundary condition coefficients if required */
 
@@ -1823,8 +1826,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       BFT_MALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
 
       if (have_flux_bc) {
-        BFT_MALLOC(f->bc_coeffs->af,  n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bf,  n_elts[0]*b_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         f->bc_coeffs->af = NULL;
@@ -1832,8 +1835,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        BFT_MALLOC(f->bc_coeffs->ad,  n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bd,  n_elts[0]*b_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         f->bc_coeffs->ad = NULL;
@@ -1841,12 +1844,21 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        BFT_MALLOC(f->bc_coeffs->ac,  n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bc,  n_elts[0]*b_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         f->bc_coeffs->ac = NULL;
         f->bc_coeffs->bc = NULL;
+      }
+
+      if (have_exch_bc) {
+        BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->hext, n_elts[0], cs_real_t);
+      }
+      else {
+        f->bc_coeffs->hint = NULL;
+        f->bc_coeffs->hext = NULL;
       }
 
     }
@@ -1857,8 +1869,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       BFT_REALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
 
       if (have_flux_bc) {
-        BFT_REALLOC(f->bc_coeffs->af,  n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bf,  n_elts[0]*b_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         BFT_FREE(f->bc_coeffs->af);
@@ -1866,8 +1878,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        BFT_REALLOC(f->bc_coeffs->ad,  n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bd,  n_elts[0]*b_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         BFT_FREE(f->bc_coeffs->ad);
@@ -1875,18 +1887,25 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        BFT_REALLOC(f->bc_coeffs->ac,  n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bc,  n_elts[0]*b_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         BFT_FREE(f->bc_coeffs->ac);
         BFT_FREE(f->bc_coeffs->bc);
       }
 
+      if (have_exch_bc) {
+        BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->hext, n_elts[0], cs_real_t);
+      }
+      else {
+        BFT_FREE(f->bc_coeffs->hint);
+        BFT_FREE(f->bc_coeffs->hext);
+      }
+
     }
 
-    f->bc_coeffs->hint = NULL;
-    f->bc_coeffs->hext = NULL;
   }
 
   else
@@ -2079,6 +2098,20 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         }
       }
     }
+
+    if (f->bc_coeffs->hint != NULL) {
+      for (ifac = 0; ifac < n_elts[0]; ifac++) {
+        f->bc_coeffs->hint[ifac] = 0.;
+        f->bc_coeffs->hext[ifac] = 0.;
+      }
+    }
+
+    if (f->bc_coeffs->hext != NULL) {
+      for (ifac = 0; ifac < n_elts[0]; ifac++) {
+        f->bc_coeffs->hext[ifac] = 0.;
+      }
+    }
+
   }
 
   else

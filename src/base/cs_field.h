@@ -293,13 +293,16 @@ cs_field_map_values(cs_field_t   *f,
  *   have_flux_bc <-- if true, flux BC coefficients (af and bf) are added
  *   have_mom_bc  <-- if true, div BC coefficients (ad and bd) are added
  *   have_conv_bc <-- if true, convection BC coefficients (ac and bc) are added
+ *   have_exch_bc <-- if true, exchange boundary coefficients (hint and hext)
+ *                    are added
  *----------------------------------------------------------------------------*/
 
 void
 cs_field_allocate_bc_coeffs(cs_field_t  *f,
                             bool         have_flux_bc,
                             bool         have_mom_bc,
-                            bool         have_conv_bc);
+                            bool         have_conv_bc,
+                            bool         have_exch_bc);
 
 /*----------------------------------------------------------------------------*/
 /* Initialize boundary condition coefficients arrays.

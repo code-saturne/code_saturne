@@ -2882,17 +2882,6 @@ cs_ic_field_set_exchcoeff(const int         field_id,
   cs_real_t *hint = f->bc_coeffs->hint;
   cs_real_t *hext = f->bc_coeffs->hext;
 
-  if (hint == NULL && n_b_faces > 0) {
-    BFT_REALLOC(f->bc_coeffs->hint, n_b_faces, cs_real_t);
-    BFT_REALLOC(f->bc_coeffs->hext, n_b_faces, cs_real_t);
-    hint = f->bc_coeffs->hint;
-    hext = f->bc_coeffs->hext;
-    for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-      hint[ii] = 0;
-      hext[ii] = 0;
-    }
-  }
-
   cs_real_t *hextloc = NULL;
   BFT_MALLOC(hextloc, n_local, cs_real_t);
 

@@ -351,7 +351,7 @@ module field
     ! Interface to C function allocating boundary condition coefficients
 
     subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc, have_mom_bc,  &
-                                           have_conv_bc)                  &
+                                           have_conv_bc, have_exch_bc)    &
       bind(C, name='cs_field_allocate_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -359,6 +359,7 @@ module field
       logical(c_bool), value       :: have_flux_bc
       logical(c_bool), value       :: have_mom_bc
       logical(c_bool), value       :: have_conv_bc
+      logical(c_bool), value       :: have_exch_bc
     end subroutine cs_field_allocate_bc_coeffs
 
     !---------------------------------------------------------------------------
@@ -1124,10 +1125,13 @@ contains
   !>                           (coefaf and coefbf) are added
   !> \param[in]  have_mom_bc   if .true., BC coefficients used in divergence
   !>                           term (coefad and coefbd) are added
-  !> \param[in]  have_conv_bc   if .true., BC coefficients used in convection
+  !> \param[in]  have_conv_bc  if .true., BC coefficients used in convection
+  !>                           term (coefac and coefbc) are added
+  !> \param[in]  have_conv_bc  if .true., BC coefficients used in convection
   !>                           term (coefac and coefbc) are added
 
-  subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc, have_conv_bc)
+  subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc,           &
+                                          have_conv_bc, have_exch_bc)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1138,6 +1142,7 @@ contains
     logical, intent(in) :: have_flux_bc
     logical, intent(in) :: have_mom_bc
     logical, intent(in) :: have_conv_bc
+    logical, intent(in) :: have_exch_bc
 
     ! Local variables
 
@@ -1145,6 +1150,7 @@ contains
     logical(c_bool) :: c_have_flux_bc
     logical(c_bool) :: c_have_mom_bc
     logical(c_bool) :: c_have_conv_bc
+    logical(c_bool) :: c_have_exch_bc
     type(c_ptr)     :: f
 
     c_id = id
@@ -1153,7 +1159,9 @@ contains
     c_have_flux_bc = have_flux_bc
     c_have_mom_bc = have_mom_bc
     c_have_conv_bc = have_conv_bc
-    call cs_field_allocate_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, c_have_conv_bc)
+    c_have_exch_bc = have_exch_bc
+    call cs_field_allocate_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, &
+                                        c_have_conv_bc, c_have_exch_bc)
 
     return
 
