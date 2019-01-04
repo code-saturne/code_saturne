@@ -1219,6 +1219,8 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -1230,8 +1232,11 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
-  /* First argument is set to 0: this a dummy argument in steady-state case */
-  _vbv_setup(0, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values, &forced_ids);
+  /* First argument is set to t_cur + dt_cur even if this is a steady
+   * computation since one can call this function to compute a steady-state
+   * solution at each time step of an unsteady computation. */
+  _vbv_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag,
+             &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1262,8 +1267,6 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 #else
     int  t_id = 0;
 #endif
-
-    const cs_real_t  time_eval = 0; /* dummy variable */
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */

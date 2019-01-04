@@ -1157,7 +1157,8 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
-  const cs_real_t  time_eval = 0; /* dummy variable */
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
@@ -1165,10 +1166,12 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_t  t0 = cs_timer_time();
 
   /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
-     argument) */
+     with a tags to detect vertices related to a Neumann BC */
   cs_real_t  *dir_values = NULL;
 
+  /* First argument is set to t_cur even if this is a steady computation since
+   * one can call this function to compute a steady-state solution at each time
+   * step of an unsteady computation. */
   _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
     /* Initialize the local system: matrix and rhs */

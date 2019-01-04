@@ -1152,7 +1152,8 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  time_eval = 0; /* dummy variable */
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
@@ -1162,6 +1163,9 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
 
+  /* First argument is set to t_cur even if this is a steady computation since
+   * one can call this function to compute a steady-state solution at each time
+   * step of an unsteady computation. */
   _setup_bc(time_eval, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
