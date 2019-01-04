@@ -70,10 +70,13 @@
 #include "cs_param.h"
 #include "cs_post.h"
 #include "cs_sles.h"
-#include "cs_sles_petsc.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
+
+#if defined(HAVE_PETSC)
+#include "cs_sles_petsc.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1213,7 +1216,6 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     break;
 #else
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
-  case CS_NAVSTO_SLES_DIAG_SCHUR:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"

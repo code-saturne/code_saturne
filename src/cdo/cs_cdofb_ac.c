@@ -69,10 +69,13 @@
 #include "cs_param.h"
 #include "cs_post.h"
 #include "cs_sles.h"
-#include "cs_sles_petsc.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
+
+#if defined(HAVE_PETSC)
+#include "cs_sles_petsc.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
