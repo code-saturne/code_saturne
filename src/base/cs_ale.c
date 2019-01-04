@@ -1114,7 +1114,6 @@ cs_ale_init_setup(cs_domain_t   *domain)
 void
 cs_ale_setup_boundaries(const cs_domain_t   *domain)
 {
-  cs_real_t bc_value = 0.;
   cs_equation_param_t *eqp = cs_equation_param_by_name("mesh_velocity");
 
   for (int i = 0;  i < domain->ale_boundaries->n_boundaries; i++) {
@@ -1125,12 +1124,14 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
     switch(domain->ale_boundaries->types[i]) {
 
     case CS_BOUNDARY_ALE_FIXED:
+      {
+        cs_real_t  bc_value[3] = {0., 0., 0.};
 
-      cs_equation_add_bc_by_value(eqp,
-                                  CS_PARAM_BC_HMG_DIRICHLET,
-                                  z->name,
-                                  &bc_value);
-
+        cs_equation_add_bc_by_value(eqp,
+                                    CS_PARAM_BC_HMG_DIRICHLET,
+                                    z->name,
+                                    &bc_value);
+      }
       break;
 
     case CS_BOUNDARY_ALE_IMPOSED_VEL:
