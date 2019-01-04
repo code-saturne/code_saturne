@@ -53,7 +53,7 @@ class TurbulenceModelsDescription:
     turbulenceVariables['k-epsilon'] = ['k', 'epsilon']
     turbulenceVariables['k-epsilon_linear_production'] = ['k', 'epsilon']
     turbulenceVariables['rij-epsilon_ssg'] = ['reynolds_stress', 'epsilon']
-    turbulenceVariables['rij-epsilon_ebrsm'] = ['reynolds_stress', 'epsilon']
+    turbulenceVariables['rij-epsilon_ebrsm'] = ['reynolds_stress', 'epsilon', 'alpha']
     turbulenceVariables['les_smagorinsky'] = []
     turbulenceVariables['les_wale'] = []
     turbulenceVariables['tchen'] = []

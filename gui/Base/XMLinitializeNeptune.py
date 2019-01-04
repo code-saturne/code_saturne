@@ -325,7 +325,6 @@ class XMLinitNeptune(Variables):
         # Add the choice between SGDH and GGDH turbulent thermal flux models
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
-        tvn   = tnode.xmlGetNode('variables')
 
         thermo_node = self.case.xmlGetNode('thermophysical_models')
         fnode = thermo_node.xmlGetNode('fields')
@@ -333,9 +332,24 @@ class XMLinitNeptune(Variables):
         from code_saturne.Pages.MainFieldsModel import MainFieldsModel
         field_names = MainFieldsModel(self.case).getFieldLabelsList()
 
-        for node in tnode.xmlGetNodeList('field'):
-            if node['turb_flux'] == None:
-                node['turb_flux'] = 'sgdh'
+        if tnode != None:
+            tvn   = tnode.xmlGetNode('variables')
+            for node in tnode.xmlGetNodeList('field'):
+                if node['turb_flux'] == None:
+                    node['turb_flux'] = 'sgdh'
+
+            # Check for missing alpha in the EBRSM model
+            for node in tnode.xmlGetNodeList('field'):
+                if node['model'] == 'rij-epsilon_ebrsm':
+                    fid = node['field_id']
+                    na = tvn.xmlGetNode('variable',name='alpha', field_id=fid)
+                    if na == None:
+                        Variables(self.case).setNewVariableProperty("variable", "",
+                                                                    tvn,
+                                                                    fid,
+                                                                    'alpha',
+                                                                    'alpha_'+field_names[int(fid)-1])
+
 
             # Renaming of Rij tensor
             for node in fnode.xmlGetNodeList('field'):
@@ -355,20 +369,20 @@ class XMLinitNeptune(Variables):
                                            name="ReynoldsStress"+comp,
                                            field_id=fieldId)
 
-        # Renaming k and espilon
-        turb_dico = {'TurbDissip':'epsilon',
-                     'epsilon':'epsilon',
-                     'TurbKineEner_k':'k',
-                     'k':'k',
-                     'turb_viscosity':'turb_viscosity',
-                     'ReynoldsStress':'reynolds_stress'}
-        for node in tnode.xmlGetNodeList("variable")+tnode.xmlGetNodeList("property"):
-            fieldId = node['field_id']
-            field_name = field_names[int(fieldId)-1]
-            for tv in turb_dico.keys():
-                if tv in node['name']:
-                    node['name']  = turb_dico[tv]
-                    node['label'] = turb_dico[tv]+"_"+field_name
+            # Renaming k and espilon
+            turb_dico = {'TurbDissip':'epsilon',
+                         'epsilon':'epsilon',
+                         'TurbKineEner_k':'k',
+                         'k':'k',
+                         'turb_viscosity':'turb_viscosity',
+                         'ReynoldsStress':'reynolds_stress'}
+            for node in tnode.xmlGetNodeList("variable")+tnode.xmlGetNodeList("property"):
+                fieldId = node['field_id']
+                field_name = field_names[int(fieldId)-1]
+                for tv in turb_dico.keys():
+                    if tv in node['name']:
+                        node['name']  = turb_dico[tv]
+                        node['label'] = turb_dico[tv]+"_"+field_name
 
 
 
