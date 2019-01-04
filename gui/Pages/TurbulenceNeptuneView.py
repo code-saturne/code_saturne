@@ -540,7 +540,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                 self.groupBoxMixingLength.hide()
                 # If the user chose GGDH for a RSM turbulence model, we set
                 # the thermal fluxes model back to SGDH for consistency
-                if 'rij_epsilon' not in turbModel and \
+                if 'rij-epsilon' not in turbModel and \
                         self.mdl.getThermalTurbulentFlux(fieldId) == 'ggdh':
                     self.mdl.setThermalTurbulentFlux(fieldId, 'sgdh')
 

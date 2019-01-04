@@ -235,9 +235,9 @@ class MainFieldsModel(Variables, Model):
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy_"+field_name, post = True)
 
         Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "Lam_vis_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "specific_heat", "Sp_heat_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "Th_cond_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "molecular_viscosity_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "specific_heat", "specific_heat_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "thermal_conductivity_"+field_name)
         Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "mass_trans", "mass_trans_"+field_name)
         Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "wall_distance", "y_plus_"+field_name, support = "boundary")
         if self.getCompressibleStatus(fieldNumber) == "on":

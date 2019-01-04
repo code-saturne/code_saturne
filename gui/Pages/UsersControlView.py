@@ -140,7 +140,7 @@ class LocationDelegate(QItemDelegate):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 4, 1)
         self.modelCombo.addItem(self.tr("cells"), "cells")
-        self.modelCombo.addItem(self.tr("interior faces"), "interior_faces")
+        self.modelCombo.addItem(self.tr("interior faces"), "internal")
         self.modelCombo.addItem(self.tr("boundary faces"), "boundary")
         self.modelCombo.addItem(self.tr("vertices"), "vertices")
 
@@ -239,12 +239,6 @@ class StandardItemModelUsersControl(QStandardItemModel):
         self._data  = []
         self.mdl    = mdl
 
-        self.loc_dict = {}
-        self.loc_dict['cells'] = 'cells'
-        self.loc_dict['interior_faces'] = 'interior faces'
-        self.loc_dict['boundary'] = 'boundary faces'
-        self.loc_dict['vertices'] = 'vertices'
-
 
     def data(self, index, role):
         if not index.isValid():
@@ -293,7 +287,7 @@ class StandardItemModelUsersControl(QStandardItemModel):
         # location
         elif col == 1:
             self.mdl.setUsersLocation(name, new_val)
-            self._data[row][col] = self.loc_dict[new_val]
+            self._data[row][col] = new_val
         # dimension
         elif col == 2:
             self.mdl.setUsersDim(name, new_val)
@@ -315,7 +309,7 @@ class StandardItemModelUsersControl(QStandardItemModel):
 
         if name == None:
             name = self.mdl.addUser("User_" + str(row + 1))
-        location = self.loc_dict[self.mdl.getUsersLocation(name)]
+        location = self.mdl.getUsersLocation(name)
         dim      = self.mdl.getUsersDim(name)
 
         scalar = [name, location, dim]

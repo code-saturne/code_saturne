@@ -577,15 +577,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -622,21 +622,21 @@ class ThermodynamicsTestCase(ModelTest):
                                          1.24
                                  </initial_value>
                          </property>
-                         <property choice="constant" field_id="2" label="Lam_vis2" name="molecular_viscosity">
+                         <property choice="constant" field_id="2" label="molecular_viscosity_2" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value>
                                          4.21
                                  </initial_value>
                          </property>
-                         <property choice="constant" field_id="2" label="Sp_heat2" name="specific_heat">
+                         <property choice="constant" field_id="2" label="specific_heat_2" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value>
                                          6.23
                                  </initial_value>
                          </property>
-                         <property choice="constant" field_id="2" label="Th_cond2" name="thermal_conductivity">
+                         <property choice="constant" field_id="2" label="thermal_conductivity_2" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value>
@@ -690,15 +690,15 @@ class ThermodynamicsTestCase(ModelTest):
                                          8.8
                                  </initial_value>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -727,18 +727,18 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value>
                                          7.7
                                  </initial_value>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -767,18 +767,18 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value>
                                          118.712
                                  </initial_value>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -807,15 +807,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value>
@@ -847,15 +847,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -892,15 +892,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -931,15 +931,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="2" label="Lam_vis2" name="molecular_viscosity">
+                         <property choice="constant" field_id="2" label="molecular_viscosity_2" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="2" label="Sp_heat2" name="specific_heat">
+                         <property choice="constant" field_id="2" label="specific_heat_2" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="2" label="Th_cond2" name="thermal_conductivity">
+                         <property choice="constant" field_id="2" label="thermal_conductivity_2" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -969,15 +969,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1008,15 +1008,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="2" label="Lam_vis2" name="molecular_viscosity">
+                         <property choice="constant" field_id="2" label="molecular_viscosity_2" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="2" label="Sp_heat2" name="specific_heat">
+                         <property choice="constant" field_id="2" label="specific_heat_2" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="2" label="Th_cond2" name="thermal_conductivity">
+                         <property choice="constant" field_id="2" label="thermal_conductivity_2" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1048,15 +1048,15 @@ class ThermodynamicsTestCase(ModelTest):
                                          2.123
                                  </formula>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
@@ -1106,15 +1106,15 @@ class ThermodynamicsTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Lam_vis1" name="molecular_viscosity">
+                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Sp_heat1" name="specific_heat">
+                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
-                         <property choice="constant" field_id="1" label="Th_cond1" name="thermal_conductivity">
+                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </property>
