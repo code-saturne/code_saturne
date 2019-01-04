@@ -50,16 +50,16 @@ class TurbulenceModelsDescription:
     turbulenceVariables = {}
     turbulenceVariables['none'] = []
     turbulenceVariables['mixing_length'] = []
-    turbulenceVariables['k-epsilon'] = ['TurbKineEner_k', 'TurbDissip']
-    turbulenceVariables['k-epsilon_linear_production'] = ['TurbKineEner_k', 'TurbDissip']
-    turbulenceVariables['rij-epsilon_ssg'] = ['ReynoldsStress', 'TurbDissip']
-    turbulenceVariables['rij-epsilon_ebrsm'] = ['ReynoldsStress', 'TurbDissip']
+    turbulenceVariables['k-epsilon'] = ['k', 'epsilon']
+    turbulenceVariables['k-epsilon_linear_production'] = ['k', 'epsilon']
+    turbulenceVariables['rij-epsilon_ssg'] = ['reynolds_stress', 'epsilon']
+    turbulenceVariables['rij-epsilon_ebrsm'] = ['reynolds_stress', 'epsilon']
     turbulenceVariables['les_smagorinsky'] = []
     turbulenceVariables['les_wale'] = []
     turbulenceVariables['tchen'] = []
     turbulenceVariables['q2-q12'] = ['TurbKineEner_q2', 'Covariance_q12']
-    turbulenceVariables['r2-q12'] = ['ReynoldsStress','Covariance_q12']
-    turbulenceVariables['r2-r12-tchen'] = ['ReynoldsStress',
+    turbulenceVariables['r2-q12'] = ['reynolds_stress','Covariance_q12']
+    turbulenceVariables['r2-r12-tchen'] = ['reynolds_stress',
                                            'R12XX','R12XY','R12XZ','R12YY','R12YZ','R12ZZ']
 
     turbulenceVariables['all'] = turbulenceVariables['k-epsilon'] \
@@ -167,7 +167,7 @@ class TurbulenceModel(MainFieldsModel):
 
            # add new variables and properties from XML
            for var in TurbulenceModelsDescription.turbulenceVariables[model]:
-             if var == "ReynoldsStress":
+             if var == "reynolds_stress":
                  Variables(self.case).setNewVariableProperty("variable", "",
                                                              self.XMLNodeVariable,
                                                              fieldId,

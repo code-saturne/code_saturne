@@ -253,7 +253,7 @@ class MainFieldsInitializationTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="volume_fraction">
+                         <variable field_id="1" label="vol_f_1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -299,7 +299,7 @@ class MainFieldsInitializationTestCase(ModelTest):
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="volume_fraction">
+                         <variable field_id="1" label="vol_f_1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value zone_id="1">
@@ -342,7 +342,7 @@ class MainFieldsInitializationTestCase(ModelTest):
                                          10
                                  </initial_value>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="volume_fraction">
+                         <variable field_id="1" label="vol_f_1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>
@@ -405,7 +405,7 @@ class MainFieldsInitializationTestCase(ModelTest):
                                          temperature
                                  </initial_type>
                          </variable>
-                         <variable field_id="1" label="alpha1" name="volume_fraction">
+                         <variable field_id="1" label="vol_f_1" name="volume_fraction">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                          </variable>

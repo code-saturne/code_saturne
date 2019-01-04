@@ -100,26 +100,36 @@ class MainFieldsModel(Variables, Model):
         self.XMLNodeproperty = self.XMLNodethermo.xmlInitNode('properties')
 
         self.XMLClosure      = self.case.xmlGetNode('closure_modeling')
-        #~ self.XMLClosure      = self.case.xmlInitNode('closure_modeling')
 
         self.XMLturbulence   = self.XMLClosure.xmlInitNode('turbulence')
         self.XMLforces       = self.XMLClosure.xmlInitNode('interfacial_forces')
         self.node_anal       = self.case.xmlInitNode('analysis_control')
         self.node_average    = self.node_anal.xmlInitNode('time_averages')
         self.node_profile    = self.node_anal.xmlInitNode('profiles')
-        Variables(self.case).setNewVariableProperty("variable",
-                                                    "",
-                                                    self.XMLNodeVariable,
-                                                    "none",
-                                                    "pressure",
-                                                    "Pressure",
-                                                    post = True)
-        Variables(self.case).setNewVariableProperty("property",
-                                                    "",
-                                                    self.XMLNodeproperty,
-                                                    "none",
-                                                    "porosity",
-                                                    "porosity")
+
+
+        pressure_node = self.XMLNodethermo.xmlGetNode('variable',
+                                                      name='pressure')
+        if pressure_node == None:
+            pressure_node = self.XMLNodethermo.xmlGetNode('variable',
+                                                          name='Pressure')
+        if pressure_node == None:
+            Variables(self.case).setNewVariableProperty("variable",
+                                                        "",
+                                                        self.XMLNodeVariable,
+                                                        "none",
+                                                        "pressure",
+                                                        "Pressure",
+                                                        post = True)
+        porosity_node = self.XMLNodethermo.xmlGetNode('property',
+                                                      name='porosity')
+        if porosity_node == None:
+            Variables(self.case).setNewVariableProperty("property",
+                                                        "",
+                                                        self.XMLNodeproperty,
+                                                        "none",
+                                                        "porosity",
+                                                        "porosity")
 
 
     def defaultValues(self):
@@ -220,7 +230,7 @@ class MainFieldsModel(Variables, Model):
 
         field_name = self.getFieldLabelsList()[int(fieldNumber)-1]
 
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "volume_fraction", "alpha_"+field_name, post = True)
+        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "volume_fraction", "vol_f_"+field_name, post = True)
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity", "U_"+field_name, dim='3', post = True)
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy_"+field_name, post = True)
 
@@ -237,7 +247,7 @@ class MainFieldsModel(Variables, Model):
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "emissivity", "emissivity_"+field_name)
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "elasticity", "elasticity_"+field_name)
         if self.getEnergyResolution(fieldNumber) == "on":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "Temperature", "Temp_"+field_name, post = True)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "temperature", "temp_"+field_name, post = True)
         if self.getCriterion(fieldNumber) == "dispersed":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "Diameter", "Diam_"+field_name)
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "DriftComponent", "DriftComponent_"+field_name, dim='3')
@@ -498,10 +508,10 @@ class MainFieldsModel(Variables, Model):
             if status != oldstatus:
                if status == "on":
                   Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name, post = True)
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Temperature", "Temp_"+field_name, post = True)
+                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "temperature", "temp_"+field_name, post = True)
                else :
                   Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "enthalpy")
-                  Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "Temperature")
+                  Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "temperature")
         childNode.xmlSetAttribute(status = status)
 
 

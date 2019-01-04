@@ -370,16 +370,16 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         exp = self.mdl.getFormula(self.zone, self.currentid, 'volume_fraction')
         if not exp:
             if self.currentid == "1":
-                exp = "alpha = 1.;\n"
+                exp = "vol_f = 1.;\n"
             else:
-                exp = "alpha = 0.;\n"
-        req = [('alpha', 'volume fraction')]
+                exp = "vol_f = 0.;\n"
+        req = [('vol_f', 'volume fraction')]
 
         sym = [('x', "X cell's gravity center"),
                ('y', "Y cell's gravity center"),
                ('z', "Z cell's gravity center")]
 
-        exa = "alpha = 1.0;\n"
+        exa = "vol_f = 1.0;\n"
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

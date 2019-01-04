@@ -506,8 +506,8 @@ Numerical parameters
     Equation parameters
     Time settings
 Postprocessing
-    Time averages
     Additional user arrays
+    Time averages
     Volume solution control
     Surface solution control
     Lagrangian solution control

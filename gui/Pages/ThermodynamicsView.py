@@ -359,7 +359,7 @@ class ThermodynamicsView(QWidget, Ui_Thermodynamics):
     """
     density = """# Density of air
 
-rho = 1.293 * (273.15 / Temperature);
+rho = 1.293 * (273.15 / temperature);
 
 # density for mixtures of gases
 #
@@ -388,8 +388,8 @@ CST = 120;
 T0 = 291.15;
 mu0 = 18.27e-6;
 
-if ( Temperature > 0 && Temperature < 555) {
-mu = mu0 * (T0+CST / Temperature+CST) * (Temperature/T0)^(3./2.);
+if ( temperature > 0 && temperature < 555) {
+mu = mu0 * (T0+CST / temperature+CST) * (temperature/T0)^(3./2.);
 } else {
 mu = -999.0;
 }
@@ -405,13 +405,13 @@ Cp2 = 1040.0;
 cp = Y1 * Cp1 + Y2 *Cp2;
 """
     thermal_conductivity="""# oxygen
-lambda = 6.2e-5 * Temperature + 8.1e-3;
+lambda = 6.2e-5 * temperature + 8.1e-3;
 
 # nitrogen
-lambda = 6.784141e-5 * Temperature + 5.564317e-3;
+lambda = 6.784141e-5 * temperature + 5.564317e-3;
 
 # hydrogen
-lambda = 4.431e-4 * Temperature + 5.334e-2;
+lambda = 4.431e-4 * temperature + 5.334e-2;
 
 """
 
@@ -918,8 +918,8 @@ temperature = enthalpy / 1000;
                 self.groupBoxTemperature.show()
 
                 fieldId = self.currentFluid
-                label = self.m_out.getVariableLabel(str(fieldId), 'Temperature')
-                exp = self.mdl.getFormula(fieldId, 'Temperature')
+                label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
+                exp = self.mdl.getFormula(fieldId, 'temperature')
                 if exp:
                     self.pushButtonTemperature.setStyleSheet("background-color: green")
                     self.pushButtonTemperature.setToolTip(exp)
@@ -1229,8 +1229,8 @@ temperature = enthalpy / 1000;
         User formula for temperature as a function of enthalpy
         """
         fieldId = self.currentFluid
-        label = self.m_out.getVariableLabel(str(fieldId), 'Temperature')
-        exp = self.mdl.getFormula(fieldId, 'Temperature')
+        label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
+        exp = self.mdl.getFormula(fieldId, 'temperature')
         if not exp:
             exp = label + " = 273.15;"
         req = [(label, 'temperature')]
@@ -1255,7 +1255,7 @@ temperature = enthalpy / 1000;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTemperature -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'Temperature', result)
+            self.mdl.setFormula(str(fieldId), 'temperature', result)
             self.pushButtonTemperature.setStyleSheet("background-color: green")
             self.pushButtonTemperature.setToolTip(result)
 

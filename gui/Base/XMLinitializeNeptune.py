@@ -208,9 +208,10 @@ class XMLinitNeptune(Variables):
             self.__backwardCompatibilityFrom_2_2()
         elif from_vers == "2.2":
             self.__backwardCompatibilityFrom_2_2()
-        elif from_vers <= "5.0":
+        elif from_vers == "4.2":
             self.__backwardCompatibilityFrom_4_2()
-            self.__backwardCompatibilityFrom_5_0()
+        elif from_vers == "4.4":
+            self.__backwardCompatibilityFrom_4_4()
 
 
     def __backwardCompatibilityFrom_2_0(self):
@@ -308,7 +309,7 @@ class XMLinitNeptune(Variables):
             if node['name'] == 'wall_temperature':
                 node['name']  = 'boundary_temperature'
 
-    def __backwardCompatibilityFrom_5_0(self):
+    def __backwardCompatibilityFrom_4_4(self):
 
         # For versions prior to 5.0,renaming of wall_temperature as boundary_temperature
         for node in self.case.xmlGetNodeList('property'):
@@ -329,6 +330,9 @@ class XMLinitNeptune(Variables):
         thermo_node = self.case.xmlGetNode('thermophysical_models')
         fnode = thermo_node.xmlGetNode('fields')
 
+        from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+        field_names = MainFieldsModel(self.case).getFieldLabelsList()
+
         for node in tnode.xmlGetNodeList('field'):
             if node['turb_flux'] == None:
                 node['turb_flux'] = 'sgdh'
@@ -336,13 +340,14 @@ class XMLinitNeptune(Variables):
             # Renaming of Rij tensor
             for node in fnode.xmlGetNodeList('field'):
                 fieldId = node['field_id']
+                field_name = field_names[int(fieldId)-1]
 
                 rn = tvn.xmlGetNode('variable',
                                     name="ReynoldsStressXX",
                                     field_id=fieldId)
                 if rn != None:
-                    rn['name']  = "ReynoldsStress"
-                    rn['label'] = "ReynoldsStress"+str(fieldId)
+                    rn['name']  = "reynolds_stress"
+                    rn['label'] = "reynolds_stress_"+field_name
                     rn['dim']   = 6
 
                     for comp in ["XY", "XZ", "YY", "YZ", "ZZ"]:
@@ -352,13 +357,15 @@ class XMLinitNeptune(Variables):
 
         # Renaming k and espilon
         turb_dico = {'TurbDissip':'epsilon',
-                     'TurbKineEner_k':'k'}
-        for node in tvn.xmlGetNodeList("variable"):
+                     'TurbKineEner_k':'k',
+                     'turb_viscosity':'turb_viscosity'}
+        for node in tnode.xmlGetNodeList("variable")+tnode.xmlGetNodeList("property"):
             fieldId = node['field_id']
+            field_name = field_names[int(fieldId)-1]
             for tv in turb_dico.keys():
                 if tv in node['name']:
                     node['name']  = turb_dico[tv]
-                    node['label'] = turb_dico[tv]+str(fieldId)
+                    node['label'] = turb_dico[tv]+"_"+field_name
 
 
 
@@ -375,16 +382,46 @@ class XMLinitNeptune(Variables):
 
         # Renaming of Pressure
         vnode = thermo_node.xmlGetNode('variables')
+        pnode = thermo_node.xmlGetNode('properties')
+
         rdico = {'Enthalpy':'enthalpy',
                  'Pressure':'pressure',
                  'Velocity':'velocity',
-                 'VolumeFraction':'volume_fraction'}
+                 'VolumeFraction':'volume_fraction',
+                 'Temperature':'temperature',
+                 'temperature':'temperature',
+                 'mass_trans':'mass_trans',
+                 'drag_coefficient':'drag_coefficient',
+                 'density':'density',
+                 'Diameter':'diameter',
+                 'DriftComponent':'drift_component',
+                 'Xd':'Xd'}
+
+        ldico = {'Enthalpy':'Enthalpy',
+                 'Pressure':'Pressure',
+                 'Velocity':'Velocity',
+                 'VolumeFraction':'vol_f',
+                 'Temperature':'temp',
+                 'temperature':'temp',
+                 'mass_trans':'mass_trans',
+                 'drag_coefficient':'drag_coef',
+                 'density':'density',
+                 'Diameter':'diam',
+                 'Xd':'Xd'}
 
         if vnode != None:
             for node in vnode.xmlGetNodeList('variable'):
                 vname = node['name']
                 if vname in rdico.keys():
                     node['name'] = rdico[vname]
+
+                    field_id = node['field_id']
+                    if field_id == 'none':
+                        label = ldico[vname]
+                    else:
+                        label = ldico[vname] + '_' + field_names[int(field_id)-1]
+                    node['label'] = label
+
                     for nzi in node.xmlGetNodeList('initial_value'):
                         nf = nzi.xmlGetNode('formula')
                         f  = nzi.xmlGetString('formula')
@@ -397,6 +434,19 @@ class XMLinitNeptune(Variables):
                     for nv in nb.xmlGetNodeList('variable'):
                         if nv['name'] in rdico.keys():
                             nv['name'] = rdico[nv['name']]
+
+        if pnode != None:
+            for node in pnode.xmlGetNodeList('property'):
+                pname = node['name']
+                if pname in rdico.keys():
+                    node['name'] = rdico[pname]
+
+                    field_id = node['field_id']
+                    if field_id == 'none':
+                        label = ldico[pname]
+                    else:
+                        label = ldico[pname] + '_' + field_names[int(field_id)-1]
+                    node['label'] = label
 
 
     def __backwardCompatibilityCurrentVersion(self):
@@ -495,6 +545,9 @@ class XMLinitNeptune(Variables):
         cnode = self.case.xmlGetNode('closure_modeling')
         tnode = cnode.xmlGetNode('turbulence')
 
+        from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+        field_names = MainFieldsModel(self.case).getFieldLabelsList()
+
         if tnode != None:
             tvn = tnode.xmlGetNode('variables')
 
@@ -505,13 +558,14 @@ class XMLinitNeptune(Variables):
             # Renaming of Rij tensor
             for node in self.__XMLNodefields.xmlGetNodeList('field'):
                 fieldId = node['field_id']
+                field_name = field_names[int(fieldId)-1]
 
                 rn = tvn.xmlGetNode("variable",
                                     name="ReynoldsStressXX",
                                     field_id=fieldId)
                 if rn != None:
-                    rn['name']  = "ReynoldsStress"
-                    rn['label'] = "ReynoldsStress"+str(fieldId)
+                    rn['name']  = "reynolds_stress"
+                    rn['label'] = "reynolds_stress_"+field_name
                     rn['dim']   = 6
 
                     for comp in ["XY", "XZ", "YY", "YZ", "ZZ"]:
@@ -521,13 +575,15 @@ class XMLinitNeptune(Variables):
 
             # Renaming k and espilon
             turb_dico = {'TurbDissip':'epsilon',
-                         'TurbKineEner_k':'k'}
-            for node in tvn.xmlGetNodeList("variable"):
+                         'TurbKineEner_k':'k',
+                         'turb_viscosity':'turb_viscosity'}
+            for node in tnode.xmlGetNodeList("variable")+tnode.xmlGetNodeList("property"):
                 fieldId = node['field_id']
+                field_name = field_names[int(fieldId)-1]
                 for tv in turb_dico.keys():
                     if tv in node['name']:
                         node['name']  = turb_dico[tv]
-                        node['label'] = turb_dico[tv]+str(fieldId)
+                        node['label'] = turb_dico[tv]+"_"+field_name
 
         # Modify the rad transfer xml node name for particles to allow a correct
         # workflow with the RTE SOLVER
@@ -543,16 +599,46 @@ class XMLinitNeptune(Variables):
 
         # Renaming of Pressure
         vnode = tpnode.xmlGetNode('variables')
+        pnode = tpnode.xmlGetNode('properties')
         rdico = {'Enthalpy':'enthalpy',
                  'Pressure':'pressure',
                  'Velocity':'velocity',
-                 'VolumeFraction':'volume_fraction'}
+                 'VolumeFraction':'volume_fraction',
+                 'Temperature':'temperature',
+                 'temperature':'temperature',
+                 'mass_trans':'mass_trans',
+                 'drag_coefficient':'drag_coefficient',
+                 'density':'density',
+                 'Diameter':'diameter',
+                 'DriftComponent':'drift_component',
+                 'Xd':'Xd'}
+
+        ldico = {'Enthalpy':'Enthalpy',
+                 'Pressure':'Pressure',
+                 'Velocity':'Velocity',
+                 'VolumeFraction':'vol_f',
+                 'Temperature':'temp',
+                 'temperature':'temp',
+                 'mass_trans':'mass_trans',
+                 'drag_coefficient':'drag_coef',
+                 'density':'density',
+                 'Diameter':'diam',
+                 'DriftComponent':'drift_component',
+                 'Xd':'Xd'}
 
         if vnode != None:
             for node in vnode.xmlGetNodeList('variable'):
                 vname = node['name']
                 if vname in rdico.keys():
                     node['name'] = rdico[vname]
+
+                    field_id = node['field_id']
+                    if field_id == 'none':
+                        label = ldico[vname]
+                    else:
+                        label = ldico[vname] + '_' + field_names[int(field_id)-1]
+                    node['label'] = label
+
                     for nzi in node.xmlGetNodeList('initial_value'):
                         nf = nzi.xmlGetNode('formula')
                         f  = nzi.xmlGetString('formula')
@@ -565,6 +651,19 @@ class XMLinitNeptune(Variables):
                     for nv in nb.xmlGetNodeList('variable'):
                         if nv['name'] in rdico.keys():
                             nv['name'] = rdico[nv['name']]
+
+        if pnode != None:
+            for node in pnode.xmlGetNodeList('property'):
+                pname = node['name']
+                if pname in rdico.keys():
+                    node['name'] = rdico[pname]
+
+                    field_id = node['field_id']
+                    if field_id == 'none':
+                        label = ldico[pname]
+                    else:
+                        label = ldico[pname] + '_' + field_names[int(field_id)-1]
+                    node['label'] = label
 
             # User arrays should be properties, not scalars
 
