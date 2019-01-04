@@ -244,6 +244,7 @@ double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: imasfl_prev, bmasfl_prev
+double precision, dimension(:), pointer :: cpro_beta, cvar_t
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -595,6 +596,21 @@ else if (ippmod(icompf).ge.0) then
     trav(2,iel) = trav(2,iel)+(rom*gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
     trav(3,iel) = trav(3,iel)+(rom*gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
   enddo
+  ! Boussinesq approximation
+else if (idilat.eq.0) then
+
+  !FIXME make it dependant on the scalar and use is_buoyant field
+  call field_get_val_s(ibeta, cpro_beta)
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+
+  ! Delta rho = - rho_0 beta Delta T
+  do iel = 1, ncel
+    drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0)
+    trav(1,iel) = trav(1,iel) + (drom * gx - cpro_gradp(1,iel)) * cell_f_vol(iel)
+    trav(2,iel) = trav(2,iel) + (drom * gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
+    trav(3,iel) = trav(3,iel) + (drom * gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
+  enddo
+
 else
   do iel = 1, ncel
     drom = (crom(iel)-ro0)
@@ -1205,15 +1221,33 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   !     NB: frcxt was used in typecl, and will be updated
   !         at the end of navstv
 
-  do iel = 1, ncel
+  ! External force variation between time step n and n+1
+  ! (used in the correction step)
+  !-----------------------------
 
-    ! External force variation between time step n and n+1
-    ! (used in the correction step)
-    drom = (crom(iel)-ro0)
-    dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
-    dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
-    dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
-  enddo
+  ! Boussinesq approximation
+  if (idilat.eq.0) then
+
+    !FIXME make it dependant on the scalar and use is_buoyant field
+    call field_get_val_s(ibeta, cpro_beta)
+    call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+
+    ! Delta rho = - rho_0 beta Delta T
+    do iel = 1, ncel
+      drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0)
+      dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
+      dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
+      dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
+    enddo
+
+  else
+    do iel = 1, ncel
+      drom = (crom(iel)-ro0)
+      dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
+      dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
+      dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
+    enddo
+  endif
 
   ! Add head losses
   if (ncepdp.gt.0) then

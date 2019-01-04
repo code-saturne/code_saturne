@@ -1652,6 +1652,21 @@ cs_parameters_check(void)
                                 cs_glob_stokes_model->ipucou,
                                 0, 2);
 
+  /* Dilatable algorithm: 0 to 5 */
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("while reading input data"),
+                                "cs_glob_stokes_model->idilat",
+                                cs_glob_stokes_model->idilat,
+                                0, 6);
+
+  if (cs_glob_stokes_model->idilat == 0) {
+    cs_parameters_is_greater_int(CS_ABORT_DELAYED,
+                                  _("while reading input data"),
+                                  "Boussinesq approximation requires the thermal_expansion field",
+                                  cs_field_by_name("thermal_expansion"),
+                                  0);
+  }
+
   cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
   /* steady or variable time step time algorithm not compatible with theta
      scheme with theta different from 1 for the velocity */
@@ -1796,7 +1811,7 @@ cs_parameters_check(void)
                                      _(f_desc),
                                      "var_cal_opt.nswrsm",
                                      var_cal_opt.nswrsm,
-                                     19);
+                                     20);
 
         BFT_FREE(f_desc);
 

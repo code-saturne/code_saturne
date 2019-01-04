@@ -283,6 +283,7 @@ cs_user_parameters(cs_domain_t *domain)
    *                   - 0: false
    *  idilat: algorithm to take into account the density
    *          variation in time
+   *                   - 0: Boussinesq approximation
    *                   - 1: dilatable steady algorithm (default)
    *                   - 2: dilatable unsteady algorithm
    *                   - 3: low-Mach algorithm

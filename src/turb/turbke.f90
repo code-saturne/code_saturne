@@ -157,6 +157,7 @@ double precision, allocatable, dimension(:) :: coefa_sqs, coefb_sqs
 double precision, allocatable, dimension(:,:) :: grad_sqk, grad_sqs
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: grad_dot_g
 
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, bromo, cromo
@@ -171,6 +172,7 @@ double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_eps_p
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_al
+double precision, dimension(:), pointer :: cpro_beta
 
 type(var_cal_opt) :: vcopt_k, vcopt_e
 
@@ -539,38 +541,67 @@ else if (igrake.eq.1) then
 
   ! Allocate a temporary for the gradient calculation
   allocate(grad(3,ncelet))
+  allocate(grad_dot_g(ncelet))
 
-  iccocg = 1
-  inc = 1
-  nswrgp = vcopt_k%nswrgr
-  epsrgp = vcopt_k%epsrgr
-  imligp = vcopt_k%imligr
-  iwarnp = vcopt_k%iwarni
-  climgp = vcopt_k%climgr
-  extrap = vcopt_k%extrag
-
-  ! Dirichlet boundary condition on the gradient of rho
-  do ifac = 1, nfabor
-    viscb(ifac) = 0.d0
-  enddo
-
-  f_id0 = -1
-
-  call gradient_s                                                 &
- ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
-   cromo  , bromo  , viscb  ,                                     &
-   grad   )
-
-  ! Production term due to buoyancy
-  !   smbrk = P+G
-  !   smbre = P+(1-ce3)*G
   if (iscalt.gt.0.and.nscal.ge.iscalt) then
     call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
     prdtur = turb_schmidt
   else
     prdtur = 1.d0
   endif
+
+  ! Boussinesq approximation, only for the thermal scalar for the moment
+  if (idilat.eq.0)  then
+
+    iccocg = 1
+    inc = 1
+
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, iccocg, &
+                               grad)
+
+    !FIXME make it dependant on the scalar and use is_buoyant field
+    call field_get_val_s(ibeta, cpro_beta)
+
+    ! - Beta grad(T) . g / Pr_T
+    do iel = 1, ncel
+      grad_dot_g(iel) = - cpro_beta(iel) &
+        * (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) / (prdtur)
+    enddo
+
+  else
+    iccocg = 1
+    inc = 1
+    nswrgp = vcopt_k%nswrgr
+    epsrgp = vcopt_k%epsrgr
+    imligp = vcopt_k%imligr
+    iwarnp = vcopt_k%iwarni
+    climgp = vcopt_k%climgr
+    extrap = vcopt_k%extrag
+
+    ! Dirichlet boundary condition on the gradient of rho
+    do ifac = 1, nfabor
+      viscb(ifac) = 0.d0
+    enddo
+
+    f_id0 = -1
+
+    call gradient_s                                                 &
+   ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+     iwarnp , epsrgp , climgp , extrap ,                            &
+     cromo  , bromo  , viscb  ,                                     &
+     grad   )
+
+
+    do iel = 1, ncel
+      grad_dot_g(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
+        / (rho*prdtur)
+    enddo
+
+  endif
+
+  ! Production term due to buoyancy
+  !   smbrk = P+G
+  !   smbre = P+(1-ce3)*G
 
   ! smbr* store mu_TxS**2
   do iel = 1, ncel
@@ -580,8 +611,7 @@ else if (igrake.eq.1) then
     xk   = cvara_k(iel)
     ttke = xk / xeps
 
-    gravke = -(grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
-           / (rho*prdtur)
+    gravke = - grad_dot_g(iel)
 
     ! Implicit Buoyant terms when negativ
     tinstk(iel) = tinstk(iel) + max(-rho*cell_f_vol(iel)*cmu*ttke*gravke, 0.d0)
@@ -593,6 +623,7 @@ else if (igrake.eq.1) then
 
   ! Free memory
   deallocate(grad)
+  deallocate(grad_dot_g)
 
 endif
 

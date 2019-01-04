@@ -161,6 +161,8 @@ double precision, dimension(:), pointer :: ddes_fd_coeff
 double precision, dimension(:), pointer :: w_dist
 double precision, dimension(:), pointer :: cpro_k_clipped
 double precision, dimension(:), pointer :: cpro_w_clipped
+double precision, dimension(:), pointer :: cpro_beta
+double precision, allocatable, dimension(:) :: grad_dot_g
 
 type(var_cal_opt) :: vcopt_w, vcopt_k
 
@@ -407,35 +409,7 @@ if (igrake.eq.1) then
 
   ! Allocate a temporary array for the gradient calculation
   allocate(grad(3,ncelet))
-
-  ! --- Buoyant term:     G = Beta*g*GRAD(T)/PrT/rho
-  !     Here is computed: G =-g*GRAD(rho)/PrT/rho
-
-  iccocg = 1
-  inc = 1
-
-  nswrgp = vcopt_k%nswrgr
-  epsrgp = vcopt_k%epsrgr
-  imligp = vcopt_k%imligr
-  iwarnp = vcopt_k%iwarni
-  climgp = vcopt_k%climgr
-  extrap = vcopt_k%extrag
-
-  ! BCs on rho: Dirichlet ROMB
-  !  NB: viscb is used as COEFB
-
-  do ifac = 1, nfabor
-    viscb(ifac) = 0.d0
-  enddo
-
-  f_id = -1
-
-  call gradient_s                                                 &
- ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
-   cromo  , bromo  , viscb  ,                                     &
-   grad   )
-
+  allocate(grad_dot_g(ncelet))
 
   ! Buoyancy production
   !   prodk=min(P,c1*eps)+G
@@ -447,12 +421,67 @@ if (igrake.eq.1) then
     prdtur = 1.d0
   endif
 
+
+  ! --- Buoyant term:     G = Beta*g*GRAD(T)/PrT/rho
+  !     Here is computed: G =-g*GRAD(rho)/PrT/rho
+
+  ! Boussinesq approximation, only for the thermal scalar for the moment
+  if (idilat.eq.0)  then
+
+    iccocg = 1
+    inc = 1
+
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, iccocg, &
+                               grad)
+
+    !FIXME make it dependant on the scalar and use is_buoyant field
+    call field_get_val_s(ibeta, cpro_beta)
+
+    ! - Beta grad(T) . g / Pr_T
+    do iel = 1, ncel
+      grad_dot_g(iel) = - cpro_beta(iel) &
+        * (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) / (prdtur)
+    enddo
+
+  else
+
+    iccocg = 1
+    inc = 1
+
+    nswrgp = vcopt_k%nswrgr
+    epsrgp = vcopt_k%epsrgr
+    imligp = vcopt_k%imligr
+    iwarnp = vcopt_k%iwarni
+    climgp = vcopt_k%climgr
+    extrap = vcopt_k%extrag
+
+    ! BCs on rho: Dirichlet ROMB
+    !  NB: viscb is used as COEFB
+
+    do ifac = 1, nfabor
+      viscb(ifac) = 0.d0
+    enddo
+
+    f_id = -1
+
+    call gradient_s                                                 &
+   ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+     iwarnp , epsrgp , climgp , extrap ,                            &
+     cromo  , bromo  , viscb  ,                                     &
+     grad   )
+
+    do iel = 1, ncel
+      grad_dot_g(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
+        / (rho*prdtur)
+    enddo
+
+  endif
+
   do iel = 1, ncel
     rho = cromo(iel)
     visct = cpro_pcvto(iel)
 
-    w2(iel) = -(grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) / &
-               (rho*prdtur)
+    w2(iel) = - grad_dot_g(iel)
 
     prodw(iel) = prodw(iel)+visct*max(w2(iel),zero)
     prodk(iel) = prodk(iel)+visct*w2(iel)
@@ -464,6 +493,7 @@ if (igrake.eq.1) then
 
   ! Free memory
   deallocate(grad)
+  deallocate(grad_dot_g)
 
 endif
 
