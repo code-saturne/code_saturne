@@ -215,6 +215,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
         # Reordering categories order for NCFD multiphase solver
         if 'Properties' in self.prtlist:
+            self.prtlist.sort()
             rlist = []
             rlist.append(self.prtlist.index('Properties'))
             rlist.append(self.prtlist.index('Variables'))

@@ -635,10 +635,34 @@ class InterfacialForcesModel(TurbulenceModel,
         old_status = node.xmlGetString('BubblesForLIM')
         node.xmlSetData('BubblesForLIM', status)
 
+        fieldId = self.getContinuousFieldList()[1]
+
         if status == "off" and old_status:
             node = self.XMLClosure.xmlGetChildNode('interfacial_area_diameter')
             if node:
                 node.xmlRemoveNode()
+
+            Variables(self.case).removeVariableProperty("property",
+                                                        self.XMLNodeproperty,
+                                                        fieldId,
+                                                        "diameter")
+            Variables(self.case).removeVariableProperty("property",
+                                                        self.XMLNodeproperty,
+                                                        fieldId,
+                                                        "drift_component")
+
+        elif status == "on":
+            field_name = MainFieldsModel(self.case).getFieldLabelsList()[int(fieldId)-1]
+            Variables(self.case).setNewVariableProperty('property', '',
+                                                        self.XMLNodeproperty,
+                                                        fieldId,
+                                                        'diameter',
+                                                        'diam_'+field_name)
+            Variables(self.case).setNewVariableProperty('property', '',
+                                                        self.XMLNodeproperty,
+                                                        fieldId,
+                                                        'drift_component',
+                                                        'drift_component_'+field_name)
 
 
     @Variables.noUndo

@@ -249,8 +249,8 @@ class MainFieldsModel(Variables, Model):
         if self.getEnergyResolution(fieldNumber) == "on":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "temperature", "temp_"+field_name, post = True)
         if self.getCriterion(fieldNumber) == "dispersed":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "Diameter", "Diam_"+field_name)
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "DriftComponent", "DriftComponent_"+field_name, dim='3')
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "diameter", "diam_"+field_name)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drift_component", "drift_component_"+field_name, dim='3')
 
 
     def getFieldLabelsList(self):
@@ -422,12 +422,13 @@ class MainFieldsModel(Variables, Model):
                    pass
 
         # TODO mettre en coherence pour les aires interf., tout ce qui est closure law a faire aussi pour la nature.
+        # Activated if dispersed or second continuous phase of GLIM
         if self.getCriterion(fieldId) == "dispersed":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "Diameter", "Diam_"+field_name)
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "DriftComponent", "DriftComponent_"+field_name, dim='3')
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "diameter", "diam_"+field_name)
+           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "drift_component", "drift_component_"+field_name, dim='3')
         else :
-           Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "Diameter")
-           Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "DriftComponent")
+           Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "diameter")
+           Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "drift_component")
 
         self.updateXML()
 
