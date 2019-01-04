@@ -544,25 +544,27 @@ cs_user_parameters(cs_domain_t *domain)
               for the boundary layer is necessary. */
 
   /*! [param_force_yplus] */
-  cs_field_t *f;
+  {
+    cs_field_t *f;
 
-  f = cs_field_by_name_try("yplus");
-  if (f != NULL)
-    cs_parameters_add_property("yplus",
-                               1,
-                               CS_MESH_LOCATION_BOUNDARY_FACES);
+    f = cs_field_by_name_try("yplus");
+    if (f != NULL)
+      cs_parameters_add_property("yplus",
+                                 1,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  f = cs_field_by_name_try("tplus");
-  if (f != NULL)
-    cs_parameters_add_property("tplus",
-                               1,
-                               CS_MESH_LOCATION_BOUNDARY_FACES);
+    f = cs_field_by_name_try("tplus");
+    if (f != NULL)
+      cs_parameters_add_property("tplus",
+                                 1,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  f = cs_field_by_name_try("tstar");
-  if (f != NULL)
-    cs_parameters_add_property("tstar",
-                               1,
-                               CS_MESH_LOCATION_BOUNDARY_FACES);
+    f = cs_field_by_name_try("tstar");
+    if (f != NULL)
+      cs_parameters_add_property("tstar",
+                                 1,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES);
+  }
   /*! [param_force_yplus] */
 
   /*--------------------------------------------------------------------------*/

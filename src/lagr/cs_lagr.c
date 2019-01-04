@@ -1922,7 +1922,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
      Aggregates are formed of multiples of these monomers. */
 
   /* Evaluation of the minimum diameter */
-  cs_real_t minimum_particle_diam = 0., rho = 0.;
+  cs_real_t minimum_particle_diam = 0.;
 
   if (cs_glob_lagr_model->agglomeration)
     minimum_particle_diam = cs_glob_lagr_agglomeration_model->base_diameter;
@@ -2218,10 +2218,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
           /* Update buffer for existing particles */
           cs_lnum_t count_del = 0, count_swap = 0;
           for (cs_lnum_t i = 0; i < local_size; ++i) {
-            cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set,
-                                                           i+start_part,
-                                                           CS_LAGR_CELL_NUM);
-            if (cell_id < 0) {
+            cs_lnum_t c_id = cs_lagr_particles_get_lnum(p_set,
+                                                        i+start_part,
+                                                        CS_LAGR_CELL_NUM);
+            if (c_id < 0) {
               memcpy(deleted_buffer + p_set->p_am->extents * count_del,
                      p_set->p_buffer + p_set->p_am->extents * (i+start_part),
                      p_set->p_am->extents);
