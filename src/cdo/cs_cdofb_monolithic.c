@@ -1216,6 +1216,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     break;
 #else
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
