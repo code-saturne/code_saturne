@@ -387,8 +387,9 @@ typedef enum {
 /*!
  * \enum cs_param_precond_type_t
  * Type of preconditionner to use with the iterative solver. Some
- * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0 or
- * \ref CS_PARAM_PRECOND_AS are available only with the PETSc interface.
+ * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0,
+ * \ref CS_PARAM_PRECOND_AS and \ref CS_PARAM_PRECOND_AMG_BLOCK are available
+ * only with the PETSc interface.
  */
 
 typedef enum {
@@ -402,7 +403,8 @@ typedef enum {
   CS_PARAM_PRECOND_ILU0,    /*!< Incomplete LU factorization */
   CS_PARAM_PRECOND_ICC0,    /*!< Incomplete Cholesky factorization */
   CS_PARAM_PRECOND_AMG,     /*!< Algebraic MultiGrid */
-  CS_PARAM_PRECOND_AS,      /*!< Additive Schwarz method */
+  CS_PARAM_PRECOND_AMG_BLOCK,  /*!< Algebraic MultiGrid by block */
+  CS_PARAM_PRECOND_AS,         /*!< Additive Schwarz method */
   CS_PARAM_N_PRECOND_TYPES
 
 } cs_param_precond_type_t;

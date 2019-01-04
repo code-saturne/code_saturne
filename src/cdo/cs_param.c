@@ -289,6 +289,9 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_AMG:
     return  "Algebraic.MultiGrid";
     break;
+  case CS_PARAM_PRECOND_AMG_BLOCK:
+    return  "Algebraic.MultiGrid.ByBlock";
+    break;
   case CS_PARAM_PRECOND_AS:
     return  "Additive.Schwarz";
     break;

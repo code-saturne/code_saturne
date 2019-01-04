@@ -295,6 +295,89 @@ _petsc_setup_hook(void   *context,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of multiplicative AMG block preconditioner for a CG
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_petsc_amg_block_hook(void     *context,
+                      Mat       a,
+                      KSP       ksp)
+{
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  KSPSetType(ksp, KSPFCG);
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(ksp,
+                   slesp.eps,         /* relative convergence tolerance */
+                   abstol,            /* absolute convergence tolerance */
+                   dtol,              /* divergence tolerance */
+                   slesp.n_max_iter); /* max number of iterations */
+
+  /* Try to have "true" norm */
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+
+  /* Apply modifications to the KSP structure */
+  PetscInt  id, n_split;
+  KSP  *xyz_subksp, _ksp;
+  PC pc, _pc;
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCFIELDSPLIT);
+  PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
+
+  PCFieldSplitSetBlockSize(pc, 3);
+  id = 0;
+  PCFieldSplitSetFields(pc, "ux", 1, &id, &id);
+  id = 1;
+  PCFieldSplitSetFields(pc, "uy", 1, &id, &id);
+  id = 2;
+  PCFieldSplitSetFields(pc, "uz", 1, &id, &id);
+
+  PCSetFromOptions(pc);
+  PCSetUp(pc);
+
+  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
+  assert(n_split == 3);
+
+  for (id = 0; id < 3; id++) {
+
+    _ksp = xyz_subksp[id];
+    KSPSetType(_ksp, KSPPREONLY);
+    KSPGetPC(_ksp, &_pc);
+    PCSetType(_pc, PCHYPRE);
+    PCHYPRESetType(_pc, "boomeramg");
+
+    PCSetFromOptions(_pc);
+    PCSetUp(_pc);
+
+  }
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, a, ksp);
+
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp.setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp.setup_done = true;
+  }
+
+  PetscFree(xyz_subksp);
+}
 #endif /* defined(HAVE_PETSC) */
 
 /*----------------------------------------------------------------------------*/
@@ -498,6 +581,20 @@ _set_key(const char            *label,
         eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K; /* Default choice */
       if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
         eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
+    }
+    else if (strcmp(keyval, "amg_block") == 0) {
+      if (eqp->dim == 1) {  /* Swith to a classical AMG preconditioner */
+        eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;
+        if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
+          eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K; /* Default choice */
+        if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
+          eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
+      }
+      else {
+        eqp->sles_param.precond = CS_PARAM_PRECOND_AMG_BLOCK;
+        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+        eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;    /* Default choice */
+      }
     }
     else if (strcmp(keyval, "as") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_AS;
@@ -1305,8 +1402,6 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
 
       cs_sles_petsc_init();
 
-      cs_sles_petsc_setup_hook_t  *_setup_hook = _petsc_setup_hook;
-
       if (slesp.precond == CS_PARAM_PRECOND_SSOR ||
           slesp.precond == CS_PARAM_PRECOND_ILU0 ||
           slesp.precond == CS_PARAM_PRECOND_ICC0) {
@@ -1319,16 +1414,26 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
         cs_sles_petsc_define(field_id,
                              NULL,
                              MATSEQAIJ, /* Warning SEQ not MPI */
-                             _setup_hook,
+                             _petsc_setup_hook,
                              (void *)eqp);
 
       }
-      else
-        cs_sles_petsc_define(field_id,
-                             NULL,
-                             MATMPIAIJ,
-                             _setup_hook,
-                             (void *)eqp);
+      else {
+
+        if (slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
+          cs_sles_petsc_define(field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _petsc_amg_block_hook,
+                               (void *)eqp);
+        else
+          cs_sles_petsc_define(field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _petsc_setup_hook,
+                               (void *)eqp);
+
+      }
 #else
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: PETSC algorithms used to solve %s are not linked.\n"

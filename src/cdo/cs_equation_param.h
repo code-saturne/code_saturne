@@ -502,6 +502,8 @@ typedef struct {
  * - "icc0" --> incomplete Cholesky factorization (for symmetric matrices and
  *   only with PETSc)
  * - "amg" --> algebraic multigrid
+ * - "amg_block" --> algebraic multigrid by block (useful for vector-valued
+ *                   equations)
  *
  * \var CS_EQKEY_ITSOL_EPS
  * Tolerance factor for stopping the iterative processus for solving the
