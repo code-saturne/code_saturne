@@ -17,6 +17,9 @@ User changes:
 
 Physical modelling:
 
+- Add Boussinesq approximation as a variable density model. To activate it, set
+  cs_glob_stokes_model->idilat to 0 in C or idilat = 0 in Fortran.
+
 - Lagrangian module:
   * Add agglomeration and fragmentation algorithms.
 

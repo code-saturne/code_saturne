@@ -73,7 +73,7 @@ integer          iscal , id, ityloc, itycat, pflag
 integer          ii
 integer          iok
 integer          f_id, idftnp
-integer          ivisph, iest
+integer          iest
 integer          key_buoyant_id, is_buoyant_fld
 
 double precision gravn2
@@ -236,19 +236,6 @@ do iscal = 1, nscal
 
 enddo
 
-! Pression hydrostatique
-if (iphydr.ne.0.and.iphydr.ne.1.and.iphydr.ne.2) then
-  write(nfecra,8121) 'IPHYDR ',iphydr
-  iok = iok + 1
-endif
-
-! Viscosite secondaire
-ivisph = ivisse
-if (ivisph.ne.0.and.ivisph.ne.1) then
-  write(nfecra,8022) 'IVISSE ',ivisph
-  iok = iok + 1
-endif
-
 ! Schemas en temps
 
 !     Schema en temps global.
@@ -313,6 +300,15 @@ enddo
 ! Stop si probleme
 if (iok.gt.0) then
   call csexit(1)
+endif
+
+! add thermal expansion field for Boussinesq approximation
+! if not already added
+if (idilat.eq.0) then
+  call field_get_id_try('thermal_expansion', ibeta)
+  if (ibeta.lt.0) then
+    call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
+  endif
 endif
 
 ! Source term for weakly compressible algorithm (semi analytic scheme)
@@ -515,21 +511,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 8022 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8101 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -732,21 +713,6 @@ return
 
 #else
 
- 8022 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' MUST BE AN INTEGER EQUAL TO 0 OR 1               ',/,&
-'@    HERE IT IS  ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8101 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
