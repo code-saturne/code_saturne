@@ -332,6 +332,20 @@ class XMLinitNeptune(Variables):
         from code_saturne.Pages.MainFieldsModel import MainFieldsModel
         field_names = MainFieldsModel(self.case).getFieldLabelsList()
 
+        turb_dico = {'TurbDissip':'epsilon',
+                     'epsilon':'epsilon',
+                     'TurbKineEner_k':'k',
+                     'k':'k',
+                     'turb_viscosity':'turb_viscosity',
+                     'ReynoldsStress':'reynolds_stress'}
+
+        rij_comp = {'ReynoldsStressXX':'0',
+                    'ReynoldsStressYY':'1',
+                    'ReynoldsStressZZ':'2',
+                    'ReynoldsStressXY':'3',
+                    'ReynoldsStressYZ':'4',
+                    'ReynoldsStressXZ':'5'}
+
         if tnode != None:
             tvn   = tnode.xmlGetNode('variables')
             for node in tnode.xmlGetNodeList('field'):
@@ -362,7 +376,7 @@ class XMLinitNeptune(Variables):
                 if rn != None:
                     rn['name']  = "reynolds_stress"
                     rn['label'] = "reynolds_stress_"+field_name
-                    rn['dim']   = 6
+                    rn['dimension']   = 6
 
                     for comp in ["XY", "XZ", "YY", "YZ", "ZZ"]:
                         tvn.xmlRemoveChild('variable',
@@ -370,12 +384,6 @@ class XMLinitNeptune(Variables):
                                            field_id=fieldId)
 
             # Renaming k and espilon
-            turb_dico = {'TurbDissip':'epsilon',
-                         'epsilon':'epsilon',
-                         'TurbKineEner_k':'k',
-                         'k':'k',
-                         'turb_viscosity':'turb_viscosity',
-                         'ReynoldsStress':'reynolds_stress'}
             for node in tnode.xmlGetNodeList("variable")+tnode.xmlGetNodeList("property"):
                 fieldId = node['field_id']
                 field_name = field_names[int(fieldId)-1]
@@ -412,6 +420,8 @@ class XMLinitNeptune(Variables):
                  'volume_fraction':'volume_fraction',
                  'Temperature':'temperature',
                  'temperature':'temperature',
+                 'SaturationEnthalpyLiquid':'SaturationEnthalpyLiquid',
+                 'SaturationEnthalpyGas':'SaturationEnthalpyGas',
                  'mass_trans':'mass_trans',
                  'molecular_viscosity':'molecular_viscosity',
                  'specific_heat':'specific_heat',
@@ -436,6 +446,8 @@ class XMLinitNeptune(Variables):
                  'volume_fraction':'vol_f',
                  'Temperature':'temp',
                  'temperature':'temp',
+                 'SaturationEnthalpyLiquid':'HsatLiquid',
+                 'SaturationEnthalpyGas':'HsatGas',
                  'mass_trans':'mass_trans',
                  'molecular_viscosity':'molecular_viscosity',
                  'specific_heat':'specific_heat',
@@ -511,6 +523,35 @@ class XMLinitNeptune(Variables):
                     if node[tag]:
                        newnode[tag] = node[tag]
                  node.xmlRemoveNode()
+
+
+        # Rename variable names in time averages and profile
+        for pp_type in ('time_average', 'profile'):
+            for node in self.case.xmlGetNodeList(pp_type):
+                for vn in node.xmlGetNodeList('var_prop'):
+                    vn_split = vn['name'].split('_')
+                    old_name = vn['name'].split('_')[0]
+                    if len(vn_split) > 1:
+                        field_id = vn['name'].split('_')[1]
+                    else:
+                        field_id = None
+
+                    if old_name in rdico.keys():
+                        vn['name'] = rdico[old_name]
+                        if field_id:
+                            vn['name'] += '_' + field_id
+
+                    elif old_name in rij_comp.keys():
+                        vn['component'] = rij_comp[old_name]
+                        vn['name'] = 'reynolds_stress_'
+                        if field_id:
+                            vn['name'] += field_id
+
+                    elif old_name in turb_dico.keys():
+                        vn['name'] = turb_dico[old_name]
+                        if field_id:
+                            vn['name'] += field_id
+
 
 
     def __backwardCompatibilityCurrentVersion(self):

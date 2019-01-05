@@ -163,17 +163,30 @@ class OutputVolumicVariablesModel(Variables, Model):
                         if not (node['support'] and node['support'] == "boundary"):
                             dicoLabel2Name[label1] = (name, str(ii))
                     if not (node['support'] and node['support'] == "boundary"):
-                        dicoLabel2Name[name] = (name, str(-1))
+                        dicoLabel2Name[label] = (name, str(-1))
+
+                elif 'reynolds_stress' in name:
+                    comp = label.split('reynolds_stress')[-1]
+                    rij_lbls = ['reynolds_stress11', 'reynolds_stress22',
+                                'reynolds_stress33', 'reynolds_stress12',
+                                'reynolds_stress23', 'reynolds_stress13']
+                    for ii in range(int(dim)):
+                        label1 = rij_lbls[ii] + comp
+                        if not (node['support'] and node['support'] == 'boundary'):
+                            dicoLabel2Name[label1] = (name, str(ii))
+                    if not (node['support'] and node['support'] == 'boundary'):
+                        dicoLabel2Name[label] = (name, str(-1))
+
                 else:
                     for ii in range(int(dim)):
                         label1 = label + "[" + str(ii) + "]"
                         if not (node['support'] and node['support'] == "boundary"):
                             dicoLabel2Name[label1] = (name, str(ii))
                     if not (node['support'] and node['support'] == "boundary"):
-                        dicoLabel2Name[name] = (name, str(-1))
+                        dicoLabel2Name[label] = (name, str(-1))
             else:
                 if not (node['support'] and node['support'] == "boundary"):
-                    dicoLabel2Name[name] = (name, str(0))
+                    dicoLabel2Name[label] = (name, str(0))
 
         return dicoLabel2Name
 

@@ -95,7 +95,7 @@ class ProfilesModel(Model):
         """
         mdl = OutputVolumicVariablesModel(self.case)
 
-        self.dicoLabel2Name = mdl.getVolumeFieldsLabel2Name(time_averages=False)
+        self.dicoLabel2Name = mdl.getVolumeFieldsLabel2Name(time_averages=True)
 
         return list(self.dicoLabel2Name.keys())
 
