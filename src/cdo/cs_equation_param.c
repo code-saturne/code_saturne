@@ -484,20 +484,6 @@ _set_key(const char            *label,
     }
     break;
 
-  case CS_EQKEY_HODGE_TIME_ALGO:
-    if (strcmp(keyval,"cost") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-    else if (strcmp(keyval, "voronoi") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-    else if (strcmp(keyval, "wbs") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-    else {
-      const char *_val = keyval;
-      bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_HODGE_TIME_ALGO");
-    }
-    break;
-
   case CS_EQKEY_HODGE_DIFF_COEF:
     if (strcmp(keyval, "dga") == 0)
       eqp->diffusion_hodge.coef = 1./3.;
@@ -509,15 +495,28 @@ _set_key(const char            *label,
       eqp->diffusion_hodge.coef = atof(keyval);
     break;
 
-  case CS_EQKEY_HODGE_TIME_COEF:
-    if (strcmp(keyval, "dga") == 0)
-      eqp->time_hodge.coef = 1./3.;
-    else if (strcmp(keyval, "sushi") == 0)
-      eqp->time_hodge.coef = 1./sqrt(3.);
-    else if (strcmp(keyval, "gcr") == 0)
-      eqp->time_hodge.coef = 1.0;
-    else
-      eqp->time_hodge.coef = atof(keyval);
+  case CS_EQKEY_HODGE_TIME_ALGO:
+    if (strcmp(keyval, "voronoi") == 0)
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    else if (strcmp(keyval, "wbs") == 0)
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_HODGE_TIME_ALGO");
+    }
+    break;
+
+  case CS_EQKEY_HODGE_REAC_ALGO:
+    if (strcmp(keyval, "voronoi") == 0)
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    else if (strcmp(keyval, "wbs") == 0)
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_HODGE_REAC_ALGO");
+    }
     break;
 
   case CS_EQKEY_SOLVER_FAMILY:

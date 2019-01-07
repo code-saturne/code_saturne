@@ -409,6 +409,15 @@ typedef struct {
  *   potential-like degrees of freedom and needs a correct computation of the
  *   cell barycenter
  *
+ * \var CS_EQKEY_HODGE_DIFF_COEF
+ * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
+ * "cost".
+ * keyval is either a name or a value:
+ * - "dga" corresponds to the value \f$ 1./3. \f$
+ * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
+ * - "gcr"  corresponds to the value \f$1\f$.
+ * - or "1.5", "9" for instance
+ *
  * \var CS_EQKEY_HODGE_TIME_ALGO
  * Set the algorithm used for building the discrete Hodge operator used
  * in the unsteady term. Available choices are:
@@ -425,33 +434,6 @@ typedef struct {
  * - "wbs" --> (default) is robust and accurate but is limited to the
  *   reconstruction of potential-like degrees of freedom and needs a correct
  *   computation of the cell barycenter
- *
- * \var CS_EQKEY_HODGE_DIFF_COEF
- * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
- * "cost".
- * keyval is either a name or a value:
- * - "dga" corresponds to the value \f$ 1./3. \f$
- * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
- * - "gcr"  corresponds to the value \f$1\f$.
- * - or "1.5", "9" for instance
- *
- * \var CS_EQKEY_HODGE_TIME_COEF
- * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
- * "cost".
- * keyval is either a name or a value:
- * - "dga" corresponds to the value \f$ 1./3. \f$
- * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
- * - "gcr"  corresponds to the value \f$1\f$.
- * - or "1.5", "9" for instance
- *
- * \var CS_EQKEY_HODGE_REAC_COEF
- * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
- * "cost".
- * keyval is either a name or a value:
- * - "dga" corresponds to the value \f$ 1./3. \f$
- * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
- * - "gcr"  corresponds to the value \f$1\f$.
- * - or "1.5", "9" for instance
  *
  * \var CS_EQKEY_SOLVER_FAMILY
  * Specify which class of solver are possible. Available choices are:
@@ -617,9 +599,7 @@ typedef enum {
   CS_EQKEY_HODGE_DIFF_ALGO,
   CS_EQKEY_HODGE_DIFF_COEF,
   CS_EQKEY_HODGE_TIME_ALGO,
-  CS_EQKEY_HODGE_TIME_COEF,
   CS_EQKEY_HODGE_REAC_ALGO,
-  CS_EQKEY_HODGE_REAC_COEF,
   CS_EQKEY_ITSOL,
   CS_EQKEY_ITSOL_EPS,
   CS_EQKEY_ITSOL_MAX_ITER,
