@@ -466,11 +466,10 @@ Calculation features
     Deformable mesh
     Turbulence models
     Thermal model
-    Gravity
+    Body forces
     Gas combustion
     Pulverized fuel combustion
     Electrical models
-    Radiative transfers
     Conjugate heat transfer
     Atmospheric flows
     Species transport
@@ -495,7 +494,6 @@ Volume zones
     Head losses
     Porosity
     Source terms
-    Coriolis Source Terms
     Groundwater laws
 Boundary zones
     Boundary conditions
@@ -737,7 +735,6 @@ Calculation management
         self.setRowClose(self.tr('Gas combustion'))
         self.setRowClose(self.tr('Pulverized fuel combustion'))
         self.setRowClose(self.tr('Electrical models'))
-        self.setRowClose(self.tr('Radiative transfers'))
         self.setRowClose(self.tr('Conjugate heat transfer'))
         self.setRowClose(self.tr('Atmospheric flows'))
         self.setRowClose(self.tr('Species transport'))
@@ -760,7 +757,7 @@ Calculation management
         self.setRowClose(self.tr('Physical properties'))
         """
         self.setRowClose(self.tr('Fluid properties'))
-        self.setRowClose(self.tr('Gravity'))
+        self.setRowClose(self.tr('Body forces'))
         """
 
         self.setRowClose(self.tr('Particles and droplets tracking'))
@@ -775,7 +772,6 @@ Calculation management
         self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Porosity'))
         self.setRowClose(self.tr('Source terms'))
-        self.setRowClose(self.tr('Coriolis Source Terms'))
         self.setRowClose(self.tr('Groundwater laws'))
         """
 
@@ -833,7 +829,6 @@ Calculation management
         m_sf_comb = False
         m_elec = False
         m_atmo = False
-        m_rad = False
         m_comp = False
         m_gwf = False
 
@@ -894,7 +889,6 @@ Calculation management
                 m_fans = False
 
             if m_thermal > 0:
-                m_rad = True
                 m_cht = True
 
         node = case.xmlGetNode('lagrangian', 'model')
@@ -916,8 +910,7 @@ Calculation management
         if p_module == 'neptune_cfd' and node_pm:
 
             m_fans = False
-            m_thermal = -1
-            m_rad = True
+            m_thermal = 1
             m_cht = True
 
             node_f = node_pm.xmlInitNode('fields')
@@ -966,11 +959,10 @@ Calculation management
         self.setRowShow(self.tr('Deformable mesh'), m_ale)
         self.setRowShow(self.tr('Turbulence models'))
         self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
-        self.setRowShow(self.tr('Gravity'), (not m_gwf))
+        self.setRowShow(self.tr('Body forces'), (not m_gwf))
         self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
         self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)
         self.setRowShow(self.tr('Electrical models'), m_elec)
-        self.setRowShow(self.tr('Radiative transfers'), m_rad)
         self.setRowShow(self.tr('Conjugate heat transfer'), m_cht)
         self.setRowShow(self.tr('Atmospheric flows'), m_atmo)
         self.setRowShow(self.tr('Species transport'))
@@ -1032,7 +1024,6 @@ Calculation management
         self.setRowShow(self.tr('Head losses'), z_head_loss)
         self.setRowShow(self.tr('Porosity'), z_porosity)
         self.setRowShow(self.tr('Source terms'), z_st)
-        self.setRowShow(self.tr('Coriolis Source Terms'), (not (m_gwf or is_ncfd)))
         self.setRowShow(self.tr('Groundwater laws'), z_groundwater)
 
         # Boundary zones

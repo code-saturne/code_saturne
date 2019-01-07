@@ -40,8 +40,6 @@ This module defines the following classes:
 
 import os, sys, unittest, logging
 from xml.dom.minidom import Document, parse, parseString, Node
-from xml.sax.handler import ContentHandler
-from xml.sax import make_parser
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -68,6 +66,9 @@ def xmlChecker(filename):
     @param filename name of the file of parameters ith its absolute path
     @return m error message
     """
+    from xml.sax.handler import ContentHandler
+    from xml.sax import make_parser
+
     m = ""
 
     try:
@@ -160,7 +161,7 @@ class Dico:
                 return None
 
 
-    def printDico(self):
+    def __printDict(self):
         """
         Simple tool wich prints the dictionary contents on the current terminal.
         """
@@ -172,7 +173,6 @@ class Dico:
 #-------------------------------------------------------------------------------
 # Lightweight XML constructor and reader
 #-------------------------------------------------------------------------------
-
 
 if sys.version[0] == '2':
 
@@ -198,6 +198,7 @@ else:
 
 class XMLElement:
     """
+    XML element base class
     """
     def __init__(self, doc, el, case):
         """
@@ -208,7 +209,7 @@ class XMLElement:
         self.ca  = case
 
 
-    def _errorExit(self, msg):
+    def ___errorExit(self, msg):
         """
         """
         print('XML ERROR')
@@ -349,7 +350,7 @@ class XMLElement:
             msg = "There is an error in with the elementNode: \n\n" \
                   + node + "\n\nand the searching attribute: \n\n" \
                   + attr + "\n\nThe application will finish."
-            self._errorExit(msg)
+            self.__errorExit(msg)
         else:
             a = self.el.getAttributeNode(attr)
 
@@ -763,7 +764,7 @@ class XMLElement:
             else:
                 msg = "There is an error in with the use of the xmlGetString method. "\
                       "There is more than one occurence of the tagName: " + tag
-                self._errorExit(msg)
+                self.__errorExit(msg)
         else:
             string = ""
 
@@ -783,7 +784,7 @@ class XMLElement:
             else:
                 msg = "There is an error in with the use of the xmlGetChildString method. "\
                       "There is more than one occurence of the tagName: " + tag
-                self._errorExit(msg)
+                self.__errorExit(msg)
         else:
             string = ""
 
@@ -806,7 +807,7 @@ class XMLElement:
             else:
                 msg = "There is an error in with the use of the xmlGetInt method. "\
                       "There is more than one occurence of the tagName: " + tag
-                self._errorExit(msg)
+                self.__errorExit(msg)
         else:
             integer = None
 
@@ -829,7 +830,7 @@ class XMLElement:
             else:
                 msg = "There is an error in with the use of the xmlGetDouble method. "\
                       "There is more than one occurence of the tagName: " + tag
-                self._errorExit(msg)
+                self.__errorExit(msg)
         else:
             double = None
 
@@ -852,7 +853,7 @@ class XMLElement:
             else:
                 msg = "There is an error in with the use of the xmlGetChildDouble method. "\
                       "There is more than one occurence of the tagName: " + tag
-                self._errorExit(msg)
+                self.__errorExit(msg)
         else:
             double = None
 
@@ -896,7 +897,7 @@ class XMLElement:
             msg = "There is an error in with the use of the xmlGetNode method. "\
                   "There is more than one occurence of the tag: " + tag
             for n in nodeList: msg += "\n" + self._inst(n).__str__()
-            self._errorExit(msg)
+            self.__errorExit(msg)
         elif len(nodeList) == 1:
             return self._inst(nodeList[0])
         else:
@@ -923,7 +924,7 @@ class XMLElement:
             msg = "There is an error in with the use of the xmlGetChildNode method. "\
                   "There is more than one occurence of the tag: " + tag
             for n in nodeList: msg += "\n" + self._inst(n).__str__()
-            self._errorExit(msg)
+            self.__errorExit(msg)
         elif len(nodeList) == 1:
             return self._inst(nodeList[0])
         else:
@@ -994,7 +995,7 @@ class XMLElement:
                 msg = "There is an error with the use of the xmlInitNode method. "\
                       "There is more than one occurence of the tag: " + tag
                 for n in nodeList: msg += "\n" + self._inst(n).__str__()
-                self._errorExit(msg)
+                self.__errorExit(msg)
             else:
                 child = self._inst(nodeList[0])
 
@@ -1018,7 +1019,7 @@ class XMLElement:
                 msg = "There is an error in with the use of the xmlInitChildNode method. "\
                       "There is more than one occurence of the tag: " + tag
                 for n in nodeList: msg += "\n" + self._inst(n).__str__()
-                self._errorExit(msg)
+                self.__errorExit(msg)
             else:
                 child = self._inst(nodeList[0])
 
@@ -1091,7 +1092,7 @@ class XMLDocument(XMLElement):
     def root(self):
         """
         This function return the only one root element of the document
-        (higher level of ELEMENT_NODE after the <?xml version="2.0" ?> markup).
+        (highest level of ELEMENT_NODE after the <?xml version="2.0" ?> markup).
         """
         return self._inst(self.doc.documentElement)
 
@@ -1146,7 +1147,7 @@ class XMLDocument(XMLElement):
     def __str__(self):
         """
         Print the XMLDocument node with \n and \t.
-        Unicode string are decoded if it's possible by the standard output,
+        Unicode strings are decoded if it's possible by the standard output,
         if not unicode characters are replaced by '?' character.
         Warning: the returned XMLDocument do not show the encoding in the
         header, because it is already encoded!
@@ -1205,7 +1206,7 @@ class XMLDocument(XMLElement):
                 if n.hasChildNodes(): self.xmlCleanAllBlank(n)
 
 
-    def xmlCleanHightLevelBlank(self, node):
+    def xmlCleanHighLevelBlank(self, node):
         """
         This method deletes TEXT_NODE which are "\n" or "\t" in the
         hight level of the ELEMENT_NODE nodes. It is a recursive method.
@@ -1218,7 +1219,7 @@ class XMLDocument(XMLElement):
             if n.nodeType == Node.ELEMENT_NODE:
                 elementNode = 1
                 if n.hasChildNodes():
-                    self.xmlCleanHightLevelBlank(n)
+                    self.xmlCleanHighLevelBlank(n)
 
         if 'formula' not in node.tagName or 'dirichlet_formula' in node.tagName:
             for n in node.childNodes:
@@ -1313,7 +1314,7 @@ class Case(Dico, XMLDocument):
         """
         Print on the current terminal the contents of the case.
         """
-        self.printDico()
+        self.__printDict()
         return self.toPrettyUnicodeString()
 
 
@@ -1322,7 +1323,7 @@ class Case(Dico, XMLDocument):
         Transform to string for IO.
         """
         d = XMLDocument().parseString(self.toPrettyString())
-        d.xmlCleanHightLevelBlank(d.root())
+        d.xmlCleanHighLevelBlank(d.root())
         return d.toString()
 
 
@@ -1333,7 +1334,7 @@ class Case(Dico, XMLDocument):
         """
         try:
             d = XMLDocument().parseString(self.toPrettyString())
-            d.xmlCleanHightLevelBlank(d.root())
+            d.xmlCleanHighLevelBlank(d.root())
             s = d.toString()
             file = open(self['xmlfile'], 'w')
             file.write(s)

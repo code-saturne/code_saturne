@@ -113,8 +113,8 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
             thisPage = Page.TurbulenceView(root, case)
 
     elif page_name == tr("Thermal model"):
-        import code_saturne.Pages.ThermalScalarView as Page
-        thisPage = Page.ThermalScalarView(root, case, tree)
+        import code_saturne.Pages.ThermalView as Page
+        thisPage = Page.ThermalView(root, case, tree)
 
     elif page_name == tr("Gas combustion"):
         import code_saturne.Pages.GasCombustionView as Page
@@ -127,10 +127,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
     elif page_name == tr("Electrical models"):
         import code_saturne.Pages.ElectricalView as Page
         thisPage = Page.ElectricalView(root, case, stbar)
-
-    elif page_name == tr("Radiative transfers"):
-        import code_saturne.Pages.ThermalRadiationView as Page
-        thisPage = Page.ThermalRadiationView(root, case, tree)
 
     elif page_name == tr("Conjugate heat transfer"):
         import code_saturne.Pages.ConjugateHeatTransferView as Page
@@ -156,10 +152,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.SourceTermsView as Page
         thisPage = Page.SourceTermsView(root, case, stbar)
 
-    elif page_name == tr("Coriolis Source Terms"):
-        import code_saturne.Pages.CoriolisSourceTermsView as Page
-        thisPage = Page.CoriolisSourceTermsView(root, case)
-
     elif page_name == tr("Groundwater laws"):
         import code_saturne.Pages.GroundwaterLawView as Page
         thisPage = Page.GroundwaterLawView(root, case)
@@ -172,7 +164,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.FluidCharacteristicsView as Page
         thisPage = Page.FluidCharacteristicsView(root, case)
 
-    elif page_name == tr("Gravity"):
+    elif page_name == tr("Body forces"):
         import code_saturne.Pages.BodyForcesView as Page
         thisPage = Page.BodyForcesView(root, case)
 

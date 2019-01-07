@@ -23,10 +23,10 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the Thermal Radiation model
+This module defines the thermal scalar management.
 
 This module contains the following classes and function:
-- ThermalRadiationView
+- ThermalScalarView
 """
 
 #-------------------------------------------------------------------------------
@@ -49,18 +49,22 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
-from code_saturne.Pages.ThermalRadiationGroupBox import Ui_ThermalRadiationGroupBox
+from code_saturne.Pages.ThermalForm import Ui_ThermalForm
+from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 from code_saturne.Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
-
-from code_saturne.Pages.MainFieldsModel import MainFieldsModel
 
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
 
 logging.basicConfig()
-log = logging.getLogger("ThermalRadiationView")
+log = logging.getLogger("ThermalView")
 log.setLevel(GuiParam.DEBUG)
 
 #--------------------------------------------------------------------------------
@@ -167,31 +171,111 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
         return text
 
 
-#--------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Main class
-#--------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
-class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
+class ThermalView(QWidget, Ui_ThermalForm):
     """
     Class to open Thermal Scalar Transport Page.
     """
-    def __init__(self, *args):
+    def __init__(self, parent, case, tree):
         """
         Constructor
         """
-        QWidget.__init__(self, *args)
+        QWidget.__init__(self, parent)
 
-        Ui_ThermalRadiationGroupBox.__init__(self)
+        Ui_ThermalForm.__init__(self)
         self.setupUi(self)
 
-
-    def setCase(self, case):
-        """
-        Constructor
-        """
+        self.browser = tree
         self.case = case
         self.case.undoStopGlobal()
-        self.mdl = ThermalRadiationModel(self.case)
+
+        # Current physics
+
+        self.coal_or_gas = "off"
+
+        if case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+            self.coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
+            del CoalCombustionModel
+            if self.coal_or_gas == "off":
+                from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+                self.coal_or_gas = GasCombustionModel(self.case).getGasCombustionModel()
+                del GasCombustionModel
+
+        # Thermal scalar
+        #---------------
+
+        self.thermal = ThermalScalarModel(self.case)
+
+        # combo Model
+
+        self.modelThermal = ComboModel(self.comboBoxThermal, 4, 1)
+
+        self.modelThermal.addItem(self.tr("No thermal scalar"), 'off')
+        self.modelThermal.addItem(self.tr("Temperature (Celsius)"), 'temperature_celsius')
+        self.modelThermal.addItem(self.tr("Temperature (Kelvin)"), 'temperature_kelvin')
+        self.modelThermal.addItem(self.tr("Enthalpy (J/kg)"), 'enthalpy')
+
+        self.modelThermal.addItem(self.tr("Potential temperature"), 'potential_temperature')
+        self.modelThermal.addItem(self.tr("Liquid potential temperature"), 'liquid_potential_temperature')
+        self.modelThermal.addItem(self.tr("Total energy (J/kg)"), 'total_energy')
+
+        self.comboBoxThermal.activated[str].connect(self.slotThermalScalar)
+
+        # Update the thermal scalar list with the calculation features
+
+        for sca in self.thermal.thermalModel:
+            if sca not in self.thermal.thermalScalarModelsList():
+                self.modelThermal.disableItem(str_model=sca)
+
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            self.comboBoxThermal.setEnabled(False)
+
+        elif ElectricalModel(self.case).getElectricalModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+
+        elif self.coal_or_gas != 'off':
+            self.comboBoxThermal.setEnabled(False)
+
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+        else:
+            self.modelThermal.delItem(6)
+
+        if AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel() != 'off':
+            self.comboBoxThermal.setEnabled(False)
+        else:
+            self.modelThermal.delItem(5)
+            self.modelThermal.delItem(4)
+
+        # Select the thermal scalar model
+
+        model = self.thermal.getThermalScalarModel()
+        self.modelThermal.setItem(str_model=model)
+
+        # Radiation model
+        #----------------
+
+        self.__setRadiation__(model)
+
+        # Undo/redo part
+
+        self.case.undoStartGlobal()
+
+
+    def __setRadiation__(self, model):
+        """
+        Update for radiation model
+        """
+        if model == 'off':
+            self.ThermalRadiationGroupBox.hide()
+            return
+
+        self.ThermalRadiationGroupBox.show()
+        self.rmdl = ThermalRadiationModel(self.case)
 
         # Combo models
 
@@ -215,8 +299,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         # Connections
 
         self.comboBoxRadModel.activated[str].connect(self.slotRadiativeTransfer)
-        self.radioButtonOn.clicked.connect(self.slotStartRestart)
-        self.radioButtonOff.clicked.connect(self.slotStartRestart)
+        self.checkBoxRadRestart.stateChanged.connect(self.slotRadRestart)
         self.comboBoxQuadrature.activated[str].connect(self.slotDirection)
         self.lineEditNdirec.textChanged[str].connect(self.slotNdirec)
         self.comboBoxAbsorption.activated[str].connect(self.slotTypeCoefficient)
@@ -235,18 +318,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         self.modelAbsorption.addItem('user function (cs_user_rad_transfer_absorption)', 'variable')
         self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
 
-        coal_or_gas = "off"
-
-        if case.xmlRootNode().tagName == "Code_Saturne_GUI":
-            from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-            coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
-            del CoalCombustionModel
-            if coal_or_gas == "off":
-                from code_saturne.Pages.GasCombustionModel import GasCombustionModel
-                coal_or_gas = GasCombustionModel(self.case).getGasCombustionModel()
-                del GasCombustionModel
-
-        if coal_or_gas != "off":
+        if self.coal_or_gas != "off":
             self.modelAbsorption.disableItem(str_model='variable')
             self.modelAbsorption.enableItem(str_model='modak')
         else:
@@ -255,7 +327,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
 
         # Initialization
 
-        self.modelRadModel.setItem(str_model=self.mdl.getRadiativeModel())
+        self.modelRadModel.setItem(str_model=self.rmdl.getRadiativeModel())
 
         # For multiphase flows, only droplet laden gas flows are accepted
         if self.case['package'].name != 'code_saturne':
@@ -267,20 +339,28 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
 
         self.slotRadiativeTransfer()
 
-        if self.mdl.getRestart() == 'on':
-            self.radioButtonOn.setChecked(True)
-            self.radioButtonOff.setChecked(False)
+        if self.rmdl.getRestart() == 'on':
+            self.checkBoxRadRestart.setChecked(True)
         else:
-            self.radioButtonOn.setChecked(False)
-            self.radioButtonOff.setChecked(True)
+            self.checkBoxRadRestart.setChecked(False)
 
-        value = self.mdl.getTypeCoeff()
+        value = self.rmdl.getTypeCoeff()
         self.modelAbsorption.setItem(str_model=value)
         self.slotTypeCoefficient(self.modelAbsorption.dicoM2V[value])
 
-        self.lineEditCoeff.setText(str(self.mdl.getAbsorCoeff()))
+        self.lineEditCoeff.setText(str(self.rmdl.getAbsorCoeff()))
 
-        self.case.undoStartGlobal()
+
+    @pyqtSlot(str)
+    def slotThermalScalar(self, text):
+        """
+        Update the thermal scalar markup.
+        """
+        th = self.modelThermal.dicoV2M[str(text)]
+        self.thermal.setThermalModel(th)
+
+        self.__setRadiation__(th)
+        self.browser.configureTree(self.case)
 
 
     @pyqtSlot(str)
@@ -288,38 +368,39 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         """
         """
         model = self.modelRadModel.dicoV2M[str(self.comboBoxRadModel.currentText())]
-        self.mdl.setRadiativeModel(model)
+        self.rmdl.setRadiativeModel(model)
         if model == 'off':
             self.frameOptions.hide()
-            self.line.hide()
+            self.groupBoxDirection.hide()
+            self.groupBoxAbsorptionCoeff.hide()
         else:
+            self.groupBoxAbsorptionCoeff.show()
             self.frameOptions.show()
-            self.line.show()
 
             if model == 'p-1':
-                self.frameDirection.hide()
+                self.groupBoxDirection.hide()
             elif model == 'dom':
-                self.frameDirection.show()
-                n = self.mdl.getQuadrature()
+                self.groupBoxDirection.show()
+                n = self.rmdl.getQuadrature()
                 self.modelDirection.setItem(str_model=str(n))
 
                 if str(n) == "6":
                     self.label_2.show()
                     self.lineEditNdirec.show()
-                    self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
+                    self.lineEditNdirec.setText(str(self.rmdl.getNbDir()))
                 else:
                     self.label_2.hide()
                     self.lineEditNdirec.hide()
 
 
-    @pyqtSlot()
-    def slotStartRestart(self):
+    @pyqtSlot(int)
+    def slotRadRestart(self, val):
         """
         """
-        if self.radioButtonOn.isChecked():
-            self.mdl.setRestart("on")
+        if val == 0:
+            self.rmdl.setRestart("off")
         else:
-            self.mdl.setRestart("off")
+            self.rmdl.setRestart("on")
 
 
     @pyqtSlot(str)
@@ -327,12 +408,12 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         """
         """
         n = int(self.modelDirection.dicoV2M[str(text)])
-        self.mdl.setQuadrature(n)
+        self.rmdl.setQuadrature(n)
 
         if n == 6:
             self.label_2.show()
             self.lineEditNdirec.show()
-            self.lineEditNdirec.setText(str(self.mdl.getNbDir()))
+            self.lineEditNdirec.setText(str(self.rmdl.getNbDir()))
         else:
             self.label_2.hide()
             self.lineEditNdirec.hide()
@@ -344,7 +425,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         """
         if self.lineEditNdirec.validator().state == QValidator.Acceptable:
             n = from_qvariant(text, int)
-            self.mdl.setNbDir(n)
+            self.rmdl.setNbDir(n)
 
 
     @pyqtSlot(str)
@@ -352,7 +433,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         """
         """
         typeCoeff = self.modelAbsorption.dicoV2M[str(text)]
-        self.mdl.setTypeCoeff(typeCoeff)
+        self.rmdl.setTypeCoeff(typeCoeff)
 
         if typeCoeff == 'constant':
             self.lineEditCoeff.setEnabled(True)
@@ -368,7 +449,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         """
         if self.lineEditCoeff.validator().state == QValidator.Acceptable:
             c  = from_qvariant(text, float)
-            self.mdl.setAbsorCoeff(c)
+            self.rmdl.setAbsorCoeff(c)
 
 
     @pyqtSlot()
@@ -377,21 +458,21 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
         Ask one popup for advanced specifications
         """
         default = {}
-        default['frequency'] = self.mdl.getFrequency()
-        default['idiver']    = self.mdl.getTrs()
-        default['tempP']     = self.mdl.getTemperatureListing()
-        default['intensity'] = self.mdl.getIntensityResolution()
-        default['model']     = self.mdl.getRadiativeModel()
+        default['frequency'] = self.rmdl.getFrequency()
+        default['idiver']    = self.rmdl.getTrs()
+        default['tempP']     = self.rmdl.getTemperatureListing()
+        default['intensity'] = self.rmdl.getIntensityResolution()
+        default['model']     = self.rmdl.getRadiativeModel()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
         dialog = ThermalRadiationAdvancedDialogView(self, self.case, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAdvancedOptions -> %s" % str(result))
-            self.mdl.setFrequency(result['frequency'])
-            self.mdl.setTrs(result['idiver'])
-            self.mdl.setTemperatureListing(result['tempP'])
-            self.mdl.setIntensityResolution(result['intensity'])
+            self.rmdl.setFrequency(result['frequency'])
+            self.rmdl.setTrs(result['idiver'])
+            self.rmdl.setTemperatureListing(result['tempP'])
+            self.rmdl.setIntensityResolution(result['intensity'])
 
 
     def tr(self, text):
@@ -405,10 +486,8 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationGroupBox):
 # Testing part
 #-------------------------------------------------------------------------------
 
-
 if __name__ == "__main__":
     pass
-
 
 #-------------------------------------------------------------------------------
 # End

@@ -57,7 +57,6 @@ CompressibleModel.py \
 ConjugateHeatTransferView.py \
 ConjugateHeatTransferModel.py \
 CoriolisSourceTermsModel.py \
-CoriolisSourceTermsView.py \
 GroundwaterModel.py \
 GroundwaterView.py \
 GroundwaterLawModel.py \
@@ -128,7 +127,7 @@ StartRestartView.py \
 ThermalRadiationModel.py \
 ThermalRadiationView.py \
 ThermalScalarModel.py \
-ThermalScalarView.py \
+ThermalView.py \
 TimeAveragesModel.py \
 TimeAveragesView.py \
 TimeStepModel.py \
@@ -228,7 +227,6 @@ BoundaryConditionsWallRadiativeTransferForm.ui \
 CoalCombustionForm.ui \
 CompressibleForm.ui \
 ConjugateHeatTransferForm.ui \
-CoriolisSourceTermsForm.ui \
 GroundwaterForm.ui \
 GroundwaterLawForm.ui \
 DefineUserScalarsForm.ui \
@@ -268,8 +266,7 @@ SourceTermsForm.ui \
 StartRestartAdvancedDialogForm.ui \
 StartRestartForm.ui \
 ThermalRadiationAdvancedDialogForm.ui \
-ThermalRadiationForm.ui \
-ThermalScalarForm.ui \
+ThermalForm.ui \
 TimeAveragesForm.ui \
 TimeStepForm.ui \
 TurboMachineryForm.ui \

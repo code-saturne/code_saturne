@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>659</width>
-    <height>209</height>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,24 +20,6 @@
       <string>User-defined fields</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="0" column="0">
-       <widget class="QGroupBox" name="groupBoxPassifScalar_2">
-        <property name="title">
-         <string/>
-        </property>
-        <layout class="QGridLayout" name="_2">
-         <property name="margin">
-          <number>9</number>
-         </property>
-         <property name="spacing">
-          <number>6</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QTableView" name="tableViewUsers"/>
-         </item>
-        </layout>
-       </widget>
-      </item>
       <item row="1" column="0">
        <layout class="QHBoxLayout" name="_3">
         <property name="spacing">
@@ -97,6 +79,9 @@
          </spacer>
         </item>
        </layout>
+      </item>
+      <item row="0" column="0">
+       <widget class="QTableView" name="tableViewUsers"/>
       </item>
      </layout>
     </widget>

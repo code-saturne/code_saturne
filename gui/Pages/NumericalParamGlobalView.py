@@ -82,7 +82,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         self.labelSRROM.hide()
         self.lineEditSRROM.hide()
-        self.line_5.hide()
 
         # Combo models
         self.modelEXTRAG = ComboModel(self.comboBoxEXTRAG,2,1)
@@ -146,12 +145,10 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.labelSRROM.show()
             self.lineEditSRROM.show()
             self.lineEditSRROM.setText(str(self.model.getDensityRelaxation()))
-            self.line_5.show()
 
         if modl_comp != 'off':
             self.labelICFGRP.show()
             self.checkBoxICFGRP.show()
-            self.line_4.show()
             if self.model.getHydrostaticEquilibrium() == 'on':
                 self.checkBoxICFGRP.setChecked(True)
             else:
@@ -162,24 +159,15 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.labelRELAXP.hide()
             self.checkBoxImprovedPressure.hide()
             self.labelImprovedPressure.hide()
-            self.line_2.hide()
-            self.line_5.hide()
-            self.line_7.hide()
-            self.line_8.hide()
         else:
             self.labelICFGRP.hide()
             self.checkBoxICFGRP.hide()
-            self.line_4.hide()
             self.checkBoxIPUCOU.show()
             self.labelIPUCOU.show()
             self.lineEditRELAXP.show()
             self.labelRELAXP.show()
             self.checkBoxImprovedPressure.show()
             self.labelImprovedPressure.show()
-            self.line_2.show()
-            self.line_5.show()
-            self.line_7.show()
-            self.line_8.show()
 
         # Update the Tree files and folders
         self.browser.configureTree(self.case)

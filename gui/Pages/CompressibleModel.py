@@ -106,7 +106,8 @@ class CompressibleModel(Variables, Model):
                 self.node_fluid.xmlRemoveChild('property', name = 'volume_viscosity')
                 self.node_ref.xmlRemoveChild('mass_molar')
                 self.node_ref.xmlRemoveChild('temperature')
-                ThermalScalarModel(self.case).setThermalModel('off')
+                if ThermalScalarModel(self.case).getThermalScalarModel() == 'total_energy':
+                    ThermalScalarModel(self.case).setThermalModel('off')
             else :
                 ThermalScalarModel(self.case).setThermalModel('total_energy')
                 for v in self.var_list:

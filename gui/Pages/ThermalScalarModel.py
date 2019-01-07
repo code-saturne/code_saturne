@@ -62,6 +62,20 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         Constuctor.
         """
+        self.case = case
+        self.thermalModel = ('off',
+                             'temperature_celsius',
+                             'temperature_kelvin',
+                             'enthalpy',
+                             'potential_temperature',
+                             'liquid_potential_temperature',
+                             'total_energy')
+
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            self.node_models = None
+            self.node_therm = None
+            return
+
         DefineUserScalarsModel.__init__(self, case)
 
         self.node_models   = self.case.xmlGetNode('thermophysical_models')
@@ -75,14 +89,6 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         self.node_comp  = self.node_models.xmlGetChildNode('compressible_model',  'model')
 
         self.old_scaTh = "off"
-
-        self.thermalModel = ('off',
-                             'temperature_celsius',
-                             'temperature_kelvin',
-                             'enthalpy',
-                             'potential_temperature',
-                             'liquid_potential_temperature',
-                             'total_energy')
 
 
     def _defaultThermalScalarValues(self):
@@ -137,11 +143,15 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         thermalScalarList = self.thermalModel
 
-        for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo, self.node_comp):
-            if node['model'] == "":
-                node['model'] = 'off'
-            if node['model'] != 'off':
-                thermalScalarList = ('off',)
+        try:
+            for node in (self.node_gas, self.node_coal, self.node_joule, self.node_atmo, self.node_comp):
+                if node['model'] == "":
+                    node['model'] = 'off'
+                if node['model'] != 'off':
+                    thermalScalarList = ('off',)
+        except Exception:
+            # some of the above nodes might not be present
+            pass
 
         return thermalScalarList
 
@@ -199,6 +209,13 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         self.isInList(thermal_scalar, self.thermalModel)
 
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            return
+
+        prev_model = self.getThermalScalarModel()
+        if thermal_scalar == prev_model:
+            return
+
         self.node_therm['model'] = thermal_scalar
 
         if thermal_scalar != 'off':
@@ -229,10 +246,13 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         Get name of thermal scalar (not label)
         """
-        model = self.node_therm['model']
-        if not model:
-            model = self._defaultThermalScalarValues()['thermal_scalar']
-            self.setThermalModel(model)
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            return 'enthalpy'
+        else:
+            model = self.node_therm['model']
+            if not model:
+                model = self._defaultThermalScalarValues()['thermal_scalar']
+
         return model
 
 
@@ -241,12 +261,15 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         Get name for thermal scalar
         """
-        label = ""
-        node = self.node_therm.xmlGetNode('variable', type='thermal')
-        if node:
-            label = node['name']
+        name = ""
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            name = 'enthalpy'
+        else:
+            node = self.node_therm.xmlGetNode('variable', type='thermal')
+            if node:
+                name = node['name']
 
-        return label
+        return name
 
 
 #-------------------------------------------------------------------------------
