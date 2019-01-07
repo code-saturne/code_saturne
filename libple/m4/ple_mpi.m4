@@ -90,7 +90,7 @@ if test "x$with_mpi" != "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([mpi.h],
                      [ple_have_mpi_header=yes],
-                     [], 
+                     [],
                      [])
   fi
 
@@ -108,7 +108,7 @@ if test "x$with_mpi" != "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([mpi.h],
                      [ple_have_mpi_header=yes],
-                     [], 
+                     [],
                      [])
   fi
 
@@ -307,14 +307,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
 
   # MPI libraries should now have been detected
 
-  if test "x$ple_have_mpi" = "xno"; then
-    if test "x$with_mpi" != "xcheck" ; then
-      AC_MSG_FAILURE([MPI support is requested, but test for MPI failed!])
-    else
-      AC_MSG_WARN([no MPI support])
-    fi
-    MPI_LIBS=""
-  else
+  if test "x$ple_have_mpi" != "xno"; then
     # Try to detect some MPI 2 features
     AC_MSG_CHECKING([for MPI2 one-sided communication])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
@@ -334,6 +327,15 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
   unset saved_LDFLAGS
   unset saved_LIBS
 
+fi
+
+if test "x$ple_have_mpi" = "xno"; then
+  if test "x$with_mpi" != "xcheck" ; then
+    AC_MSG_FAILURE([MPI support is requested, but test for MPI failed!])
+  else
+    AC_MSG_WARN([no MPI support])
+  fi
+  MPI_LIBS=""
 fi
 
 unset mpi_includedir
