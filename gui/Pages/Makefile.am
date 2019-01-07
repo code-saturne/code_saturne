@@ -142,8 +142,6 @@ GlobalNumericalParametersModel.py \
 GlobalNumericalParametersView.py \
 NonCondensableModel.py \
 NonCondensableView.py \
-TurbulenceModel.py \
-TurbulenceView.py  \
 TurbulenceNeptuneModel.py \
 TurbulenceNeptuneView.py \
 SpeciesView.py \
