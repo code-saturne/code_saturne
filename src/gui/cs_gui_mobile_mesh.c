@@ -767,6 +767,11 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
     if (nature == ale_boundary_nature_none)
       continue;
 
+    /* get the matching BC node */
+    const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
+    cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
+    tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
+
     if (nature ==  ale_boundary_nature_fixed_wall) {
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
@@ -789,7 +794,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
       t0 = cs_timer_wtime();
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
-        _uialcl_fixed_displacement(tn_bndy,
+        _uialcl_fixed_displacement(tn_bc,
                                    m->b_face_vtx_idx[ifbr],
                                    m->b_face_vtx_idx[ifbr+1],
                                    m->b_face_vtx_lst, impale, disale,
@@ -801,7 +806,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
     }
     else if (nature == ale_boundary_nature_fixed_velocity) {
       t0 = cs_timer_wtime();
-      _uialcl_fixed_velocity(tn_bndy, *iuma, *ivma, *iwma, *ivimpo,
+      _uialcl_fixed_velocity(tn_bc, *iuma, *ivma, *iwma, *ivimpo,
                              m->n_b_faces, n_faces, faces_list,
                              ialtyb, rcodcl,
                              cs_glob_time_step->dt_ref,
