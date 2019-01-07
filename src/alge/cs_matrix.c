@@ -79,6 +79,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_cuda.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -180,6 +181,122 @@ static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES][2]
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+#ifdef HAVE_CUDA_OFFLOAD
+
+typedef enum __offload_map_type {
+  OFFLOAD_MAP,
+  OFFLOAD_UNMAP,
+} offload_map_type;
+
+static void _offload_map_coeffs(const cs_matrix_t  *matrix, offload_map_type map_type) {
+
+  const cs_real_t *mc_x_val = 0;
+  const cs_real_t *mc_d_val = 0;
+  size_t ms_n_rows = 0;
+  size_t x_val_size = 0;
+  size_t d_val_size = 0;
+
+  switch(matrix->type) {
+  default:
+    // Unknown type.
+    return;
+  case CS_MATRIX_NATIVE:
+    // Native matrix - not implemented.
+    return;
+  case CS_MATRIX_MSR: {
+    const cs_matrix_struct_csr_t  *mst = matrix->structure;
+    const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+    if (!mst || !mc)
+      return;
+    mc_x_val = mc->x_val;
+    mc_d_val = mc->d_val;
+    ms_n_rows = mst->n_rows;
+    x_val_size = mst->row_index[ms_n_rows];
+    d_val_size = ms_n_rows;
+  } break;
+  case CS_MATRIX_CSR:
+  case CS_MATRIX_CSR_SYM: {
+    const cs_matrix_struct_csr_t  *mst = matrix->structure;
+    const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+    if (!mst || !mc)
+      return;
+    mc_x_val = mc->val;
+    ms_n_rows = mst->n_rows;
+    x_val_size = mst->_row_index[ms_n_rows];
+    d_val_size = ms_n_rows;
+  } break;
+  }
+
+  switch(map_type) {
+  case OFFLOAD_MAP:
+    if (mc_d_val && mc_x_val) {
+      if (ms_n_rows > CS_CUDA_GPU_THRESHOLD) {
+        cs_cuda_map_to(mc_x_val, x_val_size*sizeof(cs_real_t));
+        cs_cuda_map_to(mc_d_val, d_val_size*sizeof(cs_real_t));
+      }
+    } else if (mc_x_val) {
+      if (ms_n_rows > CS_CUDA_GPU_THRESHOLD) {
+        cs_cuda_map_to(mc_x_val, x_val_size*sizeof(cs_real_t));
+      }
+    } break;
+  case OFFLOAD_UNMAP:
+    if (mc_d_val && mc_x_val) {
+      if (ms_n_rows > CS_CUDA_GPU_THRESHOLD) {
+        cs_cuda_map_release(mc_x_val, 0);
+        cs_cuda_map_release(mc_d_val, 0);
+      }
+    } else if (mc_x_val) {
+      if (ms_n_rows > CS_CUDA_GPU_THRESHOLD) {
+        cs_cuda_map_release(mc_x_val, 0);
+      }
+    } break;
+  }
+}
+
+static void _offload_map_structure(const cs_matrix_structure_t  *ms, offload_map_type map_type) {
+  const cs_lnum_t *ms_col_id = 0;
+  const cs_lnum_t *ms_row_index = 0;
+
+  size_t ms_n_rows = 0;
+  size_t col_id_size = 0;
+  size_t row_index_size = 0;
+
+  switch(ms->type) {
+  default:
+    // Unknown matrix type.
+    return;
+  case CS_MATRIX_NATIVE:
+    // Native matrix - not implemented.
+    return;
+  case CS_MATRIX_MSR:
+  case CS_MATRIX_CSR:
+  case CS_MATRIX_CSR_SYM: {
+    const cs_matrix_struct_csr_t  *mst = ms->structure;
+    ms_col_id = mst->col_id;
+    ms_row_index = mst->row_index;
+    ms_n_rows = mst->n_rows;
+    col_id_size = mst->row_index[ms_n_rows];
+    row_index_size = ms_n_rows+1;
+  } break;
+  }
+
+  switch(map_type) {
+  case OFFLOAD_MAP:
+    if (ms_n_rows > CS_CUDA_GPU_THRESHOLD) {
+      cs_cuda_map_to(ms_col_id, col_id_size*sizeof(cs_lnum_t));
+      cs_cuda_map_to(ms_row_index, row_index_size*sizeof(cs_lnum_t));
+    }
+    break;
+  case OFFLOAD_UNMAP:
+    if (ms_n_rows > CS_CUDA_GPU_THRESHOLD) {
+      cs_cuda_map_release(ms_col_id, 0);
+      cs_cuda_map_release(ms_row_index, 0);
+    }
+    break;
+  }
+}
+#endif
 
 /*----------------------------------------------------------------------------
  * Set matrix fill metadata.
@@ -822,6 +939,11 @@ _set_coeffs_native(cs_matrix_t        *matrix,
       mc->xa = xa;
 
   }
+
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_MAP);
+#endif
+
 }
 
 /*----------------------------------------------------------------------------
@@ -834,6 +956,9 @@ _set_coeffs_native(cs_matrix_t        *matrix,
 static void
 _release_coeffs_native(cs_matrix_t  *matrix)
 {
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_UNMAP);
+#endif
   cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   if (mc != NULL) {
     mc->da = NULL;
@@ -2287,6 +2412,9 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 
   } /* (matrix->edges != NULL) */
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_MAP);
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -2462,6 +2590,10 @@ _set_coeffs_csr_from_msr(cs_matrix_t       *matrix,
   else
     _zero_coeffs_csr(matrix);
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_MAP);
+#endif
+
   /* Now free transferred arrays */
 
   if (d_vals_transfer != NULL)
@@ -2480,6 +2612,10 @@ _set_coeffs_csr_from_msr(cs_matrix_t       *matrix,
 static void
 _release_coeffs_csr(cs_matrix_t  *matrix)
 {
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_UNMAP);
+#endif
+
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   if (mc != NULL)
     mc->d_val = NULL;
@@ -2539,6 +2675,19 @@ _mat_vec_p_l_csr(bool                exclude_diag,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
+  cs_lnum_t  n_cols_ext = ms->n_cols_ext;
+
+# ifdef HAVE_CUDA_OFFLOAD
+  // Use CUDA for this if available.
+  if (cs_cuda_mat_vec_p_l_csr(
+      exclude_diag,
+      ms->row_index,
+      ms->col_id,
+      mc->val,
+      x, y,
+      n_rows, n_cols_ext))
+    return;
+# endif
 
   /* Standard case */
 
@@ -3030,6 +3179,9 @@ _set_coeffs_csr_sym(cs_matrix_t        *matrix,
 
   } /* (edges != NULL) */
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_MAP);
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -3042,6 +3194,10 @@ _set_coeffs_csr_sym(cs_matrix_t        *matrix,
 static void
 _release_coeffs_csr_sym(cs_matrix_t  *matrix)
 {
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_UNMAP);
+#endif
+
   cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
   if (mc != NULL)
     mc->d_val = NULL;
@@ -3589,6 +3745,10 @@ _set_coeffs_msr(cs_matrix_t         *matrix,
     if (xa != NULL)
       _set_xa_coeffs_msr_increment(matrix, symmetric, n_edges, edges, xa);
   }
+
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_MAP);
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -3661,6 +3821,10 @@ _set_coeffs_msr_from_msr(cs_matrix_t       *matrix,
   if (x_transferred == false)
     _map_or_copy_xa_coeffs_msr(matrix, copy, x_vals);
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_MAP);
+#endif
+
   /* Now free transferred arrays */
 
   if (d_vals_transfer != NULL)
@@ -3679,6 +3843,10 @@ _set_coeffs_msr_from_msr(cs_matrix_t       *matrix,
 static void
 _release_coeffs_msr(cs_matrix_t  *matrix)
 {
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_coeffs(matrix, OFFLOAD_UNMAP);
+#endif
+
   cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   if (mc !=NULL) {
     /* Unmap shared values */
@@ -4037,6 +4205,20 @@ _mat_vec_p_l_msr(bool                exclude_diag,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
+  cs_lnum_t  n_cols_ext = ms->n_cols_ext;
+
+  // Use CUDA if available.
+# ifdef HAVE_CUDA_OFFLOAD
+  if (cs_cuda_mat_vec_p_l_msr(
+      exclude_diag,
+      ms->row_index,
+      ms->col_id,
+      mc->x_val,
+      mc->d_val,
+      x, y,
+      n_rows, n_cols_ext))
+    return;
+# endif
 
   /* Standard case */
 
@@ -4487,18 +4669,26 @@ _pre_vector_multiply_sync_x(cs_halo_rotation_t   rotation_mode,
                             const cs_matrix_t   *matrix,
                             cs_real_t            x[restrict])
 {
+  size_t n_cols_ext = matrix->n_cols_ext;
+
   assert(matrix->halo != NULL);
 
   /* Non-blocked version */
 
   if (matrix->db_size[3] == 1) {
 
-    if (matrix->halo != NULL)
+    if (matrix->halo != NULL) {
+#     ifdef HAVE_CUDA_OFFLOAD
+      cs_cuda_move_from_device_if_exists(matrix->n_rows,n_cols_ext, x);
+#     endif
       cs_halo_sync_component(matrix->halo,
                              CS_HALO_STANDARD,
                              rotation_mode,
                              x);
-
+#     ifdef HAVE_CUDA_OFFLOAD
+      cs_cuda_move_to_device_if_exists(matrix->n_rows,n_cols_ext-matrix->halo->n_local_elts, x+matrix->halo->n_local_elts);
+#     endif
+    }
   }
 
   /* Blocked version */
@@ -4553,10 +4743,13 @@ _pre_vector_multiply_sync_y(const cs_matrix_t   *matrix,
 {
   size_t n_cols_ext = matrix->n_cols_ext;
 
-  if (matrix->db_size[3] == 1)
+  if (matrix->db_size[3] == 1) {
+#   ifdef HAVE_CUDA_OFFLOAD
+    if (!cs_cuda_vector_vc_equal_zero_if_exists(matrix->n_rows,n_cols_ext-matrix->n_rows, y+matrix->n_rows))
+#   endif
     _zero_range(y, matrix->n_rows, n_cols_ext);
 
-  else
+  } else
     _b_zero_range(y, matrix->n_rows, n_cols_ext, matrix->db_size);
 }
 
@@ -5579,6 +5772,10 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
   ms->numbering = numbering;
   ms->assembler = NULL;
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_structure(ms, OFFLOAD_MAP);
+#endif
+
   return ms;
 }
 
@@ -5669,6 +5866,10 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
   ms->numbering = numbering;
   ms->assembler = NULL;
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_structure(ms, OFFLOAD_MAP);
+#endif
+
   return ms;
 }
 
@@ -5732,6 +5933,10 @@ cs_matrix_structure_create_msr_shared(bool                    have_diag,
   ms->numbering = numbering;
   ms->assembler = NULL;
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_structure(ms, OFFLOAD_MAP);
+#endif
+
   return ms;
 }
 
@@ -5776,6 +5981,10 @@ cs_matrix_structure_create_from_assembler(cs_matrix_type_t        type,
 
   ms->assembler = ma;
 
+#ifdef HAVE_CUDA_OFFLOAD
+  _offload_map_structure(ms, OFFLOAD_MAP);
+#endif
+
   return ms;
 }
 
@@ -5793,6 +6002,10 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
   if (ms != NULL && *ms != NULL) {
 
     cs_matrix_structure_t *_ms = *ms;
+
+#ifdef HAVE_CUDA_OFFLOAD
+    _offload_map_structure(_ms, OFFLOAD_UNMAP);
+#endif
 
     _structure_destroy(_ms->type, &(_ms->structure));
 
@@ -5982,6 +6195,10 @@ cs_matrix_destroy(cs_matrix_t **matrix)
   if (matrix != NULL && *matrix != NULL) {
 
     cs_matrix_t *m = *matrix;
+
+#ifdef HAVE_CUDA_OFFLOAD
+    _offload_map_coeffs(m, OFFLOAD_UNMAP);
+#endif
 
     switch(m->type) {
     case CS_MATRIX_NATIVE:

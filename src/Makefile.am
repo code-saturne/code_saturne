@@ -27,7 +27,7 @@ SUBDIRS = . bft mei
 if HAVE_BACKEND
 SUBDIRS += \
 fvm gui \
-base cdo pprt alge mesh turb darc \
+base cuda cdo pprt alge mesh turb darc \
 atmo cfbl cogz comb ctwr elec lagr rayt \
 user user_examples apps
 endif

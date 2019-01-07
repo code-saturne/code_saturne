@@ -221,3 +221,13 @@ Makefile.in
 # /tests/
 /patches/*.patch
 /src/TAGS
+
+# Eclipse IDE meta files
+/.ptp-sync/
+.ptp-sync-folder
+.cproject
+.project
+.settings
+
+# Temporary files
+*~

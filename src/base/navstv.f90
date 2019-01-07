@@ -143,7 +143,8 @@ double precision, allocatable, dimension(:,:), target :: uvwk
 double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
-double precision, allocatable, dimension(:) :: phi
+double precision, pointer, dimension(:) :: phi
+type(c_ptr) :: phi_ptr
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
@@ -870,7 +871,8 @@ if (vcopt_u%iwarni.ge.1) then
 endif
 
 ! Allocate temporary arrays for the pressure resolution
-allocate(phi(ncelet))
+call cs_cuda_attempt_host_alloc(phi_ptr, ncelet)
+call c_f_pointer(phi_ptr, phi, [ncelet])
 
 if (ippmod(icompf).lt.0) then
 
@@ -1665,7 +1667,7 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(phi)
+call cs_cuda_attempt_host_free(phi_ptr)
 deallocate(trav)
 deallocate(dfrcxt)
 deallocate(w1)

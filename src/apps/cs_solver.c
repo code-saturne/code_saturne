@@ -53,6 +53,7 @@
 #include "cs_control.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
+#include "cs_cuda.h"
 #include "cs_domain_setup.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -605,6 +606,11 @@ main(int    argc,
   }
 #endif
 
+  // Initialize CUDA.
+# ifdef HAVE_CUDA_OFFLOAD
+  cs_cuda_initialize();
+# endif
+
   /* Default initialization */
 
 #if defined(_CS_ARCH_Linux)
@@ -674,6 +680,11 @@ main(int    argc,
 
   else
     cs_run();
+
+  // Release CUDA resources.
+# ifdef HAVE_CUDA_OFFLOAD
+  cs_cuda_finalize();
+# endif
 
   /* Return */
 

@@ -212,7 +212,8 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:,:) :: eswork
 double precision, allocatable, dimension(:,:), target :: grad
 double precision, allocatable, dimension(:,:), target :: hl_exp
-double precision, dimension(:,:), allocatable :: smbr
+double precision, pointer, dimension(:,:) :: smbr
+type(c_ptr) :: smbr_ptr
 double precision, dimension(:,:,:), allocatable :: fimp
 double precision, dimension(:,:), allocatable :: gavinj
 double precision, dimension(:,:), allocatable :: tsexp
@@ -301,7 +302,9 @@ else
 endif
 
 ! Allocate temporary arrays
-allocate(smbr(3,ncelet))
+call cs_cuda_attempt_host_alloc(smbr_ptr, 3*ncelet)
+call c_f_pointer(smbr_ptr, smbr, [3, ncelet])
+
 allocate(fimp(3,3,ncelet))
 allocate(tsexp(3,ncelet))
 allocate(tsimp(3,3,ncelet))
@@ -1781,7 +1784,7 @@ endif
 
 ! Free memory
 !------------
-deallocate(smbr)
+call cs_cuda_attempt_host_free(smbr_ptr)
 deallocate(fimp)
 deallocate(tsexp)
 deallocate(tsimp)

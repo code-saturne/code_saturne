@@ -512,6 +512,62 @@ if test "x$cs_have_openmp_f" = "xyes" ; then
 fi
 
 #------------------------------------------------------------------------------
+# Determine CUDA support
+#------------------------------------------------------------------------------
+
+
+cs_have_cuda_offload=no
+
+AC_ARG_ENABLE(cuda-offload,
+  [AS_HELP_STRING([--enable-cuda-offload], [enable CUDA offload])],
+  [
+    case "${enableval}" in
+      yes) cs_have_cuda_offload=yes ;;
+      no)  cs_have_cuda_offload=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-cuda-offload]) ;;
+    esac
+  ],
+  [ cs_have_cuda_offload=no ]
+)
+
+AC_MSG_CHECKING([for CUDA support])
+AC_MSG_RESULT($cs_have_cuda_offload)
+
+if test "x$cs_have_cuda_offload" = "xyes" ; then
+
+  saved_CXXFLAGS="$CXXFLAGS"
+  saved_LDFLAGS="$LDFLAGS"
+
+  # Select compute capabilities we want to support.
+  CUDA_COMPUTE_CAPABILITIES=""
+  CUDA_COMPUTE_CAPABILITIES="${CUDA_COMPUTE_CAPABILITIES} -gencode arch=compute_35,code=sm_35"
+  CUDA_COMPUTE_CAPABILITIES="${CUDA_COMPUTE_CAPABILITIES} -gencode arch=compute_37,code=sm_37"
+  CUDA_COMPUTE_CAPABILITIES="${CUDA_COMPUTE_CAPABILITIES} -gencode arch=compute_60,code=sm_60"
+  CUDA_COMPUTE_CAPABILITIES="${CUDA_COMPUTE_CAPABILITIES} -gencode arch=compute_70,code=sm_70" 
+
+  # Add CUDA offload default options 
+  CXXFLAGS="${CXXFLAGS} ${cxxflags_default_cuda_offload}"
+  CUDAFLAGS="-DHAVE_CONFIG_H -I../../ ${CUDA_COMPUTE_CAPABILITIES} --maxrregcount=64 -Xptxas -v "
+  
+  if test "x$debug" = xyes; then
+    CUDAFLAGS="${CUDAFLAGS} --device-debug"
+  fi
+  # Make sure we link against CUDA libraries
+  LDFLAGS="${LDFLAGS} ${ldflags_default_cuda_offload}"
+  LIBS="${LIBS} ${libs_default_cuda_offload}"
+
+  # Wrap C++ compilers around nvcc
+  CUDACC="nvcc -ccbin $CXX"
+  AC_SUBST(CUDACC)
+  AC_SUBST(CUDAFLAGS)  
+  AC_DEFINE([HAVE_CUDA_OFFLOAD], 1, [CUDA Offload Support])
+fi
+
+AC_SUBST(cs_have_cuda_offload)
+AM_CONDITIONAL(HAVE_CUDA_OFFLOAD, [test "${cs_have_cuda_offload}" = yes])
+
+
+#------------------------------------------------------------------------------
 # Checks for Python support.
 #------------------------------------------------------------------------------
 
@@ -693,6 +749,10 @@ elif test x$cs_have_catalyst = xyes ; then
   if test x$enable_shared = xno -o x$cs_have_plugin_catalyst = xno ; then
     cs_have_link_cxx=yes
   fi
+fi
+# CUDA files are interpreted as C++ files.
+if test x$cs_have_cuda_offload = xyes ; then
+  cs_have_link_cxx=yes
 fi
 if test x$user_CS_LD != "x" ; then
   CS_LD=$user_CS_LD
@@ -1161,6 +1221,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  src/turb/Makefile src/alge/Makefile src/mesh/Makefile
                  src/user/Makefile src/user_examples/Makefile
+                 src/cuda/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  salome/fsi_coupling/Makefile

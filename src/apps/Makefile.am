@@ -96,6 +96,7 @@ if HAVE_BACKEND
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cuda \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/cdo \
@@ -126,6 +127,7 @@ $(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/base/libcsbase.la \
 $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/base/libcsrenumber.la \
+$(top_builddir)/src/cuda/libcscuda.la \
 $(top_builddir)/src/pprt/libcspprt.la \
 $(top_builddir)/src/alge/libcsalge.la \
 $(top_builddir)/src/mesh/libcsmesh.la \

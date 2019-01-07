@@ -42,6 +42,7 @@
 # cxxflags_default_prf   # Added to $CXXFLAGS for profiling    (default: "-g")
 # cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
 # cxxflags_default_std   # C++ standard variant                (default: "")
+# cxxflags_default_cuda_offload # Added to $CXXFLAGS for CUDA Offl. (default: "-std=c++11 -I/usr/local/cuda/include")
 
 # fcflags_default        # Base FCFLAGS                       (default: "")
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
@@ -55,11 +56,13 @@
 # ldflags_default_opt    # Added to $LDFLAGS for optimization (default: "-O")
 # ldflags_default_prf    # Added to $LDFLAGS for profiling    (default: "-g")
 # ldflags_rpath          # Added to $LDFLAGS for shared libs  (default: "")
+# ldflags_default_cuda_offload # Added to $LDFLAGS for CUDA Offl. (default: "-L/usr/local/cuda/lib64 -L/usr/local/cuda/lib")
 
 # libs_default           # Base LIBS                          (default: "")
 # libs_default_dbg       # Added to $LIBS for debugging       (default: "")
 # libs_default_opt       # Added to $LIBS for optimization    (default: "")
 # libs_default_prf       # Added to $LIBS for profiling       (default: "")
+# libs_default_cuda_offload # Added to $LDFLAGS for CUDA Offl. (default: "-lcuda -lcudart")
 
 # Two other environment variable strings are defined, containing possibly
 # more detailed compiler information:
@@ -299,7 +302,6 @@ elif test "x$cs_gcc" = "xclang"; then
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
-  cflags_default_omp="-fopenmp=libomp"
 
 # Otherwise, are we using pathcc ?
 #---------------------------------
@@ -531,6 +533,7 @@ if test "x$cs_gxx" = "xg++"; then
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fopenmp"
   cxxflags_default_std="-ansi -funsigned-char"
+  cxxflags_default_cuda_offload="-std=c++11 -I/usr/local/cuda/include"
 
   # Modify default flags on certain systems
 
@@ -1057,6 +1060,9 @@ ldflags_default_prf="-g"
 
 if test "x$cs_linker_set" != "xyes" ; then
 
+  ldflags_default_cuda_offload="-L/usr/local/cuda/lib64 -L/usr/local/cuda/lib"
+  libs_default_cuda_offload="-lcuda -lcudart"
+  
   case "$host_os" in
 
     linux*)

@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_cuda.h"
 #include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -299,6 +300,11 @@ _cs_dot_xx_superblock(cs_lnum_t         n,
 {
   double dot_xx = 0.0;
 
+# ifdef HAVE_CUDA_OFFLOAD
+  if (cs_cuda_dot_product_xx(&dot_xx, x, n))
+    return dot_xx;
+# endif
+
 # pragma omp parallel reduction(+:dot_xx) if (n > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
@@ -360,6 +366,11 @@ _cs_dot_xx_xy_superblock(cs_lnum_t                    n,
                          double                      *xx,
                          double                      *xy)
 {
+# ifdef HAVE_CUDA_OFFLOAD
+  if (cs_cuda_dot_product_xx_xy(xx, xy, x, y,n))
+    return;
+# endif
+
   double dot_xx = 0.0, dot_xy = 0.0;
 
 # pragma omp parallel reduction(+:dot_xx, dot_xy) if (n > CS_THR_MIN)
@@ -433,6 +444,11 @@ _cs_dot_xy_yz_superblock(cs_lnum_t                    n,
                          double                      *xy,
                          double                      *yz)
 {
+# ifdef HAVE_CUDA_OFFLOAD
+  if (cs_cuda_dot_product_xy_yz(xy, yz, x, y, z, n))
+    return;
+# endif
+
   double dot_xy = 0.0, dot_yz = 0.0;
 
 # pragma omp parallel reduction(+:dot_xy, dot_yz) if (n > CS_THR_MIN)
