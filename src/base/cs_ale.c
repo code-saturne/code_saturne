@@ -95,13 +95,40 @@ cs_f_ale_get_pointers(int **iale)
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct {
+
+  /* Array of values to set the boundary conditions (array allocated to all
+     mesh vertices since there is no dedicated numbering to identify easily
+     vertices lying on the boundary */
+  cs_real_t    *vtx_values;
+
+  /* Pointer on a list of arrays of selected vertices for each zone associated
+     to a definition by array \ref CS_XDEF_BY_ARRAY for
+     CS_BOUNDARY_ALE_IMPOSED_VEL and CS_BOUNDARY_ALE_IMPOSED_DISP (definitions
+     by value or by a sliding condition are excluded. The position of the array
+     in the list is given implicitly and is related to the order in which the
+     boundary conditions are defined. (cf. \ref cs_ale_setup_boundaries
+     definition for more details). The aim of this list of arrays is to speed-up
+     the settings of the boundary conditions by avoiding doing several times the
+     same enforcement. */
+
+  int           n_selections;   /* Number of selections */
+  cs_lnum_t    *n_vertices;     /* Number of vertices in each selections  */
+  cs_lnum_t   **vtx_select;     /* List of vertices for each selection */
+
+} cs_ale_cdo_bc_t;
+
+/*============================================================================
  * Static global variables
  *============================================================================*/
 
-static cs_real_3_t *_vtx_coord0 = NULL;
+static cs_real_3_t  *_vtx_coord0 = NULL;
+static cs_ale_cdo_bc_t  *_cdo_bc = NULL;
 
 static bool cs_ale_active = false;
-
 
 /*----------------------------------------------------------------------------
  * Deprecated ALE boundary condition types
@@ -113,136 +140,30 @@ static bool cs_ale_active = false;
  };
 
 /*============================================================================
- * Static function pointers
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer relying on an analytic definition.
- *         Case of fixed velocity.
+ * \brief  Update the values of mesh vertices lying on a free surface boundary
+ *         condition.
  *
- * \param[in]      time     current physical time
- * \param[in]      n_pts    number of elements to consider
- * \param[in]      pt_ids   list of elements ids (to access coords and fill)
- * \param[in]      xyz      where to perform the evaluation
- * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] res      result of the function
+ * \param[in]  domain      pointer to a \ref cs_domain_t structure
+ * \param[in]  z           pointer to a \ref cs_zone_t structure
+ * \param[in]  select_id   id in the list of selected vertices
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_fixed_velocity(cs_real_t           time,
-                cs_lnum_t           n_pts,
-                const cs_lnum_t    *pt_ids,
-                const cs_real_t    *xyz,
-                bool                compact,
-                void               *input,
-                cs_real_t          *res)
+_free_surface(const cs_domain_t  *domain,
+              const cs_zone_t    *z,
+              const int           select_id)
 {
-  CS_UNUSED(xyz);
-  CS_UNUSED(time);
-
-  cs_real_3_t vel = {0., 0., 0.};
-  const char *z_name = (const char *)input;
-
-  /* Retrieving mesh velocity from GUI */
-  cs_gui_mobile_mesh_get_fixed_velocity(z_name, vel);
-
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
-    const cs_lnum_t  id = (pt_ids != NULL) ? 3*pt_ids[p] : 3*p;
-    const cs_lnum_t  off = (compact) ? 3*p : id;
-
-    res[off  ] = vel[0];
-    res[off+1] = vel[1];
-    res[off+2] = vel[2];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Function pointer relying on an analytic definition.
- *         Case of fixed displacement
- *
- * \param[in]      time     current physical time
- * \param[in]      n_pts    number of elements to consider
- * \param[in]      pt_ids   list of elements ids (to access coords and fill)
- * \param[in]      xyz      where to perform the evaluation
- * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] res      result of the function
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_fixed_displacement(cs_real_t           time,
-                    cs_lnum_t           n_pts,
-                    const cs_lnum_t    *pt_ids,
-                    const cs_real_t    *xyz,
-                    bool                compact,
-                    void               *input,
-                    cs_real_t          *res)
-{
-  CS_UNUSED(xyz);
-  CS_UNUSED(time);
-  CS_UNUSED(input);
-
-  const cs_real_3_t *restrict  disale
-    = (const cs_real_3_t *restrict)cs_field_by_name("disale")->val;
-  const cs_real_3_t *restrict  vtx_coord
-    = (const cs_real_3_t *restrict)cs_glob_mesh->vtx_coord;
-
-  cs_real_3_t *resv = (cs_real_3_t *)res;
-
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
-
-    const cs_lnum_t id = (pt_ids != NULL) ? pt_ids[p] : p;
-    const cs_lnum_t off = (compact) ? p : id;
-
-    for (cs_lnum_t c_id = 0; c_id < 3; c_id++) {
-      const cs_real_t  ddep
-        = disale[id][c_id] + _vtx_coord0[id][c_id] - vtx_coord[id][c_id];
-      resv[off][c_id] = ddep / cs_glob_time_step->dt_ref;
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Function pointer relying on an analytic definition.
- *         Case of free surface.
- *
- * \param[in]      time     current physical time
- * \param[in]      n_pts    number of elements to consider
- * \param[in]      pt_ids   list of elements ids (to access coords and fill)
- * \param[in]      xyz      where to perform the evaluation
- * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] res      result of the function
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_free_surface(cs_real_t           time,
-              cs_lnum_t           n_pts,
-              const cs_lnum_t    *pt_ids,
-              const cs_real_t    *xyz,
-              bool                compact,
-              void               *input,
-              cs_real_t          *res)
-{
-  CS_UNUSED(xyz);
-  CS_UNUSED(time);
-
-  const char *z_name = (const char *)input;
-
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
-  const cs_zone_t *z = cs_boundary_zone_by_name(z_name);
-  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_t *m = domain->mesh;
   const cs_real_3_t *restrict vtx_coord
     = (const cs_real_3_t *restrict)m->vtx_coord;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_real_3_t *restrict  b_face_normal
     = (const cs_real_3_t *restrict)mq->b_face_normal;
   const cs_real_3_t *restrict  b_face_cog
@@ -252,8 +173,6 @@ _free_surface(cs_real_t           time,
   int iflmab = cs_field_get_key_int(CS_F_(vel),
                                     cs_field_key_id("boundary_mass_flux_id"));
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
-
-  assert(pt_ids != NULL);
 
   /* Transform face flux to vertex displacement */
   cs_real_3_t *_mesh_vel = NULL;
@@ -286,7 +205,6 @@ _free_surface(cs_real_t           time,
       normal[1] * mf_inv_rho_n_dot_s,
       normal[2] * mf_inv_rho_n_dot_s
     };
-
 
     const cs_lnum_t s = m->b_face_vtx_idx[face_id];
     const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
@@ -327,7 +245,8 @@ _free_surface(cs_real_t           time,
       for (int i = 0; i < 3; i++)
         _mesh_vel[v_id1][i] += f_vel[i] * portion_surf;
     }
-  }
+
+  } /* Loop on selected border faces */
 
   /* Handle parallelism */
   if (m->vtx_interfaces != NULL) {
@@ -346,26 +265,188 @@ _free_surface(cs_real_t           time,
                          _v_surf);
   }
 
-  cs_real_3_t *resv = (cs_real_3_t *)res;
+  /* Loop on selected border vertices */
+  for (cs_lnum_t i = 0; i < _cdo_bc->n_vertices[select_id]; i++) {
 
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
-    const cs_lnum_t  v_id = (pt_ids != NULL) ? pt_ids[p] : p;
-    const cs_lnum_t  off = (compact) ? p : v_id;
+    const cs_lnum_t  v_id = _cdo_bc->vtx_select[select_id][i];
+    const double  invsurf = 1./_v_surf[v_id];
+    const cs_real_t  *_m_vel = (cs_real_t *)_mesh_vel + 3*v_id;
 
-    for (int i = 0; i < 3; i++) {
-      resv[off][i] = _mesh_vel[v_id][i]/_v_surf[v_id]; //FIXME  v_id or off ?
-    }
-  }
+    cs_real_t  *_val = _cdo_bc->vtx_values + 3*v_id;
+
+    for (int k = 0; k < 3; k++)
+      _val[k] = _m_vel[k] * invsurf;
+
+  } /* Loop on selected vertices */
 
   /* Free memory */
   BFT_FREE(_mesh_vel);
   BFT_FREE(_v_surf);
-
 }
 
-/*============================================================================
- * Private function definitions
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a new selection of vertices related to a definition by array
+ *        Update the cs_ale_cdo_bc_t structure.
+ *
+ * \param[in]      mesh     pointer to a \ref cs_mesh_t structure
+ * \param[in]      z        pointer to a cs_zone_t structure
+ * \param[in, out] vtag     tag array on vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_bc_list(const cs_mesh_t   *mesh,
+                const cs_zone_t   *z,
+                _Bool              vtag[])
+{
+  const cs_lnum_t  *bf2v_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t  *bf2v_lst = mesh->b_face_vtx_lst;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+  const int  id = _cdo_bc->n_selections;
+
+  cs_lnum_t  counter = 0;
+
+  _cdo_bc->n_selections++;
+  BFT_REALLOC(_cdo_bc->n_vertices, _cdo_bc->n_selections, cs_lnum_t);
+  BFT_REALLOC(_cdo_bc->vtx_select, _cdo_bc->n_selections, cs_lnum_t *);
+
+  /* Reset vtag */
+  memset(vtag, 0, n_vertices*sizeof(_Bool));
+
+  /* Count the number of vertices to select */
+  for (cs_lnum_t  i = 0; i < z->n_elts; i++) {
+
+    const cs_lnum_t  bf_id = z->elt_ids[i];
+    const cs_lnum_t  *idx = bf2v_idx + bf_id;
+    const cs_lnum_t  *lst = bf2v_lst + idx[0];
+
+    /* Loop on face vertices */
+    for (cs_lnum_t j = 0; j < idx[1]-idx[0]; j++) {
+      cs_lnum_t  v_id = lst[j];
+      if (!vtag[v_id]) {  /* Not already selected */
+        vtag[v_id] = true;
+        counter++;
+      }
+    }
+
+  } /* Loop on selected border faces */
+
+  _cdo_bc->n_vertices[id] = counter;
+  BFT_MALLOC(_cdo_bc->vtx_select[id], counter, cs_lnum_t);
+
+  /* Fill the list of selected vertices */
+  memset(vtag, 0, n_vertices*sizeof(_Bool));
+  counter = 0;
+  for (cs_lnum_t  i = 0; i < z->n_elts; i++) {
+
+    const cs_lnum_t  bf_id = z->elt_ids[i];
+    const cs_lnum_t  *idx = bf2v_idx + bf_id;
+    const cs_lnum_t  *lst = bf2v_lst + idx[0];
+
+    /* Loop on face vertices */
+    for (cs_lnum_t j = 0; j < idx[1]-idx[0]; j++) {
+      cs_lnum_t  v_id = lst[j];
+      if (!vtag[v_id]) {  /* Not already selected */
+        vtag[v_id] = true;
+        _cdo_bc->vtx_select[id][counter++] = v_id;
+      }
+    }
+
+  } /* Loop on selected border faces */
+
+  assert(counter == _cdo_bc->n_vertices[id]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This subroutine performs the solving of a Poisson equation
+ *        on the mesh velocity for ALE module. It also updates the mesh
+ *        displacement so that it can be used to update mass fluxes (due to
+ *        mesh displacement).
+ *
+ * \param[in]     domain        domain quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_bcs(const cs_domain_t  *domain)
+{
+  const cs_mesh_t  *mesh = domain->mesh;
+
+  /* Only a part of the boundaries has to be updated */
+  int  select_id = 0;
+  for (int b_id = 0; b_id < domain->ale_boundaries->n_boundaries; b_id++) {
+
+    const int z_id = domain->ale_boundaries->zone_ids[b_id];
+    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
+
+    switch(domain->ale_boundaries->types[b_id]) {
+
+    case CS_BOUNDARY_ALE_IMPOSED_VEL:
+      {
+        /* Retrieve the velocity to enforce */
+        cs_real_3_t vel = {0., 0., 0.};
+        cs_gui_mobile_mesh_get_fixed_velocity(z->name, vel);
+
+        assert(select_id < _cdo_bc->n_selections);
+
+        /* Loop on selected border vertices */
+        for (cs_lnum_t i = 0; i < _cdo_bc->n_vertices[select_id]; i++) {
+
+          cs_real_t  *_val
+            = _cdo_bc->vtx_values + 3*_cdo_bc->vtx_select[select_id][i];
+          _val[0] = vel[0];
+          _val[1] = vel[1];
+          _val[2] = vel[2];
+
+        }
+
+        select_id++;
+      }
+      break;
+
+    case CS_BOUNDARY_ALE_IMPOSED_DISP:
+      {
+        const cs_real_3_t *restrict  disale
+          = (const cs_real_3_t *restrict)cs_field_by_name("disale")->val;
+        const cs_real_t *restrict  vtx_coord
+          = (const cs_real_t *restrict)mesh->vtx_coord;
+        const cs_real_t  invdt = 1./domain->time_step->dt_ref; /* JB: dt[0] ? */
+
+        assert(select_id < _cdo_bc->n_selections);
+
+        /* Loop on selected border vertices */
+        for (cs_lnum_t i = 0; i < _cdo_bc->n_vertices[select_id]; i++) {
+
+          const cs_lnum_t  v_id = _cdo_bc->vtx_select[select_id][i];
+          const cs_real_t  *_dpl = (cs_real_t *)disale + 3*v_id;
+          const cs_real_t  *restrict  _xyz = vtx_coord + 3*v_id;
+          const cs_real_t  *restrict  _xyz0 = _vtx_coord0 + 3*v_id;
+
+          cs_real_t  *_val = _cdo_bc->vtx_values + 3*v_id;
+
+          for (int k = 0; k < 3; k++)
+            _val[k] = (_dpl[k] + _xyz0[k] - _xyz[k])* invdt;
+
+        } /* Loop on selected vertices */
+
+        select_id++;
+      }
+      break;
+
+    case CS_BOUNDARY_ALE_FREE_SURFACE:
+      assert(select_id < _cdo_bc->n_selections);
+      _free_surface(domain, z, select_id);
+      select_id++;
+      break;
+
+    default:
+      break; /* Nothing to do */
+    }
+
+  } /* Loop on ALE boundaries */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -385,12 +466,11 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
 {
   const cs_mesh_t  *m = domain->mesh;
 
-  /* Retrieving fields */
-  cs_real_3_t  *disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
-  cs_real_3_t  *disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
-
   /* Build and solve equation on the mesh velocity */
   cs_equation_t *eq = cs_equation_by_name("mesh_velocity");
+
+  /* Update the values of boundary mesh vertices */
+  _update_bcs(domain);
 
   if (cs_equation_uses_new_mechanism(eq))
     cs_equation_solve_steady_state(m, eq);
@@ -405,14 +485,15 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
 
   }
 
+  /* Retrieving fields */
+  cs_real_3_t *disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
+  cs_real_3_t *disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
   cs_real_3_t *m_vel = (cs_real_3_t *)(cs_field_by_name("mesh_velocity")->val);
 
   for (cs_lnum_t v = 0; v < m->n_vertices; v++) {
     if (impale[v] == 0) {
-      for (int c_id = 0; c_id < 3; c_id++) {
-        disale[v][c_id] =  disala[v][c_id]
-                         + m_vel[v][c_id] * domain->time_step->dt_ref;
-      }
+      for (int k = 0; k < 3; k++)
+        disale[v][k] = disala[v][k] + m_vel[v][k] * domain->time_step->dt_ref;
     }
   }
 }
@@ -1006,7 +1087,6 @@ cs_ale_solve_mesh_velocity(const int   iterns,
 
   else if (cs_glob_ale == CS_ALE_CDO)
     _ale_solve_poisson_cdo(cs_glob_domain, impale);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1108,7 +1188,26 @@ cs_ale_init_setup(cs_domain_t   *domain)
 void
 cs_ale_setup_boundaries(const cs_domain_t   *domain)
 {
+  const cs_mesh_t  *mesh = domain->mesh;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
+
   cs_equation_param_t *eqp = cs_equation_param_by_name("mesh_velocity");
+
+  if (_cdo_bc == NULL) {
+
+    BFT_MALLOC(_cdo_bc, 1, cs_ale_cdo_bc_t);
+
+    BFT_MALLOC(_cdo_bc->vtx_values, 3*n_vertices, cs_real_t);
+    memset(_cdo_bc->vtx_values, 0, 3*n_vertices*sizeof(cs_real_t));
+
+    _cdo_bc->n_selections = 0;
+    _cdo_bc->n_vertices = NULL;
+    _cdo_bc->vtx_select = NULL;
+
+  }
+
+  _Bool  *vtag = NULL;
+  BFT_MALLOC(vtag, n_vertices, _Bool);
 
   for (int i = 0;  i < domain->ale_boundaries->n_boundaries; i++) {
 
@@ -1124,37 +1223,48 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
         cs_equation_add_bc_by_value(eqp,
                                     CS_PARAM_BC_HMG_DIRICHLET,
                                     z->name,
-                                    &bc_value);
+                                    bc_value);
       }
       break;
 
     case CS_BOUNDARY_ALE_IMPOSED_VEL:
-      cs_equation_add_bc_by_analytic(eqp,
-                                     CS_PARAM_BC_DIRICHLET,
-                                     z->name,
-                                     _fixed_velocity,
-                                     z->name); /* input */
+      cs_equation_add_bc_by_array(eqp,
+                                  CS_PARAM_BC_DIRICHLET,
+                                  z->name,
+                                  cs_flag_primal_vtx,
+                                  _cdo_bc->vtx_values,
+                                  false, /* Do not transfer ownership */
+                                  NULL); /* No index */
 
+      /* Add a new list of selected vertices. */
+      _update_bc_list(mesh, z, vtag);
       break;
 
     case CS_BOUNDARY_ALE_IMPOSED_DISP:
-      cs_equation_add_bc_by_analytic(eqp,
-                                     CS_PARAM_BC_DIRICHLET,
-                                     z->name,
-                                     _fixed_displacement,
-                                     z->name); /* input FIXME useless */
+      cs_equation_add_bc_by_array(eqp,
+                                  CS_PARAM_BC_DIRICHLET,
+                                  z->name,
+                                  cs_flag_primal_vtx,
+                                  _cdo_bc->vtx_values,
+                                  false, /* Do not transfer ownership */
+                                  NULL); /* No index */
 
+      /* Add a new list of selected vertices. */
+      _update_bc_list(mesh, z, vtag);
       break;
 
     case CS_BOUNDARY_ALE_FREE_SURFACE:
-      cs_equation_add_bc_by_analytic(eqp,
-                                     CS_PARAM_BC_DIRICHLET,
-                                     z->name,
-                                     _free_surface,
-                                     z->name); /* input */
+      cs_equation_add_bc_by_array(eqp,
+                                  CS_PARAM_BC_DIRICHLET,
+                                  z->name,
+                                  cs_flag_primal_vtx,
+                                  _cdo_bc->vtx_values,
+                                  false, /* Do not transfer ownership */
+                                  NULL); /* No index */
 
+      /* Add a new list of selected vertices. */
+      _update_bc_list(mesh, z, vtag);
       break;
-
 
     case CS_BOUNDARY_ALE_SLIDING:
       cs_equation_add_sliding_condition(eqp,
@@ -1169,6 +1279,8 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
 
   }
 
+  /* Free memory */
+  BFT_FREE(vtag);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1209,6 +1321,16 @@ void
 cs_ale_destroy_all(void)
 {
   BFT_FREE(_vtx_coord0);
+
+  assert(_cdo_bc != NULL);
+  BFT_FREE(_cdo_bc->vtx_values);
+
+  for (int i = 0; i < _cdo_bc->n_selections; i++)
+    BFT_FREE(_cdo_bc->vtx_select[i]);
+  BFT_FREE(_cdo_bc->vtx_select);
+  BFT_FREE(_cdo_bc->n_vertices);
+
+  BFT_FREE(_cdo_bc);
 
   return;
 }
