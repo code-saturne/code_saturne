@@ -341,6 +341,7 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
       case CS_CDO_BC_SLIDING:
         csys->has_sliding = true;
+        break;
 
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
