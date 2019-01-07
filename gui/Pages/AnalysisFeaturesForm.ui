@@ -6,23 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>564</width>
-    <height>491</height>
+    <width>401</width>
+    <height>512</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
-   <item row="1" column="0">
+   <item row="3" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Additional Features</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="2" column="1">
-       <widget class="QComboBox" name="comboBoxLagrangian"/>
-      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="labelLagrangian">
         <property name="text">
@@ -36,6 +33,9 @@
          <string>Fans (source-term model)</string>
         </property>
        </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="comboBoxLagrangian"/>
       </item>
       <item row="3" column="1">
        <widget class="QComboBox" name="comboBoxTurboMachinery">
@@ -67,7 +67,7 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="4" column="0">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -93,101 +93,104 @@
      </property>
      <layout class="QGridLayout">
       <item row="0" column="0">
-       <layout class="QGridLayout" name="gridLayoutModel">
-        <property name="horizontalSpacing">
-         <number>6</number>
+       <widget class="QRadioButton" name="radioButtonSinglePhase">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Base single-phase models.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
+        <property name="text">
+         <string>Standard Eulerian single phase</string>
         </property>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="comboBoxAtmospheric"/>
-        </item>
-        <item row="1" column="0">
-         <widget class="QRadioButton" name="radioButtonAtmospheric">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Models for atmospheric flows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Atmospheric</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QRadioButton" name="radioButtonSinglePhase">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Base single-phase models.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Standard Eulerian single phase</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="comboBoxSinglePhase"/>
-        </item>
-        <item row="2" column="0">
-         <widget class="QRadioButton" name="radioButtonJouleEffect">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Electric arcs and Joule heating.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Electric arcs</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QComboBox" name="comboBoxJouleEffect"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="QRadioButton" name="radioButtonGroundwater">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Groundwater flow (Richards-equation) model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Groundwater</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QComboBox" name="comboBoxGroundwater"/>
-        </item>
-        <item row="4" column="0">
-         <widget class="QRadioButton" name="radioButtonReactiveFlows">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gas, coal, biomass, and fuel combustion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Reactive flows (combusion)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QComboBox" name="comboBoxReactiveFlows"/>
-        </item>
-        <item row="5" column="1">
-         <widget class="QComboBox" name="comboBoxGasCombustion"/>
-        </item>
-        <item row="7" column="1">
-         <widget class="QComboBox" name="comboBoxNeptuneCFD"/>
-        </item>
-        <item row="7" column="0">
-         <widget class="QRadioButton" name="radioButtonNeptuneCFD">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Activate NEPTUNE_CFD module.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Eulerian multiphase (NEPTUNE_CFD)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QComboBox" name="comboBoxCoalCombustion"/>
-        </item>
-       </layout>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBoxSinglePhase"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="radioButtonAtmospheric">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Models for atmospheric flows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Atmospheric</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboBoxAtmospheric"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QRadioButton" name="radioButtonGroundwater">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Groundwater flow (Richards-equation) model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Groundwater</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="comboBoxJouleEffect"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QRadioButton" name="radioButtonReactiveFlows">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gas, coal, biomass, and fuel combustion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Reactive flows (combusion)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QComboBox" name="comboBoxReactiveFlows"/>
+      </item>
+      <item row="3" column="1">
+       <widget class="QComboBox" name="comboBoxGroundwater"/>
+      </item>
+      <item row="6" column="1">
+       <widget class="QComboBox" name="comboBoxCoalCombustion"/>
+      </item>
+      <item row="5" column="1">
+       <widget class="QComboBox" name="comboBoxGasCombustion"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QRadioButton" name="radioButtonJouleEffect">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Electric arcs and Joule heating.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Electric arcs</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QComboBox" name="comboBoxNeptuneCFD"/>
+      </item>
+      <item row="7" column="0">
+       <widget class="QRadioButton" name="radioButtonNeptuneCFD">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Activate NEPTUNE_CFD module.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Eulerian multiphase (NEPTUNE_CFD)</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
+   </item>
+   <item row="0" column="1">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>
