@@ -125,7 +125,6 @@ SourceTermsView.py \
 StartRestartModel.py \
 StartRestartView.py \
 ThermalRadiationModel.py \
-ThermalRadiationView.py \
 ThermalScalarModel.py \
 ThermalView.py \
 TimeAveragesModel.py \
