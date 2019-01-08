@@ -958,7 +958,7 @@ Calculation management
         self.setRowShow(self.tr('Main fields'), (p_module == 'neptune_cfd'))
         self.setRowShow(self.tr('Deformable mesh'), m_ale)
         self.setRowShow(self.tr('Turbulence models'))
-        self.setRowShow(self.tr('Thermal model'), (m_thermal > -1 and not is_ncfd))
+        self.setRowShow(self.tr('Thermal model'), (m_thermal > -1))
         self.setRowShow(self.tr('Body forces'), (not m_gwf))
         self.setRowShow(self.tr('Gas combustion'), m_gas_comb)
         self.setRowShow(self.tr('Pulverized fuel combustion'), m_sf_comb)

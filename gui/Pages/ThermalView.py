@@ -58,6 +58,7 @@ from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 from code_saturne.Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.MainFieldsModel import MainFieldsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -196,7 +197,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         self.coal_or_gas = "off"
 
-        if case.xmlRootNode().tagName == "Code_Saturne_GUI":
+        if self.case['package'].name == 'code_saturne':
             from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
             self.coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
             del CoalCombustionModel
@@ -231,25 +232,26 @@ class ThermalView(QWidget, Ui_ThermalForm):
             if sca not in self.thermal.thermalScalarModelsList():
                 self.modelThermal.disableItem(str_model=sca)
 
-        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+        if self.case['package'].name != 'code_saturne':
             self.comboBoxThermal.setEnabled(False)
 
-        elif ElectricalModel(self.case).getElectricalModel() != 'off':
-            self.comboBoxThermal.setEnabled(False)
-
-        elif self.coal_or_gas != 'off':
-            self.comboBoxThermal.setEnabled(False)
-
-        if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            self.comboBoxThermal.setEnabled(False)
         else:
-            self.modelThermal.delItem(6)
+            if ElectricalModel(self.case).getElectricalModel() != 'off':
+                self.comboBoxThermal.setEnabled(False)
 
-        if AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel() != 'off':
-            self.comboBoxThermal.setEnabled(False)
-        else:
-            self.modelThermal.delItem(5)
-            self.modelThermal.delItem(4)
+            elif self.coal_or_gas != 'off':
+                self.comboBoxThermal.setEnabled(False)
+
+            if CompressibleModel(self.case).getCompressibleModel() != 'off':
+                self.comboBoxThermal.setEnabled(False)
+            else:
+                self.modelThermal.delItem(6)
+
+            if AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel() != 'off':
+                self.comboBoxThermal.setEnabled(False)
+            else:
+                self.modelThermal.delItem(5)
+                self.modelThermal.delItem(4)
 
         # Select the thermal scalar model
 
@@ -270,7 +272,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
         Update for radiation model
         """
-        if model == 'off':
+        if self.case['package'].name == "code_saturne" and model == 'off':
             self.ThermalRadiationGroupBox.hide()
             return
 
