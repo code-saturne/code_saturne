@@ -35,10 +35,6 @@
  * MED library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_PARAMEDMEM)
-#include <ParaFIELD.hxx>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -47,8 +43,16 @@
 
 /*----------------------------------------------------------------------------*/
 
+static int cs_medcpl_cell_field = 0;
+static int cs_medcpl_vertex_field = 1;
+
+static int cs_medcpl_no_time = 0;
+static int cs_medcpl_one_time = 1;
+static int cs_medcpl_linear_time = 2;
+
+/*----------------------------------------------------------------------------*/
+
 #if defined(HAVE_PARAMEDMEM)
-using namespace MEDCoupling;
 
 /*=============================================================================
  * Local Macro Definitions
@@ -204,8 +208,8 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                         const char                *name,
                         int                        mesh_id,
                         int                        dim,
-                        TypeOfField                type,
-                        TypeOfTimeDiscretization   td,
+                        int                        medcpl_field_type,
+                        int                        medcpl_time_discr,
                         int                        dirflag);
 
 /*----------------------------------------------------------------------------
@@ -225,21 +229,6 @@ int
 cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
                            int                        mesh_id,
                            const char                *name);
-
-/*----------------------------------------------------------------------------
- * Return ParaMEDMEM::ParaFIELD object associated with a given field id.
- *
- * parameters:
- *   coupling  <-- pointer to associated coupling
- *   field_id  <-- id of associated field structure
- *
- * returns:
- *   pointer to ParaFIELD to which values were assigned
- *----------------------------------------------------------------------------*/
-
-MEDCoupling::ParaFIELD *
-cs_paramedmem_field_get(cs_paramedmem_coupling_t  *coupling,
-                        int                        field_id);
 
 /*----------------------------------------------------------------------------
  * Write field associated with a mesh to MEDCoupling.

@@ -614,14 +614,28 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                         const char                *name,
                         int                        mesh_id,
                         int                        dim,
-                        TypeOfField                type,
-                        TypeOfTimeDiscretization   td,
+                        int                        medcpl_field_type,
+                        int                        medcpl_time_discr,
                         int                        dirflag)
 {
   int f_id = -1;
   _paramedmem_mesh_t *mesh = coupling->meshes[mesh_id];
 
   /* Prepare coupling structure */
+  TypeOfField type = ON_CELLS;
+  if (medcpl_field_type == cs_medcpl_cell_field)
+    type = ON_CELLS;
+  else if (medcpl_field_type == cs_medcpl_vertex_field)
+    type = ON_NODES;
+
+  TypeOfTimeDiscretization td = NO_TIME;
+  if (medcpl_time_discr == cs_medcpl_no_time)
+    td = NO_TIME;
+  else if (medcpl_time_discr == cs_medcpl_one_time)
+    td = ONE_TIME;
+  else if (medcpl_time_discr == cs_medcpl_linear_time)
+    td = LINEAR_TIME;
+
 
   f_id = coupling->n_fields;
 
@@ -730,29 +744,6 @@ cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
   }
 
   return -1;
-}
-
-/*----------------------------------------------------------------------------
- * Return ParaMEDMEM::ParaFIELD object associated with a given field id.
- *
- * parameters:
- *   coupling  <-- pointer to associated coupling
- *   field_id  <-- id of associated field structure
- *
- * returns:
- *   pointer to ParaFIELD to which values were assigned
- *----------------------------------------------------------------------------*/
-
-MEDCoupling::ParaFIELD *
-cs_paramedmem_field_get(cs_paramedmem_coupling_t  *coupling,
-                        int                        field_id)
-{
-  ParaFIELD *pf = NULL;
-
-  if (field_id >= 0)
-    pf = coupling->fields[field_id]->pf;
-
-  return pf;
 }
 
 /*----------------------------------------------------------------------------
