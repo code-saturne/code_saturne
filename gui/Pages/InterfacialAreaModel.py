@@ -64,6 +64,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         default['areamodel']       = "constant"
         default['sourcetermgas']   = "no_coalescence_no_fragmentation"
         default['sourcetermsolid'] = "no_coalescence_no_fragmentation"
+
         if InterfacialForcesModel(self.case).getBubblesForLIMStatus() == 'on':
             default['areamodel']     = "interfacial_area_transport"
             default['sourcetermgas'] = "ruyer_seiler"
@@ -149,9 +150,13 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         """
         self.isInList(str(fieldId),self.getFieldIdList())
 
+        cte_field_1 = InterfacialForcesModel(self.case).getContinuousFieldList()[0]
+
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         if node == None :
             model = self.defaultValues()['areamodel']
+            if int(fieldId) == int(cte_field_1):
+                model = 'constant'
             self.setAreaModel(fieldId, model)
             node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         model = node['model']
