@@ -1712,21 +1712,23 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 
     /* Retrieve information from mesh location structures */
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids
+    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
-  cs_quadrature_tetra_integral_t
-    *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
+  cs_quadrature_tetra_integral_t *qfunc
+    = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcsd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
       _dcsd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
@@ -1736,11 +1738,11 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcvd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
       _dcvd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
@@ -2217,6 +2219,8 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids
+    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_range_set_t  *rs = NULL;
   cs_quadrature_tria_integral_t
@@ -2229,7 +2233,7 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
     rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
     _pfsa_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
@@ -2237,7 +2241,7 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
     rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
 
     _pfva_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
@@ -2376,6 +2380,8 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids
+    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
@@ -2385,13 +2391,13 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
   case 1: /* Scalar-valued */
     _pcsa_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
   case 3: /* Vector-valued */
     _pcva_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
