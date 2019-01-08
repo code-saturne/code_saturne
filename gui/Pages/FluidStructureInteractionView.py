@@ -790,7 +790,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
         # Populate QTableView model
         for zone in modelLocalization.getZones():
-            boundary = Boundary("mobile_boundary", zone.getLabel(), self.case)
+            boundary = Boundary(zone.getNature(), zone.getLabel(), self.case)
             if boundary.getALEChoice() == filterALE:
                 tableViewItemModel.addItem(zone)
         return tableViewItemModel
