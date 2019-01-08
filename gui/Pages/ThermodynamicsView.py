@@ -788,6 +788,26 @@ temperature = enthalpy / 1000;
         self.groupBoxEauvap.hide()
         if method == "user properties" :
             self.groupBoxConstantProperties.show()
+
+            # Deactivate Thermal variable if no energy resolution
+            mfm = MainFieldsModel(self.case)
+            if mfm.getEnergyResolution(fieldId) == 'off':
+                self.comboBoxSpecificHeat.setEnabled(False)
+                self.lineEditSpecificHeat.setReadOnly(True)
+                self.lineEditSpecificHeat.setEnabled(False)
+
+                self.comboBoxThermalConductivity.setEnabled(False)
+                self.lineEditThermalConductivity.setReadOnly(True)
+                self.lineEditThermalConductivity.setEnabled(False)
+            else:
+                self.comboBoxSpecificHeat.setEnabled(True)
+                self.lineEditSpecificHeat.setReadOnly(False)
+                self.lineEditSpecificHeat.setEnabled(True)
+
+                self.comboBoxThermalConductivity.setEnabled(True)
+                self.lineEditThermalConductivity.setReadOnly(False)
+                self.lineEditThermalConductivity.setEnabled(True)
+
             self.groupBoxCompressible.hide()
             if self.mdl.getFieldNature(fieldId) == "solid":
                 self.groupBoxSolidProp.show()
