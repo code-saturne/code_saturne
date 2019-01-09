@@ -65,7 +65,7 @@ log.setLevel(GuiParam.DEBUG)
 
 try:
     _fromUtf8 = QString.fromUtf8
-except AttributeError:
+except Exception:
     def _fromUtf8(s):
         return s
 
