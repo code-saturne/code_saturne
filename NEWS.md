@@ -3,6 +3,9 @@ Release 5.3.2 (unreleased)
 
 Bug fixes:
 
+- CFDSTUDY (Salome): fix issues with dissapearing windows onserved on
+  some actual systems such as Debian 9 and Ubuntu 16.04.
+
 - Lagrangian Module: fix crash in some cases with no deposition model.
 
 - Fix use of unitialized values impacting cases with head losses without
