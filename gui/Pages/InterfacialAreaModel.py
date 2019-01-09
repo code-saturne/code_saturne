@@ -51,7 +51,6 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         self.__AreaModel       = ['constant', 'interfacial_area_transport']
         self.__GasSourceTerm   = ['no_coalescence_no_fragmentation','wei_yao','kamp_colin','ruyer_seiler']
         self.__SolidSourceTerm = ['no_coalescence_no_fragmentation']
-        self.__Solution        = ['uncoupled','coupled']
 
 
     def defaultValues(self):
@@ -87,12 +86,6 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         else :
             list = self.__SolidSourceTerm
         return list
-
-
-    def getSolutionMethodList(self) :
-        """
-        """
-        return self.__Solution
 
 
     def getVariableAIList(self) :
@@ -210,34 +203,6 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
 
 
     @Variables.undoLocal
-    def setSolutionMethod(self, fieldId, model) :
-        """
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-        self.isInList(model, self.getSolutionMethodList())
-
-        node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
-        childNode = node.xmlInitChildNode('solmeth')
-        childNode.xmlSetAttribute(model = model)
-
-
-    @Variables.noUndo
-    def getSolutionMethod(self, fieldId) :
-        """
-        """
-        self.isInList(str(fieldId),self.getFieldIdList())
-
-        node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
-        noden = node.xmlGetNode('solmeth')
-        if noden == None :
-            model = self.defaultValues()['coupling']
-            self.setSolutionMethod(fieldId, model)
-        model = node.xmlGetNode('solmeth')['model']
-
-        return model
-
-
-    @Variables.undoLocal
     def setInitialDiameter(self, fieldId, value) :
         """
         """
@@ -335,13 +300,6 @@ class InterfacialAreaTestCase(ModelTest):
             'Could not get SourceTermList'
 
 
-    def checkGetSolutionMethodList(self):
-        """Check whether the InterfacialAreaModel class could get the SolutionMethod list"""
-        mdl = InterfacialAreaModel(self.case)
-        assert mdl.getSolutionMethodList() == ['uncoupled', 'coupled'],\
-            'Could not get SolutionMethodList'
-
-
     def checkGetandSetAreaModel(self):
         """Check whether the InterfacialAreaModel class could set and get AreaModel"""
         MainFieldsModel(self.case).addField()
@@ -371,23 +329,6 @@ class InterfacialAreaTestCase(ModelTest):
             'Could not set SourceTerm'
         assert mdl.getSourceTerm('1') == 'wei_yao',\
             'Could not get SourceTerm'
-
-
-    def checkGetandSetSolutionMethod(self):
-        """Check whether the InterfacialAreaModel class could set and get SolutionMethod"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
-        mdl = InterfacialAreaModel(self.case)
-        mdl.setAreaModel('1','interfacial_area_transport')
-        mdl.setSolutionMethod('1','coupled')
-        doc = '''<interfacial_area_diameter>
-                         <field field_id="1" model="interfacial_area_transport">
-                                 <solmeth model="coupled"/>
-                         </field>
-                 </interfacial_area_diameter>'''
-        assert mdl.XMLAreaDiam == self.xmlNodeFromString(doc),\
-            'Could not set SolutionMethod'
-        assert mdl.getSolutionMethod('1') == 'coupled',\
-            'Could not set SolutionMethod'
 
 
     def checkGetandSetInitialDiameter(self):

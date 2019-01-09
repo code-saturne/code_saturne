@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>659</width>
-    <height>815</height>
+    <height>833</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -88,6 +88,9 @@
            </property>
            <item>
             <widget class="QLabel" name="label_6">
+             <property name="toolTip">
+              <string>This initialization is not possible for compressible fields</string>
+             </property>
              <property name="text">
               <string>Initialization of velocity
 (computation of potential state)</string>
@@ -661,7 +664,7 @@ after last restart</string>
        </widget>
       </item>
       <item row="6" column="1">
-       <widget class="QGroupBox" name="">
+       <widget class="QGroupBox" name="groupBox">
         <property name="title">
          <string>Advanced options</string>
         </property>

@@ -1,30 +1,31 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>InterfacialArea</class>
- <widget class="QWidget" name="InterfacialArea" >
-  <property name="geometry" >
+ <widget class="QWidget" name="InterfacialArea">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>659</width>
-    <height>383</height>
+    <height>435</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_5" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBox" >
-     <property name="title" >
+  <layout class="QGridLayout" name="gridLayout_5">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
       <string>Field label</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2" >
-      <item row="0" column="0" >
-       <spacer name="horizontalSpacer_7" >
-        <property name="orientation" >
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <spacer name="horizontalSpacer_7">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>264</width>
           <height>20</height>
@@ -32,9 +33,9 @@
         </property>
        </spacer>
       </item>
-      <item row="0" column="1" >
-       <widget class="QComboBox" name="comboBoxField" >
-        <property name="minimumSize" >
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBoxField">
+        <property name="minimumSize">
          <size>
           <width>120</width>
           <height>0</height>
@@ -42,12 +43,12 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2" >
-       <spacer name="horizontalSpacer_8" >
-        <property name="orientation" >
+      <item row="0" column="2">
+       <spacer name="horizontalSpacer_8">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>263</width>
           <height>20</height>
@@ -58,29 +59,29 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" >
-    <widget class="QGroupBox" name="groupBoxModel" >
-     <property name="title" >
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBoxModel">
+     <property name="title">
       <string>Model</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_3" >
-      <item row="0" column="1" >
-       <layout class="QVBoxLayout" name="verticalLayout_2" >
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_3" >
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QLabel" name="label" >
-            <property name="text" >
+           <widget class="QLabel" name="label">
+            <property name="text">
              <string>Model</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer_5" >
-            <property name="orientation" >
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>16</width>
               <height>20</height>
@@ -89,25 +90,25 @@
            </spacer>
           </item>
           <item>
-           <widget class="QComboBox" name="comboBoxModel" />
+           <widget class="QComboBox" name="comboBoxModel"/>
           </item>
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_4" >
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="QLabel" name="label_4" >
-            <property name="text" >
+           <widget class="QLabel" name="label_4">
+            <property name="text">
              <string>Default diameter</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer_6" >
-            <property name="orientation" >
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>16</width>
               <height>20</height>
@@ -116,11 +117,11 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEditDefaultDiameter" />
+           <widget class="QLineEdit" name="lineEditDefaultDiameter"/>
           </item>
           <item>
-           <widget class="QLabel" name="label_5" >
-            <property name="text" >
+           <widget class="QLabel" name="label_5">
+            <property name="text">
              <string>m</string>
             </property>
            </widget>
@@ -129,12 +130,12 @@
         </item>
        </layout>
       </item>
-      <item row="1" column="0" >
-       <spacer name="horizontalSpacer_9" >
-        <property name="orientation" >
+      <item row="1" column="0">
+       <spacer name="horizontalSpacer_9">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>160</width>
           <height>20</height>
@@ -142,12 +143,12 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="2" >
-       <spacer name="horizontalSpacer_10" >
-        <property name="orientation" >
+      <item row="1" column="2">
+       <spacer name="horizontalSpacer_10">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>160</width>
           <height>20</height>
@@ -155,27 +156,27 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="1" >
-       <widget class="QGroupBox" name="groupBoxAreaTransport" >
-        <property name="title" >
+      <item row="1" column="1">
+       <widget class="QGroupBox" name="groupBoxAreaTransport">
+        <property name="title">
          <string/>
         </property>
-        <layout class="QGridLayout" name="gridLayout" >
-         <item row="0" column="0" >
-          <layout class="QHBoxLayout" name="horizontalLayout_5" >
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QLabel" name="label_2" >
-             <property name="text" >
+            <widget class="QLabel" name="label_2">
+             <property name="text">
               <string>Source term</string>
              </property>
             </widget>
            </item>
            <item>
-            <spacer name="horizontalSpacer" >
-             <property name="orientation" >
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" stdset="0" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>16</width>
                <height>20</height>
@@ -184,34 +185,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBoxSourceTerm" />
-           </item>
-          </layout>
-         </item>
-         <item row="1" column="0" >
-          <layout class="QHBoxLayout" name="horizontalLayout_6" >
-           <item>
-            <widget class="QLabel" name="label_3" >
-             <property name="text" >
-              <string>Solution method</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_2" >
-             <property name="orientation" >
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0" >
-              <size>
-               <width>16</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QComboBox" name="comboBoxSolutionMethod" />
+            <widget class="QComboBox" name="comboBoxSourceTerm"/>
            </item>
           </layout>
          </item>
@@ -221,18 +195,18 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0" >
-    <widget class="QGroupBox" name="groupBoxMinMaxDiameter" >
-     <property name="title" >
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBoxMinMaxDiameter">
+     <property name="title">
       <string/>
      </property>
-     <layout class="QGridLayout" name="gridLayout_4" >
-      <item row="0" column="0" >
-       <spacer name="horizontalSpacer_11" >
-        <property name="orientation" >
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <spacer name="horizontalSpacer_11">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>176</width>
           <height>20</height>
@@ -240,23 +214,23 @@
         </property>
        </spacer>
       </item>
-      <item row="0" column="1" >
-       <layout class="QVBoxLayout" name="verticalLayout" >
+      <item row="0" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout" >
+         <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
-           <widget class="QLabel" name="label_6" >
-            <property name="text" >
+           <widget class="QLabel" name="label_6">
+            <property name="text">
              <string>Minimum diameter</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer_3" >
-            <property name="orientation" >
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>16</width>
               <height>20</height>
@@ -265,11 +239,11 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEditMinDiameter" />
+           <widget class="QLineEdit" name="lineEditMinDiameter"/>
           </item>
           <item>
-           <widget class="QLabel" name="label_8" >
-            <property name="text" >
+           <widget class="QLabel" name="label_8">
+            <property name="text">
              <string>m</string>
             </property>
            </widget>
@@ -277,20 +251,20 @@
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2" >
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QLabel" name="label_7" >
-            <property name="text" >
+           <widget class="QLabel" name="label_7">
+            <property name="text">
              <string>Maximum diameter</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer_4" >
-            <property name="orientation" >
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>16</width>
               <height>20</height>
@@ -299,11 +273,11 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEditMaxDiameter" />
+           <widget class="QLineEdit" name="lineEditMaxDiameter"/>
           </item>
           <item>
-           <widget class="QLabel" name="label_9" >
-            <property name="text" >
+           <widget class="QLabel" name="label_9">
+            <property name="text">
              <string>m</string>
             </property>
            </widget>
@@ -312,12 +286,12 @@
         </item>
        </layout>
       </item>
-      <item row="0" column="2" >
-       <spacer name="horizontalSpacer_12" >
-        <property name="orientation" >
+      <item row="0" column="2">
+       <spacer name="horizontalSpacer_12">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>176</width>
           <height>20</height>
@@ -328,12 +302,12 @@
      </layout>
     </widget>
    </item>
-   <item row="3" column="0" >
+   <item row="3" column="0">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>641</width>
        <height>16</height>

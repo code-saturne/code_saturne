@@ -196,7 +196,8 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         self.modelVelocityAlgorithm.addItem(self.tr("Coupled"), "coupled_difvitc")
         self.modelVelocityAlgorithm.addItem(self.tr("Mean velocity - relative velocity"), "mean_velocity_relative_velocity")
 
-        if len(MainFieldsModel(self.case).getFieldIdList()) < 2 :
+        mfm = MainFieldsModel(self.case)
+        if len(mfm.getFieldIdList()) < 2 :
             self.modelVelocityAlgorithm.disableItem(2)
         else :
             self.modelVelocityAlgorithm.enableItem(2)
@@ -261,11 +262,22 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.checkBoxRestart.setChecked(0)
             self.groupBoxRestartOption.hide()
 
-        status = self.mdl.getPotentielState()
-        if status == 'on':
-            self.checkBoxPotentialState.setChecked(1)
-        else :
+        is_compressible = False
+        for fid in mfm.getFieldIdList():
+            if mfm.getCompressibleStatus(int(fid)) == 'on':
+                is_compressible = True
+                break
+
+        if is_compressible:
+            self.mdl.setPotentielState('off')
             self.checkBoxPotentialState.setChecked(0)
+            self.checkBoxPotentialState.setEnabled(False)
+        else:
+            status = self.mdl.getPotentielState()
+            if status == 'on':
+                self.checkBoxPotentialState.setChecked(1)
+            else :
+                self.checkBoxPotentialState.setChecked(0)
 
         status = self.mdl.getFacesReconstruction()
         if status == 'on':

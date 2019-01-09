@@ -121,10 +121,6 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.modelSourceTerm.addItem(self.tr("Ruyer & Seiler"),"ruyer_seiler")
         self.modelSourceTerm.disableItem(2)
 
-        self.modelSolutionMethod = ComboModel(self.comboBoxSolutionMethod, 2, 1)
-        self.modelSolutionMethod.addItem(self.tr("Uncoupled (after navsto)"),"uncoupled")
-        self.modelSolutionMethod.addItem(self.tr("Coupled (alpha-P-H cycle)"),"coupled")
-
         # Validators
         validatorDefDiam = DoubleValidator(self.lineEditDefaultDiameter, min = 0.0)
         validatorMinDiam = DoubleValidator(self.lineEditMinDiameter, min = 0.0)
@@ -142,7 +138,6 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.comboBoxField.activated[str].connect(self.slotField)
         self.comboBoxModel.activated[str].connect(self.slotModel)
         self.comboBoxSourceTerm.activated[str].connect(self.slotSourceTerm)
-        self.comboBoxSolutionMethod.activated[str].connect(self.slotSolutionMethod)
         self.lineEditDefaultDiameter.textChanged[str].connect(self.slotDefaultDiameter)
         self.lineEditMinDiameter.textChanged[str].connect(self.slotMinDiameter)
         self.lineEditMaxDiameter.textChanged[str].connect(self.slotMaxDiameter)
@@ -184,15 +179,6 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         """
         model = self.modelSourceTerm.dicoV2M[text]
         self.mdl.setSourceTerm(self.currentid, model)
-
-
-    @pyqtSlot(str)
-    def slotSolutionMethod(self, text):
-        """
-        INPUT type for choice of solution method
-        """
-        model = self.modelSolutionMethod.dicoV2M[text]
-        self.mdl.setSolutionMethod(self.currentid, model)
 
 
     @pyqtSlot(str)
@@ -239,9 +225,6 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.groupBoxAreaTransport.show()
             model = self.mdl.getSourceTerm(fieldId)
             self.modelSourceTerm.setItem(str_model = model)
-
-            model = self.mdl.getSolutionMethod(fieldId)
-            self.modelSolutionMethod.setItem(str_model = model)
 
             self.groupBoxMinMaxDiameter.show()
 
