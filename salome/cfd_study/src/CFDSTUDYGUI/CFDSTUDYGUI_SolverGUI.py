@@ -548,8 +548,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             _c_CFDGUI.showDocks(studyId)
             _c_CFDGUI.tabifyDockWindows(sgPyQt.getDesktop(),studyId)
 
-        updateObjectBrowser()
-
 
     def showDockWindows(self, studyId, xmlName, caseName, studyCFDName):
         """
