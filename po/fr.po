@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-12-01 02:47+0100\n"
+"POT-Creation-Date: 2019-01-09 17:06+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4751,6 +4751,10 @@ msgstr ""
 "du module thermique 1D en paroi.\n"
 "Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
+#, c-format
+msgid " %s: Boundary for ALE not allowed  %s."
+msgstr ""
+
 msgid "MPI_Alltoall and MPI_Alltoallv"
 msgstr "MPI_Alltoall et MPI_Alltoallv"
 
@@ -4996,6 +5000,13 @@ msgid ""
 "%s"
 msgstr ""
 "Il est impossible de rediriger les sorties erreur dans le fichier :\n"
+"%s"
+
+#, c-format
+msgid ""
+"Error opening log file:\n"
+"%s"
+msgstr "Erreur à l'ouverture du fichier journal :\n"
 "%s"
 
 #, c-format
@@ -7248,10 +7259,11 @@ msgstr ""
 
 msgid ""
 "while reading input data,\n"
-"with k-epsilon LP (iturb=21) or v2f model (iturb=50/51)"
+"with k-epsilon LP (iturb=21),k-epsilon LS (iturb=22) or v2f model "
+"(iturb=50/51)"
 msgstr ""
 "lors de la lecture des données d'entrée,\n"
-"avec les modèles k-epsilon LP (iturb=21) ou v2f (iturb=50/51)"
+"avec les modèles k-epsilon LP (iturb=21), k-epsilon LS (iturb=22) ou v2f (iturb=50/51)"
 
 msgid ""
 "while reading input data,\n"
@@ -7839,6 +7851,9 @@ msgstr "cellules adjacentes"
 msgid "no shared cell across threads"
 msgstr "pas de cellule partagée entre fils"
 
+msgid "adjacent faces"
+msgstr "faces adjacentes"
+
 msgid "    no value\n"
 msgstr "    aucune valeur\n"
 
@@ -7958,6 +7973,9 @@ msgstr "faces intérieures"
 msgid "boundary faces"
 msgstr "faces de bord"
 
+msgid "vertices"
+msgstr "sommets"
+
 msgid ""
 "\n"
 "Checking interior faces renumbering...\n"
@@ -8044,6 +8062,16 @@ msgstr ""
 "   renumérotation des faces de bord :\n"
 "     numérotation :                                %s\n"
 
+#, c-format
+msgid ""
+"\n"
+"   renumbering for vertices:\n"
+"     numbering:                           %s\n"
+msgstr ""
+"\n"
+"   renumérotation des sommets :\n"
+"     numérotation :                                %s\n"
+
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -8105,6 +8133,42 @@ msgid "  %s: section \"%s\" not present.\n"
 msgstr ""
 
 #, c-format
+msgid "  %s: location id %d for \"%s\" does not exist.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: location id %d for \"%s\" has size %llu, but %llu is expected.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: section \"%s\" at location id %d but not at %d.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: section \"%s\" has %d values per location and  not %d.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: section \"%s\" has %d values and not %d.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: section \"%s\" is not of character type.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: section \"%s\" is not of integer type.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: section \"%s\" is not of global number type.\n"
+msgstr ""
+
+#, c-format
+msgid "  %s: section \"%s\" is not of floating-point type.\n"
+msgstr ""
+
+#, c-format
 msgid "The %s directory cannot be created"
 msgstr "Le répertoire %s ne peut être créé"
 
@@ -8140,42 +8204,6 @@ msgstr ""
 
 msgid "  General information associated with the restart file:\n"
 msgstr "  Informations générales associées au fichier de reprise de calcul :\n"
-
-#, c-format
-msgid "  %s: location id %d for \"%s\" does not exist.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: location id %d for \"%s\" has size %llu, but %llu is expected.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" at location id %d but not at %d.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" has %d values per location and  not %d.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" has %d values and not %d.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" is not of character type.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" is not of integer type.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" is not of global number type.\n"
-msgstr ""
-
-#, c-format
-msgid "  %s: section \"%s\" is not of floating-point type.\n"
-msgstr ""
 
 #, c-format
 msgid ""
@@ -8522,13 +8550,14 @@ msgstr ""
 "    ivisse:      %14d (1: prise en compte)\n"
 "\n"
 
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "\n"
 "Stokes model\n"
 "------------\n"
 "\n"
-"    idilat:      %14d (1: without unsteady term\n"
+"    idilat:      %14d (0: Boussines approximation\n"
+"                                 1: without unsteady term\n"
 "                                    in the continuity equation\n"
 "                                 2: with unsteady term in\n"
 "                                    the continuity equation\n"
@@ -9590,9 +9619,6 @@ msgstr "faces intérieures"
 msgid "boundary_faces"
 msgstr "faces de bord"
 
-msgid " Convection term is not handled yet.\n"
-msgstr ""
-
 #, c-format
 msgid ""
 " Face %d not found.\n"
@@ -9756,6 +9782,9 @@ msgstr ""
 msgid "Invalid space scheme."
 msgstr ""
 
+msgid " Convection term is not handled yet.\n"
+msgstr ""
+
 msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
 
@@ -9780,17 +9809,20 @@ msgstr ""
 msgid "Fully unsteady"
 msgstr "Instationnaire"
 
-msgid "Uzawa-Augmented Lagrangian coupling"
-msgstr ""
-
 msgid "Artificial compressibility algorithm"
 msgstr ""
 
 msgid "Artificial compressibility solved with the VPP_eps algorithm"
 msgstr ""
 
+msgid "Monolithic"
+msgstr ""
+
 msgid "Incremental projection algorithm"
 msgstr "algorithme de projection incrémental"
+
+msgid "Uzawa-Augmented Lagrangian coupling"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9806,6 +9838,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
+" Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
+" Choice between hho_{p0, p1, p2} or cdo_fb"
+msgstr ""
+
+#, c-format
+msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_SPACE_SCHEME\n"
 " Choice between hho_{p0, p1, p2} or cdo_fb"
 msgstr ""
@@ -9813,14 +9857,8 @@ msgstr ""
 #, c-format
 msgid ""
 " %s: Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
-" Valid choices are \"implicit\", \"explicit\", \"crank_nicolson\", and "
-"\"theta_scheme\"."
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
-" Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
+" Valid choices are \"euler_implicit\", \"euler_explicit\", \"crank_nicolson"
+"\", and \"theta_scheme\"."
 msgstr ""
 
 #, c-format
@@ -9963,11 +10001,6 @@ msgstr ""
 msgid "highest"
 msgstr ""
 
-msgid ""
-" Cannot build diagonal index. Pattern is shared.\n"
-" Stop execution.\n"
-msgstr ""
-
 msgid " Invalid numerical scheme to set a source term."
 msgstr ""
 
@@ -9979,9 +10012,6 @@ msgstr ""
 
 msgid " Invalid type of description."
 msgstr ""
-
-msgid "vertices"
-msgstr "sommets"
 
 #, c-format
 msgid ""
@@ -10018,6 +10048,72 @@ msgid ""
 "with imposed total pressure and total enthalpy failed at\n"
 "boundary face %i. The direction vector given by the user\n"
 "can't be null."
+msgstr ""
+
+msgid ""
+"Input of mix pressure computation with respect to specific entropy and "
+"specific volume:\n"
+" mix specific volume v < 0\n"
+msgstr ""
+
+msgid ""
+"While computing mix pressure with respect to specific entropy and specific "
+"volume:\n"
+" mix internal energy e < 0\n"
+msgstr ""
+
+msgid "In _mix_pressure_sv : 1/temperature NAN\n"
+msgstr ""
+
+msgid ""
+"While computing mix pressure with respect to specific entropy and specific "
+"volume:\n"
+" mix temperature T < 0\n"
+msgstr ""
+
+msgid "Unknown form for equilibrium function.\n"
+msgstr ""
+
+msgid "While performing dichotomy search on equilibrium function\n"
+msgstr ""
+
+msgid ""
+"Input of mix pressure and temperature computation with respect to specific "
+"energy and specific volume:\n"
+"specific volume <= 0\n"
+msgstr ""
+
+msgid ""
+"Input of mix pressure and temperature computation with respect to specific "
+"energy and specific volume:\n"
+"specific energy <= 0\n"
+msgstr ""
+
+msgid "Single-phase regime - phase 2: temperature < 0\n"
+msgstr ""
+
+msgid "Single-phase regime - phase 1: temperature < 0\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_pt() : 1.0/temperature NAN  (two-phase)\n"
+msgstr ""
+
+msgid "Two-phase regime: mixture temperature < 0\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_pt() : temperature NAN\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_pt() : pressure NAN\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_c2() : NAN\n"
+msgstr ""
+
+msgid "Negative sound speed - hyperbolicity problem\n"
+msgstr ""
+
+msgid "Negative specific internal energy e < 0\n"
 msgstr ""
 
 msgid ""
@@ -11626,19 +11722,12 @@ msgstr ""
 msgid "Couplage thermique non-fonctionnel en multi-layer"
 msgstr ""
 
+msgid "in Lagrangian module"
+msgstr ""
+
 msgid ""
-"@\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@\n"
-"@ @@ ERROR:\n"
-"@    ======\n"
-"@   TO BE COMPATIBLE WITH THE LAGRANGIAN DEPOSITION MODEL,\n"
-"@     HEAD LOSS ZONES MUST COVER THE WHOLE MESH\n"
-"@ Head loss coefficients may be locally zero.\n"
-"@ Check your case setup.\n"
-"@\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@"
+"The number of cells in the head loss zones must cover\n"
+"the whole mesh (though the local head loss may be zero).\n"
 msgstr ""
 
 #, c-format
@@ -11661,6 +11750,14 @@ msgid ""
 "Lagrangian module: \n"
 "  number of clusters = %d is either not defined (negative)\n"
 "  or > to the number of statistical classes %d\n"
+"  for zone %d and set %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian module: \n"
+"  number of particles = %d is either not defined (negative)\n"
+"  or smaller than 1 than \n"
 "  for zone %d and set %d."
 msgstr ""
 
@@ -11814,11 +11911,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Abort while opening the lagrangian module restart file: %s\n"
-"Error reading section: %s"
-msgstr ""
-
-msgid "in Lagrangian module"
+"The following information is not available in restart file: %s\n"
+"so the computation cannot be run:\n"
+"  %s\n"
 msgstr ""
 
 #, c-format
@@ -11843,6 +11938,83 @@ msgid ""
 "boundary face data will be reinitialized.\n"
 msgstr ""
 
+#, c-format
+msgid ""
+"Statistics from the previous computation are not available.\n"
+"\n"
+"Steady/unsteady computation of volume statistics\n"
+"is reset to unsteady or steady initialization mode:\n"
+" isttio = %d\n"
+" idstnt = %d\n"
+" restart iteration = %d\n"
+msgstr ""
+
+msgid ""
+"Volume statistics from the previous computation are\n"
+"not available or usable."
+msgstr ""
+
+#, c-format
+msgid ""
+"Options are changed relative to the previous computation.\n"
+"\n"
+" isttio = %d previous, %d current\n"
+" idstnt = %d previous, %d current\n"
+" nstist = %d previous, %d current\n"
+msgstr ""
+
+msgid ""
+"Statistics from the previous computation are compatible with\n"
+"current statistics computation options (in steady mode).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Statistics from the previous computation are not available.\n"
+"\n"
+"Steady/unsteady computation of boundary statistics\n"
+"is reset to unsteady or steady initialization mode:\n"
+" isttio = %d\n"
+" idstnt = %d\n"
+" restart iteration = %d\n"
+msgstr ""
+
+msgid ""
+"Boundary statistics from the previous computation are\n"
+"not available or usable."
+msgstr ""
+
+#, c-format
+msgid ""
+"Options are changed relative to the previous computation.\n"
+"\n"
+" isttio = %d previous, %d current\n"
+" nstbor = %d previous, %d current\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The following information is not available in restart file: %s\n"
+"and is set to default or user settings:\n"
+"  %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Source terms from the previous computation are not available.\n"
+"\n"
+"Start of time averaging of statistics for return coupling\n"
+"is reset to current time step:\n"
+" isttio = %d\n"
+" idstnt = %d\n"
+" restart iteration = %d\n"
+msgstr ""
+
+msgid ""
+"Source terms from the previous computation are\n"
+"not available or usable."
+msgstr ""
+
 msgid "      Fin   de la lecture\n"
 msgstr ""
 
@@ -11856,6 +12028,24 @@ msgid ""
 "      -------------------------------------\n"
 "    Lecture d'un fichier suite\n"
 "    sur les variables liees aux particules\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The number of additional user variables in restart file: %s\n"
+"is modified:\n"
+"  previous: %d\n"
+"  current:  %d\n"
+"Excess previous user variables are removed.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The number of additional user variables in restart file: %s\n"
+"is modified:\n"
+"  previous: %d\n"
+"  current:  %d\n"
+"New user variables are initialized with zero.\n"
 msgstr ""
 
 msgid "    End reading particle data restart file\n"
@@ -14564,13 +14754,24 @@ msgstr ""
 msgid "    End of output to restart file\n"
 msgstr ""
 
-msgid ""
-"   ** INFORMATIONS SUR LE MODULE DE RAYONNEMENT\n"
-"      ------------------------------------------  \n"
-"    Lecture d''un fichier suite\n"
-msgstr ""
+msgid "    Reading radiative module restart file\n"
+msgstr "    Lecture du fichier suite rayonnement\n"
 
 msgid "\n"
+msgstr ""
+
+msgid "while reading radiative restart data"
+msgstr "Erreur à la lecture des données de reprise rayonnement"
+
+#, c-format
+msgid "\"%s\" does not seem to be a radiative checkpoint/restart file."
+msgstr ""
+"Le fichier \"%s\" ne semble pas être un fichier de reprise de rayonnement."
+
+msgid "The number of cells does not match the current mesh."
+msgstr ""
+
+msgid "The number of boundary faces does not match the current mesh."
 msgstr ""
 
 msgid "    Finished reading radiative restart file.\n"
