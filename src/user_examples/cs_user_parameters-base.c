@@ -276,11 +276,14 @@ cs_user_parameters(cs_domain_t *domain)
    *  arak: Arakawa multiplicator for the Rhie and Chow
    *        filter (1 by default)
    *  ipucou: pseudo coupled pressure-velocity solver
-   *                   - 1: true (default)
-   *                   - 0: false
+   *                   - 0: false (default)
+   *                   - 1: true
+   *  irevmc: reconstruct the velocity field after correction step
+   *                   - 0: with the pressure increment gradient (default)
+   *                   - 1: with an RT0 like formula using the mass fluxes
    *  iccvfg: calculation with a fixed velocity field
-   *                   - 1: true (default)
-   *                   - 0: false
+   *                   - 0: false (default)
+   *                   - 1: true
    *  idilat: algorithm to take into account the density
    *          variation in time
    *                   - 0: Boussinesq approximation
@@ -298,13 +301,13 @@ cs_user_parameters(cs_domain_t *domain)
    *                   - 2: compute an hydrostatic pressure due to
    *                     buoyancy forces before the prediction step
    *  igprij: improve static pressure algorithm
+   *                   - 0: no treatment (default)
    *                   - 1: take -div(rho R) in the static pressure
    *                     treatment IF iphydr=1
-   *                   - 0: no treatment (default)
    *  igpust: improve static pressure algorithm
+   *                   - 0: no treatment
    *                   - 1: take user momemtum source terms in the
    *                     static pressure treatment IF iphydr=1 (default)
-   *                   - 0: no treatment
    */
 
   /*! [param_stokes_model] */

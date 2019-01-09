@@ -135,6 +135,7 @@ double precision distbf, srfbnf, hint
 double precision rnx, rny, rnz
 double precision vr(3), vr1(3), vr2(3), vrn
 double precision disp_fac(3)
+double precision mass_fl_drhovol1, mass_fl_drhovol2
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -905,20 +906,9 @@ endif
 ! 9. Update of the fluid velocity field
 !===============================================================================
 
-! Mass flux initialization for VOF algorithm
-if (ivofmt.ge.0) then
-  do ifac = 1, nfac
-    imasfl(ifac) = 0.d0
-  enddo
-  do ifac = 1, nfabor
-    bmasfl(ifac) = 0.d0
-  enddo
-endif
-
 if (ippmod(icompf).lt.0) then
 
-  ! irevmc = 0: Only the standard method is available for the coupled
-  !              version of navstv.
+  ! irevmc = 0: Update the velocity with the pressure gradient.
 
   if (irevmc.eq.0) then
 
@@ -1091,12 +1081,139 @@ if (ippmod(icompf).lt.0) then
     !Free memory
     deallocate(gradp)
 
+    ! RT0 update from the mass fluxes
+  else
+
+    ! Initialization to 0
+    do iel = 1, ncelet
+      vel(1, iel) = 0.d0
+      vel(2, iel) = 0.d0
+      vel(3, iel) = 0.d0
+    enddo
+
+    ! vel = 1 / (rho Vol) SUM mass_flux (X_f - X_i)
+    if (ivofmt.lt.0) then
+      do ifac = 1, nfac
+
+        iel1 = ifacel(1,ifac)
+        iel2 = ifacel(2,ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = imasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
+
+
+        mass_fl_drhovol2 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel2).eq.0) &
+          mass_fl_drhovol2 = imasfl(ifac) / (crom(iel2) * cell_f_vol(iel2))
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
+
+        vel(1, iel2) = vel(1, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
+        vel(2, iel2) = vel(2, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
+        vel(3, iel2) = vel(3, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
+
+      enddo
+
+      do ifac = 1, nfabor
+        iel1 = ifabor(ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = bmasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
+
+      enddo
+
+      ! vel = 1 / (Vol) SUM vol_flux (X_f - X_i)
+    else
+
+      do ifac = 1, nfac
+
+        iel1 = ifacel(1,ifac)
+        iel2 = ifacel(2,ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = imasfl(ifac) / cell_f_vol(iel1)
+
+
+        mass_fl_drhovol2 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel2).eq.0) &
+          mass_fl_drhovol2 = imasfl(ifac) / cell_f_vol(iel2)
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
+
+        vel(1, iel2) = vel(1, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
+        vel(2, iel2) = vel(2, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
+        vel(3, iel2) = vel(3, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
+
+      enddo
+
+      do ifac = 1, nfabor
+        iel1 = ifabor(ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = bmasfl(ifac) / cell_f_vol(iel1)
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
+
+      enddo
+
+    endif
+
+    call synvin(vel)
+
   endif
 
 endif
 
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
+
+! Mass flux initialization for VOF algorithm
+if (ivofmt.ge.0) then
+  do ifac = 1, nfac
+    imasfl(ifac) = 0.d0
+  enddo
+  do ifac = 1, nfabor
+    bmasfl(ifac) = 0.d0
+  enddo
+endif
 
 ! In the ALE framework, we add the mesh velocity
 if (iale.ge.1) then

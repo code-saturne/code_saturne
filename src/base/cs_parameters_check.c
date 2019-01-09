@@ -1634,11 +1634,11 @@ cs_parameters_check(void)
                                 0, 2);
 
   if (cs_glob_stokes_model->iprco == 1) {
-    cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                               _("while reading input data"),
-                               "cs_glob_stokes_model->irevmc",
-                               cs_glob_stokes_model->irevmc,
-                               0);
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("while reading input data"),
+                                  "cs_glob_stokes_model->irevmc",
+                                  cs_glob_stokes_model->irevmc,
+                                  0, 2);
 
     cs_real_t arakfr = cs_glob_stokes_model->arak;
     if (cs_glob_time_step_options->idtvar < 0) {

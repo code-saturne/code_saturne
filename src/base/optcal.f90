@@ -816,6 +816,7 @@ module optcal
 
   !> Reconstruction of the velocity field with the updated pressure option
   !>    - 0: default
+  !>    - 1: from the mass flux with a RT0 like recontruction
   integer(c_int), pointer, save ::          irevmc
 
   !> Compute the pressure step thanks to the continuity equation
