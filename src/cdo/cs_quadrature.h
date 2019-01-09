@@ -1132,7 +1132,7 @@ cs_quadrature_tet_1pt_vect(double                 tcur,
                            double                 results[])
 {
   cs_real_3_t  xg;
-  double evaluation[3];
+  double  evaluation[3];
 
   /* Copied from cs_quadrature_tet_1pt */
   xg[0] = 0.25 * (v1[0] + v2[0] + v3[0] + v4[0]);

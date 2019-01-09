@@ -795,7 +795,7 @@ _pcva_by_analytic(cs_real_t                        time_eval,
   const cs_adjacency_t  *f2e = connect->f2e;
 
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t  id = 0; id < n_elts; id++) {
+  for (cs_lnum_t id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
     cs_real_t *val_i = values + 3*c_id;
@@ -818,9 +818,9 @@ _pcva_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfco =
+        const double  hfco =
           cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
-                                                   quant->dedge_vector+3*i);
+                                               quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
         if (end - start == 3) {
@@ -2198,7 +2198,8 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the average of a function on the faces
+ * \brief  Evaluate the average of a function on the faces.
+ *         Warning: retval has to be initialize before calling this function.
  *
  * \param[in]      def        pointer to a cs_xdef_t pointer
  * \param[in]      time_eval  physical time at which one evaluates the term
@@ -2359,7 +2360,8 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the average of a function on the cells
+ * \brief  Evaluate the average of a function on the cells.
+ *         Warning: retval has to be initialize before calling this function.
  *
  * \param[in]      def        pointer to a cs_xdef_t pointer
  * \param[in]      time_eval  physical time at which one evaluates the term
