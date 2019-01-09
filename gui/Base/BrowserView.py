@@ -837,7 +837,7 @@ Calculation management
 
         if node_pm:
 
-            node = node_pm.xmlGetNode('ale_method', 'status')
+            node = node_pm.xmlGetNode('ale_method')
             if node and node['status'] == 'on':
                 m_ale = True
             node = node_pm.xmlGetNode('turbomachinery', 'model')

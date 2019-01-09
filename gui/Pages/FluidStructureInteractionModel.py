@@ -110,7 +110,7 @@ class FluidStructureInteractionModel(Model):
         self.case = case
 
         self.__node_models = case.xmlGetNode('thermophysical_models')
-        self.__node_ale    = self.__node_models.xmlInitChildNode('ale_method', 'status')
+        self.__node_ale    = self.__node_models.xmlInitChildNode('ale_method')
 
         self.__defaults = {}
         self.__defaults[const.max_iterations_implicitation]  = 1

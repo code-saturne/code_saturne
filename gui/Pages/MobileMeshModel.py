@@ -82,7 +82,7 @@ class MobileMeshModel(Model):
         Return ALE node, creating it if needed.
         """
         node_models = self.case.xmlInitNode('thermophysical_models')
-        node_ale = node_models.xmlInitChildNode('ale_method', 'status')
+        node_ale = node_models.xmlInitChildNode('ale_method')
 
         return node_ale
 
@@ -94,7 +94,7 @@ class MobileMeshModel(Model):
         node_ale = None
         node_models = self.case.xmlGetNode('thermophysical_models')
         if node_models:
-            node_ale = node_models.xmlGetChildNode('ale_method', 'status')
+            node_ale = node_models.xmlGetChildNode('ale_method')
 
         return node_ale
 

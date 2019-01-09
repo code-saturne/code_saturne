@@ -951,7 +951,7 @@ class XMLinit(Variables):
                 node['label'] = name
 
         XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
-        XMLAleMethod = XMLThermoPhysicalModel.xmlInitChildNode('ale_method', 'status')
+        XMLAleMethod = XMLThermoPhysicalModel.xmlInitChildNode('ale_method')
         if XMLAleMethod:
             for node in XMLAleMethod.xmlGetNodeList('formula'):
                 if node:
@@ -1025,7 +1025,7 @@ class XMLinit(Variables):
         # Note: it is important to do this only after updating formulas and
         #       not before, to apply updates in the order if code changes.
         XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
-        XMLAleMethod = XMLThermoPhysicalModel.xmlGetChildNode('ale_method', 'status')
+        XMLAleMethod = XMLThermoPhysicalModel.xmlGetChildNode('ale_method')
         if XMLAleMethod:
             nodeV = XMLAleMethod.xmlGetNode('variable', name="mesh_velocity_U")
             if nodeV:

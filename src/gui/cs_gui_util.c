@@ -341,7 +341,7 @@ cs_gui_node_get_status_int(cs_tree_node_t  *tn,
 
   if (cs_gui_strcmp(value, "on"))
     *status = 1;
-  else if (cs_gui_strcmp(value, "off"))
+  else if (cs_gui_strcmp(value, "off") || cs_gui_strcmp(value, ""))
     *status = 0;
   else if (value != NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -368,7 +368,7 @@ cs_gui_node_get_status_bool(cs_tree_node_t  *node,
 
   if (cs_gui_strcmp(value, "on"))
     *status = true;
-  else if (cs_gui_strcmp(value, "off"))
+  else if (cs_gui_strcmp(value, "off") || cs_gui_strcmp(value, ""))
     *status = false;
   else if (value != NULL)
     bft_error(__FILE__, __LINE__, 0,
