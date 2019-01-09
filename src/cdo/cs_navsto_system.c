@@ -401,7 +401,7 @@ cs_navsto_system_init_setup(void)
 
   /* Handle the divergence of the velocity field */
   ns->velocity_divergence = cs_field_find_or_create("velocity_divergence",
-                                                    field_mask,
+                                                    CS_FIELD_INTENSIVE,
                                                     location_id,
                                                     1, /* dimension */
                                                     has_previous);
