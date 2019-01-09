@@ -209,7 +209,7 @@ class XMLElement:
         self.ca  = case
 
 
-    def ___errorExit(self, msg):
+    def __errorExit(self, msg):
         """
         """
         print('XML ERROR')
