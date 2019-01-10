@@ -112,9 +112,6 @@ class CompressibleModel(Variables, Model):
                 ThermalScalarModel(self.case).setThermalModel('total_energy')
                 for v in self.var_list:
                     self.setNewVariable(self.node_comp, v, tpe="model", label=v)
-                from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-                TurbulenceModel(self.case).setTurbulenceModel('off')
-                del TurbulenceModel
 
 
     @Variables.noUndo

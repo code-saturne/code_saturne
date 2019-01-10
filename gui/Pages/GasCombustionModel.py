@@ -44,6 +44,7 @@ from code_saturne.Base.Common import *
 import code_saturne.Base.Toolbox as Tool
 from code_saturne.Base.XMLvariables import Variables, Model
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquationModel
@@ -114,15 +115,9 @@ class GasCombustionModel(Variables, Model):
         by the calculation features.
         """
         gasCombustionList = self.gasCombustionModel
+        turb_mdl = TurbulenceModel(self.case)
 
-        if self.node_turb['model'] not in ('k-epsilon',
-                                           'k-epsilon-PL',
-                                           'Rij-epsilon',
-                                           'Rij-SSG',
-                                           'Rij-EBRSM',
-                                           'v2f-BL-v2/k',
-                                           'k-omega-SST',
-                                           'Spalart-Allmaras'):
+        if self.node_turb['model'] not in turb_mdl.RANSmodels():
             gasCombustionList = ('off',)
 
         return gasCombustionList

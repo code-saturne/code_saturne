@@ -337,14 +337,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         compressible = self.comp.getCompressibleModel()
 
         # Compatibility between turbulence model and reactive flow models
-        if self.turb.getTurbulenceModel() not in ('k-epsilon',
-                                                  'k-epsilon-PL',
-                                                  'Rij-epsilon',
-                                                  'Rij-SSG',
-                                                  'Rij-EBRSM',
-                                                  'v2f-BL-v2/k',
-                                                  'k-omega-SST',
-                                                  'Spalart-Allmaras'):
+        if self.turb.getTurbulenceModel() not in self.turb.RANSmodels():
             if coal != 'off':
                 self.pcoal.setCoalCombustionModel('off')
                 coal = 'off'
