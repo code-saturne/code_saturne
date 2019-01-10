@@ -887,7 +887,7 @@ _assemble(const cs_cell_sys_t            *csys,
 
       r_gids[bufsize] = bi_gids[ii];
       c_gids[bufsize] = p_gid;
-      values[bufsize] = divop[3*bi+ii];
+      values[bufsize] = -divop[3*bi+ii];
       bufsize += 1;
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
@@ -899,7 +899,7 @@ _assemble(const cs_cell_sys_t            *csys,
       /* Its transposed B_x, B_y, B_z */
       r_gids[bufsize] = p_gid;
       c_gids[bufsize] = bi_gids[ii];
-      values[bufsize] = divop[3*bi+ii];
+      values[bufsize] = -divop[3*bi+ii];
       bufsize += 1;
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
