@@ -1322,16 +1322,16 @@ cs_ale_destroy_all(void)
 {
   BFT_FREE(_vtx_coord0);
 
-  assert(_cdo_bc != NULL);
-  BFT_FREE(_cdo_bc->vtx_values);
+  if (_cdo_bc != NULL) {
+    BFT_FREE(_cdo_bc->vtx_values);
 
-  for (int i = 0; i < _cdo_bc->n_selections; i++)
-    BFT_FREE(_cdo_bc->vtx_select[i]);
-  BFT_FREE(_cdo_bc->vtx_select);
-  BFT_FREE(_cdo_bc->n_vertices);
+    for (int i = 0; i < _cdo_bc->n_selections; i++)
+      BFT_FREE(_cdo_bc->vtx_select[i]);
+    BFT_FREE(_cdo_bc->vtx_select);
+    BFT_FREE(_cdo_bc->n_vertices);
 
-  BFT_FREE(_cdo_bc);
-
+    BFT_FREE(_cdo_bc);
+  }
   return;
 }
 
