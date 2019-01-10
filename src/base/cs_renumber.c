@@ -1546,10 +1546,17 @@ _renumber_b_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 
   BFT_MALLOC(new_to_old_b, n_b_faces, cs_lnum_t);
 
-  cs_order_lnum_allocated(NULL,
-                          mesh->b_face_cells,
-                          new_to_old_b,
-                          n_b_faces);
+  cs_lnum_t *fc_num;
+  BFT_MALLOC(fc_num, mesh->n_b_faces*2, cs_lnum_t);
+
+  for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+    fc_num[ii*2] = mesh->b_face_cells[ii];
+    fc_num[ii*2+1] = ii;
+  }
+
+  cs_order_lnum_allocated_s(NULL, fc_num, 2, new_to_old_b, n_b_faces);
+
+  BFT_FREE(fc_num);
 
   /* Check numbering is non trivial */
 
@@ -2567,7 +2574,6 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
 {
   int t_id;
   cs_lnum_t ii, subset_size, start_id, end_id;
-  cs_lnum_t *order = NULL, *fc_num = NULL;
 
   int retval = 0;
 
@@ -2577,9 +2583,9 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
 
   BFT_MALLOC(*b_group_index, n_b_threads*2, cs_lnum_t);
 
-  /* Order faces lexicographically */
+  /* Order faces lexicographically (with stable sort) */
 
-  BFT_MALLOC(order, mesh->n_b_faces, cs_lnum_t);
+  cs_lnum_t *fc_num;
   BFT_MALLOC(fc_num, mesh->n_b_faces*2, cs_lnum_t);
 
   for (ii = 0; ii < mesh->n_b_faces; ii++) {
@@ -2587,16 +2593,9 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
     fc_num[ii*2+1] = ii;
   }
 
-  cs_order_lnum_allocated_s(NULL, fc_num, 2, order, mesh->n_b_faces);
+  cs_order_lnum_allocated_s(NULL, fc_num, 2, new_to_old_b, mesh->n_b_faces);
 
   BFT_FREE(fc_num);
-
-  /* Build new numbering index */
-
-  for (ii = 0; ii < mesh->n_b_faces; ii++)
-    new_to_old_b[ii] = order[ii];
-
-  BFT_FREE(order);
 
   /* Compute target subset size */
 
