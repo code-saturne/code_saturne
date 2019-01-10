@@ -137,8 +137,12 @@ call cs_gui_physical_model_select
 iihmpu = iihmpr
 call usppmo(iihmpu)
 
-! User C function
+! GUI ALE parameters
+if (iihmpr.eq.1) then
+  call uialin (nalinf, nalimx, epalim)
+endif
 
+! User C function
 call cs_user_model
 
 !     Turbulence
@@ -155,14 +159,6 @@ if (iihmpr.eq.1) then
 
   call cscpva()
 
-endif
-
-! ALE parameters
-!---------------
-
-! GUI
-if (iihmpr.eq.1) then
-  call uialin (nalinf, nalimx, epalim)
 endif
 
 ! User subroutine
