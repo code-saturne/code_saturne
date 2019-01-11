@@ -3949,9 +3949,9 @@ cs_mesh_quantities_log_setup(void)
   if (cs_glob_mesh_quantities_flag != 0) {
 
     const char *correction_name[] = {"CS_BAD_CELLS_WARPED_CORRECTION",
-                                     "CS_BAD_CELLS_WARPED_REGULARISATION",
+                                     "CS_BAD_CELLS_REGULARISATION",
                                      "CS_CELL_FACE_CENTER_CORRECTION",
-                                     "CS_CELL_FACE_CENTER_CORRECTION",
+                                     "CS_CELL_CENTER_CORRECTION",
                                      "CS_FACE_DISTANCE_CLIP",
                                      "CS_FACE_RECONSTRUCTION_CLIP",
                                      "CS_CELL_VOLUME_RATIO_CORRECTION",
