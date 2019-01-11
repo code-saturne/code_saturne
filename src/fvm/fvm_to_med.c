@@ -1012,33 +1012,16 @@ _get_datatypes(const cs_datatype_t    input_cs_datatype,
     break;
 
   case CS_INT32:
-    if (med_int_sizeof == 4) {
-      *output_cs_datatype = CS_INT32;
-      *med_datatype = MED_INT32;
-      *data_sizeof = med_int_sizeof;
-    }
-    else if (med_int_sizeof == 8) {
-      *output_cs_datatype = CS_INT64;
-      *med_datatype = MED_INT64;
-      *data_sizeof = med_int_sizeof;
-    }
-    else
-      assert(0);
+    *output_cs_datatype = CS_INT32;
+    *med_datatype = MED_INT32;
+    *data_sizeof = 4;
     break;
 
   case CS_INT64:
-    if (med_int_sizeof == 4) {
-      *output_cs_datatype = CS_INT32;
-      *med_datatype = MED_INT32;
-      *data_sizeof = med_int_sizeof;
-    }
-    else if (med_int_sizeof == 8) {
-      *output_cs_datatype = CS_INT64;
-      *med_datatype = MED_INT64;
-      *data_sizeof = med_int_sizeof;
-    }
-    else
-      assert(0);
+    *output_cs_datatype = CS_INT32;
+    *med_datatype = MED_INT32;
+    *data_sizeof = 4;
+    assert(0);
     break;
 
   case CS_UINT32:
