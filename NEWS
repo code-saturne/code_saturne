@@ -5,7 +5,9 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
-- Lagrangian module: fix division by 0 in boundary stats.
+- Lagrangian Module:
+  * Fix errors in deposition/reentrainment model.
+  * Fix division by 0 in boundary stats.
 
 - Lagrangian Module: fix crash in some cases with no deposition model.
 
