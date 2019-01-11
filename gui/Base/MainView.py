@@ -31,7 +31,7 @@ This module defines the following classes:
 - NewCaseDialogView
 - MainView
 
-    @copyright: 1998-2018 EDF S.A., France
+    @copyright: 1998-2019 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
     @license: GNU GPL v2 or later, see COPYING for details.
 """

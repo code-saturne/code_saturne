@@ -552,7 +552,7 @@ fi
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(cs_use_revision, [AS_HELP_STRING([--disable-revision],
-                                               [disable Subversion or Git revision info])],
+                                               [disable Git revision info])],
   [
     case "${enableval}" in
       yes) cs_use_revision=yes ;;
@@ -572,7 +572,7 @@ if test "x$cs_use_revision" = "xyes" ; then
   fi
 fi
 
-AC_DEFINE_UNQUOTED([CS_REVISION], ["$cs_src_revision"], [Subversion / Git revision string])
+AC_DEFINE_UNQUOTED([CS_REVISION], ["$cs_src_revision"], [Git revision string])
 AC_SUBST(cs_src_revision)
 
 # Define the different version numbers for later use
