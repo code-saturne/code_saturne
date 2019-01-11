@@ -238,6 +238,8 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
 
   cs_sdm_block_init(csys->mat, n_blocks, n_blocks, block_sizes, block_sizes);
 
+  /* One has to keep the same numbering for faces betwwen cell mesh and cell
+     systme */
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const cs_lnum_t  f_id = cm->f_ids[f];
