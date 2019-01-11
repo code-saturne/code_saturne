@@ -241,6 +241,9 @@ typedef enum {
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
 
+  /* User-defined arrays */
+  CS_ENUMF_(user),
+
   /* End of attributes */
 
   CS_FIELD_N_POINTERS
