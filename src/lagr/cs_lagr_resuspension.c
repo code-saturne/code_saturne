@@ -218,8 +218,9 @@ cs_lagr_resuspension(void)
     }
 
     /* Monolayer resuspension model */
-    if (face_id > 0 &&
-        bound_stat[face_id + n_faces * lag_bi->ihdepm] < diam_mean ) {
+    if ((    cs_glob_lagr_model->clogging == 0 && face_id > 0)
+         || (   cs_glob_lagr_model->clogging == 1 && face_id > 0
+             && bound_stat[face_id + n_faces * lag_bi->ihdepm] < diam_mean)) {
 
       if (flag == CS_LAGR_PART_DEPOSITED)
         /* The particle has just deposited     */
@@ -382,7 +383,8 @@ cs_lagr_resuspension(void)
 
       }
     } /* Enf of monolayer resuspension */
-    else {
+       else if (    cs_glob_lagr_model->clogging == 1
+                 && bound_stat[face_id + n_faces * lag_bi->ihdepm] >= diam_mean) {
 
       /* Treatment of multilayer resuspension */
 
