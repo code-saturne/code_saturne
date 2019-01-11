@@ -2146,7 +2146,7 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
       double critmin = 0.01;
       if (i_dist[face_id] < critmin * distmax) {
         w_count++;
-        i_dist[face_id] = cs_math_fmax(i_dist[face_id], 0.2 * distmax);
+        i_dist[face_id] = cs_math_fmax(i_dist[face_id], critmin * distmax);
       }
 
       /* Clipping of weighting */
@@ -2189,9 +2189,10 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
           cs_math_3_distance(cell_cen[cell_id], b_face_cog[face_id]),
           cell_vol[cell_id]/cs_math_3_norm(face_nomal));
 
-      if (b_dist[face_id] < 0.01 * distmax) {
+      double critmin = 0.01;
+      if (b_dist[face_id] < critmin * distmax) {
         w_count++;
-        b_dist[face_id] = CS_MAX(b_dist[face_id], 0.2 * distmax);
+        b_dist[face_id] = CS_MAX(b_dist[face_id], critmin * distmax);
       }
 
     }
