@@ -63,6 +63,7 @@ BEGIN_C_DECLS
  *   private_comm        use private MPI communicator (default: false)
  *   names=<fmt>         use same naming rules as <fmt> format
  *                       (default: ensight)
+ *   input_name=<name>   define input name (default: writer name)
  *
  * parameters:
  *   name           <-- base output case name.

@@ -161,6 +161,8 @@ typedef struct {
   vtkCPProcessor             *processor;       /* Co processor */
   vtkCPDataDescription       *datadesc;        /* Data description */
 
+  char                       *input_name;      /* input name, or NULL for
+                                                  default */
   bool                        private_comm;    /* Use private communicator */
   bool                        ensight_names;   /* Use EnSight rules for
                                                   field names */
@@ -173,6 +175,8 @@ typedef struct {
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+int _n_writers = 0;
 
 /*============================================================================
  * Private function definitions
@@ -960,10 +964,11 @@ BEGIN_C_DECLS
  *   private_comm        use private MPI communicator (default: false)
  *   names=<fmt>         use same naming rules as <fmt> format
  *                       (default: ensight)
+ *   input_name=<name>   define input name (default: writer name)
  *
  * parameters:
  *   name           <-- base output case name.
- *   options        <-- whitespace separated, lowercase options list
+ *   options        <-- whitespace separaed, lowercase options list
  *   time_dependecy <-- indicates if and how meshes will change with time
  *   comm           <-- associated MPI communicator.
  *
@@ -1009,6 +1014,7 @@ fvm_to_catalyst_init_writer(const char             *name,
 
   w->private_comm = false;
   w->ensight_names = true;
+  w->input_name = NULL;
 
   /* Writer name */
 
@@ -1017,7 +1023,7 @@ fvm_to_catalyst_init_writer(const char             *name,
     strcpy(w->name, name);
   }
   else {
-    const char _name[] = "catalyst_writer";
+    const char _name[] = "catalyst";
     BFT_MALLOC(w->name, strlen(_name) + 1, char);
     strcpy(w->name, _name);
   }
@@ -1037,11 +1043,17 @@ fvm_to_catalyst_init_writer(const char             *name,
 
       if ((l_opt == 12) && (strncmp(options + i1, "private_comm", l_opt) == 0))
         w->private_comm = true;
-      else if ((l_opt == 6) && (strncmp(options + i1, "names=", l_opt) == 0)) {
+      else if ((l_opt > 6) && (strncmp(options + i1, "names=", 6) == 0)) {
         if ((l_opt == 6+7) && (strncmp(options + i1 + 6, "ensight", 7) == 0))
           w->ensight_names = true;
         else
           w->ensight_names = false;
+      }
+      else if ((l_opt > 11) && (strncmp(options + i1, "input_name=", 11) == 0)) {
+        int l = strlen(options + i1 + 11);
+        BFT_MALLOC(w->input_name, l+1, char);
+        strncpy(w->input_name, options + i1 + 11, l);
+        w->input_name[l] = '\0';
       }
 
       for (i1 = i2 + 1; i1 < l_tot && options[i1] == ' '; i1++);
@@ -1049,6 +1061,14 @@ fvm_to_catalyst_init_writer(const char             *name,
     }
 
   }
+
+#if CS_PV_VERSION < 55
+  if (w->input_name == NULL) {
+    char n[] = "input";
+    BFT_MALLOC(w->input_name, strlen(n)+1, char);
+    strcpy(w->input_name, n);
+  }
+#endif
 
   /* Parallel parameters */
 
@@ -1074,7 +1094,7 @@ fvm_to_catalyst_init_writer(const char             *name,
   w->processor = vtkCPProcessor::New();
 
 #if defined(HAVE_MPI)
-  if (w->comm != MPI_COMM_NULL) {
+  if (w->comm != MPI_COMM_NULL && w->comm != cs_glob_mpi_comm) {
     vtkMPICommunicatorOpaqueComm vtk_comm
       = vtkMPICommunicatorOpaqueComm(&(w->comm));
     w->processor->Initialize(vtk_comm);
@@ -1120,11 +1140,10 @@ fvm_to_catalyst_init_writer(const char             *name,
   BFT_FREE(script_path);
 
   w->datadesc = vtkCPDataDescription::New();
-#if CS_PV_VERSION < 55
-  w->datadesc->AddInput("input");
-#else
-  w->datadesc->AddInput(w->name);
-#endif
+  if (w->input_name != NULL)
+    w->datadesc->AddInput(w->input_name);
+  else
+    w->datadesc->AddInput(w->name);
 
   w->modified = true;
 
@@ -1463,11 +1482,15 @@ fvm_to_catalyst_flush(void  *this_writer_p)
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
   if (w->processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
-#if CS_PV_VERSION < 55
-    w->datadesc->GetInputDescriptionByName("input")->SetGrid(w->mb);
-#else
-    w->datadesc->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
-#endif
+    int n = w->datadesc->GetNumberOfInputDescriptions();
+    if (n == 1)
+      w->datadesc->GetInputDescription(0)->SetGrid(w->mb);
+    else {
+      if (w->input_name != NULL)
+        w->datadesc->GetInputDescriptionByName(w->input_name)->SetGrid(w->mb);
+      else
+        w->datadesc->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
+    }
 
     w->processor->CoProcess(w->datadesc);
     w->modified = false;
