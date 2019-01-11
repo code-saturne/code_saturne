@@ -549,21 +549,19 @@ cs_lagr_car(int              iprev,
 
     cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
 
-    for (cs_lnum_t id = 0; id < 3; id++) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-        unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
 
-        cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      if (cell_id >= 0) {
 
-        if (cell_id >= 0) {
+        /* Compute: II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) + g ) */
 
-          /* -->   Compute: II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) + g )
-           *       or
-           *       Compute: II = ( -grad(P)/Rom(f) + g) */
+        cs_real_t romf = extra->cromf->val[cell_id];
 
-          cs_real_t romf = extra->cromf->val[cell_id];
+        for (cs_lnum_t id = 0; id < 3; id++) {
 
           piil[ip][id] = -gradpr[cell_id][id] / romf + grav[id];
 
@@ -571,8 +569,8 @@ cs_lagr_car(int              iprev,
 
             for (cs_lnum_t i = 0; i < 3; i++) {
 
-              cs_real_t vpm   = stat_vel->val[i + cell_id * 3];
-              cs_real_t vflui = extra->vel->vals[iprev][i + cell_id * 3];
+              cs_real_t vpm   = stat_vel->val[cell_id*3 + i];
+              cs_real_t vflui = extra->vel->vals[iprev][cell_id*3 + i];
               piil[ip][id] += gradvf[cell_id][id][i] * (vpm - vflui);
 
             }
@@ -584,6 +582,29 @@ cs_lagr_car(int              iprev,
       }
     }
   }
+
+  else {
+
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+
+      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+
+      if (cell_id >= 0) {
+
+        /* Compute: II = ( -grad(P)/Rom(f) + g) */
+
+        cs_real_t romf = extra->cromf->val[cell_id];
+
+        for (cs_lnum_t id = 0; id < 3; id++)
+          piil[ip][id] = -gradpr[cell_id][id] / romf + grav[id];
+
+      }
+    }
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
