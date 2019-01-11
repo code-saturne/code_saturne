@@ -592,7 +592,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
 
   else
-    cs_lagr_particle_set_real(p_set, p_am, CS_LAGR_ADHESION_FORCE, -fadhes);
+    cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, -fadhes);
 
   /* The interaction should be negative to prevent reentrainment (attraction) */
   if (*adhesion_energ >= 0.0)

@@ -1140,7 +1140,7 @@ _lagesd(cs_real_t           dtp,
 
   }
 
-  if (cs_glob_lagr_reentrained_model->ireent == 1) {
+  if (cs_glob_lagr_model->resuspension == 1) {
 
     cs_real_t p_height = cs_lagr_particle_get_real(particle, p_am,
                                                    CS_LAGR_HEIGHT);
@@ -1161,8 +1161,11 @@ _lagesd(cs_real_t           dtp,
        * (another possibility is to use the jamming limit...) */
       cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;
 
-      if (bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] <
-          diam_mean && iresusp == 0) {
+      if (   (cs_glob_lagr_model->clogging == 0 && iresusp == 0)
+          || (   cs_glob_lagr_model->clogging == 1
+              &&   bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
+                 < diam_mean && iresusp == 0)) {
+
         /* Monolayer resuspension */
 
         /* Calculation of the hydrodynamic drag and torque
@@ -1192,8 +1195,8 @@ _lagesd(cs_real_t           dtp,
         }
 
         /* Calculation of gravity force and torque */
-        for (cs_lnum_t id = 1; id < 3; id++) {
-          grav_force[id] = p_diam * ggp[id];
+        for (cs_lnum_t id = 0; id < 3; id++) {
+          grav_force[id] = 4./3. * cs_math_pi * pow((p_diam/2), 3) * romp * ggp[id];
         }
 
         for (cs_lnum_t id = 1; id < 3; id++) {
@@ -1276,8 +1279,7 @@ _lagesd(cs_real_t           dtp,
 
           /* The particle is resuspended  */
           vpart[0] = CS_MIN(-1.0 / p_mass * dtp
-                            * CS_ABS(-lift_force[0] - drag_force[0]
-                                     - adhes_force -grav_force[0] ),
+                            * CS_ABS(drag_force[0] - adhes_force),
                             0.001);
           if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
               == CS_LAGR_PART_DEPOSITED ){
@@ -1289,10 +1291,12 @@ _lagesd(cs_real_t           dtp,
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
 
-          if (CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
-            cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
+          if (cs_glob_lagr_model->clogging == 1) {
+            if (CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
+              cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
+              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
+            }
           }
 
           if (p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
@@ -1416,8 +1420,11 @@ _lagesd(cs_real_t           dtp,
 
       } /* End of monolayer resuspension*/
 
-      else if (bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
-               >= diam_mean && iresusp ==0) {
+      else if (   cs_glob_lagr_model->clogging == 1
+               &&    bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
+                  >= diam_mean
+               && iresusp == 0) {
+
         /* Multilayer resuspension model */
 
         cs_real_t mean_depo_height
