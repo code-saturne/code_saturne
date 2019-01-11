@@ -155,6 +155,8 @@ if (iihmpr.eq.1) then
 
   call csther()
 
+  ! turbulence model choice
+  ! and reference values (uref, almax)
   call csturb()
 
   call cscpva()
@@ -295,9 +297,6 @@ if (iihmpr.eq.1) then
 
   ! Diffusivities
   call cssca3(visls0)
-
-  ! Init of reference values (uref, almax)
-  call cstini()
 
   ! Porosity model
   call cs_gui_porous_model()

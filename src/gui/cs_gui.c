@@ -908,7 +908,8 @@ _reference_length_initialization_choice(void)
 {
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree,
-                       "thermophysical_models/reference_values/length/choice");
+                       "thermophysical_models/turbulence/"
+                       "reference_length/choice");
 
   const char *initialization_choice
     = cs_tree_node_get_value_str(tn);
@@ -1861,6 +1862,26 @@ void CS_PROCF (csturb, CSTURB) (void)
     wall_fnt->iwallf = (cs_wall_f_type_t)iwallf;
   }
 
+  if (turb_mdl->iturb != 0) {
+    const char* length_choice = NULL;
+    cs_turb_ref_values_t *ref_values = cs_get_glob_turb_ref_values();
+
+    ref_values->uref = 1.; /* default if not specified */
+
+    cs_gui_node_get_child_real(tn_t,
+                               "reference_velocity",
+                               &(ref_values->uref));
+
+    length_choice = _reference_length_initialization_choice();
+
+    if (length_choice != NULL) {
+      if (cs_gui_strcmp(length_choice, "prescribed"))
+        cs_gui_node_get_child_real(tn_t,
+                                   "reference_length",
+                                   &(ref_values->almax));
+    }
+  }
+
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--model: %s\n", model);
@@ -1869,6 +1890,8 @@ void CS_PROCF (csturb, CSTURB) (void)
   bft_printf("--igrari = %i\n", rans_mdl->igrari);
   bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
   bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
+  bft_printf("--almax = %f\n", ref_values->almax);
+  bft_printf("--uref  = %f\n", ref_values->uref);
 #endif
 }
 
@@ -2635,39 +2658,6 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
       }
     }
   }
-}
-
-/*----------------------------------------------------------------------------
- * Turbulence initialization parameters.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSTINI ()
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cstini, CSTINI) (void)
-{
-  const char* length_choice = NULL;
-  cs_turb_ref_values_t *ref_values = cs_get_glob_turb_ref_values();
-
-  ref_values->uref = 1.; /* default if not specified */
-
-  cs_gui_reference_initialization("velocity", &(ref_values->uref));
-
-  length_choice = _reference_length_initialization_choice();
-
-  if (length_choice != NULL) {
-    if (cs_gui_strcmp(length_choice, "prescribed"))
-      cs_gui_reference_initialization("length", &(ref_values->almax));
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--almax = %f\n", ref_values->almax);
-  bft_printf("--uref  = %f\n", ref_values->uref);
-#endif
 }
 
 /*----------------------------------------------------------------------------

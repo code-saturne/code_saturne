@@ -1626,6 +1626,17 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility.
         """
+        # Reference values
+        XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
+        nodeRefValues = XMLThermoPhysicalNode.xmlInitNode('reference_values')
+        nodeTurb = XMLThermoPhysicalNode.xmlInitNode('turbulence', 'model')
+
+        for ref_str in ['velocity', 'length']:
+            value = nodeRefValues.xmlGetDouble(ref_str)
+            if value:
+                nodeTurb.xmlSetData('reference_' + ref_str, value)
+                nodeRefValues.xmlRemoveChild(ref_str)
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

@@ -86,17 +86,9 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.case.undoStopGlobal()
         self.mdl = ReferenceValuesModel(self.case)
 
-        # Combo models
-        self.modelLength = ComboModel(self.comboBoxLength,2,1)
-        self.modelLength.addItem(self.tr("Automatic"), 'automatic')
-        self.modelLength.addItem(self.tr("Prescribed"), 'prescribed')
-        self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
         # Connections
         self.lineEditP0.textChanged[str].connect(self.slotPressure)
-        self.lineEditV0.textChanged[str].connect(self.slotVelocity)
-        self.comboBoxLength.activated[str].connect(self.slotLengthChoice)
-        self.lineEditL0.textChanged[str].connect(self.slotLength)
         self.lineEditT0.textChanged[str].connect(self.slotTemperature)
         self.lineEditOxydant.textChanged[str].connect(self.slotTempOxydant)
         self.lineEditFuel.textChanged[str].connect(self.slotTempFuel)
@@ -106,12 +98,6 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
 
         validatorP0 = DoubleValidator(self.lineEditP0, min=0.0)
         self.lineEditP0.setValidator(validatorP0)
-
-        validatorV0 = DoubleValidator(self.lineEditV0, min=0.0)
-        self.lineEditV0.setValidator(validatorV0)
-
-        validatorL0 = DoubleValidator(self.lineEditL0, min=0.0)
-        self.lineEditL0.setValidator(validatorL0)
 
         validatorT0 = DoubleValidator(self.lineEditT0,  min=0.0)
         validatorT0.setExclusiveMin(True)
@@ -172,21 +158,6 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             p = self.mdl.getPressure()
             self.lineEditP0.setText(str(p))
 
-        v = self.mdl.getVelocity()
-        self.lineEditV0.setText(str(v))
-
-        init_length_choice = self.mdl.getLengthChoice()
-        self.modelLength.setItem(str_model=init_length_choice)
-        if init_length_choice == 'automatic':
-            self.lineEditL0.setText(str())
-            self.lineEditL0.hide()
-            self.labelUnitL0.hide()
-        else:
-            self.lineEditL0.show()
-            self.labelUnitL0.show()
-            l = self.mdl.getLength()
-            self.lineEditL0.setText(str(l))
-
         model = self.mdl.getParticularPhysical()
         if model == "atmo":
             t = self.mdl.getTemperature()
@@ -213,43 +184,6 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.mdl.setPressure(p)
 
 
-    @pyqtSlot(str)
-    def slotVelocity(self,  text):
-        """
-        Input Velocity.
-        """
-        if self.lineEditV0.validator().state == QValidator.Acceptable:
-            v = from_qvariant(text, float)
-            self.mdl.setVelocity(v)
-
-
-    @pyqtSlot(str)
-    def slotLengthChoice(self,text):
-        """
-        Set value for parameterNTERUP
-        """
-        choice = self.modelLength.dicoV2M[str(text)]
-        self.mdl.setLengthChoice(choice)
-        if choice == 'automatic':
-            self.lineEditL0.setText(str())
-            self.lineEditL0.hide()
-            self.labelUnitL0.hide()
-        else:
-            self.lineEditL0.show()
-            self.labelUnitL0.show()
-            value = self.mdl.getLength()
-            self.lineEditL0.setText(str(value))
-        log.debug("slotlengthchoice-> %s" % choice)
-
-
-    @pyqtSlot(str)
-    def slotLength(self,  text):
-        """
-        Input reference length.
-        """
-        if self.lineEditL0.validator().state == QValidator.Acceptable:
-            l = from_qvariant(text, float)
-            self.mdl.setLength(l)
 
 
     @pyqtSlot(str)

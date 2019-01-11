@@ -148,10 +148,13 @@ class TurbulenceModel(Variables, Model):
         @return: default values
         """
         default = {}
-        default['turbulence_model'] = "k-epsilon-PL"
-        default['length_scale']     = 1.0
-        default['wall_function']      = 3
-        default['gravity_terms']    = "on"
+        default['turbulence_model']       = "k-epsilon-PL"
+        default['length_scale']           = 1.0
+        default['wall_function']          = 3
+        default['gravity_terms']          = "on"
+        default['reference_velocity']     = 1.0
+        default['reference_length_choice']= 'automatic'
+        default['reference_length']       = 1.0
 
         return default
 
@@ -333,6 +336,76 @@ class TurbulenceModel(Variables, Model):
             l_scale = self.defaultTurbulenceValues()['length_scale']
             self.setLengthScale(l_scale)
         return l_scale
+
+
+    @Variables.undoLocal
+    def setVelocity(self, value):
+        """
+        Set value of reference velocity into xml file.
+        """
+        self.isGreaterOrEqual(value, 0.0)
+        self.node_turb.xmlSetData('reference_velocity',value)
+
+
+    @Variables.noUndo
+    def getVelocity(self):
+        """
+        Return the value of reference velocity.
+        """
+        value = self.node_turb.xmlGetDouble('reference_velocity')
+        if value == None:
+            value = self.defaultTurbulenceValues()['reference_velocity']
+            self.setVelocity(value)
+
+        return value
+
+
+    @Variables.undoLocal
+    def setLengthChoice(self, choice):
+        """
+        Set the Length choice.
+        """
+        self.isInList(choice, ['automatic','prescribed'])
+
+        node_init = self.node_turb.xmlInitNode('reference_length')
+        node_init['choice'] = choice
+        if choice == 'automatic':
+            self.node_turb.xmlRemoveChild('reference_length')
+
+
+    @Variables.noUndo
+    def getLengthChoice(self):
+        """
+        Get the Length choice.
+        """
+        node_init = self.node_turb.xmlInitNode('reference_length')
+        choice = node_init['choice']
+        if choice == None:
+            choice = self.defaultTurbulenceValues()['reference_length_choice']
+            self.setLengthChoice(choice)
+        return choice
+
+
+    @Variables.undoLocal
+    def setLength(self, value):
+        """
+        Set value of reference length into xml file.
+        """
+        self.isGreaterOrEqual(value, 0.0)
+        self.node_turb.xmlSetData('length',value)
+
+
+    @Variables.noUndo
+    def getLength(self):
+        """
+        Return the value of reference length.
+        """
+        value = self.node_turb.xmlGetDouble('length')
+        if value == None:
+            value = self.defaultTurbulenceValues()['reference_length']
+            self.setLength(value)
+
+        return value
 
 
     @Variables.noUndo

@@ -81,9 +81,6 @@ class ReferenceValuesModel(Model):
         """
         default = {}
         default['reference_pressure']    = 1.01325e+5
-        default['reference_velocity']    = 1.0
-        default['length_choice']         = 'automatic'
-        default['reference_length']      = 1.0
         default['reference_temperature'] = 293.15
         default['fuel_temperature']      = 436.
         default['oxydant_temperature']   = 353.
@@ -117,76 +114,6 @@ class ReferenceValuesModel(Model):
         if value == None:
             value = self.defaultValues()['reference_pressure']
             self.setPressure(value)
-
-        return value
-
-
-    @Variables.undoLocal
-    def setVelocity(self, value):
-        """
-        Set value of reference velocity into xml file.
-        """
-        self.isGreaterOrEqual(value, 0.0)
-        self.node_reference.xmlSetData('velocity',value)
-
-
-    @Variables.noUndo
-    def getVelocity(self):
-        """
-        Return the value of reference velocity.
-        """
-        value = self.node_reference.xmlGetDouble('velocity')
-        if value == None:
-            value = self.defaultValues()['reference_velocity']
-            self.setVelocity(value)
-
-        return value
-
-
-    @Variables.undoLocal
-    def setLengthChoice(self, choice):
-        """
-        Set the Length choice.
-        """
-        self.isInList(choice, ['automatic','prescribed'])
-
-        node_init = self.node_reference.xmlInitNode('length')
-        node_init['choice'] = choice
-        if choice == 'automatic':
-            self.node_reference.xmlRemoveChild('length')
-
-
-    @Variables.noUndo
-    def getLengthChoice(self):
-        """
-        Get the Length choice.
-        """
-        node_init = self.node_reference.xmlInitNode('length')
-        choice = node_init['choice']
-        if choice == None:
-            choice = self.defaultValues()['length_choice']
-            self.setLengthChoice(choice)
-        return choice
-
-
-    @Variables.undoLocal
-    def setLength(self, value):
-        """
-        Set value of reference length into xml file.
-        """
-        self.isGreaterOrEqual(value, 0.0)
-        self.node_reference.xmlSetData('length',value)
-
-
-    @Variables.noUndo
-    def getLength(self):
-        """
-        Return the value of reference length.
-        """
-        value = self.node_reference.xmlGetDouble('length')
-        if value == None:
-            value = self.defaultValues()['reference_length']
-            self.setLength(value)
 
         return value
 
