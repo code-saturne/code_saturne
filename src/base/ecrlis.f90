@@ -209,7 +209,7 @@ do f_id = 0, nfld - 1
       do c_id = 1, f_dim
 
         do icel = 1, ncel
-          w1(icel) = volume(icel) & 
+          w1(icel) = volume(icel) &
                    * (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/sqrt(dt(icel))
         enddo
 
