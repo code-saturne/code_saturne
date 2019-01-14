@@ -960,7 +960,7 @@ class MainView(object):
         self.statusbar.showMessage(msg, 2000)
 
         if renew_page:
-            if self.case['current_page'] == 'Prepare batch calculation':
+            if self.case['current_page'] == 'Calculation management':
                 p = displaySelectedPage(self.case['current_page'],
                                         self,
                                         self.case,
@@ -1645,7 +1645,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.initCase()
         mdl.setRunType(rt)
         self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'Prepare batch calculation':
+        if self.case['current_page'] == 'Calculation management':
             p = displaySelectedPage(self.case['current_page'],
                                     self,
                                     self.case,
@@ -1664,7 +1664,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.initCase()
         mdl.setRunType('standard')
         self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'Prepare batch calculation':
+        if self.case['current_page'] == 'Calculation management':
             p = displaySelectedPage(self.case['current_page'],
                                     self,
                                     self.case,

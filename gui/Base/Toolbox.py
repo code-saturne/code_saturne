@@ -228,6 +228,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
             import code_saturne.Pages.TimeStepView as Page
             thisPage = Page.TimeStepView(root, case, tree)
 
+    elif page_name == tr("Start/Restart"):
+        import code_saturne.Pages.StartRestartView as Page
+        thisPage = Page.StartRestartView(root, case)
+
     elif page_name == tr("Postprocessing"):
         import code_saturne.Pages.OutputControlView as Page
         thisPage = Page.OutputControlView(root, case, tree)
@@ -273,16 +277,12 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
             thisPage = Page.NumericalParamGlobalView(root, case, tree)
 
     elif page_name == tr("Calculation management"):
-        import code_saturne.Pages.StartRestartView as Page
-        thisPage = Page.StartRestartView(root, case)
+        import code_saturne.Pages.BatchRunningView as Page
+        thisPage = Page.BatchRunningView(root, case)
 
     elif page_name == tr("Performance tuning"):
         import code_saturne.Pages.PerformanceTuningView as Page
         thisPage = Page.PerformanceTuningView(root, case)
-
-    elif page_name == tr("Prepare batch calculation"):
-        import code_saturne.Pages.BatchRunningView as Page
-        thisPage = Page.BatchRunningView(root, case)
 
     elif page_name == tr("Fluid structure interaction"):
         import code_saturne.Pages.FluidStructureInteractionView as Page

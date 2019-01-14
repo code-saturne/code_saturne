@@ -189,6 +189,10 @@ class TreeModel(QAbstractItemModel):
                     img_path = ":/icons/22x22/boundary_conditions.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == 'Time settings':
+                    img_path = ":/icons/22x22/numerical_params.png"
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == 'Numerical parameters':
                     img_path = ":/icons/22x22/numerical_params.png"
                     icon = QIcon()
@@ -500,9 +504,10 @@ Boundary zones
     Particle boundary conditions
     Fluid structure interaction
     Cathare Coupling
+Time settings
+    Start/Restart
 Numerical parameters
     Equation parameters
-    Time settings
 Postprocessing
     Additional user arrays
     Time averages
@@ -514,7 +519,6 @@ Postprocessing
 Calculation management
     Performance tuning
     OpenTurns study
-    Prepare batch calculation
 """
         return tree
 
@@ -784,10 +788,11 @@ Calculation management
         self.setRowClose(self.tr('Cathare Coupling'))
         """
 
+        self.setRowClose(self.tr('Time settings'))
+
         self.setRowClose(self.tr('Numerical parameters'))
         """
         self.setRowClose(self.tr('Equation parameters'))
-        self.setRowClose(self.tr('Time settings'))
         """
 
         self.setRowClose(self.tr('Time averages'))
@@ -1033,11 +1038,14 @@ Calculation management
         self.setRowShow(self.tr('Fluid structure interaction'), m_ale)
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
 
+        # Time settings
+
+        self.setRowShow(self.tr('Time settings'))
+
         # Numerical parameters
 
         self.setRowShow(self.tr('Numerical parameters'))
         self.setRowShow(self.tr('Equation parameters'))
-        self.setRowShow(self.tr('Time settings'))
 
         # Postprocessing
 
