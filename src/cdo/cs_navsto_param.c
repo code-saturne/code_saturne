@@ -549,8 +549,23 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                 cs_navsto_param_model_name[nsp->model]);
   cs_log_printf(CS_LOG_SETUP, " <NavSto/Time status> %s\n",
                 cs_navsto_param_time_state_name[nsp->time_state]);
-  cs_log_printf(CS_LOG_SETUP, " <NavSto/Coupling> %s\n",
+
+  cs_log_printf(CS_LOG_SETUP, " <NavSto/Coupling> %s",
                 cs_navsto_param_coupling_name[nsp->coupling]);
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_UZAWA:
+    cs_log_printf(CS_LOG_SETUP, " Tolerance: %5.3e\n", nsp->residual_tolerance);
+    break;
+
+  default:
+    /* Nothing to print */
+    cs_log_printf(CS_LOG_SETUP, "\n");
+    break;
+  }
+
   cs_log_printf(CS_LOG_SETUP, " <NavSto/Gravity effect> %s",
                 cs_base_strtf(nsp->has_gravity));
   if (nsp->has_gravity)
