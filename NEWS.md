@@ -65,6 +65,8 @@ Architectural changes:
 - Move Reynolds stress tensor transformation matrix (alpha in clca66)
   computation to C. C translation is taken from NEPTUNE_CFD.
 
+- Remove VOFI (VoF initialization) library detection as it is not used anymore.
+
 Release 5.3.0 - October 26, 2018
 --------------------------------
 
