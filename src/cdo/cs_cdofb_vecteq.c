@@ -398,6 +398,9 @@ cs_cdofb_vecteq_apply_bc_partly(cs_real_t                      time_eval,
 
     }
 
+    if (csys->has_sliding)
+      eqc->enforce_sliding(eqp, cm, fm, cb, csys);
+
   } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
@@ -1482,6 +1485,13 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
               " %s: Invalid type of algorithm to enforce Dirichlet BC.",
               __func__);
 
+  }
+
+  eqc->enforce_sliding = NULL;
+  if (eqb->face_bc->n_sliding_faces > 0) {
+    /* There is at least one face with a sliding condition to handle */
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
   }
 
   /* Advection part */

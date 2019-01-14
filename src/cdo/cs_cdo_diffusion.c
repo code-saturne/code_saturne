@@ -1578,6 +1578,129 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account sliding BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment.
+ *          Case of vector-valued CDO Face-based schemes
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(fm);
+
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(cs_equation_param_has_diffusion(eqp));
+
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_sliding == false)
+    return;  /* Nothing to do */
+
+  const double  chi =
+    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const short int  n_f = cm->n_fc;
+  const short int  n_dofs = n_f + 1; /* n_blocks or n_scalar_dofs */
+
+  /* First step: pre-compute the product between diffusion property and the
+     face vector areas */
+  cs_real_3_t  *kappa_f = cb->vectors;
+  _compute_kappa_f(h_info, cm, cb, kappa_f);
+
+  /* Initialize the matrix related this flux reconstruction operator */
+  cs_sdm_t *bc_op = cb->hdg;
+  cs_sdm_square_init(n_dofs, bc_op);
+
+  /* First pass: build the bc_op matrix */
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
+
+      /* Compute \int_f du/dn v and update the matrix */
+      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+                              (const cs_real_t (*)[3])kappa_f,
+                              bc_op);
+
+    } /* If sliding */
+
+  } /* Loop boundary faces */
+
+  /* Second pass: add the bc_op matrix, add the BC */
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  fi = csys->_f_ids[i];
+
+    if (csys->bf_flag[fi] & CS_CDO_BC_SLIDING) {
+
+      const cs_quant_t  pfq = cm->face[fi];
+      const cs_real_t  *ni = pfq.unitv;
+      const cs_real_t  ni_ni[9] =
+        { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
+          ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
+          ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
+
+      /* chi * \meas{f} / h_f  */
+      const cs_real_t  pcoef = chi * sqrt(pfq.meas);
+
+      for (short int xj = 0; xj < n_dofs; xj++) {
+        /* It should be done both for face- and cell-defined DoFs */
+
+        if ( xj == fi ) {
+          /* Retrieve the 3x3 matrix */
+          cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, fi, fi);
+          assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);
+
+          const cs_real_t  _val = pcoef + 2 * bc_op->val[n_dofs*fi + fi];
+
+          for (short int k = 0; k < 9; k++)
+            bii->val[k] += ni_ni[k] * _val;
+
+        }
+        else { /* xj != fi */
+
+          /* Retrieve the 3x3 matrix */
+          cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, fi, xj);
+          assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+          cs_sdm_t  *bji = cs_sdm_get_block(csys->mat, xj, fi);
+          assert(bji->n_rows == bji->n_cols && bji->n_rows == 3);
+
+          const cs_real_t  _val = bc_op->val[n_dofs*fi + xj];
+
+          for (short int k = 0; k < 9; k++) {
+            bij->val[k] += ni_ni[k] * _val;
+            /* ni_ni is symmetric */
+            bji->val[k] += ni_ni[k] * _val;
+          }
+
+        } /* End if */
+
+      } /* Loop on xj */
+
+    } /* If sliding */
+
+  } /* Loop boundary faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account Robin BCs.
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
  *

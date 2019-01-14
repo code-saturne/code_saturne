@@ -440,6 +440,10 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                                   csys->rob_values);
         break;
 
+      case CS_CDO_BC_SLIDING:
+        csys->has_sliding = true;
+        break;
+
       default:
         /* Nothing to do for instance in case of homogeneous Neumann */
         break;
