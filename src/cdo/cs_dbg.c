@@ -100,8 +100,8 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
 #if 1 /* First example: Look for the cells which have the vertex 441 */
     const short int _v = cs_cell_mesh_get_v(441, cm);
 #else
-    CS_UNUSED(_v);
     const short int _v = 0;
+    CS_UNUSED(_v);
 #endif
 
 #if 1 /* Second example: Look for the cells which have a previous DoF value

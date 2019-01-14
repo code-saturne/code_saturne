@@ -1526,7 +1526,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 #       pragma omp critical
         {
           cs_log_printf(CS_LOG_DEFAULT, ">> Divergence:\n");
-          for (short int f = 0; f < n_fc; f++)
+          for (short int f = 0; f < cm->n_fc; f++)
             cs_log_printf(CS_LOG_DEFAULT, "    f%2d: %- .4e, %- .4e, %- .4e\n",
                           f, _div[3*f]*ovc, _div[3*f+1]*ovc, _div[3*f+2]*ovc);
         } /* Critical section */
@@ -1659,6 +1659,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
+  cs_dbg_darray_to_listing("VELOCITY", quant->n_faces, vel_f, 9);
   cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr, 9);
   cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
 #endif
