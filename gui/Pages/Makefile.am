@@ -150,8 +150,6 @@ PreprocessingView.py \
 ProfilesModel.py \
 ProfilesView.py \
 QMeiEditorView.py \
-ReferenceValuesModel.py \
-ReferenceValuesView.py \
 SalomeActors.py \
 SalomeHandler.py \
 ScriptRunningModel.py \
@@ -254,7 +252,6 @@ PerformanceTuningForm.ui \
 PorosityForm.ui \
 ProfilesForm.ui \
 QMeiEditorForm.ui \
-ReferenceValuesForm.ui \
 PreprocessingForm.ui \
 SolutionDomainForm.ui \
 SourceTermsForm.ui \

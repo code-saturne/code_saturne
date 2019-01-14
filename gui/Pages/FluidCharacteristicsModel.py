@@ -129,7 +129,16 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         default = {}
 
-        #Initial values for properties: 20 Celsius degrees air at atmospheric pressure
+        default['reference_pressure']    = 1.01325e+5
+        default['reference_temperature'] = 293.15
+        default['fuel_temperature']      = 436.
+        default['oxydant_temperature']   = 353.
+        default['reference_temperature'] = 293.15
+        # molar mass for dry air
+        default['reference_molar_mass'] = 28.966e-3
+
+        #Initial values for properties: 20 Celsius degrees air at atmospheric
+        #pressure
 
         default['density']              = 1.17862
         default['molecular_viscosity']  = 1.83e-05
@@ -142,6 +151,116 @@ class FluidCharacteristicsModel(Variables, Model):
         default['phas']                 = "liquid"
 
         return default
+
+    @Variables.undoLocal
+    def setPressure(self, value):
+        """
+        Set value of reference pressure into xml file.
+        """
+        self.isGreaterOrEqual(value, 0.0)
+        self.node_fluid.xmlSetData('reference_pressure',value)
+
+
+    @Variables.noUndo
+    def getPressure(self):
+        """
+        Return the value of reference pressure.
+        """
+        value = self.node_fluid.xmlGetDouble('reference_pressure')
+        if value == None:
+           p_str = 'reference_pressure'
+           value = self.defaultFluidCharacteristicsValues()[p_str]
+           self.setPressure(value)
+
+        return value
+
+
+    @Variables.undoLocal
+    def setTemperature(self, value):
+        """
+        Set reference temperature.
+        """
+        self.isGreater(value, 0.0)
+        self.node_fluid.xmlSetData('reference_temperature', value)
+
+
+    @Variables.noUndo
+    def getTemperature(self):
+        """
+        Get reference temperature.
+        """
+        value = self.node_fluid.xmlGetDouble('reference_temperature')
+        if not value :
+           t_str = 'reference_temperature'
+           value = self.defaultFluidCharacteristicsValues()[t_str]
+           self.setTemperature(value)
+        return value
+
+
+    @Variables.undoLocal
+    def setTempOxydant(self, value):
+        """
+        Set reference temperature for Oxydant.
+        """
+        self.isGreater(value, 0.0)
+        self.node_fluid.xmlSetData('reference_oxydant_temperature', value)
+
+
+    @Variables.noUndo
+    def getTempOxydant(self):
+        """
+        Get reference temperaturefor Oxydant.
+        """
+        value = self.node_fluid.xmlGetDouble('reference_oxydant_temperature')
+        if not value :
+           ot_str = 'reference_oxydant_temperature'
+           value = self.defaultFluidCharacteristicsValues()[ot_str]
+           self.setTempOxydant(value)
+        return value
+
+
+    @Variables.undoLocal
+    def setTempFuel(self, value):
+        """
+        Set reference temperature.
+        """
+        self.isGreater(value, 0.0)
+        self.node_fluid.xmlSetData('reference_fuel_temperature', value)
+
+
+    @Variables.noUndo
+    def getTempFuel(self):
+        """
+        Get reference temperature.
+        """
+        value = self.node_fluid.xmlGetDouble('reference_fuel_temperature')
+        if not value :
+           ft_str = 'reference_fuel_temperature'
+           value = self.defaultFluidCharacteristicsValues()[ft_str]
+           self.setTempFuel(value)
+        return value
+
+
+    @Variables.undoLocal
+    def setMassemol(self, value):
+        """
+        Set reference molar mass.
+        """
+        self.isGreater(value, 0.0)
+        self.node_fluid.xmlSetData('reference_molar_mass', value)
+
+
+    @Variables.noUndo
+    def getMassemol(self):
+        """
+        Get reference molar mass.
+        """
+        value = self.node_fluid.xmlGetDouble('reference_molar_mass')
+        if not value :
+           mm_str = 'reference_molar_mass'
+           value = self.defaultFluidCharacteristicsValues()[mm_str]
+           self.setMassemol(value)
+        return value
 
 
     @Variables.noUndo

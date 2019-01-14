@@ -156,10 +156,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.GroundwaterLawView as Page
         thisPage = Page.GroundwaterLawView(root, case)
 
-    elif page_name == tr("Physical properties"):
-        import code_saturne.Pages.ReferenceValuesView as Page
-        thisPage = Page.ReferenceValuesView(root, case)
-
     elif page_name == tr("Fluid properties"):
         import code_saturne.Pages.FluidCharacteristicsView as Page
         thisPage = Page.FluidCharacteristicsView(root, case)

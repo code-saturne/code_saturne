@@ -177,7 +177,7 @@ class TreeModel(QAbstractItemModel):
                     img_path = ":/icons/22x22/calculation_features.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Physical properties':
+                elif page_name == 'Fluid properties':
                     img_path = ":/icons/22x22/physical_properties.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
@@ -485,8 +485,7 @@ Closure modeling
     Nucleate boiling parameters
     Droplet condensation-evaporation
     Particles interactions
-Physical properties
-    Fluid properties
+Fluid properties
 Particles and droplets tracking
     Statistics
 Volume zones
@@ -755,7 +754,7 @@ Calculation management
         self.setRowClose(self.tr('Particles interactions'))
         """
 
-        self.setRowClose(self.tr('Physical properties'))
+        self.setRowClose(self.tr('Fluid properties'))
         """
         self.setRowClose(self.tr('Fluid properties'))
         self.setRowClose(self.tr('Body forces'))
@@ -983,9 +982,8 @@ Calculation management
         self.setRowShow(self.tr('Droplet condensation-evaporation'), m_ncfd['droplet_condens'])
         self.setRowShow(self.tr('Particles interactions'), m_ncfd['particles_interactions'])
 
-        # Physical properties
+        # Fluid properties
 
-        self.setRowShow(self.tr('Physical properties'), (not (m_gwf or is_ncfd)))
         self.setRowShow(self.tr('Fluid properties'), (not (m_gwf or is_ncfd)))
 
         # Particles and droplets tracking

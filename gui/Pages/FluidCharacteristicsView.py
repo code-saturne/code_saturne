@@ -130,7 +130,7 @@ from code_saturne.Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsF
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
+from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
@@ -382,6 +382,26 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 self.modelNameDiff.addItem(scalar)
 
         # Validators
+
+        validatorP0 = DoubleValidator(self.lineEditP0, min=0.0)
+        self.lineEditP0.setValidator(validatorP0)
+
+        validatorT0 = DoubleValidator(self.lineEditT0,  min=0.0)
+        validatorT0.setExclusiveMin(True)
+        self.lineEditT0.setValidator(validatorT0)
+
+        validatorOxydant = DoubleValidator(self.lineEditOxydant,  min=0.0)
+        validatorOxydant.setExclusiveMin(True)
+        self.lineEditOxydant.setValidator(validatorOxydant)
+
+        validatorFuel = DoubleValidator(self.lineEditFuel,  min=0.0)
+        validatorFuel.setExclusiveMin(True)
+        self.lineEditFuel.setValidator(validatorFuel)
+
+        validatorMM = DoubleValidator(self.lineEditMassMolar, min=0.0)
+        validatorMM.setExclusiveMin(True)
+        self.lineEditMassMolar.setValidator(validatorMM)
+
         validatorRho    = DoubleValidator(self.lineEditRho,    min = 0.0)
         validatorMu     = DoubleValidator(self.lineEditMu,     min = 0.0)
         validatorCp     = DoubleValidator(self.lineEditCp,     min = 0.0)
@@ -404,6 +424,98 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditDiff.setValidator(validatorDiff)
         self.lineEditViscv0.setValidator(validatorViscv0)
         self.lineEditDiftl0.setValidator(validatorDiftl0)
+
+        # Connections
+
+        self.lineEditP0.textChanged[str].connect(self.slotPressure)
+        self.lineEditT0.textChanged[str].connect(self.slotTemperature)
+        self.lineEditOxydant.textChanged[str].connect(self.slotTempOxydant)
+        self.lineEditFuel.textChanged[str].connect(self.slotTempFuel)
+        self.lineEditMassMolar.textChanged[str].connect(self.slotMassemol)
+
+        self.comboBoxRho.activated[str].connect(self.slotStateRho)
+        self.comboBoxMu.activated[str].connect(self.slotStateMu)
+        self.comboBoxCp.activated[str].connect(self.slotStateCp)
+        self.comboBoxAl.activated[str].connect(self.slotStateAl)
+        self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
+        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
+        self.comboBoxViscv0.activated[str].connect(self.slotStateViscv0)
+        self.comboBoxMaterial.activated[str].connect(self.slotMaterial)
+        self.comboBoxMethod.activated[str].connect(self.slotMethod)
+        self.comboBoxPhas.activated[str].connect(self.slotPhas)
+        self.lineEditRho.textChanged[str].connect(self.slotRho)
+        self.lineEditMu.textChanged[str].connect(self.slotMu)
+        self.lineEditCp.textChanged[str].connect(self.slotCp)
+        self.lineEditAl.textChanged[str].connect(self.slotAl)
+        self.lineEditDiff.textChanged[str].connect(self.slotDiff)
+        self.lineEditDiftl0.textChanged[str].connect(self.slotDiftl0)
+        self.lineEditViscv0.textChanged[str].connect(self.slotViscv0)
+        self.pushButtonRho.clicked.connect(self.slotFormulaRho)
+        self.pushButtonMu.clicked.connect(self.slotFormulaMu)
+        self.pushButtonCp.clicked.connect(self.slotFormulaCp)
+        self.pushButtonAl.clicked.connect(self.slotFormulaAl)
+        self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
+        self.pushButtonViscv0.clicked.connect(self.slotFormulaViscv0)
+
+        self.initializeWidget()
+
+        self.case.undoStartGlobal()
+
+
+    def initializeWidget(self):
+        """
+        """
+        mdls = self.mdl.getThermoPhysicalModel()
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = mdls
+
+        self.groupBoxMassMolar.hide()
+
+        if mdl_atmo != "off":
+            self.labelInfoT0.hide()
+        elif mdl_comp != "off" or mdl_coal != "off":
+            self.groupBoxMassMolar.show()
+        elif all(mdl == "off" for mdl in mdls):
+            thmodel = ThermalScalarModel(self.case).getThermalScalarModel()
+            if thmodel == "enthalpy":
+                self.labelT0.setText("enthalpy")
+                self.labelUnitT0.setText("J/kg")
+                self.groupBoxTemperature.setTitle("Reference enthalpy")
+            elif thmodel == "temperature_celsius":
+                self.labelUnitT0.setText("C")
+
+            if self.mdl.getMaterials() != "user_material":
+                self.labelInfoT0.hide()
+        else:
+            self.groupBoxTemperature.hide()
+
+        gas_comb = GasCombustionModel(self.case).getGasCombustionModel()
+        if gas_comb == 'd3p':
+            self.groupBoxTempd3p.show()
+            t_oxy  = self.mdl.getTempOxydant()
+            t_fuel = self.mdl.getTempFuel()
+            self.lineEditOxydant.setText(str(t_oxy))
+            self.lineEditFuel.setText(str(t_fuel))
+        else:
+            self.groupBoxTempd3p.hide()
+
+        darc = GroundwaterModel(self.case).getGroundwaterModel()
+        if darc != 'off':
+            self.groupBoxPressure.hide()
+        else:
+            p = self.mdl.getPressure()
+            self.lineEditP0.setText(str(p))
+
+        if mdl_atmo != "off":
+            t = self.mdl.getTemperature()
+            self.lineEditT0.setText(str(t))
+        elif all(mdl == "off" for mdl in mdls):
+            t = self.mdl.getTemperature()
+            self.lineEditT0.setText(str(t))
+            m = self.mdl.getMassemol()
+            self.lineEditMassMolar.setText(str(m))
+        else:
+            t = self.mdl.getTemperature()
+            self.lineEditT0.setText(str(t))
 
         if (self.freesteam == 1 or EOS == 1 or coolprop_fluids):
             self.tables = True
@@ -441,41 +553,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             material = self.mdl.getMaterials()
             self.modelMaterial.setItem(str_model=material)
             self.updateMethod()
-
-        # Connections
-        self.comboBoxRho.activated[str].connect(self.slotStateRho)
-        self.comboBoxMu.activated[str].connect(self.slotStateMu)
-        self.comboBoxCp.activated[str].connect(self.slotStateCp)
-        self.comboBoxAl.activated[str].connect(self.slotStateAl)
-        self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
-        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
-        self.comboBoxViscv0.activated[str].connect(self.slotStateViscv0)
-        self.comboBoxMaterial.activated[str].connect(self.slotMaterial)
-        self.comboBoxMethod.activated[str].connect(self.slotMethod)
-        self.comboBoxPhas.activated[str].connect(self.slotPhas)
-        self.lineEditRho.textChanged[str].connect(self.slotRho)
-        self.lineEditMu.textChanged[str].connect(self.slotMu)
-        self.lineEditCp.textChanged[str].connect(self.slotCp)
-        self.lineEditAl.textChanged[str].connect(self.slotAl)
-        self.lineEditDiff.textChanged[str].connect(self.slotDiff)
-        self.lineEditDiftl0.textChanged[str].connect(self.slotDiftl0)
-        self.lineEditViscv0.textChanged[str].connect(self.slotViscv0)
-        self.pushButtonRho.clicked.connect(self.slotFormulaRho)
-        self.pushButtonMu.clicked.connect(self.slotFormulaMu)
-        self.pushButtonCp.clicked.connect(self.slotFormulaCp)
-        self.pushButtonAl.clicked.connect(self.slotFormulaAl)
-        self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
-        self.pushButtonViscv0.clicked.connect(self.slotFormulaViscv0)
-
-        self.initializeWidget()
-
-        self.case.undoStartGlobal()
-
-
-    def initializeWidget(self):
-        """
-        """
-        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = self.mdl.getThermoPhysicalModel()
 
         #compressible
         self.groupBoxViscv0.hide()
@@ -686,6 +763,56 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         # update lineEditReference
         self.lineEditReference.setText(self.mdl.getReference())
+
+
+    @pyqtSlot(str)
+    def slotPressure(self,  text):
+        """
+        Input PRESS.
+        """
+        if self.lineEditP0.validator().state == QValidator.Acceptable:
+            p = from_qvariant(text, float)
+            self.mdl.setPressure(p)
+
+
+    @pyqtSlot(str)
+    def slotTemperature(self,  text):
+        """
+        Input TEMPERATURE.
+        """
+        if self.lineEditT0.validator().state == QValidator.Acceptable:
+            t = from_qvariant(text, float)
+            self.mdl.setTemperature(t)
+
+
+    @pyqtSlot(str)
+    def slotTempOxydant(self,  text):
+        """
+        Input oxydant TEMPERATURE.
+        """
+        if self.lineEditOxydant.validator().state == QValidator.Acceptable:
+            t = from_qvariant(text, float)
+            self.mdl.setTempOxydant(t)
+
+
+    @pyqtSlot(str)
+    def slotTempFuel(self,  text):
+        """
+        Input fuel TEMPERATURE.
+        """
+        if self.lineEditFuel.validator().state == QValidator.Acceptable:
+            t = from_qvariant(text, float)
+            self.mdl.setTempFuel(t)
+
+
+    @pyqtSlot(str)
+    def slotMassemol(self,  text):
+        """
+        Input Mass molar.
+        """
+        if self.lineEditMassMolar.validator().state == QValidator.Acceptable:
+            m = from_qvariant(text, float)
+            self.mdl.setMassemol(m)
 
 
     @pyqtSlot(str)
@@ -970,7 +1097,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         for s in self.list_scalars:
            symbols_rho.append(s)
         rho0_value = self.mdl.getInitialValueDensity()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        ref_pressure = self.mdl.getPressure()
         symbols_rho.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
         symbols_rho.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
@@ -1016,14 +1143,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
            symbols_mu.append(s)
         mu0_value = self.mdl.getInitialValueViscosity()
         rho0_value = self.mdl.getInitialValueDensity()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        ref_pressure = self.mdl.getPressure()
         symbols_mu.append(('mu0', 'Viscosity (reference value) = ' + str(mu0_value)))
         symbols_mu.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
         symbols_mu.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
         symbols_mu.append(('rho', 'Density'))
         if CompressibleModel(self.case).getCompressibleModel() == 'on':
             symbols_mu.append(('T', 'Temperature'))
-            ref_temperature = ReferenceValuesModel(self.case).getTemperature()
+            ref_temperature = self.mdl.getTemperature()
             symbols_mu.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
 
         for (nme, val) in self.notebook.getNotebookList():
@@ -1056,7 +1183,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         for s in self.list_scalars:
            symbols_cp.append(s)
         cp0_value = self.mdl.getInitialValueHeat()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        ref_pressure = self.mdl.getPressure()
         symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
         symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
@@ -1089,8 +1216,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         for s in self.list_scalars:
            symbols_viscv0.append(s)
         viscv0_value = self.mdl.getInitialValueVolumicViscosity()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
-        ref_temperature = ReferenceValuesModel(self.case).getTemperature()
+        ref_pressure = self.mdl.getPressure()
+        ref_temperature = self.mdl.getTemperature()
         symbols_viscv0.append(('viscv0', 'Volumic viscosity (reference value) = '+str(viscv0_value)+' J/kg/K'))
         symbols_viscv0.append(('p0', 'Reference pressure = '+str(ref_pressure)+' Pa'))
         symbols_viscv0.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
@@ -1135,7 +1262,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         for s in self.list_scalars:
            symbols_al.append(s)
         lambda0_value = self.mdl.getInitialValueCond()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        ref_pressure = self.mdl.getPressure()
         symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
         symbols_al.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 

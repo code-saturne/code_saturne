@@ -1630,6 +1630,10 @@ class XMLinit(Variables):
         XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
         nodeRefValues = XMLThermoPhysicalNode.xmlInitNode('reference_values')
         nodeTurb = XMLThermoPhysicalNode.xmlInitNode('turbulence', 'model')
+        nodeTurb = XMLThermoPhysicalNode.xmlInitNode('turbulence', 'model')
+
+        XMLPhysicalPropNode = self.case.xmlInitNode('physical_properties')
+        nodeF = XMLPhysicalPropNode.xmlInitNode('fluid_properties')
 
         for ref_str in ['velocity', 'length']:
             value = nodeRefValues.xmlGetDouble(ref_str)
@@ -1637,6 +1641,12 @@ class XMLinit(Variables):
                 nodeTurb.xmlSetData('reference_' + ref_str, value)
                 nodeRefValues.xmlRemoveChild(ref_str)
 
+        for ref_str in ['pressure', 'temperature', 'oxydant_temperature', \
+                        'fuel_temperature', 'mass_molar']:
+            value = nodeRefValues.xmlGetDouble(ref_str)
+            if value:
+                nodeF.xmlSetData('reference_' + ref_str, value)
+                nodeF.xmlRemoveChild(ref_str)
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

@@ -401,8 +401,8 @@ class InletBoundary(Boundary):
         elif model == 'd3p':
             dico['gas_type'] = 'oxydant'
 
-        from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
-        dico['temperatureGas'] = ReferenceValuesModel(self.case).getTemperature()
+        from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+        dico['temperatureGas'] = FluidCharacteristicsModel(self.case).getTemperature()
 
         return dico
 
@@ -1765,8 +1765,8 @@ class CoalInletBoundary(InletBoundary) :
         dico['flow'] = 1.0
         dico['ratio'] = 0.0
         dico['oxydant'] = 1
-        from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
-        dico['temperature'] = ReferenceValuesModel(self.case).getTemperature()
+        from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+        dico['temperature'] = FluidCharacteristicsModel(self.case).getTemperature()
 
         return dico
 
@@ -2168,8 +2168,8 @@ class OutletBoundary(Boundary) :
         Default values
         """
         dico = {}
-        from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
-        dico['reference_pressure'] = ReferenceValuesModel(self.case).getPressure()
+        from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+        dico['reference_pressure'] = FluidCharacteristicsModel(self.case).getPressure()
         dico['scalarChoice']  = 'neumann'
         dico['scalar']        = 0.
         dico['hydraulic_head']      = 0.
