@@ -1188,8 +1188,9 @@ class MainView(object):
         """
         Save user defined laws with MEI to C functions
         """
-        mci = mei_to_c_interpreter(self.case)
-        mci.save_all_functions(self)
+        if self.case['prepro'] == False and self.case['oturns'] == False:
+            mci = mei_to_c_interpreter(self.case)
+            mci.save_all_functions(self)
 
 
     def displayAbout(self):
