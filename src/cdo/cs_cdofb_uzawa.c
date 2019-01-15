@@ -820,7 +820,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
       cs_cdofb_vecteq_apply_remaining_bc(mom_eqp, mom_eqc, cm, fm, csys, cb);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
@@ -1302,7 +1302,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       cs_cdofb_vecteq_apply_remaining_bc(mom_eqp, mom_eqc, cm, fm, csys, cb);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
@@ -1823,7 +1823,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
       cs_cdofb_vecteq_apply_remaining_bc(mom_eqp, mom_eqc, cm, fm, csys, cb);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif

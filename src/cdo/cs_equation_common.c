@@ -55,6 +55,10 @@
 #include "cs_parall.h"
 #include "cs_xdef_eval.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
