@@ -1531,6 +1531,9 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
       cs_real_3_t  _xyz, _val;
       cs_real_33_t  _eval;
 
+      for (int k = 0; k < 3; k++)
+        eval[3*f+k] = 0.; /* Reset value */
+
       /* Loop on face edges */
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -1565,7 +1568,8 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       const cs_quant_t  fq = cm->face[f];
 
-      eval[f] = 0.; /* Reset value */
+      for (int k = 0; k < 3; k++)
+        eval[3*f+k] = 0.; /* Reset value */
 
       /* Loop on face edges */
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
@@ -1576,7 +1580,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         /* Evaluate the field at the three quadrature points */
         cs_quadrature_tria_3pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
-                                cm->tef[e],
+                                cm->tef[i],
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
