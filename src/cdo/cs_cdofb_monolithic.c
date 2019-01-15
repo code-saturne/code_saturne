@@ -850,10 +850,10 @@ _apply_bc_partly(const cs_real_t                time_eval,
           } /* If Dirichlet */
 
         } /* Loop boundary faces */
-    } /* Has diffusion */
+      } /* Nitsche kind */
 
-  } /* Nitsche kind */
-} /* Boundary cell */
+    } /* Has diffusion */
+  } /* Boundary cell */
 }
 
 /*----------------------------------------------------------------------------*/

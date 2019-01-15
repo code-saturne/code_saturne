@@ -1129,7 +1129,7 @@ cs_ale_activate(void)
 /*!
  * \brief  Test if mesh velocity solving with CDO is activated
  *
- * \return true ifmesh velocity solving with CDO is requested, false otherwise
+ * \return true if mesh velocity solving with CDO is requested, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
