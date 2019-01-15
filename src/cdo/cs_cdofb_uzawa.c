@@ -376,6 +376,42 @@ _update_pr_div_rhs(const cs_property_t          *relax,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute a normalization of the residual if needed
+ *
+ * \param[in]  nsp       Navier-Stokes parameters
+ * \param[in]  mom_eqp   Set of parameters for the momentum equations
+ * \param[in]  pr        values of the pressure fields
+ *
+ * \return the reciprocal of the normalization (1. if not needed)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_compute_residual_normalization(const cs_navsto_param_t     *nsp,
+                                const cs_equation_param_t   *mom_eqp,
+                                const cs_real_t             *pr)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+
+  cs_real_t o_norm_res = 1.;
+
+  if (cs_shared_time_step->nt_cur > 1 || nsp->n_pressure_ic_defs > 0) {
+
+    cs_real_t l2_p = sqrt(cs_dot_wxx(quant->n_cells, quant->cell_vol, pr));
+
+    if (cs_glob_n_ranks > 1)
+      cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
+
+    if (l2_p > 10*mom_eqp->sles_param.eps)
+      o_norm_res /= l2_p;
+
+  } /* If one needs a normalization */
+
+  return o_norm_res;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the residual related to the divergence of the velocity field
  *
  * \param[in]  div    array of divergence inside each cell (already computed)
@@ -602,18 +638,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
   cs_real_t  *vel_f = mom_eq->get_face_values(mom_eqc);
   cs_real_t  *div = sc->divergence->val;
 
-  /* If residual normalization is needed */
-  /* ----------------------------------- */
-  cs_real_t o_norm_res = 1.;
-  if (nsp->n_pressure_ic_defs > 0) {
-    cs_real_t l2_p = sqrt(cs_dot_wxx(n_cells, quant->cell_vol, pr));
-
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
-
-    if (l2_p > 10*mom_eq->param->sles_param.eps)
-      o_norm_res =  1. / l2_p;
-  } /* If needs a normalization */
+  /* Residual normalization */
+  cs_real_t o_norm_res = _compute_residual_normalization(nsp, mom_eqp, pr);
 
   /*---------------------------------------------------------------------------
    *
@@ -1071,19 +1097,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
   cs_real_t  *vel_f = mom_eq->get_face_values(mom_eqc);
   cs_real_t  *div = sc->divergence->val;
 
-  /* If residual normalization is needed */
-  /* ----------------------------------- */
-  cs_real_t o_norm_res = 1.;
-  if (nsp->n_pressure_ic_defs > 0) {
-    cs_real_t l2_p = sqrt(cs_dot_wxx(n_cells, quant->cell_vol, pr));
-
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
-
-    if (l2_p > 10*mom_eq->param->sles_param.eps)
-      o_norm_res =  1. / l2_p;
-
-  } /* If needs a normalization */
+  /* Residual normalization */
+  cs_real_t o_norm_res = _compute_residual_normalization(nsp, mom_eqp, pr);
 
   /*---------------------------------------------------------------------------
    *
@@ -1562,19 +1577,8 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
   cs_real_t  *vel_f = mom_eq->get_face_values(mom_eqc);
   cs_real_t  *div = sc->divergence->val;
 
-  /* If residual normalization is needed */
-  /* ----------------------------------- */
-  cs_real_t o_norm_res = 1.;
-  if (nsp->n_pressure_ic_defs > 0) {
-    cs_real_t l2_p = sqrt(cs_dot_wxx(n_cells, quant->cell_vol, pr));
-
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(1, CS_REAL_TYPE, &l2_p);
-
-    if (l2_p > 10*mom_eq->param->sles_param.eps)
-      o_norm_res =  1. / l2_p;
-
-  } /* If needs a normalization */
+  /* Residual normalization */
+  cs_real_t o_norm_res = _compute_residual_normalization(nsp, mom_eqp, pr);
 
   /*---------------------------------------------------------------------------
    *
