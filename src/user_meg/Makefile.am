@@ -89,7 +89,6 @@ libcsusermeg_la_SOURCES = $(usermegfiles)
 libcsusermeg_la_LDFLAGS = -no-undefined
 
 usermegdir = $(pkgdatadir)/user_meg
-user_DATA = $(usermegfiles)
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
