@@ -190,7 +190,7 @@ class TreeModel(QAbstractItemModel):
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == 'Time settings':
-                    img_path = ":/icons/22x22/numerical_params.png"
+                    img_path = ":/icons/22x22/time_stepping.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == 'Numerical parameters':
