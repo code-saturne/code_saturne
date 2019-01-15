@@ -150,6 +150,7 @@ PreprocessingView.py \
 ProfilesModel.py \
 ProfilesView.py \
 QMeiEditorView.py \
+QMeiToCCode.py \
 SalomeActors.py \
 SalomeHandler.py \
 ScriptRunningModel.py \

@@ -3788,38 +3788,20 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   if (!cs_gui_strcmp(vars->model, "compressible_model")) {
       if (cs_glob_fluid_properties->irovar == 1) {
           cs_field_t *c_rho = CS_F_(rho);
-          _physical_property("density", "density",
-                             n_cells, cs_glob_fluid_properties->icp,
-                             cs_glob_fluid_properties->p0,
-                             cs_glob_fluid_properties->ro0,
-                             cs_glob_fluid_properties->cp0,
-                             cs_glob_fluid_properties->viscl0, visls0,
-                             c_rho->val);
+          cs_user_meg_density(c_rho->val);
       }
   }
 
   /* law for molecular viscosity */
   if (cs_glob_fluid_properties->ivivar == 1) {
     cs_field_t *c_mu = CS_F_(mu);
-    _physical_property("molecular_viscosity", "molecular_viscosity",
-                       n_cells, cs_glob_fluid_properties->icp,
-                       cs_glob_fluid_properties->p0,
-                       cs_glob_fluid_properties->ro0,
-                       cs_glob_fluid_properties->cp0,
-                       cs_glob_fluid_properties->viscl0, visls0,
-                       c_mu->val);
+    cs_user_meg_viscosity(c_mu->val);
   }
 
   /* law for specific heat */
   if (cs_glob_fluid_properties->icp > 0) {
     cs_field_t *c_cp = CS_F_(cp);
-    _physical_property("specific_heat", "specific_heat",
-                       n_cells, cs_glob_fluid_properties->icp,
-                       cs_glob_fluid_properties->p0,
-                       cs_glob_fluid_properties->ro0,
-                       cs_glob_fluid_properties->cp0,
-                       cs_glob_fluid_properties->viscl0, visls0,
-                       c_cp->val);
+    cs_user_meg_cp(c_cp->val);
   }
 
   /* law for thermal conductivity */
@@ -3836,13 +3818,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
           int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
-            _physical_property("thermal_conductivity", "thermal_conductivity",
-                               n_cells, cs_glob_fluid_properties->icp,
-                               cs_glob_fluid_properties->p0,
-                               cs_glob_fluid_properties->ro0,
-                               cs_glob_fluid_properties->cp0,
-                               cs_glob_fluid_properties->viscl0, visls0,
-                               cond_dif->val);
+            cs_user_meg_thermal_conductivity(cond_dif->val);
           }
           break;
         }

@@ -93,7 +93,7 @@ from code_saturne.Pages.XMLEditorView import XMLEditorView
 from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
-
+from code_saturne.Pages.QMeiToCCode import mei_to_c_interpreter
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -944,6 +944,7 @@ class MainView(object):
             self.statusbar.showMessage(msg, 2000)
             return
 
+        self.saveUserFormulaInC()
         self.updateTitleBar()
         self.case.xmlSaveDocument()
         self.batchFileSave()
@@ -1181,6 +1182,14 @@ class MainView(object):
 
         # Auto expand nodes in the Browser view when clicked
         self.Browser.treeView.setExpanded(index, True)
+
+
+    def saveUserFormulaInC(self):
+        """
+        Save user defined laws with MEI to C functions
+        """
+        mci = mei_to_c_interpreter(self.case)
+        mci.save_all_functions(self)
 
 
     def displayAbout(self):

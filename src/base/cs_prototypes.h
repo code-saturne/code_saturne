@@ -764,6 +764,18 @@ cs_user_gwf_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 
+void
+cs_user_meg_density(cs_real_t values[]);
+
+void
+cs_user_meg_viscosity(cs_real_t values[]);
+
+void
+cs_user_meg_cp(cs_real_t values[]);
+
+void
+cs_user_meg_thermal_conductivity(cs_real_t values[]);
+
 END_C_DECLS
 
 #endif /* __CS_PROTOTYPES_H__ */

@@ -35,6 +35,7 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import logging
+#from code_saturne.Pages.QMeiToCCode import mei_to_c_interpreter
 
 #-------------------------------------------------------------------------------
 # EOS
@@ -269,6 +270,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.mdl = FluidCharacteristicsModel(self.case)
         self.notebook = NotebookModel(self.case)
+
+#        self.mci = mei_to_c_interpreter(self.case)
 
         if EOS == 1:
             self.ava = eosAva.EosAvailable()
@@ -864,6 +867,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         self.__changeChoice(str(text), 'Rho', 'density')
 
+        # Delete C function if necessary
+#        if text == 'constant':
+#            self.mci.delete_c_function('cs_gui_user_density')
+#        else:
+#            self.mci.write_c_function('cs_gui_user_density')
+
 
     @pyqtSlot(str)
     def slotStateMu(self, text):
@@ -1073,11 +1082,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
-    @pyqtSlot()
-    def slotFormulaRho(self):
-        """
-        User formula for density
-        """
+    def getFormulaRhoComponents(self):
+
         exp = self.mdl.getFormula('density')
         req = [('density', 'Density')]
         self.m_th = ThermalScalarModel(self.case)
@@ -1104,6 +1110,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         for (nme, val) in self.notebook.getNotebookList():
             symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
 
+        return exp, req, self.list_scalars, symbols_rho, exa;
+
+
+    @pyqtSlot()
+    def slotFormulaRho(self):
+        """
+        User formula for density
+        """
+        exp, req, sca, symbols_rho, exa = self.getFormulaRhoComponents();
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -1118,11 +1134,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonRho.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
-    def slotFormulaMu(self):
-        """
-        User formula for molecular viscosity
-        """
+    def getFormulaMuComponents(self):
         exp = self.mdl.getFormula('molecular_viscosity')
         req = [('molecular_viscosity', 'Molecular Viscosity')]
         self.m_th = ThermalScalarModel(self.case)
@@ -1156,6 +1168,17 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         for (nme, val) in self.notebook.getNotebookList():
             symbols_mu.append((nme, 'value (notebook) = ' + str(val)))
 
+        return exp, req, self.list_scalars, symbols_mu, exa;
+
+
+    @pyqtSlot()
+    def slotFormulaMu(self):
+        """
+        User formula for molecular viscosity
+        """
+
+        exp, req, sca, symbols_mu, exa = self.getFormulaMuComponents()
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -1170,11 +1193,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonMu.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
-    def slotFormulaCp(self):
-        """
-        User formula for specific heat
-        """
+    def getFormulaCpComponents(self):
         exp = self.mdl.getFormula('specific_heat')
         req = [('specific_heat', 'Specific heat')]
         exa = FluidCharacteristicsView.specific_heat
@@ -1189,6 +1208,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols_cp, exa;
+
+
+    @pyqtSlot()
+    def slotFormulaCp(self):
+        """
+        User formula for specific heat
+        """
+        exp, req, sca, symbols_cp, exa = self.getFormulaCpComponents()
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1240,11 +1269,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonViscv0.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
-    def slotFormulaAl(self):
-        """
-        User formula for thermal conductivity
-        """
+    def getFormulaAlComponents(self):
         exp = self.mdl.getFormula('thermal_conductivity')
         req = [('thermal_conductivity', 'Thermal conductivity')]
         self.m_th = ThermalScalarModel(self.case)
@@ -1268,6 +1293,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols_al.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols_al, exa;
+
+
+    @pyqtSlot()
+    def slotFormulaAl(self):
+        """
+        User formula for thermal conductivity
+        """
+        exp, req, sca, symbols_al, exa = self.getFormulaAlComponents()
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1321,6 +1356,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         Translation
         """
         return text
+
 
 #-------------------------------------------------------------------------------
 # End
