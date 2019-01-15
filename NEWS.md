@@ -36,6 +36,12 @@ Bug fixes:
 - Fix unitialized indices in wall law for additional transported vectors and
   post-processing of thermal flux at boundary.
 
+Architectural changes:
+
+- Update Melissa writer to Melissa 0.5.1. (breaking compatibility with
+  older versions, but is exceptionally accepted here as Melissa is
+  still at an experimental stage).
+
 Release 5.3.1 - November 21, 2018
 ---------------------------------
 
