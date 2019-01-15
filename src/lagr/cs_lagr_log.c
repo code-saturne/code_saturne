@@ -120,6 +120,7 @@ _status(int i)
  *
  * Parameters:
  * \param[in]  s_id      stat id
+ * \param[out] nbrfac    number of particles used for the statistics
  * \param[out] gmin      min value
  * \param[out] gmax      max value
  * \param[in]  unsnbr    inverse of the number of particles impacting
@@ -131,6 +132,7 @@ _status(int i)
 
 static void
 _lagr_min_max_boundary_stats(int         s_id,
+                             cs_lnum_t  *nbrfac,
                              cs_real_t  *gmin,
                              cs_real_t  *gmax,
                              cs_real_t   unsnbr[],
@@ -140,7 +142,7 @@ _lagr_min_max_boundary_stats(int         s_id,
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   /* Initializations */
-  cs_lnum_t nbrfac = 0;
+  *nbrfac = 0;
   *gmax = -cs_math_big_r;
   *gmin =  cs_math_big_r;
 
@@ -150,7 +152,7 @@ _lagr_min_max_boundary_stats(int         s_id,
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       if (bound_stat[ifac + n_b_faces * lagr_bd_i->iencnb] > threshold) {
-        nbrfac++;
+        *nbrfac++;
         *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] * unsnbrfou[ifac]);
         *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] * unsnbrfou[ifac]);
       }
@@ -161,7 +163,7 @@ _lagr_min_max_boundary_stats(int         s_id,
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
-        nbrfac++;
+        *nbrfac++;
         *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] * unsnbr[ifac]);
         *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] * unsnbr[ifac]);
       }
@@ -172,7 +174,7 @@ _lagr_min_max_boundary_stats(int         s_id,
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
-        nbrfac++;
+        *nbrfac++;
         *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] / lagr_bd_i->tstatp);
         *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] / lagr_bd_i->tstatp);
       }
@@ -183,7 +185,7 @@ _lagr_min_max_boundary_stats(int         s_id,
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
-        nbrfac++;
+        *nbrfac++;
         *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id]);
         *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id]);
       }
@@ -771,19 +773,27 @@ cs_lagr_log_iteration(void)
 
     for (int s_id = 0; s_id < cs_glob_lagr_dim->n_boundary_stats; s_id++) {
 
-      cs_real_t gmin = cs_math_big_r;
-      cs_real_t gmax =-cs_math_big_r;
+      cs_real_t gmin;
+      cs_real_t gmax;
+      cs_lnum_t nbrfac;
 
-      _lagr_min_max_boundary_stats(s_id, &gmin, &gmax, tabvr, tabvrfou);
+      _lagr_min_max_boundary_stats(s_id, &nbrfac, &gmin, &gmax, tabvr, tabvrfou);
 
+      cs_parall_max(1, CS_INT_TYPE, &nbrfac);
       cs_parall_min(1, CS_REAL_TYPE, &gmin);
       cs_parall_max(1, CS_REAL_TYPE, &gmax);
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "lp  %20s  %12.5E  %12.5E\n",
-                    cs_glob_lagr_boundary_interactions->nombrd[s_id],
-                    gmin,
-                    gmax);
+      /* If there is no particles, no statistics */
+      if (nbrfac > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "lp  %20s  %12.5E  %12.5E\n",
+                      cs_glob_lagr_boundary_interactions->nombrd[s_id],
+                      gmin,
+                      gmax);
+      else
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "lp  %20s\n",
+                      cs_glob_lagr_boundary_interactions->nombrd[s_id]);
 
     }
 
