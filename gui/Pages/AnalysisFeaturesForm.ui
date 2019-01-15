@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>401</width>
+    <width>409</width>
     <height>512</height>
    </rect>
   </property>
@@ -137,7 +137,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Gas, coal, biomass, and fuel combustion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Reactive flows (combusion)</string>
+         <string>Reactive flows (combustion)</string>
         </property>
        </widget>
       </item>
