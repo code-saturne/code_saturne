@@ -154,11 +154,6 @@ typedef struct {
   int                         time_step;       /* Latest time step */
   double                      time_value;      /* Latest time value */
 
-#if defined(HAVE_MPI)
-  MPI_Comm                    comm;            /* Associated communicator */
-#endif
-
-  vtkCPProcessor             *processor;       /* Co processor */
   vtkCPDataDescription       *datadesc;        /* Data description */
 
   char                       *input_name;      /* input name, or NULL for
@@ -178,9 +173,98 @@ typedef struct {
 
 int _n_writers = 0;
 
+vtkCPProcessor  *_processor = NULL;         /* Co processor */
+
+#if defined(HAVE_MPI)
+MPI_Comm  _comm = MPI_COMM_NULL;            /* Associated communicator */
+MPI_Comm  _reference_comm = MPI_COMM_NULL;  /* Reference communicator */
+#endif
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Initialize coprocessor.
+ *
+ * parameters:
+ *   private_comm <-- if true, use dedicated communicator
+ *   comm         <-- associated MPI communicator.
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+static void
+_init_coprocessor(bool      private_comm,
+                  MPI_Comm  comm)
+#else
+_init_coprocessor(void)
+#endif
+{
+  if (_processor == NULL)
+    _processor = vtkCPProcessor::New();
+
+  int mpi_flag = 0;
+
+#if defined(HAVE_MPI)
+
+  MPI_Initialized(&mpi_flag);
+
+  if (mpi_flag) {
+
+    if (comm != _reference_comm) {
+
+      if (comm != MPI_COMM_NULL && _reference_comm != MPI_COMM_NULL) {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("All Catalyst writers must use the same MPI communicator"));
+      }
+      else {
+        _reference_comm = comm;
+        if (private_comm && comm != MPI_COMM_NULL)
+          MPI_Comm_dup(comm, &(_comm));
+        else
+          _comm = comm;
+      }
+
+      vtkMPICommunicatorOpaqueComm vtk_comm
+        = vtkMPICommunicatorOpaqueComm(&_comm);
+      _processor->Initialize(vtk_comm);
+
+    }
+
+  }
+
+#endif
+
+  if (!mpi_flag)
+    _processor->Initialize();
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize coprocessor.
+ *
+ * parameters:
+ *   private_comm <-- if true, use dedicated communicator
+ *   comm         <-- associated MPI communicator.
+ *----------------------------------------------------------------------------*/
+
+static void
+_free_coprocessor(void)
+{
+  if (_processor != NULL && _n_writers < 2) {
+
+    _processor->Finalize();
+    _processor->Delete();
+    _processor = NULL;
+
+#if defined(HAVE_MPI)
+    {
+      if (_comm != _reference_comm && _comm != MPI_COMM_NULL)
+        MPI_Comm_free(&_comm);
+    }
+#endif
+
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Return the Catalyst mesh id associated with a given mesh name,
@@ -995,6 +1079,8 @@ fvm_to_catalyst_init_writer(const char             *name,
 
   fvm_to_catalyst_t  *w = NULL;
 
+  bool private_comm = false;
+
   /* Initialize writer */
 
   BFT_MALLOC(w, 1, fvm_to_catalyst_t);
@@ -1012,7 +1098,6 @@ fvm_to_catalyst_init_writer(const char             *name,
   w->time_step  = -1;
   w->time_value = 0.0;
 
-  w->private_comm = false;
   w->ensight_names = true;
   w->input_name = NULL;
 
@@ -1042,7 +1127,7 @@ fvm_to_catalyst_init_writer(const char             *name,
       l_opt = i2 - i1;
 
       if ((l_opt == 12) && (strncmp(options + i1, "private_comm", l_opt) == 0))
-        w->private_comm = true;
+        private_comm = true;
       else if ((l_opt > 6) && (strncmp(options + i1, "names=", 6) == 0)) {
         if ((l_opt == 6+7) && (strncmp(options + i1 + 6, "ensight", 7) == 0))
           w->ensight_names = true;
@@ -1070,40 +1155,26 @@ fvm_to_catalyst_init_writer(const char             *name,
   }
 #endif
 
+  /* Ensure coprocessor is built */
+
+  _n_writers += 1;
+
+#if defined(HAVE_MPI)
+  _init_coprocessor(private_comm, comm);
+#else
+  _init_coprocessor();
+#endif
+
   /* Parallel parameters */
 
 #if defined(HAVE_MPI)
-  if (w->private_comm) {
-    int mpi_flag;
-    MPI_Initialized(&mpi_flag);
-
-    if (mpi_flag && comm != MPI_COMM_NULL) {
-      MPI_Comm_dup(comm, &(w->comm));
-      MPI_Comm_rank(w->comm, &(w->rank));
-      MPI_Comm_size(w->comm, &(w->n_ranks));
-    }
-    else
-      w->comm = MPI_COMM_NULL;
+  if (_comm != MPI_COMM_NULL) {
+    MPI_Comm_rank(_comm, &(w->rank));
+    MPI_Comm_size(_comm, &(w->n_ranks));
   }
-  else
-    w->comm = comm;
-#endif /* defined(HAVE_MPI) */
+#endif
 
   /* Catalyst pipeline */
-
-  w->processor = vtkCPProcessor::New();
-
-#if defined(HAVE_MPI)
-  if (w->comm != MPI_COMM_NULL && w->comm != cs_glob_mpi_comm) {
-    vtkMPICommunicatorOpaqueComm vtk_comm
-      = vtkMPICommunicatorOpaqueComm(&(w->comm));
-    w->processor->Initialize(vtk_comm);
-  }
-  else
-    w->processor->Initialize();
-#else
-  w->processor->Initialize();
-#endif
 
   vtkCPPythonScriptPipeline  *pipeline = vtkCPPythonScriptPipeline::New();
 
@@ -1129,7 +1200,7 @@ fvm_to_catalyst_init_writer(const char             *name,
                 _("Error initializing pipeline from \"%s\":\n\n"), script_path);
 
     /* pipeline->SetGhostLevel(1); */
-    w->processor->AddPipeline(pipeline);
+    _processor->AddPipeline(pipeline);
     pipeline->Delete();
 
   }
@@ -1180,8 +1251,10 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
   /* Free vtkUnstructuredGrid and field structures
      (reference counters should go to 0) */
 
-  w->processor->Finalize();
-  w->processor->Delete();
+  _free_coprocessor();
+
+  _n_writers -= 1;
+
   w->datadesc->Delete();
   w->mb->Delete();
 
@@ -1191,13 +1264,6 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
   }
 
   BFT_FREE(w->fields);
-
-#if defined(HAVE_MPI)
-  {
-    if (w->private_comm && w->comm != MPI_COMM_NULL)
-      MPI_Comm_free(&(w->comm));
-  }
-#endif /* defined(HAVE_MPI) */
 
   /* Free fvm_to_catalyst_t structure */
 
@@ -1481,7 +1547,7 @@ fvm_to_catalyst_flush(void  *this_writer_p)
 {
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
-  if (w->processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
+  if (_processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
     int n = w->datadesc->GetNumberOfInputDescriptions();
     if (n == 1)
       w->datadesc->GetInputDescription(0)->SetGrid(w->mb);
@@ -1492,7 +1558,7 @@ fvm_to_catalyst_flush(void  *this_writer_p)
         w->datadesc->GetInputDescriptionByName(w->name)->SetGrid(w->mb);
     }
 
-    w->processor->CoProcess(w->datadesc);
+    _processor->CoProcess(w->datadesc);
     w->modified = false;
   }
 }
