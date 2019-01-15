@@ -3033,6 +3033,11 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
           continue;
       }
 
+      else if (mesh_cat_type == CS_MESH_LOCATION_INTERIOR_FACES) {
+        if (field_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
+
       if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION))
         continue;
 
@@ -3041,7 +3046,8 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
         name = f->name;
 
       if (   field_loc_type == CS_MESH_LOCATION_CELLS
-          || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
+          || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
+          || field_loc_type == CS_MESH_LOCATION_INTERIOR_FACES) {
 
         const cs_real_t *cell_val = NULL, *b_face_val = NULL;
 
