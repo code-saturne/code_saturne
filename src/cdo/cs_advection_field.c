@@ -2069,8 +2069,8 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
         default:
           bft_error(__FILE__, __LINE__, 0,
-                   " Invalid dimension for evaluating the advection field %s",
-                    adv->name);
+                    " %s: Invalid dimension for evaluating the advection"
+                    " field %s", __func__, adv->name);
 
         } /* Switch */
 
@@ -2093,8 +2093,9 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
       }
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid support for evaluating the advection field %s"
-                  " at the cell center of cell %d.", adv->name, cm->c_id);
+                  " %s: Invalid support for evaluating the advection field %s"
+                  " at the cell center of cell %d.",
+                  __func__, adv->name, cm->c_id);
     }
     break; /* Definition by array */
 
@@ -2125,7 +2126,8 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, "Incompatible type of definition.");
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Incompatible type of definition.", __func__);
     break;
 
   } /* def_type */
@@ -2234,22 +2236,27 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
         case CS_QUADRATURE_HIGHER:
           {
-            cs_real_t  w0[2*3], eval0[2*3*3];
-            cs_real_t *eval1 = eval0 + 3*3, *w1 = w0 + 3;
-            cs_real_3_t  gpts[2*3];
+            /* Two triangles s_{vef} related to a vertex and three values by
+             * triangle --> 2*3 = 6 Gauss points
+             * The flux returns by the analytic function is a vector. So the
+             * size of _val is 18=6*3
+             */
+            cs_real_t  w0[6], eval0[18];
+            cs_real_t *eval1 = eval0 + 9, *w1 = w0 + 3;
+            cs_real_3_t  gpts[6];
 
-            /* Two triangles composing the dual face inside a cell */
+            /* Two triangles composing the dual face inside a cell:
+             * Evaluate the field at the three quadrature points for each one */
             cs_quadrature_tria_3pts(edge.center, fq0.center, cm->xc,
                                     sef0.meas,
                                     gpts, w0);
 
-            /* Evaluate the field at the three quadrature points */
             cs_quadrature_tria_3pts(edge.center, fq1.center, cm->xc,
                                     sef1.meas,
                                     gpts + 3, w1);
 
             cs_xdef_cw_eval_at_xyz_by_analytic(cm,
-                                               2*3, (const cs_real_t *)gpts,
+                                               6, (const cs_real_t *)gpts,
                                                time_eval,
                                                def->input,
                                                eval0);

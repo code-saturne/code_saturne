@@ -1118,10 +1118,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
     {
       assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ));
 
-      /* Two triangles svef related to a vertex and three values by triangle
+      /* Two triangles s_{vef} related to a vertex and three values by triangle
        * --> 2*3 = 6 Gauss points
        * The flux returns by the analytic function is a vector. So the size
-       * of _val is 6*3
+       * of _val is 18 = 6*3
        */
       cs_real_t _val[18], w[6];
       cs_real_3_t  gpts[6];
@@ -1262,7 +1262,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
   case CS_QUADRATURE_BARY_SUBDIV:
     {
       assert(cs_flag_test(cm->flag,
-                          CS_CDO_LOCAL_EV|CS_CDO_LOCAL_FE|CS_CDO_LOCAL_FEQ));
+                          CS_CDO_LOCAL_EV |CS_CDO_LOCAL_FE |CS_CDO_LOCAL_FEQ));
 
       const cs_quant_t  fq = cm->face[f];
 
@@ -1388,7 +1388,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
   case CS_QUADRATURE_BARY_SUBDIV:
     {
       assert(cs_flag_test(cm->flag,
-                          CS_CDO_LOCAL_EV|CS_CDO_LOCAL_FE|CS_CDO_LOCAL_FEQ));
+                          CS_CDO_LOCAL_EV| CS_CDO_LOCAL_FE| CS_CDO_LOCAL_FEQ));
 
       const cs_quant_t  fq = cm->face[f];
 

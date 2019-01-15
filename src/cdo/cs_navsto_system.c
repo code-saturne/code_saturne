@@ -742,8 +742,8 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   }
 
-  const cs_flag_t loc_flag = CS_FLAG_FULL_LOC |
-    cs_flag_primal_face | CS_FLAG_VECTOR;
+  const cs_flag_t loc_flag
+    = CS_FLAG_FULL_LOC | cs_flag_primal_face | CS_FLAG_VECTOR;
 
   cs_advection_field_def_by_array(ns->adv_field, loc_flag, face_vel,
                                   false, /* the advection field is not owner */
