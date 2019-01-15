@@ -2271,16 +2271,53 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
           }
           break;
 
-        case CS_QUADRATURE_HIGHEST:  /* Not implemented yet */
-        default:
-          bft_error(__FILE__, __LINE__, 0, " Invalid type of quadrature.");
+        case CS_QUADRATURE_HIGHEST:
+          {
+            /* Two triangles s_{vef} related to a vertex and four values by
+             * triangle --> 2*4 = 8 Gauss points
+             * The flux returns by the analytic function is a vector. So the
+             * size of _val is 24=8*3
+             */
+            cs_real_t  w0[8], eval0[24];
+            cs_real_t *eval1 = eval0 + 12, *w1 = w0 + 4;
+            cs_real_3_t  gpts[8];
+
+            /* Two triangles composing the dual face inside a cell:
+             * Evaluate the field at the four quadrature points for each one */
+            cs_quadrature_tria_4pts(edge.center, fq0.center, cm->xc,
+                                    sef0.meas,
+                                    gpts, w0);
+
+            cs_quadrature_tria_4pts(edge.center, fq1.center, cm->xc,
+                                    sef1.meas,
+                                    gpts + 4, w1);
+
+            cs_xdef_cw_eval_at_xyz_by_analytic(cm,
+                                               8, (const cs_real_t *)gpts,
+                                               time_eval,
+                                               def->input,
+                                               eval0);
+
+            cs_real_t  add0 = 0, add1 = 0;
+            for (int p = 0; p < 4; p++) {
+              add0 += w0[p] * _dp3(eval0 + 3*p, sef0.unitv);
+              add1 += w1[p] * _dp3(eval1 + 3*p, sef1.unitv);
+            }
+
+            fluxes[e] = add0 + add1;
+          }
           break;
 
-        }  /* switch type of quadrature */
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid type of quadrature.", __func__);
+          break;
+
+        }  /* Switch type of quadrature */
 
       }  /* Loop on cell edges */
 
-    }  /* definition by analytic function */
+    }  /* Definition by analytic function */
     break;
 
   case CS_XDEF_BY_ARRAY:
