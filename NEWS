@@ -9,6 +9,7 @@ Bug fixes
   some actual systems such as Debian 9 and Ubuntu 16.04.
 
 - Lagrangian Module:
+  * Fix crash in restart when not reading previous statistics.
   * Fix crash in some cases with no deposition model.
   * Fix errors in deposition/reentrainment model.
 
