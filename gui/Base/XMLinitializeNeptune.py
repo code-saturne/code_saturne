@@ -35,7 +35,7 @@ This module contains the following classe:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import sys, unittest
+import sys, unittest, re
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -409,6 +409,7 @@ class XMLinitNeptune(Variables):
         # Renaming of Pressure
         vnode = thermo_node.xmlGetNode('variables')
         pnode = thermo_node.xmlGetNode('properties')
+        ncnode = thermo_node.xmlGetNode('non_condensable_list')
 
         rdico = {'Enthalpy':'enthalpy',
                  'enthalpy':'enthalpy',
@@ -462,8 +463,22 @@ class XMLinitNeptune(Variables):
                  'elasticity':'elasticity',
                  'Xd':'Xd'}
 
+        for ii in range(20):
+            rdico['MassFractionNonCondensableGas_'+str(ii)]='mass_fraction_non_condensable_gas_'+str(ii)
+            rdico['mass_fraction_non_condensable_gas_'+str(ii)]='mass_fraction_non_condensable_gas_'+str(ii)
+            ldico['MassFractionNonCondensableGas_'+str(ii)]='mass_fraction_non_condensable_gas_'+str(ii)
+            ldico['mass_fraction_non_condensable_gas_'+str(ii)]='mass_fraction_non_condensable_gas_'+str(ii)
+
+
         old_mei_names = {'VolumeFraction':['alpha','vol_f'],
                          'volume_fraction':['alpha','vol_f']}
+
+        if ncnode != None:
+            for node in ncnode.xmlGetNodeList('variable'):
+                ncname = node['name']
+                if 'MassFractionNonCondensableGas' in ncname:
+                    node['name'] = ncname.replace('MassFractionNonCondensableGas',
+                                                  'mass_fraction_non_condensable_gas')
 
         if vnode != None:
             for node in vnode.xmlGetNodeList('variable'):
@@ -551,6 +566,10 @@ class XMLinitNeptune(Variables):
                         vn['name'] = turb_dico[old_name]
                         if field_id:
                             vn['name'] += field_id
+
+                    elif bool(re.search('MassFractionNonCondensableGas', old_name)):
+                        vn['name'] = vn['name'].replace('MassFractionNonCondensableGas',
+                                                        'mass_fraction_non_condensable_gas')
 
 
 
