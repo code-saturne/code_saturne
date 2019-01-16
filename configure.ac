@@ -1160,7 +1160,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  src/turb/Makefile src/alge/Makefile src/mesh/Makefile
                  src/user/Makefile src/user_examples/Makefile
-                 src/user_meg/Makefile
+                 src/meg/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  salome/fsi_coupling/Makefile

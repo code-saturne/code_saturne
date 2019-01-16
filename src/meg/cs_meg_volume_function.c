@@ -51,34 +51,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_meg_thermal_conductivity.c
- *
- * \brief User definition of the thermal conductivity based on the GUI (MEG).
- *
- * \param[out]  values  computed field values
- */
-/*----------------------------------------------------------------------------*/
-
 void
-cs_user_meg_thermal_conductivity(cs_real_t  values[])
+cs_meg_volume_function(cs_field_t              *f,
+                       const cs_volume_zone_t  *z)
 {
-  /* TEST TO REMOVE */
-  return;
 
-  /* START USER DEFS */
-  /* END USER DEFS */
 
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-
-# pragma omp parallel if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    /* START USER CODE */
-    /* END USER CODE */
-  }
 }
 
-/*----------------------------------------------------------------------------*/
-
 END_C_DECLS
+

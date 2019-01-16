@@ -29,7 +29,7 @@ SUBDIRS += \
 fvm gui \
 base cdo pprt alge mesh turb darc \
 atmo cfbl cogz comb ctwr elec lagr rayt \
-user user_examples user_meg apps
+user user_examples meg apps
 endif
 
 # General flags

@@ -143,7 +143,7 @@ $(top_builddir)/src/gui/libcsgui.la \
 $(top_builddir)/src/lagr/libcslagr.la \
 $(top_builddir)/src/rayt/libcsrayt.la \
 $(top_builddir)/src/user/libcsuser.la \
-$(top_builddir)/src/user_meg/libcsusermeg.la \
+$(top_builddir)/src/meg/libcsmeg.la \
 $(top_builddir)/src/libcsmodules.la \
 $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/bft/libbft.la \

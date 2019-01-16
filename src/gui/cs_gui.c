@@ -3784,24 +3784,26 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   cs_var_t  *vars = cs_glob_var;
   const int iscalt = cs_glob_thermal_model->iscalt;
 
+  const cs_volume_zone_t *z_all = cs_volume_zone_by_name("all_cells");
+
   /* law for density */
   if (!cs_gui_strcmp(vars->model, "compressible_model")) {
       if (cs_glob_fluid_properties->irovar == 1) {
           cs_field_t *c_rho = CS_F_(rho);
-          cs_user_meg_density(c_rho->val);
+          cs_meg_volume_function(c_rho, z_all);
       }
   }
 
   /* law for molecular viscosity */
   if (cs_glob_fluid_properties->ivivar == 1) {
     cs_field_t *c_mu = CS_F_(mu);
-    cs_user_meg_viscosity(c_mu->val);
+    cs_meg_volume_function(c_mu, z_all);
   }
 
   /* law for specific heat */
   if (cs_glob_fluid_properties->icp > 0) {
     cs_field_t *c_cp = CS_F_(cp);
-    cs_user_meg_cp(c_cp->val);
+    cs_meg_volume_function(c_cp, z_all);
   }
 
   /* law for thermal conductivity */
@@ -3818,7 +3820,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
           int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
-            cs_user_meg_thermal_conductivity(cond_dif->val);
+            cs_meg_volume_function(cond_dif, z_all);
           }
           break;
         }

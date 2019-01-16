@@ -764,17 +764,25 @@ cs_user_gwf_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 
-void
-cs_user_meg_density(cs_real_t values[]);
+/*============================================================================
+ *  MEG function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate GUI defined mathematical expressions over volume zones.
+ *
+ * \param[in, out]   f    pointer to a cs_field_t structure
+ * \param[in]        z    pointer to a cs_volume_zone_t structure
+ *
+*/
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_meg_viscosity(cs_real_t values[]);
+cs_meg_volume_function(cs_field_t             *f,
+                       const cs_volume_zone_t *z);
 
-void
-cs_user_meg_cp(cs_real_t values[]);
-
-void
-cs_user_meg_thermal_conductivity(cs_real_t values[]);
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

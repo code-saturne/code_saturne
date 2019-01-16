@@ -77,16 +77,13 @@ EXTRA_DIST =
 # Library source files
 
 megfiles = \
-cs_user_meg_density.c \
-cs_user_meg_viscosity.c \
-cs_user_meg_cp.c \
-cs_user_meg_thermal_conductivity.c
+cs_meg_volume_function.c
 
-noinst_LTLIBRARIES = libcsusermeg.la
-libcsusermeg_la_SOURCES = $(megfiles)
-libcsusermeg_la_LDFLAGS = -no-undefined
+noinst_LTLIBRARIES = libcsmeg.la
+libcsmeg_la_SOURCES = $(megfiles)
+libcsmeg_la_LDFLAGS = -no-undefined
 
-megdir = $(pkgdatadir)/user_meg
+megdir = $(pkgdatadir)/meg
 meg_DATA = $(megfiles)
 
 # Finish user files installation
@@ -95,7 +92,7 @@ meg_DATA = $(megfiles)
 # Done with two sed passes (does not work otherwise)
 
 install-data-hook:
-	cd $(DESTDIR)$(pkgdatadir)/user_meg && \
+	cd $(DESTDIR)$(pkgdatadir)/meg && \
 	stubvers="^\!VERS\n"; \
 	version1="\!                      Code_Saturne version $(VERSION)\n"; \
 	version2="\!                      --------------------------"; \
