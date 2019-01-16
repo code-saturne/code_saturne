@@ -235,7 +235,7 @@ const char  *cs_lagr_moment_type_name[] = {N_("MEAN"),
 /* lagr statistics structure and associated pointer */
 
 static cs_lagr_stat_options_t _lagr_stat_options
-  = {.isuist = 0,
+  = {.isuist = 1,
      .idstnt = 0,
      .nstist = 0,
      .threshold = 1e-12};

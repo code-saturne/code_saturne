@@ -156,7 +156,7 @@ cs_lagr_dim_t *cs_glob_lagr_dim = &_lagr_dim;
 static cs_lagr_time_scheme_t _lagr_time_scheme
   = {.iilagr = 0,
      .isttio = 0,
-     .isuila = 0,
+     .isuila = 1,
      .t_order = 0,
      .modcpl = 0,
      .idirla = 0,
