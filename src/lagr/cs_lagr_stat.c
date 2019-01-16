@@ -1008,8 +1008,12 @@ _restart_info_read(void)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  if (ts->nt_prev < 1 || !cs_file_isreg("restart/lagrangian_stats"))
+  if (   ts->nt_prev < 1
+      || !cs_file_isreg("restart/lagrangian_stats")
+      || cs_glob_lagr_stat_options->isuist < 1) {
+    _restart_info_checked = true;
     return;
+  }
 
   cs_restart_t *r = NULL;
 

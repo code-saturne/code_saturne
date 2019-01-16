@@ -2488,6 +2488,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   }  /* end if number of particles > 0 */
 
+  else if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
+    cs_lagr_stat_update();
+
   /* Optional user modification of Lagrangian variables at end of iteration */
 
   cs_user_lagr_extra_operations(dt);
