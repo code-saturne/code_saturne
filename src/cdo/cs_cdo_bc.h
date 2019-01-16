@@ -219,6 +219,25 @@ cs_cdo_bc_is_neumann(cs_flag_t    flag)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Check if a flag is associated to a sliding boundary
+ *
+ * \param[in] flag     flag to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_cdo_bc_is_sliding(cs_flag_t    flag)
+{
+  if (flag & CS_CDO_BC_SLIDING)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the structure which translates the BC definitions from the
  *         user viewpoint into a ready-to-use structure for setting the arrays
  *         keeping the values of the boundary condition to set.

@@ -849,10 +849,25 @@ _apply_bc_partly(const cs_real_t                time_eval,
 
           } /* If Dirichlet */
 
-        } /* Loop boundary faces */
+        } /* Loop on boundary faces */
       } /* Nitsche kind */
 
     } /* Has diffusion */
+
+    if (csys->has_sliding) {
+      for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+        /* Get the boundary face in the cell numbering */
+        const short int  f = csys->_f_ids[i];
+
+        if (cs_cdo_bc_is_sliding(csys->bf_flag[f])) {
+          const cs_quant_t  fq = cm->face[f];
+          for (int k = 0; k < 3; k++) divop[3*f+k] += fq.meas*fq.unitv[k];
+        }
+
+      } /* Loop on boundary faces */
+    } /* Sliding BC */
+
   } /* Boundary cell */
 }
 
