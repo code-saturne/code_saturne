@@ -76,22 +76,18 @@ EXTRA_DIST =
 
 # Library source files
 
-usermegfiles = \
+megfiles = \
 cs_user_meg_density.c \
 cs_user_meg_viscosity.c \
 cs_user_meg_cp.c \
 cs_user_meg_thermal_conductivity.c
 
-# Special treatment for files existing both in f90 and C:
-
 noinst_LTLIBRARIES = libcsusermeg.la
-libcsusermeg_la_SOURCES = $(usermegfiles)
+libcsusermeg_la_SOURCES = $(megfiles)
 libcsusermeg_la_LDFLAGS = -no-undefined
 
-usermegdir = $(pkgdatadir)/user_meg
-
-clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
+megdir = $(pkgdatadir)/user_meg
+meg_DATA = $(megfiles)
 
 # Finish user files installation
 # - tag with the package version number
@@ -100,7 +96,6 @@ clean-local:
 
 install-data-hook:
 	cd $(DESTDIR)$(pkgdatadir)/user_meg && \
-	f90_user_files=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
 	version1="\!                      Code_Saturne version $(VERSION)\n"; \
 	version2="\!                      --------------------------"; \

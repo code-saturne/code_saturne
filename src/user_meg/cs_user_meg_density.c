@@ -41,29 +41,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_notebook.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_selector.h"
-
-#include "cs_post.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -77,27 +55,30 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_meg_density.c
  *
- * \brief User definition of the density based on the GUI (MEI) in C code.
+ * \brief User definition of the density based on the GUI (MEG).
  *
+ * \param[out]  values  computed field values
  */
 /*----------------------------------------------------------------------------*/
 
-
 void
-cs_user_meg_density(cs_real_t values[])
+cs_user_meg_density(cs_real_t  values[])
 {
-
   /* TEST TO REMOVE */
   return;
 
   /* START USER DEFS */
   /* END USER DEFS */
 
-  cs_lnum_t ncells = cs_glob_mesh->n_cells;
-  for (int c_id=0; c_id<ncells; c_id++) {
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+# pragma omp parallel if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     /* START USER CODE */
     /* END USER CODE */
   }
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
