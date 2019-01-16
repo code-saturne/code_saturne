@@ -466,7 +466,7 @@ temperature = enthalpy / 1000;
         self.currentFluid = 0
 
         label = self.m_out.getVariableLabel("none", "pressure")
-        self.list_scalars.append((label, self.tr("Field variables")))
+        self.list_scalars.append(('pressure', label))
 
         self.tableModelProperties = StandardItemModelProperty(self.mdl, self.ncond, self.dicoM2V, self.dicoV2M)
         self.tableViewProperties.setModel(self.tableModelProperties)
@@ -1028,12 +1028,28 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueElastCoef(fieldId,ec)
 
 
-    @pyqtSlot()
-    def slotFormulaRho(self):
+    def getFormulaComponents(self, fieldId, tag):
+
+        if tag == 'density':
+            return self.getFormulaRhoComponents(fieldId)
+
+        elif tag == 'molecular_viscosity':
+            return self.getFormulaMuComponents(fieldId)
+
+        elif tag == 'specific_heat':
+            return self.getFormulaCpComponents(fieldId)
+
+        elif tag == 'thermal_conductivity':
+            return self.getFormulaAlComponents(fieldId)
+
+        else:
+            return None
+
+
+    def getFormulaRhoComponents(self, fieldId):
         """
         User formula for density
         """
-        fieldId = self.currentFluid
         exp = self.mdl.getFormula(fieldId, 'density')
         if not exp:
             exp = "rho = 1.8;"
@@ -1046,11 +1062,21 @@ temperature = enthalpy / 1000;
 
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_rho.append((label, self.tr("Field variable")))
-        symbols_rho.append(('rho0', 'Density (reference value)'))
+            symbols_rho.append((label, "enthalpy_"+str(fieldId)))
+        rho0_value = self.mdl.getInitialValue(fieldId, 'density')
+        symbols_rho.append(('rho0', 'Density (reference value) = '+str(rho0_value)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_rho.append((s, self.tr("Additional species")))
+            symbols_rho.append((s, s))
+
+        return exp, req, self.list_scalars, symbols_rho, exa
+
+
+    @pyqtSlot()
+    def slotFormulaRho(self):
+        fieldId = self.currentFluid
+
+        exp, req, sca, symbols_rho, exa = self.getFormulaRhoComponents(fieldId)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1058,6 +1084,7 @@ temperature = enthalpy / 1000;
                                 required   = req,
                                 symbols    = symbols_rho,
                                 examples   = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -1066,12 +1093,10 @@ temperature = enthalpy / 1000;
             self.pushButtonDensity.setToolTip(exp)
 
 
-    @pyqtSlot()
-    def slotFormulaMu(self):
+    def getFormulaMuComponents(self, fieldId):
         """
         User formula for molecular viscosity
         """
-        fieldId = self.currentFluid
         exp = self.mdl.getFormula(fieldId, 'molecular_viscosity')
         if not exp:
             exp = "mu = 4.56e-05;"
@@ -1083,11 +1108,21 @@ temperature = enthalpy / 1000;
            symbols_mu.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_mu.append((label, self.tr("Field variable")))
-        symbols_mu.append(('mu0', 'Viscosity (reference value)'))
+            symbols_mu.append((label, 'enthalpy_'+str(fieldId)))
+        mu0_val = self.mdl.getInitialValue(fieldId, 'molecular_viscosity')
+        symbols_mu.append(('mu0', 'Viscosity (reference value) = '+str(mu0_val)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_mu.append((s, self.tr("Additional species")))
+            symbols_mu.append((s, s))
+
+        return exp, req, self.list_scalars, symbols_mu, exa
+
+
+    @pyqtSlot()
+    def slotFormulaMu(self):
+        fieldId = self.currentFluid
+
+        exp, req, sca, symbols_mu, exa = self.getFormulaMuComponents(fieldId)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1103,13 +1138,12 @@ temperature = enthalpy / 1000;
             self.pushButtonViscosity.setToolTip(exp)
 
 
-    @pyqtSlot()
-    def slotFormulaCp(self):
+    def getFormulaCpComponents(self, fieldId):
         """
         User formula for specific heat
         """
-        fieldId = self.currentFluid
         exp = self.mdl.getFormula(fieldId, 'specific_heat')
+
         if not exp:
             exp = "cp = 4000.;"
         req = [('cp', 'Specific heat')]
@@ -1120,11 +1154,24 @@ temperature = enthalpy / 1000;
            symbols_cp.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_cp.append((label, self.tr("Field variable")))
-        symbols_cp.append(('cp0', 'Specific heat (reference value)'))
+            symbols_cp.append((label, "enthalpy_"+str(fieldId)))
+        cp0_val = self.mdl.getInitialValue(fieldId, "specific_heat")
+        symbols_cp.append(('cp0', 'Specific heat (reference value) = '+str(cp0_val)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_cp.append((s, self.tr("Additional species")))
+            symbols_cp.append((s, s))
+
+        return exp, req, self.list_scalars, symbols_cp, exa
+
+
+    @pyqtSlot()
+    def slotFormulaCp(self):
+        """
+        User formula for specific heat
+        """
+        fieldId = self.currentFluid
+
+        exp, req, sca, symbols_cp, exa = self.getFormulaCpComponents(fieldId)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1140,12 +1187,10 @@ temperature = enthalpy / 1000;
             self.pushButtonSpecificHeat.setToolTip(exp)
 
 
-    @pyqtSlot()
-    def slotFormulaAl(self):
+    def getFormulaAlComponents(self, fieldId):
         """
         User formula for thermal conductivity
         """
-        fieldId = self.currentFluid
         exp = self.mdl.getFormula(fieldId, 'thermal_conductivity')
         if not exp:
             exp = "lambda = 1.e-5;"
@@ -1157,11 +1202,24 @@ temperature = enthalpy / 1000;
            symbols_al.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_al.append((label, self.tr("Field variable")))
-        symbols_al.append(('lambda0', 'Thermal conductivity (reference value)'))
+            symbols_al.append((label, 'enthalpy_'+str(fieldId)))
+        l0_val = self.mdl.getInitialValue(fieldId, 'thermal_conductivity')
+        symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = '+str(l0_val)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_al.append((s, self.tr("Additional species")))
+            symbols_al.append((s, s))
+
+        return exp, req, self.list_scalars, symbols_al, exa
+
+
+    @pyqtSlot()
+    def slotFormulaAl(self):
+        """
+        User formula for thermal conductivity
+        """
+        fieldId = self.currentFluid
+
+        exp, req, sca, symbols_al, exa = self.getFormulaAlComponents(fieldId)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

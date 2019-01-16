@@ -228,7 +228,7 @@ class mei_to_c_interpreter:
         else:
             usr_code += '\n'
 
-        usr_code = usr_code.replace(name, 'f->val[c_id]')
+        usr_code = usr_code.replace(required[0][0], 'f->val[c_id]')
 
         # Write the block
         usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(z->name, "%s") == 0) {\n' \
@@ -237,7 +237,7 @@ class mei_to_c_interpreter:
         usr_blck += '\n' + usr_defs + '\n'
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id; e_id < z->n_cells; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = z->cell_ids[e_id];'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = z->cell_ids[e_id];\n'
 
         usr_blck += usr_code
         usr_blck += 2*tab + '}\n'
@@ -282,6 +282,20 @@ class mei_to_c_interpreter:
             if fcv.mdl.getPropertyMode('thermal_conductivity') == 'variable':
                 exp, req, sca, sym, exa = fcv.getFormulaAlComponents()
                 self.init_c_block(exp, req, sym, sca, 'thermal_conductivity')
+
+        else:
+            from code_saturne.Pages.ThermodynamicsView import ThermodynamicsView
+            tv = ThermodynamicsView(root, self.case)
+
+            authorized_fields = ['density', 'molecular_viscosity',
+                                 'specific_heat', 'thermal_conductivity']
+
+            for fieldId in tv.mdl.getFieldIdList():
+                for fk in authorized_fields:
+                    if tv.mdl.getPropertyMode(fieldId, fk) == 'user_law':
+                        name = fk + '_' + str(fieldId)
+                        exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId, fk)
+                        self.init_c_block(exp, req, sym, sca, name)
 
         # Delete previous existing file
         file2write = 'cs_meg_volume_function.c'
