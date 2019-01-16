@@ -265,6 +265,30 @@ void
 cs_user_parameters(cs_domain_t *domain)
 {
 
+  /* Time stepping  (0 : uniform and constant
+                     1 : variable in time, uniform in space
+                     2 : variable in time and space
+                    -1 : steady algorithm) */
+
+
+  cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
+  time_opt->idtvar = 0;
+
+
+  /* Reference time step dt_ref
+     The example given below is probably not adapted to your case. */
+
+  cs_real_t dt_ref = 0.005; // was 0.05
+  domain->time_step->dt_ref = dt_ref;
+
+  /* Duration
+     nt_max is absolute number of the last time step required
+     if we have already run 10 time steps and want to
+     run 10 more, nt_max must be set to 10 + 10 = 20 */
+
+  domain->time_step->nt_max = (int) (40./dt_ref);
+
+
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/
 

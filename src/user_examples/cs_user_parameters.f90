@@ -571,42 +571,6 @@ type(var_cal_opt) :: vcopt
 
 ileaux = 0
 
-
-! --- Time stepping  (0 : uniform and constant
-!                     1 : variable in time, uniform in space
-!                     2 : variable in time and space
-!                    -1 : steady algorithm)
-
-idtvar = 0
-
-
-! --- Duration
-!       ntmabs = absolute number of the last time step required
-!         if we have already run 10 time steps and want to
-!         run 10 more, ntmabs must be set to 10 + 10 = 20
-
-ntmabs = 10
-
-
-! --- Reference time step
-!     The example given below is probably not adapted to your case.
-
-
-dtref  = 0.01d0
-
-! --- Maximum time step: dtmax
-!     Set a value base on characteristic values of your case.
-!      otherwise, the code will use a multiple of dtref by default.
-!     Example with
-!        Ld: "dynamic" length (for example, the domain length)
-!        Ud: characteristic flow velocity
-!        Lt: thermal length (for example, the domain height gravity-wise)
-!        Delta_rho/rho: relative density difference
-!        g: gravity acceleration
-
-!     dtmax = min(Ld/Ud, sqrt(Lt/(g.Delta_rho/rho)))
-
-
 ! --- Algorithm to take into account the thermodynamical pressure variation in time
 !     (not used by default except if idilat = 3)
 
