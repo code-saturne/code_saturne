@@ -287,24 +287,25 @@ class mei_to_c_interpreter:
         file2write = 'cs_meg_volume_function.c'
         self.delete_file(file2write)
 
-        # Write the functions
-        code_to_write = _file_header + _vol_function_header
-        for key in self.funcs.keys():
-            m1 = '/* User defined formula for variable %s over zone %s  */' \
-                    % (key, self.funcs[key]['zone'])
-            m2 = '/* '+'-'*(len(m1)-6)+' */\n'
+        # Write the functions if needed
+        if len(self.funcs.keys()) > 0:
+            code_to_write = _file_header + _vol_function_header
+            for key in self.funcs.keys():
+                m1 = '/* User defined formula for variable %s over zone %s  */' \
+                        % (key, self.funcs[key]['zone'])
+                m2 = '/* '+'-'*(len(m1)-6)+' */\n'
 
-            code_to_write += "  " + m2
-            code_to_write += "  " + m1 + '\n'
-            code_to_write += self.write_c_block(key)
-            code_to_write += "  " + m2 + '\n'
+                code_to_write += "  " + m2
+                code_to_write += "  " + m1 + '\n'
+                code_to_write += self.write_c_block(key)
+                code_to_write += "  " + m2 + '\n'
 
-        code_to_write += _file_footer
+            code_to_write += _file_footer
 
-        fpath = os.path.join(self.case['case_path'], 'SRC', file2write)
-        new_file = open(fpath, 'w')
-        new_file.write(code_to_write)
-        new_file.close()
+            fpath = os.path.join(self.case['case_path'], 'SRC', file2write)
+            new_file = open(fpath, 'w')
+            new_file.write(code_to_write)
+            new_file.close()
     # -------------------------------
 
 #-------------------------------------------------------------------------------
