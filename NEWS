@@ -6,6 +6,7 @@ Bug fixes
 ---------
 
 - Lagrangian Module:
+  * Fix crash in restart when not reading previous statistics.
   * Fix errors in deposition/reentrainment model.
   * Fix division by 0 in boundary stats.
 
