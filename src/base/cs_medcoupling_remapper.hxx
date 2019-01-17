@@ -54,10 +54,10 @@ BEGIN_C_DECLS
 typedef struct _cs_medcoupling_remapper_t cs_medcoupling_remapper_t;
 
 /*============================================================================
- * Public C++ function prototypes
+ * Public C function prototypes
  *============================================================================*/
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief get a remapper by its id
  *
@@ -65,7 +65,7 @@ typedef struct _cs_medcoupling_remapper_t cs_medcoupling_remapper_t;
  *
  * \return  pointer to cs_medcoupling_remapper_t struct
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_id(int  r_id);
@@ -78,14 +78,12 @@ cs_medcoupling_remapper_by_id(int  r_id);
  *
  * \return  pointer to cs_medcoupling_remapper_t struct
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_name_try(const char  *name);
 
-#if defined(HAVE_MEDCOUPLING_LOADER)
-
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief initialize a remapper based on a set of given arguments
  *
@@ -100,7 +98,7 @@ cs_medcoupling_remapper_by_name_try(const char  *name);
  *
  * \return  id of the new remapper
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_medcoupling_remapper_initialize(const char   *name,
@@ -112,9 +110,7 @@ cs_medcoupling_remapper_initialize(const char   *name,
                                    int           iteration,
                                    int           order);
 
-#endif /* HAVE_MEDCOUPLING_LOADER */
-
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief set and load a given time iteration from the MED file
  *
@@ -123,61 +119,57 @@ cs_medcoupling_remapper_initialize(const char   *name,
  * \param[in] order        iteration order to load
  *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
                                       int                         iteration,
                                       int                         order);
 
-
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief update the interpolation matrix of the remapper
  *
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
  *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r);
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Interpolate values for a given field
  *
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
- * \param[in] field_id     id of the field to interpolate (in the list given before)
+ * \param[in] field_id     id of the field to interpolate (in list given before)
  * \param[in] default_val  value to apply for elements not intersected by
  *                         source mesh
  *
  * \return  pointer to cs_real_t array containing the new values
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
 cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
                                     int                         field_id,
                                     double                      default_val);
 
-
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief translate the mesh using a given vector
  *
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
  * \param[in] translation  translation vector
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
                                   cs_real_t                   translation[3]);
 
-
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Rotate the mesh using a center point, axis and angle
  *
@@ -185,9 +177,8 @@ cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
  * \param[in] invariant  coordinates of the invariant point
  * \param[in] axis       rotation axis vector
  * \param[in] angle      rotation angle in radians
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
