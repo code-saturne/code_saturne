@@ -43,7 +43,7 @@ AC_ARG_WITH(medcoupling,
             [with_medcoupling=check])
 
 AC_ARG_ENABLE(medcoupling-as-plugin,
-  [AS_HELP_STRING([--disable-medcoupling-as-plugin], [do not use MEDCoupling as plugin])],
+  [AS_HELP_STRING([--enable-medcoupling-as-plugin], [use MEDCoupling as plugin])],
   [
     case "${enableval}" in
       yes) cs_have_plugin_medcoupling=yes ;;
@@ -51,7 +51,7 @@ AC_ARG_ENABLE(medcoupling-as-plugin,
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-medcoupling-as-plugin]) ;;
     esac
   ],
-  [ cs_have_plugin_medcoupling=yes ]
+  [ cs_have_plugin_medcoupling=no ]
 )
 
 if test x$cs_have_dlloader = xno -o x$enable_shared = xno ; then
