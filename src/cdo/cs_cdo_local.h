@@ -313,6 +313,8 @@ static inline short int
 cs_cell_mesh_get_v(const cs_lnum_t              v_id,
                    const cs_cell_mesh_t  *const cm)
 {
+  if (cm == NULL)
+    return -1;
   for (short int v = 0; v < cm->n_vc; v++)
     if (cm->v_ids[v] == v_id)
       return v;
@@ -335,6 +337,8 @@ static inline short int
 cs_cell_mesh_get_f(const cs_lnum_t              f_id,
                    const cs_cell_mesh_t  *const cm)
 {
+  if (cm == NULL)
+    return -1;
   for (short int f = 0; f < cm->n_fc; f++)
     if (cm->f_ids[f] == f_id)
       return f;

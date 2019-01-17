@@ -85,35 +85,43 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
                const cs_cell_mesh_t        *cm,
                const cs_cell_sys_t         *csys)
 {
-#if 1 /* Example: Only search debug information for a givan equation */
-  _Bool has_name = false;
-  if (eqp != NULL) {
-    if (strcmp(eqp->name, "Tracer1") == 0)
-      has_name=true;
-  }
-#else
   CS_UNUSED(eqp);
-  _Bool has_name = true;
+  CS_UNUSED(cm);
+  CS_UNUSED(csys);
+
+#if 0 /* First example: Look for debug information related the cell number 0 */
+  if (cm != NULL)
+    if (cm->c_id == 0)
+      return true;
+  if (csys != NULL)
+    if (csys->c_id == 0)
+      return true;
 #endif
 
-  if (has_name) {
-#if 1 /* First example: Look for the cells which have the vertex 441 */
-    const short int _v = cs_cell_mesh_get_v(441, cm);
-#else
-    const short int _v = 0;
-    CS_UNUSED(_v);
+#if 0 /* Second example: Only search debug information for a given equation and
+         a requested vertex */
+
+  /* Vertex number 441 belongs to the current cell ? */
+  const cs_lnum_t  target_vertex_id = 441;
+  const short int _v = cs_cell_mesh_get_v(target_vertex_id, cm);
+  if (_v < 0)
+    return false;
+
+  if (eqp != NULL)
+    if (strcmp(eqp->name, "Tracer1") == 0)
+      return true;
 #endif
 
-#if 1 /* Second example: Look for the cells which have a previous DoF value
-         greater than 0.06 and the vertex 441 */
-    if (csys != NULL && _v > -1) {
-      if (csys->val_n[_v] > 0.06)
-        return true;
-    }
-#else
-    CS_UNUSED(csys);
+#if 0 /* Third example: Look for the cells which have a previous DoF value
+         greater than 0.06 for the face 1 */
+  const cs_lnum_t target_face_id = 1;
+  const short int _f = cs_cell_mesh_get_f(target_face_id, cm);
+
+  if (csys != NULL && _f > -1) {
+    if (csys->val_n[_f] > 0.06)
+      return true;
+  }
 #endif
-  } /* The current equation has the requested name */
 
   return false;
 }
