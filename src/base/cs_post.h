@@ -81,6 +81,11 @@ BEGIN_C_DECLS
 #define CS_POST_MESH_TRAJECTORIES     -4       /* particle output */
 #define CS_POST_MESH_PROBES           -5       /* probes output */
 
+/* Additional categories (no associated default mesh */
+
+#define CS_POST_MESH_SURFACE         -12       /* surface (boundary and/or
+                                                  interior) mesh */
+
 /*============================================================================
  * Local type definitions
  *============================================================================*/
