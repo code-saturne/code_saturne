@@ -1082,7 +1082,32 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
+    def getFormulaComponents(self, tag):
+        """
+        Get the formula components for a given tag
+        """
+
+        if tag == 'density':
+            return self.getFormulaRhoComponents()
+
+        elif tag == 'molecular_viscosity':
+            return self.getFormulaMuComponents()
+
+        elif tag == 'specific_heat':
+            return self.getFormulaCpComponents()
+
+        elif tag == 'thermal_conductivity':
+            return self.getFormulaAlComponents()
+
+        else:
+            msg = 'Formula is not available for field %s in MEG' % tag
+            raise Exception(msg)
+
+
     def getFormulaRhoComponents(self):
+        """
+        User formula for density
+        """
 
         exp = self.mdl.getFormula('density')
         req = [('density', 'Density')]
@@ -1135,6 +1160,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
 
     def getFormulaMuComponents(self):
+        """
+        User formula for molecular viscosity
+        """
+
         exp = self.mdl.getFormula('molecular_viscosity')
         req = [('molecular_viscosity', 'Molecular Viscosity')]
         self.m_th = ThermalScalarModel(self.case)
@@ -1194,6 +1223,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
 
     def getFormulaCpComponents(self):
+        """
+        User formula for specific heat
+        """
         exp = self.mdl.getFormula('specific_heat')
         req = [('specific_heat', 'Specific heat')]
         exa = FluidCharacteristicsView.specific_heat
@@ -1270,6 +1302,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
 
     def getFormulaAlComponents(self):
+        """
+        User formula for thermal conductivity
+        """
         exp = self.mdl.getFormula('thermal_conductivity')
         req = [('thermal_conductivity', 'Thermal conductivity')]
         self.m_th = ThermalScalarModel(self.case)

@@ -372,9 +372,9 @@ class MainFieldsInitializationTestCase(ModelTest):
         from NonCondensableModel import NonCondensableModel
         NonCondensableModel(self.case).addNonCondensable()
         mdl = MainFieldsInitializationModel(self.case)
-        mdl.setInitialNonCondensable('1','2','MassFractionNonCondensableGas_0',0.23)
+        mdl.setInitialNonCondensable('1','2','mass_fraction_non_condensable_gas_0',0.23)
         doc = '''<non_condensable_list>
-                         <variable field_id="2" label="XX_2" name="MassFractionNonCondensableGas_0">
+                         <variable field_id="2" label="XX_2" name="mass_fraction_non_condensable_gas_0">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
                                  <initial_value zone_id="1">
@@ -384,7 +384,7 @@ class MainFieldsInitializationTestCase(ModelTest):
                  </non_condensable_list>'''
         assert mdl.XMLNonCondvariables == self.xmlNodeFromString(doc),\
             'Could not set InitialNonCondensable'
-        assert mdl.getInitialNonCondensable('1','2','MassFractionNonCondensableGas_0') == 0.23,\
+        assert mdl.getInitialNonCondensable('1','2','mass_fraction_non_condensable_gas_0') == 0.23,\
             'Could not get InitialNonCondensable'
 
 

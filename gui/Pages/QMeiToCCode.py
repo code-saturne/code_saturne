@@ -145,28 +145,29 @@ class mei_to_c_interpreter:
         internal_fields = []
 
         for s in symbols:
-            if s[0] == 'dt':
-                usr_defs += ntabs*tab + 'cs_real_t dt = cs_glob_time_step->dt;\n'
-                known_symbols.append(s[0])
-            elif s[0] == 'time':
-                usr_defs += ntabs*tab + 'cs_real_t time = cs_glob_time_step->t_cur;\n'
-                known_symbols.append(s[0])
-            elif s[0] == 'iter':
-                usr_defs += ntabs*tab + 'int iter = cs_glob_time_step->nt_cur;\n'
-                known_symbols.append(s[0])
-            elif s[0] in coords:
-                ic = coords.index(s[0])
-                lxyz = 'cs_real_t %s = xyz[c_id][%s];\n' % (s[0], str(ic))
-                usr_code += (ntabs+1)*tab + lxyz
-                known_symbols.appned(s[0])
-                need_coords = True
-            elif s not in scalars:
-                if len(s[1].split('=')) > 1:
-                    sval = s[1].split('=')[-1]
-                    usr_defs += ntabs*tab + 'cs_real_t '+s[0]+' = '+str(sval)+';\n'
+            if s[0] in expression:
+                if s[0] == 'dt':
+                    usr_defs += ntabs*tab + 'cs_real_t dt = cs_glob_time_step->dt;\n'
                     known_symbols.append(s[0])
-                else:
-                    internal_fields.append((s[0], s[1].lower()))
+                elif s[0] == 'time':
+                    usr_defs += ntabs*tab + 'cs_real_t time = cs_glob_time_step->t_cur;\n'
+                    known_symbols.append(s[0])
+                elif s[0] == 'iter':
+                    usr_defs += ntabs*tab + 'int iter = cs_glob_time_step->nt_cur;\n'
+                    known_symbols.append(s[0])
+                elif s[0] in coords:
+                    ic = coords.index(s[0])
+                    lxyz = 'cs_real_t %s = xyz[c_id][%s];\n' % (s[0], str(ic))
+                    usr_code += (ntabs+1)*tab + lxyz
+                    known_symbols.appned(s[0])
+                    need_coords = True
+                elif s not in scalars:
+                    if len(s[1].split('=')) > 1:
+                        sval = s[1].split('=')[-1]
+                        usr_defs += ntabs*tab + 'cs_real_t '+s[0]+' = '+str(sval)+';\n'
+                        known_symbols.append(s[0])
+                    else:
+                        internal_fields.append((s[0], s[1].lower()))
 
         if need_coords:
             user_defs = ntabs*tab \
@@ -174,20 +175,30 @@ class mei_to_c_interpreter:
                       + '\n\n' \
                       + user_defs
 
+        use_internal_fields = False
         for f in internal_fields:
-            l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' % (f[0], f[1])
-            usr_defs += ntabs*tab + l
-            known_symbols.append(f[0])
-            usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' % (f[0], f[0])
-        usr_code += '\n'
+            if f[0] in expression:
+                use_internal_fields = True
+                l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' % (f[0], f[1])
+                usr_defs += ntabs*tab + l
+                known_symbols.append(f[0])
+                usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' % (f[0], f[0])
 
+        if use_internal_fields:
+            usr_code += '\n'
+
+        use_scalars = False
         for s in scalars:
             sn = s[0]
-            l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' % (sn,sn)
-            usr_defs += ntabs*tab + l
-            known_symbols.append(sn)
-            usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' % (sn, sn)
-        usr_code += '\n'
+            if sn in expression:
+                use_scalars = True
+                l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' % (sn,sn)
+                usr_defs += ntabs*tab + l
+                known_symbols.append(sn)
+                usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' % (sn, sn)
+
+        if use_scalars:
+            usr_code += '\n'
 
         exp_str = expression
         for s in required:
@@ -234,7 +245,7 @@ class mei_to_c_interpreter:
         usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(z->name, "%s") == 0) {\n' \
                 % (name, zone)
 
-        usr_blck += '\n' + usr_defs + '\n'
+        usr_blck += usr_defs + '\n'
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id; e_id < z->n_cells; e_id++) {\n'
         usr_blck += 3*tab + 'cs_lnum_t c_id = z->cell_ids[e_id];\n'
@@ -260,28 +271,13 @@ class mei_to_c_interpreter:
 
         self.root = root
         if self.case['package'].name == 'code_saturne':
+            authorized_fields = ['density', 'molecular_viscosity',
+                                 'specific_heat', 'thermal_conductivity']
             from code_saturne.Pages.FluidCharacteristicsView import FluidCharacteristicsView
             fcv = FluidCharacteristicsView(root, self.case)
-
-            # Density
-            if fcv.mdl.getPropertyMode('density') == 'variable':
-                exp, req, sca, sym, exa = fcv.getFormulaRhoComponents()
-                self.init_c_block(exp, req, sym, sca, 'density')
-
-            # Viscosity
-            if fcv.mdl.getPropertyMode('molecular_viscosity') == 'variable':
-                exp, req, sca, sym, exa = fcv.getFormulaMuComponents()
-                self.init_c_block(exp, req, sym, sca, 'molecular_viscosity')
-
-            # Specific heat
-            if fcv.mdl.getPropertyMode('specific_heat') == 'variable':
-                exp, req, sca, sym, exa = fcv.getFormulaCpComponents()
-                self.init_c_block(exp, req, sym, sca, 'specific_heat')
-
-            # Thermal conductivity
-            if fcv.mdl.getPropertyMode('thermal_conductivity') == 'variable':
-                exp, req, sca, sym, exa = fcv.getFormulaAlComponents()
-                self.init_c_block(exp, req, sym, sca, 'thermal_conductivity')
+            for fk in authorized_fields:
+                exp, req, sca, sym, exa = fcv.getFormulaComponents(fk)
+                self.init_c_block(exp, req, sym, sca, fk)
 
         else:
             from code_saturne.Pages.ThermodynamicsView import ThermodynamicsView

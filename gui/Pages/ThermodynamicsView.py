@@ -1029,6 +1029,9 @@ temperature = enthalpy / 1000;
 
 
     def getFormulaComponents(self, fieldId, tag):
+        """
+        Get the formula components for a given tag
+        """
 
         if tag == 'density':
             return self.getFormulaRhoComponents(fieldId)
@@ -1043,7 +1046,8 @@ temperature = enthalpy / 1000;
             return self.getFormulaAlComponents(fieldId)
 
         else:
-            return None
+            msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId)
+            raise Exception(msg)
 
 
     def getFormulaRhoComponents(self, fieldId):
@@ -1074,6 +1078,9 @@ temperature = enthalpy / 1000;
 
     @pyqtSlot()
     def slotFormulaRho(self):
+        """
+        User formula for density
+        """
         fieldId = self.currentFluid
 
         exp, req, sca, symbols_rho, exa = self.getFormulaRhoComponents(fieldId)
@@ -1120,6 +1127,9 @@ temperature = enthalpy / 1000;
 
     @pyqtSlot()
     def slotFormulaMu(self):
+        """
+        User formula for molecular viscosity
+        """
         fieldId = self.currentFluid
 
         exp, req, sca, symbols_mu, exa = self.getFormulaMuComponents(fieldId)
