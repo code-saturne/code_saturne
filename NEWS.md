@@ -3,6 +3,9 @@ Release 5.3.2 (unreleased)
 
 Bug fixes:
 
+- Fix installation of some MEDCoupling features based on modular
+  MEDCoupling features detection.
+
 - CFDSTUDY (Salome): fix issues with dissapearing windows onserved on
   some actual systems such as Debian 9 and Ubuntu 16.04.
 

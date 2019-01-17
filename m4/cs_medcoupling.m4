@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2018 EDF S.A.
+dnl Copyright (C) 1998-2019 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -98,7 +98,7 @@ if test "x$with_medcoupling" != "xno" ; then
 #include <MEDLoader.hxx>]],
 [[using namespace MEDCoupling;
   std::string f_name;
-  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+  MEDCouplingField *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
                     ],
                     [ cs_have_medcoupling_loader=yes ],
                     [ AC_MSG_WARN([no MEDCoupling file support]) ],
@@ -145,7 +145,7 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 #include <MEDLoader.hxx>]],
 [[using namespace MEDCoupling;
   std::string f_name;
-  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+  MEDCouplingField *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
                      ],
                      [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
                        cs_have_medcoupling=yes
@@ -250,6 +250,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
 fi
 
 AM_CONDITIONAL(HAVE_MEDCOUPLING, test x$cs_have_medcoupling = xyes)
+AM_CONDITIONAL(HAVE_MEDCOUPLING_LOADER, test x$cs_have_medcoupling_loader = xyes)
 AM_CONDITIONAL(HAVE_PARAMEDMEM, test x$cs_have_paramedmem = xyes)
 AM_CONDITIONAL(HAVE_PLUGIN_MEDCOUPLING, test x$cs_have_plugin_medcoupling = xyes)
 
@@ -259,6 +260,7 @@ if test x$cs_have_plugin_medcoupling = xyes ; then
 fi
 
 AC_SUBST(cs_have_medcoupling)
+AC_SUBST(cs_have_medcoupling_loader)
 AC_SUBST(cs_have_paramedmem)
 AC_SUBST(cs_py_have_plugin_medcoupling)
 AC_SUBST(MEDCOUPLING_CPPFLAGS)
