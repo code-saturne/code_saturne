@@ -72,6 +72,7 @@
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_physical_model.h"
+#include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
