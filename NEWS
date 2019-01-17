@@ -5,6 +5,8 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Fix memory leak leading to crash in legacy porosity model.
+
 - Lagrangian Module:
   * Fix crash in restart when not reading previous statistics.
   * Fix errors in deposition/reentrainment model.
