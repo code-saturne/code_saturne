@@ -98,7 +98,7 @@ if test "x$with_medcoupling" != "xno" ; then
 #include <MEDLoader.hxx>]],
 [[using namespace MEDCoupling;
   std::string f_name;
-  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+  MEDCouplingField *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
                     ],
                     [ cs_have_medcoupling_loader=yes ],
                     [ AC_MSG_WARN([no MEDCoupling file support]) ],
@@ -145,7 +145,7 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 #include <MEDLoader.hxx>]],
 [[using namespace MEDCoupling;
   std::string f_name;
-  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+  MEDCouplingField *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
                      ],
                      [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
                        cs_have_medcoupling=yes
@@ -173,9 +173,10 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 
     CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
 
+    cs_paramedmem_l0="-lparamedmem"
     cs_paramedmem_l1="-lparamedmem -lparamedloader"
 
-    for cs_paramedmem_libs in "$cs_paramedmem_l1"
+    for cs_paramedmem_libs in "$cs_paramedmem_l0" "$cs_paramedmem_l1"
     do
 
       if test "x$cs_have_paramedmem" = "xno" ; then
@@ -249,6 +250,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
 fi
 
 AM_CONDITIONAL(HAVE_MEDCOUPLING, test x$cs_have_medcoupling = xyes)
+AM_CONDITIONAL(HAVE_MEDCOUPLING_LOADER, test x$cs_have_medcoupling_loader = xyes)
 AM_CONDITIONAL(HAVE_PARAMEDMEM, test x$cs_have_paramedmem = xyes)
 AM_CONDITIONAL(HAVE_PLUGIN_MEDCOUPLING, test x$cs_have_plugin_medcoupling = xyes)
 
@@ -258,6 +260,7 @@ if test x$cs_have_plugin_medcoupling = xyes ; then
 fi
 
 AC_SUBST(cs_have_medcoupling)
+AC_SUBST(cs_have_medcoupling_loader)
 AC_SUBST(cs_have_paramedmem)
 AC_SUBST(cs_py_have_plugin_medcoupling)
 AC_SUBST(MEDCOUPLING_CPPFLAGS)
