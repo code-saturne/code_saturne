@@ -173,23 +173,23 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 
     CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
 
-    cs_paramedmem_l0="-lparamedmem"
-    cs_paramedmem_l1="-lparamedmem -lparamedloader"
+    if test "$cs_have_medcoupling_loader" = "yes"; then
+      cs_paramedmem_libs="-lparamedmem -lparamedloader"
+    else
+      cs_paramedmem_libs="-lparamedmem"
+    fi
 
-    for cs_paramedmem_libs in "$cs_paramedmem_l0" "$cs_paramedmem_l1"
-    do
+    if test "x$cs_have_paramedmem" = "xno" ; then
 
-      if test "x$cs_have_paramedmem" = "xno" ; then
+      if test "$cs_have_medcoupling_loader" = "no"; then
+        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
+      else
+        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${LIBS}"
+      fi
 
-        if test "$cs_have_medcoupling_loader" = "no"; then
-          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
-        else
-          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${LIBS}"
-        fi
-
-        AC_LINK_IFELSE([AC_LANG_PROGRAM(
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <InterpKernelDEC.hxx>
 #include <set>]],
 [[using namespace MEDCoupling;
@@ -205,16 +205,14 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
                        [ ],
                       )
 
-        if test "x$cs_have_paramedmem" = "xyes"; then
-          MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
-        fi
-
-        LDFLAGS="$saved_LDFLAGS"
-        LIBS="$saved_LIBS"
-
+      if test "x$cs_have_paramedmem" = "xyes"; then
+        MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
       fi
 
-    done
+      LDFLAGS="$saved_LDFLAGS"
+      LIBS="$saved_LIBS"
+
+    fi
 
     if test "x$cs_have_paramedmem" != "xyes"; then
       AC_MSG_WARN([no ParaMEDMEM support])
