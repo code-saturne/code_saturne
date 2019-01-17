@@ -133,6 +133,51 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Convert a flag into a description
+ *
+ * \param[in]       bc_flag  flag of boundary condition
+ * \param[in, out]  desc     string storing the description of the BC
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
+                   char       *desc)
+{
+  if (desc == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Empty desciption buffer.", __func__);
+
+  switch (bc_flag) {
+
+  case CS_CDO_BC_HMG_DIRICHLET:
+    sprintf(desc, "%s", "Homogenous Dirichlet");
+    break;
+  case CS_CDO_BC_DIRICHLET:
+    sprintf(desc, "%s", "Dirichlet");
+    break;
+  case CS_CDO_BC_HMG_NEUMANN:
+    sprintf(desc, "%s", "Homogeneous Neumann");
+    break;
+  case CS_CDO_BC_NEUMANN:
+    sprintf(desc, "%s", "Neumann");
+    break;
+  case CS_CDO_BC_ROBIN:
+    sprintf(desc, "%s", "Robin");
+    break;
+  case CS_CDO_BC_SLIDING:
+    sprintf(desc, "%s", "Sliding");
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid case. Please contact the support.\n", __func__);
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Convert a cs_param_bc_type_t into a flag (enable multiple type for
  *          a same entity as required for vertices and edges)
  *

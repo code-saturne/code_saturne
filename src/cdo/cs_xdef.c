@@ -608,7 +608,7 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(cs_xdef_t     *d)
+cs_xdef_log(const cs_xdef_t     *d)
 {
   if (d == NULL)
     return;

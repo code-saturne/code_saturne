@@ -1538,8 +1538,13 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
                 eqname, eqp->n_bc_defs);
   if (eqp->verbosity > 1) {
-    for (int id = 0; id < eqp->n_bc_defs; id++)
-      cs_xdef_log(eqp->bc_defs[id]);
+    char  desc[128];
+    for (int id = 0; id < eqp->n_bc_defs; id++) {
+      const cs_xdef_t  *d = eqp->bc_defs[id];
+      cs_cdo_bc_get_desc(d->meta, desc);
+      cs_log_printf(CS_LOG_SETUP, "  <%s/Boundary type> %s\n", eqname, desc);
+      cs_xdef_log(d);
+    }
   }
 
   if (unsteady) {
