@@ -3,7 +3,9 @@ Release 5.3.2 (unreleased)
 
 Bug fixes:
 
-- Fix a lagrangia module user example.
+- Fix memory leak leading to crash in legacy porosity model.
+
+- Fix a lagrangian module user example.
 
 - Fix installation of some MEDCoupling features based on modular
   MEDCoupling features detection.
