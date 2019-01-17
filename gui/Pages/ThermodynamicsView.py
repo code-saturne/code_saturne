@@ -74,6 +74,7 @@ from code_saturne.Pages.OutputFieldsModel import OutputFieldsModel
 from code_saturne.Pages.NonCondensableModel import NonCondensableModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -437,6 +438,7 @@ temperature = enthalpy / 1000;
         self.case.undoStopGlobal()
 
         self.mdl = ThermodynamicsModel(self.case)
+        self.notebook = NotebookModel(self.case)
         self.ncond = NonCondensableModel(self.case)
 
         # Dico
@@ -1073,6 +1075,9 @@ temperature = enthalpy / 1000;
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols_rho.append((s, s))
 
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
+
         return exp, req, self.list_scalars, symbols_rho, exa
 
 
@@ -1121,6 +1126,9 @@ temperature = enthalpy / 1000;
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols_mu.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_mu.append((nme, 'value (notebook) = ' + str(val)))
 
         return exp, req, self.list_scalars, symbols_mu, exa
 
@@ -1171,6 +1179,9 @@ temperature = enthalpy / 1000;
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols_cp.append((s, s))
 
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
+
         return exp, req, self.list_scalars, symbols_cp, exa
 
 
@@ -1218,6 +1229,9 @@ temperature = enthalpy / 1000;
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols_al.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_al.append((nme, 'value (notebook) = ' + str(val)))
 
         return exp, req, self.list_scalars, symbols_al, exa
 

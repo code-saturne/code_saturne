@@ -770,6 +770,22 @@ cs_user_gwf_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate GUI defined mathematical expressions over boundary zones.
+ *
+ * \param[in, out]   f    pointer to a cs_field_t structure
+ * \param[in]        z    pointer to a cs_boundary_zone_t structure
+ *
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_boundary_function(cs_field_t             *f,
+                         const cs_boundary_zone_t *z);
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate GUI defined mathematical expressions over volume zones.
  *
  * \param[in, out]   f    pointer to a cs_field_t structure
@@ -781,6 +797,22 @@ cs_user_gwf_setup(cs_domain_t   *domain);
 void
 cs_meg_volume_function(cs_field_t             *f,
                        const cs_volume_zone_t *z);
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate GUI defined mathematical expressions over volume zones for initialization.
+ *
+ * \param[in, out]   f    pointer to a cs_field_t structure
+ * \param[in]        z    pointer to a cs_volume_zone_t structure
+ *
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_volume_initialization(cs_field_t             *f,
+                             const cs_volume_zone_t *z);
 
 /*----------------------------------------------------------------------------*/
 
