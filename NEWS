@@ -5,6 +5,8 @@ Release 5.0.10 (unreleased)
 Bug fixes
 ---------
 
+- Fix memory leak leading to crash in legacy porosity model.
+
 - CFDSTUDY (Salome): fix issues with dissapearing windows onserved on
   some actual systems such as Debian 9 and Ubuntu 16.04.
 
