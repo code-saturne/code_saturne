@@ -5,6 +5,8 @@ Release 4.0.10 (unreleased)
 Bug fixes:
 ----------
 
+- Fix memory leak leading to crash in legacy porosity model.
+
 - Compressible: fix density time scheme in transported passive scalar/vector
    balance to ensure conservativity with compressible algorithm.
 

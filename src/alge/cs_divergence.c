@@ -1437,11 +1437,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
   } else {
 
-    cs_real_6_t *viscce;
-    cs_real_6_t *w2;
-
-    viscce = NULL;
-    w2 = NULL;
+    cs_real_6_t *viscce = NULL;
+    cs_real_6_t *w2 = NULL;
 
     /* Without porosity */
     if (porosi == NULL) {
@@ -1573,6 +1570,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                                + frcxt[ii][2]*b_face_normal[face_id][2] );
 
     }
+
+    BFT_FREE(w2);
   }
 
 }
