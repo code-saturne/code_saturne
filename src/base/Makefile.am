@@ -411,7 +411,7 @@ endif
 
 if HAVE_PLUGIN_MEDCOUPLING
 
-cs_paramedmem_la_CPPFLAGS = \
+cs_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
@@ -422,30 +422,30 @@ $(MEDCOUPLING_CPPFLAGS) \
 $(MED_CPPFLAGS) \
 $(HDF5_CPPFLAGS) \
 $(MPI_CPPFLAGS)
-pkglib_LTLIBRARIES += cs_paramedmem.la
+pkglib_LTLIBRARIES += cs_medcoupling.la
 
-cs_paramedmem_la_SOURCES = \
+cs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx
 
 if HAVE_MEDCOUPLING_LOADER
-cs_paramedmem_la_SOURCES += \
+cs_medcoupling_la_SOURCES += \
 cs_medcoupling_remapper.cxx
 endif
 
 if HAVE_PARAMEDMEM
-cs_paramedmem_la_SOURCES += \
+cs_medcoupling_la_SOURCES += \
 cs_paramedmem_coupling.cxx \
 cs_paramedmem_remapper.cxx
 endif
 
-cs_paramedmem_la_LDFLAGS = -module -avoid-version
-cs_paramedmem_la_LIBADD = \
+cs_medcoupling_la_LDFLAGS = -module -avoid-version
+cs_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
 
 else
 
-libcs_paramedmem_la_CPPFLAGS = \
+libcs_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
@@ -457,25 +457,25 @@ $(MED_CPPFLAGS) \
 $(HDF5_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
-libcs_paramedmem_la_SOURCES = \
+libcs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx
 
 if HAVE_MEDCOUPLING_LOADER
-libcs_paramedmem_la_SOURCES += \
+libcs_medcoupling_la_SOURCES += \
 cs_medcoupling_remapper.cxx
 endif
 
 if HAVE_PARAMEDMEM
-libcs_paramedmem_la_SOURCES += \
+libcs_medcoupling_la_SOURCES += \
 cs_paramedmem_coupling.cxx \
 cs_paramedmem_remapper.cxx
 endif
 
-libcs_paramedmem_la_LIBADD = \
+libcs_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
-noinst_LTLIBRARIES += libcs_paramedmem.la
-libcsbase_la_LIBADD += libcs_paramedmem.la
+noinst_LTLIBRARIES += libcs_medcoupling.la
+libcsbase_la_LIBADD += libcs_medcoupling.la
 
 endif
 
