@@ -1047,6 +1047,15 @@ temperature = enthalpy / 1000;
         elif tag == 'thermal_conductivity':
             return self.getFormulaAlComponents(fieldId)
 
+        elif tag == 'd_rho_d_P':
+            return self.getFormuladrodpComponents(fieldId)
+
+        elif tag == 'd_rho_d_h':
+            return self.getFormuladrodhComponents(fieldId)
+
+        elif tag == 'temperature':
+            return self.getFormulaTemperatureComponents(fieldId)
+
         else:
             msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
             raise Exception(msg)
@@ -1259,8 +1268,7 @@ temperature = enthalpy / 1000;
             self.pushButtonThermalConductivity.setToolTip(exp)
 
 
-    @pyqtSlot()
-    def slotFormulaSt(self):
+    def getFormulaStComponents(self):
         """
         User formula for surface tension
         """
@@ -1276,11 +1284,25 @@ temperature = enthalpy / 1000;
         for fieldId in self.mdl.getFieldIdList():
             if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
                 label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-                symbols_st.append((label, self.tr("Field variable")))
-        symbols_st.append(('sigma0', 'Surface tension (reference value)'))
+                symbols_st.append((label, 'enthalpy_'+str(fieldId)))
+        s0_val = self.mdl.getInitialValue('none', 'surface_tension')
+        symbols_st.append(('sigma0', 'Surface tension (reference value) = '+str(s0_val)))
 
         for s in self.m_spe.getScalarNameList():
-              symbols_st.append((s, self.tr("Additional species")))
+              symbols_st.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_st.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols_st, exa
+
+
+    @pyqtSlot()
+    def slotFormulaSt(self):
+        """
+        User formula for surface tension
+        """
+        exp, req, sca, symbols_st, exa = self.getFormulaStComponents()
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1325,12 +1347,10 @@ temperature = enthalpy / 1000;
                     self.runProcess = subprocess.Popen(command, shell=True)
 
 
-    @pyqtSlot()
-    def slotFormulaTemperature(self):
+    def getFormulaTemperatureComponents(self, fieldId):
         """
         User formula for temperature as a function of enthalpy
         """
-        fieldId = self.currentFluid
         label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
         exp = self.mdl.getFormula(fieldId, 'temperature')
         if not exp:
@@ -1343,10 +1363,23 @@ temperature = enthalpy / 1000;
            symbols.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, self.tr("Field variable")))
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, self.tr("Additional species")))
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+
+    @pyqtSlot()
+    def slotFormulaTemperature(self):
+        """
+        User formula for temperature as a function of enthalpy
+        """
+        fieldId = self.currentFluid
+
+        exp, req, sca, symbols, exa = self.getFormulaTemperatureComponents(fieldId)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1362,12 +1395,10 @@ temperature = enthalpy / 1000;
             self.pushButtonTemperature.setToolTip(result)
 
 
-    @pyqtSlot()
-    def slotFormuladrodp(self):
+    def getFormuladrodpComponents(self, fieldId):
         """
         User formula for d(ro) / dp (compressible flow)
         """
-        fieldId = self.currentFluid
         exp = self.mdl.getFormula(fieldId, 'd_rho_d_P')
         if not exp:
             exp = "d_rho_d_P = 0.;"
@@ -1379,10 +1410,24 @@ temperature = enthalpy / 1000;
            symbols.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, self.tr("Field variable")))
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, self.tr("Additional species")))
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
+
+        return  exp, req, self.list_scalars, symbols, exa
+
+
+    @pyqtSlot()
+    def slotFormuladrodp(self):
+        """
+        User formula for d(ro) / dp (compressible flow)
+        """
+        fieldId = self.currentFluid
+        exp, req, sca, symbols, exa = self.getFormuladrodpComponents(fieldId)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1398,12 +1443,10 @@ temperature = enthalpy / 1000;
             self.pushButtondRodp.setToolTip(result)
 
 
-    @pyqtSlot()
-    def slotFormuladrodh(self):
+    def getFormuladrodhComponents(self, fieldId):
         """
         User formula for d(ro) / dh (compressible flow)
         """
-        fieldId = self.currentFluid
         exp = self.mdl.getFormula(fieldId, 'd_rho_d_h')
         if not exp:
             exp = "d_rho_d_h = 0.;"
@@ -1415,10 +1458,24 @@ temperature = enthalpy / 1000;
            symbols.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, self.tr("Field variable")))
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, self.tr("Additional species")))
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols, exa
+
+
+    @pyqtSlot()
+    def slotFormuladrodh(self):
+        """
+        User formula for d(ro) / dh (compressible flow)
+        """
+        fieldId = self.currentFluid
+        exp, req, sca, symbols, exa = self.getFormuladrodhComponents(fieldId)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

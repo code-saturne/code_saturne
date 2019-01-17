@@ -60,6 +60,9 @@ cs_meg_volume_function(cs_field_t              *f,
 
 """
 
+_cs_maths_intern_name = {'abs':'cs_math_fabs',
+                         'min':'cs_math_fmin',
+                         'max':'cs_math_fmax'}
 
 class mei_to_c_interpreter:
 
@@ -182,6 +185,15 @@ class mei_to_c_interpreter:
         if use_scalars:
             usr_code += '\n'
 
+        # Internal names of mathematical functions
+        for key in _cs_maths_intern_name.keys():
+            if key in expression:
+                expression = expression.replace(key+'(',
+                                                _cs_maths_intern_name[key]+'(')
+
+        if 'pi' in expression:
+            usr_defs += ntabs*tab + 'cs_real_t pi = cs_math_pi;\n'
+
         exp_str = expression
         for s in required:
             known_symbols.append(s[0]);
@@ -229,7 +241,7 @@ class mei_to_c_interpreter:
 
         usr_blck += usr_defs + '\n'
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id; e_id < z->n_cells; e_id++) {\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < z->n_cells; e_id++) {\n'
         usr_blck += 3*tab + 'cs_lnum_t c_id = z->cell_ids[e_id];\n'
 
         usr_blck += usr_code
@@ -266,7 +278,8 @@ class mei_to_c_interpreter:
             tv = ThermodynamicsView(root, self.case)
 
             authorized_fields = ['density', 'molecular_viscosity',
-                                 'specific_heat', 'thermal_conductivity']
+                                 'specific_heat', 'thermal_conductivity',
+                                 'd_rho_d_P', 'd_rho_d_h', 'temperature']
 
             for fieldId in tv.mdl.getFieldIdList():
                 for fk in authorized_fields:
