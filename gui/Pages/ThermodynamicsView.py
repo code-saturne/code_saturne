@@ -1046,7 +1046,7 @@ temperature = enthalpy / 1000;
             return self.getFormulaAlComponents(fieldId)
 
         else:
-            msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId)
+            msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
             raise Exception(msg)
 
 
