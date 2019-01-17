@@ -412,7 +412,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     for (int attr_id = CS_LAGR_USER;
          attr_id < CS_LAGR_USER + cs_glob_lagr_model->n_user_variables;
          attr_id++) {
-      cs_real_t *user_var = cs_lagr_particle_attr(particles, p_id, attr_id);
+      cs_real_t *user_var = cs_lagr_particles_attr(particles, p_id, attr_id);
       *user_var = 0.;
     }
 
