@@ -88,16 +88,18 @@ static const double _k_boltz = 1.38e-23;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/* \brief Integration of SDEs by 1st order scheme
+/*! \brief Integration of SDEs by 1st order time scheme
  *
- * \param[in]  taup      temps caracteristique dynamique
- * \param[in]  tlag      temps caracteristique fluide
- * \param[in]  piil      terme dans l'integration des eds up
+ * \param[in]  dtp       time step
+ * \param[in]  taup      dynamic characteristic time
+ * \param[in]  tlag      lagrangian fluid characteristic time
+ * \param[in]  piil      term in integration of UP SDEs
  * \param[in]  bx        caracteristiques de la turbulence
- * \param[in]  vagaus    variables aleatoires gaussiennes
+ * \param[in]  vagaus    gaussian random variables
+ * \param[in]  brgaus    gaussian random variables
  * \param[in]  gradpr    pressure gradient
- * \param[in]  romp      masse volumique des particules
- * \param[in]  fextla    champ de forces exterieur utilisateur (m/s2)
+ * \param[in]  romp      particles associated density
+ * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
  */
 /*------------------------------------------------------------------------------*/
@@ -109,11 +111,11 @@ _lages1(cs_real_t           dtp,
         const cs_real_3_t   piil[],
         const cs_real_33_t  bx[],
         const cs_real_33_t  vagaus[],
+        const cs_real_t     brgaus[],
         const cs_real_3_t   gradpr[],
         const cs_real_t     romp[],
-        const cs_real_t     brgaus[],
-        cs_real_t          *terbru,
-        cs_real_3_t        *fextla)
+        const cs_real_3_t   force_p[],
+        cs_real_t          *terbru)
 {
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
@@ -123,9 +125,7 @@ _lages1(cs_real_t           dtp,
 
   /* Initialisations*/
 
-  const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
-
-  cs_real_t tkelvi =  273.15;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   cs_real_t vitf = 0.0;
 
@@ -139,8 +139,6 @@ _lages1(cs_real_t           dtp,
   cs_real_t tbrix1, tbrix2, tbriu;
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
-
-  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
 
   /* Integrate SDE's over particles */
 
@@ -176,19 +174,7 @@ _lages1(cs_real_t           dtp,
         /* calcul de II*TL+<u> et [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
 
         cs_real_t tci = piil[ip][id] * tlag[ip][id] + vitf;
-        cs_real_t force = 0.0;
-
-        if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-          force = (- gradpr[cell_id][id] / romp[ip]
-                   + grav[id] + fextla[ip][id]) * taup[ip];
-
-        /* Added-mass term?     */
-        else
-          force =   (- gradpr[cell_id][id] / romp[ip]
-                     * (1.0 + 0.5 * added_mass_const)
-                  / (1.0 + 0.5 * added_mass_const * rom / romp[ip])
-                  + grav[id] + fextla[ip][id]) * taup[ip];
-
+        cs_real_t force = force_p[ip][id];
 
         /* --> (2.2) Calcul des coefficients/termes deterministes */
         /* ----------------------------------------------------    */
@@ -391,7 +377,7 @@ _lages1(cs_real_t           dtp,
 }
 
 /*----------------------------------------------------------------------------*/
-/* \brief Integration of SDEs by 2nd order scheme
+/*! \brief Integration of SDEs by 2nd order scheme
  *
  * When there has beed interaction with a boundary face, the velocity and
  * velocity seen computations are forced to 1st order.
@@ -402,11 +388,11 @@ _lages1(cs_real_t           dtp,
  * \param[in]  bx        caracteristiques de la turbulence
  * \param[in]  tsfext    infos pour couplage retour dynamique
  * \param[in]  vagaus    variables aleatoires gaussiennes
+ * \param[in]  brgaus    gaussian variable for brownian movement
  * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      masse volumique des particules
- * \param[in]  brgaus    gaussian variable for brownian movement
+ * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
- * \param[in]  fextla    champ de forces exterieur utilisateur (m/s2)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -418,11 +404,11 @@ _lages2(cs_real_t           dtp,
         const cs_real_33_t  bx[],
         cs_real_t           tsfext[],
         const cs_real_33_t  vagaus[],
+        const cs_real_t     brgaus[],
         const cs_real_3_t   gradpr[],
         const cs_real_t     romp[],
-        const cs_real_t     brgaus[],
-        cs_real_t          *terbru,
-        cs_real_3_t        *fextla)
+        const cs_real_3_t   force_p[],
+        cs_real_t          *terbru)
 {
   cs_real_t  aux0, aux1, aux2, aux3, aux4, aux5, aux6, aux7, aux8, aux9;
   cs_real_t  aux10, aux11, aux12, aux17, aux18, aux19;
@@ -440,26 +426,22 @@ _lages2(cs_real_t           dtp,
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* ==============================================================================*/
-  /* 1. INITIALISATIONS                                                            */
+  /* 1. Initialisations                                                            */
   /* ==============================================================================*/
 
-  const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
-
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
-
-  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
 
   cs_real_t *auxl;
   BFT_MALLOC(auxl, p_set->n_particles*6, cs_real_t);
 
   /* =============================================================================
-   * 2. INTEGRATION DES EDS SUR LES PARTICULES
+   * 2. Integration of the SDE on partilces
    * =============================================================================*/
 
   /* =============================================================================
    * 2.1 CALCUL A CHAQUE SOUS PAS DE TEMPS
    * ==============================================================================*/
-  /* --> Calcul de tau_p*A_p et de II*TL+<u> :
+  /* --> Compute tau_p*A_p and II*TL+<u> :
    *     -------------------------------------*/
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
@@ -472,19 +454,7 @@ _lages2(cs_real_t           dtp,
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
-        cs_real_t rom   = extra->cromf->val[cell_id];
-
-        if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-          auxl[ip * 6 + id] = (- gradpr[cell_id][id] / romp[ip]
-                               + grav[id] + fextla[ip][id]) * taup[ip];
-
-        /* Added-mass term?     */
-        else
-          auxl[ip * 6 + id] =   ( - gradpr[cell_id][id] / romp[ip]
-                                  * (1.0 + 0.5 * added_mass_const)
-                                  / (1.0 + 0.5 * added_mass_const * rom / romp[ip])
-                                  + grav[id] + fextla[ip][id] )
-                              * taup[ip];
+        auxl[ip * 6 + id] = force_p[ip][id];
 
         if (nor == 1)
           auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id]
@@ -526,7 +496,7 @@ _lages2(cs_real_t           dtp,
 
           aux0     = -dtp / taup[ip];
           aux1     =  exp(aux0);
-          tsfext[ip]      =   taup[ip]
+          tsfext[ip] =   taup[ip]
                             * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
                             * (-aux1 + (aux1 - 1.0) / aux0);
 
@@ -588,11 +558,11 @@ _lages2(cs_real_t           dtp,
             piil,
             bx,
             vagaus,
+            brgaus,
             gradpr,
             romp,
-            brgaus,
-            terbru,
-            fextla);
+            force_p,
+            terbru);
   }
 
   else {
@@ -730,7 +700,7 @@ _lages2(cs_real_t           dtp,
  * \param[in]  vagaus    gaussian random variables
  * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      particles associated density
- * \param[in]  fextla    external user forces (m/s2)
+ * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[in]  tempf     temperature of the fluid (K)
  * \param[in]  vislen    FIXME
  * \param[in]  depint    interface location near-wall/core-flow
@@ -744,8 +714,8 @@ _lagesd(cs_real_t           dtp,
         const cs_real_3_t   piil[],
         const cs_real_33_t  vagaus[],
         const cs_real_3_t   gradpr[],
-        cs_real_t           romp[],
-        const cs_real_3_t   fextla[],
+        const cs_real_t     romp[],
+        const cs_real_3_t   force_p[],
         cs_real_t           tempf,
         const cs_real_t     vislen[],
         cs_real_t          *depint,
@@ -783,8 +753,6 @@ _lagesd(cs_real_t           dtp,
    * ======================================================================== */
 
   const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
-
-  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
 
   /* particle data */
   unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
@@ -917,25 +885,9 @@ _lagesd(cs_real_t           dtp,
 
   /* 2.5 Particle force: - pressure gradient/romp + external force + g   */
 
-  cs_real_t force_p[3];
   cs_real_t force_pn[3];
-  cs_real_t rom = extra->cromf->val[cell_id];
 
-  for (int id = 0; id < 3; id++) {
-    if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-      force_p[id] = (- gradpr[cell_id][id] / romp[ip]
-          + grav[id] + fextla[ip][id]) * taup[ip];
-
-    /* Added-mass term?     */
-    else
-      force_p[id] =   (- gradpr[cell_id][id] / romp[ip]
-          * (1.0 + 0.5 * added_mass_const)
-          / (1.0 + 0.5 * added_mass_const * rom / romp[ip])
-          + grav[id] + fextla[ip][id]) * taup[ip];
-
-  }
-
-  cs_math_33_3_product(rot_m, force_p, force_pn);
+  cs_math_33_3_product(rot_m, force_p[ip], force_pn);
 
   /* 2.6 - "piil" term    */
 
@@ -1016,7 +968,7 @@ _lagesd(cs_real_t           dtp,
 
     for (cs_lnum_t id = 1; id < 3; id++) {
 
-      cs_lnum_t i0 = id-1;
+      cs_lnum_t i0 = id-1;//FIXME strange
 
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
       cs_real_t force = force_pn[id];
@@ -2078,8 +2030,8 @@ _lagesd(cs_real_t           dtp,
 /*----------------------------------------------------------------------------*/
 /*! \brief Deposition submodel
  *
- *    Main subroutine of the submodel
- *    1/ Calculation of the normalized wall-normal distance of
+ *  Main subroutine of the submodel
+ *   1/ Calculation of the normalized wall-normal distance of
  *           the boundary-cell particles
  *   2/ Sorting of the particles with respect to their normalized
  *           wall-normal distance
@@ -2094,7 +2046,7 @@ _lagesd(cs_real_t           dtp,
  * \param[in] vagaus    gaussian random variables
  * \param[in] gradpr    pressure gradient
  * \param[in] romp      particles associated density
- * \param[in] fextla    external user forces (m/s2)
+ * \param[in] force_p   taup times forces on particles (m/s)
  * \param[in] vislen    FIXME
  */
 /*----------------------------------------------------------------------------*/
@@ -2108,7 +2060,7 @@ _lagdep(cs_real_t           dtp,
         const cs_real_33_t  vagaus[],
         const cs_real_3_t   gradpr[],
         const cs_real_t     romp[],
-        cs_real_3_t        *fextla,
+        const cs_real_3_t   force_p[],
         const cs_real_t     vislen[],
         cs_lnum_t          *nresnew)
 {
@@ -2119,10 +2071,6 @@ _lagdep(cs_real_t           dtp,
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* Initialisations*/
-  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
-                         cs_glob_physical_constants->gravity[1],
-                         cs_glob_physical_constants->gravity[2]};
-
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -2137,8 +2085,6 @@ _lagdep(cs_real_t           dtp,
   cs_real_t grga2, gagam, gaome;
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
-
-  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
 
   /* Interface location between near-wall region   */
   /* and core of the flow (normalized units)  */
@@ -2224,22 +2170,10 @@ _lagdep(cs_real_t           dtp,
 
           /* --> (2.1) Calcul preliminaires :    */
           /* ----------------------------   */
-          /* calcul de II*TL+<u> et [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
+          /* compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
 
           cs_real_t tci = piil[ip][id] * tlag[ip][id] + vitf;
-          cs_real_t force = 0.0;
-
-          if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-            force = (- gradpr[cell_id][id] / romp[ip]
-                     + grav[id] + fextla[ip][id]) * taup[ip];
-
-          /* Added-mass term?     */
-          else
-            force =   (- gradpr[cell_id][id] / romp[ip]
-                  * (1.0 + 0.5 * added_mass_const)
-                  / (1.0 + 0.5 * added_mass_const * romf / romp[ip])
-                  + grav[id] + fextla[ip][id])* taup[ip];
-
+          cs_real_t force = force_p[ip][id];
 
           /* --> (2.2) Calcul des coefficients/termes deterministes */
           /* ----------------------------------------------------    */
@@ -2405,7 +2339,7 @@ _lagdep(cs_real_t           dtp,
                 vagaus,
                 gradpr,
                 romp,
-                fextla,
+                force_p,
                 tempf,
                 vislen,
                 &depint,
@@ -2566,13 +2500,13 @@ cs_lagr_sde(cs_real_t           dt_p,
   /* Management of user external force fields
      ---------------------------------------- */
 
-  cs_real_3_t *fextla;
-  BFT_MALLOC(fextla, p_set->n_particles, cs_real_3_t);
+  cs_real_3_t *force_p;
+  BFT_MALLOC(force_p, p_set->n_particles, cs_real_3_t);
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-    fextla[ip][0] = 0.0;
-    fextla[ip][1] = 0.0;
-    fextla[ip][2] = 0.0;
+    force_p[ip][0] = 0.0;
+    force_p[ip][1] = 0.0;
+    force_p[ip][2] = 0.0;
   }
 
   cs_user_lagr_ef(dt_p,
@@ -2585,7 +2519,42 @@ cs_lagr_sde(cs_real_t           dt_p,
                   (const cs_real_3_t *)gradpr,
                   (const cs_real_33_t *)gradvf,
                   romp,
-                  fextla);
+                  force_p);
+
+  const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
+  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
+
+  /* Finalize forces on particles:
+   *
+   *  (- pressure gradient /romp +ext forces + g) . taup
+   *
+   * */
+  if (cs_glob_lagr_time_scheme->iadded_mass == 0) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      for (int id = 0; id < 3; id++) {
+        force_p[ip][id] = (- gradpr[cell_id][id] / romp[ip]
+          + grav[id] + force_p[ip][id]) * taup[ip];
+
+      }
+    }
+  }
+  /* Added-mass term?     */
+  else {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      cs_real_t romf = extra->cromf->val[cell_id];
+      for (int id = 0; id < 3; id++) {
+        force_p[ip][id] = (- gradpr[cell_id][id] / romp[ip]
+          * (1.0 + 0.5 * added_mass_const)
+          / (1.0 + 0.5 * added_mass_const * romf / romp[ip])
+          + grav[id] + force_p[ip][id]) * taup[ip];
+      }
+    }
+  }
 
   /* First order
      ----------- */
@@ -2602,11 +2571,11 @@ cs_lagr_sde(cs_real_t           dt_p,
               piil,
               bx,
               (const cs_real_33_t *)vagaus,
+              brgaus,
               gradpr,
               romp,
-              brgaus,
-              terbru,
-              fextla);
+              force_p,
+              terbru);
 
     /* Management of the deposition submodel */
 
@@ -2619,7 +2588,7 @@ cs_lagr_sde(cs_real_t           dt_p,
               (const cs_real_33_t *)vagaus,
               gradpr,
               romp,
-              fextla,
+              force_p,
               vislen,
               nresnew);
 
@@ -2637,14 +2606,13 @@ cs_lagr_sde(cs_real_t           dt_p,
             bx,
             tsfext,
             (const cs_real_33_t *)vagaus,
+            brgaus,
             gradpr,
             romp,
-            brgaus,
-            terbru,
-            fextla);
+            force_p,
+            terbru);
 
-    /* Save Gaussian variable i needed */
-
+    /* Save Gaussian variable if needed */
     if (cs_glob_lagr_time_step->nor == 1) {
 
       for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
@@ -2669,7 +2637,7 @@ cs_lagr_sde(cs_real_t           dt_p,
 
   }
 
-  BFT_FREE(fextla);
+  BFT_FREE(force_p);
 
   BFT_FREE(brgaus);
   BFT_FREE(vagaus);
