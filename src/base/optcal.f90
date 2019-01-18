@@ -585,7 +585,7 @@ module optcal
   integer(c_int), pointer, save :: idirsm
 
   !>  Wall functions
-  !>  Indicates the type of wall function is used for the velocity
+  !>  Indicates the type of wall function used for the velocity
   !>  boundary conditions on a frictional wall.
   !>  - 0: no wall functions
   !>  - 1: one scale of friction velocities (power law)

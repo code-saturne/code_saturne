@@ -329,7 +329,8 @@ enddo
 
 ! Boundary roughness
 if (iwallf.ge.5) then
-  call add_boundary_property_field_owner('boundary_roughness', 'Boundary Roughness', &
+  call add_boundary_property_field_owner('boundary_roughness', &
+                                         'Boundary Roughness', &
                                          iflid)
 endif
 

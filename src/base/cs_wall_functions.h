@@ -857,7 +857,7 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
    * ln((y+y0)/y0) = ln((y+y0)/alpha xi) + kappa * 5.2
    *
    * y0 =  roughness * exp(-kappa * 8.5)
-   * */
+   */
   double y0 = roughness*exp(-cs_turb_xkappa*cs_turb_cstlog_rough);
 
   /* Blending for very low values of k */

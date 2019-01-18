@@ -88,7 +88,7 @@ BEGIN_C_DECLS
   for concise syntax, as it is expected to be used in many places.
 
   \var  cs_wall_functions_t::iwallf
-        Indicates the type of wall function is used for the velocity
+        Indicates the type of wall function used for the velocity
         boundary conditions on a frictional wall.\n
         - 0: no wall functions
         - 1: one scale of friction velocities (power law)

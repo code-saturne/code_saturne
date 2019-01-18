@@ -142,7 +142,7 @@ end interface
 
 call add_property_field_1d('density', 'Density', irom)
 icrom = irom
-! Postprocessed and in the log file by default, hidden in modini if not variable.
+! Postprocessed and in the log file by default, hidden in modini if not variable
 call field_set_key_int(icrom, keylog, 1)
 call field_set_key_int(icrom, keyvis, 1)
 
