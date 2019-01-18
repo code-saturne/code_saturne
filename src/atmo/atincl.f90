@@ -281,11 +281,14 @@ integer, save::  moddis
 !>-   modnuc = 0 : without nucleation
 !>-   modnuc = 1 : Pruppacher and Klett 1997
 !>-   modnuc = 2 : Cohard et al. 1998,1999
-!>-   modnuc = 3 : Abdul-Razzak et al. 1998,2000 NOT IMPLEMENTED YET
+!>-   modnuc = 3 : Abdul-Razzak et al. 1998,2000
 !>  logaritmic standard deviation of the log-normal law of the droplet spectrum
 integer, save::  modnuc
 !> sedimentation flag
 integer, save::  modsedi
+!> deposition flag
+integer, save:: moddep
+
 !> adimensional :  sigc=0.53 other referenced values are 0.28, 0.15
 double precision, save:: sigc
 

@@ -137,6 +137,7 @@ use field
 use lagran
 use turbomachinery
 use cs_c_bindings
+use atincl, only: itotwt, iliqwt, modsedi, moddep
 
 !===============================================================================
 
@@ -158,7 +159,7 @@ double precision hbord(nfabor),theipb(nfabor)
 integer          ifac, iel, isou, ii, jj, kk
 integer          iscal, clsyme
 integer          modntl
-integer          iuntur, iuiptn, f_id
+integer          iuntur, iuiptn, f_id, iustar
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -167,7 +168,7 @@ double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
 double precision uk, uet, yplus, uplus, phit
-double precision gredu
+double precision gredu, temp
 double precision cfnnu, cfnns, cfnnk, cfnne
 double precision sqrcmu, ek
 double precision xmutlm
@@ -178,23 +179,29 @@ double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf
 double precision cofimp
-double precision distb0, rugd  , rugt  , ydep
+double precision distb0, rugd  , ydep
 double precision dsa0
 double precision rinfiv(3)
 double precision visci(3,3), fikis, viscis, distfi
-double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
+double precision fcoefa(6), fcoefb(6), fcofaf(6)
+double precision fcofbf(6), fcofad(6), fcofbd(6)
+
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
-double precision rttb, alpha_rnn
+double precision rttb, alpha_rnn, liqwt, totwt
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
-double precision, dimension(:), allocatable :: byplus, buk, buet, bcfnns
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
+double precision, dimension(:), allocatable :: byplus, buk
+double precision, dimension(:), allocatable, target :: buet, bcfnns_loc
 
-double precision, dimension(:), pointer :: cvar_k
+double precision, dimension(:), pointer :: cvar_k, bcfnns
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvara_nusa
+
+double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
+double precision, dimension(:), pointer :: cpro_rugt
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -243,7 +250,6 @@ type(var_cal_opt) :: vcopt_rij, vcopt_ep
 
 ek = 0.d0
 phit = 0.d0
-rugt = 0.d0
 uiptn = 0.d0
 
 rinfiv(1) = rinfin
@@ -255,7 +261,7 @@ uet = 1.d0
 utau = 1.d0
 sqrcmu = sqrt(cmu)
 
-! --- Correction factors for stratification (used in atmospheric version)
+! --- Correction factors for stratification (used in atmospheric models)
 cfnnu=1.d0
 cfnns=1.d0
 cfnnk=1.d0
@@ -276,14 +282,14 @@ if (iyplbr.ge.0) then
 endif
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
-uetbor => null()
+! --- Store wall friction velocity
 
-if (     (itytur.eq.4 .and. idries.eq.1) &
-    .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
-  call field_get_id_try('ustar', f_id)
-  if (f_id.ge.0) then
-    call field_get_val_s(f_id, uetbor)
-  endif
+call field_get_id_try('ustar', iustar)
+if (iustar.ge.0) then !TODO remove, this information is in cofaf cofbf
+  call field_get_val_s(iustar, ustar)
+else
+  allocate(buet(nfabor))
+  ustar => buet
 endif
 
 ! --- Gradient and flux Boundary Conditions
@@ -549,8 +555,31 @@ endif
 ! Pointers to specific fields
 allocate(byplus(nfabor))
 allocate(buk(nfabor))
-allocate(buet(nfabor))
-allocate(bcfnns(nfabor))
+
+call field_get_id_try("non_neutral_scalar_correction", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, bcfnns)
+else
+  allocate(bcfnns_loc(nfabor))
+  bcfnns => bcfnns_loc
+endif
+
+cvar_t => null()
+cvar_totwt => null()
+cpro_liqwt => null()
+cpro_rugt => null()
+
+if (ippmod(iatmos).ge.1) then
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+    call field_get_val_s(iliqwt, cpro_liqwt)
+
+    if (modsedi.eq.1.and.moddep.gt.0) then
+      call field_get_val_s_by_name('boundary_thermal_roughness', cpro_rugt)
+    endif
+  endif
+endif
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -762,13 +791,27 @@ do ifac = 1, nfabor
       ! Compute reduced gravity for non horizontal walls :
       gredu = gx*rnx + gy*rny + gz*rnz
 
+      temp = cvar_t(iel)
+      totwt = 0.d0
+      liqwt = 0.d0
+
+      if (ippmod(iatmos).eq.2) then
+        totwt = cvar_totwt(iel)
+        liqwt = cpro_liqwt(iel)
+
+        if (modsedi.eq.1.and.moddep.gt.0) then
+          cpro_rugt(ifac) = rcodcl(ifac,iv,3)
+        endif
+      endif
+
       call atmcls &
       !==========
-    ( ifac   , iel    ,                                              &
+    ( ifac   ,                                                       &
       utau   , yplus  ,                                              &
       uet    ,                                                       &
       gredu  ,                                                       &
       cfnnu  , cfnns  , cfnnk  , cfnne  ,                            &
+      temp   , totwt  , liqwt  ,                                     &
       icodcl , rcodcl )
 
     endif
@@ -784,24 +827,16 @@ do ifac = 1, nfabor
     yplumx = max(yplus,yplumx)
     yplumn = min(yplus,yplumn)
 
-    ! Sauvegarde de la vitesse de frottement et de la viscosite turbulente
-    ! apres amortissement de van Driest pour la LES
-    ! On n'amortit pas mu_t une seconde fois si on l'a deja fait
-    ! (car une cellule peut avoir plusieurs faces de paroi)
-    ! ou
-    ! Sauvegarde de la vitesse de frottement et distance a la paroi yplus
-    ! si le modele de depot de particules est active.
-
+    ! save turbulent subgrid viscosity after van Driest damping in LES
+    ! care is taken to not dampen it twice at boundary cells having more
+    ! one boundary face
     if (itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac) = uet !TODO remove, this information is in cofaf cofbf
       if (visvdr(iel).lt.-900.d0) then
         ! FIXME amortissement de van Driest a revoir en rugueux :
         ! visct(iel) = visct(iel)*(1.d0-exp(-yplus/cdries))**2
         visvdr(iel) = visct(iel)
         visctc      = visct(iel)
       endif
-    else if (iilagr.gt.0.and.idepst.gt.0) then
-      uetbor(ifac) = uet
     endif
 
     ! Save yplus if post-processed
@@ -943,7 +978,7 @@ do ifac = 1, nfabor
     endif
 
     !===========================================================================
-    ! 4. Boundary conditions on k and espilon
+    ! 4. Boundary conditions on k and epsilon
     !===========================================================================
 
     ydep = distbf*0.5d0+rugd
@@ -1399,7 +1434,7 @@ do ifac = 1, nfabor
 
     byplus(ifac) = yplus
     buk(ifac) = uk
-    buet(ifac) = uet
+    ustar(ifac) = uet
     bcfnns(ifac) = cfnns
 
   endif
@@ -1422,7 +1457,7 @@ do iscal = 1, nscal
     !=================
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
-   byplus , buk    , buet   , bcfnns ,                            &
+   byplus , buk    , ustar  , bcfnns ,                            &
    hbord  , theipb ,                                              &
    tetmax , tetmin , tplumx , tplumn )
 
@@ -1451,7 +1486,7 @@ endif
 deallocate(byplus)
 deallocate(buk)
 deallocate(buet)
-deallocate(bcfnns)
+if (allocated(bcfnns_loc)) deallocate(bcfnns_loc)
 
 !===============================================================================
 ! 9. Writings

@@ -161,7 +161,7 @@ integer          iscal, clsyme
 integer          modntl
 integer          iuntur, f_dim
 integer          nlogla, nsubla, iuiptn
-integer          f_id_rough, f_id
+integer          f_id_rough, f_id, iustar
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -188,7 +188,7 @@ double precision rttb, alpha_rnn
 double precision roughness
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
 double precision, dimension(:), pointer :: bfpro_roughness
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
@@ -268,14 +268,13 @@ if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bfpro_roughness)
 if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
-uetbor => null()
+ustar => null()
 
-if (     (itytur.eq.4 .and. idries.eq.1) &
-    .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
-  call field_get_id_try('ustar', f_id)
-  if (f_id.ge.0) then
-    call field_get_val_s(f_id, uetbor)
-  endif
+! --- Save wall friction velocity
+
+call field_get_id_try('ustar', iustar)
+if (iustar.ge.0) then
+  call field_get_val_s(iustar, ustar)
 endif
 
 ! --- Gradient and flux boundary conditions
@@ -750,23 +749,19 @@ do ifac = 1, nfabor
     yplumx = max(yplus-dplus,yplumx)
     yplumn = min(yplus-dplus,yplumn)
 
-    ! Sauvegarde de la vitesse de frottement et de la viscosite turbulente
-    ! apres amortissement de van Driest pour la LES
-    ! On n'amortit pas mu_t une seconde fois si on l'a deja fait
-    ! (car une cellule peut avoir plusieurs faces de paroi)
-    ! ou
-    ! Sauvegarde de la vitesse de frottement et distance a la paroi yplus
-    ! si le modele de depot de particules est active.
+    if (iustar.ge.0) then
+      ustar(ifac) = uet !TODO remove, this information is in cofaf cofbf
+    endif
 
+    ! save turbulent subgrid viscosity after van Driest damping in LES
+    ! care is taken to not dampen it twice at boundary cells having more
+    ! one boundary face
     if (itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac) = uet !TODO remove, this information is in cofaf cofbf
       if (visvdr(iel).lt.-900.d0) then
         visct(iel) = visct(iel)*(1.d0-exp(-(yplus-dplus)/cdries))**2
         visvdr(iel) = visct(iel)
         visctc      = visct(iel)
       endif
-    else if (iilagr.gt.0.and.idepst.gt.0) then
-      uetbor(ifac) = uet
     endif
 
     ! Save yplus if post-processed or condensation modelling
@@ -922,7 +917,7 @@ do ifac = 1, nfabor
     endif
 
     !===========================================================================
-    ! 4. Boundary conditions on k and espilon
+    ! 4. Boundary conditions on k and epsilon
     !===========================================================================
 
     if (itytur.eq.2) then
@@ -933,7 +928,7 @@ do ifac = 1, nfabor
         ! Dirichlet Boundary Condition on k
         !----------------------------------
         if (iwallf.eq.0) then
-          ! No wall functions forces by user
+          ! No wall functions forced by user
           pimp = 0.d0
         else
           ! Use of wall functions
@@ -953,12 +948,12 @@ do ifac = 1, nfabor
              pimp         , hint          , rinfin )
 
 
-        ! Diriclet Boundary Condition on epsilon tilda
+        ! Dirichlet Boundary Condition on epsilon tilda
         !---------------------------------------------
         pimp_lam = 0.d0
 
         if (iwallf.eq.0) then
-          ! No wall functions forces by user
+          ! No wall functions forced by user
           pimp = pimp_lam
         else
           ! Use of wall functions
