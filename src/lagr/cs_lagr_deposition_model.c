@@ -567,7 +567,10 @@ _dep_diffusion_phases(cs_real_t *dx,
   /* The particle enters the inner zone */
   else if (yplusa < *dintrf) {
 
-    *marko = 0;
+    /* In that case, we change the tag indint so that the diffusion phase
+     * will not call */
+    *indint = 1;
+    *marko = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
     *vvue  = sqrt ( cs_math_pow2((*kdifcl)) * *tlag2 / 2.0) * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
     dxaux  = *dx;
