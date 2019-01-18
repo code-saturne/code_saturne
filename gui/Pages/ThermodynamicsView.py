@@ -1418,7 +1418,7 @@ temperature = enthalpy / 1000;
             symbols.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
-            symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
 
         return  exp, req, self.list_scalars, symbols, exa
 
