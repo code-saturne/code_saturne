@@ -338,10 +338,15 @@ class mei_to_c_interpreter:
 
             code_to_write += _file_footer
 
-            fpath = os.path.join(self.case['case_path'], 'SRC', file2write)
-            new_file = open(fpath, 'w')
-            new_file.write(code_to_write)
-            new_file.close()
+            try:
+                fpath = os.path.join(self.case['case_path'], 'SRC', file2write)
+                new_file = open(fpath, 'w')
+                new_file.write(code_to_write)
+                new_file.close()
+
+                return 0
+            except:
+                return 1
     # -------------------------------
 
 #-------------------------------------------------------------------------------

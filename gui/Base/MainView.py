@@ -944,10 +944,10 @@ class MainView(object):
             self.statusbar.showMessage(msg, 2000)
             return
 
-        self.saveUserFormulaInC()
         self.updateTitleBar()
         self.case.xmlSaveDocument()
         self.batchFileSave()
+        self.saveUserFormulaInC()
 
         # force to blank after save
         self.case['undo'] = []
@@ -1190,7 +1190,22 @@ class MainView(object):
         """
         if self.case['prepro'] == False and self.case['oturns'] == False:
             mci = mei_to_c_interpreter(self.case)
-            mci.save_all_functions(self)
+            state = mci.save_all_functions(self)
+
+            if state != 0:
+                title = self.tr("Save error")
+                msg  = "You are not in a CASE structure.\n"
+                msg += "The xml file was saved, but the User Definitions' "
+                msg += "functions could not be saved in the SRC folder.\n"
+                msg += "Please re-open your xml file within a CASE structure "
+                msg += "and save it again."
+                err_msg = self.tr(msg)
+                QMessageBox.critical(self, title, err_msg)
+                msg = self.tr("Saving incomplete.\n \
+                              Reopen xml file within a CASE structure")
+                self.statusbar.showMessage(msg, 2000)
+                self.updateTitleBar()
+                return
 
 
     def displayAbout(self):
