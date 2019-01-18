@@ -32,6 +32,34 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Tag of the coherence structure
+ *----------------------------------------------------------------------------*/
+
+enum {
+  /* Bulk */
+
+  CS_LAGR_COHERENCE_STRUCT_BULK = -1,
+  /* Boundary layer */
+
+  /* Inner layer */
+  CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF = 0,
+
+  /* Outer layer: three types of structures */
+  CS_LAGR_COHERENCE_STRUCT_SWEEP = 1,
+  CS_LAGR_COHERENCE_STRUCT_DIFFUSION = 2,
+  CS_LAGR_COHERENCE_STRUCT_EJECTION = 3,
+
+  CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF = 10,
+  CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION = 12,
+  CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP = 20,
+  CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION = 30
+};
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

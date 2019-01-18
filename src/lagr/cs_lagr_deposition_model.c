@@ -138,7 +138,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Management of the ejection coherent structure (marko = 3)
+ * Management of the ejection coherent structure (marko = CS_LAGR_COHERENCE_STRUCT_EJECTION)
  *
  * parameters:
  *   marko     -->    state of the jump process
@@ -188,8 +188,8 @@ _dep_ejection(cs_lnum_t *marko,
   *vvue  =  -*vstruc + *gnorm * taup + *vnorm;
   *vpart = vpart0 * exp ( -dtp / taup) + (1 - exp ( -dtp / taup)) * vvue0;
   *dx    =   vvue0 * dtp
-           + vvue0 * taup * (exp ( -dtp / taup) - 1)
-           + vpart0 * taup * (1 - exp ( -dtp / taup));
+           + vvue0 * taup * (exp ( -dtp / taup) - 1.)
+           + vpart0 * taup * (1. - exp ( -dtp / taup));
   ypaux  = *yplus - *dx / lvisq;
 
   /* --------------------------------------------------------
@@ -199,19 +199,19 @@ _dep_ejection(cs_lnum_t *marko,
   if (ypaux > *depint)
     *marko    =  -2;
   else if (ypaux < *dintrf)
-    *marko    = 0;
+    *marko    = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
   else {
 
     if (*unif1 < (dtp / *tstruc))
-      *marko  = 12;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION;
     else
-      *marko  = 3;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_EJECTION;
 
   }
 }
 
 /*-----------------------------------------------------------------------------
- * Management of the sweep coherent structure (marko = 1)
+ * Management of the sweep coherent structure (marko = CS_LAGR_COHERENCE_STRUCT_SWEEP)
  *
  * parameters:
  *   dx        <->    wall-normal displacement
@@ -302,7 +302,7 @@ _dep_sweep(cs_real_t *dx,
     cs_real_t ypluss    = *yplus;
     *yplus    = *dintrf;
     *vvue     =  -*vstruc + *gnorm * taup + *vnorm;
-    *marko    = 0;
+    *marko    = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
     cs_lnum_t indint    = 1;
 
     _dep_inner_zone_diffusion(dx,
@@ -339,7 +339,7 @@ _dep_sweep(cs_real_t *dx,
 
     if (yplusa > *dintrf) {
 
-      *marko  = 3;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_EJECTION;
       *vvue   =  -*vstruc + *gnorm * taup + *vnorm;
       _dep_ejection(marko,
                     depint,
@@ -365,15 +365,15 @@ _dep_sweep(cs_real_t *dx,
   else {
 
     if (*unif1 < (dtp / *tstruc))
-      *marko  = 12;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION;
     else
-      *marko  = 1;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_SWEEP;
 
   }
 }
 
 /*----------------------------------------------------------------------------
- * Management of the diffusion phases (marko = 2)
+ * Management of the diffusion phases (marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION)
  *
  * parameters:
  *   dx        -->    wall-normal displacement
@@ -388,7 +388,7 @@ _dep_sweep(cs_real_t *dx,
  *   ttotal    <->    tdiffu + tstruc
  *   vstruc    <--    coherent structure velocity
  *   romp      <--    particle density
- *   taup      <->    particle relaxation time
+ *   taup      -->    particle relaxation time
  *   kdif      <->    diffusion phase diffusion coefficient
  *   tlag2     <->    diffusion relaxation timescale
  *   lvisq     <--    wall-unit lengthscale
@@ -446,7 +446,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   cs_real_t vpart0 = *vpart;
 
   cs_real_t vvue0;
-  if (*marko == 12)
+  if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION)
     vvue0 = vagaus[3] * sqrt (cs_math_pow2(*kdif) * *tlag2 / 2.0);
   else
     vvue0 = *vvue;
@@ -551,7 +551,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   /* --> trajectory  */
   *dx = ter1x + ter2x + ter3x + ter4x + ter5x;
 
-  /* --> vu fluid velocity     */
+  /* --> seen fluid velocity     */
   *vvue = ter1f + ter2f + ter3f;
 
   /* --> particles velocity    */
@@ -610,19 +610,19 @@ _dep_diffusion_phases(cs_real_t *dx,
 
       if (*unif2 < 0.5) {
 
-        *marko = 1;
+        *marko = CS_LAGR_COHERENCE_STRUCT_SWEEP;
         *vvue  = *vstruc + *gnorm * taup + *vnorm;
 
       }
       else {
 
-        *marko = 3;
+        *marko = CS_LAGR_COHERENCE_STRUCT_EJECTION;
         *vvue  =  -*vstruc + *gnorm * taup + *vnorm;
 
       }
     }
     else
-      *marko = 2;
+      *marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION;
 
   }
 }
@@ -864,7 +864,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
   if ((yplusa > *dintrf) && (*indint != 1)) {
 
-    *marko = 2;
+    *marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION;
     *vvue  =  -sqrt(cs_math_pow2((*kdifcl * (*ttotal / *tdiffu))) * *tlag2 / 2.0)
              * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
@@ -1097,50 +1097,55 @@ cs_lagr_deposition(cs_real_t  dtp,
   cs_lnum_t indint = 0;
 
   /* ====================================================================   */
-  /* 2. Treatment of the 'degenerated' cases (marko = 10, 20, 30) */
+  /* 2. Treatment of the 'degenerated' cases
+   * (marko =
+   *   CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF,
+   *   CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP,
+   *   CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION) */
   /* ====================================================================   */
 
   cs_real_t unif1;
-  if (*marko == 10) {
+  if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF) {
 
-    *marko    = 0;
+    *marko    = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
     *vvue     = 0.0;
 
   }
-  else if (*marko == 20) {
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP) {
 
     cs_random_uniform(1, &unif1);
 
     if (unif1 < paux)
-      *marko  = 1;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_SWEEP;
 
     else
-      *marko  = 12;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION;
 
   }
-  else if (*marko == 30) {
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION) {
 
     cs_random_uniform(1, &unif1);
 
     if (unif1 < 0.5)
-      *marko  = 1;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_SWEEP;
 
     else
-      *marko  = 3;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_EJECTION;
 
   }
 
   /* ====================================================================
    * 2. Call of different subroutines given the value of marko
-   *   marko = 1 --> sweep phase
-   *   marko = 2 or 12 --> diffusion phase
-   *   marko = 3 --> ejection phase
-   *   marko = 0 --> inner-zone diffusion
+   *   marko = CS_LAGR_COHERENCE_STRUCT_SWEEP --> sweep phase
+   *   marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION
+   *         or CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION --> diffusion phase
+   *   marko = CS_LAGR_COHERENCE_STRUCT_EJECTION --> ejection phase
+   *   marko = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF --> inner-zone diffusion
    * =====================================================================  */
 
   cs_real_t rpart = *diamp * 0.5;
 
-  if (*marko == 1)
+  if (*marko == CS_LAGR_COHERENCE_STRUCT_SWEEP)
     _dep_sweep(dx,
                vvue,
                vpart,
@@ -1168,7 +1173,8 @@ cs_lagr_deposition(cs_real_t  dtp,
                grpn,
                piiln);
 
-  else if (*marko == 2 || *marko == 12)
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_DIFFUSION
+      || *marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION)
     _dep_diffusion_phases(dx,
                           vvue,
                           vpart,
@@ -1197,7 +1203,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                           grpn,
                           piiln);
 
-  else if (*marko == 3)
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_EJECTION)
     _dep_ejection(marko,
                   depint,
                   dtp,
@@ -1214,7 +1220,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                   gnorm,
                   vnorm);
 
-  else if (*marko == 0)
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF)
     _dep_inner_zone_diffusion(dx,
                               vvue,
                               vpart,

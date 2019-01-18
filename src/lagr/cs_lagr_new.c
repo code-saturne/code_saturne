@@ -71,6 +71,7 @@
 #include "cs_field_pointer.h"
 
 #include "cs_lagr_clogging.h"
+#include "cs_lagr_deposition_model.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_dlvo.h"
 #include "cs_lagr_stat.h"
@@ -806,13 +807,19 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
       if (yplus < cs_lagr_particle_get_real(particle, p_am, CS_LAGR_INTERF)) {
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 10);
+        cs_lagr_particle_set_lnum(particle,
+                                  p_am,
+                                  CS_LAGR_MARKO_VALUE,
+                                  CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF);
 
       }
 
       else if (yplus > 100.0) {
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, -1);
+        cs_lagr_particle_set_lnum(particle,
+                                  p_am,
+                                  CS_LAGR_MARKO_VALUE,
+                                  CS_LAGR_COHERENCE_STRUCT_BULK);
 
       }
 
@@ -822,13 +829,22 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
         cs_random_uniform(1, &random);
 
         if (random < 0.25)
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 12);
+          cs_lagr_particle_set_lnum(particle,
+                                    p_am,
+                                    CS_LAGR_MARKO_VALUE,
+                                    CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION);
 
         else if (random > 0.625)
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 1);
+          cs_lagr_particle_set_lnum(particle,
+                                    p_am,
+                                    CS_LAGR_MARKO_VALUE,
+                                    CS_LAGR_COHERENCE_STRUCT_SWEEP);
 
         else /* if ((random > 0.25) && (random < 0.625)) */
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 3);
+          cs_lagr_particle_set_lnum(particle,
+                                    p_am,
+                                    CS_LAGR_MARKO_VALUE,
+                                    CS_LAGR_COHERENCE_STRUCT_EJECTION);
 
       }
 

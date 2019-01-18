@@ -76,6 +76,7 @@
 #include "cs_field_pointer.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_deposition_model.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_clogging.h"
@@ -3398,8 +3399,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
       /* Modification of MARKO pointer */
       if (*cur_part_yplus > 100.0)
-
-        cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, -1);
+        cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, CS_LAGR_COHERENCE_STRUCT_BULK);
 
       else {
 
@@ -3407,19 +3407,34 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
             cs_lagr_particles_get_real(particles, i, CS_LAGR_INTERF)) {
 
           if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE) < 0)
-            cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, 10);
+            cs_lagr_particles_set_lnum(particles,
+                                       i,
+                                       CS_LAGR_MARKO_VALUE,
+                                       CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF);
           else
-            cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, 0);
+            cs_lagr_particles_set_lnum(particles,
+                                       i,
+                                       CS_LAGR_MARKO_VALUE,
+                                       CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF);
 
         }
         else {
 
           if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE) < 0)
-            cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, 20);
+            cs_lagr_particles_set_lnum(particles,
+                                       i,
+                                       CS_LAGR_MARKO_VALUE,
+                                       CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP);
 
-          else if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE) == 0 ||
-                   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE) == 10 )
-            cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, 30);
+          else if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE)
+              == CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF
+              ||
+              cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE)
+              == CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF)
+            cs_lagr_particles_set_lnum(particles,
+                                       i,
+                                       CS_LAGR_MARKO_VALUE,
+                                       CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION);
         }
 
       }

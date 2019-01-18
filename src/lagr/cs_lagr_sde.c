@@ -2104,7 +2104,7 @@ _lagdep(cs_real_t           dtp,
                          cs_glob_physical_constants->gravity[2]};
 
 
-  cs_real_t tkelvi =  273.15;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   cs_real_t vitf = 0.0;
 
@@ -2193,7 +2193,10 @@ _lagdep(cs_real_t           dtp,
           cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
           == CS_LAGR_PART_IN_FLOW) {
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, -1);
+        cs_lagr_particle_set_lnum(particle,
+                                  p_am,
+                                  CS_LAGR_MARKO_VALUE,
+                                  CS_LAGR_COHERENCE_STRUCT_BULK);
 
         for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -2342,19 +2345,36 @@ _lagdep(cs_real_t           dtp,
             < cs_lagr_particle_get_real(particle, p_am,
                                         CS_LAGR_INTERF) ) {
 
-          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_MARKO_VALUE) < 0)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 10);
+          if (cs_lagr_particle_get_lnum(particle,
+                                        p_am,
+                                        CS_LAGR_MARKO_VALUE) < 0)
+            cs_lagr_particle_set_lnum(particle,
+                                      p_am,
+                                      CS_LAGR_MARKO_VALUE,
+                                      CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF);
           else
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 0);
+            cs_lagr_particle_set_lnum(particle,
+                                      p_am,
+                                      CS_LAGR_MARKO_VALUE,
+                                      CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF);
 
         }
         else {
 
           if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_MARKO_VALUE) < 0)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 20);
+            cs_lagr_particle_set_lnum(particle,
+                                      p_am,
+                                      CS_LAGR_MARKO_VALUE,
+                                      CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP);
 
-          else if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_MARKO_VALUE) == 0)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 30);
+          else if (cs_lagr_particle_get_lnum(particle,
+                                             p_am,
+                                             CS_LAGR_MARKO_VALUE)
+              == CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF)
+            cs_lagr_particle_set_lnum(particle,
+                                      p_am,
+                                      CS_LAGR_MARKO_VALUE,
+                                      CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION);
 
         }
 
