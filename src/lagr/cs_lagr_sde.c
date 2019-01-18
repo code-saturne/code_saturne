@@ -730,6 +730,7 @@ _lages2(cs_real_t           dtp,
  * \param[in]  vagaus    gaussian random variables
  * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      particles associated density
+ * \param[in]  fextla    external user forces (m/s2)
  * \param[in]  tempf     temperature of the fluid (K)
  * \param[in]  vislen    FIXME
  * \param[in]  depint    interface location near-wall/core-flow
@@ -743,7 +744,8 @@ _lagesd(cs_real_t           dtp,
         const cs_real_3_t   piil[],
         const cs_real_33_t  vagaus[],
         const cs_real_3_t   gradpr[],
-        cs_real_t           romp,
+        cs_real_t           romp[],
+        const cs_real_3_t   fextla[],
         cs_real_t           tempf,
         const cs_real_t     vislen[],
         cs_real_t          *depint,
@@ -781,6 +783,8 @@ _lagesd(cs_real_t           dtp,
    * ======================================================================== */
 
   const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
+
+  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
 
   /* particle data */
   unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
@@ -911,11 +915,27 @@ _lagesd(cs_real_t           dtp,
     vflui[2] = 0.;
   }
 
-  /* 2.5 - pressure gradient   */
+  /* 2.5 Particle force: - pressure gradient/romp + external force + g   */
 
-  cs_real_t gdpr[3];
+  cs_real_t force_p[3];
+  cs_real_t force_pn[3];
+  cs_real_t rom = extra->cromf->val[cell_id];
 
-  cs_math_33_3_product(rot_m, gradpr[cell_id], gdpr);
+  for (int id = 0; id < 3; id++) {
+    if (cs_glob_lagr_time_scheme->iadded_mass == 0)
+      force_p[id] = (- gradpr[cell_id][id] / romp[ip]
+          + grav[id] + fextla[ip][id]) * taup[ip];
+
+    /* Added-mass term?     */
+    else
+      force_p[id] =   (- gradpr[cell_id][id] / romp[ip]
+          * (1.0 + 0.5 * added_mass_const)
+          / (1.0 + 0.5 * added_mass_const * rom / romp[ip])
+          + grav[id] + fextla[ip][id]) * taup[ip];
+
+  }
+
+  cs_math_33_3_product(rot_m, force_p, force_pn);
 
   /* 2.6 - "piil" term    */
 
@@ -971,14 +991,14 @@ _lagesd(cs_real_t           dtp,
                      vvue,
                      depl,
                      &p_diam,
-                     romp,
+                     romp[ip],
                      taup[ip],
                      &yplus,
                      &interf,
                      &enertur,
                      ggp,
                      vflui,
-                     gdpr,
+                     force_pn,
                      piilp,
                      depint);
 
@@ -999,7 +1019,7 @@ _lagesd(cs_real_t           dtp,
       cs_lnum_t i0 = id-1;
 
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
-      cs_real_t force = (- gdpr[id] / romp + ggp[id]) * taup[ip];
+      cs_real_t force = force_pn[id];
       cs_real_t aux1  = exp(-dtp / taup[ip]);
       cs_real_t aux2  = exp(-dtp / tlp);
       cs_real_t aux3  = tlp / (tlp - taup[ip]);
@@ -1194,7 +1214,7 @@ _lagesd(cs_real_t           dtp,
 
         /* Calculation of gravity force and torque */
         for (cs_lnum_t id = 0; id < 3; id++) {
-          grav_force[id] = 4./3. * cs_math_pi * cs_math_pow3(p_diam/2) * romp * ggp[id];
+          grav_force[id] = 4./3. * cs_math_pi * cs_math_pow3(p_diam/2) * romp[ip] * ggp[id];
         }
 
         for (cs_lnum_t id = 1; id < 3; id++) {
@@ -2384,7 +2404,8 @@ _lagdep(cs_real_t           dtp,
                 piil,
                 vagaus,
                 gradpr,
-                romp[ip],
+                romp,
+                fextla,
                 tempf,
                 vislen,
                 &depint,
