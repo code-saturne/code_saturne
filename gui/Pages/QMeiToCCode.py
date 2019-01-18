@@ -1,6 +1,7 @@
 import os, shutil
 
 from code_saturne.Pages.FluidCharacteristicsView import FluidCharacteristicsView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 
 #-------------------------------------------------------------------------------
@@ -75,6 +76,11 @@ class mei_to_c_interpreter:
         self.funcs = {}
 
         self.code_to_write = ""
+
+        nb = NotebookModel(self.case)
+        self.notebook = {}
+        for (nme, val) in nb.getNotebookList():
+            self.notebook[nme] = str(val)
     # -------------------------------
 
 
@@ -144,8 +150,14 @@ class mei_to_c_interpreter:
                     ic = coords.index(s[0])
                     lxyz = 'cs_real_t %s = xyz[c_id][%s];\n' % (s[0], str(ic))
                     usr_code += (ntabs+1)*tab + lxyz
-                    known_symbols.appned(s[0])
+                    known_symbols.append(s[0])
                     need_coords = True
+                elif s[0] in self.notebook.keys():
+                    l = 'cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
+                            % (s[0], s[0])
+                    usr_defs += ntabs*tab + l
+                    known_symbols.append(s[0])
+
                 elif s not in scalars:
                     if len(s[1].split('=')) > 1:
                         sval = s[1].split('=')[-1]
