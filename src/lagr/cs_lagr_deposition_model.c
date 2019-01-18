@@ -563,15 +563,21 @@ _dep_diffusion_phases(cs_real_t *dx,
    * -------------------------------------------------- */
 
   if (yplusa > *depint)
-    *marko    =  -2;
+    *marko =  -2;
+  /* The particle enters the inner zone */
   else if (yplusa < *dintrf) {
 
     *marko = 0;
     *vvue  = sqrt ( cs_math_pow2((*kdifcl)) * *tlag2 / 2.0) * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
     dxaux  = *dx;
+    /* Warning, in the local referenceframe, the normal is outwaring */
     *vpart = (*yplus - yplusa) * lvisq / dtl;
+
+    /* Remaining time */
     dtp1   = dtl * (*dintrf - yplusa) / (*yplus - yplusa);
+
+    /* Y+ is overwriten at the interface */
     *yplus = *dintrf;
     _dep_inner_zone_diffusion(dx,
                               vvue,
@@ -854,25 +860,33 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   *vvue  = *vvue + terf;
   *vpart = *vpart + terp + terpbr;
   *dx    = *dx + terx + terxbr;
+  /* Predicted arrival y+ */
   cs_real_t yplusa = *yplus - *dx / lvisq;
 
   if ((yplusa * lvisq) < *rpart) {
 
-    *dx  = *dx + 2 * *rpart;
+    *dx  = *dx + 2. * *rpart;
     return;
 
   }
 
+  /* The particle leaves the inner zone */
   if ((yplusa > *dintrf) && (*indint != 1)) {
 
     *marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION;
     *vvue  =  -sqrt(cs_math_pow2((*kdifcl * (*ttotal / *tdiffu))) * *tlag2 / 2.0)
              * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
-    *vpart = (*yplus - yplusa) * lvisq / dtl;
     cs_real_t dxaux  = *dx;
+    /* Warning, in the local referenceframe, the normal is outwaring */
+    *vpart = (*yplus - yplusa) * lvisq / dtl;
+
+    /* Remaining time */
     cs_real_t dtp1   = dtl * (*dintrf - yplusa) / (*yplus - yplusa);
+
+    /* Y+ is overwriten at the interface */
     *yplus = *dintrf;
+
     _dep_diffusion_phases(dx,
                           vvue,
                           vpart,
