@@ -162,6 +162,22 @@ cs_boundary_add(cs_boundary_t        *bdy,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build an array on boundary faces which specify the type of boundary
+ *         for each face.
+ *
+ * \param[in]       boundaries    pointer to the domain boundaries
+ * \param[in]       n_b_faces     number of boundaries faces
+ * \param[in, out]  bf_type       array to define the type of boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_build_type_array(const cs_boundary_t    *boundaries,
+                             cs_lnum_t               n_b_faces,
+                             cs_boundary_type_t     *bf_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add a new zone gathering all CS_BOUNDARY_WALL zone type
  *
  * \param[in, out]  boundaries    pointer to the domain boundaries
