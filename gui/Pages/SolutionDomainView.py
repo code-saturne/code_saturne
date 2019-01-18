@@ -659,7 +659,7 @@ class MeshInputDialog(QFileDialog):
 class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     """
     """
-    def __init__(self, parent, case, stbar):
+    def __init__(self, parent, case, stbar, tree):
         """
         Constructor
         """
@@ -667,8 +667,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         Ui_SolutionDomainForm.__init__(self)
         self.setupUi(self)
 
+        self.root = parent
         self.stbar = stbar
         self.case = case
+        self.browser = tree
+
         self.case.undoStopGlobal()
         self.mdl = SolutionDomainModel(self.case)
 
@@ -791,7 +794,31 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self._tableViewLayout()
 
+        # Combomodels
+
+        self.modelArg_cs_verif = ComboModel(self.comboBoxRunType, 4, 1)
+
+        self.modelArg_cs_verif.addItem(self.tr("Import mesh only"), 'none')
+        self.modelArg_cs_verif.addItem(self.tr("Mesh preprocessing only"),
+                                       'mesh preprocess')
+        self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria only"),
+                                       'mesh quality')
+        self.modelArg_cs_verif.addItem(self.tr("Standard Computation"), 'standard')
+
+        self.modelArg_cs_verif.setItem(str_model=self.case['run_type'])
+
+        if self.mesh_input != None:
+            self.modelArg_cs_verif.disableItem(str_model='none')
+        else:
+            self.modelArg_cs_verif.enableItem(str_model='none')
+
+        self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
+
         self.case.undoStartGlobal()
+
+        # Update tree
+
+        self.browser.configureTree(self.case)
 
 
     def MeshesResizeEvent(self, event):
@@ -1086,6 +1113,17 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.mdl.delMesh(mesh)
 
         self._tableViewLayout()
+
+
+    @pyqtSlot(str)
+    def slotArgRunType(self, text):
+        """
+        Input run type option.
+        """
+        run_type = self.modelArg_cs_verif.dicoV2M[str(text)]
+        self.mdl.setRunType(run_type)
+        self.root.initCase()
+        self.browser.configureTree(self.case)
 
 
     def tr(self, text):

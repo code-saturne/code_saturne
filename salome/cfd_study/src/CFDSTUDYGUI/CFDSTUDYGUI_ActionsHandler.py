@@ -137,8 +137,6 @@ SolverSaveAsAction             = 102
 SolverCloseAction              = 103
 SolverUndoAction               = 104
 SolverRedoAction               = 105
-SolverPreproModeAction         = 106
-SolverCalculationModeAction    = 107
 SolverOpenTurnsModeAction      = 108
 
 SolverToolsMenu                = 110
@@ -619,24 +617,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._SolverActionIdMap[SolverRedoAction] = action_id
         action.triggered.connect(self.slotRedo)
 
-        # Preprocessing Mode action
-        action = sgPyQt.createAction(-1, "Preprocessing Mode", "Preprocessing Mode", "Preprocessing Mode", \
-                                      ObjectTR.tr("PREPRO_MODE_CFD_GUI_ACTION_ICON"))
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverPreproModeAction] = action_id
-        action.triggered.connect(self.slotPreproMode)
-
-        # Calculation Mode action
-        action = sgPyQt.createAction(-1, "Calculation Mode", "Calculation Mode", "Calculation Mode", \
-                                      ObjectTR.tr("CALCULATION_MODE_CFD_GUI_ACTION_ICON"))
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverCalculationModeAction] = action_id
-        action.triggered.connect(self.slotCalculationMode)
-
         # OpenTurns Study Mode action
         action = sgPyQt.createAction(-1, \
                                      "OpenTurns Study Mode", \
@@ -888,8 +868,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.solverAction(SolverSaveAsAction).setEnabled(False)
                 self.solverAction(SolverUndoAction).setEnabled(False)
                 self.solverAction(SolverRedoAction).setEnabled(False)
-                self.solverAction(SolverPreproModeAction).setEnabled(False)
-                self.solverAction(SolverCalculationModeAction).setEnabled(False)
 
                 case   = CFDSTUDYGUI_DataModel.GetCase(XMLSobj)
                 study  = CFDSTUDYGUI_DataModel.GetStudyByObj(XMLSobj)
@@ -902,8 +880,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                         self.solverAction(SolverSaveAsAction).setEnabled(True)
                         self.solverAction(SolverUndoAction).setEnabled(True)
                         self.solverAction(SolverRedoAction).setEnabled(True)
-                        self.solverAction(SolverPreproModeAction).setEnabled(True)
-                        self.solverAction(SolverCalculationModeAction).setEnabled(True)
 
     def customPopup(self, id, popup):
         """
@@ -1864,12 +1840,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
     def slotRedo(self):
         self._SolverGUI.onRedo()
-
-    def slotPreproMode(self):
-        self._SolverGUI.onPreproMode()
-
-    def slotCalculationMode(self):
-        self._SolverGUI.onCalculationMode()
 
     def slotOTStudyMode(self):
         self._SolverGUI.onOTStudyMode()

@@ -91,6 +91,7 @@ from code_saturne.Pages.WelcomeView import WelcomeView
 from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
 from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
+from code_saturne.Pages.SolutionDomainModel import getRunType
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 from code_saturne.Pages.QMeiToCCode import mei_to_c_interpreter
@@ -439,9 +440,6 @@ class MainView(object):
                     self.setFont(font)
                     app.setFont(font)
 
-        self.actionPrepro.setEnabled(False)
-        self.actionCalculation.setEnabled(False)
-
         self.updateRecentFileMenu()
         QTimer.singleShot(0, self.loadInitialFile)
 
@@ -637,8 +635,6 @@ class MainView(object):
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
         self.updateTitleBar()
-        self.actionPrepro.setEnabled(True)
-        self.actionCalculation.setEnabled(True)
 
 
     def caseNew(self):
@@ -662,8 +658,6 @@ class MainView(object):
                 self.scrollArea.setWidget(self.displayFirstPage())
                 self.case['saved'] = "yes"
 
-                self.actionPrepro.setEnabled(True)
-                self.actionCalculation.setEnabled(True)
                 self.case.undo_signal.connect(self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
@@ -764,7 +758,7 @@ class MainView(object):
 
         # we determine if we are in calculation mode when we open an xml file
         mdl = ScriptRunningModel(self.case)
-        self.case['prepro'] = mdl.getPreproMode()
+        self.case['run_type'] = getRunType(self.case)
 
         msg = self.initCase()
 
@@ -789,8 +783,6 @@ class MainView(object):
         # Update the Tree Navigator layout
 
         self.case.undo_signal.connect(self.slotUndoRedoView)
-        self.actionPrepro.setEnabled(True)
-        self.actionCalculation.setEnabled(True)
 
         self.updateTitleBar()
 
@@ -1188,7 +1180,7 @@ class MainView(object):
         """
         Save user defined laws with MEI to C functions
         """
-        if self.case['prepro'] == False and self.case['oturns'] == False:
+        if self.case['run_type'] == 'standard' and self.case['oturns'] == False:
             mci = mei_to_c_interpreter(self.case)
             state = mci.save_all_functions(self)
 
@@ -1376,8 +1368,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         self.actionUndo.triggered.connect(self.slotUndo)
         self.actionRedo.triggered.connect(self.slotRedo)
-        self.actionPrepro.triggered.connect(self.slotPreproMode)
-        self.actionCalculation.triggered.connect(self.slotCalculationMode)
 
         docdir = self.package.get_dir('docdir')
 
@@ -1424,14 +1414,15 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         If previous case, just check if all mandatory nodes exist.
         """
 
+        prepro_only = self.case['run_type'] != 'standard'
         if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
             from neptune_cfd.nc_package import package as nc_package
             self.package = nc_package()
-            return XMLinitNeptune(self.case).initialize(self.case['prepro'])
+            return XMLinitNeptune(self.case).initialize(prepro_only)
         elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
             from code_saturne.cs_package import package as cs_package
             self.package = cs_package()
-            return XMLinit(self.case).initialize(self.case['prepro'])
+            return XMLinit(self.case).initialize(prepro_only)
 
 
     def displayWelcomePage(self):
@@ -1659,50 +1650,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.scrollArea.setWidget(p)
 
 
-    def slotPreproMode(self):
-        """
-        mode prepro slot
-        """
-        mdl = ScriptRunningModel(self.case)
-        rt = mdl.getRunType(self.case['prepro'])
-        self.case['prepro'] = True
-        self.case['oturns'] = False
-        self.initCase()
-        mdl.setRunType(rt)
-        self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'Calculation management':
-            p = displaySelectedPage(self.case['current_page'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
-    def slotCalculationMode(self):
-        """
-        mode calculation slot
-        """
-        mdl = ScriptRunningModel(self.case)
-        self.case['prepro'] = False
-        self.case['oturns'] = False
-        self.initCase()
-        mdl.setRunType('standard')
-        self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'Calculation management':
-            p = displaySelectedPage(self.case['current_page'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
     def slotOpenTurnsMode(self):
         """
         OpenTurns mode study slot
         """
-        self.case['prepro'] = False
         self.case['oturns'] = True
         self.initCase()
         self.Browser.configureTree(self.case)

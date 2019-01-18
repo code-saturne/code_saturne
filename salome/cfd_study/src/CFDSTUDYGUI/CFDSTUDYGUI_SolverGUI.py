@@ -255,14 +255,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if self._CurrentWindow != None:
             self._CurrentWindow.slotRedo()
 
-    def onPreproMode(self):
-        if self._CurrentWindow != None:
-            self._CurrentWindow.slotPreproMode()
-
-    def onCalculationMode(self):
-        if self._CurrentWindow != None:
-            self._CurrentWindow.slotCalculationMode()
-
     def onOTStudyMode(self):
         if self._CurrentWindow != None:
             self._CurrentWindow.slotOpenTurnsMode()

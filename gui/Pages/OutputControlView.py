@@ -1239,7 +1239,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cfg.libs['catalyst'].have == "no":
             no_catalyst = True
 
-        if self.case['prepro'] == False:
+        if self.case['run_type'] == 'standard':
             # lagrangian model
             self.lag_mdl = LagrangianModel(self.case)
 
@@ -1298,7 +1298,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelProbeFmt.addItem(self.tr(".csv"), 'CSV')
 
         # Hide time frequency (in s) when calculation is steady
-        if self.case['prepro'] == False:
+        if self.case['run_type'] == 'standard':
             if self.isSteady() != 0:
                 self.modelTimePlot.disableItem(3)
 
@@ -1478,7 +1478,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.lineEditNTLIST.setText(str(ntlist))
         self.slotOutputListing(t)
 
-        if self.case['prepro'] == False:
+        if self.case['run_type'] == 'standard':
             if self.lag_mdl.getLagrangianModel() != 'off':
                 self.groupBoxListingParticles.show()
                 period = self.mdl.getListingFrequencyLagrangian()

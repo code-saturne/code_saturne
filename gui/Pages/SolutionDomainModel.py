@@ -69,6 +69,29 @@ def RelOrAbsPath(path, case_dir):
         return path
 
 #-------------------------------------------------------------------------------
+# Utility function: get run type from case
+#-------------------------------------------------------------------------------
+
+def getRunType(case):
+    """
+    This function allows querying a case for its run type
+    """
+
+    val = None
+
+    node_mgt = case.xmlGetNode('calculation_management')
+    if node_mgt:
+        val = node_mgt.xmlGetString('run_type')
+
+    if not val:
+        val = 'standard'
+
+    case['run_type'] = val
+
+    return val
+
+
+#-------------------------------------------------------------------------------
 # Class Mesh Model
 #-------------------------------------------------------------------------------
 
@@ -196,6 +219,8 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
         self.node_thinwall   = self.node_ecs.xmlInitNode('thin_walls')
         self.node_extrude    = self.node_ecs.xmlInitNode('extrusion')
+
+        self.node_mgt = self.case.xmlInitNode('calculation_management')
 
 
 #************************* Private methods *****************************
@@ -489,6 +514,8 @@ class SolutionDomainModel(MeshModel, Model):
         node = self.node_ecs.xmlInitNode('mesh_input', 'path')
         if mesh_input:
             node['path'] = mesh_input
+            if self.getRunType() == 'none':
+                self.setRunType('mesh preprocess')
         else:
             node.xmlRemoveNode()
 
@@ -1353,6 +1380,39 @@ class SolutionDomainModel(MeshModel, Model):
         node.xmlRemoveNode()
         if thin_id < self.getExtrudeSelectionsCount():
             self._updateExtrudeNumbers()
+
+
+    # Methods to manage run type
+    #===========================
+
+    @Variables.noUndo
+    def getRunType(self):
+        """
+        Get run type.
+        """
+        val = self.node_mgt.xmlGetString('run_type')
+
+        if not val:
+            val = 'standard'
+
+        self.case['run_type'] = val
+
+        return val
+
+
+    @Variables.undoLocal
+    def setRunType(self, run):
+        """
+        Set run type.
+        """
+        self.isInList(run, ('none', 'mesh preprocess', 'mesh quality', 'standard'))
+        if run != 'standard':
+            self.node_mgt.xmlSetData('run_type', run)
+        else:
+            node = self.node_mgt.xmlInitNode('run_type')
+            node.xmlRemoveNode()
+
+        self.case['run_type'] = run
 
 
 #-------------------------------------------------------------------------------

@@ -730,6 +730,13 @@ Calculation management
 
         self.setRowClose(self.tr('Notebook'))
 
+        show_prepro = True
+        if case['run_type'] == 'none':
+            show_prepro = False
+
+        self.setRowShow(self.tr('Preprocessing'), show_prepro)
+        self.setRowShow(self.tr('Postprocessing'), show_prepro)
+
         self.setRowClose(self.tr('Calculation features'))
         """
         self.setRowClose(self.tr('Main fields'))
@@ -814,7 +821,7 @@ Calculation management
         Configures the browser with users data.
         """
 
-        if case['prepro'] == True:
+        if case['run_type'] != 'standard':
             return self.__configureTreePrepro(case)
 
         p_module = ''
@@ -957,6 +964,10 @@ Calculation management
 
         self.setRowOpen(self.tr('Notebook'))
 
+        # Preprocessing
+
+        self.setRowShow(self.tr('Preprocessing'), True)
+
         # Thermophysical Models
 
         self.setRowShow(self.tr('Calculation features'), True)
@@ -1049,6 +1060,7 @@ Calculation management
 
         # Postprocessing
 
+        self.setRowShow(self.tr('Postprocessing'), True)
         self.setRowShow(self.tr('Time averages'), True)
         self.setRowShow(self.tr('Additional user arrays'))
         self.setRowShow(self.tr('Volume solution control'), True)

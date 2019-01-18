@@ -467,7 +467,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.spinBoxNProcs.valueChanged[int].connect(self.slotNProcs)
             self.spinBoxNThreads.valueChanged[int].connect(self.slotNThreads)
 
-        self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
         self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
         self.lineEditRunId.textChanged[str].connect(self.slotJobRunId)
 
@@ -476,21 +475,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.checkBoxTrace.stateChanged.connect(self.slotTrace)
         self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
-
-        # Combomodels
-
-        self.modelArg_cs_verif = ComboModel(self.comboBoxRunType, 2, 1)
-
-        self.modelArg_cs_verif.addItem(self.tr("Import mesh only"), 'none')
-        self.modelArg_cs_verif.addItem(self.tr("Mesh preprocessing"), 'mesh preprocess')
-        self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh quality')
-        if self.case['prepro'] == True:
-            self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType(self.case['prepro']))
-            self.labelRunType.show()
-            self.comboBoxRunType.show()
-        else:
-            self.labelRunType.hide()
-            self.comboBoxRunType.hide()
 
         # initialize Widgets
 
@@ -669,15 +653,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_wckey')
 
 
-    @pyqtSlot(str)
-    def slotArgRunType(self, text):
-        """
-        Input run type option.
-        """
-        run_type = self.modelArg_cs_verif.dicoV2M[str(text)]
-        self.mdl.setRunType(run_type)
-
-
     @pyqtSlot(int)
     def slotNProcs(self, v):
         """
@@ -796,7 +771,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             return
 
         # Verify if boundary condition definitions exist
-        if self.case['prepro'] == False:
+        if self.case['run_type'] == 'standard':
             bd = LocalizationModel('BoundaryZone', self.case)
             if not bd.getZones():
                 if self.case['no_boundary_conditions'] == False:

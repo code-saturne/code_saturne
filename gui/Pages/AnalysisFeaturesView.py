@@ -308,10 +308,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.case.root().xmlRemoveChild("numerical_parameters")
 
         self.case.xmlRootNode().tagName = "Code_Saturne_GUI"
-        self.case['prepro'] = False
         self.case.root()["solver_version"] = ""
 
-        XMLinit(self.case).initialize(self.case['prepro'])
+        XMLinit(self.case).initialize()
 
 
     def init_saturne(self):
@@ -464,10 +463,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.case.root().xmlInitNode("physical_properties")
 
         self.case.xmlRootNode().tagName = "NEPTUNE_CFD_GUI"
-        self.case['prepro'] = False
         self.case.root()["solver_version"] = ""
 
-        XMLinitNeptune(self.case).initialize(self.case['prepro'])
+        XMLinitNeptune(self.case).initialize()
 
 
     def init_neptune(self):

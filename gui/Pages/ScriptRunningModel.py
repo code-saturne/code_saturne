@@ -74,38 +74,6 @@ class ScriptRunningModel(Model):
 
 
     @Variables.noUndo
-    def getRunType(self, preproview = None):
-        """
-        Get run type.
-        """
-        val = self.node_mgt.xmlGetString('run_type')
-
-        if not preproview:
-            val = 'standard'
-
-        if not val:
-            if not preproview:
-                val = 'standard'
-            else:
-                val = 'mesh quality'
-            self.setRunType(val)
-        elif (preproview and val == 'standard'):
-            val = 'mesh quality'
-            self.setRunType(val)
-
-        return val
-
-
-    @Variables.undoLocal
-    def setRunType(self, run):
-        """
-        Set run type.
-        """
-        self.isInList(run, ('none', 'mesh preprocess', 'mesh quality', 'standard'))
-        self.node_mgt.xmlSetData('run_type', run)
-
-
-    @Variables.noUndo
     def getTrace(self):
         """
         Get logging options.

@@ -82,7 +82,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
 
     elif page_name == tr("Mesh"):
         import code_saturne.Pages.SolutionDomainView as Page
-        thisPage = Page.SolutionDomainView(root, case, stbar)
+        thisPage = Page.SolutionDomainView(root, case, stbar, tree)
 
     elif page_name == tr("Preprocessing"):
         import code_saturne.Pages.PreprocessingView as Page

@@ -479,24 +479,6 @@
     <string>Ctrl+Shift+Z</string>
    </property>
   </action>
-  <action name="actionPrepro">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/icons/22x22/prepro-mode.png</normaloff>:/icons/22x22/prepro-mode.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Preprocessing Mode</string>
-   </property>
-  </action>
-  <action name="actionCalculation">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/icons/22x22/calc-mode.png</normaloff>:/icons/22x22/calc-mode.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Calculation Mode</string>
-   </property>
-  </action>
   <action name="caseNewAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">

@@ -101,7 +101,7 @@ class Dico:
         self.data = {}
 
         self.data['saved']            = "yes"
-        self.data['prepro']           = True
+        self.data['run_type']         = 'none'
         self.data['oturns']           = False
         self.data['xmlfile']          = ""
         self.data['pythonfile']       = ""

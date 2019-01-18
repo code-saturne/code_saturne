@@ -52,8 +52,6 @@
     <addaction name="openXtermAction"/>
     <addaction name="separator"/>
     <addaction name="displayCaseAction"/>
-    <addaction name="actionPrepro"/>
-    <addaction name="actionCalculation"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -158,19 +156,6 @@
    </attribute>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
-  </widget>
-  <widget class="QToolBar" name="toolBar_3">
-   <property name="windowTitle">
-    <string>toolBar_3</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionPrepro"/>
-   <addaction name="actionCalculation"/>
   </widget>
   <widget class="QToolBar" name="toolBar_4">
    <property name="windowTitle">
@@ -306,12 +291,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
-   </property>
-  </action>
-  <action name="displayLogo">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/MONO-bulle-HD.png</normaloff>:/icons/22x22/MONO-bulle-HD.png</iconset>
    </property>
   </action>
   <action name="reload_modulesAction">
@@ -556,24 +535,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Z</string>
-   </property>
-  </action>
-  <action name="actionPrepro">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/prepro-mode.png</normaloff>:/icons/22x22/prepro-mode.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Preprocessing Mode</string>
-   </property>
-  </action>
-  <action name="actionCalculation">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/calc-mode.png</normaloff>:/icons/22x22/calc-mode.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Calculation Mode</string>
    </property>
   </action>
   <action name="caseNewAction">

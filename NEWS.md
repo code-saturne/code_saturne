@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 User changes:
 
+- GUI: significant reorganization
+  * Folders replaced by active pages (with new icons reflecting this)
+  * Preprocessor/calculation modes replaced by run type in mesh page
+  * Many minor changes
+
 - Allow stopping criteria based on physical time and/or additional time.
 
 - Add cs_restart_map_set_mesh_input function to allow mapping restarts
