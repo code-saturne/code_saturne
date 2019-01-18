@@ -275,18 +275,36 @@ class mei_to_c_interpreter:
 
         else:
             from code_saturne.Pages.ThermodynamicsView import ThermodynamicsView
+            from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+
             tv = ThermodynamicsView(root, self.case)
+            mfm = MainFieldsModel(self.case)
 
             authorized_fields = ['density', 'molecular_viscosity',
-                                 'specific_heat', 'thermal_conductivity',
-                                 'd_rho_d_P', 'd_rho_d_h', 'temperature']
+                                 'specific_heat', 'thermal_conductivity']
+
+            compressible_fields = ['d_rho_d_P', 'd_rho_d_h']
 
             for fieldId in tv.mdl.getFieldIdList():
-                for fk in authorized_fields:
-                    if tv.mdl.getPropertyMode(fieldId, fk) == 'user_law':
-                        name = fk + '_' + str(fieldId)
-                        exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId, fk)
-                        self.init_c_block(exp, req, sym, sca, name)
+                if tv.mdl.getMaterials(fieldId) == 'user_material':
+                    for fk in authorized_fields:
+                        if tv.mdl.getPropertyMode(fieldId, fk) == 'user_law':
+                            name = fk + '_' + str(fieldId)
+                            exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,fk)
+                            self.init_c_block(exp, req, sym, sca, name)
+
+                    if mfm.getCompressibleStatus(fieldId) == 'on':
+                        for fk in compressible_fields:
+                            name = fk + '_' + str(fieldId)
+                            exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,fk)
+                            self.init_c_block(exp, req, sym, sca, name)
+
+                    # Temperature as a function of enthalpie
+                    name = 'temperature_' + str(fieldId)
+                    exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,
+                                                                     'temperature')
+                    self.init_c_block(exp, req, sym, sca, name)
+
 
         # Delete previous existing file
         file2write = 'cs_meg_volume_function.c'

@@ -1371,6 +1371,8 @@ temperature = enthalpy / 1000;
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
+        return exp, req, self.list_scalars, symbols, exa
+
 
     @pyqtSlot()
     def slotFormulaTemperature(self):
