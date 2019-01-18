@@ -300,10 +300,11 @@ class mei_to_c_interpreter:
                             self.init_c_block(exp, req, sym, sca, name)
 
                     # Temperature as a function of enthalpie
-                    name = 'temperature_' + str(fieldId)
-                    exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,
-                                                                     'temperature')
-                    self.init_c_block(exp, req, sym, sca, name)
+                    if mfm.getEnergyResolution(fieldId) == 'on':
+                        name = 'temperature_' + str(fieldId)
+                        exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,
+                                                                         'temperature')
+                        self.init_c_block(exp, req, sym, sca, name)
 
 
         # Delete previous existing file
