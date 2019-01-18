@@ -196,7 +196,8 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   cs_navsto_system_t  *navsto = _allocate_navsto_system();
 
   /* Initialize the set of parameters */
-  navsto->param = cs_navsto_param_create(model, time_state, algo_coupling);
+  navsto->param
+    = cs_navsto_param_create(boundaries, model, time_state, algo_coupling);
 
   /* Advection field related to the resolved velocity */
   navsto->adv_field = cs_advection_field_add("velocity_field",

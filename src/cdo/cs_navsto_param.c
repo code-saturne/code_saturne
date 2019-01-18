@@ -186,21 +186,25 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
  * \brief  Create a new structure to store all numerical parameters related
  *         to the resolution of the Navier-Stokes (NS) system
  *
+ * \param[in]  boundaries     pointer to a cs_boundary_t structure
  * \param[in]  model          model related to the NS system to solve
  * \param[in]  time_state     state of the time for the NS equations
  * \param[in]  algo_coupling  algorithm used for solving the NS system
-*
+ *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
-cs_navsto_param_create(cs_navsto_param_model_t        model,
-                       cs_navsto_param_time_state_t   time_state,
-                       cs_navsto_param_coupling_t     algo_coupling)
+cs_navsto_param_create(const cs_boundary_t              *boundaries,
+                       cs_navsto_param_model_t           model,
+                       cs_navsto_param_time_state_t      time_state,
+                       cs_navsto_param_coupling_t        algo_coupling)
 {
   cs_navsto_param_t  *param = NULL;
   BFT_MALLOC(param, 1, cs_navsto_param_t);
+
+  param->boundaries = boundaries; /* shared structure */
 
   param->verbosity = 1;
 

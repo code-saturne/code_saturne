@@ -196,9 +196,14 @@ typedef enum {
 
 typedef struct {
 
- /*! \var verbosity
-  * Level of display of the information related to the Navier-Stokes system
-  */
+  /* \var boundaries
+   * Pointer to a \ref cs_boundary_t structure shared with the domain
+   */
+  const cs_boundary_t          *boundaries;
+
+  /*! \var verbosity
+   * Level of display of the information related to the Navier-Stokes system
+   */
   int                           verbosity;
 
   /*! \var dof_reduction_mode
@@ -320,7 +325,7 @@ typedef struct {
   /*! \var n_velocity_ic_defs
    *  Number of initial conditions associated to the velocity
    */
-  int  n_velocity_ic_defs;
+  int   n_velocity_ic_defs;
 
   /*! \var velocity_ic_defs
    *  Pointers to the definitions of the initial conditions associated to the
@@ -339,7 +344,7 @@ typedef struct {
   /*! \var n_pressure_ic_defs
    *  Number of initial conditions associated to the pressure
    */
-  int  n_pressure_ic_defs;
+  int   n_pressure_ic_defs;
 
   /*! \var pressure_ic_defs
    *  Pointers to the definitions of the initial conditions associated to the
@@ -347,7 +352,7 @@ typedef struct {
    *  In order to force a zero-mean pressure, the code can compute the average
    *  of the resulting pressure and subtract it
    */
-   cs_xdef_t  **pressure_ic_defs;
+  cs_xdef_t  **pressure_ic_defs;
 
   /*! @} */
 
@@ -452,18 +457,20 @@ cs_navsto_param_is_steady(cs_navsto_param_t       *nsp)
  * \brief  Create a new structure to store all numerical parameters related
  *         to the resolution of the Navier-Stokes (NS) system
  *
+ * \param[in]  boundaries     pointer to a cs_boundary_t structure
  * \param[in]  model          model related to the NS system to solve
  * \param[in]  time_state     state of the time for the NS equations
  * \param[in]  algo_coupling  algorithm used for solving the NS system
-*
+ *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
-cs_navsto_param_create(cs_navsto_param_model_t        model,
-                       cs_navsto_param_time_state_t   time_state,
-                       cs_navsto_param_coupling_t     algo_coupling);
+cs_navsto_param_create(const cs_boundary_t              *boundaries,
+                       cs_navsto_param_model_t           model,
+                       cs_navsto_param_time_state_t      time_state,
+                       cs_navsto_param_coupling_t        algo_coupling);
 
 /*----------------------------------------------------------------------------*/
 /*!
