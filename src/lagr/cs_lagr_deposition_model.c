@@ -280,9 +280,11 @@ _dep_sweep(cs_real_t *dx,
 
   /*  Deposition submodel */
 
-  *vpart = vpart0 * exp ( -dtp / taup) + (1 - exp ( -dtp / taup)) * vvue0;
-  *dx    =   vvue0 * dtp + vvue0 * taup * (exp ( -dtp / taup) - 1)
-           + vpart0 * taup * (1 - exp ( -dtp / taup));
+  *vpart = vpart0 * exp ( -dtp / taup) + (1. - exp ( -dtp / taup)) * vvue0;
+  *dx    =   vvue0 * dtp + vvue0 * taup * (exp ( -dtp / taup) - 1.)
+           + vpart0 * taup * (1. - exp ( -dtp / taup));
+
+  /* Y+ at arrival */
   cs_real_t yplusa = *yplus - *dx / lvisq;
 
   /* --------------------------------------------------------
@@ -445,7 +447,7 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   cs_real_t vvue0;
   if (*marko == 12)
-    vvue0 = vagaus[3] * sqrt (pow (*kdif, 2) * *tlag2 / 2.0);
+    vvue0 = vagaus[3] * sqrt (cs_math_pow2(*kdif) * *tlag2 / 2.0);
   else
     vvue0 = *vvue;
 
@@ -461,9 +463,9 @@ _dep_diffusion_phases(cs_real_t *dx,
   aux3 = *tlag2 / (*tlag2 - taup);
   aux4 = *tlag2 / (*tlag2 + taup);
   aux5 = *tlag2 * (1.0 - aux2);
-  aux6 = pow (*kdif, 2) * *tlag2;
+  aux6 = cs_math_pow2(*kdif) * *tlag2;
   aux7 = *tlag2 - taup;
-  aux8 = pow (*kdif, 2) * pow (aux3, 2);
+  aux8 = cs_math_pow2(*kdif) * cs_math_pow2(aux3);
 
   /* --> terms for the trajectory   */
   aa     = taup * (1.0 - aux1);
@@ -500,7 +502,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   if (CS_ABS(gama2) > cs_math_epzero) {
 
     p21  = omegam / sqrt (gama2);
-    p22  = omega2 - pow (p21, 2);
+    p22  = omega2 - cs_math_pow2(p21);
     p22  = sqrt (CS_MAX(0.0, p22));
 
   }
@@ -538,7 +540,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   else
     p32  = 0.0;
 
-  p33    = grga2 - pow (p31, 2) - pow (p32, 2);
+  p33    = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
   p33    = sqrt (CS_MAX(0.0, p33));
   ter5p  = p31 * vagaus[0] + p32 * vagaus[1] + p33 * vagaus[2];
 
@@ -565,7 +567,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   else if (yplusa < *dintrf) {
 
     *marko = 0;
-    *vvue  = sqrt (pow ((*kdifcl), 2) * *tlag2 / 2.0) * sqrt (2.0 * cs_math_pi) * 0.5;
+    *vvue  = sqrt ( cs_math_pow2((*kdifcl)) * *tlag2 / 2.0) * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
     dxaux  = *dx;
     *vpart = (*yplus - yplusa) * lvisq / dtl;
@@ -699,7 +701,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
     argt = cs_math_pi * *yplus / 5.0;
     kaux = *kdifcl * 0.5 * (1.0 - cos (argt));
-    tci  =  -pow (*tlag2, 2) * 0.5 * pow (*kdifcl, 2) * cs_math_pi * sin (argt)
+    tci  =  -cs_math_pow2(*tlag2) * 0.5 * cs_math_pow2(*kdifcl) * cs_math_pi * sin (argt)
            * (1.0 - cos (argt)) / (2.0 * 5.0) / lvisq;
 
   }
@@ -715,7 +717,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    *  Brownian motion
    * -----------------------------------------------    */
 
-  cs_real_t mpart    = 4.0 / 3.0 * cs_math_pi * pow (*rpart, 3) * romp;
+  cs_real_t mpart    = 4.0 / 3.0 * cs_math_pi * cs_math_pow3(*rpart) * romp;
   cs_real_t kdifbr   = sqrt (2.0 * _k_boltz * tempf / (mpart * taup));
   cs_real_t kdifbrtp = kdifbr * taup;
 
@@ -726,10 +728,10 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t tlmtp  = *tlag2 - taup;
   cs_real_t tlptp  = *tlag2 + taup;
   cs_real_t tltp   = *tlag2 * taup;
-  cs_real_t tl2    = pow (*tlag2, 2);
-  cs_real_t tp2    = pow (taup, 2);
+  cs_real_t tl2    = cs_math_pow2(*tlag2);
+  cs_real_t tp2    = cs_math_pow2(taup);
   cs_real_t thet   = *tlag2 / tlmtp;
-  cs_real_t the2   = pow (thet, 2);
+  cs_real_t the2   = cs_math_pow2(thet);
   cs_real_t etl    = exp ( -dtstl);
   cs_real_t etp    = exp ( -dtstp);
   cs_real_t l1l    = 1.0 - etl;
@@ -737,7 +739,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t l2l    = 1.0 - etl * etl;
   cs_real_t l2p    = 1.0 - etp * etp;
   cs_real_t l3     = 1.0 - etl * etp;
-  cs_real_t kaux2  = pow (kaux, 2);
+  cs_real_t kaux2  = cs_math_pow2(kaux);
   cs_real_t k2the2 = kaux2 * the2;
   cs_real_t aa1    = taup * l1p;
   cs_real_t bb1    = thet * (*tlag2 * l1l - aa1);
@@ -749,9 +751,9 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    * Auxiliary terms for Brownian motion
    * -------------------------------------------------- */
 
-  cs_real_t xiubr  = 0.5 * pow ((kdifbrtp * l1p), 2);
+  cs_real_t xiubr  = 0.5 * cs_math_pow2((kdifbrtp * l1p));
   cs_real_t ucarbr = kdifbrtp * kdifbr * 0.5 * l2p;
-  cs_real_t xcarbr = pow (kdifbrtp, 2) * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
+  cs_real_t xcarbr = cs_math_pow2(kdifbrtp) * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
   cs_real_t ubr    = sqrt (CS_MAX(ucarbr, 0.0));
 
   /* ---------------------------------------------------
@@ -769,11 +771,11 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t pgam2  = 0.5 * kaux2 * *tlag2 * l2l;
   cs_real_t ggam2  = the2 * pgam2 + k2the2 * (  l3 * ( -2 * tltp / tlptp)
                                               + l2p * (taup * 0.5));
-  cs_real_t ome2   = k2the2 * ( dtl * pow (tlmtp, 2) + l2l * (tl2 * *tlag2 * 0.5)
+  cs_real_t ome2   = k2the2 * ( dtl * cs_math_pow2(tlmtp) + l2l * (tl2 * *tlag2 * 0.5)
                                + l2p * (tp2 * taup * 0.5)
                                + l1l * ( -2.0 * tl2 * tlmtp)
                                + l1p * (2.0 * tp2 * tlmtp)
-                               + l3 * ( -2.0 * (pow (tltp, 2)) / tlptp));
+                               + l3 * ( -2.0 * (cs_math_pow2(tltp)) / tlptp));
 
   cs_real_t pgagga = thet * (pgam2 - kaux2 * tltp / tlptp * l3);
   cs_real_t pgaome = thet * *tlag2 * ( -pgam2 + kaux2 * (  l1l * tlmtp
@@ -796,7 +798,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   else
     p21  = 0.0;
 
-  cs_real_t p22 = sqrt (CS_MAX (0.0, ggam2 - pow (p21, 2)));
+  cs_real_t p22 = sqrt (CS_MAX (0.0, ggam2 - cs_math_pow2(p21)));
 
   /*  P31, P32 and P33 computations */
   cs_real_t p31;
@@ -827,7 +829,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   else
     p21br = 0.0;
 
-  cs_real_t p22br  = sqrt (CS_MAX (xcarbr - pow (p21br, 2), 0.0));
+  cs_real_t p22br  = sqrt (CS_MAX (xcarbr - cs_math_pow2(p21br), 0.0));
 
   /* ----------------------------------------------------------
    *  The random terms are consequently:
@@ -863,7 +865,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   if ((yplusa > *dintrf) && (*indint != 1)) {
 
     *marko = 2;
-    *vvue  =  -sqrt(pow ((*kdifcl * (*ttotal / *tdiffu)), 2) * *tlag2 / 2.0)
+    *vvue  =  -sqrt(cs_math_pow2((*kdifcl * (*ttotal / *tdiffu))) * *tlag2 / 2.0)
              * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
     *vpart = (*yplus - yplusa) * lvisq / dtl;
@@ -912,7 +914,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
         cs_real_t argtn1  = cs_math_pi * yplusa / 5.0;
         kauxn1  = *kdifcl * 0.5 * (1.0 - cos (argtn1));
-        tcin1   =  cs_math_sq(*tlag2) * 0.5 * cs_math_sq(*kdifcl)
+        tcin1   =  cs_math_pow2(*tlag2) * 0.5 * cs_math_pow2(*kdifcl)
                    * cs_math_pi * sin (argtn1) * (1.0 - cos (argtn1))
                    / (2.0 * 5.0) / lvisq;
       }
@@ -948,7 +950,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
        * --------------------------------------------------*/
 
       cs_real_t ketoi   = (a22 * kaux + b22 * kauxn1) / l2l;
-      cs_real_t ketoi2  = pow (ketoi, 2);
+      cs_real_t ketoi2  = cs_math_pow2(ketoi);
 
       /* --------------------------------------------------
        *  Correlation matrix computation
@@ -972,7 +974,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
       else
         p21 = 0.0;
 
-      p22 = sqrt (CS_MAX (0.0, ggam2 - pow (p21, 2)));
+      p22 = sqrt (CS_MAX (0.0, ggam2 - cs_math_pow2(p21)));
 
       /* ----------------------------------------------------------
        *  The random terms are:
@@ -1084,7 +1086,7 @@ cs_lagr_deposition(cs_real_t  dtp,
 
   /* Ratios computation of the flux to determine the kdifcl value */
 
-  cs_real_t ectype = sqrt (pow (kdif, 2) * tlag2 / 2.0);
+  cs_real_t ectype = sqrt (cs_math_pow2(kdif) * tlag2 / 2.0);
   cs_real_t paux   = sqrt (cs_math_pi / 2.0) * tstruc * vstruc / (ectype * tdiffu);
   paux   = paux / (1.0 + paux);
   cs_real_t kdifcl = kdif * (tdiffu / ttotal);

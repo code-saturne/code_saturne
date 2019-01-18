@@ -198,9 +198,9 @@ _lages1(cs_real_t           dtp,
         aux3 = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
         aux4 = tlag[ip][id] / (tlag[ip][id] + taup[ip]);
         aux5 = tlag[ip][id] * (1.0 - aux2);
-        aux6 = pow(bx[ip][id][nor-1],2.0) * tlag[ip][id];
+        aux6 = cs_math_pow2(bx[ip][id][nor-1]) * tlag[ip][id];
         aux7 = tlag[ip][id] - taup[ip];
-        aux8 = pow(bx[ip][id][nor-1],2.0) * pow(aux3, 2);
+        aux8 = cs_math_pow2(bx[ip][id][nor-1]) * cs_math_pow2(aux3);
 
         /* --> trajectory terms */
         cs_real_t aa = taup[ip] * (1.0 - aux1);
@@ -243,7 +243,7 @@ _lages1(cs_real_t           dtp,
         if (CS_ABS(p11) > cs_math_epzero) {
 
           p21 = gagam / p11;
-          p22 = grga2 - pow(p21, 2);
+          p22 = grga2 - cs_math_pow2(p21);
           p22 = sqrt(CS_MAX(0.0, p22));
 
         }
@@ -265,7 +265,7 @@ _lages1(cs_real_t           dtp,
                 * aux8;
         omegam = aux3 * ( (tlag[ip][id] - taup[ip]) * (1.0 - aux2)
                           - 0.5 * tlag[ip][id] * (1.0 - aux2 * aux2)
-                          + pow(taup[ip],2) / (tlag[ip][id] + taup[ip]) * (1.0 - aux1 * aux2)
+                          + cs_math_pow2(taup[ip]) / (tlag[ip][id] + taup[ip]) * (1.0 - aux1 * aux2)
                           ) * aux6;
         omega2 =   aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
                  + 0.5 * tlag[ip][id] * tlag [ip][id] * aux5 * (1.0 + aux2)
@@ -283,7 +283,7 @@ _lages1(cs_real_t           dtp,
         else
           p32 = 0.0;
 
-        p33 = omega2 - pow(p31, 2) - pow(p32, 2);
+        p33 = omega2 - cs_math_pow2(p31) - cs_math_pow2(p32);
         p33 = sqrt(CS_MAX(0.0, p33));
         ter5x = p31 * vagaus[ip][id][0] + p32 * vagaus[ip][id][1] + p33 * vagaus[ip][id][2];
 
@@ -331,10 +331,10 @@ _lages1(cs_real_t           dtp,
 
           cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup[ip]));
 
-          cs_real_t tix2 = pow((taup[ip] * ddbr), 2) * (dtp - taup[ip] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
+          cs_real_t tix2 = cs_math_pow2((taup[ip] * ddbr)) * (dtp - taup[ip] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
           cs_real_t tiu2 = ddbr * ddbr * taup[ip] * (1.0 - exp( -2.0 * dtp / taup[ip])) / 2.0;
 
-          cs_real_t tixiu  = pow((ddbr * taup[ip] * (1.0 - aux1)), 2) / 2.0;
+          cs_real_t tixiu  = cs_math_pow2((ddbr * taup[ip] * (1.0 - aux1))) / 2.0;
 
           tbrix2 = tix2 - (tixiu * tixiu) / tiu2;
 
@@ -827,23 +827,23 @@ _lagesd(cs_real_t           dtp,
   cs_real_t energi, dissip;
   if (yplus <= 5.0) {
 
-    energi = 0.1 * cs_math_sq(yplus) * cs_math_sq(ustar);
-    dissip = 0.2 * pow(ustar, 4) / visccf;
+    energi = 0.1 * cs_math_pow2(yplus) * cs_math_pow2(ustar);
+    dissip = 0.2 * cs_math_pow4(ustar) / visccf;
 
   }
 
   else if (yplus <= 30.0) {
 
-    energi = cs_math_sq(ustar) / sqrt(0.09);
-    dissip = 0.2 * pow(ustar, 4) / visccf;
+    energi = cs_math_pow2(ustar) / sqrt(0.09);
+    dissip = 0.2 * cs_math_pow4(ustar) / visccf;
 
   }
   else {
 
     assert(yplus <= 100.0); /* should not arrive here otherwise */
 
-    energi   = cs_math_sq(ustar) / sqrt(0.09);
-    dissip   = pow(ustar, 4) / (0.41 * yplus * visccf);
+    energi   = cs_math_pow2(ustar) / sqrt(0.09);
+    dissip   = cs_math_pow4(ustar) / (0.41 * yplus * visccf);
 
   }
 
@@ -886,7 +886,7 @@ _lagesd(cs_real_t           dtp,
 
   cs_math_33_3_product(rot_m, vela, vflui);
 
-  cs_real_t norm = sqrt(pow(vflui[1],2)+pow(vflui[2],2));
+  cs_real_t norm = sqrt(cs_math_pow2(vflui[1]) + cs_math_pow2(vflui[2]));
 
   /* Velocity norm w.r.t y+ */
   cs_real_t norm_vit;
@@ -1007,7 +1007,7 @@ _lagesd(cs_real_t           dtp,
       cs_real_t aux5  = tlp * (1.0 - aux2);
       cs_real_t aux6  = bxp * bxp * tlp;
       cs_real_t aux7  = tlp - taup[ip];
-      cs_real_t aux8  = bxp * bxp * pow(aux3, 2);
+      cs_real_t aux8  = bxp * bxp * cs_math_pow2(aux3);
 
       /* --> Terms for the trajectory   */
       cs_real_t aa    = taup[ip] * (1.0 - aux1);
@@ -1034,14 +1034,14 @@ _lagesd(cs_real_t           dtp,
       cs_real_t gama2  = 0.5 * (1.0 - aux2 * aux2);
       cs_real_t omegam = aux3 * ( (tlp - taup[ip]) * (1.0 - aux2)
                                   - 0.5 * tlp * (1.0 - aux2 * aux2)
-                                  + pow(taup[ip],2) / (tlp + taup[ip])
+                                  + cs_math_pow2(taup[ip]) / (tlp + taup[ip])
                                   * (1.0 - aux1 * aux2)
                                   ) * aux6;
       cs_real_t omega2 =   aux7
                          * (aux7 * dtp - 2.0 * (tlp * aux5 - taup[ip] * aa))
                          + 0.5 * tlp * tlp * aux5 * (1.0 + aux2)
-                         + 0.5 * pow(taup[ip], 2.0) * aa * (1.0 + aux1)
-                         - 2.0 * aux4 * tlp * pow(taup[ip],2.0) * (1.0 - aux1 * aux2);
+                         + 0.5 * cs_math_pow2(taup[ip]) * aa * (1.0 + aux1)
+                         - 2.0 * aux4 * tlp * cs_math_pow2(taup[ip]) * (1.0 - aux1 * aux2);
       omega2 *= aux8 ;
 
       cs_real_t  p11, p21, p22, p31, p32, p33;
@@ -1049,7 +1049,7 @@ _lagesd(cs_real_t           dtp,
       if (CS_ABS(gama2) >cs_math_epzero) {
 
         p21    = omegam / sqrt (gama2);
-        p22    = omega2 - pow(p21, 2);
+        p22    = omega2 - cs_math_pow2(p21);
         p22    = sqrt(CS_MAX(0.0, p22));
 
       }
@@ -1091,7 +1091,7 @@ _lagesd(cs_real_t           dtp,
       else
         p32 = 0.0;
 
-      p33 = grga2 - pow(p31, 2) - pow(p32, 2);
+      p33 = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
       p33 = sqrt (CS_MAX(0.0, p33));
 
       cs_real_t ter5p =   p31 * vagaus[ip][i0][0]
@@ -1182,13 +1182,13 @@ _lagesd(cs_real_t           dtp,
         }
 
         /* Calculation of lift force and torque */
-        lift_force[0] = - 20.0 * pow(visccf,2) * romf *
+        lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
           pow(ustar * p_diam * 0.5 / visccf, 2.31);
 
         for (cs_lnum_t id = 1; id < 3; id++) {
 
           lift_torque[id] = -lift_force[0] * p_diam * 0.5
-            * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
         }
 
@@ -1212,7 +1212,7 @@ _lagesd(cs_real_t           dtp,
           grav_torque[id] = (-grav_force[0] +
                               grav_force[1]*sign11 +
                               grav_force[2]*sign22 ) * p_diam * 0.5
-            * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2));
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
 
         }
 
@@ -1259,16 +1259,16 @@ _lagesd(cs_real_t           dtp,
               == CS_LAGR_PART_DEPOSITED ) {
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc]
-              -=   cs_math_pi * pow(p_diam, 2) * p_stat_w
+              -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
                  * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
-              -=   cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+              -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
                  * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
-              -=   pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                 * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+              -=   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                 * 0.25 / mq->b_f_face_surf[n_f_id]);
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg]
               -= p_stat_w;
@@ -1291,7 +1291,7 @@ _lagesd(cs_real_t           dtp,
 
           if (cs_glob_lagr_model->clogging == 1) {
             if (CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
-              cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+              cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
             }
@@ -1321,14 +1321,14 @@ _lagesd(cs_real_t           dtp,
 
             adhes_torque[id]  = - cs_lagr_particle_get_real(particle, p_am,
                                                             CS_LAGR_ADHESION_TORQUE)
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) ) ;
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) ) ;
           }
 
-          cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow((p_diam * 0.5), 2);
+          cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
           cs_real_t cst_1, cst_4;
           cst_4 =   6 * cs_math_pi * visccf
             * romf * 1.7 * 1.4
-            * pow(p_diam * 0.5, 2);
+            * cs_math_pow2(p_diam * 0.5);
           cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
           for (cs_lnum_t id = 1; id < 3; id++) {
@@ -1356,16 +1356,16 @@ _lagesd(cs_real_t           dtp,
                 == CS_LAGR_PART_DEPOSITED ) {
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc]
-                -=   cs_math_pi * pow(p_diam, 2) * p_stat_w
+                -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
                    * 0.25 / mq->b_f_face_surf[n_f_id];
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
-                -=   cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
                    * 0.25 / mq->b_f_face_surf[n_f_id];
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
-                -=   pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+                -=   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                   * 0.25 / mq->b_f_face_surf[n_f_id]);
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg]
                 -= p_stat_w;
@@ -1450,13 +1450,13 @@ _lagesd(cs_real_t           dtp,
           }
 
           /* Calculation of lift force and torque */
-          lift_force[0] = - 20.0 * pow(visccf,2) * romf *
+          lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
             pow(ustar * (p_height - mean_depo_height) * 0.5 / visccf, 2.31);
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
             lift_torque[id] = -lift_force[0] * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
@@ -1481,7 +1481,7 @@ _lagesd(cs_real_t           dtp,
             grav_torque[id] = (-grav_force[0] +
                                 grav_force[1]*sign11 +
                                 grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
@@ -1524,7 +1524,7 @@ _lagesd(cs_real_t           dtp,
             grav_torque[id] = (-grav_force[0] +
                                 grav_force[1]*sign11 +
                                 grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
@@ -1546,13 +1546,13 @@ _lagesd(cs_real_t           dtp,
           }
 
           /* Calculation of lift force and torque */
-          lift_force[0] = - 20.0 * pow(visccf,2) * romf *
+          lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
             pow(ustar * p_diam * 0.5 / visccf, 2.31);
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
             lift_torque[id] = -lift_force[0] * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
@@ -1576,7 +1576,7 @@ _lagesd(cs_real_t           dtp,
             grav_torque[id] = (-grav_force[0] +
                                 grav_force[1]*sign11 +
                                 grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
         }
@@ -1588,7 +1588,7 @@ _lagesd(cs_real_t           dtp,
         cs_real_t adhes_energ, adhes_force, adhes_force_ps;
         cs_lagr_adh_pp(p_diam, tempf, &adhes_energ, &adhes_force);
         /* Average number of contact in a cluster */
-        cs_real_t ncont_pp = pow(p_diam/diam_mean, 2);
+        cs_real_t ncont_pp = cs_math_pow2(p_diam/diam_mean);
 
         /* Case with consolidation */
         if (cs_glob_lagr_consolidation_model->iconsol > 0 &&
@@ -1654,7 +1654,7 @@ _lagesd(cs_real_t           dtp,
         for (cs_lnum_t id = 1; id < 3; id++) {
           adhes_torque[id] =
             - cs_lagr_particle_get_real(particle, p_am, CS_LAGR_ADHESION_TORQUE)
-            * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
         }
 
 
@@ -1684,16 +1684,16 @@ _lagesd(cs_real_t           dtp,
           if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==1 ) {
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
-              cs_math_pi * pow(p_diam, 2) * p_stat_w
+              cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
               * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
-              cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+              cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
               * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
-              pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+              cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                   * 0.25 / mq->b_f_face_surf[n_f_id]);
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
               p_stat_w;
@@ -1715,7 +1715,7 @@ _lagesd(cs_real_t           dtp,
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
 
           if (CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
-            cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+            cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
           }
@@ -1741,9 +1741,9 @@ _lagesd(cs_real_t           dtp,
           /* Calculation of the norm of the hydrodynamic
            * torque and drag (tangential) */
 
-          cs_real_t drag_tor_norm  = sqrt (pow(drag_torque[1], 2) + pow(drag_torque[2], 2));
-          cs_real_t lift_tor_norm  = sqrt (pow(lift_torque[1], 2) + pow(lift_torque[2], 2));
-          cs_real_t grav_tor_norm  = sqrt (pow(grav_torque[1], 2) + pow(grav_torque[2], 2));
+          cs_real_t drag_tor_norm  = sqrt (cs_math_pow2(drag_torque[1]) + cs_math_pow2(drag_torque[2]));
+          cs_real_t lift_tor_norm  = sqrt (cs_math_pow2(lift_torque[1]) + cs_math_pow2(lift_torque[2]));
+          cs_real_t grav_tor_norm  = sqrt (cs_math_pow2(grav_torque[1]) + cs_math_pow2(grav_torque[2]));
 
           /* Differentiation between two cases:
            *  a) Already rolling clusters
@@ -1751,11 +1751,11 @@ _lagesd(cs_real_t           dtp,
 
           if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 2 ) {
 
-            cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow((p_diam * 0.5), 2);
+            cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
             cs_real_t cst_1, cst_4;
             cst_4 =   6 * cs_math_pi * visccf
               * romf * 1.7 * 1.4
-              * pow(p_diam * 0.5, 2);
+              * cs_math_pow2(p_diam * 0.5);
             cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
             for (cs_lnum_t id = 1; id < 3; id++) {
@@ -1876,31 +1876,31 @@ _lagesd(cs_real_t           dtp,
 
                 /* Update of surface covered and deposit height */
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
-                  cs_math_pi * pow(p_diam, 2) * p_stat_w
+                  cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
                   * 0.25 / mq->b_f_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
-                  cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                  cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
                   * 0.25 / mq->b_f_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
-                  pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                       * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+                  cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                       * 0.25 / mq->b_f_face_surf[n_f_id]);
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
                   p_stat_w;
 
                 itreated = 1;
-                cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+                cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
 
                 /* Treatment of cluster motion */
-                cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow((p_diam * 0.5), 2);
+                cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
                 cs_real_t cst_1, cst_4;
                 cst_4 =   6 * cs_math_pi * visccf
                   * romf * 1.7 * 1.4
-                  * pow(p_diam * 0.5, 2);
+                  * cs_math_pow2(p_diam * 0.5);
                 cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
                 for (cs_lnum_t id = 1; id < 3; id++) {
@@ -1939,7 +1939,7 @@ _lagesd(cs_real_t           dtp,
                   * cs_lagr_particle_get_real(new_part, p_am, CS_LAGR_CLUSTER_NB_PART)
                   / cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART) ;
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_MASS, m_resusp);
-                cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+                cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_DIAMETER, d_resusp);
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_HEIGHT, d_resusp);
 
@@ -1955,12 +1955,12 @@ _lagesd(cs_real_t           dtp,
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_stay);
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
-                  cs_math_pi * height_reent * pow(p_diam, 2) * p_stat_w
+                  cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
                   * 0.25 / mq->b_f_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
-                  pow(cs_math_pi * height_reent * pow(p_diam, 2) * p_stat_w
-                       * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+                  cs_math_pow2(cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
+                       * 0.25 / mq->b_f_face_surf[n_f_id]);
 
                 cs_real_t nb_stay =
                   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART) -
@@ -2226,9 +2226,9 @@ _lagdep(cs_real_t           dtp,
           aux3 = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
           aux4 = tlag[ip][id] / (tlag[ip][id] + taup[ip]);
           aux5 = tlag[ip][id] * (1.0 - aux2);
-          aux6 = pow(bx[ip][id][nor-1], 2.0) * tlag[ip][id];
+          aux6 = cs_math_pow2(bx[ip][id][nor-1]) * tlag[ip][id];
           aux7 = tlag[ip][id] - taup[ip];
-          aux8 = pow(bx[ip][id][nor-1], 2.0) * pow(aux3, 2);
+          aux8 = cs_math_pow2(bx[ip][id][nor-1]) * cs_math_pow2(aux3);
 
           /* --> trajectory terms */
           cs_real_t aa = taup[ip] * (1.0 - aux1);
@@ -2258,7 +2258,7 @@ _lagdep(cs_real_t           dtp,
           gama2  = 0.5 * (1.0 - aux2 * aux2);
           omegam = aux3 * ( (tlag[ip][id] - taup[ip]) * (1.0 - aux2)
                                   - 0.5 * tlag[ip][id] * (1.0 - aux2 * aux2)
-                                  + pow(taup[ip],2) / (tlag[ip][id] + taup[ip])
+                                  + cs_math_pow2(taup[ip]) / (tlag[ip][id] + taup[ip])
                                   * (1.0 - aux1 * aux2)
                                   ) * aux6;
           omega2 =  aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
@@ -2270,7 +2270,7 @@ _lagdep(cs_real_t           dtp,
           if (CS_ABS(gama2) > cs_math_epzero) {
 
             p21 = omegam / sqrt(gama2);
-            p22 = omega2 - pow(p21, 2);
+            p22 = omega2 - cs_math_pow2(p21);
             p22 = sqrt(CS_MAX(0.0, p22));
 
           }
@@ -2312,7 +2312,7 @@ _lagdep(cs_real_t           dtp,
           else
             p32 = 0.0;
 
-          p33 = grga2 - cs_math_sq(p31) - cs_math_sq(p32);
+          p33 = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
           p33 = sqrt(CS_MAX(0.0, p33));
           ter5p =   p31 * vagaus[ip][id][0]
                   + p32 * vagaus[ip][id][1]
@@ -2513,8 +2513,8 @@ cs_lagr_sde(cs_real_t           dt_p,
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
     if (cs_lagr_particle_get_cell_id(particle, p_am) >= 0) {
 
-      cs_real_t d3 = pow(cs_lagr_particle_get_real(particle, p_am,
-                                                   CS_LAGR_DIAMETER),3.0);
+      cs_real_t d3 = cs_math_pow3(cs_lagr_particle_get_real(particle, p_am,
+                                                   CS_LAGR_DIAMETER));
       romp[ip] = aa * cs_lagr_particle_get_real(particle, p_am,
                                                 CS_LAGR_MASS) / d3;
 
