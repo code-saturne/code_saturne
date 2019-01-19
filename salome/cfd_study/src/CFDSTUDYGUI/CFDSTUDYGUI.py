@@ -204,24 +204,12 @@ def activate():
     @return: C{True} only if the activation is successful.
     """
     log.debug("activate")
-#MP    global d_activation, studyId
     dsk = sgPyQt.getDesktop()
-#MP    studyId = sgPyQt.getStudyId()
     dsk.setTabPosition(Qt.RightDockWidgetArea,QTabWidget.South)
     dsk.setTabPosition(Qt.LeftDockWidgetArea,QTabWidget.South)
 
-    if salome_version.getVersion() <= '7.4.0' :
-        if salome.myStudy.FindComponent(__MODULE_NAME__) == None :
-            CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
-            log.debug("activate ->  CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases = %s" % CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases)
-    # instance of the CFDSTUDYGUI_ActionsHandler class for the current desktop
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
 
-#MP    if studyId not in list(d_activation.keys()):
-#MP        d_activation[studyId] = 1
-
-#MP    if d_activation[studyId] == 1:
-#MP        d_activation[studyId] = 0
     env_saturne, mess1 = CheckCFD_CodeEnv(CFD_Saturne)
     env_neptune, mess2 = CheckCFD_CodeEnv(CFD_Neptune)
 
@@ -233,14 +221,12 @@ def activate():
                              "Error", mess1, QMessageBox.Ok, 0)
         QMessageBox.critical(ActionHandler.dskAgent().workspace(),
                              "Error", mess2, QMessageBox.Ok, 0)
-#MP        d_activation[studyId] = 1
         return False
 
     if env_neptune:
         if mess2 != "":
             mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
             cfdstudyMess.aboutMessage(mess)
-#MP            d_activation[studyId] = 1
             return False
         else:
             ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, env_neptune)
@@ -249,7 +235,6 @@ def activate():
         if mess1 != "":
             mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
             cfdstudyMess.aboutMessage(mess)
-#MP            d_activation[studyId] = 1
             return False
         else:
             ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
