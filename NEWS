@@ -5,6 +5,8 @@ Release 5.0.10 (unreleased)
 Bug fixes
 ---------
 
+- Fix crash when using multiple GUI-defined scalar balance zones.
+
 - Fix memory leak leading to crash in legacy porosity model.
 
 - CFDSTUDY (Salome): fix issues with dissapearing windows onserved on
