@@ -6771,7 +6771,8 @@ cs_gui_balance_by_zone(void)
         name = cs_gui_get_attribute_value(path);
         BFT_FREE(path);
 
-        cs_balance_by_zone(cell_criteria, name);
+        if (name != NULL)
+          cs_balance_by_zone(cell_criteria, name);
         BFT_FREE(name);
       }
     }
