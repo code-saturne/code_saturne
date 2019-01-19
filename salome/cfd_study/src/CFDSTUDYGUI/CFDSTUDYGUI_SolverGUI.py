@@ -97,10 +97,23 @@ def tabObjectBrowser():
     dsk = sgPyQt.getDesktop()
     ldock = dsk.findChildren(QDockWidget)
     ldocktree = []
+
+    # FIXME: if either Salome objectBrowser or Code_Saturne BrowserForm
+    # is renamed, this must be updated. Other treeview objects with
+    # the same names in this list could aslo be spurioulsly docked,
+    # so this test should be improved. grouping all QTreeView objects
+    # should be avoided absolutely, as some of those objets may appear
+    # at a lower level (this was the cause of an extremely irritating
+    # bug in previous versions).
+
     for i in ldock:
         lo = i.findChildren(QTreeView)
         if len(lo):
-            ldocktree.append(i)
+            if hasattr(lo[0], "parent"):
+                p = lo[0].parent()
+                if str(p.objectName()) in ('objectBrowser', # Salome OB
+                                           'BrowserForm'):  # Code_Saturne browser
+                    ldocktree.append(i)
     for i in range(1, len(ldocktree)):
         dsk.tabifyDockWidget(ldocktree[0], ldocktree[i])
 
