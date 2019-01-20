@@ -328,7 +328,7 @@ do ii = 1, nscal
 enddo
 
 ! Boundary roughness
-if (iwallf.ge.5) then
+if (iwallf.eq.5.or.iwallf.eq.6) then
   call add_boundary_property_field_owner('boundary_roughness', &
                                          'Boundary Roughness', &
                                          iflid)
