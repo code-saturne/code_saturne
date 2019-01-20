@@ -55,16 +55,15 @@
     <outstream name="NTCHRO" type="CALCIUM_integer"/> <!-- output frequency -->
     <outstream name="ICVEXT" type="CALCIUM_integer"/> <!-- convergence indicator send to Saturne -->
     <outstream name="ICVAST" type="CALCIUM_integer"/> <!-- convergence indicator send to Aster -->
-    <outstream name="NB_DYN" type="CALCIUM_integer"/> <!-- number of coupled nodes (Aster->supervisor) -->
-    <outstream name="NB_FOR" type="CALCIUM_integer"/> <!-- number of coupled faces (Aster->supervisor) -->
 
+    <instream name="NB_DYN" type="CALCIUM_integer"/> <!-- number of coupled nodes (Aster->supervisor) -->
+    <instream name="NB_FOR" type="CALCIUM_integer"/> <!-- number of coupled faces (Aster->supervisor) -->
     <instream name="ALMAXI" type="CALCIUM_double"/>  <!-- characteristic length (given by Saturne) -->
     <instream name="DTSAT" type="CALCIUM_double"/>   <!-- Saturne time step -->
     <instream name="DTAST" type="CALCIUM_double"/>   <!-- Aster time step -->
     <instream name="DEPAST" type="CALCIUM_double"/>  <!-- structure displacement (Aster->supervisor) -->
     <instream name="VITAST" type="CALCIUM_double"/>  <!-- structure velocity (Aster->supervisor) -->
     <instream name="FORSAT" type="CALCIUM_double"/>  <!-- structure load (Saturne->supervisor) -->
-    <instream name="DONGEO" type="CALCIUM_integer"/> <!-- array containing number of coupled [faces,nodes] (Saturne->supervisor) -->
     <instream name="ICV" type="CALCIUM_integer"/>    <!-- convergence indicator received from Saturne -->
   </service>
 
@@ -89,7 +88,8 @@
     <outstream name="COONOD" type="CALCIUM_double"/>  <!-- coupled node coordinates -->
     <outstream name="COOFAC" type="CALCIUM_double"/>  <!-- coupled face coordinates -->
     <outstream name="ICV" type="CALCIUM_integer"/>    <!-- convergence indicator received from Saturne -->
-    <outstream name="DONGEO" type="CALCIUM_integer"/> <!-- array containing number of coupled [faces,nodes] (Saturne->supervisor) -->
+    <outstream name="NB_DYN" type="CALCIUM_integer"/> <!-- number of coupled nodes (Aster->supervisor) -->
+    <outstream name="NB_FOR" type="CALCIUM_integer"/> <!-- number of coupled faces (Aster->supervisor) -->
     <outstream name="COLNOD" type="CALCIUM_integer"/> <!-- coupled node colors -->
     <outstream name="COLFAC" type="CALCIUM_integer"/> <!-- coupled face colors -->
 
@@ -274,18 +274,6 @@
     <property name="StorageLevel" value="10"/>
   </stream>
 
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>NB_DYN</fromport>
-    <tonode>solid_service</tonode><toport>NB_DYN</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>NB_FOR</fromport>
-    <tonode>solid_service</tonode><toport>NB_FOR</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
   <!-- Code_Saturne -->
    <stream>
     <fromnode>fluid_service</fromnode><fromport>DTSAT</fromport>
@@ -306,6 +294,30 @@
   </stream>
 
   <stream>
+    <fromnode>fluid_service</fromnode><fromport>NB_DYN</fromport>
+    <tonode>solid_service</tonode><toport>NB_DYN</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>NB_FOR</fromport>
+    <tonode>solid_service</tonode><toport>NB_FOR</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>NB_DYN</fromport>
+    <tonode>inter_service</tonode><toport>NB_DYN</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>NB_FOR</fromport>
+    <tonode>inter_service</tonode><toport>NB_FOR</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+
+  <stream>
     <fromnode>fluid_service</fromnode><fromport>COONOD</fromport>
     <tonode>solid_service</tonode><toport>COONOD</toport>
     <property name="StorageLevel" value="10"/>
@@ -320,12 +332,6 @@
   <stream>
     <fromnode>fluid_service</fromnode><fromport>ICV</fromport>
     <tonode>inter_service</tonode><toport>ICV</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>fluid_service</fromnode><fromport>DONGEO</fromport>
-    <tonode>inter_service</tonode><toport>DONGEO</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 

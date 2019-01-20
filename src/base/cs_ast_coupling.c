@@ -281,11 +281,19 @@ void CS_PROCF(astgeo, ASTGEO)
 
     int sizes[2] = {ast_coupling->n_g_faces, ast_coupling->n_g_vertices};
 
-    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
-                         "DONGEO", 2, &(sizes[0]));
+    /* For "milieu" */
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
                             "ALMAXI", 1, almax);
+
+    /* Directly for code_aster */
+
+    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+                         "NB_DYN", 1, &(sizes[1]));
+
+    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+                         "NB_FOR", 1, &(sizes[0]));
+
 
   }
 

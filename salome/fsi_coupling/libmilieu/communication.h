@@ -39,14 +39,6 @@ int
 recv_geom(void *component);
 
 /*----------------------------------------------------------------------------
- * Send geometric data to Code_Aster
- * To be removed in initialization stage
- *----------------------------------------------------------------------------*/
-
-int
-send_geom(void* component);
-
-/*----------------------------------------------------------------------------
  * Sends time step computed by middle component to codes
  *----------------------------------------------------------------------------*/
 

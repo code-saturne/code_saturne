@@ -65,6 +65,62 @@ double  *foaas = NULL;
 double  *fopas = NULL;
 
 /*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
+ * number of points.
+ *----------------------------------------------------------------------------*/
+
+void
+_allocate_arrays(void)
+{
+  xast =(double *)calloc(3*nb_dyn,sizeof(double));
+  xvast=(double *)calloc(3*nb_dyn,sizeof(double));
+  xvasa=(double *)calloc(3*nb_dyn,sizeof(double));
+  xastp=(double *)calloc(3*nb_dyn,sizeof(double));
+
+  for (int k = 0; k < nb_dyn; k++) {
+
+    xast[3*k]   = 0.;
+    xast[3*k+1] = 0.;
+    xast[3*k+2] = 0.;
+
+    xvast[3*k]   = 0.;
+    xvast[3*k+1] = 0.;
+    xvast[3*k+2] = 0.;
+
+    xvasa[3*k]   = 0.;
+    xvasa[3*k+1] = 0.;
+    xvasa[3*k+2] = 0.;
+
+    xastp[3*k]   = 0.;
+    xastp[3*k+1] = 0.;
+    xastp[3*k+2] = 0.;
+  }
+
+  foras =(double *)calloc(3*nb_for,sizeof(double));
+  foaas =(double *)calloc(3*nb_for,sizeof(double));
+  fopas =(double *)calloc(3*nb_for,sizeof(double));
+
+  for (int k = 0; k < nb_for; k++) {
+
+    foras[3*k]   = 0.;
+    foras[3*k+1] = 0.;
+    foras[3*k+2] = 0.;
+
+    foaas[3*k]   = 0.;
+    foaas[3*k+1] = 0.;
+    foaas[3*k+2] = 0.;
+
+    fopas[3*k]   = 0.;
+    fopas[3*k+1] = 0.;
+    fopas[3*k+2] = 0.;
+  }
+}
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -112,11 +168,7 @@ runmilieu(void *icompo)
     printf("   reference length (m): %4.2le\n", lref  );
     printf("----------------------------------\n");
 
-    /* dynamics */
-    alldyn();
-
-    /* efforts  */
-    allfor();
+    _allocate_arrays();
 
     /* Prediction coefficients */
     c1    = 0.;
@@ -124,11 +176,6 @@ runmilieu(void *icompo)
     c3    = 0.;
     beta  = 0.;
     alpha = 0.;
-  }
-
-  /* Send geometric data to Code_Aster (remove in the future)*/
-  if (ierr >= 0) {
-    ierr = send_geom(icompo);
   }
 
   /* Initialize time step */

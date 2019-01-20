@@ -62,22 +62,6 @@ dinorm(double *vect1,
        double nbpts);
 
 /*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
- * number of points.
- *----------------------------------------------------------------------------*/
-
-void
-alldyn(void);
-
-/*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (double) based on the 'nb_for'
- * number of points.
- *----------------------------------------------------------------------------*/
-
-void
-allfor(void);
-
-/*----------------------------------------------------------------------------
  * Convergence test for implicit calculation case
  *
  * returns:
