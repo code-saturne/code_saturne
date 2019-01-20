@@ -289,6 +289,8 @@ class TurbulenceModel(Variables, Model):
             self.node_turb.xmlRemoveChild('property')
             self.node_turb.xmlRemoveChild('wall_function')
             self.__removeVariablesAndProperties([], 'smagorinsky_constant^2')
+            wall_function = 0
+            self.setWallFunction(wall_function)
 
         DefineUserScalarsModel(self.case).setTurbulentFluxGlobalModel(model_turb)
 

@@ -39,6 +39,7 @@ from code_saturne.Base.XMLengine    import *
 
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.ThermalScalarModel     import ThermalScalarModel
+from code_saturne.Pages.TurbulenceModel        import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -3000,7 +3001,11 @@ class WallBoundary(Boundary) :
         """
         choice = "off"
         node = self.boundNode.xmlInitNode('velocity_pressure')
-        if node.xmlGetChildNode('roughness'):
+
+        turb_mdl = TurbulenceModel(self.case)
+        if turb_mdl.getWallFunction() in [0, 1, 4, 7]:
+            choice = "off"
+        elif node.xmlGetChildNode('roughness'):
             choice = "on"
 
         return choice

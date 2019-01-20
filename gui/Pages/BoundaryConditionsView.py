@@ -144,11 +144,13 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
         if MobileMeshModel(self.__case).getMethod() == "off":
             if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
-                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet', 'imposed_p_outlet')
+                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet', \
+                       'imposed_p_outlet')
             else:
                 lst = ('groundwater')
         else:
-            lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'imposed_p_outlet')
+            lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
+                   'imposed_p_outlet')
 
         d = LocalizationModel('BoundaryZone', self.__case)
         for zone in d.getZones():
@@ -246,6 +248,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         """
         self.slidingWidget.showWidget(boundary)
         self.roughWidget.showWidget(boundary)
+
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
         self.radiativeWidget.showWidget(boundary)

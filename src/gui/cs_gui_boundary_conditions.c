@@ -3,24 +3,24 @@
  *============================================================================*/
 
 /*
-   This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of Code_Saturne, a general-purpose CFD tool.
 
-   Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
-   This program is free software; you can redistribute it and/or modify it under
-   the terms of the GNU General Public License as published by the Free Software
-   Foundation; either version 2 of the License, or (at your option) any later
-   version.
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
 
-   This program is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-   FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-   details.
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
 
-   You should have received a copy of the GNU General Public License along with
-   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-   Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,6 +69,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_parall.h"
 #include "cs_elec_model.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1156,6 +1157,8 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
   }
 
+  cs_wall_functions_t *wall_fnt = cs_get_glob_wall_functions();
+
   /* Now loop on boundary condition definitions proper */
 
   cs_tree_node_t *tn_b1 = (tn_b0 != NULL) ? tn_b0->children : tn_b0;
@@ -1298,8 +1301,13 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
           _sliding_wall(tn_vp, izone);
 
         /* Wall: ROUGH */
-        cs_gui_node_get_child_real(tn_vp, "roughness",
-                                   &boundaries->rough[izone]);
+        if (   wall_fnt->iwallf != CS_WALL_F_DISABLED
+            && wall_fnt->iwallf != CS_WALL_F_1SCALE_POWER
+            && wall_fnt->iwallf != CS_WALL_F_SCALABLE_2SCALES_LOG
+            && wall_fnt->iwallf != CS_WALL_F_2SCALES_CONTINUOUS) {
+          cs_gui_node_get_child_real(tn_vp, "roughness",
+                                     &boundaries->rough[izone]);
+        }
       }
     }
 

@@ -50,6 +50,8 @@ from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsRoughWallForm import Ui_BoundaryConditionsRoughWallForm
 
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -93,6 +95,10 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         validatorRoughCoef = DoubleValidator(self.lineEditRoughCoef)
         self.lineEditRoughCoef.setValidator(validatorRoughCoef)
 
+        turb_mdl = TurbulenceModel(self.case)
+        if turb_mdl.getWallFunction() in [0, 1, 4, 7]:
+            self.radioButtonRough.setEnabled(False)
+
         self.case.undoStartGlobal()
 
 
@@ -125,7 +131,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         """
         Private slot.
 
-        Selects if the wall is rought or smooth.
+        Selects if the wall is rough or smooth.
         """
         if self.radioButtonSmooth.isChecked():
             self.frameRoughness.hide()
