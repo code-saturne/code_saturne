@@ -211,7 +211,7 @@ _log_setup_injection(cs_log_t  log)
   if (cs_glob_lagr_time_scheme == NULL)
     return;
 
-  if (cs_glob_lagr_time_scheme->iilagr < 1)
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
@@ -342,7 +342,7 @@ cs_lagr_log_setup(void)
   if (cs_glob_lagr_time_scheme == NULL)
     return;
 
-  if (cs_glob_lagr_time_scheme->iilagr < 1)
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
   /* Now add Lagrangian setup info */
@@ -555,7 +555,7 @@ cs_lagr_log_iteration(void)
   if (cs_glob_lagr_time_scheme == NULL)
     return;
 
-  if (cs_glob_lagr_time_scheme->iilagr < 1)
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
   const cs_real_t  *b_stats = bound_stat;
@@ -809,7 +809,7 @@ cs_lagr_log_iteration(void)
 
   /* Information about two-way coupling  */
 
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     if (cs_glob_lagr_time_scheme->isttio == 0) {
 

@@ -197,14 +197,14 @@ cs_gui_particles_model(void)
 
   const char *model = cs_tree_node_get_tag(tn_lagr, "model");
 
-  cs_glob_lagr_time_scheme->iilagr = 0;
+  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_OFF;
   if (model != NULL) {
     if (! strcmp(model, "one_way"))
-      cs_glob_lagr_time_scheme->iilagr = 1;
+      cs_glob_lagr_time_scheme->iilagr = CS_LAGR_ONEWAY_COUPLING;
     else if (! strcmp(model, "two_way"))
-      cs_glob_lagr_time_scheme->iilagr = 2;
+      cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING;
     else if (! strcmp(model, "frozen"))
-      cs_glob_lagr_time_scheme->iilagr = 3;
+      cs_glob_lagr_time_scheme->iilagr = CS_LAGR_FROZEN_CONTINUOUS_PHASE;
   }
 
 #if _XML_DEBUG_
@@ -212,7 +212,7 @@ cs_gui_particles_model(void)
   bft_printf("--iilagr = %i\n", cs_glob_lagr_time_scheme->iilagr);
 #endif
 
-  if (cs_glob_lagr_time_scheme->iilagr == 0)
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
   /* Global settings */
@@ -284,7 +284,7 @@ cs_gui_particles_model(void)
 
   /* Two-way coupling */
 
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
     cs_tree_node_t *tn = cs_tree_node_get_child(tn_lagr, "two_way_coupling");
 
     cs_gui_node_get_child_int(tn, "iteration_start",
@@ -465,7 +465,7 @@ cs_gui_particles_model(void)
     break;
   }
 
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
     bft_printf("--nstits = %i\n", cs_glob_lagr_source_terms->nstits);
     bft_printf("--ltsdyn = %i\n", cs_glob_lagr_source_terms->ltsdyn);
     bft_printf("--ltsmas = %i\n", cs_glob_lagr_source_terms->ltsmas);

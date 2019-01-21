@@ -282,7 +282,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   /* Default initializations for Lagrangian module. */
 
-  lagr_time_scheme->iilagr = 0;
+  lagr_time_scheme->iilagr = CS_LAGR_OFF;
   lagr_time_scheme->isuila = 0;
 
   cs_glob_lagr_stat_options->isuist = 0;
@@ -347,7 +347,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_user_lagr_model();
 
-  if (lagr_time_scheme->iilagr == 0) {
+  if (lagr_time_scheme->iilagr == CS_LAGR_OFF) {
 
     _free_lagr_encrustation_pointers();
     _free_lagr_boundary_interaction_pointers();
@@ -369,12 +369,12 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                 _("in Lagrangian module"),
                                 "cs_glob_lagr_time_scheme->iilagr",
                                 lagr_time_scheme->iilagr,
-                                0, 4);
+                                CS_LAGR_OFF, CS_LAGR_FROZEN_CONTINUOUS_PHASE + 1);
 
   /* Restart needed if computation on frozen field.
      Note that for the Lagrangian module, frozen field also includes scalars. */
 
-  if (lagr_time_scheme->iilagr == 3 && *isuite != 1)
+  if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE && *isuite != 1)
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in Lagrangian module"),
@@ -383,10 +383,10 @@ cs_lagr_option_definition(cs_int_t   *isuite,
          "but the background Eulerian computation is not a restart.\n"),
        lagr_time_scheme->iilagr);
 
-  if (lagr_time_scheme->iilagr == 3)
+  if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     *iccvfg = 1;
 
-  if (   lagr_time_scheme->iilagr != 2
+  if (   lagr_time_scheme->iilagr != CS_LAGR_TWOWAY_COUPLING
       && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 1)
     cs_parameters_error
       (CS_ABORT_DELAYED,
@@ -396,10 +396,10 @@ cs_lagr_option_definition(cs_int_t   *isuite,
          "on the continuous phase is not activated:\n"
          "  cs_glob_lagr_time_scheme->iilagr = %d\n"
          "The return coupling must be acivated for this model:\n"
-         "  cs_glob_lagr_time_scheme->iilagr = 2\n"),
+         "  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"),
        lagr_time_scheme->iilagr);
 
-  if (lagr_time_scheme->iilagr > 0
+  if (lagr_time_scheme->iilagr != CS_LAGR_OFF
       && (   cs_glob_time_step->is_local
           || cs_glob_time_step->is_variable)) {
 
@@ -1532,7 +1532,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   /* ISTTIO NSTITS LTSDYN LTSMAS LTSTHE  */
   /* Si champs figes alors forcement en stationnaire    */
-  if (lagr_time_scheme->iilagr == 3)
+  if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     lagr_time_scheme->isttio = 1;
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -1541,7 +1541,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                 lagr_time_scheme->isttio,
                                 0, 2);
 
-  if (lagr_time_scheme->iilagr == 2) {
+  if (lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     if (lagr_time_scheme->isttio == 1 &&
         cs_glob_lagr_source_terms->nstits < 1) {

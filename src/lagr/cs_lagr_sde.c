@@ -486,7 +486,7 @@ _lages2(cs_real_t           dtp,
     }
 
     /* --> Sauvegarde couplage   */
-    if (cs_glob_lagr_time_scheme->iilagr == 2) {
+    if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
       for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 

@@ -154,7 +154,7 @@ cs_lagr_dim_t *cs_glob_lagr_dim = &_lagr_dim;
 /* Time and Lagrangian-Eulerian coupling scheme */
 
 static cs_lagr_time_scheme_t _lagr_time_scheme
-  = {.iilagr = 0,
+  = {.iilagr = CS_LAGR_OFF,
      .isttio = 0,
      .isuila = 1,
      .t_order = 0,
@@ -362,7 +362,9 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .cvar_r11 = NULL,
      .cvar_r22 = NULL,
      .cvar_r33 = NULL,
-     .cvar_rij = NULL};
+     .cvar_rij = NULL,
+     .grad_pr = NULL,
+     .grad_vel = NULL};
 
 cs_lagr_extra_module_t *cs_glob_lagr_extra_module = &_lagr_extra_module;
 
@@ -1167,6 +1169,13 @@ cs_lagr_finalize(void)
   cs_lagr_tracking_finalize();
 
   cs_lagr_finalize_zone_conditions();
+
+  /* Fluid gradients */
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  BFT_FREE(extra->grad_pr);
+  if (extra->grad_vel != NULL)
+    BFT_FREE(extra->grad_vel);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1611,10 +1620,18 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 {
   CS_UNUSED(dt);
 
+  /* Allocate pressure and velocity gradients */
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
+
+  BFT_MALLOC(extra->grad_pr, ncelet, cs_real_3_t);
+  if (cs_glob_lagr_time_scheme->modcpl > 0)
+    BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
+
   /* For frozen field:
      values at previous time step = values at current time step */
 
-  if (cs_glob_lagr_time_scheme->iilagr == 3) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
 
     int n_fields = cs_field_n_fields();
 
@@ -1625,6 +1642,9 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
         cs_field_current_to_previous(f);
 
     }
+
+    /* Compute gradients of current value fields */
+    cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
 
   }
 
@@ -1641,7 +1661,7 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 
   /* Read particle restart data */
 
-  if (cs_glob_lagr_time_scheme->iilagr > 0)
+  if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_OFF)
     cs_lagr_restart_read_p();
 }
 
@@ -1677,16 +1697,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
   cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_normal;
 
   /* Allocate temporary arrays */
-  cs_real_3_t *gradpr;
-  BFT_MALLOC(gradpr, ncelet, cs_real_3_t);
   cs_real_t *w1, *w2;
   BFT_MALLOC(w1, ncelet, cs_real_t);
   BFT_MALLOC(w2, ncelet, cs_real_t);
 
   /* Allocate other arrays depending on user options    */
-  cs_real_33_t *gradvf = NULL;
-  if (cs_glob_lagr_time_scheme->modcpl > 0)
-    BFT_MALLOC(gradvf, ncelet, cs_real_33_t);
 
   cs_real_t *tempp = NULL;
   if (   lagr_model->clogging == 1
@@ -1964,13 +1979,15 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     /* At the first time step we initialize particles to
        values at current time step and not at previous time step, because
-       values at previous time step = initialization (null gradients) */
+       values at previous time step = initialization (zero gradients) */
 
-    mode = 1;
-    if (ts->nt_cur == 1)
-      mode = 0;
+    if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
+      mode = 1;
+      if (ts->nt_cur == 1)
+        mode = 0;
 
-    cs_lagr_gradients(mode, gradpr, gradvf);
+      cs_lagr_gradients(mode, extra->grad_pr, extra->grad_vel);
+    }
 
     /* Particles progression
        --------------------- */
@@ -1996,11 +2013,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
       BFT_MALLOC(bx, p_set->n_particles, cs_real_33_t);
 
       cs_real_t *tsfext = NULL;
-      if (cs_glob_lagr_time_scheme->iilagr == 2)
+      if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
         BFT_MALLOC(tsfext, p_set->n_particles, cs_real_t);
 
       cs_real_t *cpgd1 = NULL, *cpgd2 = NULL, *cpght = NULL;
-      if (   cs_glob_lagr_time_scheme->iilagr == 2
+      if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && lagr_model->physical_model == 2
           && cs_glob_lagr_source_terms->ltsthe == 1) {
 
@@ -2034,8 +2051,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* Computation of the fluid's pressure and velocity gradient
          at n+1 (with values at current time step) */
       if (   cs_glob_lagr_time_step->nor == 2
-          && cs_glob_lagr_time_scheme->iilagr != 3)
-        cs_lagr_gradients(0, gradpr, gradvf);
+          && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
+        cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
 
       /* use fields at previous or current time step */
       if (cs_glob_lagr_time_step->nor == 1)
@@ -2071,8 +2088,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   piil,
                   bx,
                   tempct,
-                  gradpr,
-                  gradvf,
+                  extra->grad_pr,
+                  extra->grad_vel,
                   w1,
                   w2);
 
@@ -2084,8 +2101,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   (const cs_real_3_t *)piil,
                   (const cs_real_33_t *)bx,
                   tsfext,
-                  (const cs_real_3_t *)gradpr,
-                  (const cs_real_33_t *)gradvf,
+                  extra->grad_pr,
+                  extra->grad_vel,
                   terbru,
                   vislen,
                   &nresnew);
@@ -2277,7 +2294,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* Reverse coupling: compute source terms
          -------------------------------------- */
 
-      if (   cs_glob_lagr_time_scheme->iilagr == 2
+      if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order)
         cs_lagr_coupling(taup, tempct, tsfext, cpgd1, cpgd2, cpght, w1, w2);
 
@@ -2289,10 +2306,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
       BFT_FREE(piil);
       BFT_FREE(bx);
 
-      if (cs_glob_lagr_time_scheme->iilagr == 2)
+      if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
         BFT_FREE(tsfext);
 
-      if (   cs_glob_lagr_time_scheme->iilagr == 2
+      if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && lagr_model->physical_model == 2
           && cs_glob_lagr_source_terms->ltsthe == 1) {
         BFT_FREE(cpgd1);
@@ -2522,12 +2539,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
     cs_lagr_print(ts->t_cur);
 
   /* Free memory */
-
-  BFT_FREE(gradpr);
   BFT_FREE(w1);
   BFT_FREE(w2);
-  if (cs_glob_lagr_time_scheme->modcpl > 0)
-    BFT_FREE(gradvf);
 
   if (   lagr_model->deposition == 1
       && ts->nt_cur == ts->nt_max)

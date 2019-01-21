@@ -112,6 +112,28 @@ typedef enum {
 
 } cs_lagr_deposition_state_t;
 
+  /*! Lagrangian module status.
+     the different values correspond to the following coupling:
+     - CS_LAGR_OFF: Lagrangian module off
+     - CS_LAGR_ONEWAY_COUPLING: Lagrangian two-phase flow in one-way coupling
+         (no influence of the particles on the continuous phase)
+     - CS_LAGR_TWOWAY_COUPLING: Lagrangian two-phase flow with two-way coupling
+         (influence of the particles on the dynamics of the continuous phase).
+         Dynamics, temperature and mass may be coupled independently.
+     - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
+         continuous phase. This option
+         only only be used in case of a calculation restart. All the
+         Eulerian fields are frozen (including the scalar fields).
+         This option automatically implies \ref iccvfg = 1 */
+
+typedef enum {
+  CS_LAGR_OFF = 0,
+  CS_LAGR_ONEWAY_COUPLING = 1,
+  CS_LAGR_TWOWAY_COUPLING = 2,
+  CS_LAGR_FROZEN_CONTINUOUS_PHASE = 3
+};
+
+
 /*! Fixed maximum sizes */
 /*----------------------*/
 
@@ -143,14 +165,14 @@ typedef struct {
 typedef struct {
 
   /*! Lagrangian module status.
-     the different values correspond to the following coupling:
-     - 0: Lagrangian module off
-     - 1: Lagrangian two-phase flow in one-way coupling (no influence of
-          the particles on the continuous phase)
-     - 2 Lagrangian two-phase flow with two-way coupling (influence of
-         the particles on the dynamics of the continuous phase). Dynamics,
-         temperature and mass may be coupled independently.
-     - 3 Lagrangian two-phase flow on frozen continuous phase. This option
+     - CS_LAGR_OFF: Lagrangian module off
+     - CS_LAGR_ONEWAY_COUPLING: Lagrangian two-phase flow in one-way coupling
+         (no influence of the particles on the continuous phase)
+     - CS_LAGR_TWOWAY_COUPLING: Lagrangian two-phase flow with two-way coupling
+         (influence of the particles on the dynamics of the continuous phase).
+         Dynamics, temperature and mass may be coupled independently.
+     - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
+         continuous phase. This option
          only only be used in case of a calculation restart. All the
          Eulerian fields are frozen (including the scalar fields).
          This option automatically implies \ref iccvfg = 1 */
@@ -163,7 +185,9 @@ typedef struct {
       (starting respectively from the iterations \ref nstist)
       and calculate time-averaged two-way coupling source terms (from the
       time step \ref nstits).
-      Useful if \ref iilagr=1 or \ref iilagr=2 (if \ref iilagr=3,
+      Useful if \ref iilagr = CS_LAGR_ONEWAY_COUPLING
+      or \ref iilagr = CS_LAGR_TWOWAY_COUPLING
+      (if \ref iilagr = CS_LAGR_FROZEN_CONTINUOUS_PHASE,
       then \ref isttio=1 automatically) */
   int  isttio;
 
@@ -560,11 +584,11 @@ typedef struct {
 
   /*! activation (=1) or not (=0) of the two-way coupling on the dynamics
     of the continuous phase.
-    Useful if \ref iilagr = 2 and \ref iccvfg = 0 */
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and \ref iccvfg = 0 */
   int  ltsdyn;
 
   /*! activation (=1) or not (=0) of the two-way coupling on the mass.
-    Useful if \ref iilagr = 2, \ref physical_model = 1 and \ref impvar = 1 */
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING, \ref physical_model = 1 and \ref impvar = 1 */
   int  ltsmas;
 
   /*  if \ref physical_model = 1 and \ref itpvar = 1, \ref ltsthe
@@ -572,7 +596,7 @@ typedef struct {
    if \ref physical_model = 2, \ref ltsthe activates (=1) or not (=0) the
    two-way coupling on the eulerian variables related to pulverised
    coal combustion.
-   Useful if \ref iilagr = 2 */
+   Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING */
   int  ltsthe;
 
   /*! implicit source term for the continuous phase velocity and
@@ -618,7 +642,7 @@ typedef struct {
     steady state (transition period) and the averages appearing in the source
     terms are reinitialized at each time step, as it is the case for unsteady
     flows (\ref isttio=0).
-    Useful if \ref iilagr = 2 and \ref isttio = 1 */
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and \ref isttio = 1 */
   int  nstits;
 
   /*! number of time steps for source terms accumulations */
@@ -996,6 +1020,12 @@ typedef struct {
 
   /* Reynolds Stress Tensor */
   cs_field_t *cvar_rij;
+
+  /* Total pressure gradient */
+  cs_real_3_t *grad_pr;
+
+  /* velocity gradient */
+  cs_real_33_t *grad_vel;
 
 } cs_lagr_extra_module_t;
 

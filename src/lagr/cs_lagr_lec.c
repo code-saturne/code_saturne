@@ -134,7 +134,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   /* Default initializations */
 
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     for (int ivar = 0; ivar < cs_glob_lagr_dim->ntersl; ivar++) {
 
@@ -601,7 +601,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
     }
 
-    if (cs_glob_lagr_time_scheme->iilagr == 2) {
+    if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
       {
         cs_int_t tabvar[1];
@@ -1534,7 +1534,7 @@ cs_restart_lagrangian_checkpoint_write(void)
    * ======================================================== */
 
   if (   cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt
-      || cs_glob_lagr_time_scheme->iilagr == 2
+      || cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       || cs_glob_lagr_dim->n_boundary_stats > 0) {
 
     cs_log_printf(CS_LOG_DEFAULT,
@@ -1673,7 +1673,7 @@ cs_restart_lagrangian_checkpoint_write(void)
 
     /* Source terms for return coupling */
 
-    if (cs_glob_lagr_time_scheme->iilagr == 2) {
+    if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
       {
         char rubriq[] = "iteration_debut_termes_sources_stationnaires";

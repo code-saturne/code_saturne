@@ -60,15 +60,15 @@ cs_user_lagr_model(void)
   /* Particle-tracking mode
    * ====================== */
 
-  /* iilagr = 0 : no particle tracking (default)
-   *        = 1 : particle-tracking one-way coupling
-   *        = 2 : particle-tracking two-way coupling
-   *        = 3 : particle tracking on frozen field
+  /* iilagr = CS_LAGR_OFF: no particle tracking (default)
+   *        = CS_LAGR_ONEWAY_COUPLING: particle-tracking one-way coupling
+   *        = CS_LAGR_TWOWAY_COUPLING: particle-tracking two-way coupling
+   *        = CS_LAGR_FROZEN_CONTINUOUS_PHASE: particle tracking on frozen field
    *     (this option requires a calculation restart isuite=1,
    *     all Eulerian fields are frozen (pressure, velocities,
    *     scalars). This option is stronger than iccvfg)     */
 
-  cs_glob_lagr_time_scheme->iilagr = 1;
+  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_ONEWAY_COUPLING;
 
   /* Particle-tracking calculation restart
    * ===================================== */
@@ -193,18 +193,18 @@ cs_user_lagr_model(void)
    * -----------------------------------
    *   if steady: isttio = 1
    *   if unsteady: isttio = 0
-   *   if iilagr = 3 then isttio = 1
+   *   if iilagr = CS_LAGR_FROZEN_CONTINUOUS_PHASE then isttio = 1
 
    Remark: if isttio = 0, then the statistical averages are reset
    at each time step   */
 
-  if (cs_glob_lagr_time_scheme->iilagr != 3)
+  if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     cs_glob_lagr_time_scheme->isttio   = 0;
 
-  /* Two-way coupling: (iilagr = 2)
+  /* Two-way coupling: (iilagr = CS_LAGR_TWOWAY_COUPLING)
      ------------------------------ */
 
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
     /* * number of absolute time step (i.e. with restart)
        from which a time average for two-way coupling source terms is
        computed (steady source terms)
@@ -471,7 +471,7 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_reentrained_model->iflow == 1) {
 
     /* One-way coupling */
-    cs_glob_lagr_time_scheme->iilagr  = 1;
+    cs_glob_lagr_time_scheme->iilagr  = CS_LAGR_ONEWAY_COUPLING;
 
     /* The statistical averages are not reset
        at each time step */

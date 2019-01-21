@@ -1109,7 +1109,7 @@ cs_parameters_check(void)
                                  "time-dependant by nature"),
                                "cs_glob_lagr_time_scheme->iilagr",
                                cs_glob_lagr_time_scheme->iilagr,
-                               0);
+                               CS_LAGR_OFF);
 
     int les_iturb[3] = {40, 41, 42};
     cs_parameters_is_not_in_list_int(CS_ABORT_DELAYED,
@@ -1343,7 +1343,7 @@ cs_parameters_check(void)
 
   /* In lagrangian with two-way coupling, k-omega SST is forbidden (not
      properly implemented) */
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
     cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
                                    _("while reading input data,\n"
                                      "two way coupling in lagrangian modelling "
