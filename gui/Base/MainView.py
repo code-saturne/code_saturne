@@ -1184,7 +1184,7 @@ class MainView(object):
             mci = mei_to_c_interpreter(self.case)
             state = mci.save_all_functions(self)
 
-            if state != 0:
+            if state == 1:
                 title = self.tr("Save error")
                 msg  = "You are not in a CASE structure.\n"
                 msg += "The xml file was saved, but the User Definitions' "
@@ -1198,6 +1198,20 @@ class MainView(object):
                 self.statusbar.showMessage(msg, 2000)
                 self.updateTitleBar()
                 return
+            elif state == -1:
+                title = self.tr("Warning!")
+                msg  = "You are within a RESU folder!\n"
+                msg += "The xml file was saved, as the cs_meg C functions "
+                msg += "for mathematical expressions.\n"
+                msg += "The C functions are hence different from those in "
+                msg += "your DATA folder!\n"
+                err_msg = self.tr(msg)
+                QMessageBox.warning(self, title, err_msg)
+                msg = self.tr("Saving was done withing a RESU folder and not in CASE.")
+                self.statusbar.showMessage(msg, 2000)
+                self.updateTitleBar()
+                return
+
 
 
     def displayAbout(self):

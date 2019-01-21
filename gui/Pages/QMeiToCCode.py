@@ -343,10 +343,18 @@ class mei_to_c_interpreter:
                 new_file = open(fpath, 'w')
                 new_file.write(code_to_write)
                 new_file.close()
-
                 return 0
+
             except:
-                return 1
+                try:
+                    fpath = os.path.join(self.case['case_path'], 'src', file2write)
+                    new_file = open(fpath, 'w')
+                    new_file.write(code_to_write)
+                    new_file.close()
+                    return -1
+
+                except:
+                    return 1
     # -------------------------------
 
 #-------------------------------------------------------------------------------
