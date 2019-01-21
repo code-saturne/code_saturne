@@ -63,6 +63,7 @@ BEGIN_C_DECLS
  *         with a specified coupling algorithm
  *
  * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      fb_type    type of boundary for each boundary face
  * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
  *                            structure cast on-the-fly
  *
@@ -72,6 +73,7 @@ BEGIN_C_DECLS
 
 typedef void *
 (cs_navsto_init_scheme_context_t)(const cs_navsto_param_t    *nsp,
+                                  cs_boundary_type_t         *fb_type,
                                   void                       *nscc);
 
 /*----------------------------------------------------------------------------*/
@@ -139,7 +141,12 @@ typedef struct {
   /*! \var param
    *  Set of parameters to handle the Navier-Stokes system
    */
-  cs_navsto_param_t  *param;
+  cs_navsto_param_t     *param;
+
+  /*! \var boundary_type
+   * Array storing the type of boundary for each boundary face
+   */
+  cs_boundary_type_t    *bf_type;
 
   /*!
    * @name Fields
@@ -152,46 +159,46 @@ typedef struct {
    *  Advection field, pointer to \ref cs_adv_field_t
    */
 
-  cs_adv_field_t     *adv_field;
+  cs_adv_field_t       *adv_field;
 
   /*! \var velocity
    *  Velocity, vector-valued, pointer to \ref cs_field_t
    */
 
-  cs_field_t         *velocity;
+  cs_field_t           *velocity;
 
   /*! \var velocity_divergence
    *  Divergence of the velocity fied, scalar-valued
    *  pointer to \ref cs_field_t
    */
 
-  cs_field_t         *velocity_divergence;
+  cs_field_t           *velocity_divergence;
 
   /*! \var pressure
    *  Pressure, scalar-valued, pointer to \ref cs_field_t
    */
 
-  cs_field_t         *pressure;
+  cs_field_t           *pressure;
 
   /*! \var temperature
    *  Temperature, scalar-var, pointer to \ref cs_field_t. NULL if no
    *  energy-like equation is defined
    */
 
-  cs_field_t         *temperature;
+  cs_field_t           *temperature;
 
   /*! \var coupling_context
    * Additional structure storing information according to the way equations
    * of model for the Navier-Stokes system are coupled and thus solved
    */
-  void               *coupling_context;
+  void                 *coupling_context;
 
   /*! \var scheme_context
    * Additional structure storing information according to the space
    * discretization scheme used for solving the model for the Navier-Stokes
    * system
    */
-  void               *scheme_context;
+  void                 *scheme_context;
 
   /*!
    * @}

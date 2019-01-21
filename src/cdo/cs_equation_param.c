@@ -1878,6 +1878,30 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a boundary condition from an existing \ref cs_xdef_t structure
+ *         The lifecycle of the cs_xdef_t structure is now managed by the
+ *         current \ref cs_equation_param_t structure.
+ *
+ * \param[in, out] eqp    pointer to a cs_equation_param_t structure
+ * \param[in]      xdef   pointer to the \ref cs_xdef_t structure to transfer
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_xdef_bc(cs_equation_param_t        *eqp,
+                        cs_xdef_t                  *xdef)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  int  new_id = eqp->n_bc_defs;
+  eqp->n_bc_defs += 1;
+  BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs, cs_xdef_t *);
+  eqp->bc_defs[new_id] = xdef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_zone_t

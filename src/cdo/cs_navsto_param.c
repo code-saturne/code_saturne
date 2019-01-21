@@ -246,6 +246,9 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
   param->n_pressure_ic_defs = 0;
   param->pressure_ic_defs = NULL;
 
+  param->n_velocity_inlets = 0;
+  param->velocity_inlet_boundary_ids = NULL;
+
   return param;
 }
 
@@ -287,6 +290,9 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
     param->pressure_ic_defs = NULL;
 
   } /* Pressure initial conditions */
+
+  if (param->n_velocity_inlets > 0)
+    BFT_FREE(param->velocity_inlet_boundary_ids);
 
   BFT_FREE(param);
 
@@ -875,6 +881,198 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
   nsp->pressure_ic_defs[new_id] = d;
 
   return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add the definition of boundary conditions related to a fixed wall
+ *         into the set of parameters for the management of the Navier-Stokes
+ *         system of equations
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_fixed_walls(cs_navsto_param_t    *nsp)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+  assert(nsp->boundaries != NULL);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_real_3_t  zero = {0, 0, 0};
+
+  const cs_boundary_t  *bdy = nsp->boundaries;
+
+  for (int i = 0; i < bdy->n_boundaries; i++) {
+    if (bdy->types[i] == CS_BOUNDARY_WALL) {
+
+      cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                              3,    /* dim */
+                                              bdy->zone_ids[i],
+                                              CS_FLAG_STATE_UNIFORM, /* state */
+                                              CS_CDO_BC_HMG_DIRICHLET,
+                                              (void *)zero);
+
+      cs_equation_add_xdef_bc(eqp, d);
+
+    } /* Fixed wall */
+  } /* Loop on domain boundaries */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add the definition of boundary conditions related to a symmetry
+ *         into the set of parameters for the management of the Navier-Stokes
+ *         system of equations
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_symmetries(cs_navsto_param_t    *nsp)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+  assert(nsp->boundaries != NULL);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_real_t  zero = 0;
+
+  const cs_boundary_t  *bdy = nsp->boundaries;
+
+  for (int i = 0; i < bdy->n_boundaries; i++) {
+    if (bdy->types[i] == CS_BOUNDARY_SYMMETRY) {
+
+      /* Add the homogeneous Dirichlet on the normal component */
+      cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                              1,    /* dim */
+                                              bdy->zone_ids[i],
+                                              CS_FLAG_STATE_UNIFORM, /* state */
+                                              CS_CDO_BC_SLIDING,
+                                              (void *)&zero);
+
+      cs_equation_add_xdef_bc(eqp, d);
+
+    } /* Symmetry */
+  } /* Loop on domain boundaries */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the velocity field for an inlet boundary using a uniform
+ *         value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      values    array of three real values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
+                                      const char           *z_name,
+                                      cs_real_t            *values)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  int  new_id = nsp->n_velocity_inlets;
+
+  nsp->n_velocity_inlets += 1;
+  BFT_REALLOC(nsp->velocity_inlet_boundary_ids, nsp->n_velocity_inlets, int);
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+  if (z_id < 0)
+  bft_error(__FILE__, __LINE__, 0,
+            " %s: Zone \"%s\" does not exist.\n"
+            " Please check your settings.", __func__, z_name);
+
+  int  bdy_id = cs_boundary_id_by_zone_id(nsp->boundaries, z_id);
+  if (bdy_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not belong to an existing boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_INLET)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" is not related to an inlet boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  nsp->velocity_inlet_boundary_ids[new_id] = bdy_id;
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                          3,    /* dim */
+                                          z_id,
+                                          CS_FLAG_STATE_UNIFORM, /* state */
+                                          CS_CDO_BC_DIRICHLET,
+                                          (void *)values);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_equation_add_xdef_bc(eqp, d);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the velocity field for an inlet boundary using an analytical
+ *         function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
+                                         const char           *z_name,
+                                         cs_analytic_func_t   *ana,
+                                         void                 *input)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  int  new_id = nsp->n_velocity_inlets;
+
+  nsp->n_velocity_inlets += 1;
+  BFT_REALLOC(nsp->velocity_inlet_boundary_ids, nsp->n_velocity_inlets, int);
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+  if (z_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not exist.\n"
+              " Please check your settings.", __func__, z_name);
+
+  int  bdy_id = cs_boundary_id_by_zone_id(nsp->boundaries, z_id);
+  if (bdy_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not belong to an existing boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_INLET)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" is not related to an inlet boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  nsp->velocity_inlet_boundary_ids[new_id] = bdy_id;
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_analytic_input_t  anai = {.func = ana, .input = input };
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                          3,    /* dim */
+                                          z_id,
+                                          0,    /* state */
+                                          CS_CDO_BC_DIRICHLET,
+                                          &anai);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_equation_add_xdef_bc(eqp, d);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -106,7 +106,8 @@ cs_cdofb_monolithic_init_common(const cs_mesh_t               *mesh,
  * \brief  Initialize a \ref cs_cdofb_monolithic_t structure
  *
  * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] nsc_input  pointer to a \ref cs_navsto_monolithic_t structure
+ * \param[in] fb_type    type of boundary for each boundary face
+ * \param[in] nsc_input  pointer to a \ref cs_navsto_ac_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_monolithic_t structure
  */
@@ -114,6 +115,7 @@ cs_cdofb_monolithic_init_common(const cs_mesh_t               *mesh,
 
 void *
 cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
+                                        cs_boundary_type_t        *fb_type,
                                         void                      *nsc_input);
 
 /*----------------------------------------------------------------------------*/

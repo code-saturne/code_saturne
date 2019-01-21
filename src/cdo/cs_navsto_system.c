@@ -119,6 +119,9 @@ _allocate_navsto_system(void)
 
   navsto->param = NULL;
 
+  /* Array of boundary type */
+  navsto->bf_type = NULL;
+
   /* Velocity in the case of Navier-Stokes or Stokes,
      Wind or advection field in the case of the Oseen problem */
   navsto->adv_field = NULL;
@@ -271,6 +274,8 @@ cs_navsto_system_destroy(void)
 
   if (navsto == NULL)
     return;
+
+  BFT_FREE(navsto->bf_type);
 
   /*
     Properties, advection fields, equations and fields are all destroyed
@@ -525,6 +530,15 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
                                  NULL, /* all cells */
                                  one);
 
+  /* Remaining boundary conditions:
+   * 1. Walls
+   * 2. Symmetries
+   * 3. Outlets
+   */
+  cs_navsto_set_fixed_walls(nsp);
+  cs_navsto_set_symmetries(nsp);
+  /* TODO: cs_navsto_set_outlets() */
+
   /* Last setup stage according to the type of coupling (not related to
      space discretization scheme */
   switch (nsp->coupling) {
@@ -699,7 +713,6 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                             const cs_cdo_quantities_t   *quant,
                             const cs_time_step_t        *ts)
 {
-  CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
   cs_navsto_system_t  *ns = cs_navsto_system;
@@ -711,8 +724,14 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid space discretization scheme.", __func__);
 
+  /* Allocate then define an array of boundary types for each boundary face */
+  BFT_MALLOC(ns->bf_type, mesh->n_b_faces, cs_boundary_type_t);
+  cs_boundary_build_type_array(nsp->boundaries, mesh->n_b_faces, ns->bf_type);
+
   /* Allocate and initialize the scheme context structure */
-  ns->scheme_context = ns->init_scheme_context(nsp, ns->coupling_context);
+  ns->scheme_context = ns->init_scheme_context(nsp,
+                                               ns->bf_type,
+                                               ns->coupling_context);
 
   /* Initial conditions for the velocity */
   if (ns->init_velocity != NULL)
@@ -722,9 +741,9 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
   if (ns->init_pressure != NULL)
     ns->init_pressure(nsp, quant, ts, ns->pressure);
 
-  /* Define the advection field. Since one links the advection field to the face
-     velocity this is only available for Fb schemes and should be done after
-     initializing the context structure */
+  /* Define the advection field. Since one links the advection field to the
+     face velocity this is only available for Fb schemes and should be done
+     after initializing the context structure */
   cs_real_t *face_vel = NULL;
 
   switch (nsp->coupling) {

@@ -196,11 +196,6 @@ typedef enum {
 
 typedef struct {
 
-  /* \var boundaries
-   * Pointer to a \ref cs_boundary_t structure shared with the domain
-   */
-  const cs_boundary_t          *boundaries;
-
   /*! \var verbosity
    * Level of display of the information related to the Navier-Stokes system
    */
@@ -306,7 +301,7 @@ typedef struct {
 
   /*!
    * @}
-   * @name Initial conditions(IC)
+   * @name Initial conditions (IC)
    *
    * Set of parameters used to take into account the initial condition on the
    * pressure and/or the velocity.
@@ -353,6 +348,29 @@ typedef struct {
    *  of the resulting pressure and subtract it
    */
   cs_xdef_t  **pressure_ic_defs;
+
+  /*! @}
+   * @name Boundary conditions (BC)
+   *
+   * Set of parameters used to take into account the boundary conditions on the
+   * pressure and/or the velocity.
+   * @{
+   */
+
+  /* \var boundaries
+   * Pointer to a \ref cs_boundary_t structure shared with the domain
+   */
+  const cs_boundary_t   *boundaries;
+
+  /* \var n_velocity_inlets
+   * Number of inlets with a Dirichlet of the velocity field
+   *
+   * \var velocity_inlet_boundary_ids
+   * List of boundary ids related to each velocity inlets
+   */
+
+  int                    n_velocity_inlets;
+  int                   *velocity_inlet_boundary_ids;
 
   /*! @} */
 
@@ -626,6 +644,68 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
                                       const char             *z_name,
                                       cs_analytic_func_t     *analytic,
                                       void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add the definition of boundary conditions related to a fixed wall
+ *         into the set of parameters for the management of the Navier-Stokes
+ *         system of equations
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_fixed_walls(cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add the definition of boundary conditions related to a symmetry
+ *         into the set of parameters for the management of the Navier-Stokes
+ *         system of equations
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_symmetries(cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the velocity field for an inlet boundary using a uniform
+ *         value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      values    array of three real values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
+                                      const char           *z_name,
+                                      cs_real_t            *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the velocity field for an inlet boundary using an analytical
+ *         function
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
+                                         const char           *z_name,
+                                         cs_analytic_func_t   *ana,
+                                         void                 *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

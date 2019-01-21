@@ -235,6 +235,34 @@ cs_boundary_get_name(cs_boundary_type_t  type)
     return cs_boundary_name[type];
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the related id associated to a boundary from its zone id
+ *
+ * \param[in] boundaries       pointer to a cs_boundary_t structure
+ * \param[in] z_id             id of the related zone
+ *
+ * \return the associated boundary id in the boundary list
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_id_by_zone_id(const cs_boundary_t  *boundaries,
+                          int                   z_id)
+{
+  if (boundaries == NULL)
+    return -1;
+
+  for (int i = 0; i < boundaries->n_boundaries; i++) {
+    if (boundaries->zone_ids[i] == z_id)
+      return i;
+  }
+
+  /* If not found */
+  return -1;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the default boundary related to the given \ref cs_boundary_t

@@ -128,21 +128,26 @@ typedef struct {
    *  the cell DoFs of the velocity
    */
 
-  cs_field_t  *velocity;
+  cs_field_t               *velocity;
 
   /*! \var pressure
    *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
    *  the cell DoFs of the pressure
    */
 
-  cs_field_t  *pressure;
+  cs_field_t               *pressure;
 
   /*! \var divergence
    *  Pointer to \ref cs_real_t containing the values of the divergence on the
    *  cells
    */
 
-  cs_field_t  *divergence;
+  cs_field_t               *divergence;
+
+  /*! \var bf_type
+   *  Array of boundary type for each boundary face. (Shared)
+   */
+  const cs_boundary_type_t       *bf_type;
 
   /*!
    * @}
@@ -797,6 +802,7 @@ _build_shared_structures(void)
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in, out] fm          pointer to a facewise view of the mesh
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -810,6 +816,7 @@ _apply_bc_partly(const cs_real_t                time_eval,
                  const cs_equation_param_t     *eqp,
                  const cs_cdofb_vecteq_t       *eqc,
                  const cs_cell_mesh_t          *cm,
+                 const cs_boundary_type_t      *bf_type,
                  cs_face_mesh_t                *fm,
                  cs_cell_sys_t                 *csys,
                  cs_cell_builder_t             *cb,
@@ -836,18 +843,18 @@ _apply_bc_partly(const cs_real_t                time_eval,
           /* Get the boundary face in the cell numbering */
           const short int  f = csys->_f_ids[i];
 
-          if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
+          if (bf_type[i] == CS_BOUNDARY_WALL) {
 
-            const cs_quant_t  fq = cm->face[f];
+            for (int k = 0; k < 3; k++) divop[3*f+k] = 0.;
 
-            /* All Dirichlet: homogeneous or not */
-            for (int k = 0; k < 3; k++) divop[3*f+k] += fq.meas*fq.unitv[k];
+          }
+          else if (bf_type[i] == CS_BOUNDARY_INLET) {
 
-            mass_rhs[0]
-              += fq.meas*cs_math_3_dot_product(csys->dir_values + 3*f,
-                                               fq.unitv);
+            mass_rhs[0] -= cs_math_3_dot_product(csys->dir_values + 3*f,
+                                                 divop + 3*f);
+            for (int k = 0; k < 3; k++) divop[3*f+k] = 0.;
 
-          } /* If Dirichlet */
+          }
 
         } /* Loop on boundary faces */
       } /* Nitsche kind */
@@ -861,8 +868,7 @@ _apply_bc_partly(const cs_real_t                time_eval,
         const short int  f = csys->_f_ids[i];
 
         if (cs_cdo_bc_is_sliding(csys->bf_flag[f])) {
-          const cs_quant_t  fq = cm->face[f];
-          for (int k = 0; k < 3; k++) divop[3*f+k] += fq.meas*fq.unitv[k];
+          for (int k = 0; k < 3; k++) divop[3*f+k] = 0.;
         }
 
       } /* Loop on boundary faces */
@@ -1233,6 +1239,7 @@ cs_cdofb_monolithic_init_common(const cs_mesh_t               *mesh,
  * \brief  Initialize a \ref cs_cdofb_monolithic_t structure
  *
  * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in] bf_type    type of boundary for each boundary face
  * \param[in] nsc_input  pointer to a \ref cs_navsto_ac_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_monolithic_t structure
@@ -1241,13 +1248,13 @@ cs_cdofb_monolithic_init_common(const cs_mesh_t               *mesh,
 
 void *
 cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
+                                        cs_boundary_type_t        *bf_type,
                                         void                      *nsc_input)
 {
   /* Sanity checks */
   assert(nsp != NULL && nsc_input != NULL);
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n", __func__);
 
   /* Cast the coupling context (CC) */
   cs_navsto_monolithic_t  *cc = (cs_navsto_monolithic_t  *)nsc_input;
@@ -1258,6 +1265,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   BFT_MALLOC(sc, 1, cs_cdofb_monolithic_t);
 
   sc->coupling_context = cc; /* shared with cs_navsto_system_t */
+
+  sc->bf_type = bf_type;
 
   sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
@@ -1473,8 +1482,10 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
     cs_real_t  *div_op = NULL;
+    cs_boundary_type_t  *bf_type = NULL;
 
     BFT_MALLOC(div_op, 3*connect->n_max_fbyc, cs_real_t);
+    BFT_MALLOC(bf_type, connect->n_max_fbyc, cs_boundary_type_t);
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Store the shift to access border faces (first interior faces and
@@ -1513,6 +1524,16 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
                                        dir_values, vel_c, time_eval,
                                        csys, cb);
+
+      for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+        /* Get the boundary face in the cell numbering */
+        const short int  f = csys->_f_ids[i];
+        const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
+
+        bf_type[i] = sc->bf_type[bf_id];
+
+      }
 
       /* Initialize the RHS for the mass eq */
       mass_rhs[c_id] = 0.;
@@ -1571,7 +1592,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(time_eval, mom_eqp, mom_eqc, cm, fm, csys, cb,
+      _apply_bc_partly(time_eval, mom_eqp, mom_eqc, cm, bf_type, fm, csys, cb,
                        div_op, mass_rhs + c_id);
 
       /* 5- STATIC CONDENSATION
