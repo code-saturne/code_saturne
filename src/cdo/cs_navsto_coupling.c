@@ -690,6 +690,9 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_TIME_STATE_UNSTEADY:
   case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid choice for the time state", __func__);
