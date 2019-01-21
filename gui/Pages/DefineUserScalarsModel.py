@@ -377,6 +377,11 @@ class DefineUserScalarsModel(Variables, Model):
                     node['label'] = name
                     node['name']  = name
 
+                    # Rename scalar diffusivity consistently with the scalar
+                    for ndiff in node.xmlGetNodeList('property'):
+                        if ndiff['name'] == old_name+'_diffusivity':
+                            ndiff['name'] = name + '_diffusivity'
+
                 if node.xmlGetString('variance') == old_name:
                     node.xmlSetData('variance', name)
 

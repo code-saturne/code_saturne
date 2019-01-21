@@ -3779,8 +3779,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
   const char *law = NULL;
   double time0;
-  mei_tree_t *ev_law = NULL;
-  cs_lnum_t i, iel;
+  cs_lnum_t i;
 
   cs_var_t  *vars = cs_glob_var;
   const int iscalt = cs_glob_thermal_model->iscalt;
@@ -3832,14 +3831,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   if (cs_gui_strcmp(vars->model, "compressible_model")) {
     if (*iviscv > 0) {
       cs_field_t *c = cs_field_by_name_try("volume_viscosity");
-      _compressible_physical_property("volume_viscosity",
-                                      "volume_viscosity", c->id,
-                                      n_cells,
-                                      itempk,
-                                      cs_glob_fluid_properties->p0,
-                                      cs_glob_fluid_properties->t0,
-                                      cs_glob_fluid_properties->ro0,
-                                      visls0, viscv0);
+      cs_meg_volume_function(c, z_all);
     }
   }
 
@@ -3893,97 +3885,18 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
         law = cs_tree_node_get_value_str(tn);
 
         if (law != NULL) {
-          /* return an empty interpreter */
-          time0 = cs_timer_wtime();
-
-          ev_law = mei_tree_new(law);
-
-          char *tmp2 = NULL;
-          BFT_MALLOC(tmp2, strlen(f->name) + 17, char);
-          strcpy(tmp2, f->name);
-          strcat(tmp2, "_diffusivity_ref");
-
-          /* get DYNAMIC scalar diffusivity reference and divide by reference
-           * density to get the reference KINEMATIC viscosity */
-          cs_real_t scal_diff_ref =
-            cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"))
-            / cs_glob_fluid_properties->ro0;
-          mei_tree_insert(ev_law,"x",0.0);
-          mei_tree_insert(ev_law,"y",0.0);
-          mei_tree_insert(ev_law,"z",0.0);
-          mei_tree_insert(ev_law,tmp2, scal_diff_ref);
-
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(ev_law);
-
-          BFT_FREE(tmp2);
-
-          for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
-            const cs_field_t  *f2 = cs_field_by_id(f_id2);
-            if (f2->type & CS_FIELD_USER)
-              mei_tree_insert(ev_law, f2->name, 0.0);
-          }
-
-          /* try to build the interpreter */
-          char *tmp = NULL;
-          BFT_MALLOC(tmp, strlen(f->name) + 13, char);
-          strcpy(tmp, f->name);
-          strcat(tmp, "_diffusivity");
-
-          if (mei_tree_builder(ev_law))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n"),
-                      ev_law->string);
-
-          if (mei_tree_find_symbol(ev_law, tmp))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"),
-                      tmp);
-
-          /* for each cell, update the value of the table of symbols for
-             each scalar (including the thermal scalar), and evaluate */
-
+          cs_meg_volume_function(c_prop, z_all);
           if (cs_glob_fluid_properties->irovar == 1) {
-            cs_field_t *c_rho = CS_F_(rho);
-            for (iel = 0; iel < n_cells; iel++) {
-              for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
-                const cs_field_t  *f2 = cs_field_by_id(f_id2);
-                if (f2->type & CS_FIELD_USER)
-                  mei_tree_insert(ev_law,
-                                  f2->name,
-                                  f2->val[iel]);
-              }
-              mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
-              mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
-              mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
+            cs_real_t *c_rho = CS_F_(rho)->val;
+            for (int c_id = 0; c_id < n_cells; c_id++)
+              c_prop->val[c_id] *= c_rho[c_id];
 
-              mei_evaluate(ev_law);
-              c_prop->val[iel] = mei_tree_lookup(ev_law, tmp) * c_rho->val[iel];
-            }
+          } else {
+            for (int c_id = 0; c_id < n_cells; c_id++)
+              c_prop->val[c_id] *= cs_glob_fluid_properties->ro0;
           }
-          else {
-            for (iel = 0; iel < n_cells; iel++) {
-              for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
-                const cs_field_t  *f2 = cs_field_by_id(f_id2);
-                if (f2->type & CS_FIELD_USER)
-                  mei_tree_insert(ev_law,
-                                  f2->name,
-                                  f2->val[iel]);
-              }
-              mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
-              mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
-              mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
-
-              mei_evaluate(ev_law);
-              c_prop->val[iel] =   mei_tree_lookup(ev_law, tmp)
-                                 * cs_glob_fluid_properties->ro0;
-            }
-          }
-          BFT_FREE(tmp);
-          mei_tree_destroy(ev_law);
-
-          cs_gui_add_mei_time(cs_timer_wtime() - time0);
         }
+        cs_gui_add_mei_time(cs_timer_wtime() - time0);
       }
     }
   }

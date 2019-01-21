@@ -1,4 +1,5 @@
 import os, shutil
+import re
 
 from code_saturne.Pages.FluidCharacteristicsView import FluidCharacteristicsView
 from code_saturne.Pages.NotebookModel import NotebookModel
@@ -85,13 +86,13 @@ class mei_to_c_interpreter:
 
 
     # -------------------------------
-    def init_c_block(self,
-                     expression,
-                     required,
-                     symbols,
-                     scalars,
-                     name,
-                     zone_name='all_cells'):
+    def init_cell_block(self,
+                        expression,
+                        required,
+                        symbols,
+                        scalars,
+                        name,
+                        zone_name='all_cells'):
 
         if name in self.funcs.keys():
             if self.funcs[name][zone] == zone_name:
@@ -135,51 +136,64 @@ class mei_to_c_interpreter:
 
         internal_fields = []
 
-        for s in symbols:
-            if s[0] in expression:
-                if s[0] == 'dt':
-                    usr_defs += ntabs*tab + 'cs_real_t dt = cs_glob_time_step->dt;\n'
-                    known_symbols.append(s[0])
-                elif s[0] == 'time':
-                    usr_defs += ntabs*tab + 'cs_real_t time = cs_glob_time_step->t_cur;\n'
-                    known_symbols.append(s[0])
-                elif s[0] == 'iter':
-                    usr_defs += ntabs*tab + 'int iter = cs_glob_time_step->nt_cur;\n'
-                    known_symbols.append(s[0])
-                elif s[0] in coords:
-                    ic = coords.index(s[0])
-                    lxyz = 'cs_real_t %s = xyz[c_id][%s];\n' % (s[0], str(ic))
-                    usr_code += (ntabs+1)*tab + lxyz
-                    known_symbols.append(s[0])
-                    need_coords = True
-                elif s[0] in self.notebook.keys():
-                    l = 'cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                            % (s[0], s[0])
-                    usr_defs += ntabs*tab + l
-                    known_symbols.append(s[0])
+        exp_lines_cmps = []
+        for expl in expression.split('\n'):
+            line_comp = []
+            for elt in re.split('=|\+|-|\*|\/|\(|\)|;',expl):
+                if elt != '':
+                    line_comp.append((elt.lstrip()).rstrip())
+            exp_lines_cmps.append(line_comp)
 
-                elif s not in scalars:
-                    if len(s[1].split('=')) > 1:
-                        sval = s[1].split('=')[-1]
-                        usr_defs += ntabs*tab + 'cs_real_t '+s[0]+' = '+str(sval)+';\n'
+            for s in symbols:
+                if s[0] in line_comp:
+                    if s[0] == 'dt':
+                        usr_defs += ntabs*tab + 'cs_real_t dt = cs_glob_time_step->dt;\n'
                         known_symbols.append(s[0])
-                    else:
-                        internal_fields.append((s[0], s[1].lower()))
+                    elif s[0] == 'time':
+                        usr_defs += ntabs*tab + 'cs_real_t time = cs_glob_time_step->t_cur;\n'
+                        known_symbols.append(s[0])
+                    elif s[0] == 'iter':
+                        usr_defs += ntabs*tab + 'int iter = cs_glob_time_step->nt_cur;\n'
+                        known_symbols.append(s[0])
+                    elif s[0] in coords:
+                        ic = coords.index(s[0])
+                        lxyz = 'cs_real_t %s = xyz[c_id][%s];\n' % (s[0], str(ic))
+                        usr_code += (ntabs+1)*tab + lxyz
+                        known_symbols.append(s[0])
+                        need_coords = True
+                    elif s[0] in self.notebook.keys():
+                        l = 'cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
+                                % (s[0], s[0])
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(s[0])
+
+                    elif s not in scalars:
+                        if len(s[1].split('=')) > 1:
+                            sval = s[1].split('=')[-1]
+                            usr_defs += ntabs*tab + 'cs_real_t '+s[0]+' = '+str(sval)+';\n'
+                            known_symbols.append(s[0])
+                        else:
+                            internal_fields.append((s[0], s[1].lower()))
 
         if need_coords:
-            user_defs = ntabs*tab \
-                      + 'cs_real_3_t xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
-                      + '\n\n' \
-                      + user_defs
+            usr_defs = ntabs*tab \
+                     + 'cs_real_3_t xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
+                     + '\n\n' \
+                     + usr_defs
 
         use_internal_fields = False
         for f in internal_fields:
-            if f[0] in expression:
-                use_internal_fields = True
-                l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' % (f[0], f[1])
-                usr_defs += ntabs*tab + l
-                known_symbols.append(f[0])
-                usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' % (f[0], f[0])
+            for line in exp_lines_cmps:
+                if f[0] in line:
+                    use_internal_fields = True
+                    l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
+                            % (f[0], f[1])
+                    usr_defs += ntabs*tab + l
+                    known_symbols.append(f[0])
+                    usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n'\
+                            % (f[0], f[0])
+
+                    break
 
         if use_internal_fields:
             usr_code += '\n'
@@ -187,12 +201,16 @@ class mei_to_c_interpreter:
         use_scalars = False
         for s in scalars:
             sn = s[0]
-            if sn in expression:
-                use_scalars = True
-                l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' % (sn,sn)
-                usr_defs += ntabs*tab + l
-                known_symbols.append(sn)
-                usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' % (sn, sn)
+            for line in exp_lines_cmps:
+                if sn in line:
+                    use_scalars = True
+                    l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
+                    % (sn,sn)
+                    usr_defs += ntabs*tab + l
+                    known_symbols.append(sn)
+                    usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' \
+                    % (sn, sn)
+                    break
 
         if use_scalars:
             usr_code += '\n'
@@ -203,19 +221,24 @@ class mei_to_c_interpreter:
                 expression = expression.replace(key+'(',
                                                 _cs_maths_intern_name[key]+'(')
 
-        if 'pi' in expression:
-            usr_defs += ntabs*tab + 'cs_real_t pi = cs_math_pi;\n'
+        for line in exp_lines_cmps:
+            if 'pi' in line:
+                usr_defs += ntabs*tab + 'cs_real_t pi = cs_math_pi;\n'
 
-        exp_str = expression
         for s in required:
             known_symbols.append(s[0]);
 
-        exp_lines = exp_str.split("\n")
+        exp_lines = expression.split("\n")
 
         ntabs += 1
         if_loop = False
         for l in exp_lines:
             if len(l) > 0:
+                line_comp = []
+                for elt in re.split('=|\+|-|\*|\/|\(|\)',expl):
+                    if elt != '':
+                        line_comp.append((expl.lstrip()).rstrip())
+
                 lf = l.split('=')
                 if len(lf) > 1 and lf[0].rstrip() not in known_symbols:
                     known_symbols.append(lf[0])
@@ -245,7 +268,7 @@ class mei_to_c_interpreter:
         else:
             usr_code += '\n'
 
-        usr_code = usr_code.replace(required[0][0], 'f->val[c_id]')
+        usr_code = usr_code.replace(required[0][0], 'f->val[c_id]', 1)
 
         # Write the block
         usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(z->name, "%s") == 0) {\n' \
@@ -280,10 +303,30 @@ class mei_to_c_interpreter:
             authorized_fields = ['density', 'molecular_viscosity',
                                  'specific_heat', 'thermal_conductivity']
             from code_saturne.Pages.FluidCharacteristicsView import FluidCharacteristicsView
+
+            from code_saturne.Pages.CompressibleModel import CompressibleModel
+            if CompressibleModel(self.case).getCompressibleModel() != 'off':
+                authorized_fields.append('volume_viscosity')
+
             fcv = FluidCharacteristicsView(root, self.case)
             for fk in authorized_fields:
-                exp, req, sca, sym, exa = fcv.getFormulaComponents(fk)
-                self.init_c_block(exp, req, sym, sca, fk)
+                if fcv.mdl.getPropertyMode(fk) == 'variable':
+                    exp, req, sca, sym, exa = fcv.getFormulaComponents(fk)
+                    self.init_cell_block(exp, req, sym, sca, fk)
+
+            slist = fcv.m_sca.getUserScalarNameList()
+            for s in fcv.m_sca.getScalarsVarianceList():
+                if s in slist: slist.remove(s)
+            if slist != []:
+                for s in slist:
+                    diff_choice = fcv.m_sca.getScalarDiffusivityChoice(s)
+                    if diff_choice == 'variable':
+                        dname = fcv.m_sca.getScalarDiffusivityName(s)
+                        exp, req, sca, sym, exa = \
+                        fcv.getFormulaComponents('scalar_diffusivity', s)
+                        self.init_cell_block(exp, req, sym, sca, dname)
+
+
 
         else:
             from code_saturne.Pages.ThermodynamicsView import ThermodynamicsView
@@ -303,20 +346,20 @@ class mei_to_c_interpreter:
                         if tv.mdl.getPropertyMode(fieldId, fk) == 'user_law':
                             name = fk + '_' + str(fieldId)
                             exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,fk)
-                            self.init_c_block(exp, req, sym, sca, name)
+                            self.init_cell_block(exp, req, sym, sca, name)
 
                     if mfm.getCompressibleStatus(fieldId) == 'on':
                         for fk in compressible_fields:
                             name = fk + '_' + str(fieldId)
                             exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,fk)
-                            self.init_c_block(exp, req, sym, sca, name)
+                            self.init_cell_block(exp, req, sym, sca, name)
 
                     # Temperature as a function of enthalpie
                     if mfm.getEnergyResolution(fieldId) == 'on':
                         name = 'temperature_' + str(fieldId)
                         exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,
                                                                          'temperature')
-                        self.init_c_block(exp, req, sym, sca, name)
+                        self.init_cell_block(exp, req, sym, sca, name)
 
 
         # Delete previous existing file

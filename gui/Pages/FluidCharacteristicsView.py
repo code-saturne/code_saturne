@@ -679,6 +679,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
             # Compressible Flows
             if mdl_comp != 'off':
+                self.groupBoxViscv0.show()
                 if tag == 'density':
                     __model.setItem(str_model='variable')
                     __combo.setEnabled(False)
@@ -687,7 +688,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __button.hide()
                     self.mdl.setPropertyMode(tag, 'variable')
                     __line.setEnabled(True)
-                self.groupBoxViscv0.hide()
                 if tag == 'specific_heat':
                     __model.setItem(str_model='constant')
                     __combo.setEnabled(False)
@@ -702,7 +702,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                         __button.setEnabled(True)
                     else:
                         __button.setEnabled(False)
-                self.groupBoxViscv0.show()
             else:
                 if tag == 'specific_heat':
                     self.groupBoxCp.setTitle('Specific heat')
@@ -1082,7 +1081,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
-    def getFormulaComponents(self, tag):
+    def getFormulaComponents(self, tag, scalar=None):
         """
         Get the formula components for a given tag
         """
@@ -1098,6 +1097,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         elif tag == 'thermal_conductivity':
             return self.getFormulaAlComponents()
+
+        elif tag == 'volume_viscosity':
+            return self.getFormulaViscv0Components()
+
+        elif tag == 'scalar_diffusivity' and scalar != None:
+            return self.getFormulaDiffComponents(scalar)
 
         else:
             msg = 'Formula is not available for field %s in MEG' % tag
@@ -1265,8 +1270,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonCp.setStyleSheet("background-color: green")
 
 
-    @pyqtSlot()
-    def slotFormulaViscv0(self):
+    def getFormulaViscv0Components(self):
         """
         User formula for volumic viscosity
         """
@@ -1280,12 +1284,22 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         ref_pressure = self.mdl.getPressure()
         ref_temperature = self.mdl.getTemperature()
         symbols_viscv0.append(('viscv0', 'Volumic viscosity (reference value) = '+str(viscv0_value)+' J/kg/K'))
-        symbols_viscv0.append(('p0', 'Reference pressure = '+str(ref_pressure)+' Pa'))
-        symbols_viscv0.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
+        symbols_viscv0.append(('p0', 'Reference pressure (Pa) = '+str(ref_pressure)))
+        symbols_viscv0.append(('t0', 'Reference temperature (K) = '+str(ref_temperature)))
         symbols_viscv0.append(('T', 'Temperature'))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols_viscv0.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols_viscv0, exa
+
+
+    @pyqtSlot()
+    def slotFormulaViscv0(self):
+        """
+        User formula for volumic viscosity
+        """
+        exp, req, sca, symbols_viscv0, exa = self.getFormulaViscv0Components()
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1353,24 +1367,33 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonAl.setStyleSheet("background-color: green")
 
 
+    def getFormulaDiffComponents(self, scalar):
+        """
+        User formula for the diffusion coefficient
+        """
+        name = self.m_sca.getScalarDiffusivityName(scalar)
+        exp = self.m_sca.getDiffFormula(scalar)
+        req = [(str(name), str(scalar)+' diffusion coefficient')]
+        exa = ''
+        sym = [('x','cell center coordinate'),
+               ('y','cell center coordinate'),
+               ('z','cell center coordinate'),]
+        sym.append((str(scalar),str(scalar)))
+        diff0_value = self.m_sca.getScalarDiffusivityInitialValue(scalar)
+        sym.append((str(name)+'_ref', str(scalar)+' diffusion coefficient (reference value, m^2/s) = '+str(diff0_value)))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, sym, exa
+
+
     @pyqtSlot()
     def slotFormulaDiff(self):
         """
         User formula for the diffusion coefficient
         """
-        name = self.m_sca.getScalarDiffusivityName(self.scalar)
-        exp = self.m_sca.getDiffFormula(self.scalar)
-        req = [(str(name), str(self.scalar)+'diffusion coefficient')]
-        exa = ''
-        sym = [('x','cell center coordinate'),
-               ('y','cell center coordinate'),
-               ('z','cell center coordinate'),]
-        sym.append((str(self.scalar),str(self.scalar)))
-        diff0_value = self.m_sca.getScalarDiffusivityInitialValue(self.scalar)
-        sym.append((str(name)+'_ref', str(self.scalar)+' diffusion coefficient (reference value) = '+str(diff0_value)+' m^2/s'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sca, sym, exa = self.getFormulaDiffComponents(self.scalar)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
