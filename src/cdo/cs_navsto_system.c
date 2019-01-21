@@ -212,7 +212,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     default_bc = CS_PARAM_BC_HMG_DIRICHLET;
     break;
   case CS_BOUNDARY_SYMMETRY:
-    default_bc = CS_PARAM_BC_HMG_NEUMANN;
+    default_bc = CS_PARAM_BC_SLIDING;
     break;
 
   default:

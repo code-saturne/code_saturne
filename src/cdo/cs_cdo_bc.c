@@ -153,7 +153,8 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
   cs_flag_t  default_flag = cs_cdo_bc_get_flag(default_bc);
 
   if (!(default_flag & CS_CDO_BC_HMG_DIRICHLET) &&
-      !(default_flag & CS_CDO_BC_HMG_NEUMANN))
+      !(default_flag & CS_CDO_BC_HMG_NEUMANN) &&
+      !(default_flag & CS_CDO_BC_SLIDING))
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Incompatible type of boundary condition by default.\n"
                 " Please modify your settings.\n"), __func__);
@@ -222,6 +223,8 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
         bc->n_hmg_dir_faces++;
       else if (default_flag & CS_CDO_BC_HMG_NEUMANN)
         bc->n_hmg_neu_faces++;
+      else if (default_flag & CS_CDO_BC_SLIDING)
+        bc->n_sliding_faces++;
       else
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid type of default boundary condition", __func__);
