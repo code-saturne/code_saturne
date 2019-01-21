@@ -694,7 +694,7 @@ _lagr_map_fields_default(void)
     /* we are probably using NEPTUNE_CFD */
     _lagr_extra_module.vel         = cs_field_by_name_try("velocity_1");
 
-    _lagr_extra_module.cvar_k      = cs_field_by_name_try("TurbKineEner_k_1");
+    _lagr_extra_module.cvar_k      = cs_field_by_name_try("k_1");
     _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon_1");
     _lagr_extra_module.cvar_omg    = NULL;
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("rij_1");
