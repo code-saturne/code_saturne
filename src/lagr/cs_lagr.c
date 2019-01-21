@@ -1643,9 +1643,6 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 
     }
 
-    /* Compute gradients of current value fields */
-    cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
-
   }
 
   /* First call (initializations)
@@ -1663,6 +1660,11 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 
   if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_OFF)
     cs_lagr_restart_read_p();
+
+  /* Compute gradients of current value fields */
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
+    cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
+
 }
 
 /*----------------------------------------------------------------------------
