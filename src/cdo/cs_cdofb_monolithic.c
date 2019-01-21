@@ -1411,7 +1411,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
   /* Retrieve high-level structures */
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
-  cs_navsto_ac_t *cc = (cs_navsto_ac_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
