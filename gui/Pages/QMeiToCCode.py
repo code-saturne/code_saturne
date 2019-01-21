@@ -355,6 +355,10 @@ class mei_to_c_interpreter:
 
                 except:
                     return 1
+
+        # Return 0 if nothing is written for robustness
+        else:
+            return 0
     # -------------------------------
 
 #-------------------------------------------------------------------------------
