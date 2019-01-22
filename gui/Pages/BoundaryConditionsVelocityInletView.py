@@ -345,6 +345,21 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.hide()
 
 
+    def getVelocityExpression(self, boundary):
+        """
+        Get the mathematical expression for velocity
+        """
+        exp = boundary.getVelocity()
+        c = boundary.getVelocityChoice()
+        if c == 'norm_formula':
+            n = 'u_norm'
+        elif c == 'flow1_formula':
+            n = 'q_m'
+        elif c == 'flow2_formula':
+            n = 'q_v'
+
+        return exp, n
+
     @pyqtSlot(str)
     def __slotChoiceVelocity(self, text):
         """

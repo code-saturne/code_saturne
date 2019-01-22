@@ -740,7 +740,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         # Is the file saved?
 
         if not self.__caseIsSaved__():
-            self.parent.fileSave(renew_page=False)
+            #self.parent.fileSave(renew_page=False)
+            self.parent.fileSave(renew_page=True)
             self.__updateRunButton__
 
         if not self.__caseIsSaved__():

@@ -1212,6 +1212,9 @@ class MainView(object):
                 self.updateTitleBar()
                 return
 
+            else:
+                return
+
 
 
     def displayAbout(self):

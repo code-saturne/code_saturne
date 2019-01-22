@@ -58,15 +58,18 @@ BEGIN_C_DECLS
  * \brief This function is used to compute user defined values for fields over a
  * given boundary zone
  *
- * \param[in, out]  f  pointer to cs_field_t
- * \param[in]       z  pointer to cs_volume_zone_t
+ * \param[in]       field_name  name of the field (const char *)
+ * \param[in]       condition   condition type (const char *)
+ * \param[in]       z           pointer to cs_volume_zone_t
+ * \param[in, out]  new_vals    pointer to cs_real_t to contain the computed values
  *
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_meg_boundary_function(cs_field_t                *f,
-                         const cs_boundary_zone_t  *z)
+cs_real_t *
+cs_meg_boundary_function(const char               *field_name,
+                         const char               *condition,
+                         const cs_boundary_zone_t *z)
 {
 
 

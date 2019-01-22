@@ -772,14 +772,17 @@ cs_user_gwf_setup(cs_domain_t   *domain);
 /*!
  * \brief  Evaluate GUI defined mathematical expressions over boundary zones.
  *
- * \param[in, out]   f    pointer to a cs_field_t structure
- * \param[in]        z    pointer to a cs_boundary_zone_t structure
+ * \param[in]       field_name  name of the field (const char *)
+ * \param[in]       condition   condition type (const char *)
+ * \param[in]       z           pointer to cs_volume_zone_t
+ * \param[in, out]  new_vals    pointer to cs_real_t to contain the computed values
  *
 */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_meg_boundary_function(cs_field_t             *f,
+cs_real_t *
+cs_meg_boundary_function(const char               *field_name,
+                         const char               *condition,
                          const cs_boundary_zone_t *z);
 
 /*----------------------------------------------------------------------------*/

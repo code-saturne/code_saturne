@@ -69,6 +69,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_parall.h"
 #include "cs_elec_model.h"
+#include "cs_prototypes.h"
 #include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
@@ -925,7 +926,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
                  const int        *idarcy)
 {
   cs_lnum_t faces = 0;
-  cs_lnum_t ifac;
   cs_lnum_t ifbr;
   int icharb, iclass;
 
@@ -1106,7 +1106,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     }
   }
 
-  for (ifac = 0; ifac < n_b_faces; ifac++)
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
     izfppp[ifac] = 0;
 
   /* filling of the "boundaries" structure */
@@ -1420,8 +1420,8 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
     /* check if faces are already marked with a zone number */
 
-    for (ifac = 0; ifac < faces; ifac++) {
-      ifbr = face_ids[ifac];
+    for (cs_lnum_t ifac= 0; ifac < faces; ifac++) {
+      cs_lnum_t ifbr = face_ids[ifac];
       if (izfppp[ifbr] > 0) {
         if (overlap_error[0] == 0) {
           overlap_error[0] = 1;
@@ -1554,9 +1554,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                                int        *nvar,
                                double     *rcodcl)
 {
-  cs_lnum_t faces = 0;
-  cs_lnum_t ifbr;
-  cs_lnum_t i, ivar;
   double t0;
   double norm = 0.;
 
@@ -1594,14 +1591,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
   for (int izone = 0; izone < boundaries->n_zones; izone++) {
 
     int zone_nbr = boundaries->bc_num[izone];
-
-    const cs_lnum_t *face_ids
-      = _get_boundary_faces(boundaries->label[izone], &faces);
+    cs_boundary_zone_t *bz = cs_boundary_zone_by_id(zone_nbr);
 
 #if _XML_DEBUG_
     bft_printf("\n---zone %i label: %s\n", zone_nbr, boundaries->label[izone]);
     bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
-    bft_printf("---zone %i number of faces: %i\n", zone_nbr, faces);
+    bft_printf("---zone %i number of faces: %i\n", zone_nbr, bz->n_faces);
 #endif
 
     /* Mapped inlet? */
@@ -1609,21 +1604,21 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
     if (   cs_gui_strcmp(boundaries->nature[izone], "inlet")
         && boundaries->locator[izone] == NULL)
       boundaries->locator[izone] = _mapped_inlet(boundaries->label[izone],
-                                                 faces,
-                                                 face_ids);
+                                                 bz->n_faces,
+                                                 bz->face_ids);
 
     /* for each field */
     for (int f_id = 0; f_id < n_fields; f_id++) {
       const cs_field_t  *f = cs_field_by_id(f_id);
       const int var_key_id = cs_field_key_id("variable_id");
-      ivar = cs_field_get_key_int(f, var_key_id) -1;
+      cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
       if (f->type & CS_FIELD_VARIABLE) {
         switch (boundaries->type_code[f->id][izone]) {
           case NEUMANN:
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              for (i = 0; i < f->dim; i++) {
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
+              for (cs_lnum_t i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i)*n_b_faces + ifbr] = 3;
                 rcodcl[2 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val3;
@@ -1632,10 +1627,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             break;
 
           case DIRICHLET:
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
               /* if wall_function <-- icodcl[ivar *n_b_faces + ifbr] = 1; */
-              for (i = 0; i < f->dim; i++) {
+              for (cs_lnum_t i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) * n_b_faces + ifbr] = 1;
                 rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val1;
@@ -1644,9 +1639,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             break;
 
           case WALL_FUNCTION:
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              for (i = 0; i < f->dim; i++) {
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
+              for (cs_lnum_t i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) * n_b_faces + ifbr] = 5;
                 if (boundaries->rough[izone] >= 0.0)
                   icodcl[(ivar + i) * n_b_faces + ifbr] = 6;
@@ -1657,9 +1652,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             break;
 
           case EXCHANGE_COEFF:
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              for (i = 0; i < f->dim; i++) {
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
+              for (cs_lnum_t i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) * n_b_faces + ifbr] = 5;
                 rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val1;
@@ -1670,93 +1665,59 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             break;
 
           case DIRICHLET_FORMULA:
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              for (i = 0; i < f->dim; i++) {
-                mei_tree_t *ev_formula
-                  = boundaries->scalar[f->id][izone * f->dim + i];
-                mei_tree_insert(ev_formula, "t", ts->t_cur);
-                mei_tree_insert(ev_formula, "dt",
-                                cs_glob_time_step->dt_ref);
-                mei_tree_insert(ev_formula, "iter", ts->nt_cur);
-                _set_mei_coords(ev_formula, b_face_cog[ifbr]);
+            {
+              cs_real_t *new_vals = cs_meg_boundary_function(f->name,
+                                                             "dirichlet_formula",
+                                                             bz);
 
-                /* add variable from notebook */
-                cs_gui_add_notebook_variables(ev_formula);
-
-                icodcl[(ivar + i) *n_b_faces + ifbr] = 1;
-                mei_evaluate(ev_formula);
-                if (f->dim > 1)
-                {
-                  char *name = NULL;
-                  BFT_MALLOC(name, strlen(f->name) + 4, char);
-                  sprintf(name, "%s[%d]", f->name, i);
-                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
-                    = mei_tree_lookup(ev_formula, name);
-                  BFT_FREE(name);
-                } else {
-                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
-                    = mei_tree_lookup(ev_formula, f->name);
+              for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
+                for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+                  cs_lnum_t ifbr = bz->face_ids[ifac];
+                  icodcl[(ivar + ii) *n_b_faces + ifbr] = 1;
+                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + ii) * n_b_faces + ifbr]
+                    = new_vals[ii * bz->n_faces + ifac];
                 }
               }
+              break;
             }
-            break;
 
           case NEUMANN_FORMULA:
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              for (i = 0; i < f->dim; i++) {
-                icodcl[(ivar + i) *n_b_faces + ifbr] = 3;
-                mei_tree_t *ev_formula
-                  = boundaries->scalar[f->id][izone * f->dim + i];
-                mei_tree_insert(ev_formula, "t", ts->t_cur);
-                mei_tree_insert(ev_formula, "dt",
-                                cs_glob_time_step->dt_ref);
-                mei_tree_insert(ev_formula, "iter", ts->nt_cur);
+            {
+              cs_real_t *new_vals = cs_meg_boundary_function(f->name,
+                                                             "neumann_formula",
+                                                             bz);
 
-                /* add variable from notebook */
-                cs_gui_add_notebook_variables(ev_formula);
-
-                mei_evaluate(ev_formula);
-                rcodcl[2 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
-                  = mei_tree_lookup(ev_formula, "flux");
+              for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
+                for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+                  cs_lnum_t ifbr = bz->face_ids[ifac];
+                  icodcl[(ivar + ii) *n_b_faces + ifbr] = 3;
+                  rcodcl[2 * n_b_faces * (*nvar) + (ivar + ii) * n_b_faces + ifbr]
+                    = new_vals[ii * bz->n_faces + ifac];
+                }
               }
+              break;
             }
-            break;
 
           case EXCHANGE_COEFF_FORMULA:
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              for (i = 0; i < f->dim; i++) {
-                icodcl[(ivar + i) *n_b_faces + ifbr] = 5;
-                mei_tree_t *ev_formula
-                  = boundaries->scalar[f->id][izone * f->dim + i];
-                mei_tree_insert(ev_formula, "t", ts->t_cur);
-                mei_tree_insert(ev_formula, "dt",
-                                cs_glob_time_step->dt_ref);
-                mei_tree_insert(ev_formula, "iter", ts->nt_cur);
+            {
+              cs_real_t *new_vals = cs_meg_boundary_function(f->name,
+                                                             "exchange_coefficient_formula",
+                                                             bz);
 
-                /* add variable from notebook */
-                cs_gui_add_notebook_variables(ev_formula);
+              for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
+                for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+                  cs_lnum_t ifbr = bz->face_ids[ifac];
+                  icodcl[(ivar + ii) *n_b_faces + ifbr] = 5;
 
-                mei_evaluate(ev_formula);
-                if (f->dim > 1)
-                {
-                  char *name = NULL;
-                  BFT_MALLOC(name, strlen(f->name) + 4, char);
-                  sprintf(name, "%s[%d]", f->name, i);
-                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
-                      = mei_tree_lookup(ev_formula, name);
-                  BFT_FREE(name);
-                } else {
-                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
-                      = mei_tree_lookup(ev_formula, f->name);
+                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + ii) * n_b_faces + ifbr]
+                    = new_vals[ii * bz->n_faces + ifac];
+
+                  rcodcl[1 * n_b_faces * (*nvar) + (ivar + ii) * n_b_faces + ifbr]
+                    = new_vals[f->dim * bz->n_faces + ifac];
                 }
-                rcodcl[1 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + ifbr]
-                    = mei_tree_lookup(ev_formula, "hc");
               }
+              break;
             }
-            break;
         }
       } /* switch */
     }
@@ -1765,19 +1726,19 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       if (cs_glob_elec_option->ielcor == 1) {
         const cs_field_t  *f = CS_F_(potr);
         const int var_key_id = cs_field_key_id("variable_id");
-        ivar = cs_field_get_key_int(f, var_key_id) -1;
+        cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
-        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = face_ids[ifac];
+        for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+          cs_lnum_t ifbr = bz->face_ids[ifac];
           rcodcl[ivar * n_b_faces + ifbr] *= cs_glob_elec_option->coejou;
         }
 
         int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
         if (ieljou == 2 || ieljou == 4) {
           const cs_field_t  *fi = CS_F_(poti);
-          ivar = cs_field_get_key_int(fi, var_key_id) -1;
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          cs_lnum_t ivar = cs_field_get_key_int(fi, var_key_id) -1;
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             rcodcl[ivar * n_b_faces + ifbr] *= cs_glob_elec_option->coejou;
           }
         }
@@ -1787,12 +1748,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
     if (cs_gui_strcmp(vars->model_value, "arc")) {
       const cs_field_t  *f = CS_F_(potr);
       const int var_key_id = cs_field_key_id("variable_id");
-      ivar = cs_field_get_key_int(f, var_key_id) -1;
+      cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
       if (   boundaries->type_code[f->id][izone] == DIRICHLET_IMPLICIT
           && cs_glob_elec_option->ielcor == 1) {
-        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = face_ids[ifac];
+        for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+          cs_lnum_t ifbr = bz->face_ids[ifac];
           icodcl[ivar * n_b_faces + ifbr] = 5;
           rcodcl[ivar * n_b_faces + ifbr] = cs_glob_elec_option->pot_diff;
         }
@@ -1802,8 +1763,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       ivar = cs_field_get_key_int(fp, var_key_id) -1;
 
       if (boundaries->type_code[fp->id][izone] == NEUMANN_IMPLICIT)
-        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = face_ids[ifac];
+        for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+          cs_lnum_t ifbr = bz->face_ids[ifac];
           cs_lnum_t iel = b_face_cells[ifbr];
           icodcl[ivar *n_b_faces + ifbr] = 5;
           icodcl[(ivar+1) *n_b_faces + ifbr] = 5;
@@ -1863,22 +1824,16 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
         if (   cs_gui_strcmp(choice_v, "flow1_formula")
             || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step->dt_ref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
-
-          mei_evaluate(boundaries->velocity[izone]);
-
-          if (cs_gui_strcmp(choice_v, "flow1_formula"))
-            qimp[zone_nbr-1]
-              = mei_tree_lookup(boundaries->velocity[izone], "q_m");
-          else if (cs_gui_strcmp(choice_v, "flow2_formula"))
-            qimp[zone_nbr-1]
-              = mei_tree_lookup(boundaries->velocity[izone], "q_v");
+          if (cs_gui_strcmp(choice_v, "flow1_formula")) {
+            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
+                                                        "flow1_formula",
+                                                        bz);
+          } else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
+            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
+                                                        "flow2_formula",
+                                                        bz);
+          }
         }
         else {
           qimp[zone_nbr-1] = boundaries->qimp[izone];
@@ -1894,8 +1849,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           const cs_field_t  *fe = cs_field_by_name_try("total_energy");
           int ivare = cs_field_get_key_int(fe, var_key_id) -1;
 
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             rcodcl[ivarp * n_b_faces + ifbr] = boundaries->prein[izone];
             rcodcl[ivare * n_b_faces + ifbr] = boundaries->entin[izone];
           }
@@ -1906,8 +1861,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           const cs_field_t  *ft = cs_field_by_name_try("temperature");
           int ivart = cs_field_get_key_int(ft, var_key_id) -1;
 
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             rcodcl[ivart * n_b_faces + ifbr] = boundaries->tempin[izone];
             b_rho->val[ifbr] = boundaries->rhoin[izone];
           }
@@ -1915,22 +1870,15 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       }
       else {
         if (boundaries->velocity[izone] != NULL) {
-          mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step->dt_ref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
-
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
-
-          mei_evaluate(boundaries->velocity[izone]);
-
-          if (cs_gui_strcmp(choice_v, "flow1_formula"))
-            qimp[zone_nbr-1]
-              = mei_tree_lookup(boundaries->velocity[izone], "q_m");
-          else if (cs_gui_strcmp(choice_v, "flow2_formula"))
-            qimp[zone_nbr-1]
-              = mei_tree_lookup(boundaries->velocity[izone], "q_v");
+          if (cs_gui_strcmp(choice_v, "flow1_formula")) {
+            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
+                                                        "flow1_formula",
+                                                        bz);
+          } else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
+            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
+                                                        "flow2_formula",
+                                                        bz);
+          }
         }
         else {
           qimp[zone_nbr-1] = boundaries->qimp[izone];
@@ -1951,8 +1899,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           inlet_type = CS_CONVECTIVE_INLET;
       }
 
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
 
         /* zone number and nature of boundary */
         izfppp[ifbr] = zone_nbr;
@@ -1966,8 +1914,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           choice_d = NULL;
         }
         if (boundaries->meteo[izone].automatic) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             iautom[ifbr] = 1;
           }
         }
@@ -1983,8 +1931,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           norm =   boundaries->norm[izone]
                  / cs_math_3_norm(boundaries->dir[izone]);
 
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             for (cs_lnum_t ic = 0; ic < 3; ic++) {
               rcodcl[(ivarv + ic) * n_b_faces + ifbr]
                 = boundaries->dir[izone][ic] * norm;
@@ -1995,8 +1943,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                  || cs_gui_strcmp(choice_v, "flow2")
                  || cs_gui_strcmp(choice_v, "flow1_formula")
                  || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             for (cs_lnum_t ic = 0; ic < 3; ic++) {
               rcodcl[(ivarv + ic) * n_b_faces + ifbr]
                 = boundaries->dir[izone][ic];
@@ -2005,19 +1953,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           t0 = cs_timer_wtime();
+          cs_real_t *new_vals = cs_meg_boundary_function("velocity",
+                                                         "norm_formula",
+                                                         bz);
 
-          mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step->dt_ref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
-
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
-
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
-
-            _set_mei_coords(boundaries->velocity[izone], b_face_cog[ifbr]);
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
 
             cs_real_t x_norm = cs_math_3_norm(boundaries->dir[izone]);
             if (x_norm <= 0.)
@@ -2025,25 +1966,18 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                   _("Error in the boundary conditions: "
                     " the normal direction is of norm 0."));
 
-            mei_evaluate(boundaries->velocity[izone]);
-
-            norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-                   / x_norm;
-
             for (cs_lnum_t ic = 0; ic < 3; ic++) {
               rcodcl[(ivarv + ic) * n_b_faces + ifbr]
-                = boundaries->dir[izone][ic] * norm;
+                = boundaries->dir[izone][ic] *
+                  new_vals[ic*bz->n_faces + ifac] / x_norm;
             }
 
           }
-
-          cs_gui_add_mei_time(cs_timer_wtime() - t0);
-
         }
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           if (boundaries->itype[izone] == CS_EPHCF) {
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
               for (cs_lnum_t ic = 0; ic < 3; ic++) {
                 rcodcl[(ivarv + ic) * n_b_faces + ifbr]
                   = boundaries->dir[izone][ic];
@@ -2055,12 +1989,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       else if (   cs_gui_strcmp(choice_d, "normal")
                || cs_gui_strcmp(choice_d, "translation")) {
         if (cs_gui_strcmp(choice_v, "norm")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
 
             norm = boundaries->norm[izone] / b_face_surf[ifbr];
 
-            for (i = 0; i < 3; i++)
+            for (cs_lnum_t i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr]
                 = -b_face_normal[ifbr][i] * norm;
           }
@@ -2069,10 +2003,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                  || cs_gui_strcmp(choice_v, "flow2")
                  || cs_gui_strcmp(choice_v, "flow1_formula")
                  || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
 
-            for (i = 0; i < 3; i++)
+            for (cs_lnum_t i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr]
                 = -b_face_normal[ifbr][i] / b_face_surf[ifbr];
           }
@@ -2080,37 +2014,26 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           t0 = cs_timer_wtime();
 
-          mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step->dt_ref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
+          cs_real_t *new_vals = cs_meg_boundary_function("velocity",
+                                                         "norm_formula",
+                                                         bz);
 
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(boundaries->velocity[izone]);
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
 
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
-
-            _set_mei_coords(boundaries->velocity[izone], b_face_cog[ifbr]);
-
-            mei_evaluate(boundaries->velocity[izone]);
-
-            norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-                   / b_face_surf[ifbr];
-
-            for (i = 0; i < 3; i++)
+            for (cs_lnum_t i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr]
-                = -b_face_normal[ifbr][i] * norm;
+                = -b_face_normal[ifbr][i] *
+                  new_vals[i*bz->n_faces + ifac] / b_face_surf[ifbr];
           }
-          cs_gui_add_mei_time(cs_timer_wtime() - t0);
         }
 
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           if (boundaries->itype[izone] == CS_EPHCF) {
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
 
-              for (i = 0; i < 3; i++)
+              for (cs_lnum_t i = 0; i < 3; i++)
                 rcodcl[(ivarv + i) * n_b_faces + ifbr]
                   = -b_face_normal[ifbr][i];
             }
@@ -2120,28 +2043,20 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       else if (cs_gui_strcmp(choice_d, "formula")) {
         t0 = cs_timer_wtime();
 
-        mei_tree_insert(boundaries->direction[izone], "t", ts->t_cur);
-        mei_tree_insert(boundaries->direction[izone], "dt",
-                        cs_glob_time_step->dt_ref);
-        mei_tree_insert(boundaries->direction[izone], "iter", ts->nt_cur);
-
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(boundaries->direction[izone]);
+        cs_real_t *xvals = cs_meg_boundary_function("direction",
+                                                    "formula",
+                                                    bz);
 
         if (cs_gui_strcmp(choice_v, "norm")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
-
-            _set_mei_coords(boundaries->direction[izone], b_face_cog[ifbr]);
-
-            mei_evaluate(boundaries->direction[izone]);
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
 
             cs_real_t x[3];
-            x[0] = mei_tree_lookup(boundaries->direction[izone], "dir_x");
-            x[1] = mei_tree_lookup(boundaries->direction[izone], "dir_y");
-            x[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
+            for (int ic = 0; ic < 3; ic++)
+              x[ic] = xvals[ic*bz->n_faces + ifac];
 
             cs_real_t x_norm = cs_math_3_norm(x);
+
             if (x_norm <= 0.)
               bft_error(__FILE__, __LINE__, 0,
                   _("Error in the boundary conditions: "
@@ -2149,7 +2064,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
             norm = boundaries->norm[izone] / x_norm;
 
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr] = x[i] * norm;
           }
         }
@@ -2157,17 +2072,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                  || cs_gui_strcmp(choice_v, "flow2")
                  || cs_gui_strcmp(choice_v, "flow1_formula")
                  || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
-
-            _set_mei_coords(boundaries->direction[izone], b_face_cog[ifbr]);
-
-            mei_evaluate(boundaries->direction[izone]);
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
 
             cs_real_t x[3];
-            x[0] = mei_tree_lookup(boundaries->direction[izone], "dir_x");
-            x[1] = mei_tree_lookup(boundaries->direction[izone], "dir_y");
-            x[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
+            for (int ic = 0; ic < 3; ic++)
+              x[ic] = xvals[ic*bz->n_faces + ifac];
 
             cs_real_t x_norm = cs_math_3_norm(x);
             if (x_norm <= 0.)
@@ -2175,29 +2085,21 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                   _("Error in the boundary conditions: "
                     "the normal direction is of norm 0.\n "));
 
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr] = x[i];
           }
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt",
-                          cs_glob_time_step->dt_ref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
+          cs_real_t *norm_vals = cs_meg_boundary_function("velocity",
+                                                          "norm_formula",
+                                                          bz);
 
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
-
-            _set_mei_coords(boundaries->velocity[izone], b_face_cog[ifbr]);
-            _set_mei_coords(boundaries->direction[izone], b_face_cog[ifbr]);
-
-            mei_evaluate(boundaries->velocity[izone]);
-            mei_evaluate(boundaries->direction[izone]);
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
 
             cs_real_t x[3];
-            x[0] = mei_tree_lookup(boundaries->direction[izone], "dir_x");
-            x[1] = mei_tree_lookup(boundaries->direction[izone], "dir_y");
-            x[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
+            for (int ic = 0; ic < 3; ic++)
+              x[ic] = xvals[ic*bz->n_faces + ifac];
 
             cs_real_t x_norm = cs_math_3_norm(x);
             if (x_norm <= 0.)
@@ -2205,35 +2107,30 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                   _("Error in the boundary conditions: "
                     "the normal direction is of norm 0.\n "));
 
-            norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-                   / x_norm;
+            norm = norm_vals[ifac] / x_norm;
 
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr] = x[i] * norm;
           }
         }
 
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           if (boundaries->itype[izone] == CS_EPHCF) {
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-
-              _set_mei_coords(boundaries->direction[izone], b_face_cog[ifbr]);
-
-              mei_evaluate(boundaries->direction[izone]);
+            cs_real_t *xvals = cs_meg_boundary_function("direction",
+                                                        "formula",
+                                                        bz);
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
 
               cs_real_t x[3];
-              x[0] = mei_tree_lookup(boundaries->direction[izone], "dir_x");
-              x[1] = mei_tree_lookup(boundaries->direction[izone], "dir_y");
-              x[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
+              for (int ic = 0; ic < 3; ic++)
+                x[ic] = xvals[ic*bz->n_faces + ifac];
 
-              for (i = 0; i < 3; i++)
+              for (cs_lnum_t i = 0; i < 3; i++)
                 rcodcl[(ivarv + i) * n_b_faces + ifbr] = x[i];
             }
           }
         }
-        cs_gui_add_mei_time(cs_timer_wtime() - t0);
-
       }
 
       /* turbulent inlet, with formula */
@@ -2247,23 +2144,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         const char *formula = cs_tree_node_get_child_value_str(tn_t, "formula");
 
         if (formula != NULL) {
-          mei_tree_t *ev_formula = mei_tree_new(formula);
-          mei_tree_insert(ev_formula,"x", 0.0);
-          mei_tree_insert(ev_formula,"y", 0.0);
-          mei_tree_insert(ev_formula,"z", 0.0);
-          mei_tree_insert(ev_formula, "t", ts->t_cur);
-          mei_tree_insert(ev_formula, "dt", cs_glob_time_step->dt_ref);
-          mei_tree_insert(ev_formula, "iter", ts->nt_cur);
-
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(ev_formula);
-
-          /* try to build the interpreter */
-
-          if (mei_tree_builder(ev_formula))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n %i"),
-                      ev_formula->string, mei_tree_builder(ev_formula));
 
           const char *model = cs_gui_get_thermophysical_model("turbulence");
           if (model == NULL)
@@ -2271,36 +2151,30 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
           if (   cs_gui_strcmp(model, "k-epsilon")
               || cs_gui_strcmp(model, "k-epsilon-PL")) {
-            const char *symbols[] = {"k","epsilon"};
-            if (mei_tree_find_symbols(ev_formula, 2, symbols))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        "k or epsilon");
+
+            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_ke",
+                                                           "formula",
+                                                           bz);
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
             int ivark = cs_field_get_key_int(c_k, var_key_id) -1;
             int ivare = cs_field_get_key_int(c_eps, var_key_id) -1;
 
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              _set_mei_coords(ev_formula, b_face_cog[ifbr]);
-              mei_evaluate(ev_formula);
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
               rcodcl[ivark * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "k");
+                = new_vals[0 * bz->n_faces + ifac];
               rcodcl[ivare * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "epsilon");
+                = new_vals[1 * bz->n_faces + ifac];
             }
           }
           else if (  cs_gui_strcmp(model, "Rij-epsilon")
                    ||cs_gui_strcmp(model, "Rij-SSG")) {
-            const char *symbols[] = {"r11", "r22", "r33",
-                                     "r12", "r13", "r23", "epsilon"};
-            if (mei_tree_find_symbols(ev_formula, 7, symbols))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        "r11, r22, r33, r12, r13, r23 or epsilon");
 
+            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_rije",
+                                                           "formula",
+                                                           bz);
             cs_field_t *cfld_rij;
             if (cs_glob_turb_rans_model->irijco == 1)
               cfld_rij = cs_field_by_name("rij");
@@ -2311,33 +2185,23 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             int ivarrij = cs_field_get_key_int(cfld_rij, var_key_id) - 1;
             int ivare   = cs_field_get_key_int(c_eps, var_key_id) -1;
 
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              _set_mei_coords(ev_formula, b_face_cog[ifbr]);
-              mei_evaluate(ev_formula);
-              rcodcl[ ivarrij      * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r11");
-              rcodcl[(ivarrij + 1) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r22");
-              rcodcl[(ivarrij + 2) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r33");
-              rcodcl[(ivarrij + 3) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r12");
-              rcodcl[(ivarrij + 4) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r23");
-              rcodcl[(ivarrij + 5) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r13");
-              rcodcl[ivare   * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "epsilon");
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
+
+              /* Values are stored for rij components then epsilon */
+              for (int ii = 0; ii < 6; ii++)
+                rcodcl[(ivarrij + ii) * n_b_faces + ifbr]
+                  = new_vals[bz->n_faces * ii + ifac];
+
+              rcodcl[ivare * n_b_faces + ifbr]
+                = new_vals[bz->n_faces * 6 + ifac];
             }
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-            const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23",
-                                     "epsilon", "alpha"};
-            if (mei_tree_find_symbols(ev_formula, 8, symbols))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        "R11, R22, R33, R12, R13, R23, eps or alpha");
+
+            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_rij_ebrsm",
+                                                           "formula",
+                                                           bz);
 
             cs_field_t *cfld_rij;
             if (cs_glob_turb_rans_model->irijco == 1)
@@ -2351,35 +2215,27 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             int ivare   = cs_field_get_key_int(c_eps, var_key_id) -1;
             int ivara   = cs_field_get_key_int(c_a, var_key_id) -1;
 
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              _set_mei_coords(ev_formula, b_face_cog[ifbr]);
-              mei_evaluate(ev_formula);
-              rcodcl[ ivarrij      * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r11");
-              rcodcl[(ivarrij + 1) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r22");
-              rcodcl[(ivarrij + 2) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r33");
-              rcodcl[(ivarrij + 3) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r12");
-              rcodcl[(ivarrij + 4) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r23");
-              rcodcl[(ivarrij + 5) * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "r13");
-              rcodcl[ivare   * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "epsilon");
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
+
+              /* Values are stored for rij components then epsilon and alpha*/
+              for (int ii = 0; ii < 6; ii++)
+                rcodcl[(ivarrij + ii) * n_b_faces + ifbr]
+                  = new_vals[bz->n_faces * ii + ifac];
+
+              rcodcl[ivare * n_b_faces + ifbr]
+                = new_vals[bz->n_faces * 6 + ifac];
+
               rcodcl[ivara   * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "alpha");
+                = new_vals[bz->n_faces * 7 + ifac];
             }
           }
           else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-            const char *symbols[] = {"k", "epsilon", "phi", "alpha"};
+            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_v2f",
+                                                           "formula",
+                                                           bz);
 
-            if (mei_tree_find_symbols(ev_formula, 4, symbols))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        "k, eps, phi of alpha");
+            const char *symbols[] = {"k", "epsilon", "phi", "alpha"};
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2390,68 +2246,53 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             int ivarp = cs_field_get_key_int(c_phi, var_key_id) -1;
             int ivara = cs_field_get_key_int(c_a,   var_key_id) -1;
 
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              _set_mei_coords(ev_formula, b_face_cog[ifbr]);
-              mei_evaluate(ev_formula);
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
               rcodcl[ivark * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "k");
+                = new_vals[0 * bz->n_faces + ifac];
               rcodcl[ivare * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "epsilon");
+                = new_vals[1 * bz->n_faces + ifac];
               rcodcl[ivarp * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "phi");
+                = new_vals[2 * bz->n_faces + ifac];
               rcodcl[ivara * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "alpha");
+                = new_vals[3 * bz->n_faces + ifac];
             }
           }
           else if (cs_gui_strcmp(model, "k-omega-SST")) {
-            const char *symbols[] = {"k", "omega"};
-
-            if (mei_tree_find_symbols(ev_formula, 2, symbols))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        "k or omega");
+            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_kw",
+                                                           "formula",
+                                                           bz);
 
             cs_field_t *c_k = cs_field_by_name("k");
             cs_field_t *c_o = cs_field_by_name("omega");
             int ivark = cs_field_get_key_int(c_k,   var_key_id) -1;
             int ivaro = cs_field_get_key_int(c_o,   var_key_id) -1;
 
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              _set_mei_coords(ev_formula, b_face_cog[ifbr]);
-              mei_evaluate(ev_formula);
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
               rcodcl[ivark * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "k");
+                = new_vals[0 * bz->n_faces + ifac];
               rcodcl[ivaro * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "omega");
+                = new_vals[1 * bz->n_faces + ifac];
             }
           }
           else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-            const char *symbols[] = {"nu_tilda"};
-
-            if (mei_tree_find_symbols(ev_formula, 1, symbols))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        "nu_tilda");
+            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_spalart",
+                                                           "formula",
+                                                           bz);
 
             cs_field_t *c_nu = cs_field_by_name("nu_tilda");
             int ivarnu = cs_field_get_key_int(c_nu, var_key_id) -1;
 
-            for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-              ifbr = face_ids[ifac];
-              _set_mei_coords(ev_formula, b_face_cog[ifbr]);
-              mei_evaluate(ev_formula);
-              rcodcl[ivarnu * n_b_faces + ifbr]
-                = mei_tree_lookup(ev_formula, "nu_tilda");
+            for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+              cs_lnum_t ifbr = bz->face_ids[ifac];
+              rcodcl[ivarnu * n_b_faces + ifbr] = new_vals[ifac];
             }
           }
           else
             bft_error(__FILE__, __LINE__, 0,
                       _("Invalid turbulence model: %s.\n"), model);
-          mei_tree_destroy(ev_formula);
         }
-        cs_gui_add_mei_time(cs_timer_wtime() - t0);
       }
 
 #if _XML_DEBUG_
@@ -2541,8 +2382,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         /* Roughness value is stored in Velocity_U (z0) */
         /* Remember: rcodcl(ifac, ivar, 1) -> rcodcl[k][j][i]
            = rcodcl[ k*dim1*dim2 + j*dim1 + i] */
-        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = face_ids[ifac];
+        for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+          cs_lnum_t ifbr = bz->face_ids[ifac];
           cs_lnum_t idx = 2 * n_b_faces * (*nvar) + ivarv * n_b_faces + ifbr;
           rcodcl[idx] = boundaries->rough[izone];
 
@@ -2554,16 +2395,16 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
       }
 
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = iwall;
       }
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         if (cs_gui_strcmp(vars->model, "compressible_model"))
           itypfb[ifbr] = boundaries->itype[izone];
@@ -2574,8 +2415,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
         iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             itypfb[ifbr] = 0;
           }
         }
@@ -2585,8 +2426,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
           const int var_key_id = cs_field_key_id("variable_id");
           int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
           }
         }
@@ -2594,8 +2435,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "imposed_p_outlet")) {
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = CS_OUTLET;
       }
@@ -2604,58 +2445,49 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
       const int var_key_id = cs_field_key_id("variable_id");
       int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac] -1;
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac] -1;
         icodcl[ivar1 * n_b_faces + ifbr] = 1;
         rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
       }
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = CS_SYMMETRY;
       }
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_inlet_outlet")) {
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = CS_FREE_INLET;
       }
 
       if (boundaries->headLoss[izone] != NULL) {
         t0 = cs_timer_wtime();
+        cs_real_t *new_vals = cs_meg_boundary_function("head_loss",
+                                                       "formula",
+                                                       bz);
 
         const cs_field_t  *fp = cs_field_by_name_try("pressure");
         const int var_key_id = cs_field_key_id("variable_id");
         int ivarp = cs_field_get_key_int(fp, var_key_id) -1;
 
-        mei_tree_insert(boundaries->headLoss[izone], "t", ts->t_cur);
-        mei_tree_insert(boundaries->headLoss[izone], "dt",
-                        cs_glob_time_step->dt_ref);
-        mei_tree_insert(boundaries->headLoss[izone], "iter", ts->nt_cur);
-
-        /* add variable from notebook */
-        cs_gui_add_notebook_variables(boundaries->headLoss[izone]);
-
-        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = face_ids[ifac];
-          _set_mei_coords(boundaries->headLoss[izone], b_face_cog[ifbr]);
-
-          mei_evaluate(boundaries->headLoss[izone]);
+        for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+          cs_lnum_t ifbr = bz->face_ids[ifac];
           rcodcl[1 * n_b_faces * (*nvar) + ivarp * n_b_faces + ifbr]
-            = mei_tree_lookup(boundaries->headLoss[izone], "K");
+            = new_vals[ifac];
         }
-        cs_gui_add_mei_time(cs_timer_wtime() - t0);
       }
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface")) {
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = CS_FREE_SURFACE;
       }
@@ -2665,8 +2497,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
       const int var_key_id = cs_field_key_id("variable_id");
 
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = CS_INDEF;
       }
@@ -2681,9 +2513,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       if (fp2 != NULL) {
         int ivar2 = cs_field_get_key_int(fp2, var_key_id) -1;
 
-        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = face_ids[ifac];
-          for (i = 0; i < 3; i++) {
+        for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+          cs_lnum_t ifbr = bz->face_ids[ifac];
+          for (cs_lnum_t i = 0; i < 3; i++) {
             icodcl[(ivar2 + i) * n_b_faces + ifbr] = 3;
             rcodcl[(ivar2 + i) * n_b_faces + ifbr] = 0.;
           }
@@ -2697,37 +2529,29 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         const char *choice_d = cs_gui_node_get_tag(tn_hh, "choice");
 
         if (cs_gui_strcmp(choice_d, "dirichlet")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 1;
             rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
           }
         }
         else if (cs_gui_strcmp(choice_d, "neumann")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 3;
             rcodcl[2 * n_b_faces * (*nvar) + ivar1 * n_b_faces + ifbr]
               = boundaries->preout[izone];
           }
         }
         else if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
-          mei_tree_t *ev_formula = boundaries->groundwat[izone];
-          mei_tree_insert(ev_formula, "t", ts->t_cur);
-          mei_tree_insert(ev_formula, "dt", cs_glob_time_step->dt_ref);
-          mei_tree_insert(ev_formula, "iter", ts->nt_cur);
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac];
+          cs_real_t *new_vals = cs_meg_boundary_function("hydraulic_head",
+                                                         "dirichlet_formula",
+                                                         bz);
+
+          for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+            cs_lnum_t ifbr = bz->face_ids[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 1;
-
-            _set_mei_coords(ev_formula, b_face_cog[ifbr]);
-
-            /* add variable from notebook */
-            cs_gui_add_notebook_variables(ev_formula);
-
-            mei_evaluate(ev_formula);
-            rcodcl[ivar1 * n_b_faces + ifbr]
-              = mei_tree_lookup(ev_formula, "H");
+            rcodcl[ivar1 * n_b_faces + ifbr] = new_vals[ifac];
           }
         }
       }
@@ -2735,8 +2559,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
-      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac];
+      for (cs_lnum_t ifac = 0; ifac < bz->n_faces; ifac++) {
+        cs_lnum_t ifbr = bz->face_ids[ifac];
         izfppp[ifbr] = zone_nbr;
         itypfb[ifbr] = CS_INDEF;
       }
@@ -2757,7 +2581,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       for (int f_id = 0; f_id < n_fields; f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
         const int var_key_id = cs_field_key_id("variable_id");
-        ivar = cs_field_get_key_int(f, var_key_id) -1;
+        cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
         if (f->type & CS_FIELD_VARIABLE) {
           int interpolate = 0;
@@ -2773,7 +2597,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
                                               CS_MESH_LOCATION_CELLS,
                                               normalize, interpolate,
-                                              faces, face_ids,
+                                              bz->n_faces, bz->face_ids,
                                               NULL, *nvar, rcodcl);
         }
 
@@ -2781,13 +2605,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
     }
 
 #if _XML_DEBUG_
-    if (faces > 0) {
-      ifbr = face_ids[0];
+    if (bz->n_faces > 0) {
+      cs_lnum_t ifbr = bz->face_ids[0];
 
       for (int f_id = 0; f_id < n_fields; f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
         const int var_key_id = cs_field_key_id("variable_id");
-        ivar = cs_field_get_key_int(f, var_key_id) -1;
+        cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
         if (f->type & CS_FIELD_VARIABLE) {
           bft_printf("------%s: icodcl=%i, "
                      "rcodcl(1)=%12.5e, rcodcl(2)=%12.5e, rcodcl(3)=%12.5e\n",
