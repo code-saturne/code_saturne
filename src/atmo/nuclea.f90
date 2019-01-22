@@ -20,14 +20,11 @@
 
 !-------------------------------------------------------------------------------
 !> \file nuclea.f90
-!> \brief Atmospheric module - humid atmosphere - cloud droplet nucleation
-
-!> \brief Compute aerosols nucleation source term
+!> \brief Compute aerosol cloud droplets nucleation when using the atmospheric
+!> humid model using a microphysical model.
 !>
-!> This term is taken into account in an explicit manner regarding the droplet
-!> number.
-!> It is the first microphysical model after solving advection-diffusion, hence
-!> the droplet number is clipped if necessary.
+!> It is taken into account as an additional step split from advection-diffusion
+!> equation, hence the droplet number is first clipped if necessary.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -101,7 +98,8 @@ double precision numcb,dencb
 external         esatliq
 double precision esatliq
 
-double precision , parameter :: rhoeau=1000. ! kg/m**3
+double precision , parameter :: rhowater=1000. ! kg/m**3
+! FIXME should be set somewhere else
 
 ! ===============================================================================
 ! 0.  Initialisation
@@ -131,7 +129,7 @@ else if (modnuc.eq.2) then
   constbeta = 136.d0
 
   !  Polluted Air Case. See Hudson and Li (1995)
-  !  constc    = 1865.
+  !  constc    = 1865. ! 8700.d0 if Cohard and Pinty used on PARISFOG
   !  constk    = 0.86
   !  constmu   = 1.50
   !  constbeta = 6.80
@@ -174,7 +172,7 @@ do iel = 1, ncel
 
          nuc = (constc)**(2./(constk+2.)) * ( 0.01d0 * (aa1*w(3,iel)                 &
               + aa4*refrad(iel))**(3./2.)                                        &
-              / (2.*pi*rhoeau*aa2*aa3**(3.d0/2.d0)*constk*fbeta))                &
+              / (2.*pi*rhowater*aa2*aa3**(3.d0/2.d0)*constk*fbeta))                &
               **(constk/(constk+2.d0))
 
        ! 1.2  Modele of Cohard and Pinty (1998)
@@ -189,7 +187,7 @@ do iel = 1, ncel
            yy     = hypgeo(constmu,constk/2.d0,constk/2.d0 + 3.d0/2.d0,          &
                 - constbeta*sursat**2 )
            sursat = ((0.01 * (aa1*w(3,iel) + aa4*refrad(iel))                      &
-                **(3.d0/2.d0) / (2.d0*constk*constc*pi*rhoeau                    &
+                **(3.d0/2.d0) / (2.d0*constk*constc*pi*rhowater                    &
                 *aa2*fbeta*aa3**(3.d0/2.d0)) )/yy )                              &
                 **(1.d0/(constk + 2.d0))
          enddo
@@ -206,10 +204,14 @@ do iel = 1, ncel
            call csexit(1)
          endif
 
-      ! 1.3  Model of Abdul-Razzak and al. (1998)
+       ! 1.3  Model of Abdul-Razzak and al. (1998)
+       ! This model requires a fine knowledge of aerosols chemistry.
 
        else if (modnuc.eq.3) then
 
+         ! Warning: this set of constants fits for PARISFOG case.
+         ! They were determined using fine data on aerosols measured
+         ! during PARISFOG POI 13
          ntotal1  = 8700.d0
          rayonm1  = 0.0165d-6
          sigaero1 = 1.57d0
@@ -269,7 +271,7 @@ do iel = 1, ncel
          rhoaero(4) = 1.77d3
 
          ! coefficient for Kelvin effect: coefa [/m]
-         coefa = 2.d0*tauvw/(rhoeau*rvap*tempk)
+         coefa = 2.d0*tauvw/(rhowater*rvap*tempk)
 
          ! FIXME
          ! cf pruppacher and klett 1997 (reprinted correction 2000) (6-28)
@@ -283,7 +285,7 @@ do iel = 1, ncel
                    / mmaero(ii)
            dencb = dencb + fraero(ii)/rhoaero(ii)
          enddo
-         coefb = mmh2o*numcb/(dencb*rhoeau)
+         coefb = mmh2o*numcb/(dencb*rhowater)
 
          ! supersaturation [-]
          sursat1 = (2./sqrt(coefb))*((coefa/3./rayonm1)**(1.5))
@@ -326,9 +328,9 @@ do iel = 1, ncel
          coefzeta = 2.*coefa/3.*sqrt(coefavg)
 
          ! coefficient eta - Ntot [m^(-3)]
-         coefeta1 = (coefavg**1.5d0)/(2.d0*pi*rhoeau*aa2*ntotal1*1.d6)
-         coefeta2 = (coefavg**1.5d0)/(2.d0*pi*rhoeau*aa2*ntotal2*1.d6)
-         coefeta3 = (coefavg**1.5d0)/(2.d0*pi*rhoeau*aa2*ntotal3*1.d6)
+         coefeta1 = (coefavg**1.5d0)/(2.d0*pi*rhowater*aa2*ntotal1*1.d6)
+         coefeta2 = (coefavg**1.5d0)/(2.d0*pi*rhowater*aa2*ntotal2*1.d6)
+         coefeta3 = (coefavg**1.5d0)/(2.d0*pi*rhowater*aa2*ntotal3*1.d6)
 
          ! max supersaturation (smax)
          smax1 = (foncf1*((coefzeta/coefeta1)**1.5d0) +              &
@@ -380,7 +382,7 @@ do iel = 1, ncel
 
    elseif (nc(iel).lt.epzero) then
 
-     nc(iel) = 1.d-6*(3.d0*rom(iel)*qldia(iel))/(4.d0*pi*rhoeau*(10.d-6)**3)
+     nc(iel) = 1.d-6*(3.d0*rom(iel)*qldia(iel))/(4.d0*pi*rhowater*(10.d-6)**3)
 
    endif ! end w > 0
 
