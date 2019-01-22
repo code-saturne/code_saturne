@@ -216,6 +216,146 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
                                        cs_real_t                   values[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         an algebraic technique.
+ *         One assumes that static condensation has been performed and that
+ *         the velocity-block has size 3*n_fc
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_alge(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         a penalization technique (with a large coefficient).
+ *         One assumes that static condensation has been performed and that
+ *         the velocity-block has size 3*n_fc
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_pena(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         a weak penalization technique (Nitsche).
+ *         One assumes that static condensation has not been performed yet and
+ *         that the velocity-block has size 3*(n_fc + 1)
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_weak(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         a weak penalization technique (symmetrized Nitsche).
+ *         One assumes that static condensation has not been performed yet and
+ *         that the velocity-block has size 3*(n_fc + 1)
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_wsym(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a symmetric boundary (treated as a sliding BCs on
+ *         the three velocity components.
+ *         A weak penalization technique (symmetrized Nitsche) is used.
+ *         One assumes that static condensation has not been performed yet and
+ *         that the velocity-block has (n_fc + 1) blocks of size 3x3.
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_symmetry(short int                       f,
+                  const cs_equation_param_t      *eqp,
+                  const cs_cell_mesh_t           *cm,
+                  cs_cell_builder_t              *cb,
+                  cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account a wall BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment.
+ *          Case of vector-valued CDO Face-based schemes
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_fixed_wall(short int                       f,
+                    const cs_equation_param_t      *eqp,
+                    const cs_cell_mesh_t           *cm,
+                    cs_cell_builder_t              *cb,
+                    cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

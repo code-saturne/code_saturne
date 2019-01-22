@@ -144,10 +144,40 @@ typedef struct {
 
   cs_field_t               *divergence;
 
-  /*! \var bf_type
+  /*!
+   * @}
+   * @name Performance monitoring
+   * Monitoring the efficiency of the algorithm used to solve the Navier-Stokes
+   * system
+   * @{
+   *
+   *  \var bf_type
    *  Array of boundary type for each boundary face. (Shared)
    */
+
   const cs_boundary_type_t       *bf_type;
+
+  /*! \var apply_fixed_wall
+   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
+   *  wall boundary (no slip boundary)
+   *
+   *  \var apply_sliding_wall
+   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
+   *  wall boundary (a tangential velocity is specified at the wall)
+   *
+   *  \var apply_velocity_inlet
+   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
+   *  boundary with a fixed velocity at the inlet
+   *
+   *  \var apply_symmetry
+   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
+   *  symmetry boundary
+   */
+
+  cs_cdo_apply_boundary_t        *apply_fixed_wall;
+  cs_cdo_apply_boundary_t        *apply_sliding_wall;
+  cs_cdo_apply_boundary_t        *apply_velocity_inlet;
+  cs_cdo_apply_boundary_t        *apply_symmetry;
 
   /*!
    * @}
@@ -798,82 +828,85 @@ _build_shared_structures(void)
  * \brief   Apply the boundary conditions to the local system when this should
  *          be done before the static condensation
  *
- * \param[in]      time_eval   time at which one performs the evaluation
+ * \param[in]      sc          pointer to a cs_cdofb_monolithic_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
- * \param[in, out] fm          pointer to a facewise view of the mesh
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
- * \param[in, out] divop       array with the divergence op. values
- * \param[in, out] mass_rhs    rhs related to the pressure DoF
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_apply_bc_partly(const cs_real_t                time_eval,
+_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
                  const cs_equation_param_t     *eqp,
                  const cs_cdofb_vecteq_t       *eqc,
                  const cs_cell_mesh_t          *cm,
                  const cs_boundary_type_t      *bf_type,
-                 cs_face_mesh_t                *fm,
                  cs_cell_sys_t                 *csys,
-                 cs_cell_builder_t             *cb,
-                 cs_real_t                     *divop,
-                 cs_real_t                     *mass_rhs)
+                 cs_cell_builder_t             *cb)
 {
-  /* Update the velocity-block and the right-hand side (part related to the
-     momentum equation) */
-  cs_cdofb_vecteq_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
+  CS_UNUSED(eqc);
+  assert(cs_equation_param_has_diffusion(eqp) == true);
 
-  /* Update the divergence operator and the right-hand side related to the
-     mass equation */
   if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    /* Weakly enforced Dirichlet BCs for cells attached to the boundary csys is
-       updated inside (matrix and rhs). Add contribution related to the pressure
-       arising from the Dirichlet BCs */
-    if (cs_equation_param_has_diffusion(eqp)) {
+    /* Update the velocity-block and the right-hand side (part related to the
+     * momentum equation). */
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-          eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-        for (short int i = 0; i < csys->n_bc_faces; i++) {
+    /* Neumann boundary conditions */
+    if (csys->has_nhmg_neumann)
+      for (short int f  = 0; f < 3*cm->n_fc; f++)
+        csys->rhs[f] += csys->neu_values[f];
 
-          /* Get the boundary face in the cell numbering */
-          const short int  f = csys->_f_ids[i];
+    for (short int i = 0; i < csys->n_bc_faces; i++) {
 
-          if (bf_type[i] == CS_BOUNDARY_WALL) {
+      /* Get the boundary face in the cell numbering */
+      const short int  f = csys->_f_ids[i];
 
-            for (int k = 0; k < 3; k++) divop[3*f+k] = 0.;
+      switch (bf_type[i]) {
 
-          }
-          else if (bf_type[i] == CS_BOUNDARY_INLET) {
-
-            mass_rhs[0] -= cs_math_3_dot_product(csys->dir_values + 3*f,
-                                                 divop + 3*f);
-            for (int k = 0; k < 3; k++) divop[3*f+k] = 0.;
-
-          }
-
-        } /* Loop on boundary faces */
-      } /* Nitsche kind */
-
-    } /* Has diffusion */
-
-    if (csys->has_sliding) {
-      for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-        /* Get the boundary face in the cell numbering */
-        const short int  f = csys->_f_ids[i];
-
-        if (cs_cdo_bc_is_sliding(csys->bf_flag[f])) {
-          for (int k = 0; k < 3; k++) divop[3*f+k] = 0.;
+      case CS_BOUNDARY_INLET:
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+          sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
         }
+        break;
 
-      } /* Loop on boundary faces */
-    } /* Sliding BC */
+      case CS_BOUNDARY_SLIDING_WALL:
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+          sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+        }
+        break;
 
+      case CS_BOUNDARY_WALL:
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+          sc->apply_fixed_wall(f, eqp, cm, cb, csys);
+        }
+        break;
+
+      case CS_BOUNDARY_SYMMETRY:
+        /* Always weakly enforce the symmetric constraint on the
+           velocity-block */
+        sc->apply_symmetry(f, eqp, cm, cb, csys);
+        break;
+
+      default: /* Nothing to do */
+        /* Remark: Case of a "natural" outlet */
+        break;
+
+      } /* End of switch */
+
+    } /* Loop on boundary faces */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump(">> Local system matrix after partial BC enforcement",
+                       csys);
+#endif
   } /* Boundary cell */
 }
 
@@ -882,63 +915,107 @@ _apply_bc_partly(const cs_real_t                time_eval,
  * \brief   Apply the boundary conditions to the local system when this should
  *          be done after the static condensation
  *
+ * \param[in]      sc          pointer to a cs_cdofb_monolithic_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] fm          pointer to a facewise view of the mesh
+ * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
- * \param[in, out] divop       array with the divergence op. values
+ * \param[in, out] div_op      array with the divergence op. values
  * \param[in, out] mass_rhs    pointer to the rhs for the mass eq. in this cell
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_apply_remaining_bc(const cs_equation_param_t     *eqp,
+_apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
+                    const cs_equation_param_t     *eqp,
                     const cs_cdofb_vecteq_t       *eqc,
                     const cs_cell_mesh_t          *cm,
-                    cs_face_mesh_t                *fm,
+                    const cs_boundary_type_t      *bf_type,
                     cs_cell_sys_t                 *csys,
                     cs_cell_builder_t             *cb,
-                    cs_real_t                     *divop,
+                    cs_real_t                     *div_op,
                     cs_real_t                     *mass_rhs)
 {
-  /* Update the velocity-block and the right-hand side */
-  cs_cdofb_vecteq_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
-
-  /* Enforcement of the Dirichlet BCs */
-  if (csys->has_dirichlet == false)
-    return;  /* Nothing to do */
-
-  /* Update the divergence operator */
   if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-    /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-       csys is updated inside (matrix and rhs) */
-    if (cs_equation_param_has_diffusion(eqp)) {
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-          eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+    /* Update the divergence operator and the right-hand side related to the
+     * mass equation.
+     * Enforcement of Dirichlet BC in a stronger way if this is the choice
+     */
+    for (short int i = 0; i < csys->n_bc_faces; i++) {
 
-        /* Add contribution related to the pressure arising from tthe Dirichlet
-           BCs */
-        for (short int i = 0; i < csys->n_bc_faces; i++) {
+      /* Get the boundary face in the cell numbering */
+      const short int  f = csys->_f_ids[i];
 
-          /* Get the boundary face in the cell numbering */
-          const short int  f = csys->_f_ids[i];
+      switch (bf_type[i]) {
 
-          if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
+      case CS_BOUNDARY_INLET:
+        /* Update mass RHS from the knowledge of the mass flux
+         * TODO: multiply by rho */
+        mass_rhs[0] -= cs_math_3_dot_product(csys->dir_values + 3*f,
+                                             div_op + 3*f);
 
-            mass_rhs[0] -= cs_math_3_dot_product(csys->dir_values + 3*f,
-                                                 divop + 3*f);
-            for (int k = 0; k < 3; k++) divop[3*f+k] = 0;
-          }
+        /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
+        for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
 
-        } /* Loop boundary faces */
+        /* Enforcement of the velocity for the velocity-block
+         * Dirichlet on the three components of the velocity field */
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+          sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
+        }
+        break;
 
-      } /* Algebraic or penalized*/
-    } /* Has diffusion */
+      case CS_BOUNDARY_SLIDING_WALL:
+        /* No need to update the mass RHS since there is no mass flux */
+
+        /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
+        for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
+
+        /* Enforcement of the velocity for the velocity-block
+         * Dirichlet on the three components of the velocity field */
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+          sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+        }
+        break;
+
+      case CS_BOUNDARY_WALL:
+        /* No need to update the mass RHS since there is no mass flux */
+
+        /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
+        for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
+
+        /* Enforcement of the velocity for the velocity-block
+         * Dirichlet on the three components of the velocity field */
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+          sc->apply_fixed_wall(f, eqp, cm, cb, csys);
+        }
+        break;
+
+      case CS_BOUNDARY_SYMMETRY:
+
+        /* No need to update the mass RHS since there is no mass flux */
+
+        /* Weak-enforcement for the velocity-block (cf. _apply_bc_partly) */
+
+        /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
+        for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
+
+        break;
+
+      default: /* Nothing to do */
+        /* Remark: Case of a "natural" outlet */
+        break;
+
+      } /* End of switch */
+
+    } /* Loop boundary faces */
+
   } /* Boundary cell */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -949,7 +1026,7 @@ _apply_remaining_bc(const cs_equation_param_t     *eqp,
  *
  * \param[in]        csys              pointer to a cs_cell_sys_t structure
  * \param[in]        cm                pointer to a cs_cell_mesh_t structure
- * \param[in]        divop             array with the divergence op. values
+ * \param[in]        div_op            array with the divergence op. values
  * \param[in]        has_sourceterm    has the equation a source term?
  * \param[in, out]   mav               pointer to cs_matrix_assembler_values_t
  * \param[in, out]   rhs               right-end side of the system
@@ -960,7 +1037,7 @@ _apply_remaining_bc(const cs_equation_param_t     *eqp,
 static void
 _assemble(const cs_cell_sys_t            *csys,
           const cs_cell_mesh_t           *cm,
-          const cs_real_t                *divop,
+          const cs_real_t                *div_op,
           const bool                      has_sourceterm,
           cs_matrix_assembler_values_t   *mav,
           cs_real_t                       rhs[],
@@ -1040,7 +1117,7 @@ _assemble(const cs_cell_sys_t            *csys,
 
       r_gids[bufsize] = bi_gids[ii];
       c_gids[bufsize] = p_gid;
-      values[bufsize] = divop[3*bi+ii];
+      values[bufsize] = div_op[3*bi+ii];
       bufsize += 1;
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
@@ -1052,7 +1129,7 @@ _assemble(const cs_cell_sys_t            *csys,
       /* Its transposed B_x, B_y, B_z */
       r_gids[bufsize] = p_gid;
       c_gids[bufsize] = bi_gids[ii];
-      values[bufsize] = divop[3*bi+ii];
+      values[bufsize] = div_op[3*bi+ii];
       bufsize += 1;
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
@@ -1256,21 +1333,63 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n", __func__);
 
-  /* Cast the coupling context (CC) */
-  cs_navsto_monolithic_t  *cc = (cs_navsto_monolithic_t  *)nsc_input;
-
   /* Navier-Stokes scheme context (SC) */
   cs_cdofb_monolithic_t  *sc = NULL;
 
   BFT_MALLOC(sc, 1, cs_cdofb_monolithic_t);
 
+  /* Cast the coupling context (CC) */
+  cs_navsto_monolithic_t  *cc = (cs_navsto_monolithic_t  *)nsc_input;
+  cs_equation_t  *mom_eq = cc->momentum;
+  cs_equation_param_t *mom_eqp = mom_eq->param;
+
   sc->coupling_context = cc; /* shared with cs_navsto_system_t */
 
-  sc->bf_type = bf_type;
-
+  /* Quick access to the main fields */
   sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
   sc->divergence = cs_field_by_name("velocity_divergence");
+
+  /* Boundary treatment */
+  sc->bf_type = bf_type;
+
+  /* Set the way to enforce the Dirichlet BC on the velocity
+   * "fixed_wall" means a no-slip BC
+   */
+  sc->apply_symmetry = cs_cdofb_symmetry;
+
+  switch (mom_eqp->enforcement) {
+
+  case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+    sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_alge;
+    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
+    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_PENALIZED:
+    sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_pena;
+    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_pena;
+    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_pena;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_weak;
+    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_weak;
+    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_weak;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_wsym;
+    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_wsym;
+    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_wsym;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of algorithm to enforce Dirichlet BC.",
+              __func__);
+
+  }
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(sc->timer);
@@ -1592,8 +1711,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(time_eval, mom_eqp, mom_eqc, cm, bf_type, fm, csys, cb,
-                       div_op, mass_rhs + c_id);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, bf_type, csys, cb);
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -1616,8 +1734,8 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _apply_remaining_bc(mom_eqp, mom_eqc, cm, fm, csys, cb,
-                          div_op, mass_rhs + c_id);
+      _apply_remaining_bc(sc, mom_eqp, mom_eqc, cm, bf_type, csys, cb, div_op,
+                          mass_rhs + c_id);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1633,6 +1751,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
     /* Free temporary buffer */
     BFT_FREE(div_op);
+    BFT_FREE(bf_type);
 
   } /* OPENMP Block */
 

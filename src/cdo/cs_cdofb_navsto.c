@@ -54,6 +54,7 @@
 #include "cs_navsto_coupling.h"
 #include "cs_navsto_param.h"
 #include "cs_post.h"
+#include "cs_sdm.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -90,6 +91,9 @@ BEGIN_C_DECLS
 
 #define CS_CDOFB_NAVSTO_DBG      0
 
+/* Redefined the name of functions from cs_math to get shorter names */
+#define _dp3  cs_math_3_dot_product
+
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -97,6 +101,64 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute \f$ \int_{fb} \nabla (u) \cdot \nu_{fb} v \f$ where \p fb
+ *         is a boundary face (Co+St algorithm)
+ *
+ * \param[in]       fb        index of the boundary face on the local numbering
+ * \param[in]       beta      value of coefficient in front of the STAB part
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       kappa_f   diffusion property against face vector for all
+ *                            faces
+ * \param[in, out]  ntrgrd    pointer to a local matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_normal_flux_reco(short int                  fb,
+                  const double               beta,
+                  const cs_cell_mesh_t      *cm,
+                  const cs_real_3_t         *kappa_f,
+                  cs_sdm_t                  *ntrgrd)
+{
+  /* Sanity check */
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+                      CS_CDO_LOCAL_HFQ));
+  assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
+
+  const short int  nfc = cm->n_fc;
+  const cs_quant_t  pfbq = cm->face[fb];
+  const cs_nvec3_t  debq = cm->dedge[fb];
+
+  /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
+  const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
+  const cs_real_t  beta_fbkfb_o_pfc = beta * fb_k_fb / cm->pfc[fb];
+  const cs_real_t  ov_vol = 1./cm->vol_c;
+
+  cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
+  cs_real_t  row_sum = 0.0;
+  for (short int f = 0; f < nfc; f++) {
+
+    const cs_real_t  if_ov = ov_vol * cm->f_sgn[f];
+    const cs_real_t  f_k_fb = pfbq.meas * _dp3(kappa_f[f], pfbq.unitv);
+    const cs_quant_t  pfq = cm->face[f];
+
+    cs_real_t  stab = -pfq.meas*debq.meas * _dp3(debq.unitv, pfq.unitv);
+    if (f == fb) stab += cm->vol_c;
+
+    const cs_real_t  int_gradf_dot_f = if_ov *
+      ( f_k_fb                        /* Cons */
+        + beta_fbkfb_o_pfc * stab);   /* Stab */
+    ntrgrd_fb[f] -= int_gradf_dot_f;  /* Minus because -du/dn */
+    row_sum      += int_gradf_dot_f;
+
+  } /* Loop on f */
+
+  /* Cell column */
+  ntrgrd_fb[nfc] += row_sum;
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -364,5 +426,486 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         an algebraic technique.
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_alge(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(eqp);
+  CS_UNUSED(cm);
+
+  double  *x_dir = cb->values;
+  double  *ax_dir = cb->values + 3;
+  cs_sdm_t  *m = csys->mat;
+  cs_sdm_block_t  *bd = m->block_desc;
+  assert(bd != NULL);
+  assert(bd->n_row_blocks == cm->n_fc || bd->n_row_blocks == cm->n_fc + 1);
+
+  /* Build x_dir */
+  _Bool  is_non_homogeneous = true;
+
+  memset(cb->values, 0, 6*sizeof(double));
+
+  for (int k = 0; k < 3; k++) {
+    if (csys->dof_flag[3*f+k] & CS_CDO_BC_DIRICHLET) {
+      x_dir[k] = csys->dir_values[3*f+k];
+      is_non_homogeneous = true;
+    }
+  }
+
+  if (is_non_homogeneous) {
+
+    for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+      if (bi == f)
+        continue;
+
+      cs_real_t  *_rhs = csys->rhs + 3*bi;
+      cs_sdm_t  *mIF = cs_sdm_get_block(m, bi, f);
+
+      cs_sdm_square_matvec(mIF, x_dir, ax_dir);
+      for (int k = 0; k < 3; k++) _rhs[k] -= ax_dir[k];
+
+    }
+
+  } /* Non-homogeneous Dirichlet BC */
+
+  /* Set RHS to the Dirichlet value for the related face */
+  for (int k = 0; k < 3; k++)
+    csys->rhs[3*f+k] = x_dir[k];
+
+  /* Second pass: Replace the Dirichlet block by a diagonal block and fill with
+   * zero the remaining row and column */
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    if (bi != f) {
+
+      /* Reset block (I,F) which is a 3x3 block */
+      cs_sdm_t  *mIF = cs_sdm_get_block(m, bi, f);
+      memset(mIF->val, 0, 9*sizeof(double));
+
+    }
+    else { /* bi == f */
+
+      /* Reset block (I==F,J) which is a 3x3 block */
+      for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+        cs_sdm_t  *mFJ = cs_sdm_get_block(m, f, bj);
+        memset(mFJ->val, 0, 9*sizeof(double));
+      }
+
+      cs_sdm_t  *mFF = cs_sdm_get_block(m, f, f);
+      assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+      for (int k = 0; k < 3; k++)
+        mFF->val[4*k] = 1; /* 4 == mFF->n_rows + 1 */
+
+    }
+
+  } /* Block bi */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         a penalization technique (with a large coefficient).
+ *         One assumes that static condensation has been performed and that
+ *         the velocity-block has size 3*n_fc
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_pena(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(cm);
+  assert(cm != NULL && csys != NULL);
+
+  cs_sdm_t  *m = csys->mat;
+  cs_sdm_block_t  *bd = m->block_desc;
+  assert(bd != NULL);
+  assert(bd->n_row_blocks == cm->n_fc);
+
+  const cs_flag_t  *_flag = csys->dof_flag + 3*f;
+  const cs_real_t  *_dir_val = csys->dir_values + 3*f;
+
+  _Bool  is_non_homogeneous = true;
+  for (int k = 0; k < 3; k++) {
+    if (_flag[k] & CS_CDO_BC_DIRICHLET)
+      is_non_homogeneous = true;
+  }
+
+  /* Penalize diagonal entry (and its rhs if needed) */
+  cs_sdm_t  *mFF = cs_sdm_get_block(m, f, f);
+  assert((mFF->n_rows == 3) &&  (mFF->n_cols == 3));
+
+  if (is_non_homogeneous) {
+
+    cs_real_t  *_rhs = csys->rhs + 3*f;
+    for (int k = 0; k < 3; k++) {
+      mFF->val[4*k] += eqp->bc_penalization_coeff; /* 4 == mFF->n_rows + 1 */
+      _rhs[k] += _dir_val[k] * eqp->bc_penalization_coeff;
+    }
+
+  }
+  else {
+
+    for (int k = 0; k < 3; k++)
+      mFF->val[4*k] += eqp->bc_penalization_coeff; /* 4 == mFF->n_rows + 1 */
+
+  } /* Homogeneous BC */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         a weak penalization technique (Nitsche).
+ *         One assumes that static condensation has not been performed yet and
+ *         that the velocity-block has size 3*(n_fc + 1)
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_weak(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys)
+{
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  assert(cs_equation_param_has_diffusion(eqp));
+  assert(h_info.is_iso == true);
+
+  /* 0) Pre-compute the product between diffusion property and the
+     face vector areas */
+  cs_real_3_t  *kappa_f = cb->vectors;
+  for (short int i = 0; i < cm->n_fc; i++) {
+    const cs_real_t  coef = cm->face[i].meas*cb->dpty_val;
+    for (short int k = 0; k < 3; k++)
+      kappa_f[i][k] = coef * cm->face[i].unitv[k];
+  }
+
+  /* 1) Build the bc_op matrix (scalar-valued version) */
+
+  /* Initialize the matrix related to the flux reconstruction operator */
+  const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
+  cs_sdm_t *bc_op = cb->loc;
+  cs_sdm_square_init(n_dofs, bc_op);
+
+  /* Compute \int_f du/dn v and update the matrix */
+  _normal_flux_reco(f, h_info.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+
+  /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
+
+  /* coeff * \meas{f} / h_f  */
+  const cs_real_t pcoef = eqp->bc_penalization_coeff * sqrt(cm->face[f].meas);
+
+  bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
+
+  for (short int k = 0; k < 3; k++)
+    csys->rhs[3*f + k] += pcoef * csys->dir_values[3*f + k];
+
+  /* 3) Update the local system matrix */
+  for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
+    for (int bj = 0; bj < n_dofs; bj++) {
+
+      /* Retrieve the 3x3 matrix */
+      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+      const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
+      /* Update diagonal terms only */
+      bij->val[0] += _val;
+      bij->val[4] += _val;
+      bij->val[8] += _val;
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a Dirichlet BCs on the three velocity components.
+ *         For instance for a velocity inlet boundary or a wall
+ *         Handle the velocity-block in the global algebraic system in case of
+ *         a weak penalization technique (symmetrized Nitsche).
+ *         One assumes that static condensation has not been performed yet and
+ *         that the velocity-block has size 3*(n_fc + 1)
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_block_dirichlet_wsym(short int                       f,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cell_mesh_t           *cm,
+                              cs_cell_builder_t              *cb,
+                              cs_cell_sys_t                  *csys)
+{
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  assert(cs_equation_param_has_diffusion(eqp));
+  assert(h_info.is_iso == true);
+
+  /* 0) Pre-compute the product between diffusion property and the
+     face vector areas */
+  cs_real_3_t  *kappa_f = cb->vectors;
+  for (short int i = 0; i < cm->n_fc; i++) {
+    const cs_real_t  coef = cm->face[i].meas*cb->dpty_val;
+    for (short int k = 0; k < 3; k++)
+      kappa_f[i][k] = coef * cm->face[i].unitv[k];
+  }
+
+  /* 1) Build the bc_op matrix (scalar-valued version) */
+
+  /* Initialize the matrix related to the flux reconstruction operator */
+  const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
+  cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
+  cs_sdm_square_init(n_dofs, bc_op);
+
+  /* Compute \int_f du/dn v and update the matrix */
+  _normal_flux_reco(f, h_info.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+
+  /* 2) Update the bc_op matrixand the RHS with the Dirichlet values */
+
+  /* Update bc_op = bc_op + transp and transp = transpose(bc_op)
+     cb->loc plays the role of the flux operator */
+  cs_sdm_square_add_transpose(bc_op, bc_op_t);
+
+  /* Update the RHS with bc_op_t*dir_face */
+  for (short int k = 0; k < 3; k++) {
+
+    /* Only this value is not zero (simplify the matvec operation) */
+    const cs_real_t  dir_f = csys->dir_values[3*f+k];
+    for (short int i = 0; i < n_dofs; i++)
+      csys->rhs[3*i+k] += bc_op_t->val[i*n_dofs+f] * dir_f;
+
+  } /* Loop on components */
+
+  /* 3) Update the bc_op matrix and the RHS with the penalization */
+
+  /* coeff * \meas{f} / h_f  */
+  const cs_real_t pcoef = eqp->bc_penalization_coeff * sqrt(cm->face[f].meas);
+
+  bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
+
+  for (short int k = 0; k < 3; k++)
+    csys->rhs[3*f + k] += pcoef * csys->dir_values[3*f + k];
+
+  /* 4) Update the local system matrix */
+  for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
+    for (int bj = 0; bj < n_dofs; bj++) {
+
+      /* Retrieve the 3x3 matrix */
+      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+      const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
+      /* Update diagonal terms only */
+      bij->val[0] += _val;
+      bij->val[4] += _val;
+      bij->val[8] += _val;
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account a symmetric boundary (treated as a sliding BCs on
+ *         the three velocity components.
+ *         A weak penalization technique (symmetrized Nitsche) is used.
+ *         One assumes that static condensation has not been performed yet and
+ *         that the velocity-block has (n_fc + 1) blocks of size 3x3.
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_symmetry(short int                       f,
+                  const cs_equation_param_t      *eqp,
+                  const cs_cell_mesh_t           *cm,
+                  cs_cell_builder_t              *cb,
+                  cs_cell_sys_t                  *csys)
+{
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(cs_equation_param_has_diffusion(eqp));
+
+  /* 0) Pre-compute the product between diffusion property and the
+     face vector areas */
+  cs_real_3_t  *kappa_f = cb->vectors;
+  for (short int i = 0; i < cm->n_fc; i++) {
+    const cs_real_t  coef = cm->face[i].meas*cb->dpty_val;
+    for (short int k = 0; k < 3; k++)
+      kappa_f[i][k] = coef * cm->face[i].unitv[k];
+  }
+
+  /* Initialize the matrix related this flux reconstruction operator */
+  const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
+  cs_sdm_t *bc_op = cb->hdg;
+  cs_sdm_square_init(n_dofs, bc_op);
+
+  /* Compute \int_f du/dn v and update the matrix */
+  _normal_flux_reco(f, h_info.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+
+  /* 2) Update the bc_op matrix and nothing done to the RHS since a sliding
+     means homogeneous Dirichlet values on the normal component and hommogeneous
+     Neumann on the tangential flux */
+
+  const cs_quant_t  pfq = cm->face[f];
+  const cs_real_t  *nf = pfq.unitv;
+  const cs_real_33_t  nf_nf = { {nf[0]*nf[0], nf[0]*nf[1], nf[0]*nf[2]},
+                                {nf[1]*nf[0], nf[1]*nf[1], nf[1]*nf[2]},
+                                {nf[2]*nf[0], nf[2]*nf[1], nf[2]*nf[2]} };
+
+  /* chi * \meas{f} / h_f  */
+  const cs_real_t  pcoef = eqp->bc_penalization_coeff * sqrt(pfq.meas);
+
+  /* Handle the diagonal block: Retrieve the 3x3 matrix */
+  cs_sdm_t  *bFF = cs_sdm_get_block(csys->mat, f, f);
+  assert(bFF->n_rows == bFF->n_cols && bFF->n_rows == 3);
+
+  const cs_real_t  _val = pcoef + 2*bc_op->val[f*(n_dofs+1)];
+  for (short int k = 0; k < 3; k++) {
+    bFF->val[3*k  ] += nf_nf[0][k] * _val;
+    bFF->val[3*k+1] += nf_nf[1][k] * _val;
+    bFF->val[3*k+2] += nf_nf[2][k] * _val;
+  }
+
+  for (short int xj = 0; xj < n_dofs; xj++) {
+
+    if (xj == f)
+      continue;
+
+    /* It should be done both for face- and cell-defined DoFs */
+    /* Retrieve the 3x3 matrix */
+    cs_sdm_t  *bFJ = cs_sdm_get_block(csys->mat, f, xj);
+    assert(bFJ->n_rows == bFJ->n_cols && bFJ->n_rows == 3);
+    cs_sdm_t  *bJF = cs_sdm_get_block(csys->mat, xj, f);
+    assert(bJF->n_rows == bJF->n_cols && bJF->n_rows == 3);
+
+    const cs_real_t  op_fj = bc_op->val[n_dofs*f  + xj];
+    const cs_real_t  op_jf = bc_op->val[n_dofs*xj + f];
+    const cs_real_t  _val = op_fj + op_jf;
+
+    for (int k = 0; k < 3; k++) {
+
+      bFJ->val[3*k  ] += nf_nf[0][k] * _val;
+      bFJ->val[3*k+1] += nf_nf[1][k] * _val;
+      bFJ->val[3*k+2] += nf_nf[2][k] * _val;
+
+      /* nf_nf is symmetric */
+      bJF->val[3*k  ] += nf_nf[0][k] * _val;
+      bJF->val[3*k+1] += nf_nf[1][k] * _val;
+      bJF->val[3*k+2] += nf_nf[2][k] * _val;
+
+    }
+
+  } /* Loop on xj */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account a wall BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment.
+ *          Case of vector-valued CDO Face-based schemes
+ *
+ * \param[in]       f         face id in the cell mesh numbering
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_fixed_wall(short int                       f,
+                    const cs_equation_param_t      *eqp,
+                    const cs_cell_mesh_t           *cm,
+                    cs_cell_builder_t              *cb,
+                    cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(cb);
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  const cs_quant_t  pfq = cm->face[f];
+  const cs_real_t  *ni = pfq.unitv;
+  const cs_real_t  ni_ni[9] = { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
+                                ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
+                                ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
+
+  /* chi * \meas{f} / h_f  */
+  const cs_real_t  pcoef = eqp->bc_penalization_coeff * sqrt(pfq.meas);
+
+  cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, f, f);
+  assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);
+
+  for (short int k = 0; k < 9; k++)
+    bii->val[k] += pcoef * ni_ni[k];
+}
+
+/*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

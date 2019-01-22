@@ -52,6 +52,26 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Apply a boundary condition for a given face (inlet, outlet, wall,
+ *         sliding wall, symmetry...)
+ *
+ * \param[in]       f       face id in the cell mesh numbering
+ * \param[in]       eqp     pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  cb      pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys    structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdo_apply_boundary_t)(short int                     f,
+                          const cs_equation_param_t    *eqp,
+                          const cs_cell_mesh_t         *cm,
+                          cs_cell_builder_t            *cb,
+                          cs_cell_sys_t                *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Enforcement of a boundary condition (Dirichlet, Robin, sliding...)
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
