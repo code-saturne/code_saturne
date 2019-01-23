@@ -206,6 +206,10 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   navsto->adv_field = cs_advection_field_add("velocity_field",
                                              CS_ADVECTION_FIELD_NAVSTO);
 
+  /* Normal flux at the boundary faces */
+  cs_advection_field_set_option(navsto->adv_field,
+                                CS_ADVKEY_DEFINE_AT_BOUNDARY_FACES);
+
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
   cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
@@ -718,9 +722,10 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
   CS_UNUSED(connect);
 
   cs_navsto_system_t  *ns = cs_navsto_system;
-  const cs_navsto_param_t *nsp = ns->param;
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  const cs_navsto_param_t *nsp = ns->param;
   assert(nsp != NULL);
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
     bft_error(__FILE__, __LINE__, 0,
@@ -747,13 +752,17 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
      face velocity this is only available for Fb schemes and should be done
      after initializing the context structure */
   cs_real_t *face_vel = NULL;
+  cs_field_t  *bd_nflux = NULL;
 
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_MONOLITHIC:
   case CS_NAVSTO_COUPLING_UZAWA:
-    face_vel = cs_equation_get_face_values(cs_equation_by_name("momentum"));
+    {
+      cs_equation_t  *mom_eq = cs_equation_by_name("momentum");
+      face_vel = cs_equation_get_face_values(mom_eq);
+    }
     break;
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
@@ -770,6 +779,11 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
   cs_advection_field_def_by_array(ns->adv_field, loc_flag, face_vel,
                                   false, /* the advection field is not owner */
                                   NULL);
+
+  /* Assign the velocity boundary flux to the boundary flux for the advection
+     field*/
+  if (bd_nflux != NULL)
+    ns->adv_field->bdy_field_id = bd_nflux->id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -777,12 +791,14 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
  * \brief  Build, solve and update the Navier-Stokes system in case of a
  *         steady-state approach
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh)
+cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
+                                      const cs_time_step_t   *time_step)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
@@ -794,33 +810,81 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh)
   if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
     ns->compute_steady(mesh, ns->param, ns->scheme_context);
 
-  /* TODO: Update the variable states */
+  /* Retrieve the boundary velocity flux (mass flux) and perform the update */
+  cs_field_t  *nflx
+    = cs_advection_field_get_field(ns->adv_field,
+                                   CS_MESH_LOCATION_BOUNDARY_FACES);
 
+  assert(nflx != NULL);
+  cs_advection_field_across_boundary(ns->adv_field,
+                                     time_step->t_cur,
+                                     nflx->val);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build, solve and update the Navier-Stokes system
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t       *mesh)
+cs_navsto_system_compute(const cs_mesh_t         *mesh,
+                         const cs_time_step_t    *time_step)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  if (ns->param->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
+  const cs_navsto_param_t  *nsp = ns->param;
+  if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
     return;
 
   /* Build and solve the Navier-Stokes system */
-  ns->compute(mesh, ns->param, ns->scheme_context);
+  ns->compute(mesh, nsp, ns->scheme_context);
+  /* Retrieve the boundary velocity flux (mass flux) and perform the update */
+  cs_field_t  *nflx
+    = cs_advection_field_get_field(ns->adv_field,
+                                   CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  /* TODO: Update the variable states */
+  assert(nflx != NULL);
+  cs_advection_field_across_boundary(ns->adv_field, time_step->t_cur,
+                                     nflx->val);
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations for the Navier-Stokes system
+ *
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_extra_op(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *cdoq)
+{
+  cs_navsto_system_t  *navsto = cs_navsto_system;
+
+  if (navsto == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  const cs_navsto_param_t  *nsp = navsto->param;
+
+  switch (nsp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOFB:
+    cs_cdofb_navsto_extra_op(nsp, cdoq, connect, navsto->adv_field);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
+    break;
+
+  } /* End of switch */
 }
 
 /*----------------------------------------------------------------------------*/

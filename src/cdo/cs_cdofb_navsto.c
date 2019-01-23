@@ -53,6 +53,7 @@
 #include "cs_math.h"
 #include "cs_navsto_coupling.h"
 #include "cs_navsto_param.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_sdm.h"
 #include "cs_timer.h"
@@ -423,6 +424,153 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     values[c_id] = values[c_id] / cv[c_id] - g_avg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Perform extra-operation related to Fb schemes when solving
+ *         Navier-Stokes.
+ *         - Compute the mass flux accross the boundaries.
+ *
+ * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_adv_field_t        *adv_field)
+{
+  CS_UNUSED(connect);
+
+  const cs_boundary_t  *boundaries = nsp->boundaries;
+
+  /* Retrieve the boundary velocity flux (mass flux) */
+  cs_field_t  *nflx
+    = cs_advection_field_get_field(adv_field, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  /* Retrieve the face velocity values (also possible to retrieve it from the
+     advection field -- through the input member of the cs_xdef_t structure) */
+  cs_real_t *face_vel = NULL;
+
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+  case CS_NAVSTO_COUPLING_UZAWA:
+    face_vel = cs_equation_get_face_values(cs_equation_by_name("momentum"));
+    break;
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_PROJECTION:
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling algorithm",
+              __func__);
+    break;
+  }
+
+  assert(face_vel != NULL);
+
+  /* 1. Compute for each boundary the integrated flux */
+  _Bool  *belong_to_default = NULL;
+  BFT_MALLOC(belong_to_default, quant->n_b_faces, _Bool);
+# pragma omp parallel for if  (quant->n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
+    belong_to_default[i] = true;
+
+  cs_real_t  *boundary_fluxes = NULL;
+  BFT_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
+  memset(boundary_fluxes, 0, (boundaries->n_boundaries + 1)*sizeof(cs_real_t));
+
+  for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
+
+    const cs_zone_t  *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
+
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+      const cs_lnum_t  bf_id = z->elt_ids[i];
+      belong_to_default[bf_id] = false;
+      boundary_fluxes[b_id] += nflx->val[bf_id];
+    }
+
+  } /* Loop on domain boundaries */
+
+  /* Update the flux through the default boundary */
+  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++) {
+    if (belong_to_default[i])
+      boundary_fluxes[boundaries->n_boundaries] += nflx->val[i];
+  }
+
+  /* Parallel synchronization if needed */
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
+
+  /* Output result */
+  cs_log_printf(CS_LOG_DEFAULT,
+                "--- Balance of the mass flux across the boundaries:\n");
+
+  for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
+
+    const cs_zone_t  *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
+
+    switch (boundaries->types[b_id]) {
+    case CS_BOUNDARY_WALL:
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+                    "Wall", z->name, boundary_fluxes[b_id]);
+      break;
+    case CS_BOUNDARY_SLIDING_WALL:
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+                    "Sliding_wall", z->name, boundary_fluxes[b_id]);
+      break;
+    case CS_BOUNDARY_INLET:
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+                    "Inlet", z->name, boundary_fluxes[b_id]);
+      break;
+    case CS_BOUNDARY_OUTLET:
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+                    "Outlet", z->name, boundary_fluxes[b_id]);
+      break;
+    case CS_BOUNDARY_SYMMETRY:
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+                    "Symmetry", z->name, boundary_fluxes[b_id]);
+      break;
+    default:
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n"
+                    "Other", z->name, boundary_fluxes[b_id]);
+      break;
+
+    } /* End of switch */
+
+  } /* Loop on boundaries */
+
+  /* Default boundary */
+  switch (boundaries->default_type) {
+
+  case CS_BOUNDARY_SYMMETRY:
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+                  "Symmetry", "Default boundary",
+                  boundary_fluxes[boundaries->n_boundaries]);
+    break;
+
+  case CS_BOUNDARY_WALL:
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+                  "Wall", "Default boundary",
+                  boundary_fluxes[boundaries->n_boundaries]);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid type of default boundary.\n"
+                " A valid choice is either \"CS_BOUNDARY_WALL\" or"
+                " \"CS_BOUNDARY_SYMMETRY\"."), __func__);
+  }
+
+  /* Free temporary buffers */
+  BFT_FREE(belong_to_default);
+  BFT_FREE(boundary_fluxes);
 }
 
 /*----------------------------------------------------------------------------*/

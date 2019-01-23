@@ -217,6 +217,25 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Perform extra-operation related to Fb schemes when solving
+ *         Navier-Stokes.
+ *         - Compute the mass flux accross the boundaries.
+ *
+ * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_adv_field_t        *adv_field);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Take into account a Dirichlet BCs on the three velocity components.
  *         For instance for a velocity inlet boundary or a wall
  *         Handle the velocity-block in the global algebraic system in case of

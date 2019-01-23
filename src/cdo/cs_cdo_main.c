@@ -219,7 +219,8 @@ _solve_steady_state_domain(cs_domain_t  *domain)
                                 domain->cdo_quantities);
 
   if (cs_navsto_system_is_activated())
-    cs_navsto_system_compute_steady_state(domain->mesh);
+    cs_navsto_system_compute_steady_state(domain->mesh,
+                                          domain->time_step);
 
   /* User-defined equations */
   _compute_steady_user_equations(domain);
@@ -266,7 +267,7 @@ _solve_domain(cs_domain_t  *domain)
                    domain->cdo_quantities);
 
   if (cs_navsto_system_is_activated())
-    cs_navsto_system_compute(domain->mesh);
+    cs_navsto_system_compute(domain->mesh, domain->time_step);
 
   /* User-defined equations */
   _compute_unsteady_user_equations(domain, nt_cur);

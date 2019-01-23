@@ -472,6 +472,10 @@ cs_domain_post(cs_domain_t  *domain,
     if (cs_gwf_is_activated())
       cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
 
+    /* 5. Specific operations for the GWF module */
+    if (cs_navsto_system_is_activated())
+      cs_navsto_system_extra_op(domain->connect, domain->cdo_quantities);
+
   } /* Needs a new log */
 
   /* Predefined extra-operations related to

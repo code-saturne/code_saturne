@@ -360,23 +360,40 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
  * \brief  Build, solve and update the Navier-Stokes system in case of a
  *         steady-state approach
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh);
+cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
+                                      const cs_time_step_t   *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build, solve and update the Navier-Stokes system
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t              *mesh);
+cs_navsto_system_compute(const cs_mesh_t         *mesh,
+                         const cs_time_step_t    *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations for the Navier-Stokes system
+ *
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_extra_op(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
