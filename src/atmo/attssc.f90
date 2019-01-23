@@ -20,13 +20,12 @@
 
 !-------------------------------------------------------------------------------
 !> \file attssc.f90
+!>
 !> \brief Additional right-hand side source terms for scalar equations
-!>    taking into account dry and humid atmospheric variables
-!
-!> \brief Additional right-hand side source terms for scalar equations
-!>   if 1D atmospheric radiative module is used (iatra1 = 1)
-!>    additional source terms
-!>   for the thermal scalar equation to take into account the radiative forcing.
+!> taking into account dry and humid atmospheric variables.
+!> If 1D atmospheric radiative module is used (iatra1 = 1) additional source
+!> terms for the thermal scalar equation to take into account the radiative
+!> forcing.
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -34,7 +33,8 @@
 !______________________________________________________________________________!
 !> \param[in]   iscal           scalar number
 !> \param[in]   crvexp          explicit part of the second term
-!-------------------------------------------------------------------------------
+!_______________________________________________________________________________
+
 subroutine attssc ( iscal, crvexp )
 
 !===============================================================================
