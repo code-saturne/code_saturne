@@ -95,7 +95,8 @@ if test "x$with_medcoupling" != "xno" ; then
 
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 [[#include <MEDCouplingFieldDouble.hxx>
-#include <MEDLoader.hxx>]],
+#include <MEDLoader.hxx>
+#include <MEDFileField1TS.hxx>]],
 [[using namespace MEDCoupling;
   std::string f_name;
   MEDCouplingField *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
