@@ -917,7 +917,6 @@ _apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
  *
  * \param[in]      sc          pointer to a cs_cdofb_monolithic_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -930,7 +929,6 @@ _apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
 static void
 _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
                     const cs_equation_param_t     *eqp,
-                    const cs_cdofb_vecteq_t       *eqc,
                     const cs_cell_mesh_t          *cm,
                     const cs_boundary_type_t      *bf_type,
                     cs_cell_sys_t                 *csys,
@@ -1281,6 +1279,84 @@ _solve_system(cs_sles_t                     *sles,
   BFT_FREE(b);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the linear system and update the velocity fields and the
+ *         pressure field
+ *
+ * \param[in]      sc       scheme context
+ * \param[in]      mom_eq   equation structure related to the momentum
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in, out] mom_rhs  right-hand side for the momentum equation
+ * \param[in, out] mass_rhs right_hand side for the mass equation
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_and_update_fields(const cs_matrix_t             *matrix,
+                           cs_cdofb_monolithic_t         *sc,
+                           cs_equation_t                 *mom_eq,
+                           cs_real_t                     *mom_rhs,
+                           cs_real_t                     *mass_rhs)
+{
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+
+  /* Copy current field values to previous values */
+  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_equation_param_t  *mom_eqp = mom_eq->param;
+  cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+
+  cs_field_t  *pr_fld = sc->pressure;
+  cs_field_t  *vel_fld = sc->velocity;
+
+  cs_timer_t  t_upd = cs_timer_time();
+
+  cs_field_current_to_previous(vel_fld);
+  cs_field_current_to_previous(pr_fld);
+  cs_field_current_to_previous(sc->divergence);
+
+  cs_timer_t  t_tmp = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
+
+  /* Now solve the system */
+  cs_real_t  *vel_f = mom_eqc->face_values;
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+
+  _solve_system(sles, matrix, mom_eqp, vel_f, pr_fld->val, mom_rhs, mass_rhs);
+
+  /* Update pressure, velocity and divergence fields */
+  t_upd = cs_timer_time();
+
+  /* Compute values at cells vel_c from values at faces vel_f
+     vel_c = acc^-1*(RHS - Acf*vel_f) */
+  cs_static_condensation_recover_vector(connect->c2f,
+                                        mom_eqc->rc_tilda,
+                                        mom_eqc->acf_tilda,
+                                        vel_f, vel_fld->val);
+
+  /* Update the divergence of the velocity field */
+  cs_real_t  *div = sc->divergence->val;
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
+                                                quant, connect->c2f, vel_f);
+
+  t_tmp = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
+  cs_dbg_darray_to_listing("VELOCITY", quant->n_faces, vel_f, 9);
+  cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr_fld->val, 9);
+  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
+#endif
+
+  /* Frees */
+  cs_sles_free(sles);
+
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -1537,6 +1613,10 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
   cs_timer_t  t_cmpt = cs_timer_time();
 
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces;
+
   /* Retrieve high-level structures */
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
@@ -1544,19 +1624,10 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
-
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
-
-  cs_real_t  *pr = sc->pressure->val;
-  cs_field_t  *vel_fld = sc->velocity;
-  cs_real_t  *vel_c = vel_fld->val;
+  cs_real_t  *vel_c = sc->velocity->val;
 
   /*----------------------------------------------------------------------------
-   *
    *                      BUILD: START
-   *
    *--------------------------------------------------------------------------*/
 
   const cs_time_step_t *ts = cs_shared_time_step;
@@ -1586,7 +1657,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix,        \
-         mass_rhs, mav, dir_values, vel_c, pr, sc)
+         mass_rhs, mav, dir_values, vel_c, sc)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1645,6 +1716,8 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
                                        csys, cb);
 
       const short int n_fc = cm->n_fc;
+
+      /* Define the local bf_type */
       for (short int i = 0; i < csys->n_bc_faces; i++) {
 
         /* Get the boundary face in the cell numbering */
@@ -1735,7 +1808,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _apply_remaining_bc(sc, mom_eqp, mom_eqc, cm, bf_type, csys, cb, div_op,
+      _apply_remaining_bc(sc, mom_eqp, cm, bf_type, csys, cb, div_op,
                           mass_rhs + c_id);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
@@ -1767,61 +1840,18 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_bld, &t_tmp);
 
   /*----------------------------------------------------------------------------
-   *
    *                      BUILD: END
-   *
    *--------------------------------------------------------------------------*/
 
-  /* Copy current field values to previous values */
-  cs_timer_t t_upd = cs_timer_time();
-
-  cs_field_current_to_previous(vel_fld);
-  cs_field_current_to_previous(sc->pressure);
-  cs_field_current_to_previous(sc->divergence);
-
-  t_tmp = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
-
-  /* Now solve the system */
-  cs_real_t *vel_f = mom_eqc->face_values;
-  cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
-  _solve_system(sles, matrix, mom_eqp, vel_f, pr, rhs, mass_rhs);
+  /* Now compute/update the velocity and pressure fields */
+  _compute_and_update_fields(matrix, sc, mom_eq, rhs, mass_rhs);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_MONOLITHIC_DBG,
                         vel_f, rhs, 3*n_faces);
 #endif
 
-  /* Update pressure, velocity and divergence fields */
-  t_upd = cs_timer_time();
-
-  /* Compute values at cells vel_c from values at faces vel_f
-     vel_c = acc^-1*(RHS - Acf*vel_f) */
-  cs_static_condensation_recover_vector(connect->c2f,
-                                        mom_eqc->rc_tilda,
-                                        mom_eqc->acf_tilda,
-                                        vel_f, vel_c);
-
-  /* Update the divergence of the velocity field */
-  cs_real_t  *div = sc->divergence->val;
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
-                                                quant, connect->c2f, vel_f);
-
-  t_tmp = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_darray_to_listing("VELOCITY", quant->n_faces, vel_f, 9);
-  cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr, 9);
-  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
-#endif
-
   /* Frees */
-  cs_sles_free(sles);
   BFT_FREE(rhs);
   BFT_FREE(mass_rhs);
   cs_matrix_destroy(&matrix);
@@ -1842,13 +1872,17 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
-                                     const cs_navsto_param_t *nsp,
-                                     void                    *scheme_context)
+cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
+                                     const cs_navsto_param_t  *nsp,
+                                     void                     *scheme_context)
 {
   CS_UNUSED(nsp);
 
   cs_timer_t  t_cmpt = cs_timer_time();
+
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces;
 
   /* Retrieve high-level structures */
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
@@ -1857,19 +1891,10 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
-
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
-
-  cs_real_t  *pr = sc->pressure->val;
-  cs_field_t  *vel_fld = sc->velocity;
-  cs_real_t  *vel_c = vel_fld->val;
+  cs_real_t  *vel_c = sc->velocity->val;
 
   /*----------------------------------------------------------------------------
-   *
    *                      BUILD: START
-   *
    *--------------------------------------------------------------------------*/
 
   const cs_time_step_t *ts = cs_shared_time_step;
@@ -1902,7 +1927,7 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix,        \
-         mass_rhs, mav, dir_values, vel_c, pr, sc)
+         mass_rhs, mav, dir_values, vel_c, sc)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1917,8 +1942,10 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
     cs_real_t  *div_op = NULL;
+    cs_boundary_type_t  *bf_type = NULL;
 
     BFT_MALLOC(div_op, 3*connect->n_max_fbyc, cs_real_t);
+    BFT_MALLOC(bf_type, connect->n_max_fbyc, cs_boundary_type_t);
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Store the shift to access border faces (first interior faces and
@@ -1959,6 +1986,17 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
                                        csys, cb);
 
       const short int n_fc = cm->n_fc;
+
+      /* Define the local bf_type */
+      for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+        /* Get the boundary face in the cell numbering */
+        const short int  f = csys->_f_ids[i];
+        const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
+
+        bf_type[i] = sc->bf_type[bf_id];
+
+      }
 
       /* Initialize the RHS for the mass eq */
       mass_rhs[c_id] = 0.;
@@ -2005,7 +2043,7 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
       if (has_sourceterm) {
 
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp,
-                                   time_eval, 1., /* time (dummy), scaling */
+                                   time_eval, 1., /* scaling if theta */
                                    cb, mom_eqb, csys);
 
       } /* End of term source */
@@ -2017,8 +2055,7 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(time_eval, mom_eqp, mom_eqc, cm, fm, csys, cb,
-                       div_op, mass_rhs + c_id);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, bf_type, csys, cb);
 
       /* 4- TIME CONTRIBUTION */
       /* ==================== */
@@ -2035,12 +2072,12 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
           csys->rhs[3*n_fc + k] += ptyc * csys->val_n[3*n_fc+k];
           /* Simply add an entry in mat[cell, cell] */
           acc->val[4*k] += ptyc;
-        } /* Loop on k */
+        }
 
       }
       else
         bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+                  "available so far.\n", __func__);
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -2063,8 +2100,8 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _apply_remaining_bc(mom_eqp, mom_eqc, cm, fm, csys, cb,
-                          div_op, mass_rhs + c_id);
+      _apply_remaining_bc(sc, mom_eqp, cm, bf_type, csys, cb, div_op,
+                          mass_rhs + c_id);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -2080,6 +2117,7 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
 
     /* Free temporary buffer */
     BFT_FREE(div_op);
+    BFT_FREE(bf_type);
 
   } /* OPENMP Block */
 
@@ -2094,61 +2132,18 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_bld, &t_tmp);
 
   /*----------------------------------------------------------------------------
-   *
    *                      BUILD: END
-   *
    *--------------------------------------------------------------------------*/
 
-  /* Copy current field values to previous values */
-  cs_timer_t t_upd = cs_timer_time();
-
-  cs_field_current_to_previous(vel_fld);
-  cs_field_current_to_previous(sc->pressure);
-  cs_field_current_to_previous(sc->divergence);
-
-  t_tmp = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
-
-  /* Now solve the system */
-  cs_real_t *vel_f = mom_eqc->face_values;
-  cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
-  _solve_system(sles, matrix, mom_eqp, vel_f, pr, rhs, mass_rhs);
+  /* Now compute/update the velocity and pressure fields */
+  _compute_and_update_fields(matrix, sc, mom_eq, rhs, mass_rhs);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_MONOLITHIC_DBG,
                         vel_f, rhs, 3*n_faces);
 #endif
 
-  /* Update pressure, velocity and divergence fields */
-  t_upd = cs_timer_time();
-
-  /* Compute values at cells vel_c from values at faces vel_f
-     vel_c = acc^-1*(RHS - Acf*vel_f) */
-  cs_static_condensation_recover_vector(connect->c2f,
-                                        mom_eqc->rc_tilda,
-                                        mom_eqc->acf_tilda,
-                                        vel_f, vel_c);
-
-  /* Update the divergence of the velocity field */
-  cs_real_t  *div = sc->divergence->val;
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
-                                                quant, connect->c2f, vel_f);
-
-  t_tmp = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_darray_to_listing("VELOCITY", quant->n_faces, vel_f, 9);
-  cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr, 9);
-  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
-#endif
-
   /* Frees */
-  cs_sles_free(sles);
   BFT_FREE(rhs);
   BFT_FREE(mass_rhs);
   cs_matrix_destroy(&matrix);
@@ -2169,13 +2164,17 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
-                                  const cs_navsto_param_t *nsp,
-                                  void                    *scheme_context)
+cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
+                                  const cs_navsto_param_t  *nsp,
+                                  void                     *scheme_context)
 {
   CS_UNUSED(nsp);
 
   cs_timer_t  t_cmpt = cs_timer_time();
+
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces;
 
   /* Retrieve high-level structures */
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
@@ -2184,19 +2183,10 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
-
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
-
-  cs_real_t  *pr = sc->pressure->val;
-  cs_field_t  *vel_fld = sc->velocity;
-  cs_real_t  *vel_c = vel_fld->val;
+  cs_real_t  *vel_c = sc->velocity->val;
 
   /*----------------------------------------------------------------------------
-   *
    *                      BUILD: START
-   *
    *--------------------------------------------------------------------------*/
 
   const cs_time_step_t *ts = cs_shared_time_step;
@@ -2235,7 +2225,7 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix,        \
-         mass_rhs, mav, dir_values, vel_c, pr, sc, compute_initial_source)
+         mass_rhs, mav, dir_values, vel_c, sc, compute_initial_source)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2250,8 +2240,10 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
     cs_real_t  *div_op = NULL;
+    cs_boundary_type_t  *bf_type = NULL;
 
     BFT_MALLOC(div_op, 3*connect->n_max_fbyc, cs_real_t);
+    BFT_MALLOC(bf_type, connect->n_max_fbyc, cs_boundary_type_t);
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Store the shift to access border faces (first interior faces and
@@ -2292,6 +2284,17 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
                                        csys, cb);
 
       const short int n_fc = cm->n_fc;
+
+      /* Define the local bf_type */
+      for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+        /* Get the boundary face in the cell numbering */
+        const short int  f = csys->_f_ids[i];
+        const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
+
+        bf_type[i] = sc->bf_type[bf_id];
+
+      }
 
       /* Initialize the RHS for the mass eq */
       mass_rhs[c_id] = 0.;
@@ -2366,8 +2369,7 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(time_eval, mom_eqp, mom_eqc, cm, fm, csys, cb,
-                       div_op, mass_rhs + c_id);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, bf_type, csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */
@@ -2403,7 +2405,7 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
       }
       else
         bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+                  "available so far.\n", __func__);
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -2426,8 +2428,8 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _apply_remaining_bc(mom_eqp, mom_eqc, cm, fm, csys, cb,
-                          div_op, mass_rhs + c_id);
+      _apply_remaining_bc(sc, mom_eqp, cm, bf_type, csys, cb, div_op,
+                          mass_rhs + c_id);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -2443,6 +2445,7 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
 
     /* Free temporary buffer */
     BFT_FREE(div_op);
+    BFT_FREE(bf_type);
 
   } /* OPENMP Block */
 
@@ -2457,61 +2460,18 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_bld, &t_tmp);
 
   /*----------------------------------------------------------------------------
-   *
    *                      BUILD: END
-   *
    *--------------------------------------------------------------------------*/
 
-  /* Copy current field values to previous values */
-  cs_timer_t t_upd = cs_timer_time();
-
-  cs_field_current_to_previous(vel_fld);
-  cs_field_current_to_previous(sc->pressure);
-  cs_field_current_to_previous(sc->divergence);
-
-  t_tmp = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
-
-  /* Now solve the system */
-  cs_real_t *vel_f = mom_eqc->face_values;
-  cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
-  _solve_system(sles, matrix, mom_eqp, vel_f, pr, rhs, mass_rhs);
+  /* Now compute/update the velocity and pressure fields */
+  _compute_and_update_fields(matrix, sc, mom_eq, rhs, mass_rhs);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_MONOLITHIC_DBG,
                         vel_f, rhs, 3*n_faces);
 #endif
 
-  /* Update pressure, velocity and divergence fields */
-  t_upd = cs_timer_time();
-
-  /* Compute values at cells vel_c from values at faces vel_f
-     vel_c = acc^-1*(RHS - Acf*vel_f) */
-  cs_static_condensation_recover_vector(connect->c2f,
-                                        mom_eqc->rc_tilda,
-                                        mom_eqc->acf_tilda,
-                                        vel_f, vel_c);
-
-  /* Update the divergence of the velocity field */
-  cs_real_t  *div = sc->divergence->val;
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
-                                                quant, connect->c2f, vel_f);
-
-  t_tmp = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_darray_to_listing("VELOCITY", quant->n_faces, vel_f, 9);
-  cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr, 9);
-  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
-#endif
-
   /* Frees */
-  cs_sles_free(sles);
   BFT_FREE(rhs);
   BFT_FREE(mass_rhs);
   cs_matrix_destroy(&matrix);
