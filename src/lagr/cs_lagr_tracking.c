@@ -1322,7 +1322,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       /* The particle deposits*/
       if (!cs_glob_lagr_model->clogging && !cs_glob_lagr_model->resuspension) {
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_DEPOSITED);
+                                  CS_LAGR_PART_DEPOSITED);
 
         move_particle = CS_LAGR_PART_MOVE_OFF;
 
@@ -1460,7 +1460,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             cs_real_t cur_part_diameter
               = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_DIAMETER);
 
-            if ((cur_part_depo==1) && (cur_part_close_face_id == face_id)) {
+            if (   (cur_part_depo == CS_LAGR_PART_DEPOSITED)
+                && (cur_part_close_face_id == face_id)) {
               scov_cdf +=   (pi * pow(cur_part_diameter,2) / 4.)
                           *  cur_part_stat_weight / face_area;
               if (scov_cdf >= scov_rand)
