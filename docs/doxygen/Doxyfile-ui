@@ -794,7 +794,8 @@ FILE_PATTERNS          = *.c \
                          *.py \
                          *.f90 \
                          *.f \
-                         *.h
+                         *.h \
+                         *.hxx
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
