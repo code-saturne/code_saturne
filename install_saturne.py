@@ -602,7 +602,7 @@ class Setup:
                     url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.4/src/%s")
 
         p = self.packages['hdf5']
-        p.config_opts = "--enable-production"
+        p.config_opts = "--enable-build-mode=production"
 
         # CGNS library
 
