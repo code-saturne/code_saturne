@@ -844,18 +844,18 @@ cs_cdofb_symmetry(short int                       f,
 
     const cs_real_t  op_fj = bc_op->val[n_dofs*f  + xj];
     const cs_real_t  op_jf = bc_op->val[n_dofs*xj + f];
-    const cs_real_t  _val = op_fj + op_jf;
+    const cs_real_t  _val_fj_jf = op_fj + op_jf;
 
     for (int k = 0; k < 3; k++) {
 
-      bFJ->val[3*k  ] += nf_nf[0][k] * _val;
-      bFJ->val[3*k+1] += nf_nf[1][k] * _val;
-      bFJ->val[3*k+2] += nf_nf[2][k] * _val;
+      bFJ->val[3*k  ] += nf_nf[0][k] * _val_fj_jf;
+      bFJ->val[3*k+1] += nf_nf[1][k] * _val_fj_jf;
+      bFJ->val[3*k+2] += nf_nf[2][k] * _val_fj_jf;
 
       /* nf_nf is symmetric */
-      bJF->val[3*k  ] += nf_nf[0][k] * _val;
-      bJF->val[3*k+1] += nf_nf[1][k] * _val;
-      bJF->val[3*k+2] += nf_nf[2][k] * _val;
+      bJF->val[3*k  ] += nf_nf[0][k] * _val_fj_jf;
+      bJF->val[3*k+1] += nf_nf[1][k] * _val_fj_jf;
+      bJF->val[3*k+2] += nf_nf[2][k] * _val_fj_jf;
 
     }
 
