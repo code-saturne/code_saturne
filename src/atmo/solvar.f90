@@ -72,8 +72,7 @@ parameter ( idim2 = 26 )
 !==============================================================================
 
 
-!... declaration des variables externes
-
+! Arguments
 
 double precision rcodcl(nfabor,nvar,3)
 
@@ -81,8 +80,7 @@ double precision temp(ncelet)
 double precision qv(ncelet)
 double precision rom(ncelet),dt(ncelet)
 
-
-!... declaration des variables internes
+! Local variables
 
 integer ifac,iel,isol
 double precision rcodcx, rcodcy, rcodcz, rcodsn
@@ -355,6 +353,8 @@ do isol = 1, nfmodsol
   solution_sol(isol)%total_water = qvsplu
 
 enddo
+
+call cs_user_atmo_soil(temp, qv, rom, dt, rcodcl)
 
 return
 

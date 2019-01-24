@@ -456,3 +456,78 @@ enddo
 
 return
 end subroutine cs_user_atmo_1d_rad_prf
+
+!===============================================================================
+
+!> \brief Compute ground level variables.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]
+!______________________________________________________________________________!
+
+subroutine cs_user_atmo_soil &
+     (temp , qv ,rom , dt, rcodcl)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use parall
+use period
+use ppppar
+use ppthch
+use ppincl
+use atincl
+use atsoil
+use mesh
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision rcodcl(nfabor,nvar,3)
+
+double precision temp(ncelet)
+double precision qv(ncelet)
+double precision rom(ncelet),dt(ncelet)
+
+! Local variables
+
+integer ifac, isol
+
+double precision tetas, qvs
+
+!===============================================================================
+
+!< [atmo_soil_temperature]
+
+do isol = 1, nfmodsol
+  ifac = indsol(isol)
+
+  ! read external data to set potential temperature and specific humidity
+  tetas = 16.504682364d0
+  qvs = 0.00583966915d0
+
+  solution_sol(isol)%temp_sol = tetas - tkelvi
+  solution_sol(isol)%tempp = tetas
+  solution_sol(isol)%total_water = qvs
+enddo
+
+!< [atmo_soil_temperature]
+
+return
+end subroutine cs_user_atmo_soil
