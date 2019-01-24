@@ -346,7 +346,8 @@ endif
 
 ! Wall distance for some turbulence models
 
-if ((iturb.eq.30.and.irijec.eq.1).or.              &
+if ( iturb.eq.23.or.                                &
+     (iturb.eq.30.and.irijec.eq.1).or.              &
      (itytur.eq.4.and.idries.eq.1).or.              &
      iturb.eq.60.or.iturb.eq.70      ) then
   ineedy = 1

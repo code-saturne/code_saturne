@@ -749,8 +749,8 @@ if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
 if (ikecou.eq.-999) then
   if (idtvar.lt.0) then
     ikecou = 0
-  else if (iturb.eq.21 .or. iturb.eq.22 .or. itytur.eq.5           &
-       .or. iturb.eq.60 ) then
+  else if (iturb.eq.21 .or. iturb.eq.22 .or. iturb.eq.23 .or. &
+           itytur.eq.5 .or. iturb.eq.60 ) then
     ikecou = 0
   else
     ikecou = 1

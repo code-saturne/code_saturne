@@ -290,6 +290,10 @@ elseif (itytur.eq.2) then
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
   if (iturb.eq.22) then
+    
+    ! 4.3.1 Launder-Sharma
+    ! --------------------
+
     do iel = 1, ncel
       xk   = cvar_k(iel)
       xe   = cvar_ep(iel)
@@ -299,12 +303,25 @@ elseif (itytur.eq.2) then
       xfmu = exp(-3.4d0/(1.d0+xmut/xmu/50.d0)**2.d0)
       visct(iel) = cmu*xfmu*xmut
     enddo
+
+  else if (iturb.eq.23) then
+
+    ! 4.3.2 Non-linear quadratic Baglietto
+    ! ------------------------------------
+    
+    call visqke
+  
   else
+
+    ! 4.3.3 Standard and Linear Production
+    ! ------------------------------------
+
     do iel = 1, ncel
       xk = cvar_k(iel)
       xe = cvar_ep(iel)
       visct(iel) = crom(iel)*cmu*xk**2/xe
     enddo
+
   endif
 
 elseif (itytur.eq.3) then

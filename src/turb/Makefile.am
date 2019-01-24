@@ -84,6 +84,7 @@ clipsa.f90 \
 clpalp.f90 \
 clprij.f90 \
 clpv2f.f90 \
+cnlevm.f90 \
 divrit.f90 \
 resalp.f90 \
 reseps.f90 \
@@ -104,6 +105,7 @@ turbsa.f90 \
 turrij.f90 \
 visdyn.f90 \
 vislmg.f90 \
+visqke.f90 \
 vissma.f90 \
 vissst.f90 \
 visv2f.f90 \

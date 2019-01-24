@@ -55,6 +55,7 @@ enum {
   CS_TURB_K_EPSILON = 20,
   CS_TURB_K_EPSILON_LIN_PROD = 21,
   CS_TURB_K_EPSILON_LS = 22,
+  CS_TURB_K_EPSILON_QUAD = 23,
   CS_TURB_RIJ_EPSILON_LRR = 30,
   CS_TURB_RIJ_EPSILON_SSG = 31,
   CS_TURB_RIJ_EPSILON_EBRSM = 32,
@@ -81,6 +82,8 @@ typedef struct {
                             Linear Production (LP) correction
                           CS_TURB_K_EPSILON_LS: Launder-Sharma low Re
                             k-epsilon model
+                          CS_TURB_K_EPSILON_QUAD : Balgietto et al. low Re
+                            k epsilon model
                           CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
                           CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
                           CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)

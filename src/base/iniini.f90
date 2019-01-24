@@ -776,6 +776,13 @@ ce2     = 1.92d0
 ce4     = 1.20d0
 sigmak  = 1.00d0
 
+!   pour le k-epsilon quadratic (Baglietto)
+cnl1  = 0.8d0
+cnl2  = 11.d0
+cnl3  = 4.5d0
+cnl4  = 1.d3
+cnl5  = 1.d0
+
 !   pour le Rij-epsilon standard (et SSG pour CRIJ3)
 crij1  = 1.80d0
 crij2  = 0.60d0

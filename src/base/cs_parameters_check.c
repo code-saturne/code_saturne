@@ -1279,14 +1279,14 @@ cs_parameters_check(void)
   /* Turbulence */
 
   /* Model */
-  const int iturb_vals[15] = {0,          /* laminar */
-                              10,         /* mixing length */
-                              20, 21, 22, /* k-epsilon */
-                              30, 31, 32, /* RSM */
-                              40, 41, 42, /* LES */
-                              50, 51,     /* v2f */
-                              60,         /* k-omega */
-                              70};        /* Spallart-Allmaras */
+  const int iturb_vals[15] = {0,              /* laminar */
+                              10,             /* mixing length */
+                              20, 21, 22, 23, /* k-epsilon */
+                              30, 31, 32,     /* RSM */
+                              40, 41, 42,     /* LES */
+                              50, 51,         /* v2f */
+                              60,             /* k-omega */
+                              70};            /* Spallart-Allmaras */
 
   cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                _("while reading input data"),
@@ -1421,15 +1421,17 @@ cs_parameters_check(void)
                                   cs_glob_turb_rans_model->ikecou,
                                   0, 2);
 
-    /* En k-eps a prod lin et en v2f on force IKECOU a 0 */
+    /* En k-eps a prod lin/LS/Quad et en v2f on force IKECOU a 0 */
     if (   cs_glob_turb_model->iturb == 21
         || cs_glob_turb_model->iturb == 22
+        || cs_glob_turb_model->iturb == 23
         || cs_glob_turb_model->itytur == 5) {
       cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
                                    "with k-epsilon LP (iturb=21),"
-                                   "k-epsilon LS (iturb=22) or v2f model "
-                                   "(iturb=50/51)"),
+                                   "k-epsilon LS (iturb=22), "
+                                   "k-epislon quadratic (iturb=23)"
+                                   "or v2f model (iturb=50/51)"),
                                  "cs_glob_turb_rans_model->ikecou",
                                  cs_glob_turb_rans_model->ikecou,
                                  0);

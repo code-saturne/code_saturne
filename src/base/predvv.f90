@@ -951,87 +951,114 @@ endif
 
 !-------------------------------------------------------------------------------
 ! ---> - Divergence of tensor Rij
+! ---> - Non linear part of Rij for non-liear Eddy Viscosity Models
 
-if(itytur.eq.3.and.iterns.eq.1) then
+if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
 
   allocate(rij(6,ncelet))
-  if(irijco.eq.1) then !TODO change index of rij
-    do iel = 1, ncelet
-      rij(1,iel) = cvara_rij(1,iel)
-      rij(2,iel) = cvara_rij(2,iel)
-      rij(3,iel) = cvara_rij(3,iel)
-      rij(4,iel) = cvara_rij(4,iel)
-      rij(5,iel) = cvara_rij(5,iel)
-      rij(6,iel) = cvara_rij(6,iel)
-    enddo
-  else
-    do iel = 1, ncelet
-      rij(1,iel) = cvara_r11(iel)
-      rij(2,iel) = cvara_r22(iel)
-      rij(3,iel) = cvara_r33(iel)
-      rij(4,iel) = cvara_r12(iel)
-      rij(5,iel) = cvara_r23(iel)
-      rij(6,iel) = cvara_r13(iel)
-    enddo
-  endif
-! --- Boundary conditions on the components of the tensor Rij
-
   allocate(coefat(6,nfabor))
-  if(irijco.eq.1) then
-    call field_get_coefad_v(ivarfl(irij),coefap)
-    coefat = coefap
-  else
-    call field_get_coefad_s(ivarfl(ir11),coef1)
-    call field_get_coefad_s(ivarfl(ir22),coef2)
-    call field_get_coefad_s(ivarfl(ir33),coef3)
-    call field_get_coefad_s(ivarfl(ir12),coef4)
-    call field_get_coefad_s(ivarfl(ir23),coef5)
-    call field_get_coefad_s(ivarfl(ir13),coef6)
-    do ifac = 1, nfabor
-      coefat(1,ifac) = coef1(ifac)
-      coefat(2,ifac) = coef2(ifac)
-      coefat(3,ifac) = coef3(ifac)
-      coefat(4,ifac) = coef4(ifac)
-      coefat(5,ifac) = coef5(ifac)
-      coefat(6,ifac) = coef6(ifac)
-    enddo
-  endif
-
   allocate(coefbt(6,6,nfabor))
-  do ifac = 1, nfabor
-    do ii = 1, 6
-      do jj = 1, 6
-        coefbt(jj,ii,ifac) = 0.d0
+
+  ! Reynolds Stress Models
+  if(itytur.eq.3) then 
+
+    if(irijco.eq.1) then !TODO change index of rij
+      do iel = 1, ncelet
+        rij(1,iel) = cvara_rij(1,iel)
+        rij(2,iel) = cvara_rij(2,iel)
+        rij(3,iel) = cvara_rij(3,iel)
+        rij(4,iel) = cvara_rij(4,iel)
+        rij(5,iel) = cvara_rij(5,iel)
+        rij(6,iel) = cvara_rij(6,iel)
+      enddo
+    else
+      do iel = 1, ncelet
+        rij(1,iel) = cvara_r11(iel)
+        rij(2,iel) = cvara_r22(iel)
+        rij(3,iel) = cvara_r33(iel)
+        rij(4,iel) = cvara_r12(iel)
+        rij(5,iel) = cvara_r23(iel)
+        rij(6,iel) = cvara_r13(iel)
+      enddo
+    endif
+    ! --- Boundary conditions on the components of the tensor Rij
+
+    if(irijco.eq.1) then
+      call field_get_coefad_v(ivarfl(irij),coefap)
+      coefat = coefap
+    else
+      call field_get_coefad_s(ivarfl(ir11),coef1)
+      call field_get_coefad_s(ivarfl(ir22),coef2)
+      call field_get_coefad_s(ivarfl(ir33),coef3)
+      call field_get_coefad_s(ivarfl(ir12),coef4)
+      call field_get_coefad_s(ivarfl(ir23),coef5)
+      call field_get_coefad_s(ivarfl(ir13),coef6)
+      do ifac = 1, nfabor
+        coefat(1,ifac) = coef1(ifac)
+        coefat(2,ifac) = coef2(ifac)
+        coefat(3,ifac) = coef3(ifac)
+        coefat(4,ifac) = coef4(ifac)
+        coefat(5,ifac) = coef5(ifac)
+        coefat(6,ifac) = coef6(ifac)
+      enddo
+    endif
+
+    do ifac = 1, nfabor
+      do ii = 1, 6
+        do jj = 1, 6
+          coefbt(jj,ii,ifac) = 0.d0
+        enddo
       enddo
     enddo
-  enddo
 
-  if(irijco.eq.1) then
-    call field_get_coefbd_v(ivarfl(irij),coefbp)
-    coefbt = coefbp
-  else
-    call field_get_coefbd_s(ivarfl(ir11),coef1)
-    call field_get_coefbd_s(ivarfl(ir22),coef2)
-    call field_get_coefbd_s(ivarfl(ir33),coef3)
-    call field_get_coefbd_s(ivarfl(ir12),coef4)
-    call field_get_coefbd_s(ivarfl(ir23),coef5)
-    call field_get_coefbd_s(ivarfl(ir13),coef6)
+    if(irijco.eq.1) then
+      call field_get_coefbd_v(ivarfl(irij),coefbp)
+      coefbt = coefbp
+    else
+      call field_get_coefbd_s(ivarfl(ir11),coef1)
+      call field_get_coefbd_s(ivarfl(ir22),coef2)
+      call field_get_coefbd_s(ivarfl(ir33),coef3)
+      call field_get_coefbd_s(ivarfl(ir12),coef4)
+      call field_get_coefbd_s(ivarfl(ir23),coef5)
+      call field_get_coefbd_s(ivarfl(ir13),coef6)
+      do ifac = 1, nfabor
+        coefbt(1,1,ifac) = coef1(ifac)
+        coefbt(2,2,ifac) = coef2(ifac)
+        coefbt(3,3,ifac) = coef3(ifac)
+        coefbt(4,4,ifac) = coef4(ifac)
+        coefbt(5,5,ifac) = coef5(ifac)
+        coefbt(6,6,ifac) = coef6(ifac)
+      enddo
+    endif
+  
+  ! Baglietto et al. quadratic k-epislon model
+  else if(iturb.eq.23) then
+
+    ! --- Compute the non linear part of Rij
+    call cnlevm (rij)
+    
+    ! --- Boundary conditions : Homogeneous Neumann
     do ifac = 1, nfabor
-      coefbt(1,1,ifac) = coef1(ifac)
-      coefbt(2,2,ifac) = coef2(ifac)
-      coefbt(3,3,ifac) = coef3(ifac)
-      coefbt(4,4,ifac) = coef4(ifac)
-      coefbt(5,5,ifac) = coef5(ifac)
-      coefbt(6,6,ifac) = coef6(ifac)
+      do ii = 1, 6
+        coefat(ii,ifac) = 0.d0
+        do jj = 1, 6
+          coefbt(jj,ii,ifac) = 1.d0
+        enddo
+      enddo
     enddo
-  endif
+
+  end if
 
   ! Flux computation options
   f_id = -1
   init = 1;
   inc  = 1;
   iflmb0 = 0;
-  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
+  if(itytur.eq.3) then
+    call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
+  else
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  end if
   nswrgp = vcopt%nswrgr;
   imligp = vcopt%imligr;
   iwarnp = vcopt%iwarni;
@@ -1104,7 +1131,6 @@ if(itytur.eq.3.and.iterns.eq.1) then
   endif
 
 endif
-
 
 !-------------------------------------------------------------------------------
 ! ---> Face diffusivity for the velocity

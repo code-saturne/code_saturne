@@ -104,7 +104,7 @@ double precision prdv2f(ncelet)
 
 character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
-integer          f_id0 , iiun
+integer          f_id0 , iiun  , f_id
 integer          iclip
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
@@ -117,11 +117,12 @@ integer          imucpp, idftnp, iswdyp
 integer          key_t_ext_id
 integer          iroext
 integer          iviext
+integer          ii, jj, kk
 
 integer          icvflb, imasac
 integer          ivoid(1)
 
-double precision rnorm , d2s3, d1s3, divp23
+double precision rnorm , d2s3, d1s3, divp23, d1s2
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
 double precision prdtur, xk, xeps, xphi, xnu, xnut, ttke, ttmin, tt
@@ -137,6 +138,13 @@ double precision xnoral, xnal(3)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0,alpha
 double precision normp
 
+double precision xstrai(3,3), xrotac(3,3)
+double precision sikskjsji, wikskjsji, skiwjksji, wikwjksji
+double precision sijsij, wijwij
+double precision xqc1, xqc2, xqc3
+double precision xpk, xpkp, xttke, xcmu, xss
+double precision xdist, xrey
+
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
@@ -149,7 +157,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8, usimpe
 double precision, allocatable, dimension(:) :: w10, w11, w12
-double precision, allocatable, dimension(:) :: ce2rc
+double precision, allocatable, dimension(:) :: ce1rc, ce2rc
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: sqrt_k, sqrt_strain
 double precision, allocatable, dimension(:) :: coefa_sqk, coefb_sqk
@@ -173,6 +181,7 @@ double precision, dimension(:), pointer :: c_st_k_p, c_st_eps_p
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: cpro_beta
+double precision, dimension(:), pointer :: w_dist
 
 type(var_cal_opt) :: vcopt_k, vcopt_e
 
@@ -229,6 +238,11 @@ call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.eq.50.or.iturb.eq.51) call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
 if (iturb.eq.51) call field_get_val_prev_s(ivarfl(ial), cvara_al)
 
+if (iturb.eq.23) then
+  call field_get_id("wall_distance", f_id)
+  call field_get_val_s(f_id, w_dist)
+end if
+
 thets  = thetst
 
 call field_get_key_int(ivarfl(ik), kstprv, istprv)
@@ -283,6 +297,7 @@ sqrcmu = sqrt(cmu)
 
 d2s3 = 2.d0/3.d0
 d1s3 = 1.d0/3.d0
+d1s2 = 1.d0/2.d0
 
 !===============================================================================
 ! 1.1 Advanced reinit
@@ -431,9 +446,6 @@ if (iturb.eq.22) then
   enddo
 end if
 
-! Free memory
-deallocate(gradv)
-
 !===============================================================================
 ! 3. Unsteady terms (stored in tinstk and tinste)
 !===============================================================================
@@ -463,6 +475,84 @@ if (iturb.eq.21) then
     smbrk(iel) = rho*cmueta*xs*cvara_k(iel)
     smbre(iel) = smbrk(iel)
   enddo
+! Compute turbulent production for the quadratic Baglietto 
+! k-epsilon model (iturb =23).
+else if (iturb.eq.23) then
+
+  do iel = 1,ncel
+   
+    visct = cpro_pcvto(iel)
+    rho   = crom(iel)
+    xeps  = cvar_ep(iel)
+    xk    = cvar_k(iel)
+    xttke = xk/xeps
+    
+    ! Sij
+    xstrai(1,1) = gradv(1, 1, iel)
+    xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
+    xstrai(1,3) = d1s2*(gradv(3, 1, iel)+gradv(1, 3, iel))
+    xstrai(2,1) = xstrai(1,2)
+    xstrai(2,2) = gradv(2, 2, iel)
+    xstrai(2,3) = d1s2*(gradv(3, 2, iel)+gradv(2, 3, iel))
+    xstrai(3,1) = xstrai(1,3)
+    xstrai(3,2) = xstrai(2,3)
+    xstrai(3,3) = gradv(3, 3, iel)
+    ! omegaij
+    xrotac(1,1) = 0.d0
+    xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
+    xrotac(1,3) = d1s2*(gradv(3, 1, iel)-gradv(1, 3, iel))
+    xrotac(2,1) = -xrotac(1,2)
+    xrotac(2,2) = 0.d0
+    xrotac(2,3) = d1s2*(gradv(3, 2, iel)-gradv(2, 3, iel))
+    xrotac(3,1) = -xrotac(1,3)
+    xrotac(3,2) = -xrotac(2,3)
+    xrotac(3,3) = 0.d0
+
+    sikskjsji = 0.d0
+    wikskjsji = 0.d0
+    skiwjksji = 0.d0
+    wikwjksji = 0.d0
+    sijsij    = 0.d0
+    wijwij    = 0.d0
+
+    do ii = 1,3
+      do jj = 1,3
+        sijsij = sijsij + xstrai(ii,jj)*xstrai(ii,jj)
+        wijwij = wijwij + xrotac(ii,jj)*xrotac(ii,jj)
+
+        do kk = 1,3
+          sikskjsji = sikskjsji                                    &
+                    + xstrai(ii,kk)*xstrai(kk,jj)*xstrai(jj,ii)
+          wikskjsji = wikskjsji                                    &
+                    + xrotac(ii,kk)*xstrai(kk,jj)*xstrai(jj,ii)
+          skiwjksji = skiwjksji                                    &
+                    + xstrai(kk,ii)*xrotac(jj,kk)*xstrai(jj,ii)
+          wikwjksji = wikwjksji                                    &
+                    + xrotac(ii,kk)*xrotac(jj,kk)*xstrai(jj,ii)
+        end do
+      end do
+    end do
+
+    xss  = xttke*sqrt(.5d0*sijsij)
+    xcmu = d2s3/(3.9d0 + xss)
+    
+    ! Evaluating "constants"
+    xqc1 = cnl1/((cnl4 + cnl5*xss**3.d0)*xcmu)
+    xqc2 = cnl2/((cnl4 + cnl5*xss**3.d0)*xcmu)
+    xqc3 = cnl3/((cnl4 + cnl5*xss**3.d0)*xcmu)
+
+    ! Evaluating the turbulent production
+    smbrk(iel)  = visct*strain(iel)                                         &
+                  - xqc1*visct*xttke* ( sikskjsji - d1s3*sijsij*divu(iel) ) &
+                  - xqc2*visct*xttke* ( wikskjsji + skiwjksji )             &
+                  - xqc3*visct*xttke* ( wikwjksji - d1s3*wijwij*divu(iel) )
+    smbre(iel) = smbrk(iel)
+
+  ! End loop on ncel
+  end do
+
+! End test on specific k-epsilon model
+! In the general case Pk = mu_t*SijSij
 else
   do iel = 1, ncel
     visct = cpro_pcvto(iel)
@@ -480,6 +570,7 @@ endif
 
 ! Allocate an array for the modified Ceps2 coefficient
 allocate(ce2rc(ncel))
+allocate(ce1rc(ncel))
 
 if (irccor.eq.1) then
 
@@ -497,22 +588,42 @@ else
         xeps = cvar_ep(iel)
         xk   = cvar_k(iel)
         ce2rc(iel) = (1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))*ce2
+        ce1rc(iel) = ce1
+      end do
+    ! Baglietto quadratic k-epsilon model
+    else if (iturb.eq.23) then
+      do iel = 1, ncel
+        rho  = crom(iel)
+        xeps = cvar_ep(iel)
+        xk   = cvar_k(iel)
+        ce2rc(iel) = (1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))*ce2
+
+        xdist = max(w_dist(iel),epzero)
+        xrey  = rho*xdist*sqrt(xk)/viscl(iel)
+        xpk = smbrk(iel) -  d2s3*rho*xk*divu(iel)
+        xpkp = 1.33d0*(1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))          &
+              *(xpk + 2.d0*viscl(iel)*xk/(xdist**2.d0))*exp(-3.75d-3*xrey**2.d0) 
+
+        ce1rc(iel) = (1.d0+xpkp/max(xpk,1.d-10))*ce1
       end do
     ! Other k-epsilon models
     else
       do iel = 1, ncel
         ce2rc(iel) = ce2
+        ce1rc(iel) = ce1
       enddo
     end if
 
   elseif (iturb.eq.50) then
     do iel = 1, ncel
       ce2rc(iel) = cv2fe2
+      ce1rc(iel) = ce1
     enddo
 
   elseif (iturb.eq.51) then
     do iel = 1, ncel
       ce2rc(iel) = ccaze2
+      ce1rc(iel) = ce1
     enddo
   endif
 
@@ -841,10 +952,10 @@ if (itytur.eq.2) then
                )
 
     smbre(iel) = cell_f_vol(iel)*                                          &
-               ( cvara_ep(iel)/cvara_k(iel)*( ce1*smbre(iel)               &
+               ( cvara_ep(iel)/cvara_k(iel)*( ce1rc(iel)*smbre(iel)               &
                                             - ce2rc(iel)*rho*cvara_ep(iel) &
                                             )                              &
-               - d2s3*rho*ce1*cvara_ep(iel)*divu(iel)                      &
+               - d2s3*rho*ce1rc(iel)*cvara_ep(iel)*divu(iel)                      &
                )
 
   enddo
@@ -877,7 +988,7 @@ if (itytur.eq.2) then
       tinstk(iel) = tinstk(iel) + rho*cell_f_vol(iel)/ttke            &
                   + max(d2s3*rho*cell_f_vol(iel)*divu(iel), 0.d0)
       tinste(iel) = tinste(iel) + ce2rc(iel)*rho*cell_f_vol(iel)/ttke &
-                  + max(d2s3*ce1*rho*cell_f_vol(iel)*divu(iel), 0.d0)
+                  + max(d2s3*ce1rc(iel)*rho*cell_f_vol(iel)*divu(iel), 0.d0)
     enddo
   endif
 
@@ -1328,8 +1439,8 @@ if (ikecou.eq.1) then
            -2.d0*cvara_k(iel)/cvara_ep(iel)                               &
            *cmu*min(prdtke(iel)/visct,zero)+divp23
       a12 = 1.d0
-      a21 = -ce1*cmu*prdeps(iel)/visct-ce2rc(iel)*epssuk*epssuk
-      a22 = 1.d0/dt(iel)+ce1*divp23                               &
+      a21 = -ce1rc(iel)*cmu*prdeps(iel)/visct-ce2rc(iel)*epssuk*epssuk
+      a22 = 1.d0/dt(iel)+ce1rc(iel)*divp23                               &
            +2.d0*ce2rc(iel)*epssuk
 
       unsdet = 1.d0/(a11*a22 -a12*a21)
@@ -1543,6 +1654,7 @@ iclip = 1
 call clipke(ncelet, ncel, iclip)
 
 ! Free memory
+deallocate(gradv)
 deallocate(viscf, viscb)
 deallocate(usimpk)
 deallocate(smbrk, smbre, rovsdt)
@@ -1552,6 +1664,7 @@ deallocate(w4, w5)
 deallocate(w7, w8, usimpe)
 deallocate(dpvar)
 deallocate(ce2rc)
+deallocate(ce1rc)
 
 if (allocated(w10)) deallocate(w10, w11)
 if (allocated(prdtke)) deallocate(prdtke, prdeps)

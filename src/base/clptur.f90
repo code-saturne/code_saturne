@@ -922,7 +922,9 @@ do ifac = 1, nfabor
 
     if (itytur.eq.2) then
 
+      ! ==================================
       ! Launder Sharma boundary conditions
+      ! ==================================
       if(iturb.eq.22) then
 
         ! Dirichlet Boundary Condition on k
@@ -980,7 +982,66 @@ do ifac = 1, nfabor
              coefb_ep(ifac), coefbf_ep(ifac),             &
              pimp         , hint          , rinfin )
 
+
+      ! ===================================
+      ! Quadratic Baglietto k-epsilon model
+      ! ===================================
+      else if(iturb.eq.23) then
+        
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+        if (iwallf.eq.0) then
+          ! No wall functions forces by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+            pimp = uk**2/sqrcmu
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
+
+        ! Dirichlet Boundary Condition on epsilon
+        !---------------------------------------
+        if(iwallf.ne.0) then
+
+          pimp_lam = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+
+          if (yplus > epzero) then
+            pimp_turb = 5.d0*uk**4*romc/        &
+                        (xkappa*visclc*(yplus+dplus))
+
+            ! Blending between wall and homogeneous layer
+            fep       = exp(-(yplus/4.d0)**1.5d0)
+            dep       = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          end if
+
+        else
+          
+          pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+        end if
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             pimp          , hint           , rinfin )
+
+      ! ==============================================
       ! k-epsilon and k-epsilon LP boundary conditions
+      ! ==============================================
       else
 
         ! Dirichlet Boundary Condition on k
