@@ -226,7 +226,7 @@ class mei_to_c_interpreter:
         use_scalars = False
         for s in scalars:
             sn = s[0]
-            for line in exp_lines_cmps:
+            for line in exp_lines_comp:
                 if sn in line:
                     use_scalars = True
                     l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
