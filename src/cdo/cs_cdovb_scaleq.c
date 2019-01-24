@@ -2033,10 +2033,6 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
-  cs_field_t  *bflux = cs_field_by_id(eqc->bflux_field_id);
-
-  /* Assign the boundary flux for faces where Neumann is defined */
-  cs_equation_init_boundary_flux_from_bc(t_cur, quant, eqp, bflux->val);
 
   /* Allocate and initialize the structure storing the balance evaluation */
   cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_vtx,
@@ -2044,7 +2040,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   /* OpenMP block */
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, eqp, eqb, eqc, pot, bflux, eb, _vbs_cell_builder)
+  shared(quant, connect, eqp, eqb, eqc, pot, eb, _vbs_cell_builder)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

@@ -718,6 +718,8 @@ _set_key(const char            *label,
       eqp->process_flag |= CS_EQUATION_POST_PECLET;
     else if (strcmp(keyval, "upwind_coef") == 0)
       eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
+    else if (strcmp(keyval, "normal_flux") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_NORMAL_FLUX;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,

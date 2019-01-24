@@ -96,11 +96,15 @@ BEGIN_C_DECLS
  * \def CS_EQUATION_POST_UPWIND_COEF
  * \brief Postprocess the value of the upwinding coefficient
  *
+ * \def CS_EQUATION_POST_NORMAL_FLUX
+ * \brief Postprocess the value of the normal flux across the boundary faces
+ *
  */
 
 #define CS_EQUATION_POST_BALANCE     (1 << 0) /* 1 */
 #define CS_EQUATION_POST_PECLET      (1 << 1) /* 2 */
 #define CS_EQUATION_POST_UPWIND_COEF (1 << 2) /* 4 */
+#define CS_EQUATION_POST_NORMAL_FLUX (1 << 3) /* 8 */
 
 /*! @} */
 
@@ -585,6 +589,7 @@ typedef struct {
  *              each main term of an equation (diffusion, convection, time...)
  * - "peclet"  post-process an estimation of the Peclet number in each cell
  * - "upwind_coef"  post-process an estimation of the upwinding coefficient
+ * - "normal_flux"  post-process the normal flux across boundary faces
  */
 
 typedef enum {

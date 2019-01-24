@@ -1009,7 +1009,8 @@ cs_equation_add(const char            *eqname,
 
   eq->param = cs_equation_create_param(eqname, eqtype, dim, default_bc);
 
-  eq->field_id = -1;    /* field is created in a second step */
+  eq->field_id = -1;           /* This field is created in a second step */
+  eq->boundary_flux_id = -1;   /* Not always defined (done in a second step) */
 
   /* Algebraic system: allocated later */
   eq->rset = NULL;
@@ -1858,27 +1859,34 @@ cs_equation_create_fields(void)
     /* Store the related field id */
     eq->field_id = cs_field_id_by_name(eq->varname);
 
-    /* Add a field for the normal boundary flux */
-    location_id = cs_mesh_location_get_id_by_name("boundary_faces");
+    if (eqp->process_flag & CS_EQUATION_POST_NORMAL_FLUX) {
 
-    char  *bdy_flux_name = NULL;
-    int  len = strlen(eq->varname) + strlen("_boundary_flux") + 2;
+      /* Add a field for the normal boundary flux */
+      location_id = cs_mesh_location_get_id_by_name("boundary_faces");
 
-    BFT_MALLOC(bdy_flux_name, len, char);
-    sprintf(bdy_flux_name, "%s_boundary_flux", eq->varname);
+      char  *bdy_flux_name = NULL;
+      int  len = strlen(eq->varname) + strlen("_normal_boundary_flux") + 2;
 
-    cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
-                                                        0,
-                                                        location_id,
-                                                        eqp->dim,
-                                                        has_previous);
+      BFT_MALLOC(bdy_flux_name, len, char);
+      sprintf(bdy_flux_name, "%s_normal_boundary_flux", eq->varname);
 
-    eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
+      /* If a scalar: the scalar diffusive flux across the boundary
+       *  If a vector: the vector dot the normal of the boundary face */
+      cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
+                                                          0,
+                                                          location_id,
+                                                          1, // eqp->dim,
+                                                          has_previous);
 
-    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"), post_flag);
+      eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
 
-    BFT_FREE(bdy_flux_name);
+      cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
+      cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"),
+                           post_flag);
+
+      BFT_FREE(bdy_flux_name);
+
+    } /* Create a boundary field */
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -1907,6 +1915,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                        const cs_time_step_t        *ts)
 {
   CS_UNUSED(connect);
+  CS_UNUSED(quant);
 
   for (int i = 0; i < _n_equations; i++) {
 
@@ -1929,11 +1938,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     if (ts->nt_cur < 1)
       eq->init_field_values(ts->t_cur, eq->field_id,
                             mesh, eqp, eq->builder, eq->scheme_context);
-
-    /* Assign the initial boundary flux where Neumann is defined */
-    cs_field_t  *bflux = cs_field_by_id(eq->boundary_flux_id);
-
-    cs_equation_init_boundary_flux_from_bc(ts->t_cur, quant, eqp, bflux->val);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
