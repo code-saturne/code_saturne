@@ -764,7 +764,8 @@ class domain(base_domain):
             sys.stderr.write(err_str)
         else:
             try:
-                os.symlink(os.path.join("run_solver.log"), "listing")
+                link_path = os.path.join(self.exec_dir, "listing")
+                os.symlink("run_solver.log", link_path)
             except Exception:
                 pass
 
