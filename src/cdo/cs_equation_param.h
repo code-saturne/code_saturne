@@ -581,8 +581,10 @@ typedef struct {
  *
  * \var CS_EQKEY_EXTRA_OP
  * Set the additional post-processing to perform. Available choices are:
- * - "peclet" --> post-process an estimation of the Peclet number in each cell
- * - "upwind_coef" --> post-process an estimation of the upwinding coefficient
+ * - "balance"  post-process the balance result in each control volume for
+ *              each main term of an equation (diffusion, convection, time...)
+ * - "peclet"  post-process an estimation of the Peclet number in each cell
+ * - "upwind_coef"  post-process an estimation of the upwinding coefficient
  */
 
 typedef enum {

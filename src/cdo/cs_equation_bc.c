@@ -225,8 +225,6 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
           cs_xdef_analytic_input_t  *anai =
             (cs_xdef_analytic_input_t *)def->input;
 
-          printf("ANALYTIC B FLUX from bc\n");
-
           anai->func(t_eval,
                      z->n_elts, z->elt_ids, cdoq->b_face_center,
                      false,       /* compacted output ? */
