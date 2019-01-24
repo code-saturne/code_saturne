@@ -379,7 +379,7 @@ contains
 
     double precision climgp, epsrgp, extrap, depo
 
-    integer    iccocg, ii, iifld, imligp, inc, iqpp, iwarnp, nswrgp, ifac, iel
+    integer    iccocg, ii, iifld, imligp, inc, iwarnp, nswrgp, ifac, iel
     double precision, dimension(:), allocatable :: local_coefa, local_coefb
     double precision, dimension(:), allocatable :: local_field, sed_vel
     double precision, dimension(:), allocatable :: pres, temp
@@ -549,9 +549,9 @@ contains
     ! Local variables
 
     double precision ckarm, eps0, cbolz, gamma, alpha, arecep
-    double precision dp, aaa, cp
+    double precision dp
     double precision muair, nuair, dbrow, cebro, lpm, ccunning
-    double precision wg, adyna, ather, venthoriz
+    double precision wg, ather
     double precision raero, st, ceimp, ceint, rsurf,rhoeau
     double precision dzmin
 

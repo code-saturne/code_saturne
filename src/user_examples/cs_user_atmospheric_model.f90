@@ -1,5 +1,7 @@
 !-------------------------------------------------------------------------------
 
+!VERS
+
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2019 EDF S.A.
@@ -21,26 +23,23 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Function:
-! ---------
+! Purpose:
+! -------
 
 !> \file cs_user_atmospheric_model.f90
 !>
-!> \brief User subroutine dedicated to the atmospheric model.
+!> \brief User subroutines dedicated to the atmospheric model.
 !>
 !> See \subpage cs_user_atmospheric_model for examples.
-
-subroutine usatdv &
-     ( imode )
+!-------------------------------------------------------------------------------
 
 !===============================================================================
-!  Purpose:
-!  -------
+
 !> \brief Atmospheric module subroutine
-!>
+
 !> User definition of the vertical 1D arrays
 !> User initialization of corresponding 1D ground model
-!>
+
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -48,6 +47,9 @@ subroutine usatdv &
 !______________________________________________________________________________!
 !> \param[in]     imode        number of calls of usatdv
 !______________________________________________________________________________!
+
+subroutine usatdv &
+  ( imode )
 
 !===============================================================================
 ! Module files
@@ -76,7 +78,6 @@ implicit none
 
 integer           imode
 
-!===============================================================================
 ! Local variables
 
 integer           ii,iiv
@@ -229,30 +230,27 @@ end subroutine usatdv
 
 !===============================================================================
 
+!> \brief Data entry for the atmospheric ground model.
+!> Define the different values which can be taken by iappel.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iappel        Computation of the cells number where we impose
+!>                              a ground Model if iappel=1. users may defined
+!>                              the ground face composition if iappel=2.
+!>                              Warning : be coherent with the dimension of the
+!>                              array \c pourcent_sol
+!>                              Warning: tt's also possible to modify the
+!>                              \c tab_sol array of the ground
+!>                              type constants
+!______________________________________________________________________________!
+
 subroutine usatsoil &
      ( iappel )
 
-!===============================================================================
-! Purpose:
-! -------
-!
-!> \brief Data Entry for the atmospheric ground model.
-!>
-!>
-!> Introduction:
-!>
-!> Define the different values which can be taken by iappel:
-!>
-!> iappel = 1 (only one call on initialization):
-!>            Computation of the cells number where we impose a
-!>            Ground Model
-!>
-!> iappel = 2 (only one call on initialization):
-!>            users may defined the ground face composition
-!>            Warning : be coherent with the dimension of the array \c pourcent_sol
-!>            It's also possible to modify the \c tab_sol array of the ground
-!>            type constants
-!
 !===============================================================================
 ! Module files
 !===============================================================================
@@ -277,11 +275,11 @@ use mesh
 implicit none
 
 ! Arguments
-!-------------------------------------------------------------------
+
 integer          iappel
 
 ! Local variables
-!-------------------------------------------------------------------
+
 integer          ifac , ifbt1d , ilelt , nlelt , isol
 
 integer, allocatable, dimension(:) :: lstelt
@@ -344,3 +342,117 @@ deallocate(lstelt)  ! temporary array for boundary faces selection
 
 return
 end subroutine usatsoil
+
+!===============================================================================
+
+!> \brief Fill in vertical profiles of atmospheric properties prior to solve
+!> 1D radiative transfers. Altitudes (\ref zvert array) are defined in
+!> \ref usatd.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in,out] preray        pressure vertical profile
+!> \param[in,out] temray        real temperature vertical profile
+!> \param[in,out] romray        density vertical profile
+!> \param[in,out] qvray         water vapor content vertical profile
+!> \param[in,out] qlray         water liquid content vertical profile
+!> \param[in,out] ncray         droplets density vertical profile
+!> \param[in,out] aeroso        aerosol concentration vertical profile
+!______________________________________________________________________________!
+
+subroutine cs_user_atmo_1d_rad_prf &
+     ( preray, temray, romray, qvray, qlray, ncray, aeroso )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use parall
+use period
+use ppppar
+use ppthch
+use ppincl
+use atincl
+use atsoil
+use mesh
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision preray(kmx), temray(kmx), romray(kmx), qvray(kmx)
+double precision qlray(kmx), ncray(kmx), aeroso(kmx)
+
+! Local variables
+
+integer k
+double precision tmean, rhum, rap
+
+!===============================================================================
+
+!< [humid_aerosols_atmo]
+
+aeroso(1) = 10.d0
+
+do k = 2, kvert
+  zray(k) = zvert(k)
+
+  tmean = 0.5d0 * (temray(k-1) + temray(k)) + tkelvi
+  rhum = rair * (1.d0 + (rvsra-1.d0)*qvray(k))
+  rap = -abs(gz) * (zray(k)-zray(k-1)) / rhum / tmean
+  preray(k) = preray(k-1) * exp(rap)
+
+  ! analytical profile of aerosol concentration
+  if (zray(k).lt.50.d0) then
+    aeroso(k) = aeroso(1)
+  else
+    aeroso(k) = aeroso(1)*exp(-(zray(k)-50.d0) / 1.25d3)
+    if (aeroso(k).lt.5.d0) then
+      aeroso(k) = 5.d0
+    endif
+  endif
+enddo
+
+! Filling the additional levels above meshed domain
+! (at these levels, pressure, temperature, density profiles have been
+! initialized with standard atmosphere profiles)
+
+do k = kvert+1, kmx
+  zray(k) = zvert(k)
+
+  ! read meteo data for temperature, water wapor and liquid content in
+  ! upper layers for example to fill temray, qvray, qlray
+
+  tmean = 0.5d0*(temray(k-1)+temray(k)) + tkelvi
+  rhum = rair*(1.d0+(rvsra-1.d0)*qvray(k))
+  rap = -abs(gz)*(zray(k)-zray(k-1)) / rhum / tmean
+  preray(k) = preray(k-1)*exp(rap)
+  romray(k) = preray(k) / (temray(k)+tkelvi) / rhum
+
+  ! nc not known above the meshed domain
+  ! droplets radius is assumed of mean volume radius = 5 microns
+  ncray(k) = 1.d-6*(3.d0*romray(k)*qlray(k))                               &
+                  /(4.d0*pi*1.d3*(5.d-6)**3.d0)
+
+  ! similarly, aerosol concentration not known
+  aeroso(k) = aeroso(1)*exp(-(zray(k)-50.d0) / 1.25d3)
+  if (aeroso(k).lt.5.d0) then
+    aeroso(k) = 5.d0
+  endif
+enddo
+
+!< [humid_aerosols_atmo]
+
+return
+end subroutine cs_user_atmo_1d_rad_prf

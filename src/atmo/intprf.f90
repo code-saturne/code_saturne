@@ -20,9 +20,9 @@
 
 !-------------------------------------------------------------------------------
 !> \file intprf.f90
+!>
 !> \brief Temporal and z-axis interpolation for meteorological profiles
-
-!> \brief Temporal and z-axis optimized linear interpolation
+!> An optimized linear interpolation is used.
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -67,7 +67,7 @@ else if (temps.ge.proft(nproft)) then
   it1 = nproft
   it2 = nproft
   alphat = 1.d0
-else !     else nproft > 1
+else ! else nproft > 1
   it = 1
  102    continue
   if (temps.gt.proft(it+1)) then
@@ -92,7 +92,7 @@ else if (xz.ge.profz(nprofz)) then
   iz1 = nprofz
   iz2 = nprofz
   alphaz = 1.d0
-else ! sinon on a forcement nprofz > 1
+else ! else nprofz > 1
   iz = 1
  103    continue
   if (xz.gt.profz(iz+1)) then

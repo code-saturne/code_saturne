@@ -221,37 +221,49 @@ integer, save:: idrayi
 integer, save:: idrayst
 !> grid formed by 1D profiles
 integer, save:: igrid
+!> Flag for the computation of downward and upward infrared radiative fluxes
+!> 0: disabled
+!> 1: enabled
+integer, save:: irdu
+!> Flag for storage of downward and upward solar radiative fluxes
+!> 0: disabled
+!> 1: enabled
+integer, save:: soldu
 
 ! 2.6 Arrays specific to the 1d atmospheric radiative module
 !-------------------------------------------------------------------------------
 
 !> horizontal coordinates of the vertical grid
-double precision, allocatable :: xyvert(:,:)
+double precision, allocatable, dimension(:,:) :: xyvert
 !> vertical grid for 1D radiative scheme initialize in
 !>       cs_user_atmospheric_model.f90
-double precision, allocatable :: zvert(:)
+double precision, allocatable, dimension(:) :: zvert
 !> absorption for CO2 + 03
-double precision, allocatable :: acinfe(:)
+double precision, allocatable, dimension(:) :: acinfe
 !> differential absorption for CO2 + 03
-double precision, allocatable :: dacinfe(:)
+double precision, allocatable, dimension(:) :: dacinfe
 !> absorption for CO2 only
-double precision, allocatable :: aco2(:, :)
+double precision, allocatable, dimension(:,:) :: aco2, aco2s
 !> differential absorption for CO2 only
-double precision, allocatable :: daco2(:,:)
+double precision, allocatable, dimension(:,:) :: daco2, daco2s
 !> idem acinfe, flux descendant
-double precision, allocatable :: acsup(:)
+double precision, allocatable, dimension(:) :: acsup, acsups
 !> internal variable for 1D radiative model
-double precision, allocatable :: dacsup(:)
+double precision, allocatable, dimension(:) :: dacsup, dacsups
 !> internal variable for 1D radiative model
-double precision, allocatable :: tauzq(:)
+double precision, allocatable, dimension(:) :: tauzq
 !> internal variable for 1D radiative model
-double precision, allocatable :: tauz(:)
+double precision, allocatable, dimension(:) :: tauz
 !> internal variable for 1D radiative model
-double precision, allocatable :: zq(:)
+double precision, allocatable, dimension(:) :: zq
 !> internal variable for 1D radiative model
 double precision, save :: tausup
 !> internal variable for 1D radiative model
-double precision, allocatable :: zray(:), rayi(:,:),rayst(:,:)
+double precision, allocatable, dimension(:) :: zray
+double precision, allocatable, dimension(:,:) :: rayi, rayst
+!> Upward and downward radiative fluxes (infrared, solar) along each vertical
+double precision, allocatable, dimension(:,:) :: iru, ird, solu, sold
+
 
 ! 3.0 Data specific to the ground model
 !-------------------------------------------------------------------------------
@@ -352,8 +364,9 @@ if (imeteo.gt.0) then
     call usatdv ( imode )
 
     allocate(xyvert(nvert,3), zvert(kmx))
-    allocate(acinfe(kmx), dacinfe(kmx), aco2(kmx,kmx))
-    allocate(daco2(kmx,kmx), acsup(kmx), dacsup(kmx))
+    allocate(acinfe(kmx), dacinfe(kmx), aco2(kmx,kmx), aco2s(kmx,kmx))
+    allocate(daco2(kmx,kmx), daco2s(kmx,kmx), acsup(kmx), dacsup(kmx))
+    allocate(acsups(kmx), dacsups(kmx))
     allocate(tauzq(kmx+1), tauz(kmx+1), zq(kmx+1))
     allocate(rayi(kmx,nvert), rayst(kmx,nvert), zray(kmx))
 
@@ -362,6 +375,14 @@ if (imeteo.gt.0) then
     call mestcr  ("rayi",  len("rayi"), 1, 0, idrayi)
     call mestcr  ("rayst", len("rayst"), 1, 0, idrayst)
     call gridcr  ("int_grid", len("int_grid"), igrid)
+
+    if (irdu.eq.1) then
+      allocate(iru(kmx,nvert), ird(kmx,nvert))
+    endif
+
+    if (soldu.eq.1) then
+      allocate(sold(kmx,nvert), solu(kmx,nvert))
+    endif
 
   endif
 
@@ -397,18 +418,25 @@ if (imeteo.gt.0) then
   if (iatra1.eq.1) then
 
     deallocate(xyvert, zvert)
-    deallocate(acinfe, dacinfe, aco2)
-    deallocate(daco2, acsup, dacsup)
+    deallocate(acinfe, dacinfe, aco2, aco2s)
+    deallocate(daco2, daco2s, acsup, dacsup)
+    deallocate(acsups, dacsups)
     deallocate(tauzq, tauz, zq)
     deallocate(rayi, rayst, zray)
 
     deallocate(soilvert)
 
     call mestde ()
-    !============
 
     call grides ()
-    !============
+
+    if (irdu.eq.1) then
+      deallocate(iru, ird)
+    endif
+
+    if (soldu.eq.1) then
+      deallocate(solu, sold)
+    endif
 
   endif
 

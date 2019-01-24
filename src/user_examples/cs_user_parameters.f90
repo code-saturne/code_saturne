@@ -1354,6 +1354,11 @@ inucl_siream = 1
 ! and dynamic bins (icut_siream to nbin_aer)
 icut_siream = nbin_aer
 
+! computation / storage of downward and upward infrared radiative fluxes
+irdu = 1
+! computation / storage of downward and upward solar radiative fluxes
+soldu = 1
+
 !< [usati1]
 
 !----

@@ -168,6 +168,15 @@ iatmst = 0
 
 theo_interp = 0
 
+! -------------------------------------
+! flags for 1d radiative transfer model
+! -------------------------------------
+
+! no computation / storage of downward and upward infrared radiative fluxes
+irdu = 0
+! no computation / storage of downward and upward solar radiative fluxes
+soldu = 0
+
 !===============================================================================
 ! 2. ON DONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
