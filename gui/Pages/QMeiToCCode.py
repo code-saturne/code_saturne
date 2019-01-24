@@ -742,6 +742,7 @@ class mei_to_c_interpreter:
         self.delete_file(file2write)
 
         # Write the functions if needed
+        code_to_write = ''
         if len(self.bnd_funcs.keys()) > 0:
             code_to_write = _file_header + _bnd_function_header
             for key in self.bnd_funcs.keys():
