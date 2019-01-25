@@ -145,7 +145,14 @@
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="3">
+           <item row="1" column="1">
+            <widget class="QLabel" name="labelCheckRestartMesh">
+             <property name="text">
+              <string>Different mesh</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
             <widget class="QToolButton" name="toolButton">
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the restart directory (Ex: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;STUDY/CASE/RESU/run_id/checkpoint&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -159,7 +166,7 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
+           <item row="0" column="3">
             <widget class="QLineEdit" name="lineEdit">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -178,7 +185,7 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="3">
+           <item row="1" column="4">
             <widget class="QToolButton" name="toolButtonRestartMesh">
              <property name="text">
               <string>...</string>
@@ -189,14 +196,14 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="2">
+           <item row="1" column="3">
             <widget class="QLineEdit" name="lineEditRestartMesh">
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;mesh_input&lt;/span&gt; or &lt;span style=&quot; font-weight:600;&quot;&gt;mesh_output&lt;/span&gt; from previous run matching the restart files.&lt;/p&gt;&lt;p&gt;If this file is not available (not saved in previous calculation), re-running the previous calculation in &amp;quot;preprocessing only&amp;quot; mode may allow rebuilding it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="2">
+           <item row="2" column="3">
             <spacer name="horizontalSpacerMesh">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
@@ -209,7 +216,7 @@
              </property>
             </spacer>
            </item>
-           <item row="0" column="0">
+           <item row="0" column="1">
             <widget class="QLabel" name="labelRestartDir">
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the restart directory (Ex: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;STUDY/CASE/RESU/run_id/checkpoint&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -220,13 +227,6 @@
             </widget>
            </item>
            <item row="1" column="0">
-            <widget class="QLabel" name="labelCheckRestartMesh">
-             <property name="text">
-              <string>Different mesh</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
             <widget class="QCheckBox" name="checkBoxRestartMesh">
              <property name="text">
               <string/>
@@ -245,22 +245,12 @@
          <item>
           <layout class="QHBoxLayout">
            <item>
-            <widget class="QLabel" name="label_2">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the dynamic field should be frozen or not. In such a case, the values of velocity, pressure, and turbulence variables are kept constant. Only the equations for the scalars are solved.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICCVFG&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>Calculation on frozen velocity and pressure fields</string>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QCheckBox" name="checkBox">
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the dynamic field should be frozen or not. In such a case, the values of velocity, pressure, and turbulence variables are kept constant. Only the equations for the scalars are solved.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICCVFG&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
-              <string/>
+              <string>Calculation on frozen velocity and pressure fields</string>
              </property>
             </widget>
            </item>

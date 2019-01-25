@@ -794,6 +794,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self._tableViewLayout()
 
+        # Checkbox for restart behavior
+
+        self.checkBoxMeshRestart.setChecked(not self.mdl.getPreprocessOnRestart())
+        self.checkBoxMeshRestart.clicked.connect(self.slotMeshRestart)
+
         # Combomodels
 
         self.modelArg_cs_verif = ComboModel(self.comboBoxRunType, 4, 1)
@@ -1113,6 +1118,14 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.mdl.delMesh(mesh)
 
         self._tableViewLayout()
+
+
+    @pyqtSlot()
+    def slotMeshRestart(self):
+        """
+        Input if preprocessing should be done on restart or not
+        """
+        self.mdl.setPreprocessOnRestart(not self.checkBoxMeshRestart.isChecked())
 
 
     @pyqtSlot(str)

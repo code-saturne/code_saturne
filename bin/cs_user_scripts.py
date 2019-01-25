@@ -61,6 +61,11 @@ def define_domain_parameters(domain):
     # Reusing output from previous runs
     #----------------------------------
 
+    # By default, upon restart, if the previous mesh is available in the
+    # checkpoint, preprocessing is skipped. To allow additional preprocessing,
+    # set:
+    #   domain.preprocess_on_restart = True
+
     # To use the output of a previous Preprocessor (mesh import) run, set:
     #   domain.mesh_input = 'RESU/<run_id>/mesh_input'
 
@@ -74,6 +79,7 @@ def define_domain_parameters(domain):
     #  domain.restart_input = 'RESU/<run_id>/checkpoint'
 
     if domain.param == None:
+        domain.preprocess_on_restart = False
         domain.mesh_input = None
         domain.partition_input = None
         domain.restart_input = None

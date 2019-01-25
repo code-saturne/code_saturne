@@ -11,8 +11,6 @@ Changes expected between the current version and 6.0.0 final:
 
 - Some GUI changes or page reorganizations are possible
 - Run script improvements:
-  * Handling of mesh_input files and preprocessing in case of restart
-    should allow a better automated option
   * In new cases, replacement of SCRIPTS/runcase by DATA/run.cfg will
     allow keeping run settings across multiple system types
 - Ongoing work in the Lagrangian module may lead to some changes
@@ -29,6 +27,10 @@ User changes:
   * Folders replaced by active pages (with new icons reflecting this)
   * Preprocessor/calculation modes replaced by run type in mesh page
   * Many minor changes
+
+- Save mesh_input in restart by default. To avoid using excess disk space when
+  meshes do not change, use hard links where appropriate (and move mesh_output
+  to checkpoint/mesh_input upon checkpointing).
 
 - Allow stopping criteria based on physical time and/or additional time.
 

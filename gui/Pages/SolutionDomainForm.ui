@@ -337,7 +337,7 @@
       <string>Execution mode</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
+      <item row="1" column="0">
        <widget class="QComboBox" name="comboBoxRunType">
         <property name="minimumSize">
          <size>
@@ -347,7 +347,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="1">
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -359,6 +359,16 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="checkBoxMeshRestart">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;In case of restart, automatically use the mesh_input from the matching checkpoint,&lt;/p&gt;&lt;p&gt;and skip all preprocessing modifications.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Use unmodified checkpoint mesh in case of restart</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

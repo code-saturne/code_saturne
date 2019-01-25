@@ -293,6 +293,29 @@ cs_restart_checkpoint_set_defaults(int     nt_interval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define checkpoint behavior for mesh.
+ *
+ * If mesh checkpointing is active (default), upon writing the first
+ * checkpoint file of a computation, a mesh_output file is moved to
+ * checkpoint/mesh_input if present. If not present but a mesh_input
+ * file (or link to file) is present, a hard link to that file is
+ * added as checkpoint/mesh_input.
+ *
+ * A mesh_input directory is ignored, as it is normally only created when
+ * multiple input files are appended, which leads to the output and thus
+ * presence of a mesh_output file, unless explicitely deactivated by the
+ * user.
+ *
+ * \param[in]  mode  if 0, do not checkpoint mesh
+ *                   if 1, checkpoint mesh_output or mesh_input file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_mesh_mode(int  mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define last forced checkpoint time step.
  *
  * \param[in]  nt_last  last time step for forced checkpoint
