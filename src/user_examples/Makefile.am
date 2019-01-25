@@ -187,7 +187,7 @@ exampledir = $(pkgdatadir)/user_examples
 example_DATA = $(examplefiles)
 
 clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
+	-rm -f *__genmod.f90 *.mod
 
 # Finish example files installation
 # - tag with the package version number

@@ -249,5 +249,8 @@ install-exec-hook: libcs_solver.la
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	 --mode=install --dest "$(DESTDIR)"
 
+clean-local:
+	-rm -f cs_solver$(EXEEXT)
+
 uninstall-local:
 	rm $(pkglibexecdir)/cs_solver$(EXEEXT)
