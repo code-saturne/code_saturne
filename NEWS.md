@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 6.0.0 (unreleased)
+--------------------------
+
 User changes:
 
 - GUI: significant reorganization
