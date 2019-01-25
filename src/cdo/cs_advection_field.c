@@ -1409,11 +1409,45 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
       {
         const cs_real_t  *constant_val = (cs_real_t *)def->input;
 
-        cs_nvec3(constant_val, &nvec);
-        for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          const cs_nvec3_t  fq = cs_quant_set_face_nvec(n_i_faces + i, cdoq);
-          flx_values[i] = fq.meas * nvec.meas * _dp3(fq.unitv, nvec.unitv);
+#       pragma omp parallel for if  (n_b_faces > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_b_faces; i++)
+          flx_values[i] = _dp3(cdoq->b_face_normal + 3*i, constant_val);
+
+      }
+      break;
+
+    case CS_XDEF_BY_ARRAY:
+      {
+        cs_xdef_array_input_t *ai = (cs_xdef_array_input_t *)def->input;
+        assert(ai->stride == 3);
+
+        if (cs_flag_test(ai->loc, cs_flag_primal_face)) {
+
+          /* Boundary faces come after interior faces */
+          const cs_real_t  *const bface_vel = ai->values + 3*n_i_faces;
+
+#         pragma omp parallel for if  (n_b_faces > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < n_b_faces; i++)
+            flx_values[i] = _dp3(cdoq->b_face_normal + 3*i, bface_vel + 3*i);
+
         }
+        else if (cs_flag_test(ai->loc, cs_flag_primal_cell)) {
+
+          const cs_adjacency_t  *f2c = cs_cdo_connect->f2c;
+          const cs_lnum_t  *const bf2c_ids = f2c->ids + 2*n_i_faces;
+          const cs_real_t  *const cell_vel = ai->values;
+
+#         pragma omp parallel for if  (n_b_faces > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+            const cs_lnum_t  c_id = bf2c_ids[i];
+            flx_values[i] = _dp3(cdoq->b_face_normal + 3*i, cell_vel + 3*c_id);
+          }
+
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Incompatible location when defined by array.",
+                    __func__);
 
       }
       break;
