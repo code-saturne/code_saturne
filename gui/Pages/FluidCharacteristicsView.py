@@ -73,6 +73,7 @@ if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
    except Exception:  # CoolProp might be available but not its Python bindings
 
       if cs_config.config().libs['coolprop'].have != "gui_only":
+         """
          import traceback
          exc_info = sys.exc_info()
          bt = traceback.format_exception(*exc_info)
@@ -81,6 +82,8 @@ if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
          del exc_info
          print("Warning: CoolProp Python bindings not available or usable")
          print("         list of fluids based on CoolProp 5.1.1")
+         """
+         pass
       else:
          coolprop_warn = True
 
