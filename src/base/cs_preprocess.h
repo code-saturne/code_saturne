@@ -51,6 +51,21 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine if preprocessing is needed.
+ *
+ * Preprocessing is ignored when a ./restart/mesh_input file is present but
+ * no ./mesh_input file or directory is present. In this case, restart mesh
+ * file is read, and all other preprocessing steps are skipped.
+ *
+ * \return  true if preprocessing is needed, false if only reading is needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_preprocess_mesh_is_needed(void);
+
 /*----------------------------------------------------------------------------
  * Define all mesh preprocessing operations.
  *----------------------------------------------------------------------------*/

@@ -412,6 +412,7 @@ class domain(base_domain):
 
         # Solver options
 
+        self.preprocess_on_restart = False
         self.exec_solver = True
 
         if param:
@@ -693,15 +694,6 @@ class domain(base_domain):
 
         err_str = ""
 
-        # If we are using a previous preprocessing, simply link to it here
-        if self.mesh_input:
-            mesh_input = os.path.expanduser(self.mesh_input)
-            if not os.path.isabs(mesh_input):
-                mesh_input = os.path.join(self.case_dir, mesh_input)
-            link_path = os.path.join(self.exec_dir, 'mesh_input')
-            self.purge_result(link_path) # in case of previous run here
-            self.symlink(mesh_input, link_path)
-
         # Copy data files
 
         dir_files = os.listdir(self.data_dir)
@@ -766,6 +758,26 @@ class domain(base_domain):
                              os.path.join(self.exec_dir, 'restart_mesh_input'))
 
             print(' Restart mesh ' + self.restart_mesh_input + '\n')
+
+        # Mesh input file
+
+        restart_input_mesh = None
+        if self.restart_input:
+            restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input')
+            if not os.path.exists(restart_input_mesh):
+                restart_input_mesh = None
+
+        if restart_input_mesh is None or self.preprocess_on_restart:
+            if self.mesh_input:
+                mesh_input = os.path.expanduser(self.mesh_input)
+                if not os.path.isabs(mesh_input):
+                    mesh_input = os.path.join(self.case_dir, mesh_input)
+                link_path = os.path.join(self.exec_dir, 'mesh_input')
+                self.purge_result(link_path) # in case of previous run here
+                self.symlink(mesh_input, link_path)
+        else:
+            # use mesh from restart, with no symbolic link
+            self.mesh_input = restart_input_mesh
 
         # Partition input files
 
@@ -1023,10 +1035,6 @@ class domain(base_domain):
             if f in dir_files:
                 purge_list.append(f)
         purge_list.extend(fnmatch.filter(dir_files, 'core*'))
-
-        f = 'scratch3.lag'
-        if f in dir_files:
-            purge_list.append(f)
 
         for f in purge_list:
             dir_files.remove(f)

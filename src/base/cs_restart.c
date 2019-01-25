@@ -31,9 +31,18 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(HAVE_FCNTL_H)
+# include <fcntl.h>
+#endif
+
+#if defined(HAVE_UNISTD_H)
+# include <unistd.h>
+#endif
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -86,16 +95,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
-
-/* Fortran API */
-/* ----------- */
-
-/*
- * "Usual" max name length (a longer name is possible but will
- * incur dynamic memory allocation.
- */
-
-#define CS_RESTART_NAME_LEN   64
 
 /*============================================================================
  * Local type definitions
@@ -181,6 +180,7 @@ static int _restart_present = 0;
 
 /* Restart time steps and frequency */
 
+static int    _checkpoint_mesh = 1;          /* checkpoint mesh if possible */
 static int    _checkpoint_nt_interval = -1;  /* time step interval */
 static int    _checkpoint_nt_next = -1;      /* next forced time step */
 static int    _checkpoint_nt_last = -1;      /* last checkpoint time step */
@@ -1508,6 +1508,70 @@ _add_location_check_ref(cs_restart_t     *restart,
                                  ent_global_num);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update checkpoint directory with mesh.
+ *
+ * The mesh_output file is moved to restart/mesh_input if present.
+ * Otherwise, if mesh_input is present and a file (not a directory),
+ * is linked to restart/mesh_input (using a hard link if possible)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_mesh_checkpoint(void)
+{
+  if (cs_glob_rank_id < 1 && _checkpoint_mesh > 0) {
+
+    const char _checkpoint[] = "checkpoint";
+    if (cs_file_mkdir_default(_checkpoint) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("The %s directory cannot be created"), _checkpoint);
+
+    /* Move mesh_output if present */
+
+    const char opath_i[] = "mesh_input";
+    const char opath_o[] = "mesh_output";
+    const char npath[] = "checkpoint/mesh_input";
+
+    if (cs_file_isreg(opath_o)) {
+      int retval = rename(opath_o, npath);
+      if (retval != 0) {
+        cs_base_warn(__FILE__, __LINE__);
+        bft_printf(_("Failure moving %s to %s:\n"
+                     "%s\n"),
+                   opath_o, npath, strerror(errno));
+      }
+    }
+
+    /* Otherwise link mesh_input if it is a regular file
+       (in case of a mesh_input directory, do nothing, since a
+       directory should be created only in case of multiple meshes,
+       and concatenation leads to a mesh_output being created,
+       unless the (avanced) user has explicitely deactivated that
+       output, in which case we abide by that choice) */
+
+    else if (cs_file_isreg(opath_i)) {
+
+#if defined(HAVE_LINKAT) && defined(HAVE_FCNTL_H)
+
+      int retval = linkat(AT_FDCWD, opath_i,
+                          AT_FDCWD, npath, AT_SYMLINK_FOLLOW);
+
+      if (retval != 0) {
+        cs_base_warn(__FILE__, __LINE__);
+        bft_printf(_("Failure hard-linking %s to %s:\n"
+                     "%s\n"),
+                   opath_i, npath, strerror(errno));
+
+      }
+
+#endif
+
+    }
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1643,6 +1707,32 @@ cs_restart_checkpoint_set_defaults(int     nt_interval,
   _checkpoint_nt_interval = nt_interval;
   _checkpoint_t_interval = t_interval;
   _checkpoint_wt_interval = wt_interval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define checkpoint behavior for mesh.
+ *
+ * If mesh checkpointing is active (default), upon writing the first
+ * checkpoint file of a computation, a mesh_output file is moved to
+ * checkpoint/mesh_input if present. If not present but a mesh_input
+ * file (or link to file) is present, a hard link to that file is
+ * added as checkpoint/mesh_input.
+ *
+ * A mesh_input directory is ignored, as it is normally only created when
+ * multiple input files are appended, which leads to the output and thus
+ * presence of a mesh_output file, unless explicitely deactivated by the
+ * user.
+ *
+ * \param[in]  mode  if 0, do not checkpoint mesh
+ *                   if 1, checkpoint mesh_output or mesh_input file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_mesh_mode(int  mode)
+{
+  _checkpoint_mesh = mode;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1859,6 +1949,13 @@ cs_restart_create(const char         *name,
   const char _checkpoint[] = "checkpoint";
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
+
+  /* Ensure mesh checkpoint is updated on first call */
+
+  if (    mode == CS_RESTART_MODE_WRITE
+      && _restart_n_opens[mode] == 0) {
+    _update_mesh_checkpoint();
+  }
 
   /* Initializations */
 

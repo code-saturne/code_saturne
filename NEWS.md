@@ -1,6 +1,12 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Save mesh_input in restart by default. To avoid using excess disk space when
+  meshes do not change, use hard links where appropriate (and move mesh_output
+  to checkpoint/mesh_input upon checkpointing).
+
 Release 6.0.0 (unreleased)
 --------------------------
 

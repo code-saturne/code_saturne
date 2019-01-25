@@ -1382,6 +1382,38 @@ class SolutionDomainModel(MeshModel, Model):
             self._updateExtrudeNumbers()
 
 
+    # Methods to manage restart behavior
+    #===================================
+
+    @Variables.noUndo
+    def getPreprocessOnRestart(self):
+        """
+        Get preprocess on restart option.
+        """
+
+        val = False
+        if self.node_ecs:
+            s = self.node_ecs.xmlGetString('preprocess_on_restart')
+            print(s)
+            if str(s) == 'yes':
+                val = True
+
+        return val
+
+
+    @Variables.undoLocal
+    def setPreprocessOnRestart(self, val):
+        """
+        Set run type.
+        """
+        if val == True:
+            self.node_ecs.xmlSetData('preprocess_on_restart', 'yes')
+        else:
+            node = self.node_ecs.xmlGetNode('preprocess_on_restart')
+            if node:
+                node.xmlRemoveNode()
+
+
     # Methods to manage run type
     #===========================
 

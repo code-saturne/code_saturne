@@ -210,6 +210,12 @@ class Parser:
         if sol_domain_node == None:
             return
 
+        # Check whether additionnal preprocessing is done upn restart
+
+        val = getDataFromNode(sol_domain_node, 'preprocess_on_restart')
+        if val in ('yes', 'on'):
+            self.dict['preprocess_on_restart'] = True
+
         # Get mesh_input if available; in this case, no mesh
         # import will be necessary, so we are done.
 
@@ -292,6 +298,8 @@ class Parser:
         if not calc_node:
             return
 
+        is_restart = False
+
         sr_node = getChildNode(calc_node, 'start_restart')
 
         if sr_node != None:
@@ -300,6 +308,7 @@ class Parser:
                 path = str(node.getAttribute('path'))
                 if path:
                     self.dict['restart_input'] = path
+                    is_restart = True
 
         if sr_node != None:
             node = getChildNode(sr_node, 'restart_mesh')
