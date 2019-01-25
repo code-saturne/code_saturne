@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-01-09 17:06+0100\n"
+"POT-Creation-Date: 2019-01-25 16:04+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5006,7 +5006,8 @@ msgstr ""
 msgid ""
 "Error opening log file:\n"
 "%s"
-msgstr "Erreur à l'ouverture du fichier journal :\n"
+msgstr ""
+"Erreur à l'ouverture du fichier journal :\n"
 "%s"
 
 #, c-format
@@ -7259,11 +7260,12 @@ msgstr ""
 
 msgid ""
 "while reading input data,\n"
-"with k-epsilon LP (iturb=21),k-epsilon LS (iturb=22) or v2f model "
-"(iturb=50/51)"
+"with k-epsilon LP (iturb=21),k-epsilon LS (iturb=22), k-epislon quadratic "
+"(iturb=23)or v2f model (iturb=50/51)"
 msgstr ""
 "lors de la lecture des données d'entrée,\n"
-"avec les modèles k-epsilon LP (iturb=21), k-epsilon LS (iturb=22) ou v2f (iturb=50/51)"
+"avec les modèles k-epsilon LP (iturb=21), k-epsilon LS (iturb=22), "
+"k-epsilon quadratique (iturb=23) ou v2f (iturb=50/51)"
 
 msgid ""
 "while reading input data,\n"
@@ -10657,6 +10659,9 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
+msgid "All Catalyst writers must use the same MPI communicator"
+msgstr ""
+
 #, c-format
 msgid ""
 "Error initializing pipeline from \"%s\":\n"
@@ -11313,12 +11318,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid ""
-"Error: can not interpret expression: %s\n"
-" %i"
-msgstr ""
-
-#, c-format
 msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
@@ -11373,7 +11372,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Error: can not use evaluate property: %s\n"
+msgid "Error: can not evaluate property: %s using a thermal law\n"
 msgstr ""
 
 #, c-format
@@ -11410,6 +11409,12 @@ msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
 msgid "Density value is zero or not found in the xml file.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not interpret expression: %s\n"
+" %i"
 msgstr ""
 
 #, c-format
@@ -12440,7 +12445,7 @@ msgid ""
 "on the continuous phase is not activated:\n"
 "  cs_glob_lagr_time_scheme->iilagr = %d\n"
 "The return coupling must be acivated for this model:\n"
-"  cs_glob_lagr_time_scheme->iilagr = 2\n"
+"  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"
 msgstr ""
 
 #, c-format
