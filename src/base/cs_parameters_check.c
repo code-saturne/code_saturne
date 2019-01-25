@@ -1279,7 +1279,7 @@ cs_parameters_check(void)
   /* Turbulence */
 
   /* Model */
-  const int iturb_vals[15] = {0,              /* laminar */
+  const int iturb_vals[16] = {0,              /* laminar */
                               10,             /* mixing length */
                               20, 21, 22, 23, /* k-epsilon */
                               30, 31, 32,     /* RSM */
