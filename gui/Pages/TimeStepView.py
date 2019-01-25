@@ -352,7 +352,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Select stop criterion model
         """
         m_prev, c_prev = self.mdl.getStopCriterion()
-        model = self.modelTimeStop.dicoV2M[text]
+        model = self.modelTimeStop.dicoV2M[str(text)]
 
         value = c_prev
         if m_prev in ("iterations", "iterations_add"):
