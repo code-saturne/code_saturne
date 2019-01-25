@@ -46,6 +46,11 @@ import code_saturne.Base.Toolbox as Tool
 from code_saturne.Base.XMLvariables import Variables, Model
 from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
 
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+
 #-------------------------------------------------------------------------------
 # EOS
 #-------------------------------------------------------------------------------
@@ -90,6 +95,27 @@ class FluidCharacteristicsModel(Variables, Model):
         self.coolprop = 0
         if cfg.libs['coolprop'].have != "no":
             self.coolprop = 1
+
+        # Scalars list
+        self.list_scalars = []
+        thm = ThermalScalarModel(self.case)
+        tsn = thm.getThermalScalarName()
+        tsm = thm.getThermalScalarModel()
+
+        if tsm == "temperature_celsius":
+            self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (C)")))
+        elif tsm == "temperature_kelvin":
+            self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (K)")))
+        elif tsm != "off":
+            self.list_scalars.append((tsn, self.tr("Thermal scalar")))
+
+        self.m_sca = DefineUserScalarsModel(self.case)
+        for s in self.m_sca.getUserScalarNameList():
+            self.list_scalars.append((s, self.tr("Additional scalar")))
+
+        # Notebook
+        self.notebook = NotebookModel(self.case)
+
 
 
     def __nodeFromTag(self, name):
@@ -626,11 +652,193 @@ class FluidCharacteristicsModel(Variables, Model):
             if node.xmlGetNode('postprocessing_recording'):
                 node.xmlRemoveChild('postprocessing_recording')
 
+    # MEG Generation related functions
+    def getFormulaComponents(self, tag, scalar=None):
+        """
+        Get the formula components for a given tag
+        """
+
+        if tag == 'density':
+            return self.getFormulaRhoComponents()
+
+        elif tag == 'molecular_viscosity':
+            return self.getFormulaMuComponents()
+
+        elif tag == 'specific_heat':
+            return self.getFormulaCpComponents()
+
+        elif tag == 'thermal_conductivity':
+            return self.getFormulaAlComponents()
+
+        elif tag == 'volume_viscosity':
+            return self.getFormulaViscv0Components()
+
+        elif tag == 'scalar_diffusivity' and scalar != None:
+            return self.getFormulaDiffComponents(scalar)
+
+        else:
+            msg = 'Formula is not available for field %s in MEG' % tag
+            raise Exception(msg)
+
+
+    def getFormulaRhoComponents(self):
+        """
+        User formula for density
+        """
+
+        exp = self.getFormula('density')
+        req = [('density', 'Density')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+
+        rho0_value = self.getInitialValueDensity()
+        symbols.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
+
+        ref_pressure = self.getPressure()
+        symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols;
+
+
+    def getFormulaMuComponents(self):
+        """
+        User formula for molecular viscosity
+        """
+
+        exp = self.getFormula('molecular_viscosity')
+        req = [('molecular_viscosity', 'Molecular Viscosity')]
+
+        symbols = []
+
+        for s in self.list_scalars:
+           symbols.append(s)
+        mu0_value = self.getInitialValueViscosity()
+        symbols.append(('mu0', 'Viscosity (reference value) = ' + str(mu0_value)))
+
+        rho0_value = self.getInitialValueDensity()
+        symbols.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
+
+        ref_pressure = self.getPressure()
+        symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
+        symbols.append(('rho', 'Density'))
+
+        if CompressibleModel(self.case).getCompressibleModel() == 'on':
+            symbols.append(('T', 'Temperature'))
+            ref_temperature = self.getTemperature()
+            symbols.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols;
+
+
+    def getFormulaCpComponents(self):
+        """
+        User formula for specific heat
+        """
+        exp = self.getFormula('specific_heat')
+        req = [('specific_heat', 'Specific heat')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+
+        cp0_value = self.getInitialValueHeat()
+        symbols.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
+
+        ref_pressure = self.getPressure()
+        symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols;
+
+
+    def getFormulaViscv0Components(self):
+        """
+        User formula for volumic viscosity
+        """
+        exp = self.mdl.getFormula('volume_viscosity')
+        req = [('volume_viscosity', 'Volumic viscosity')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+
+        viscv0_value = self.getInitialValueVolumicViscosity()
+        ref_pressure = self.getPressure()
+        ref_temperature = self.getTemperature()
+        symbols.append(('viscv0', 'Volumic viscosity (reference value) = '+str(viscv0_value)+' J/kg/K'))
+        symbols.append(('p0', 'Reference pressure (Pa) = '+str(ref_pressure)))
+        symbols.append(('t0', 'Reference temperature (K) = '+str(ref_temperature)))
+        symbols.append(('T', 'Temperature'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols;
+
+
+    def getFormulaAlComponents(self):
+        """
+        User formula for thermal conductivity
+        """
+        exp = self.mdl.getFormula('thermal_conductivity')
+        req = [('thermal_conductivity', 'Thermal conductivity')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+
+        lambda0_value = self.getInitialValueCond()
+        ref_pressure = self.getPressure()
+        symbols.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
+        symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols;
+
+
+    def getFormulaDiffComponents(self, scalar):
+        """
+        User formula for the diffusion coefficient
+        """
+        name = self.m_sca.getScalarDiffusivityName(scalar)
+        exp  = self.m_sca.getDiffFormula(scalar)
+        req = [(str(name), str(scalar)+' diffusion coefficient')]
+        sym = [('x','cell center coordinate'),
+               ('y','cell center coordinate'),
+               ('z','cell center coordinate'),]
+        sym.append((str(scalar),str(scalar)))
+        diff0_value = self.m_sca.getScalarDiffusivityInitialValue(scalar)
+        sym.append((str(name)+'_ref', str(scalar)+' diffusion coefficient (reference value, m^2/s) = '+str(diff0_value)))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, sym
+
 
 ##    def RemoveThermoConductNode(self):
 ##        """Remove balise property for thermal_conductivity"""
 ##        self.node_fluid.xmlRemoveChild('property', name='thermal_conductivity')
 
+
+    def tr(self, text):
+        """
+        translation
+        """
+        return text
 
 
 #-------------------------------------------------------------------------------

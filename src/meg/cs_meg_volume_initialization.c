@@ -66,7 +66,7 @@ BEGIN_C_DECLS
 
 void
 cs_meg_volume_initialization(cs_field_t              *f,
-                             const cs_volume_zone_t  *z)
+                             const cs_volume_zone_t  *vz)
 {
 
 

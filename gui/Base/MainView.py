@@ -1182,7 +1182,7 @@ class MainView(object):
         """
         if self.case['run_type'] == 'standard' and self.case['oturns'] == False:
             mci = mei_to_c_interpreter(self.case)
-            state = mci.save_all_functions(self)
+            state = mci.save_all_functions()
 
             if state == 1:
                 title = self.tr("Save error")

@@ -783,7 +783,7 @@ cs_user_gwf_setup(cs_domain_t   *domain);
 cs_real_t *
 cs_meg_boundary_function(const char               *field_name,
                          const char               *condition,
-                         const cs_boundary_zone_t *z);
+                         const cs_boundary_zone_t *bz);
 
 /*----------------------------------------------------------------------------*/
 
@@ -799,7 +799,7 @@ cs_meg_boundary_function(const char               *field_name,
 
 void
 cs_meg_volume_function(cs_field_t             *f,
-                       const cs_volume_zone_t *z);
+                       const cs_volume_zone_t *vz);
 
 /*----------------------------------------------------------------------------*/
 
@@ -815,7 +815,7 @@ cs_meg_volume_function(cs_field_t             *f,
 
 void
 cs_meg_volume_initialization(cs_field_t             *f,
-                             const cs_volume_zone_t *z);
+                             const cs_volume_zone_t *vz);
 
 /*----------------------------------------------------------------------------*/
 

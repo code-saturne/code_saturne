@@ -1030,66 +1030,6 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueElastCoef(fieldId,ec)
 
 
-    def getFormulaComponents(self, fieldId, tag):
-        """
-        Get the formula components for a given tag
-        """
-
-        if tag == 'density':
-            return self.getFormulaRhoComponents(fieldId)
-
-        elif tag == 'molecular_viscosity':
-            return self.getFormulaMuComponents(fieldId)
-
-        elif tag == 'specific_heat':
-            return self.getFormulaCpComponents(fieldId)
-
-        elif tag == 'thermal_conductivity':
-            return self.getFormulaAlComponents(fieldId)
-
-        elif tag == 'd_rho_d_P':
-            return self.getFormuladrodpComponents(fieldId)
-
-        elif tag == 'd_rho_d_h':
-            return self.getFormuladrodhComponents(fieldId)
-
-        elif tag == 'temperature':
-            return self.getFormulaTemperatureComponents(fieldId)
-
-        else:
-            msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
-            raise Exception(msg)
-
-
-    def getFormulaRhoComponents(self, fieldId):
-        """
-        User formula for density
-        """
-        exp = self.mdl.getFormula(fieldId, 'density')
-        if not exp:
-            exp = "rho = 1.8;"
-        req = [('rho', 'Density')]
-        exa = ThermodynamicsView.density
-
-        symbols_rho = []
-        for s in self.list_scalars:
-           symbols_rho.append(s)
-
-        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_rho.append((label, "enthalpy_"+str(fieldId)))
-        rho0_value = self.mdl.getInitialValue(fieldId, 'density')
-        symbols_rho.append(('rho0', 'Density (reference value) = '+str(rho0_value)))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_rho.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_rho, exa
-
-
     @pyqtSlot()
     def slotFormulaRho(self):
         """
@@ -1097,7 +1037,9 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_rho, exa = self.getFormulaRhoComponents(fieldId)
+        exp, req, sca, symbols_rho = self.mdl.getFormulaRhoComponents(fieldId)
+
+        exa = ThermodynamicsView.density
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1114,34 +1056,6 @@ temperature = enthalpy / 1000;
             self.pushButtonDensity.setToolTip(exp)
 
 
-    def getFormulaMuComponents(self, fieldId):
-        """
-        User formula for molecular viscosity
-        """
-        exp = self.mdl.getFormula(fieldId, 'molecular_viscosity')
-        if not exp:
-            exp = "mu = 4.56e-05;"
-        req = [('mu', 'Molecular Viscosity')]
-        exa = ThermodynamicsView.molecular_viscosity
-
-        symbols_mu = []
-        for s in self.list_scalars:
-           symbols_mu.append(s)
-        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_mu.append((label, 'enthalpy_'+str(fieldId)))
-        mu0_val = self.mdl.getInitialValue(fieldId, 'molecular_viscosity')
-        symbols_mu.append(('mu0', 'Viscosity (reference value) = '+str(mu0_val)))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_mu.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_mu.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_mu, exa
-
-
     @pyqtSlot()
     def slotFormulaMu(self):
         """
@@ -1149,7 +1063,9 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_mu, exa = self.getFormulaMuComponents(fieldId)
+        exp, req, sca, symbols_mu = self.mdl.getFormulaMuComponents(fieldId)
+
+        exa = ThermodynamicsView.molecular_viscosity
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1165,35 +1081,6 @@ temperature = enthalpy / 1000;
             self.pushButtonViscosity.setToolTip(exp)
 
 
-    def getFormulaCpComponents(self, fieldId):
-        """
-        User formula for specific heat
-        """
-        exp = self.mdl.getFormula(fieldId, 'specific_heat')
-
-        if not exp:
-            exp = "cp = 4000.;"
-        req = [('cp', 'Specific heat')]
-        exa = ThermodynamicsView.specific_heat
-
-        symbols_cp = []
-        for s in self.list_scalars:
-           symbols_cp.append(s)
-        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_cp.append((label, "enthalpy_"+str(fieldId)))
-        cp0_val = self.mdl.getInitialValue(fieldId, "specific_heat")
-        symbols_cp.append(('cp0', 'Specific heat (reference value) = '+str(cp0_val)))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_cp.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_cp, exa
-
-
     @pyqtSlot()
     def slotFormulaCp(self):
         """
@@ -1201,7 +1088,9 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_cp, exa = self.getFormulaCpComponents(fieldId)
+        exp, req, sca, symbols_cp = self.mdl.getFormulaCpComponents(fieldId)
+
+        exa = ThermodynamicsView.specific_heat
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1217,34 +1106,6 @@ temperature = enthalpy / 1000;
             self.pushButtonSpecificHeat.setToolTip(exp)
 
 
-    def getFormulaAlComponents(self, fieldId):
-        """
-        User formula for thermal conductivity
-        """
-        exp = self.mdl.getFormula(fieldId, 'thermal_conductivity')
-        if not exp:
-            exp = "lambda = 1.e-5;"
-        req = [('lambda', 'Thermal conductivity')]
-        exa = ThermodynamicsView.thermal_conductivity
-
-        symbols_al = []
-        for s in self.list_scalars:
-           symbols_al.append(s)
-        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_al.append((label, 'enthalpy_'+str(fieldId)))
-        l0_val = self.mdl.getInitialValue(fieldId, 'thermal_conductivity')
-        symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = '+str(l0_val)))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_al.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_al.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_al, exa
-
-
     @pyqtSlot()
     def slotFormulaAl(self):
         """
@@ -1252,7 +1113,9 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols_al, exa = self.getFormulaAlComponents(fieldId)
+        exp, req, sca, symbols_al = self.mdl.getFormulaAlComponents(fieldId)
+
+        exa = ThermodynamicsView.thermal_conductivity
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1268,41 +1131,14 @@ temperature = enthalpy / 1000;
             self.pushButtonThermalConductivity.setToolTip(exp)
 
 
-    def getFormulaStComponents(self):
-        """
-        User formula for surface tension
-        """
-        exp = self.mdl.getFormula('none', 'surface_tension')
-        if not exp:
-            exp = "sigma = 0.075;"
-        req = [('sigma', 'Surface Tension')]
-        exa = ThermodynamicsView.surface_tension
-
-        symbols_st = []
-        for s in self.list_scalars:
-           symbols_st.append(s)
-        for fieldId in self.mdl.getFieldIdList():
-            if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-                label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-                symbols_st.append((label, 'enthalpy_'+str(fieldId)))
-        s0_val = self.mdl.getInitialValue('none', 'surface_tension')
-        symbols_st.append(('sigma0', 'Surface tension (reference value) = '+str(s0_val)))
-
-        for s in self.m_spe.getScalarNameList():
-              symbols_st.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_st.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_st, exa
-
-
     @pyqtSlot()
     def slotFormulaSt(self):
         """
         User formula for surface tension
         """
-        exp, req, sca, symbols_st, exa = self.getFormulaStComponents()
+        exp, req, sca, symbols_st = self.mdl.getFormulaStComponents()
+
+        exa = ThermodynamicsView.surface_tension
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1347,33 +1183,6 @@ temperature = enthalpy / 1000;
                     self.runProcess = subprocess.Popen(command, shell=True)
 
 
-    def getFormulaTemperatureComponents(self, fieldId):
-        """
-        User formula for temperature as a function of enthalpy
-        """
-        label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
-        exp = self.mdl.getFormula(fieldId, 'temperature')
-        if not exp:
-            exp = label + " = 273.15;"
-        req = [(label, 'temperature')]
-        exa = ThermodynamicsView.temperature
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, 'enthalpy_'+str(fieldId)))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols, exa
-
-
     @pyqtSlot()
     def slotFormulaTemperature(self):
         """
@@ -1381,7 +1190,9 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
 
-        exp, req, sca, symbols, exa = self.getFormulaTemperatureComponents(fieldId)
+        exp, req, sca, symbols = self.mdl.getFormulaTemperatureComponents(fieldId)
+
+        exa = ThermodynamicsView.temperature
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1397,39 +1208,15 @@ temperature = enthalpy / 1000;
             self.pushButtonTemperature.setToolTip(result)
 
 
-    def getFormuladrodpComponents(self, fieldId):
-        """
-        User formula for d(ro) / dp (compressible flow)
-        """
-        exp = self.mdl.getFormula(fieldId, 'd_rho_d_P')
-        if not exp:
-            exp = "d_rho_d_P = 0.;"
-        req = [('d_rho_d_P', 'Partial derivative of density with respect to pressure')]
-        exa = "d_rho_d_P = 0.;"
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, 'enthalpy_'+str(fieldId)))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return  exp, req, self.list_scalars, symbols, exa
-
-
     @pyqtSlot()
     def slotFormuladrodp(self):
         """
         User formula for d(ro) / dp (compressible flow)
         """
         fieldId = self.currentFluid
-        exp, req, sca, symbols, exa = self.getFormuladrodpComponents(fieldId)
+        exp, req, sca, symbols = self.mdl.getFormuladrodpComponents(fieldId)
+
+        exa = "d_rho_d_P = 0.;"
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1445,39 +1232,15 @@ temperature = enthalpy / 1000;
             self.pushButtondRodp.setToolTip(result)
 
 
-    def getFormuladrodhComponents(self, fieldId):
-        """
-        User formula for d(ro) / dh (compressible flow)
-        """
-        exp = self.mdl.getFormula(fieldId, 'd_rho_d_h')
-        if not exp:
-            exp = "d_rho_d_h = 0.;"
-        req = [('d_rho_d_h', 'Partial derivative of density with respect to enthalpy')]
-        exa = "d_rho_d_h = 0.;"
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, 'enthalpy_'+str(fieldId)))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols, exa
-
-
     @pyqtSlot()
     def slotFormuladrodh(self):
         """
         User formula for d(ro) / dh (compressible flow)
         """
         fieldId = self.currentFluid
-        exp, req, sca, symbols, exa = self.getFormuladrodhComponents(fieldId)
+        exp, req, sca, symbols = self.mdl.getFormuladrodhComponents(fieldId)
+
+        exa = "d_rho_d_h = 0.;"
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

@@ -274,8 +274,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.mdl = FluidCharacteristicsModel(self.case)
         self.notebook = NotebookModel(self.case)
 
-#        self.mci = mei_to_c_interpreter(self.case)
-
         if EOS == 1:
             self.ava = eosAva.EosAvailable()
 
@@ -1084,41 +1082,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
-    def getFormulaComponents(self, tag, scalar=None):
-        """
-        Get the formula components for a given tag
-        """
-
-        if tag == 'density':
-            return self.getFormulaRhoComponents()
-
-        elif tag == 'molecular_viscosity':
-            return self.getFormulaMuComponents()
-
-        elif tag == 'specific_heat':
-            return self.getFormulaCpComponents()
-
-        elif tag == 'thermal_conductivity':
-            return self.getFormulaAlComponents()
-
-        elif tag == 'volume_viscosity':
-            return self.getFormulaViscv0Components()
-
-        elif tag == 'scalar_diffusivity' and scalar != None:
-            return self.getFormulaDiffComponents(scalar)
-
-        else:
-            msg = 'Formula is not available for field %s in MEG' % tag
-            raise Exception(msg)
-
-
-    def getFormulaRhoComponents(self):
+    @pyqtSlot()
+    def slotFormulaRho(self):
         """
         User formula for density
         """
+        exp, req, sca, symbols_rho = self.mdl.getFormulaRhoComponents();
 
-        exp = self.mdl.getFormula('density')
-        req = [('density', 'Density')]
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
@@ -1131,27 +1101,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             exa = FluidCharacteristicsView.density_h
         else:
             exa = FluidCharacteristicsView.density
-
-        symbols_rho = []
-        for s in self.list_scalars:
-           symbols_rho.append(s)
-        rho0_value = self.mdl.getInitialValueDensity()
-        ref_pressure = self.mdl.getPressure()
-        symbols_rho.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
-        symbols_rho.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_rho, exa;
-
-
-    @pyqtSlot()
-    def slotFormulaRho(self):
-        """
-        User formula for density
-        """
-        exp, req, sca, symbols_rho, exa = self.getFormulaRhoComponents();
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1167,13 +1116,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonRho.setStyleSheet("background-color: green")
 
 
-    def getFormulaMuComponents(self):
+    @pyqtSlot()
+    def slotFormulaMu(self):
         """
         User formula for molecular viscosity
         """
 
-        exp = self.mdl.getFormula('molecular_viscosity')
-        req = [('molecular_viscosity', 'Molecular Viscosity')]
+        exp, req, sca, symbols_mu = self.mdl.getFormulaMuComponents()
+
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
@@ -1186,35 +1136,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             exa = FluidCharacteristicsView.molecular_viscosity_h
         else:
             exa = FluidCharacteristicsView.molecular_viscosity
-
-        symbols_mu = []
-        for s in self.list_scalars:
-           symbols_mu.append(s)
-        mu0_value = self.mdl.getInitialValueViscosity()
-        rho0_value = self.mdl.getInitialValueDensity()
-        ref_pressure = self.mdl.getPressure()
-        symbols_mu.append(('mu0', 'Viscosity (reference value) = ' + str(mu0_value)))
-        symbols_mu.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
-        symbols_mu.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-        symbols_mu.append(('rho', 'Density'))
-        if CompressibleModel(self.case).getCompressibleModel() == 'on':
-            symbols_mu.append(('T', 'Temperature'))
-            ref_temperature = self.mdl.getTemperature()
-            symbols_mu.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_mu.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_mu, exa;
-
-
-    @pyqtSlot()
-    def slotFormulaMu(self):
-        """
-        User formula for molecular viscosity
-        """
-
-        exp, req, sca, symbols_mu, exa = self.getFormulaMuComponents()
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1230,34 +1151,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonMu.setStyleSheet("background-color: green")
 
 
-    def getFormulaCpComponents(self):
-        """
-        User formula for specific heat
-        """
-        exp = self.mdl.getFormula('specific_heat')
-        req = [('specific_heat', 'Specific heat')]
-        exa = FluidCharacteristicsView.specific_heat
-
-        symbols_cp = []
-        for s in self.list_scalars:
-           symbols_cp.append(s)
-        cp0_value = self.mdl.getInitialValueHeat()
-        ref_pressure = self.mdl.getPressure()
-        symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
-        symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_cp, exa;
-
-
     @pyqtSlot()
     def slotFormulaCp(self):
         """
         User formula for specific heat
         """
-        exp, req, sca, symbols_cp, exa = self.getFormulaCpComponents()
+        exp, req, sca, symbols_cp = self.mdl.getFormulaCpComponents()
+
+        exa = FluidCharacteristicsView.specific_heat
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1273,36 +1174,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonCp.setStyleSheet("background-color: green")
 
 
-    def getFormulaViscv0Components(self):
-        """
-        User formula for volumic viscosity
-        """
-        exp = self.mdl.getFormula('volume_viscosity')
-        req = [('volume_viscosity', 'Volumic viscosity')]
-        exa = FluidCharacteristicsView.volume_viscosity
-        symbols_viscv0 = []
-        for s in self.list_scalars:
-           symbols_viscv0.append(s)
-        viscv0_value = self.mdl.getInitialValueVolumicViscosity()
-        ref_pressure = self.mdl.getPressure()
-        ref_temperature = self.mdl.getTemperature()
-        symbols_viscv0.append(('viscv0', 'Volumic viscosity (reference value) = '+str(viscv0_value)+' J/kg/K'))
-        symbols_viscv0.append(('p0', 'Reference pressure (Pa) = '+str(ref_pressure)))
-        symbols_viscv0.append(('t0', 'Reference temperature (K) = '+str(ref_temperature)))
-        symbols_viscv0.append(('T', 'Temperature'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_viscv0.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_viscv0, exa
-
-
     @pyqtSlot()
     def slotFormulaViscv0(self):
         """
         User formula for volumic viscosity
         """
-        exp, req, sca, symbols_viscv0, exa = self.getFormulaViscv0Components()
+        exp, req, sca, symbols_viscv0 = self.mdl.getFormulaViscv0Components()
+
+        exa = FluidCharacteristicsView.volume_viscosity
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1318,12 +1197,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonViscv0.setStyleSheet("background-color: green")
 
 
-    def getFormulaAlComponents(self):
+    @pyqtSlot()
+    def slotFormulaAl(self):
         """
         User formula for thermal conductivity
         """
-        exp = self.mdl.getFormula('thermal_conductivity')
-        req = [('thermal_conductivity', 'Thermal conductivity')]
+        exp, req, sca, symbols_al, exa = self.mdl.getFormulaAlComponents()
+
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
@@ -1334,27 +1214,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             exa = FluidCharacteristicsView.thermal_conductivity_h
         else:
             exa = FluidCharacteristicsView.thermal_conductivity
-
-        symbols_al = []
-        for s in self.list_scalars:
-           symbols_al.append(s)
-        lambda0_value = self.mdl.getInitialValueCond()
-        ref_pressure = self.mdl.getPressure()
-        symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
-        symbols_al.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_al.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols_al, exa;
-
-
-    @pyqtSlot()
-    def slotFormulaAl(self):
-        """
-        User formula for thermal conductivity
-        """
-        exp, req, sca, symbols_al, exa = self.getFormulaAlComponents()
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1370,33 +1229,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonAl.setStyleSheet("background-color: green")
 
 
-    def getFormulaDiffComponents(self, scalar):
-        """
-        User formula for the diffusion coefficient
-        """
-        name = self.m_sca.getScalarDiffusivityName(scalar)
-        exp = self.m_sca.getDiffFormula(scalar)
-        req = [(str(name), str(scalar)+' diffusion coefficient')]
-        exa = ''
-        sym = [('x','cell center coordinate'),
-               ('y','cell center coordinate'),
-               ('z','cell center coordinate'),]
-        sym.append((str(scalar),str(scalar)))
-        diff0_value = self.m_sca.getScalarDiffusivityInitialValue(scalar)
-        sym.append((str(name)+'_ref', str(scalar)+' diffusion coefficient (reference value, m^2/s) = '+str(diff0_value)))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, sym, exa
-
-
     @pyqtSlot()
     def slotFormulaDiff(self):
         """
         User formula for the diffusion coefficient
         """
-        exp, req, sca, sym, exa = self.getFormulaDiffComponents(self.scalar)
+        exp, req, sca, sym = self.mdl.getFormulaDiffComponents(self.scalar)
+
+        exa = ''
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

@@ -59,6 +59,8 @@ except Exception:
 
 from studymanager.cs_studymanager_run import run_studymanager_command
 
+from code_saturne.Pages.QMeiToCCode import mei_to_c_interpreter
+
 #-------------------------------------------------------------------------------
 # log config.
 #-------------------------------------------------------------------------------
@@ -264,6 +266,12 @@ class Case(object):
                     case.xmlCleanAllBlank(case.xmlRootNode())
                     XMLinit(case).initialize()
                     case.xmlSaveDocument()
+
+                    # Save MEG functions
+                    case['case_path'] = os.path.join(self.__repo, subdir)
+                    mci = mei_to_c_interpreter(case)
+                    mci_state = mci.save_all_functions()
+
 
         # 2) Create RESU and SRC directory if needed
         if not xmlonly:

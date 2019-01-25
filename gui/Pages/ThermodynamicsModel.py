@@ -27,6 +27,9 @@ from code_saturne.Base.XMLvariables import Model
 from code_saturne.Base.XMLengine import *
 from code_saturne.Base.XMLmodel import *
 from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.Pages.OutputFieldsModel import OutputFieldsModel
+from code_saturne.Pages.SpeciesModel import SpeciesModel
 
 #-------------------------------------------------------------------------------
 # EOS
@@ -62,6 +65,14 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.__XMLNodefields = self.XMLNodethermo.xmlInitNode('fields')
         self.__XMLThermo     = self.XMLNodethermo.xmlInitNode('thermodynamics')
         self.XMLNodeproperty = self.XMLNodethermo.xmlInitNode('properties')
+
+        self.m_spe = SpeciesModel(self.case)
+        self.notebook = NotebookModel(self.case)
+        self.list_scalars = []
+
+        self.m_out = OutputFieldsModel(self.case)
+        label = self.m_out.getVariableLabel("none", "pressure")
+        self.list_scalars.append(('pressure', label))
 
 
     def defaultValues(self):
@@ -495,6 +506,264 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
     def getXMLThermo(self):
         return self.__XMLThermo
+
+
+    # MEG Generation related functions
+    def getFormulaComponents(self, fieldId, tag):
+        """
+        Get the formula components for a given tag
+        """
+
+        if tag == 'density':
+            return self.getFormulaRhoComponents(fieldId)
+
+        elif tag == 'molecular_viscosity':
+            return self.getFormulaMuComponents(fieldId)
+
+        elif tag == 'specific_heat':
+            return self.getFormulaCpComponents(fieldId)
+
+        elif tag == 'thermal_conductivity':
+            return self.getFormulaAlComponents(fieldId)
+
+        elif tag == 'd_rho_d_P':
+            return self.getFormuladrodpComponents(fieldId)
+
+        elif tag == 'd_rho_d_h':
+            return self.getFormuladrodhComponents(fieldId)
+
+        elif tag == 'temperature':
+            return self.getFormulaTemperatureComponents(fieldId)
+
+        else:
+            msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
+            raise Exception(msg)
+
+
+    def getFormulaRhoComponents(self, fieldId):
+        """
+        User formula for density
+        """
+        exp = self.getFormula(fieldId, 'density')
+        if not exp:
+            exp = "rho = 1.8;"
+        req = [('rho', 'Density')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+
+        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+            symbols.append((label, "enthalpy_"+str(fieldId)))
+
+        rho0_value = self.getInitialValue(fieldId, 'density')
+        symbols.append(('rho0', 'Density (reference value) = '+str(rho0_value)))
+
+        for s in self.m_spe.getScalarByFieldId(fieldId):
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols
+
+
+    def getFormulaMuComponents(self, fieldId):
+        """
+        User formula for molecular viscosity
+        """
+        exp = self.getFormula(fieldId, 'molecular_viscosity')
+        if not exp:
+            exp = "mu = 4.56e-05;"
+        req = [('mu', 'Molecular Viscosity')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+
+        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
+
+        mu0_val = self.getInitialValue(fieldId, 'molecular_viscosity')
+        symbols.append(('mu0', 'Viscosity (reference value) = '+str(mu0_val)))
+
+        for s in self.m_spe.getScalarByFieldId(fieldId):
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols
+
+
+    def getFormulaCpComponents(self, fieldId):
+        """
+        User formula for specific heat
+        """
+        exp = self.getFormula(fieldId, 'specific_heat')
+
+        if not exp:
+            exp = "cp = 4000.;"
+        req = [('cp', 'Specific heat')]
+
+        symbols_cp = []
+        for s in self.list_scalars:
+           symbols_cp.append(s)
+
+        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+            symbols_cp.append((label, "enthalpy_"+str(fieldId)))
+        cp0_val = self.getInitialValue(fieldId, "specific_heat")
+        symbols_cp.append(('cp0', 'Specific heat (reference value) = '+str(cp0_val)))
+
+        for s in self.m_spe.getScalarByFieldId(fieldId):
+            symbols_cp.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols_cp
+
+
+    def getFormulaAlComponents(self, fieldId):
+        """
+        User formula for thermal conductivity
+        """
+        exp = self.getFormula(fieldId, 'thermal_conductivity')
+        if not exp:
+            exp = "lambda = 1.e-5;"
+        req = [('lambda', 'Thermal conductivity')]
+
+        symbols_al = []
+        for s in self.list_scalars:
+           symbols_al.append(s)
+        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+            symbols_al.append((label, 'enthalpy_'+str(fieldId)))
+        l0_val = self.getInitialValue(fieldId, 'thermal_conductivity')
+        symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = '+str(l0_val)))
+
+        for s in self.m_spe.getScalarByFieldId(fieldId):
+            symbols_al.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_al.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols_al
+
+
+    def getFormulaStComponents(self):
+        """
+        User formula for surface tension
+        """
+        exp = self.getFormula('none', 'surface_tension')
+        if not exp:
+            exp = "sigma = 0.075;"
+        req = [('sigma', 'Surface Tension')]
+
+        symbols_st = []
+        for s in self.list_scalars:
+           symbols_st.append(s)
+        for fieldId in self.getFieldIdList():
+            if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+                label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+                symbols_st.append((label, 'enthalpy_'+str(fieldId)))
+        s0_val = self.getInitialValue('none', 'surface_tension')
+        symbols_st.append(('sigma0', 'Surface tension (reference value) = '+str(s0_val)))
+
+        for s in self.m_spe.getScalarNameList():
+              symbols_st.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_st.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols_st
+
+
+    def getFormulaTemperatureComponents(self, fieldId):
+        """
+        User formula for temperature as a function of enthalpy
+        """
+        label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
+        exp = self.getFormula(fieldId, 'temperature')
+        if not exp:
+            exp = label + " = 273.15;"
+        req = [(label, 'temperature')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
+
+        for s in self.m_spe.getScalarByFieldId(fieldId):
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols
+
+
+    def getFormuladrodpComponents(self, fieldId):
+        """
+        User formula for d(ro) / dp (compressible flow)
+        """
+        exp = self.getFormula(fieldId, 'd_rho_d_P')
+        if not exp:
+            exp = "d_rho_d_P = 0.;"
+        req = [('d_rho_d_P', 'Partial derivative of density with respect to pressure')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
+
+        for s in self.m_spe.getScalarByFieldId(fieldId):
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return  exp, req, self.list_scalars, symbols
+
+
+    def getFormuladrodhComponents(self, fieldId):
+        """
+        User formula for d(ro) / dh (compressible flow)
+        """
+        exp = self.getFormula(fieldId, 'd_rho_d_h')
+        if not exp:
+            exp = "d_rho_d_h = 0.;"
+        req = [('d_rho_d_h', 'Partial derivative of density with respect to enthalpy')]
+
+        symbols = []
+        for s in self.list_scalars:
+           symbols.append(s)
+        if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
+            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
+
+        for s in self.m_spe.getScalarByFieldId(fieldId):
+            symbols.append((s, s))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, self.list_scalars, symbols
+
+
+    def tr(self, text):
+        """
+        translation
+        """
+        return text
+
 
 
 #-------------------------------------------------------------------------------

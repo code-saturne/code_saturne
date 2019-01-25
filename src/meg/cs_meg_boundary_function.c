@@ -69,7 +69,7 @@ BEGIN_C_DECLS
 cs_real_t *
 cs_meg_boundary_function(const char               *field_name,
                          const char               *condition,
-                         const cs_boundary_zone_t *z)
+                         const cs_boundary_zone_t *bz)
 {
 
 

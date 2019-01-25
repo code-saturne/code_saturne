@@ -1,7 +1,6 @@
 import os, shutil
 import re
 
-from code_saturne.Pages.FluidCharacteristicsView import FluidCharacteristicsView
 from code_saturne.Pages.NotebookModel import NotebookModel
 
 
@@ -57,7 +56,7 @@ END_C_DECLS
 _vol_function_header = \
 """void
 cs_meg_volume_function(cs_field_t              *f,
-                       const cs_volume_zone_t  *z)
+                       const cs_volume_zone_t  *vz)
 {
 
 """
@@ -66,7 +65,7 @@ _bnd_function_header = \
 """cs_real_t *
 cs_meg_boundary_function(const char               *field_name,
                          const char               *condition,
-                         const cs_boundary_zone_t *z)
+                         const cs_boundary_zone_t *bz)
 {
 
 """
@@ -289,16 +288,16 @@ class mei_to_c_interpreter:
         else:
             usr_code += '\n'
 
-        usr_code = usr_code.replace(required[0][0], 'new_vals[e_id]', 1)
+        usr_code = usr_code.replace(required[0][0], 'f->val[e_id]', 1)
 
         # Write the block
-        usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(z->name, "%s") == 0) {\n' \
+        usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(vz->name, "%s") == 0) {\n' \
                 % (name, zone)
 
         usr_blck += usr_defs + '\n'
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < z->n_cells; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = z->cell_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_cells; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->cell_ids[e_id];\n'
 
         usr_blck += usr_code
         usr_blck += 2*tab + '}\n'
@@ -371,7 +370,7 @@ class mei_to_c_interpreter:
         # allocate the new array
         usr_defs += ntabs*tab + 'cs_real_t *new_vals;\n'
         if need_for_loop:
-            usr_defs += ntabs*tab + 'int vals_size = z->n_faces * %d;\n' % (len(required))
+            usr_defs += ntabs*tab + 'int vals_size = bz->n_faces * %d;\n' % (len(required))
         else:
             usr_defs += ntabs*tab + 'int vals_size = %d;\n' % (len(required))
 
@@ -464,7 +463,7 @@ class mei_to_c_interpreter:
 
         for ir in range(len(required)):
             if need_for_loop:
-                new_v = 'new_vals[%d * z->n_faces + e_id]' % (ir)
+                new_v = 'new_vals[%d * bz->n_faces + e_id]' % (ir)
             else:
                 new_v = 'new_vals[%d]' % (ir)
 
@@ -473,14 +472,14 @@ class mei_to_c_interpreter:
         # Write the block
         block_cond  = tab + 'if (strcmp(field_name, "%s") == 0 && \n' % (field_name)
         block_cond += tab + '    strcmp(condition, "%s") == 0 && \n' % (cname)
-        block_cond += tab + '    strcmp(z->name, "%s") == 0) {\n' % (zone)
+        block_cond += tab + '    strcmp(bz->name, "%s") == 0) {\n' % (zone)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs + '\n'
 
         if need_for_loop:
-            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < z->n_faces; e_id++) {\n'
-            usr_blck += 3*tab + 'cs_lnum_t f_id = z->face_ids[e_id];\n'
+            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < bz->n_faces; e_id++) {\n'
+            usr_blck += 3*tab + 'cs_lnum_t f_id = bz->face_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -540,35 +539,35 @@ class mei_to_c_interpreter:
         if self.case['package'].name == 'code_saturne':
             authorized_fields = ['density', 'molecular_viscosity',
                                  'specific_heat', 'thermal_conductivity']
-            from code_saturne.Pages.FluidCharacteristicsView import FluidCharacteristicsView
+            from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
             from code_saturne.Pages.CompressibleModel import CompressibleModel
             if CompressibleModel(self.case).getCompressibleModel() != 'off':
                 authorized_fields.append('volume_viscosity')
 
-            fcv = FluidCharacteristicsView(self.root, self.case)
+            fcm = FluidCharacteristicsModel(self.case)
             for fk in authorized_fields:
-                if fcv.mdl.getPropertyMode(fk) == 'variable':
-                    exp, req, sca, sym, exa = fcv.getFormulaComponents(fk)
+                if fcm.getPropertyMode(fk) == 'variable':
+                    exp, req, sca, sym = fcm.getFormulaComponents(fk)
                     self.init_cell_block(exp, req, sym, sca, fk)
 
-            slist = fcv.m_sca.getUserScalarNameList()
-            for s in fcv.m_sca.getScalarsVarianceList():
+            slist = fcm.m_sca.getUserScalarNameList()
+            for s in fcm.m_sca.getScalarsVarianceList():
                 if s in slist: slist.remove(s)
             if slist != []:
                 for s in slist:
-                    diff_choice = fcv.m_sca.getScalarDiffusivityChoice(s)
+                    diff_choice = fcm.m_sca.getScalarDiffusivityChoice(s)
                     if diff_choice == 'variable':
-                        dname = fcv.m_sca.getScalarDiffusivityName(s)
-                        exp, req, sca, sym, exa = \
-                        fcv.getFormulaComponents('scalar_diffusivity', s)
+                        dname = fcm.m_sca.getScalarDiffusivityName(s)
+                        exp, req, sca, sym, = \
+                        fcm.getFormulaComponents('scalar_diffusivity', s)
                         self.init_cell_block(exp, req, sym, sca, dname)
 
         else:
-            from code_saturne.Pages.ThermodynamicsView import ThermodynamicsView
+            from code_saturne.Pages.ThermodynamicsModel import ThermodynamicsModel
             from code_saturne.Pages.MainFieldsModel import MainFieldsModel
 
-            tv = ThermodynamicsView(self.root, self.case)
+            tm = ThermodynamicsModel(self.case)
             mfm = MainFieldsModel(self.case)
 
             authorized_fields = ['density', 'molecular_viscosity',
@@ -576,25 +575,25 @@ class mei_to_c_interpreter:
 
             compressible_fields = ['d_rho_d_P', 'd_rho_d_h']
 
-            for fieldId in tv.mdl.getFieldIdList():
-                if tv.mdl.getMaterials(fieldId) == 'user_material':
+            for fieldId in tm.getFieldIdList():
+                if tm.getMaterials(fieldId) == 'user_material':
                     for fk in authorized_fields:
-                        if tv.mdl.getPropertyMode(fieldId, fk) == 'user_law':
+                        if tm.getPropertyMode(fieldId, fk) == 'user_law':
                             name = fk + '_' + str(fieldId)
-                            exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,fk)
+                            exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
                             self.init_cell_block(exp, req, sym, sca, name)
 
                     if mfm.getCompressibleStatus(fieldId) == 'on':
                         for fk in compressible_fields:
                             name = fk + '_' + str(fieldId)
-                            exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,fk)
+                            exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
                             self.init_cell_block(exp, req, sym, sca, name)
 
                     # Temperature as a function of enthalpie
                     if mfm.getEnergyResolution(fieldId) == 'on':
                         name = 'temperature_' + str(fieldId)
-                        exp, req, sca, sym, exa = tv.getFormulaComponents(fieldId,
-                                                                         'temperature')
+                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,
+                                                                    'temperature')
                         self.init_cell_block(exp, req, sym, sca, name)
 
 
@@ -637,6 +636,9 @@ class mei_to_c_interpreter:
             tm = TurbulenceModel(self.case)
 
             for zone in blm.getZones():
+                if zone._nature == "symmetry":
+                    continue
+
                 boundary = Boundary(zone._nature, zone._label, self.case)
 
                 # Velocity for inlets
@@ -767,9 +769,7 @@ class mei_to_c_interpreter:
     # -------------------------------
 
     # -------------------------------
-    def save_all_functions(self, root):
-
-        self.root = root
+    def save_all_functions(self):
 
         save_status = 0
 
