@@ -119,10 +119,10 @@ cs_interface_test \
 cs_map_test \
 cs_matrix_test \
 cs_moment_test \
+cs_random_test \
 cs_rank_neighbors_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
-cs_random_test \
 cs_sizes_test \
 cs_tree_test
 
@@ -234,6 +234,3 @@ cs_tree_test_LDADD    = $(LDADD_CS_TESTS)
 EXTRA_DIST = \
 unittests.py \
 $(top_srcdir)/tests/graphics
-
-dist-hook:
-	rm -rf `find $(distdir)/tests/graphics -type d -name .svn`

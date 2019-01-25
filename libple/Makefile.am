@@ -46,8 +46,8 @@ EXTRA_DIST = m4/ple_config_info.m4 \
              sbin/clean \
              sbin/rmb
 
-# One adds the examples sub-directories and get rid of the .svn
-# directories with a dist-hook. The reason for this trick is that
+# One adds the examples sub-directories with a dist-hook.
+# The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples
 
@@ -90,7 +90,3 @@ install-tests:
 
 uninstall-tests:
 	@cd tests ; $(MAKE) uninstall-tests
-
-dist-hook:
-	-rm -rf `find $(distdir)/examples -name .svn`
-

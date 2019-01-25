@@ -141,8 +141,8 @@ m4/cs_salome.m4 \
 m4/cs_scotch.m4 \
 m4/cs_zlib.m4
 
-# One adds several sub-directories and get rid of the .svn
-# directories with a dist-hook. The reason for this trick is that
+# One adds several sub-directories with a dist-hook.
+# The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples extras patches
 
@@ -371,7 +371,7 @@ install-doc:
 
 update-copyright:
 	y=`date +%Y`; yold=$$(($$y-1)); \
-	lst=`find ${top_srcdir} -type d \( -name .svn -o -name .git -o -name "build*" \) -prune -o \( -type f -a ! -name Makefile.in \) -print`; \
+	lst=`find ${top_srcdir} -type d \( -name .git -o -name "build*" \) -prune -o \( -type f -a ! -name Makefile.in \) -print`; \
 	for f in $$lst; do \
 	  echo $$f && \
 	  $(SED) -i "s/Copyright (C) 1998-$${yold} EDF S.A./Copyright (C) 1998-$$y EDF S.A./" $$f; \
