@@ -67,6 +67,7 @@ cs_meg_boundary_function(const char               *field_name,
                          const char               *condition,
                          const cs_boundary_zone_t *bz)
 {
+  cs_real_t *new_vals = NULL;
 
 """
 
@@ -368,7 +369,6 @@ class mei_to_c_interpreter:
         internal_fields = []
 
         # allocate the new array
-        usr_defs += ntabs*tab + 'cs_real_t *new_vals;\n'
         if need_for_loop:
             usr_defs += ntabs*tab + 'int vals_size = bz->n_faces * %d;\n' % (len(required))
         else:
@@ -470,8 +470,8 @@ class mei_to_c_interpreter:
             usr_code = usr_code.replace(required[ir], new_v, 1)
 
         # Write the block
-        block_cond  = tab + 'if (strcmp(field_name, "%s") == 0 && \n' % (field_name)
-        block_cond += tab + '    strcmp(condition, "%s") == 0 && \n' % (cname)
+        block_cond  = tab + 'if (strcmp(field_name, "%s") == 0 &&\n' % (field_name)
+        block_cond += tab + '    strcmp(condition, "%s") == 0 &&\n' % (cname)
         block_cond += tab + '    strcmp(bz->name, "%s") == 0) {\n' % (zone)
         usr_blck = block_cond + '\n'
 
@@ -486,7 +486,6 @@ class mei_to_c_interpreter:
         if need_for_loop:
             usr_blck += 2*tab + '}\n'
 
-        usr_blck += 2*tab + 'return new_vals;\n'
         usr_blck += tab + '}\n'
 
         return usr_blck
@@ -759,6 +758,7 @@ class mei_to_c_interpreter:
                 code_to_write += self.write_bnd_block(key)
                 code_to_write += "  " + m2 + '\n'
 
+            code_to_write += "  return new_vals;\n"
             code_to_write += _file_footer
 
 
