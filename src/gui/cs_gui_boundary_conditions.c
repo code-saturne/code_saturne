@@ -1969,7 +1969,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             for (cs_lnum_t ic = 0; ic < 3; ic++) {
               rcodcl[(ivarv + ic) * n_b_faces + ifbr]
                 = boundaries->dir[izone][ic] *
-                  new_vals[ic*bz->n_faces + ifac] / x_norm;
+                  new_vals[ifac] / x_norm;
             }
 
           }
