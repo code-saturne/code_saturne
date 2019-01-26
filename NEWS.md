@@ -1,6 +1,26 @@
 Release 6.0.0 (unreleased)
 --------------------------
 
+Notes:
+
+  This is a beta version of version 6.0, which should be released
+  late April 2019. Most features are frozen while the version undergoes
+  the complete validation process, with the exceptions below.
+
+Changes expected between the current version and 6.0.0 final:
+
+- Some GUI changes or page reorganizations are possible
+- Run script improvements:
+  * Handling of mesh_input files and preprocessing in case of restart
+    should allow a better automated option
+  * In new cases, replacement of SCRIPTS/runcase by DATA/run.cfg will
+    allow keeping run settings across multiple system types
+- Ongoing work in the Lagrangian module may lead to some changes
+- The C API for user boundary conditions should be redesigned, leading
+  to changes in the use of the cs_user_boundary_conditions function.
+- Various minor improvements not impacting current case setups
+- Documentation will be updated
+
 User changes:
 
 - GUI: significant reorganization
