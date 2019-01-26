@@ -778,6 +778,8 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
+  /* The default boundary condition on the pressure field is always a
+     homogeneous Neumann */
   nsc->correction = cs_equation_add("pressure_correction",
                                     "phi",
                                     CS_EQUATION_TYPE_NAVSTO,

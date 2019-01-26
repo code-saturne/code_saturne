@@ -169,6 +169,143 @@ _normal_flux_reco(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the members of the cs_cdofb_navsto_builder_t structure
+ *
+ * \param[in]      t_eval     time at which one evaluates the pressure BC
+ * \param[in]      nsp        set of parameters to define the NavSto system
+ * \param[in]      cm         cellwise view of the mesh
+ * \param[in]      csys       cellwise view of the algebraic system
+ * \param[in]      pr_bc      set of definitions for the presuure BCs
+ * \param[in]      bf_type    type of boundaries for all boundary faces
+ * \param[in, out] nsb        builder to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
+                               const cs_navsto_param_t     *nsp,
+                               const cs_cell_mesh_t        *cm,
+                               const cs_cell_sys_t         *csys,
+                               const cs_cdo_bc_face_t      *pr_bc,
+                               const cs_boundary_type_t    *bf_type,
+                               cs_cdofb_navsto_builder_t   *nsb)
+{
+  assert(cm != NULL && csys != NULL && nsp != NULL); /* sanity checks */
+
+  const short int n_fc = cm->n_fc;
+
+  /* Build the divergence operator:
+   *        D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f
+   * But in the linear system what appears is after integration
+   *        [[ -div(u), q ]]_{P_c} = -|c| div(u)_c q_c
+   * Thus, the volume in the divergence drops
+   */
+
+  for (short int f = 0; f < n_fc; f++) {
+
+    const cs_quant_t  pfq = cm->face[f];
+    const cs_real_t  sgn_f = -cm->f_sgn[f] * pfq.meas;
+
+    cs_real_t  *_div_f = nsb->div_op + 3*f;
+    _div_f[0] = sgn_f * pfq.unitv[0];
+    _div_f[1] = sgn_f * pfq.unitv[1];
+    _div_f[2] = sgn_f * pfq.unitv[2];
+
+  } /* Loop on cell faces */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 2
+  if (cs_dbg_cw_test(NULL, cm, csys)) {
+    const cs_real_t  sovc = -1. / cm->vol_c;
+#   pragma omp critical
+    {
+      cs_log_printf(CS_LOG_DEFAULT, ">> Divergence:\n");
+      for (short int f = 0; f < n_fc; f++)
+        cs_log_printf(CS_LOG_DEFAULT, "    f%2d: %- .4e, %- .4e, %- .4e\n",
+                      f, nsb->div_op[3*f]*sovc, nsb->div_op[3*f+1]*sovc,
+                      nsb->div_op[3*f+2]*sovc);
+    } /* Critical section */
+  }
+#endif
+
+  /* Build local arrays related to the boundary conditions */
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering and the boundary face id in
+       the mesh numbering */
+    const short int  f = csys->_f_ids[i];
+    const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
+
+    /* Set the type of boundary */
+    nsb->bf_type[i] = bf_type[bf_id];
+
+    /* Set the pressure BC if required */
+    if (nsb->bf_type[i] == CS_BOUNDARY_PRESSURE_INLET_OUTLET) {
+
+      /* Add a Dirichlet for the pressure field */
+      const short int  def_id = pr_bc->def_ids[bf_id];
+      const cs_xdef_t  *def = nsp->pressure_bc_defs[def_id];
+      assert(pr_bc != NULL);
+
+      switch(def->type) {
+      case CS_XDEF_BY_VALUE:
+        {
+          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+          nsb->pressure_bc_val[i] = constant_val[0];
+        }
+        break;
+
+      case CS_XDEF_BY_ARRAY:
+        {
+          cs_xdef_array_input_t  *a_in = (cs_xdef_array_input_t *)def->input;
+          assert(a_in->stride == 1);
+          assert(cs_flag_test(a_in->loc, cs_flag_primal_face));
+          nsb->pressure_bc_val[i] = a_in->values[bf_id];
+        }
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        switch(nsp->dof_reduction_mode) {
+
+        case CS_PARAM_REDUCTION_DERHAM:
+          cs_xdef_cw_eval_at_xyz_by_analytic(cm, 1, cm->face[f].center,
+                                             t_eval,
+                                             def->input,
+                                             nsb->pressure_bc_val + i);
+          break;
+
+        case CS_PARAM_REDUCTION_AVERAGE:
+          cs_xdef_cw_eval_scalar_face_avg_by_analytic(cm, f, t_eval,
+                                                      def->input,
+                                                      def->qtype,
+                                                      nsb->pressure_bc_val + i);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" %s: Invalid type of reduction.\n"
+                      " Stop computing the Dirichlet value.\n"), __func__);
+
+        } /* switch on reduction */
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" %s: Invalid type of definition.\n"
+                    " Stop computing the Dirichlet value.\n"), __func__);
+        break;
+
+      } /* def->type */
+
+    }
+    else
+      nsb->pressure_bc_val[i] = 0.;
+
+  } /* Loop on boundary faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the divergence of a cell using the \ref cs_cdo_quantities_t
  *         structure
  *
@@ -594,27 +731,31 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     switch (boundaries->types[b_id]) {
     case CS_BOUNDARY_WALL:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                     "Wall", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_SLIDING_WALL:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                     "Sliding_wall", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_INLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                     "Inlet", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_OUTLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                     "Outlet", z->name, boundary_fluxes[b_id]);
       break;
+    case CS_BOUNDARY_PRESSURE_INLET_OUTLET:
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+                    "Pressure Inlet/Outlet", z->name, boundary_fluxes[b_id]);
+      break;
     case CS_BOUNDARY_SYMMETRY:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                     "Symmetry", z->name, boundary_fluxes[b_id]);
       break;
     default:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                     "Other", z->name, boundary_fluxes[b_id]);
       break;
 
@@ -626,13 +767,13 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   switch (boundaries->default_type) {
 
   case CS_BOUNDARY_SYMMETRY:
-    cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                   "Symmetry", "Default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
     break;
 
   case CS_BOUNDARY_WALL:
-    cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
                   "Wall", "Default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
     break;

@@ -61,9 +61,70 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Structure storing additional arrays related to the building of the system in
+   case of CDO Face-based scheme. This structure is associated to a cell-wise
+   building */
+
+typedef struct {
+
+  /* Operator */
+  cs_real_t           *div_op;           /* Size: 3*n_fc
+                                            div_op = -|c|div */
+
+  /* Boundary conditions */
+  cs_boundary_type_t  *bf_type;          /* Size: n_fc */
+  cs_real_t           *pressure_bc_val;  /* Size: n_fc */
+
+} cs_cdofb_navsto_builder_t;
+
 /*============================================================================
  * Static inline public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and allocate a local NavSto builder when Fb schemes are used
+ *
+ * \param[in] connect        pointer to a cs_cdo_connect_t structure
+ *
+ * \return a cs_cdofb_navsto_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_cdofb_navsto_builder_t
+cs_cdofb_navsto_create_builder(const cs_cdo_connect_t   *connect)
+{
+  cs_cdofb_navsto_builder_t  nsb = {.div_op = NULL,
+                                    .bf_type = NULL,
+                                    .pressure_bc_val = NULL };
+
+  if (connect == NULL)
+    return nsb;
+
+  BFT_MALLOC(nsb.div_op, 3*connect->n_max_fbyc, cs_real_t);
+  BFT_MALLOC(nsb.bf_type, connect->n_max_fbyc, cs_boundary_type_t);
+  BFT_MALLOC(nsb.pressure_bc_val, connect->n_max_fbyc, cs_real_t);
+
+  return nsb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy the given cs_cdofb_navsto_builder_t structure
+ *
+ * \param[in, out] nsb   pointer to the cs_cdofb_navsto_builder_t to free
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb)
+{
+  if (nsb != NULL) {
+    BFT_FREE(nsb->div_op);
+    BFT_FREE(nsb->bf_type);
+    BFT_FREE(nsb->pressure_bc_val);
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -101,6 +162,29 @@ cs_cdofb_navsto_divergence_vect(const cs_cell_mesh_t  *cm,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the members of the cs_cdofb_navsto_builder_t structure
+ *
+ * \param[in]      t_eval     time at which one evaluates the pressure BC
+ * \param[in]      nsp        set of parameters to define the NavSto system
+ * \param[in]      cm         cellwise view of the mesh
+ * \param[in]      csys       cellwise view of the algebraic system
+ * \param[in]      pr_bc      set of definitions for the presuure BCs
+ * \param[in]      bf_type    type of boundaries for all boundary faces
+ * \param[in, out] nsb        builder to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
+                               const cs_navsto_param_t     *nsp,
+                               const cs_cell_mesh_t        *cm,
+                               const cs_cell_sys_t         *csys,
+                               const cs_cdo_bc_face_t      *pr_bc,
+                               const cs_boundary_type_t    *bf_type,
+                               cs_cdofb_navsto_builder_t   *nsb);
 
 /*----------------------------------------------------------------------------*/
 /*!
