@@ -1251,14 +1251,14 @@ _solve_system(cs_sles_t                     *sles,
                          CS_REAL_TYPE, 1, /* type and stride */
                          xsol, xsol);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
   if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
                          b, b);
 
   cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
-                        CS_CDOFB_VECTEQ_DBG,
+                        CS_CDOFB_MONOLITHIC_DBG,
                         xsol, b, 3*n_faces);
 #endif
 
@@ -1849,11 +1849,6 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
   /* Now compute/update the velocity and pressure fields */
   _compute_and_update_fields(matrix, sc, mom_eq, rhs, mass_rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_MONOLITHIC_DBG,
-                        vel_f, rhs, 3*n_faces);
-#endif
-
   /* Frees */
   BFT_FREE(rhs);
   BFT_FREE(mass_rhs);
@@ -2140,11 +2135,6 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
 
   /* Now compute/update the velocity and pressure fields */
   _compute_and_update_fields(matrix, sc, mom_eq, rhs, mass_rhs);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_MONOLITHIC_DBG,
-                        vel_f, rhs, 3*n_faces);
-#endif
 
   /* Frees */
   BFT_FREE(rhs);
@@ -2468,11 +2458,6 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
 
   /* Now compute/update the velocity and pressure fields */
   _compute_and_update_fields(matrix, sc, mom_eq, rhs, mass_rhs);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_MONOLITHIC_DBG,
-                        vel_f, rhs, 3*n_faces);
-#endif
 
   /* Frees */
   BFT_FREE(rhs);
