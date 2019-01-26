@@ -131,7 +131,7 @@ typedef enum {
   CS_LAGR_ONEWAY_COUPLING = 1,
   CS_LAGR_TWOWAY_COUPLING = 2,
   CS_LAGR_FROZEN_CONTINUOUS_PHASE = 3
-};
+} cs_lagr_module_status_t;
 
 
 /*! Fixed maximum sizes */
