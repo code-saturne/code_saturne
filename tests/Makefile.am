@@ -52,6 +52,36 @@ $(MPI_CPPFLAGS)
 AM_CFLAGS   = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS  =
 
+BUILT_SOURCES = \
+cs_halo.c \
+cs_range_set.c \
+cs_sort.c \
+cs_matrix.c \
+cs_matrix_assembler.c \
+cs_blas.c \
+cs_random.c
+
+cs_halo.c: Makefile $(top_srcdir)/src/base/cs_halo.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_range_set.c: Makefile $(top_srcdir)/src/base/cs_range_set.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_sort.c: Makefile $(top_srcdir)/src/base/cs_sort.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_random.c: Makefile $(top_srcdir)/src/base/cs_random.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_blas.c: Makefile $(top_srcdir)/src/alge/cs_blas.c
+	cat $(top_srcdir)/src/alge/$@ >$@
+
+cs_matrix.c: Makefile $(top_srcdir)/src/alge/cs_matrix.c
+	cat $(top_srcdir)/src/alge/$@ >$@
+
+cs_matrix_assembler.c: Makefile $(top_srcdir)/src/alge/cs_matrix_assembler.c
+	cat $(top_srcdir)/src/alge/$@ >$@
+
 check_PROGRAMS =
 
 # BFT tests
@@ -139,7 +169,7 @@ cs_all_to_all_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_blas_test_SOURCES  = \
 cs_blas_test.c \
-../src/alge/cs_blas.c
+cs_blas.c
 cs_blas_test_CPPFLAGS  = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
@@ -185,11 +215,11 @@ cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_matrix_test_SOURCES  = \
 cs_matrix_test.c \
-../src/base/cs_halo.c \
-../src/base/cs_range_set.c \
-../src/base/cs_sort.c \
-../src/alge/cs_matrix.c \
-../src/alge/cs_matrix_assembler.c
+cs_halo.c \
+cs_range_set.c \
+cs_sort.c \
+cs_matrix.c \
+cs_matrix_assembler.c
 cs_matrix_test_CPPFLAGS  = \
 -D_CS_UNIT_MATRIX_TEST \
 $(AM_CPPFLAGS)
@@ -202,7 +232,7 @@ cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_random_test_SOURCES  = \
 cs_random_test.c \
-../src/base/cs_random.c
+cs_random.c
 cs_random_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_random_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -234,3 +264,10 @@ cs_tree_test_LDADD    = $(LDADD_CS_TESTS)
 EXTRA_DIST = \
 unittests.py \
 $(top_srcdir)/tests/graphics
+
+# Clean
+
+clean-local:
+	-rm -f $(BUILT_SOURCES)
+
+
