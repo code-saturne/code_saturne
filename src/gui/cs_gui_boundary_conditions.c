@@ -1969,7 +1969,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             for (cs_lnum_t ic = 0; ic < 3; ic++) {
               rcodcl[(ivarv + ic) * n_b_faces + ifbr]
                 = boundaries->dir[izone][ic] *
-                  new_vals[ic*bz->n_faces + ifac] / x_norm;
+                  new_vals[ifac] / x_norm;
             }
 
           }
@@ -2024,7 +2024,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             for (cs_lnum_t i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr]
                 = -b_face_normal[ifbr][i] *
-                  new_vals[i*bz->n_faces + ifac] / b_face_surf[ifbr];
+                  new_vals[ifac] / b_face_surf[ifbr];
           }
         }
 
