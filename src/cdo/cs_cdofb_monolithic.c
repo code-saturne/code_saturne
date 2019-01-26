@@ -1197,6 +1197,8 @@ _solve_system(cs_sles_t                     *sles,
   BFT_MALLOC(b, n_scatter_elts, cs_real_t);
 
   /* De-interlace the velocity array and the rhs for the face DoFs */
+# pragma omp parallel for if (CS_THR_MIN > n_faces) default(none) \
+  shared(vel_f, b_f, xsol, b)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
     xsol[f            ] = vel_f[3*f];
@@ -1263,6 +1265,8 @@ _solve_system(cs_sles_t                     *sles,
 #endif
 
   /* Interlace xsol --> vel_f and pre_c */
+# pragma omp parallel for if (CS_THR_MIN > n_faces) default(none) \
+  shared(vel_f, xsol)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
     vel_f[3*f]   = xsol[f];
