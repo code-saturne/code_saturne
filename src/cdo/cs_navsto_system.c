@@ -541,7 +541,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
    */
   cs_navsto_set_fixed_walls(nsp);
   cs_navsto_set_symmetries(nsp);
-  /* TODO: cs_navsto_set_outlets() */
+  cs_navsto_set_outlets(nsp);
 
   /* Last setup stage according to the type of coupling (not related to
      space discretization scheme */
