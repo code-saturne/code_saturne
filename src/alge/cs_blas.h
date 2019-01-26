@@ -111,6 +111,22 @@ cs_sum(cs_lnum_t         n,
        const cs_real_t  *x);
 
 /*----------------------------------------------------------------------------
+ * Return the weighted sum of a vector. For better precision, a superblock
+ * algorithm is used.
+ *
+ * \param[in]  n  size of array x
+ * \param[in]  w  array of floating-point weights
+ * \param[in]  x  array of floating-point values
+ *
+ * \return the resulting weighted sum
+ *----------------------------------------------------------------------------*/
+
+double
+cs_weighted_sum(cs_lnum_t         n,
+                const cs_real_t  *w,
+                const cs_real_t  *x);
+
+/*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y
  *
  * parameters:
