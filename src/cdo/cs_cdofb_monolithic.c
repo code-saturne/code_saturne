@@ -1343,6 +1343,9 @@ _compute_and_update_fields(const cs_matrix_t             *matrix,
     div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
                                                 quant, connect->c2f, vel_f);
 
+  /* Rescale pressure */
+  cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_fld->val);
+
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 

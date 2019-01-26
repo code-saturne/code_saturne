@@ -673,6 +673,19 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add the definition of boundary conditions related to outlets
+ *         into the set of parameters for the management of the Navier-Stokes
+ *         system of equations
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_outlets(cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the velocity field for an inlet boundary using a uniform
  *         value
  *

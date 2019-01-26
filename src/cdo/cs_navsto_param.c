@@ -962,6 +962,45 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add the definition of boundary conditions related to outlets
+ *         into the set of parameters for the management of the Navier-Stokes
+ *         system of equations
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+  assert(nsp->boundaries != NULL);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  cs_real_33_t  zero = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+
+  const cs_boundary_t  *bdy = nsp->boundaries;
+
+  for (int i = 0; i < bdy->n_boundaries; i++) {
+    if (bdy->types[i] == CS_BOUNDARY_OUTLET) {
+
+      /* Add the homogeneous Dirichlet on the normal component */
+      cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                              9,    /* dim */
+                                              bdy->zone_ids[i],
+                                              CS_FLAG_STATE_UNIFORM, /* state */
+                                              CS_CDO_BC_HMG_NEUMANN,
+                                              (void *)&zero);
+
+      cs_equation_add_xdef_bc(eqp, d);
+
+    } /* Symmetry */
+  } /* Loop on domain boundaries */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the velocity field for an inlet boundary using a uniform
  *         value
  *
