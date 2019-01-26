@@ -19,6 +19,8 @@ Changes expected between the current version and 6.0.0 final:
 - The C API for user boundary conditions should be redesigned, leading
   to changes in the use of the cs_user_boundary_conditions function.
 - Various minor improvements not impacting current case setups
+- Handling of Catalyst script and writer naming may change to adapt
+  to changes in ParaView 5.6.
 - Documentation will be updated
 
 User changes:
