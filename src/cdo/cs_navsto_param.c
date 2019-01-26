@@ -1026,9 +1026,9 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
 
   int  z_id = cs_get_bdy_zone_id(z_name);
   if (z_id < 0)
-  bft_error(__FILE__, __LINE__, 0,
-            " %s: Zone \"%s\" does not exist.\n"
-            " Please check your settings.", __func__, z_name);
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not exist.\n"
+              " Please check your settings.", __func__, z_name);
 
   int  bdy_id = cs_boundary_id_by_zone_id(nsp->boundaries, z_id);
   if (bdy_id < 0)

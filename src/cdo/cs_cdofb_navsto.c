@@ -371,8 +371,8 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
   }  /* Loop on definitions */
 
-  /* We should ensure that the mean of the pressure is zero. Thus we compute
-   * it and subtract it from every value.
+  /* We should ensure that the mean value of the pressure is zero. Thus we
+   * compute it and subtract it from every value.
    *
    * NOTES:
    *  - It could be useful to stored this average somewhere

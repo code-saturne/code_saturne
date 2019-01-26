@@ -141,11 +141,11 @@ typedef struct {
   double     *neu_values;       /*!< Neumann BCs values; size = n_dofs */
 
   /* Robin BCs */
-  bool        has_robin;
+  bool        has_robin;     /*!< Robin BCs ? */
   double     *rob_values;    /*!< Robin BCs values; size = 3*n_dofs */
 
   /* Sliding BCs */
-  bool        has_sliding;
+  bool        has_sliding;   /*!< Sliding BCs ? */
 
   /* Internal enforcement of DoFs */
   bool        has_internal_enforcement;  /*!< Internal enforcement ? */
