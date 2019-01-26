@@ -289,7 +289,7 @@ class mei_to_c_interpreter:
         else:
             usr_code += '\n'
 
-        usr_code = usr_code.replace(required[0][0], 'f->val[e_id]', 1)
+        usr_code = usr_code.replace(required[0][0], 'f->val[c_id]', 1)
 
         # Write the block
         usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(vz->name, "%s") == 0) {\n' \
