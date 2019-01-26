@@ -79,7 +79,15 @@ cs_boundary_name[CS_BOUNDARY_N_TYPES][CS_BASE_STRING_LEN] =
     N_("sliding wall"),
     N_("inlet"),
     N_("outlet"),
-    N_("symmetry")
+    N_("symmetry"),
+    /* ALE boundaries */
+    N_("ALE fixed surface"),
+    N_("ALE sliding surface"),
+    N_("ALE imposed velocity"),
+    N_("ALE imposed displacement"),
+    N_("ALE internal coupling"),
+    N_("ALE external coupling"),
+    N_("ALE free surface")
   };
 
 /*============================================================================
