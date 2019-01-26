@@ -407,23 +407,26 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
    *    and definitions that do not cover all the domain. */
 
   const cs_lnum_t  n_cells = quant->n_cells;
- /*
-  * The algorithm used for summing is l3superblock60, based on the article:
-  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
-  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
-  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
-  * 2008 Society for Industrial and Applied Mathematics
-  */
 
-  const cs_real_t  intgr = cs_sum(n_cells, values);
+  /*
+   * The algorithm used for summing is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
+
+  const cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
+
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &intgr);
+
   assert(quant->vol_tot > 0.);
   const cs_real_t  g_avg = intgr / quant->vol_tot;
 
-  const cs_real_t *cv = quant->cell_vol;
-
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    values[c_id] = values[c_id] / cv[c_id] - g_avg;
+    values[c_id] = values[c_id] - g_avg;
 }
 
 /*----------------------------------------------------------------------------*/
