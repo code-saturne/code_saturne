@@ -1207,7 +1207,7 @@ class MainView(object):
                 msg += "your DATA folder!\n"
                 err_msg = self.tr(msg)
                 QMessageBox.warning(self, title, err_msg)
-                msg = self.tr("Saving was done withing a RESU folder and not in CASE.")
+                msg = self.tr("Saving was done within a RESU folder and not in CASE.")
                 self.statusbar.showMessage(msg, 2000)
                 self.updateTitleBar()
                 return
