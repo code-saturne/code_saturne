@@ -358,15 +358,15 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->rhs, 0, s);
   memset(csys->source, 0, s);
 
+  csys->n_bc_faces = 0;
+  csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
+
   csys->has_internal_enforcement = false;
   for (int i = 0; i < csys->n_dofs; i++)
     csys->intern_forced_ids[i] = -1; /* Not selected */
 
   if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
       (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)) {
-
-    csys->n_bc_faces = 0;
-    csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
 
     memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
     memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
