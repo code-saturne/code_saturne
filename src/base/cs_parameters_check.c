@@ -1292,7 +1292,7 @@ cs_parameters_check(void)
                                _("while reading input data"),
                                "cs_glob_turb_model->iturb",
                                cs_glob_turb_model->iturb,
-                               15,
+                               16,
                                iturb_vals,
                                NULL);
 
