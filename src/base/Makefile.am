@@ -428,9 +428,6 @@ endif
 
 if HAVE_PARAMEDMEM
 cs_paramedmem_la_SOURCES += cs_paramedmem_coupling.cxx
-if HAVE_MEDCOUPLING_LOADER
-cs_paramedmem_la_SOURCES += cs_paramedmem_remapper.cxx
-endif
 endif
 
 cs_paramedmem_la_LDFLAGS = -module -avoid-version
@@ -462,9 +459,6 @@ endif
 
 if HAVE_PARAMEDMEM
 libcs_paramedmem_la_SOURCES += cs_paramedmem_coupling.cxx
-if HAVE_MEDCOUPLING_LOADER
-libcs_paramedmem_la_SOURCES += cs_paramedmem_remapper.cxx
-endif
 endif
 
 libcs_paramedmem_la_LIBADD = \
