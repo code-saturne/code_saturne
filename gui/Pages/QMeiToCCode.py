@@ -702,7 +702,7 @@ class mei_to_c_interpreter:
                 if zone._nature == 'free_inlet_outlet':
                     name = "head_loss"
                     req  = ['K']
-                    exp = boundary.getHeadLossesFormula
+                    exp = boundary.getHeadLossesFormula()
                     self.init_bnd_block(exp, req, name, zone._label, 'formula')
 
                 # Hydraulic head for groundwater flow
