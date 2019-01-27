@@ -317,7 +317,7 @@ class mei_to_c_interpreter:
 
         func_key = '::'.join([bnd_name, name])
         if func_key in self.bnd_funcs.keys():
-            msg = "Formula for variable %s in boundary %s was allready defined:\n %s" \
+            msg = "Formula for variable %s in boundary %s was already defined:\n %s" \
                     % (name, bnd_name, self.vol_funcs[name]['exp'])
             raise Exception(msg)
 
