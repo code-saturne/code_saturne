@@ -46,7 +46,7 @@ from code_saturne.Base.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import getopenfilename
 
 #-------------------------------------------------------------------------------

@@ -45,9 +45,9 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Pages.AtmosphericFlowsForm   import Ui_AtmosphericFlowsForm
-from code_saturne.Pages.AtmosphericFlowsModel  import AtmosphericFlowsModel
+from code_saturne.model.AtmosphericFlowsModel  import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # log config

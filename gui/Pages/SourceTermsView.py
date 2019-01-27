@@ -47,16 +47,16 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Pages.SourceTermsForm import Ui_SourceTermsForm
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from code_saturne.Pages.SourceTermsModel import SourceTermsModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
+from code_saturne.model.SourceTermsModel import SourceTermsModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -56,14 +56,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.LocalizationForm import Ui_LocalizationForm
 from code_saturne.Pages.VolumicZoneAdvancedDialogForm import Ui_VolumicZoneAdvancedDialogForm
 from code_saturne.Pages.PreProcessingInformationsView import Informations, preprocessorFile
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
 # log config

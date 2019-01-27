@@ -45,14 +45,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant
 
 from code_saturne.Pages.ElectricalForm import Ui_ElectricalForm
-from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.model.ElectricalModel import ElectricalModel
 
 #-------------------------------------------------------------------------------
 # log config

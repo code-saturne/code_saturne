@@ -48,26 +48,26 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 
 import code_saturne.Base.QtPage as QtPage
 
 from code_saturne.Pages.AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-from code_saturne.Pages.GasCombustionModel import GasCombustionModel
-from code_saturne.Pages.CompressibleModel import CompressibleModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-from code_saturne.Pages.ElectricalModel import ElectricalModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
-from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
+from code_saturne.model.GasCombustionModel import GasCombustionModel
+from code_saturne.model.CompressibleModel import CompressibleModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.ElectricalModel import ElectricalModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.MainFieldsModel import MainFieldsModel
 
-from code_saturne.Pages.LagrangianModel import LagrangianModel
-from code_saturne.Pages.TurboMachineryModel import TurboMachineryModel
-from code_saturne.Pages.MobileMeshModel import MobileMeshModel
-from code_saturne.Pages.FansModel import FansStatus
+from code_saturne.model.LagrangianModel import LagrangianModel
+from code_saturne.model.TurboMachineryModel import TurboMachineryModel
+from code_saturne.model.MobileMeshModel import MobileMeshModel
+from code_saturne.model.FansModel import FansStatus
 
 #-------------------------------------------------------------------------------
 # log config
@@ -300,7 +300,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         from code_saturne.cs_package import package as cs_package
         self.case['package'] = cs_package()
 
-        from code_saturne.Base.XMLinitialize import XMLinit
+        from code_saturne.model.XMLinitialize import XMLinit
 
         self.case.root().xmlRemoveChild("additional_scalars")
         self.case.root().xmlRemoveChild("closure_modeling")
@@ -326,7 +326,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comp  = CompressibleModel(self.case)
         self.darc  = GroundwaterModel(self.case)
 
-        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        from code_saturne.model.TimeStepModel import TimeStepModel
 
         joule = self.elect.getElectricalModel()
         atmospheric = self.atmo.getAtmosphericFlowsModel()
@@ -453,7 +453,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
             return
 
-        from code_saturne.Base.XMLinitializeNeptune import XMLinitNeptune
+        from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
 
         self.case.root().xmlRemoveChild("thermophysical_models")
         self.case.root().xmlRemoveChild("numerical_parameters")
@@ -505,7 +505,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
     def init_common(self):
 
-        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        from code_saturne.model.TimeStepModel import TimeStepModel
 
         # Turbomachinery features
 

@@ -1,7 +1,7 @@
 import os
 import re
 
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 
 #-------------------------------------------------------------------------------
@@ -503,9 +503,9 @@ class mei_to_c_interpreter:
         if self.case['package'].name == 'code_saturne':
             authorized_fields = ['density', 'molecular_viscosity',
                                  'specific_heat', 'thermal_conductivity']
-            from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+            from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
 
-            from code_saturne.Pages.CompressibleModel import CompressibleModel
+            from code_saturne.model.CompressibleModel import CompressibleModel
             if CompressibleModel(self.case).getCompressibleModel() != 'off':
                 authorized_fields.append('volume_viscosity')
 
@@ -528,8 +528,8 @@ class mei_to_c_interpreter:
                         self.init_cell_block(exp, req, sym, sca, dname)
 
         else:
-            from code_saturne.Pages.ThermodynamicsModel import ThermodynamicsModel
-            from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+            from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
+            from code_saturne.model.MainFieldsModel import MainFieldsModel
 
             tm = ThermodynamicsModel(self.case)
             mfm = MainFieldsModel(self.case)
@@ -565,9 +565,9 @@ class mei_to_c_interpreter:
     def generate_boundary_code(self):
 
         if self.case['package'].name == 'code_saturne':
-            from code_saturne.Pages.LocalizationModel import LocalizationModel
-            from code_saturne.Pages.Boundary import Boundary
-            from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+            from code_saturne.model.LocalizationModel import LocalizationModel
+            from code_saturne.model.Boundary import Boundary
+            from code_saturne.model.TurbulenceModel import TurbulenceModel
 
             blm = LocalizationModel('BoundaryZone', self.case)
             tm = TurbulenceModel(self.case)

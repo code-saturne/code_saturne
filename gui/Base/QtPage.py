@@ -57,8 +57,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
 #-------------------------------------------------------------------------------
 # log config

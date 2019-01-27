@@ -47,7 +47,7 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 
 import CFDSTUDYGUI
 from CFDSTUDYGUI_DataModel import _getStudy, _getEngine

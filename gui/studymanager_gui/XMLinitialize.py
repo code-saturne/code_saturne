@@ -39,8 +39,7 @@ import sys, unittest, re
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.XMLvariables import Variables
-from code_saturne.studymanager_gui import Toolbox
+from code_saturne.model.XMLvariables import Variables
 
 #-------------------------------------------------------------------------------
 # class XMLinit

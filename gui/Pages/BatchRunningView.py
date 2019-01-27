@@ -67,13 +67,13 @@ from code_saturne.Pages.BatchRunningForm import Ui_BatchRunningForm
 from code_saturne.Pages.BatchRunningDebugOptionsHelpDialogForm import Ui_BatchRunningDebugOptionsHelpDialogForm
 from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant
 from code_saturne.Base.CommandMgrDialogView import CommandMgrDialogView
-from code_saturne.Pages.BatchRunningModel import BatchRunningModel
-from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.BatchRunningModel import BatchRunningModel
+from code_saturne.model.ScriptRunningModel import ScriptRunningModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
 # log config

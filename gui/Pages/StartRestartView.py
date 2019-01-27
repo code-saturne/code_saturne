@@ -49,12 +49,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, from_qvariant
-from code_saturne.Pages.SolutionDomainModel import RelOrAbsPath
+from code_saturne.model.SolutionDomainModel import RelOrAbsPath
 from code_saturne.Pages.StartRestartForm import Ui_StartRestartForm
 from code_saturne.Pages.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
-from code_saturne.Pages.StartRestartModel import StartRestartModel
+from code_saturne.model.StartRestartModel import StartRestartModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -57,14 +57,14 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Base.QtPage                          import DoubleValidator, IntValidator
 from code_saturne.Base.QtPage                          import to_qvariant, from_qvariant
 from code_saturne.Pages.FluidStructureInteractionForm  import Ui_FluidStructureInteractionForm
-from code_saturne.Pages.FluidStructureInteractionModel import FluidStructureInteractionModel
-from code_saturne.Pages.LocalizationModel              import LocalizationModel
-from code_saturne.Pages.Boundary                       import Boundary
+from code_saturne.model.FluidStructureInteractionModel import FluidStructureInteractionModel
+from code_saturne.model.LocalizationModel              import LocalizationModel
+from code_saturne.model.Boundary                       import Boundary
 from code_saturne.Pages.FluidStructureInteractionAdvancedOptionsDialogForm import \
 Ui_FluidStructureInteractionAdvancedOptionsDialogForm
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

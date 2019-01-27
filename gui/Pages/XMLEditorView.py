@@ -49,7 +49,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Pages.XMLEditorForm import Ui_XMLEditor
 
 #-------------------------------------------------------------------------------

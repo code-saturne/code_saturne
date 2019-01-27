@@ -47,12 +47,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, IntValidator, to_qvariant
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.NumericalParamEquationForm import Ui_NumericalParamEquationForm
-from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquationModel
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -952,7 +952,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         elif QT_API == "PYQT5":
             self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        from code_saturne.model.TimeStepModel import TimeStepModel
         idtvar = TimeStepModel(self.case).getTimePassing()
         if idtvar in [-1, 2]:
             self.tableViewSolver.setColumnHidden(5, True)

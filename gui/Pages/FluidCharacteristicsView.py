@@ -127,18 +127,18 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
-from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.CompressibleModel import CompressibleModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.CompressibleModel import CompressibleModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.GasCombustionModel import GasCombustionModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

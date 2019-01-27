@@ -47,10 +47,10 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Pages.BoundaryConditionsNonCondensable import Ui_BoundaryConditionsNonCondensable
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
-from code_saturne.Pages.NonCondensableModel import NonCondensableModel
+from code_saturne.model.NonCondensableModel import NonCondensableModel
 
 #-------------------------------------------------------------------------------
 # log config

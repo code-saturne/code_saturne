@@ -45,11 +45,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from code_saturne.Pages.LagrangianOutputForm import Ui_LagrangianOutputForm
-from code_saturne.Pages.LagrangianOutputModel import LagrangianOutputModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.LagrangianOutputModel import LagrangianOutputModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config

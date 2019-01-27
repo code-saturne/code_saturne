@@ -45,8 +45,8 @@ import cs_create
 from cs_create import set_executable
 import cs_runcase
 
-from code_saturne.Base import XMLengine
-from code_saturne.studymanager_gui import PathesModel
+from code_saturne.model import XMLengine
+from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
 
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2

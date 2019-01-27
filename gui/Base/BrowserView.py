@@ -46,7 +46,8 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.BrowserForm import Ui_BrowserForm
-from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
+from code_saturne.model.Common import GuiParam
+from code_saturne.Base.Toolbox import displaySelectedPage
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 import resource_base_rc

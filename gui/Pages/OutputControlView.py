@@ -53,16 +53,15 @@ import os, re
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
 from code_saturne.Base.QtPage import RegExpValidator, to_qvariant
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.OutputControlForm import Ui_OutputControlForm
-from code_saturne.Pages.OutputControlModel import OutputControlModel
+from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.LagrangianModel import LagrangianModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.LagrangianModel import LagrangianModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -2733,7 +2732,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         steady = 0
 
         if self.case.xmlRootNode().tagName != "NEPTUNE_CFD_GUI" :
-            from code_saturne.Pages.TimeStepModel import TimeStepModel
+            from code_saturne.model.TimeStepModel import TimeStepModel
             idtvar = TimeStepModel(self.case).getTimePassing()
             if idtvar in [-1, 2]:
                 steady = 1

@@ -37,7 +37,7 @@ import os, sys, logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import *
+from code_saturne.model.Common import *
 
 #-------------------------------------------------------------------------------
 # displaySelectedPage direct to the good page with its name

@@ -39,7 +39,7 @@ import os, sys, unittest, logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.XMLengine import *
+from code_saturne.model.XMLengine import *
 
 #-------------------------------------------------------------------------------
 # Third-party modules

@@ -39,9 +39,8 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-import code_saturne.Base.Toolbox as Tool
-from code_saturne.Base.XMLvariables import Model, Variables
-from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.model.XMLvariables import Model, Variables
+from code_saturne.model.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
 # Model class

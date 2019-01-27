@@ -47,7 +47,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Pages.BoundaryConditionsPressure import Ui_BoundaryConditionsPressure
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, from_qvariant
 
 #-------------------------------------------------------------------------------

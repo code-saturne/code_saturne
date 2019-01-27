@@ -48,13 +48,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.LagrangianForm import Ui_LagrangianForm
 from code_saturne.Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
-from code_saturne.Pages.LagrangianModel import LagrangianModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.LagrangianModel import LagrangianModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config

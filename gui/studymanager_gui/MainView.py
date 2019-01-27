@@ -71,10 +71,9 @@ except:
     sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
     from code_saturne.studymanager_gui.MainForm import Ui_MainForm
 
-from code_saturne.Base import XMLengine
-from code_saturne.Base.XMLmodel import *
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.Common import XML_DOC_VERSION
+from code_saturne.model import XMLengine
+from code_saturne.model.XMLmodel import *
+from code_saturne.model.Common import XML_DOC_VERSION, GuiParam
 from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
 from code_saturne.studymanager_gui.BrowserView import BrowserView
 from code_saturne.studymanager_gui.XMLinitialize import *
@@ -85,7 +84,7 @@ except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from code_saturne.Pages.WelcomeView import WelcomeView
-from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename

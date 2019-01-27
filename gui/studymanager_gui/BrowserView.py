@@ -46,7 +46,7 @@ from code_saturne.Base.QtGui     import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.BrowserForm import Ui_BrowserForm
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.BrowserView import TreeItem, TreeModel
 from code_saturne.Base.BrowserView import BrowserView as SaturneBrowserView
 from code_saturne.studymanager_gui.Toolbox import displaySelectedPage

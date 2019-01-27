@@ -53,12 +53,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from NumericalParamEquationNeptune import Ui_NumericalParamEquation
-from code_saturne.Pages.NumericalParamEquationModelNeptune import NumericalParamEquatModel
-from code_saturne.Pages.GlobalNumericalParametersModel import GlobalNumericalParametersModel
+from code_saturne.model.NumericalParamEquationModelNeptune import NumericalParamEquatModel
+from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalParametersModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -605,4 +605,3 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
         Changed tab
         """
         self.case['current_tab'] = index
-

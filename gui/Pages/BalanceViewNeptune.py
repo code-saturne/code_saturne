@@ -44,11 +44,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, IntValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.BalanceForm import Ui_BalanceForm
-from code_saturne.Pages.BalanceModelNeptune import BalanceModelNeptune
+from code_saturne.model.BalanceModelNeptune import BalanceModelNeptune
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------

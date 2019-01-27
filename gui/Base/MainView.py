@@ -75,12 +75,13 @@ except:
     from code_saturne.Base.NewCaseDialogForm import Ui_NewCaseDialogForm
 
 from code_saturne.Base.BrowserView import BrowserView
-from code_saturne.Base import XMLengine, QtCase
-from code_saturne.Base.XMLinitialize import *
-from code_saturne.Base.XMLinitializeNeptune import *
-from code_saturne.Base.XMLmodel import *
-from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
-from code_saturne.Base.Common import XML_DOC_VERSION
+from code_saturne.model import XMLengine
+from code_saturne.Base import QtCase
+from code_saturne.model.XMLinitialize import *
+from code_saturne.model.XMLinitializeNeptune import *
+from code_saturne.model.XMLmodel import *
+from code_saturne.model.Common import GuiParam, displaySelectedPage
+from code_saturne.model.Common import XML_DOC_VERSION
 
 try:
     import code_saturne.Pages
@@ -88,13 +89,14 @@ except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from code_saturne.Pages.WelcomeView import WelcomeView
-from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
-from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
-from code_saturne.Pages.SolutionDomainModel import getRunType
+from code_saturne.model.ScriptRunningModel import ScriptRunningModel
+from code_saturne.model.SolutionDomainModel import getRunType
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 from code_saturne.cs_mei_to_c import mei_to_c_interpreter
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

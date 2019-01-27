@@ -47,12 +47,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
-from code_saturne.Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
-from code_saturne.Pages.LagrangianModel import LagrangianModel
+from code_saturne.model.LagrangianStatisticsModel import LagrangianStatisticsModel
+from code_saturne.model.LagrangianModel import LagrangianModel
 
 
 #-------------------------------------------------------------------------------

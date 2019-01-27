@@ -45,12 +45,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
-from code_saturne.Pages.OutputControlModel import OutputControlModel
-from code_saturne.Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
-from code_saturne.Pages.OutputSurfacicFieldsModel import OutputSurfacicFieldsModel #AZ
+from code_saturne.model.OutputControlModel import OutputControlModel
+from code_saturne.model.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
+from code_saturne.model.OutputSurfacicFieldsModel import OutputSurfacicFieldsModel #AZ
 from code_saturne.Pages.OutputVolumicVariablesView import LabelDelegate
 
 #-------------------------------------------------------------------------------

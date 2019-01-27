@@ -51,12 +51,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Species import Ui_Species
 from SpeciesModel import SpeciesModel
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
 #-------------------------------------------------------------------------------
 # log config
@@ -478,4 +477,3 @@ class SpeciesView(QWidget, Ui_Species):
         if checked:
             status = 'on'
         self.mdl.setDiffusionStatus(self.currentid, status)
-
