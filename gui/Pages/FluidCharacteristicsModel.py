@@ -766,7 +766,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         User formula for volumic viscosity
         """
-        exp = self.mdl.getFormula('volume_viscosity')
+        exp = self.getFormula('volume_viscosity')
         req = [('volume_viscosity', 'Volumic viscosity')]
 
         symbols = []
@@ -791,7 +791,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         User formula for thermal conductivity
         """
-        exp = self.mdl.getFormula('thermal_conductivity')
+        exp = self.getFormula('thermal_conductivity')
         req = [('thermal_conductivity', 'Thermal conductivity')]
 
         symbols = []
