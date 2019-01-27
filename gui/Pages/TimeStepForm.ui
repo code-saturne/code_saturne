@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>487</width>
-    <height>447</height>
+    <width>820</width>
+    <height>737</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,19 +17,6 @@
    <item row="3" column="0">
     <widget class="QGroupBox" name="groupBox">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <spacer name="horizontalSpacer_3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item>
        <widget class="QLabel" name="label_4">
         <property name="toolTip">
@@ -100,19 +87,6 @@
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxTimeStep">
      <layout class="QHBoxLayout">
-      <item>
-       <spacer>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item>
        <layout class="QGridLayout">
         <item row="1" column="2">
@@ -390,19 +364,6 @@
       <item row="1" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QLabel" name="labelNTERUP">
@@ -440,19 +401,6 @@
       </item>
       <item row="0" column="0">
        <layout class="QHBoxLayout">
-        <item>
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item>
          <layout class="QHBoxLayout">
           <item>

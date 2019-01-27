@@ -23,19 +23,6 @@
       <item>
        <layout class="QHBoxLayout" name="_1">
         <item>
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
          <widget class="QComboBox" name="comboBoxRadModel">
           <property name="minimumSize">
            <size>
@@ -88,6 +75,19 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="0">
+          <spacer name="horizontalSpacer_7">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>13</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
          <item row="0" column="2">
           <widget class="QLabel" name="label_2">
            <property name="toolTip">
@@ -98,8 +98,8 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <spacer name="horizontalSpacer_7">
+         <item row="0" column="4">
+          <spacer name="horizontalSpacer_8">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -124,19 +124,6 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="4">
-          <spacer name="horizontalSpacer_8">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>13</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
         </layout>
        </widget>
       </item>
@@ -152,7 +139,7 @@
          <bool>true</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="1">
+         <item row="0" column="0">
           <widget class="QComboBox" name="comboBoxAbsorption">
            <property name="minimumSize">
             <size>
@@ -165,20 +152,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>17</width>
-             <height>17</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="4">
+         <item row="0" column="3">
           <spacer name="horizontalSpacer_3">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -191,7 +165,7 @@
            </property>
           </spacer>
          </item>
-         <item row="0" column="3">
+         <item row="0" column="2">
           <widget class="QLabel" name="label">
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;If the absorption coefficient is chosen to be constant, this box must be filled.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -201,7 +175,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
+         <item row="0" column="1">
           <widget class="QLineEdit" name="lineEditCoeff">
            <property name="maximumSize">
             <size>
@@ -229,22 +203,12 @@
          <item>
           <layout class="QHBoxLayout" name="_4">
            <item>
-            <spacer>
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>21</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
             <widget class="QCheckBox" name="checkBoxRadRestart">
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use restart info for radiative transfer in case of calculation restart.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="layoutDirection">
+              <enum>Qt::RightToLeft</enum>
              </property>
              <property name="text">
               <string>Restart for radiative calculation</string>
@@ -268,19 +232,6 @@
          </item>
          <item>
           <layout class="QHBoxLayout" name="_2">
-           <item>
-            <spacer>
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
            <item>
             <widget class="QLabel" name="labelAdvanced">
              <property name="toolTip">
@@ -356,27 +307,14 @@
       <bool>false</bool>
      </property>
      <layout class="QGridLayout">
-      <property name="horizontalSpacing">
-       <number>6</number>
-      </property>
       <property name="leftMargin">
        <number>9</number>
       </property>
+      <property name="horizontalSpacing">
+       <number>6</number>
+      </property>
       <item row="0" column="0">
        <layout class="QHBoxLayout">
-        <item>
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>16</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item>
          <widget class="QComboBox" name="comboBoxThermal">
           <property name="minimumSize">
