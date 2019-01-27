@@ -25,6 +25,18 @@ User changes:
 
 Physical modelling:
 
+- Add non-linear (quadratic) eddy viscosity model k-epsilon of Baglietto et al.
+  * to enable it, set cs_glob_turb_model->iturb = 23
+  * it is a Low Reynolds model, compatible with adaptative wall functions.
+
+- Add eddy viscosity model k-epsilon Launder-Sharma
+  * to enable it, set cs_glob_turb_model->iturb = 22
+  * all y+ wall model is possible (cs_glob_wall_functions->iwallf = 7)
+  * low Reynolds model behavior can be forced
+    (cs_glob_wall_functions->iwallf = 0)
+  * uses a segregated scheme to solve k-epsilon equations system
+    (cs_glob_turb_rans_model->ikecou = 0).
+
 - Add Boussinesq approximation as a variable density model. To activate it, set
   cs_glob_stokes_model->idilat to 0 in C or idilat = 0 in Fortran.
 
@@ -69,6 +81,10 @@ Bug fixes:
   model.
 
 Architectural changes:
+
+- Handle mathematical expression in GUI by generating corresponding C code
+  then inserted in a cs_meg_..._function.c file compiled with other run 
+  sources. This drastically improves performance when using MEI.
 
 - Move Reynolds stress tensor transformation matrix (alpha in clca66)
   computation to C. C translation is taken from NEPTUNE_CFD.
