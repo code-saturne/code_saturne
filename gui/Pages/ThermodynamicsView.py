@@ -63,18 +63,18 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Thermodynamics import Ui_Thermodynamics
 from ThermodynamicsModel import *
-from code_saturne.Pages.MainFieldsModel import MainFieldsModel
-from code_saturne.Pages.SpeciesModel import SpeciesModel
-from code_saturne.Pages.OutputFieldsModel import OutputFieldsModel
-from code_saturne.Pages.NonCondensableModel import NonCondensableModel
+from code_saturne.model.MainFieldsModel import MainFieldsModel
+from code_saturne.model.SpeciesModel import SpeciesModel
+from code_saturne.model.OutputFieldsModel import OutputFieldsModel
+from code_saturne.model.NonCondensableModel import NonCondensableModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

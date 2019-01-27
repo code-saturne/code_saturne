@@ -51,7 +51,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from TurbulenceNeptune import Ui_Turbulence

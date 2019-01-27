@@ -47,10 +47,10 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Pages.BoundaryConditionsWall import Ui_BoundaryConditionsWall
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel
 
-from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+from code_saturne.model.MainFieldsModel import MainFieldsModel
 
 #-------------------------------------------------------------------------------
 # log config

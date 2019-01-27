@@ -48,14 +48,14 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from MainFieldsInitialization import Ui_MainFieldsInitialization
-from code_saturne.Pages.MainFieldsInitializationModel import MainFieldsInitializationModel
-from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from code_saturne.Pages.NonCondensableModel import NonCondensableModel
-from code_saturne.Pages.SpeciesModel import SpeciesModel
-from code_saturne.Pages.ThermodynamicsModel import ThermodynamicsModel
+from code_saturne.model.MainFieldsInitializationModel import MainFieldsInitializationModel
+from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
+from code_saturne.model.NonCondensableModel import NonCondensableModel
+from code_saturne.model.SpeciesModel import SpeciesModel
+from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 

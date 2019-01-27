@@ -53,10 +53,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from code_saturne.Pages.OpenTurnsForm import Ui_OpenTurnsForm
-from code_saturne.Pages.OpenTurnsModel import OpenTurnsModel
+from code_saturne.model.OpenTurnsModel import OpenTurnsModel
 
 #-------------------------------------------------------------------------------
 # log config

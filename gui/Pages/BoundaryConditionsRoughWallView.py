@@ -45,12 +45,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsRoughWallForm import Ui_BoundaryConditionsRoughWallForm
 
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config

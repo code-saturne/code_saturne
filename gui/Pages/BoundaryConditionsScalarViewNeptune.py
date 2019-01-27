@@ -47,10 +47,10 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Pages.BoundaryConditionsScalar import Ui_BoundaryConditionsScalar
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
-from code_saturne.Pages.SpeciesModel import SpeciesModel
+from code_saturne.model.SpeciesModel import SpeciesModel
 
 #-------------------------------------------------------------------------------
 # log config

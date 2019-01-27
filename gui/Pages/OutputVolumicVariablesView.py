@@ -45,14 +45,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
 from code_saturne.Base.QtPage import ComboModel
 from code_saturne.Base.QtPage import PYQT_API_1
 from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
-from code_saturne.Pages.OutputControlModel import OutputControlModel
-from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.model.OutputControlModel import OutputControlModel
+from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -376,7 +375,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 post = self.mdl.getPostStatus(name)
 
             if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
-                from code_saturne.Pages.TimeStepModel import TimeStepModel
+                from code_saturne.model.TimeStepModel import TimeStepModel
                 if TimeStepModel(self.case).getTimePassing() in (0, 1):
                     if name == 'local_time_step':
                         self.disabledItem.append((row, 3))

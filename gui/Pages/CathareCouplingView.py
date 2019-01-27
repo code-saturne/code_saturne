@@ -52,13 +52,12 @@ import code_saturne.Base.QtPage as QtPage
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.CathareCouplingForm import Ui_CathareCouplingForm
-from code_saturne.Pages.CathareCouplingModel import CathareCouplingModel
-from code_saturne.Pages.LocalizationModelNeptune import LocalizationModel
+from code_saturne.model.CathareCouplingModel import CathareCouplingModel
+from code_saturne.model.LocalizationModelNeptune import LocalizationModel
 
 #-------------------------------------------------------------------------------
 # log config

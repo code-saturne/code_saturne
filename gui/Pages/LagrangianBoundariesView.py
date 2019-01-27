@@ -47,16 +47,16 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 from code_saturne.Pages.LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.LagrangianBoundariesModel import LagrangianBoundariesModel
-from code_saturne.Pages.LagrangianModel import LagrangianModel
-from code_saturne.Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LagrangianBoundariesModel import LagrangianBoundariesModel
+from code_saturne.model.LagrangianModel import LagrangianModel
+from code_saturne.model.LagrangianStatisticsModel import LagrangianStatisticsModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 
 
 #-------------------------------------------------------------------------------

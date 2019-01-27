@@ -47,9 +47,9 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Pages.BoundaryConditionsTurbulenceInletForm import Ui_BoundaryConditionsTurbulenceInletForm
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
-from code_saturne.Pages.TurbulenceNeptuneModel import TurbulenceModel
+from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 

@@ -45,10 +45,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.MainView import MainView
 from code_saturne.Pages.IdentityAndPathesForm import Ui_IdentityAndPathesForm
-from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 
 #-------------------------------------------------------------------------------
 # log config

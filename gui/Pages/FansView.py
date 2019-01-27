@@ -44,11 +44,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, IntValidator, DoubleValidator
 from code_saturne.Base.QtPage import ComboModel, to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.FansForm import Ui_FansForm
-from code_saturne.Pages.FansModel import FansModel
+from code_saturne.model.FansModel import FansModel
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------

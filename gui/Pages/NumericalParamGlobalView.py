@@ -45,10 +45,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from code_saturne.Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
-from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+from code_saturne.model.NumericalParamGlobalModel import NumericalParamGlobalModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -128,7 +128,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         else:
             self.checkBoxIPUCOU.setChecked(False)
 
-        import code_saturne.Pages.FluidCharacteristicsModel as FluidCharacteristics
+        import code_saturne.model.FluidCharacteristicsModel as FluidCharacteristics
         fluid = FluidCharacteristics.FluidCharacteristicsModel(self.case)
         modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal, modl_comp = fluid.getThermoPhysicalModel()
 

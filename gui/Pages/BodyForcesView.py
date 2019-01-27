@@ -45,11 +45,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, from_qvariant
 from code_saturne.Pages.BodyForcesForm import Ui_BodyForcesForm
-from code_saturne.Pages.BodyForcesModel import BodyForcesModel
-from code_saturne.Pages.CoriolisSourceTermsModel import CoriolisSourceTermsModel
+from code_saturne.model.BodyForcesModel import BodyForcesModel
+from code_saturne.model.CoriolisSourceTermsModel import CoriolisSourceTermsModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -48,7 +48,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from DropletCondensationEvaporation import Ui_DropletCondensationEvaporation
 from DropletCondensationEvaporationModel import DropletCondensationEvaporationModel

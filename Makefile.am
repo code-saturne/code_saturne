@@ -275,7 +275,87 @@ bin/studymanager/cs_studymanager_drawing.py \
 bin/studymanager/__init__.py \
 bin/studymanager/cs_studymanager_parser.py \
 bin/studymanager/cs_studymanager_study.py \
-bin/studymanager/cs_studymanager_texmaker.py
+bin/studymanager/cs_studymanager_texmaker.py \
+bin/studymanager/cs_studymanager_pathes_model.py
+
+modeldir = $(pkgpythondir)/model
+model_PYTHON = \
+bin/model/Common.py \
+bin/model/AtmosphericFlowsModel.py \
+bin/model/BalanceModelNeptune.py \
+bin/model/BalanceModel.py \
+bin/model/BatchRunningModel.py \
+bin/model/BodyForcesModel.py \
+bin/model/BoundaryConditionsModelNeptune.py \
+bin/model/BoundaryNeptune.py \
+bin/model/Boundary.py \
+bin/model/CathareCouplingModel.py \
+bin/model/CoalCombustionModel.py \
+bin/model/CompressibleModel.py \
+bin/model/ConjugateHeatTransferModel.py \
+bin/model/CoriolisSourceTermsModel.py \
+bin/model/DefineUserScalarsModel.py \
+bin/model/DropletCondensationEvaporationModel.py \
+bin/model/ElectricalModel.py \
+bin/model/FansModel.py \
+bin/model/FluidCharacteristicsModel.py \
+bin/model/FluidStructureInteractionModel.py \
+bin/model/GasCombustionModel.py \
+bin/model/GlobalNumericalParametersModel.py \
+bin/model/GroundwaterLawModel.py \
+bin/model/GroundwaterModel.py \
+bin/model/HeadLossesModel.py \
+bin/model/IdentityAndPathesModel.py \
+bin/model/InitializationModel.py \
+bin/model/__init__.py \
+bin/model/InterfacialAreaModel.py \
+bin/model/InterfacialEnthalpyModel.py \
+bin/model/InterfacialForcesModel.py \
+bin/model/LagrangianBoundariesModel.py \
+bin/model/LagrangianModel.py \
+bin/model/LagrangianOutputModel.py \
+bin/model/LagrangianStatisticsModel.py \
+bin/model/LocalizationModelNeptune.py \
+bin/model/LocalizationModel.py \
+bin/model/MainFieldsInitializationModel.py \
+bin/model/MainFieldsModel.py \
+bin/model/MobileMeshModel.py \
+bin/model/NonCondensableModel.py \
+bin/model/NotebookModel.py \
+bin/model/NucleateBoilingModel.py \
+bin/model/NumericalParamEquationModelNeptune.py \
+bin/model/NumericalParamEquationModel.py \
+bin/model/NumericalParamGlobalModel.py \
+bin/model/OpenTurnsModel.py \
+bin/model/OutputControlModel.py \
+bin/model/OutputFieldsModel.py \
+bin/model/OutputSurfacicFieldsModel.py \
+bin/model/OutputSurfacicVariablesModel.py \
+bin/model/OutputVolumicVariablesModel.py \
+bin/model/PerformanceTuningModel.py \
+bin/model/PorosityModel.py \
+bin/model/ProfilesModel.py \
+bin/model/ScriptRunningModel.py \
+bin/model/SolidModel.py \
+bin/model/SolutionDomainModel.py \
+bin/model/SourceTermsModel.py \
+bin/model/SpeciesModel.py \
+bin/model/StartRestartModel.py \
+bin/model/ThermalRadiationModel.py \
+bin/model/ThermalScalarModel.py \
+bin/model/ThermodynamicsModel.py \
+bin/model/TimeAveragesModel.py \
+bin/model/TimeStepModelNeptune.py \
+bin/model/TimeStepModel.py \
+bin/model/TurboMachineryModel.py \
+bin/model/TurbulenceModel.py \
+bin/model/TurbulenceNeptuneModel.py \
+bin/model/UsersControlModel.py \
+bin/model/XMLengine.py \
+bin/model/XMLinitializeNeptune.py \
+bin/model/XMLinitialize.py \
+bin/model/XMLmodel.py \
+bin/model/XMLvariables.py
 
 # Install user scripts
 

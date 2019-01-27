@@ -39,9 +39,8 @@ import os, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import *
-import code_saturne.Base.Toolbox as Tool
-from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.model.Common import *
+from code_saturne.model.XMLvariables import Model, Variables
 
 #-------------------------------------------------------------------------------
 # Model class

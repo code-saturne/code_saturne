@@ -51,12 +51,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import ComboModel, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from UsersControl import Ui_UsersControl
-from UsersControlModel import UsersControlModel
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.model.UsersControlModel import UsersControlModel
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
 #-------------------------------------------------------------------------------
 # log config
@@ -403,5 +402,3 @@ class UsersControlView(QWidget, Ui_UsersControl):
         if row >= 0 :
             log.debug("slotDeleteScalar -> %s" % row)
             self.tableModelUsers.deleteItem(row)
-
-

@@ -46,13 +46,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator
 from code_saturne.Base.QtPage import ComboModel, to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.TimeAveragesForm import Ui_TimeAveragesForm
-from code_saturne.Pages.StartRestartModel import StartRestartModel
-from code_saturne.Pages.TimeAveragesModel import TimeAveragesModel
+from code_saturne.model.StartRestartModel import StartRestartModel
+from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -45,19 +45,19 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
 
 from code_saturne.Pages.InitializationForm import Ui_InitializationForm
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from code_saturne.Pages.InitializationModel import InitializationModel
-from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
+from code_saturne.model.InitializationModel import InitializationModel
+from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -47,16 +47,16 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.GroundwaterLawForm import Ui_GroundwaterLawForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.GroundwaterLawModel import GroundwaterLawModel
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

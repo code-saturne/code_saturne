@@ -45,14 +45,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant
 from code_saturne.Pages.ProfilesForm import Ui_ProfilesForm
-from code_saturne.Pages.ProfilesModel import ProfilesModel
+from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

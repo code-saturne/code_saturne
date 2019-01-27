@@ -26,7 +26,8 @@
 # Library modules import
 #-------------------------------------------------------------------------------
 
-__all__ = ["studymanager","Base", "Pages", "studymanager_gui", "trackcvg"]
+__all__ = ["studymanager","Base", "Pages", "model", "studymanager_gui", \
+           "trackcvg"]
 
 #-------------------------------------------------------------------------------
 # End

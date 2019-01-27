@@ -43,7 +43,6 @@ ManageCasesModel.py \
 ManageCasesView.py \
 ManagePlotterModel.py \
 ManagePlotterView.py \
-PathesModel.py \
 PathesView.py \
 Toolbox.py \
 XMLinitialize.py

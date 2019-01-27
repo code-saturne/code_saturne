@@ -45,8 +45,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
 from code_saturne.studymanager_gui.ManageCasesForm import Ui_ManageCasesForm
 from code_saturne.studymanager_gui.ManageCasesModel import ManageCasesModel

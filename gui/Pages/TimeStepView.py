@@ -45,10 +45,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from code_saturne.Pages.TimeStepForm import Ui_TimeStepForm
-from code_saturne.Pages.TimeStepModel import TimeStepModel
+from code_saturne.model.TimeStepModel import TimeStepModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -148,7 +148,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         # Constraints on time step from Turbulence model
 
-        from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+        from code_saturne.model.TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
 
@@ -160,7 +160,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         # Constraints on time step from Lagrangian model
 
-        from code_saturne.Pages.LagrangianModel import LagrangianModel
+        from code_saturne.model.LagrangianModel import LagrangianModel
         model = LagrangianModel(self.case).getLagrangianModel()
         if model in ['one_way', 'two_way']:
             if idtvar not in [0, 1]:
@@ -173,7 +173,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         # Constraints on time step from compressible model
 
-        from code_saturne.Pages.CompressibleModel import CompressibleModel
+        from code_saturne.model.CompressibleModel import CompressibleModel
         model = CompressibleModel(self.case).getCompressibleModel()
         if model != 'off':
             if idtvar not in [0, 1]:
@@ -186,7 +186,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         # Constraints on time step from groundwater model
 
-        from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+        from code_saturne.model.GroundwaterModel import GroundwaterModel
         model = GroundwaterModel(self.case).getGroundwaterModel()
         if model != 'off':
             if idtvar not in [0, 1]:

@@ -47,18 +47,18 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from code_saturne.Pages.ThermalForm import Ui_ThermalForm
-from code_saturne.Pages.ElectricalModel import ElectricalModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-from code_saturne.Pages.GasCombustionModel import GasCombustionModel
-from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
-from code_saturne.Pages.CompressibleModel import CompressibleModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.ElectricalModel import ElectricalModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.GasCombustionModel import GasCombustionModel
+from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.model.CompressibleModel import CompressibleModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
-from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
-from code_saturne.Pages.MainFieldsModel import MainFieldsModel
+from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.model.MainFieldsModel import MainFieldsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -198,11 +198,11 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.coal_or_gas = "off"
 
         if self.case['package'].name == 'code_saturne':
-            from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+            from code_saturne.model.CoalCombustionModel import CoalCombustionModel
             self.coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
             del CoalCombustionModel
             if self.coal_or_gas == "off":
-                from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+                from code_saturne.model.GasCombustionModel import GasCombustionModel
                 self.coal_or_gas = GasCombustionModel(self.case).getGasCombustionModel()
                 del GasCombustionModel
 

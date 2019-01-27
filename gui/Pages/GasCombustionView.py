@@ -45,10 +45,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel
 from code_saturne.Pages.GasCombustionForm import Ui_GasCombustionForm
-from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.model.GasCombustionModel import GasCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -48,14 +48,14 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.Pages.PorosityForm import Ui_PorosityForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.PorosityModel import PorosityModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.PorosityModel import PorosityModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config

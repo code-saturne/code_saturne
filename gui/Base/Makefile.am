@@ -39,16 +39,10 @@ endif
 PYFILES = \
 BrowserView.py \
 CommandMgrDialogView.py \
-Common.py \
 MainView.py \
 QtCase.py \
 QtPage.py \
-Toolbox.py \
-XMLengine.py \
-XMLinitialize.py \
-XMLmodel.py \
-XMLvariables.py \
-XMLinitializeNeptune.py
+Toolbox.py
 
 if HAVE_QT5
   PYFILES += qt5/QtCore.py qt5/QtGui.py qt5/QtWidgets.py
