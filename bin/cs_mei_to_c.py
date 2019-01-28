@@ -1,4 +1,4 @@
-import os, shutil
+import os
 import re
 
 from code_saturne.Pages.NotebookModel import NotebookModel
@@ -92,6 +92,12 @@ class mei_to_c_interpreter:
         self.notebook = {}
         for (nme, val) in nb.getNotebookList():
             self.notebook[nme] = str(val)
+
+        # Volume code
+        self.generate_volume_code()
+
+        # Bouondary code
+        self.generate_boundary_code()
     # -------------------------------
 
     # -------------------------------
@@ -121,7 +127,7 @@ class mei_to_c_interpreter:
 
         if name in self.vol_funcs.keys():
             if self.vol_funcs[name]['zone'] == zone_name:
-                msg = "Formula for variable %s in zone %s was allready defined:\n %s" \
+                msg = "Formula for variable %s in zone %s was already defined:\n %s" \
                         % (name, zone_name, self.vol_funcs[name]['exp'])
                 raise Exception(msg)
 
@@ -492,48 +498,7 @@ class mei_to_c_interpreter:
     # -------------------------------
 
     # -------------------------------
-    def delete_file(self, c_file_name):
-
-        # Copy function file if needed
-        fpath = os.path.join(self.case['case_path'], 'SRC', c_file_name);
-        if os.path.isfile(fpath):
-            os.remove(fpath)
-    # -------------------------------
-
-    # -------------------------------
-    def save_file(self, c_file_name, code_to_write):
-
-        if code_to_write != '':
-            # Try and write the volume function in the SRC folder
-            try:
-                fpath = os.path.join(self.case['case_path'], 'SRC', c_file_name)
-                new_file = open(fpath, 'w')
-                new_file.write(code_to_write)
-                new_file.close()
-                return 0
-
-            except:
-                # If the SRC doesnt exist, check if we are in a RESU folder, and
-                # hence a src folder is present. A warning will be shown
-                # if it is the case
-                try:
-                    fpath = os.path.join(self.case['case_path'], 'src', c_file_name)
-                    new_file = open(fpath, 'w')
-                    new_file.write(code_to_write)
-                    new_file.close()
-                    return -1
-
-                except:
-                    # Cant save the function. xml file will still be saved
-                    return 1
-
-        # Return 0 if nothing is written for robustness
-        else:
-            return 0
-    # -------------------------------
-
-    # -------------------------------
-    def save_volume_function(self):
+    def generate_volume_code(self):
 
         if self.case['package'].name == 'code_saturne':
             authorized_fields = ['density', 'molecular_viscosity',
@@ -594,37 +559,10 @@ class mei_to_c_interpreter:
                         exp, req, sca, sym = tm.getFormulaComponents(fieldId,
                                                                     'temperature')
                         self.init_cell_block(exp, req, sym, sca, name)
-
-
-        # Delete previous existing file
-        file2write = 'cs_meg_volume_function.c'
-        self.delete_file(file2write)
-
-        # Generate the functions code if needed
-        code_to_write = ''
-        if len(self.vol_funcs.keys()) > 0:
-            code_to_write = _file_header + _vol_function_header
-            for key in self.vol_funcs.keys():
-                m1 = 'User defined formula for variable %s over zone %s' \
-                        % (key, self.vol_funcs[key]['zone'])
-                m2 = '/* '+'-'*(len(m1))+' */\n'
-                m1 = '/* '+m1+' */'
-
-                code_to_write += "  " + m2
-                code_to_write += "  " + m1 + '\n'
-                code_to_write += self.write_cell_block(key)
-                code_to_write += "  " + m2 + '\n'
-
-            code_to_write += _file_footer
-
-        # Write the C file if necessary
-        write_status = self.save_file(file2write, code_to_write)
-
-        return write_status
     # -------------------------------
 
     # -------------------------------
-    def save_boundary_function(self):
+    def generate_boundary_code(self):
 
         if self.case['package'].name == 'code_saturne':
             from code_saturne.Pages.LocalizationModel import LocalizationModel
@@ -735,8 +673,82 @@ class mei_to_c_interpreter:
                         else:
                             req = [sca, 'hc']
                         self.init_bnd_block(exp, req, sca, zone._label, c)
+    # -------------------------------
 
+    # -------------------------------
+    def has_meg_code(self):
 
+        retcode = False
+
+        if len(self.vol_funcs) > 0 or len(self.bnd_funcs) > 0:
+            retcode = True
+
+        return retcode
+    # -------------------------------
+
+    # -------------------------------
+    def delete_file(self, c_file_name):
+
+        # Copy function file if needed
+        fpath = os.path.join(self.case['case_path'], 'SRC', c_file_name);
+        if os.path.isfile(fpath):
+            os.remove(fpath)
+    # -------------------------------
+
+    # -------------------------------
+    def save_file(self, c_file_name, code_to_write):
+
+        if code_to_write != '':
+            # Try and write the volume function in the src if in RESU folder
+            # For debugging purposes
+            try:
+                fpath = os.path.join(self.case['case_path'], 'src', c_file_name)
+                new_file = open(fpath, 'w')
+                new_file.write(code_to_write)
+                new_file.close()
+                return 1
+
+            except:
+                # Cant save the function. xml file will still be saved
+                return -1
+
+        # Return 0 if nothing is written for robustness
+        else:
+            return 0
+    # -------------------------------
+
+    # -------------------------------
+    def save_volume_function(self):
+
+        # Delete previous existing file
+        file2write = 'cs_meg_volume_function.c'
+        self.delete_file(file2write)
+
+        # Generate the functions code if needed
+        code_to_write = ''
+        if len(self.vol_funcs.keys()) > 0:
+            code_to_write = _file_header + _vol_function_header
+            for key in self.vol_funcs.keys():
+                m1 = 'User defined formula for variable %s over zone %s' \
+                        % (key, self.vol_funcs[key]['zone'])
+                m2 = '/* '+'-'*(len(m1))+' */\n'
+                m1 = '/* '+m1+' */'
+
+                code_to_write += "  " + m2
+                code_to_write += "  " + m1 + '\n'
+                code_to_write += self.write_cell_block(key)
+                code_to_write += "  " + m2 + '\n'
+
+            code_to_write += _file_footer
+
+        # Write the C file if necessary
+        write_status = self.save_file(file2write, code_to_write)
+
+        return write_status
+    # -------------------------------
+
+    # -------------------------------
+    def save_boundary_function(self):
 
         # Delete previous existing file
         file2write = 'cs_meg_boundary_function.c'

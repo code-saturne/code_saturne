@@ -94,7 +94,7 @@ from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
 from code_saturne.Pages.SolutionDomainModel import getRunType
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
-from code_saturne.Pages.QMeiToCCode import mei_to_c_interpreter
+from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -1185,20 +1185,6 @@ class MainView(object):
             state = mci.save_all_functions()
 
             if state == 1:
-                title = self.tr("Save error")
-                msg  = "You are not in a CASE structure.\n"
-                msg += "The xml file was saved, but the User Definitions' "
-                msg += "functions could not be saved in the SRC folder.\n"
-                msg += "Please re-open your xml file within a CASE structure "
-                msg += "and save it again."
-                err_msg = self.tr(msg)
-                QMessageBox.critical(self, title, err_msg)
-                msg = self.tr("Saving incomplete.\n \
-                              Reopen xml file within a CASE structure")
-                self.statusbar.showMessage(msg, 2000)
-                self.updateTitleBar()
-                return
-            elif state == -1:
                 title = self.tr("Warning!")
                 msg  = "You are within a RESU folder!\n"
                 msg += "The xml file was saved, as the cs_meg C functions "
