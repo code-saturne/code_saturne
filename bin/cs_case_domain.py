@@ -43,6 +43,8 @@ from cs_exec_environment import run_command, source_shell_script
 from cs_exec_environment import enquote_arg, separate_args
 from cs_exec_environment import source_syrthes_env
 
+from cs_mei_to_c import mei_to_c_interpreter
+
 #===============================================================================
 # Utility functions
 #===============================================================================
@@ -435,6 +437,9 @@ class domain(base_domain):
 
         self.adaptation = adaptation
 
+        # MEG expression generator
+        self.mci = None
+
     #---------------------------------------------------------------------------
 
     def __set_auto_restart__(self):
@@ -590,6 +595,24 @@ class domain(base_domain):
 
         if self.exec_solver and len(src_files) > 0:
             return True
+        elif self.param != None:
+            from Base.XMLengine import Case
+            from Base.XMLinitialize import XMLinit
+
+            fp = os.path.join(self.data_dir, self.param)
+            case = Case(package=self.package, file_name=fp)
+            case['xmlfile'] = fp
+            case.xmlCleanAllBlank(case.xmlRootNode())
+            XMLinit(case).initialize()
+            case.xmlSaveDocument()
+
+            case['case_path'] = self.exec_dir
+            self.mci = mei_to_c_interpreter(case)
+            if self.mci.has_meg_code():
+                return True
+            else:
+                self.mci = None
+                return False
         else:
             return False
 
@@ -600,27 +623,31 @@ class domain(base_domain):
         Compile and link user subroutines if necessary
         """
         # Check if there are files to compile in source path
-
+        # or if MEG functions need to be generated
         src_files = cs_compile.files_to_compile(self.src_dir)
 
-        if len(src_files) > 0:
+        if len(src_files) > 0 or self.mci != None:
 
-            # Add header files to list so as not to forget to copy them
-
-            dir_files = os.listdir(self.src_dir)
-            src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
-                                     + fnmatch.filter(dir_files, '*.hxx')
-                                     + fnmatch.filter(dir_files, '*.hpp'))
-
+            # Create the src folder
             exec_src = os.path.join(self.exec_dir, 'src')
 
-            # Copy source files to execution directory
-
             make_clean_dir(exec_src)
-            for f in src_files:
-                src_file = os.path.join(self.src_dir, f)
-                dest_file = os.path.join(exec_src, f)
-                shutil.copy2(src_file, dest_file)
+
+            if len(src_files) > 0:
+                # Add header files to list so as not to forget to copy them
+                dir_files = os.listdir(self.src_dir)
+                src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
+                                         + fnmatch.filter(dir_files, '*.hxx')
+                                         + fnmatch.filter(dir_files, '*.hpp'))
+
+                # Copy source files to execution directory
+                for f in src_files:
+                    src_file = os.path.join(self.src_dir, f)
+                    dest_file = os.path.join(exec_src, f)
+                    shutil.copy2(src_file, dest_file)
+
+            if self.mci != None:
+                mci_state = self.mci.save_all_functions()
 
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')

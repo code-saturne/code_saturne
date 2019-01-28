@@ -35,7 +35,6 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import logging
-#from code_saturne.Pages.QMeiToCCode import mei_to_c_interpreter
 
 #-------------------------------------------------------------------------------
 # EOS
