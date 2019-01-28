@@ -395,7 +395,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
          "is activated, but the return coupling of the dispersed phase\n"
          "on the continuous phase is not activated:\n"
          "  cs_glob_lagr_time_scheme->iilagr = %d\n"
-         "The return coupling must be acivated for this model:\n"
+         "The return coupling must be activated for this model:\n"
          "  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"),
        lagr_time_scheme->iilagr);
 

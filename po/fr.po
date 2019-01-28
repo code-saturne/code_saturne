@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-01-25 16:04+0100\n"
+"POT-Creation-Date: 2019-01-30 12:23+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5100,8 +5100,32 @@ msgstr "entrée"
 msgid "outlet"
 msgstr "sortie"
 
+msgid "imposed pressure (inlet/outlet)"
+msgstr ""
+
 msgid "symmetry"
 msgstr "symmétrie"
+
+msgid "ALE fixed surface"
+msgstr ""
+
+msgid "ALE sliding surface"
+msgstr ""
+
+msgid "ALE imposed velocity"
+msgstr ""
+
+msgid "ALE imposed displacement"
+msgstr ""
+
+msgid "ALE internal coupling"
+msgstr ""
+
+msgid "ALE external coupling"
+msgstr ""
+
+msgid "ALE free surface"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -7264,8 +7288,8 @@ msgid ""
 "(iturb=23)or v2f model (iturb=50/51)"
 msgstr ""
 "lors de la lecture des données d'entrée,\n"
-"avec les modèles k-epsilon LP (iturb=21), k-epsilon LS (iturb=22), "
-"k-epsilon quadratique (iturb=23) ou v2f (iturb=50/51)"
+"avec les modèles k-epsilon LP (iturb=21), k-epsilon LS (iturb=22), k-epsilon "
+"quadratique (iturb=23) ou v2f (iturb=50/51)"
 
 msgid ""
 "while reading input data,\n"
@@ -9608,6 +9632,18 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+" %s: Invalid type of reduction.\n"
+" Stop computing the Dirichlet value.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid type of definition.\n"
+" Stop computing the Dirichlet value.\n"
+msgstr ""
+
+#, c-format
 msgid " %s: Incompatible reduction for the field %s.\n"
 msgstr " %s : réduction incompatible pour le champ %s.\n"
 
@@ -9654,19 +9690,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Undefined type of schme to solve for eq. %s. Please check your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid type of definition.\n"
-" Stop computing the Dirichlet value.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid type of reduction.\n"
-" Stop computing the Dirichlet value.\n"
+" Undefined type of scheme to solve for eq. %s. Please check your settings."
 msgstr ""
 
 msgid ""
@@ -12444,7 +12468,7 @@ msgid ""
 "is activated, but the return coupling of the dispersed phase\n"
 "on the continuous phase is not activated:\n"
 "  cs_glob_lagr_time_scheme->iilagr = %d\n"
-"The return coupling must be acivated for this model:\n"
+"The return coupling must be activated for this model:\n"
 "  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"
 msgstr ""
 
