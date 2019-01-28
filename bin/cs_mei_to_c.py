@@ -92,16 +92,12 @@ class mei_to_c_interpreter:
         self.notebook = {}
         for (nme, val) in nb.getNotebookList():
             self.notebook[nme] = str(val)
-        print(len(self.notebook))
 
         # Volume code
         self.generate_volume_code()
 
         # Bouondary code
         self.generate_boundary_code()
-
-        print(len(self.vol_funcs))
-        print(len(self.bnd_funcs))
     # -------------------------------
 
     # -------------------------------
@@ -131,7 +127,7 @@ class mei_to_c_interpreter:
 
         if name in self.vol_funcs.keys():
             if self.vol_funcs[name]['zone'] == zone_name:
-                msg = "Formula for variable %s in zone %s was allready defined:\n %s" \
+                msg = "Formula for variable %s in zone %s was already defined:\n %s" \
                         % (name, zone_name, self.vol_funcs[name]['exp'])
                 raise Exception(msg)
 
