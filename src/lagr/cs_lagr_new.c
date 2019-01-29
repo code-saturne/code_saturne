@@ -75,7 +75,6 @@
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_dlvo.h"
 #include "cs_lagr_stat.h"
-#include "cs_lagr_geom.h"
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
 

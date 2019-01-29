@@ -73,7 +73,6 @@
 #include "cs_physical_model.h"
 
 #include "cs_lagr.h"
-#include "cs_lagr_geom.h"
 #include "cs_lagr_new.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_stat.h"
