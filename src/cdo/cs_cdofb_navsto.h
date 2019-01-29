@@ -208,24 +208,6 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add contribution related to the pressure if Nitsche's method for the
- *         boundary conditions (Dirichlet or Sliding) is requested
- *
- * \param[in]       eqp         pointer to \ref cs_equation_param_t structure
- * \param[in]       cm          pointer to \ref cs_cell_mesh_t structure
- * \param[in]       prs_c       value of the pressure at the current cell
- * \param[in, out]  csys        pointer to \ref cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_pressure_nitsche(const cs_equation_param_t *eqp,
-                                 const cs_cell_mesh_t      *cm,
-                                 const cs_real_t            prs_c,
-                                 cs_cell_sys_t             *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add the grad-div part to the local matrix (i.e. for the current
  *         cell)
  *

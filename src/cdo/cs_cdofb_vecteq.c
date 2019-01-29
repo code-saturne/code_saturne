@@ -147,6 +147,97 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   return cb;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Apply the part of boundary conditions that should be done before
+ *          the static condensation and the time scheme (case of CDO-Fb schemes)
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] fm          pointer to a facewise view of the mesh
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_apply_bc_partly(const cs_equation_param_t     *eqp,
+                 const cs_cdofb_vecteq_t       *eqc,
+                 const cs_cell_mesh_t          *cm,
+                 cs_face_mesh_t                *fm,
+                 cs_cell_sys_t                 *csys,
+                 cs_cell_builder_t             *cb)
+{
+  /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+   * Operations that have to be performed BEFORE the static condensation */
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+
+    /* Neumann boundary conditions */
+    if (csys->has_nhmg_neumann)
+      for (short int f  = 0; f < 3*cm->n_fc; f++)
+        csys->rhs[f] += csys->neu_values[f];
+
+    /* Weakly enforced Dirichlet BCs for cells attached to the boundary
+       csys is updated inside (matrix and rhs) */
+    if (cs_equation_param_has_diffusion(eqp)) {
+
+      if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+          eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+        eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
+
+    }
+
+    if (csys->has_sliding)
+      eqc->enforce_sliding(eqp, cm, fm, cb, csys);
+
+  } /* Boundary cell */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_sys_dump(">> Local system matrix after BC & before condensation",
+                     csys);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Apply the boundary conditions to the local system in CDO-Fb schemes
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] fm          pointer to a facewise view of the mesh
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_apply_remaining_bc(const cs_equation_param_t     *eqp,
+                    const cs_cdofb_vecteq_t       *eqc,
+                    const cs_cell_mesh_t          *cm,
+                    cs_face_mesh_t                *fm,
+                    cs_cell_sys_t                 *csys,
+                    cs_cell_builder_t             *cb)
+{
+  /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
+   * Operations that have to be performed AFTER the static condensation */
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+
+      /* Enforced Dirichlet BCs for cells attached to the boundary
+       * csys is updated inside (matrix and rhs). This is close to a strong
+       * way to enforce Dirichlet BCs */
+      eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
+
+    }
+
+  } /* Boundary cell */
+}
+
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -642,7 +733,6 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
       cs_cdofb_vecteq_diffusion(time_eval, eqp, eqb, eqc, cm, fm, csys, cb);
 
       const _Bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
-
       if (has_sourceterm) { /* SOURCE TERM
                              * =========== */
 
@@ -655,7 +745,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      cs_cdofb_vecteq_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
+      _apply_bc_partly(eqp, eqc, cm, fm, csys, cb);
 
 
       /* STATIC CONDENSATION
@@ -677,8 +767,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
-
-      cs_cdofb_vecteq_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
+      _apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -841,7 +930,6 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
       cs_cdofb_vecteq_diffusion(time_eval, eqp, eqb, eqc, cm, fm, csys, cb);
 
       const _Bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
-
       if (has_sourceterm) { /* SOURCE TERM
                              * =========== */
 
@@ -854,7 +942,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      cs_cdofb_vecteq_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
+      _apply_bc_partly(eqp, eqc, cm, fm, csys, cb);
 
       /* UNSTEADY TERM + TIME SCHEME
        * =========================== */
@@ -897,8 +985,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 
       /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
-
-      cs_cdofb_vecteq_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
+      _apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1070,7 +1157,6 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
       cs_cdofb_vecteq_diffusion(time_eval, eqp, eqb, eqc, cm, fm, csys, cb);
 
       const _Bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
-
       if (has_sourceterm) { /* SOURCE TERM
                              * =========== */
         if (compute_initial_source) { /* First time step */
@@ -1096,7 +1182,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      cs_cdofb_vecteq_apply_bc_partly(time_eval, eqp, eqc, cm, fm, csys, cb);
+      _apply_bc_partly(eqp, eqc, cm, fm, csys, cb);
 
       /* UNSTEADY TERM + TIME SCHEME
        * =========================== */
@@ -1154,8 +1240,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
 
       /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
-
-      cs_cdofb_vecteq_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
+      _apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))

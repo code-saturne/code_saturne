@@ -312,51 +312,6 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Apply the part of boundary conditions that should be done before
- *          the static condensation and the time scheme (case of CDO-Fb schemes)
- *
- * \param[in]      time_eval   time at which analytical function are evaluated
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqc         context for this kind of discretization
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] fm          pointer to a facewise view of the mesh
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_apply_bc_partly(cs_real_t                      time_eval,
-                                const cs_equation_param_t     *eqp,
-                                const cs_cdofb_vecteq_t       *eqc,
-                                const cs_cell_mesh_t          *cm,
-                                cs_face_mesh_t                *fm,
-                                cs_cell_sys_t                 *csys,
-                                cs_cell_builder_t             *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Apply the boundary conditions to the local system in CDO-Fb schemes
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqc         context for this kind of discretization
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] fm          pointer to a facewise view of the mesh
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_apply_remaining_bc(const cs_equation_param_t     *eqp,
-                                   const cs_cdofb_vecteq_t       *eqc,
-                                   const cs_cell_mesh_t          *cm,
-                                   cs_face_mesh_t                *fm,
-                                   cs_cell_sys_t                 *csys,
-                                   cs_cell_builder_t             *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Solve a linear system arising from a scalar-valued CDO-Fb scheme
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
