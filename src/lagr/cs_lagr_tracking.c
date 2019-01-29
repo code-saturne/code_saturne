@@ -3507,6 +3507,9 @@ cs_lagr_test_wall_cell(const void                     *particle,
   cs_lnum_t cell_num
     = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM);
 
+  *yplus = 10000;
+  *face_id = -1;
+
   if (cell_num < 0) return;
 
   cs_lnum_t  *cell_b_face_idx = cs_glob_mesh_adjacencies->cell_b_faces_idx;
@@ -3516,9 +3519,6 @@ cs_lagr_test_wall_cell(const void                     *particle,
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_normal;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_cog;
-
-  *yplus = 10000;
-  *face_id = -1;
 
   const cs_real_t  *particle_coord
     = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
