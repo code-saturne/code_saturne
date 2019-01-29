@@ -80,8 +80,8 @@ from code_saturne.Base import QtCase
 from code_saturne.model.XMLinitialize import *
 from code_saturne.model.XMLinitializeNeptune import *
 from code_saturne.model.XMLmodel import *
-from code_saturne.model.Common import GuiParam, displaySelectedPage
-from code_saturne.model.Common import XML_DOC_VERSION
+from code_saturne.model.Common import GuiParam, XML_DOC_VERSION
+from code_saturne.Base.Toolbox import displaySelectedPage
 
 try:
     import code_saturne.Pages
