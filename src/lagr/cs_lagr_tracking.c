@@ -1001,16 +1001,16 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
                              face_normal[1]/face_area,
                              face_normal[2]/face_area};
 
-  cs_lnum_t  cur_cell_id
+  cs_lnum_t  cell_id
     = cs_lagr_particle_get_cell_id(particle, p_am);
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   for (int k = 0; k < 3; k++)
     disp[k] = particle_coord[k] - p_info->start_coords[k];
 
-  assert(! (fabs(disp[0]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[1]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[2]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15));
+  assert(! (fabs(disp[0]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
+            fabs(disp[1]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
+            fabs(disp[2]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15));
 
   for (int k = 0; k < 3; k++)
     intersect_pt[k] = disp[k]*t_intersect + p_info->start_coords[k];
@@ -1041,7 +1041,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
      /* Deposition criterion: E_kin > E_barr */
     if (energ >= energt * 0.5 * particle_diameter) {
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
       cs_real_3_t vect_cen;
       for (int k = 0; k < 3; k++)
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1055,7 +1055,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
         particle_velocity_seen[k] = 0.0;
       }
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cur_cell_id +1);
+                                cell_id +1);
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID,
                                 face_id);
       // The particle is not treated yet: the motion is now imposed
@@ -1167,13 +1167,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_real_t face_area  = fvq->b_face_surf[face_id];
 
 
-  cs_lnum_t  cur_cell_id
+  cs_lnum_t  cell_id
     = cs_lagr_particle_get_cell_id(particle, p_am);
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
-  assert(! (fabs(disp[0]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[1]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[2]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15));
+  assert(! (fabs(disp[0]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
+            fabs(disp[1]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
+            fabs(disp[2]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15));
 
   /* Save particle impacting velocity */
   if (   cs_glob_lagr_boundary_interactions->iangbd > 0
@@ -1211,7 +1211,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     move_particle = CS_LAGR_PART_MOVE_OFF;
 
-    cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
     cs_real_3_t vect_cen;
     for (int k = 0; k < 3; k++) {
       vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1314,7 +1314,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
      /* Deposition criterion: E_kin > E_barr */
     if (energ > energt * 0.5 * particle_diameter) {
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
       cs_real_3_t vect_cen;
       for (int k = 0; k < 3; k++)
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1579,7 +1579,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                 CS_LAGR_PART_IN_FLOW);
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
       cs_real_3_t vect_cen;
       for (int k = 0; k < 3; k++) {
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1617,7 +1617,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
                               cs_glob_mesh->b_face_cells[face_id] + 1);
 
-    cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
     cs_real_3_t vect_cen;
     for (int k = 0; k < 3; k++) {
       vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1762,7 +1762,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
                                 cs_glob_mesh->b_face_cells[face_id] + 1);
 
-    cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
     cs_real_3_t vect_cen;
     for (int k = 0; k < 3; k++) {
       vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
@@ -1940,7 +1940,7 @@ _local_propagation(void                           *particle,
   for (int k = 0; k < 3; k++)
     disp[k] = particle_coord[k] - prev_location[k];
 
-  cs_lnum_t  cur_cell_id
+  cs_lnum_t  cell_id
     = cs_lagr_particle_get_cell_id(particle, p_am);
 
   const cs_real_3_t *vtx_coord
@@ -1948,7 +1948,7 @@ _local_propagation(void                           *particle,
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Dimension less test: no movement? */
-  cs_real_t inv_ref_length = 1./pow(cell_vol[cur_cell_id], 1./3.);
+  cs_real_t inv_ref_length = 1./pow(cell_vol[cell_id], 1./3.);
   if (fabs(disp[0] * inv_ref_length) < 1e-15 &&
       fabs(disp[1] * inv_ref_length) < 1e-15 &&
       fabs(disp[2] * inv_ref_length) < 1e-15 ) {
@@ -1974,11 +1974,11 @@ _local_propagation(void                           *particle,
        move_particle == CS_LAGR_PART_MOVE_ON;
        n_loops++) {
 
-    cur_cell_id
+    cell_id
       = cs_lagr_particle_get_cell_id(particle, p_am);
 
-    assert(cur_cell_id < mesh->n_cells);
-    assert(cur_cell_id > -1);
+    assert(cell_id < mesh->n_cells);
+    assert(cell_id > -1);
 
     if (n_loops > _max_propagation_loops) { /* Manage error */
 
@@ -1990,7 +1990,7 @@ _local_propagation(void                           *particle,
       move_particle  = CS_LAGR_PART_MOVE_OFF;
       particle_state = CS_LAGR_PART_TREATED;
 
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
 
       for (int k = 0; k < 3; k++) {
         prev_location[k] = cell_cen[k];
@@ -2021,9 +2021,9 @@ _local_propagation(void                           *particle,
           = (const cs_real_3_t *)(  cs_glob_lagr_b_face_proj
                                   + *neighbor_face_id);
 
-        flow_velo_x = u->val[cur_cell_id*3];
-        flow_velo_y = u->val[cur_cell_id*3 + 1];
-        flow_velo_z = u->val[cur_cell_id*3 + 2];
+        flow_velo_x = u->val[cell_id*3];
+        flow_velo_y = u->val[cell_id*3 + 1];
+        flow_velo_z = u->val[cell_id*3 + 2];
 
         /* e1 (normal) vector coordinates */
         cs_real_t e1_x = cs_glob_lagr_b_u_normal[*neighbor_face_id][0];
@@ -2095,8 +2095,8 @@ _local_propagation(void                           *particle,
       = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
 
     /* Loop on faces to see if the particle trajectory crosses it*/
-    for (i = cell_face_idx[cur_cell_id];
-         i < cell_face_idx[cur_cell_id+1] && move_particle == CS_LAGR_PART_MOVE_ON;
+    for (i = cell_face_idx[cell_id];
+         i < cell_face_idx[cell_id+1] && move_particle == CS_LAGR_PART_MOVE_ON;
          i++) {
 
       cs_lnum_t face_id, vtx_start, vtx_end, n_vertices;
@@ -2114,7 +2114,7 @@ _local_propagation(void                           *particle,
         /* Interior face */
 
         face_id = face_num - 1;
-        if (cur_cell_id == mesh->i_face_cells[face_id][1])
+        if (cell_id == mesh->i_face_cells[face_id][1])
           reorient_face = -1;
         vtx_start = mesh->i_face_vtx_idx[face_id];
         vtx_end = mesh->i_face_vtx_idx[face_id+1];
@@ -2179,7 +2179,7 @@ _local_propagation(void                           *particle,
 
     if ((n_in != n_out || test_in)
         && (move_particle == CS_LAGR_PART_MOVE_ON)) {
-      cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
 
       for (int k = 0; k < 3; k++)
         prev_location[k] = cell_cen[k];
@@ -2247,21 +2247,21 @@ _local_propagation(void                           *particle,
 
         /* Now update cell */
 
-        if (cur_cell_id == c_id1) {
+        if (cell_id == c_id1) {
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
                                     c_id2 + 1);
-          cur_cell_id = c_id2;
+          cell_id = c_id2;
         }
 
         else {
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
                                     c_id1 + 1);
-          cur_cell_id = c_id1;
+          cell_id = c_id1;
         }
 
         /* Particle changes rank */
 
-        if (cur_cell_id >= mesh->n_cells) {
+        if (cell_id >= mesh->n_cells) {
 
           particle_state = CS_LAGR_PART_TO_SYNC;
           move_particle = CS_LAGR_PART_MOVE_OFF;
@@ -2295,7 +2295,7 @@ _local_propagation(void                           *particle,
 
             cs_real_t intersect_pt[3], vect_cen[3];
             cs_real_t bc_epsilon = 1e-8;
-            cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
+            cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
 
             for (int k = 0; k < 3; k++)
               intersect_pt[k]
@@ -2309,9 +2309,9 @@ _local_propagation(void                           *particle,
 
             if (*particle_yplus < 100.0) {
 
-              cs_real_t flow_velo_x = u->val[cur_cell_id*3];
-              cs_real_t flow_velo_y = u->val[cur_cell_id*3 + 1];
-              cs_real_t flow_velo_z = u->val[cur_cell_id*3 + 2];
+              cs_real_t flow_velo_x = u->val[cell_id*3];
+              cs_real_t flow_velo_y = u->val[cell_id*3 + 1];
+              cs_real_t flow_velo_z = u->val[cell_id*3 + 2];
 
               /* The particle is still in the boundary layer */
 
@@ -3063,8 +3063,8 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     _tracking_info(particles, i)->start_coords[2] = prv_part_coord[2];
 
     if (cell_rotor_num != NULL) {
-      cs_lnum_t  cur_cell_id = CS_ABS(cur_part_cell_num) - 1;
-      int r_num = cell_rotor_num[cur_cell_id];
+      cs_lnum_t  cell_id = CS_ABS(cur_part_cell_num) - 1;
+      int r_num = cell_rotor_num[cell_id];
       if (r_num > 0) {
         _apply_vector_transfo((const cs_real_t (*)[4])rot_m[r_num],
                               _tracking_info(particles, i)->start_coords);
