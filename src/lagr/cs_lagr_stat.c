@@ -1679,7 +1679,7 @@ _cs_lagr_moment_reset_unsteady_stats(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update a given mesh based date function moment.
+ * \brief Update a given mesh based data function moment.
  *
  * \param[in, out]  mt      pointer to associated moment
  * \param[in]       mwa     pointer to associated weight accumulator
@@ -1735,11 +1735,11 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
       for (cs_lnum_t je = 0; je < n_elts; je++) {
         double delta[3], delta_n[3], r[3], m_n[3];
         const cs_lnum_t k = je*wa_stride;
-        const double wa_sum_n = w[k] + wa_sum[k];
+        const double wa_sum_n = CS_MAX(w[k] + wa_sum[k], 1e-100);
         for (cs_lnum_t l = 0; l < 3; l++) {
           cs_lnum_t jl = je*6 + l, jml = je*3 + l;
           delta[l]   = x[jml] - m[jml];
-          r[l] = delta[l] * (w[k] / (fmax(wa_sum_n, 1e-100)));
+          r[l] = delta[l] * (w[k] / wa_sum_n);
           m_n[l] = m[jml] + r[l];
           delta_n[l] = x[jml] - m_n[l];
           val[jl] =   (val[jl]*wa_sum[k] + (w[k]*delta[l]*delta_n[l]))
@@ -1768,9 +1768,9 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
     else { /* simple variance */
       for (cs_lnum_t j = 0; j < nd; j++) {
         const cs_lnum_t k = (j*wa_stride) / mt->dim;
-        double wa_sum_n = w[k] + wa_sum[k];
+        double wa_sum_n = CS_MAX(w[k] + wa_sum[k], 1e-100);
         double delta = x[j] - m[j];
-        double r = delta * (w[k] / (fmax(wa_sum_n, 1e-100)));
+        double r = delta * (w[k] / wa_sum_n);
         double m_n = m[j] + r;
         val[j] = (val[j]*wa_sum[k] + (w[k]*delta*(x[j]-m_n))) / wa_sum_n;
         m[j] += r;
@@ -1784,7 +1784,8 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
 
     for (cs_lnum_t j = 0; j < nd; j++) {
       const cs_lnum_t k = (j*wa_stride) / mt->dim;
-      val[j] += (x[j] - val[j]) * (w[k] / (w[k] + wa_sum[k]));
+      double wa_sum_n = CS_MAX(w[k] + wa_sum[k], 1e-100);
+      val[j] += (x[j] - val[j]) * (w[k] / wa_sum_n);
     }
 
   }
@@ -1942,7 +1943,7 @@ _cs_lagr_stat_update_all(void)
                   mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
 
                 /* update weight sum with new particle weight */
-                const cs_real_t wa_sum_n = p_weight + l_wa_sum[cell_id];
+                const cs_real_t wa_sum_n = CS_MAX(p_weight + l_wa_sum[cell_id], 1e-100);
 
                 if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
 
@@ -1957,7 +1958,7 @@ _cs_lagr_stat_update_all(void)
                       cs_lnum_t jl = cell_id*6 + l;
                       cs_lnum_t jml = cell_id*3 + l;
                       delta[l]   = pval[l] - mean_val[jml];
-                      r[l] = delta[l] * (p_weight / (fmax(wa_sum_n, 1e-100)));
+                      r[l] = delta[l] * (p_weight / wa_sum_n);
                       m_n[l] = mean_val[jml] + r[l];
                       delta_n[l] = pval[l] - m_n[l];
                       val[jl] = (  val[jl]*l_wa_sum[cell_id]
@@ -2001,7 +2002,7 @@ _cs_lagr_stat_update_all(void)
                     for (cs_lnum_t l = 0; l < dim; l++) {
 
                       double delta = pval[l] - mean_val[cell_id*dim+l];
-                      double r = delta * (p_weight / (fmax(wa_sum_n, 1e-100)));
+                      double r = delta * (p_weight / wa_sum_n);
                       double m_n = mean_val[cell_id*dim+l] + r;
 
                       val[cell_id*dim+l]
@@ -2024,7 +2025,7 @@ _cs_lagr_stat_update_all(void)
 
                   for (cs_lnum_t l = 0; l < dim; l++)
                     val[cell_id*dim+l] +=   (pval[l] - val[cell_id*dim+l])
-                                          * p_weight / (fmax(wa_sum_n, 1e-100));
+                                          * p_weight / wa_sum_n;
 
                 } /* End of test if moment is a variance or a mean */
 
