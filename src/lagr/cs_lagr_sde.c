@@ -859,6 +859,7 @@ _lagesd(cs_real_t           dtp,
   cs_math_33_3_product(rot_m, vela, vflui);
 
   cs_real_t norm = sqrt(cs_math_pow2(vflui[1]) + cs_math_pow2(vflui[2]));
+  cs_real_t inv_norm = ((norm > cs_math_zero_threshold) ?  1. / norm : 0);
 
   /* Velocity norm w.r.t y+ */
   cs_real_t norm_vit;
@@ -874,14 +875,8 @@ _lagesd(cs_real_t           dtp,
     norm_vit = (2.5 * log (yplus) + 5.5) * ustar;
   }
 
-  if (norm_vit > 0.) {
-    vflui[1] = norm_vit * vflui[1] / norm;
-    vflui[2] = norm_vit * vflui[2] / norm;
-  }
-  else {
-    vflui[1] = 0.;
-    vflui[2] = 0.;
-  }
+  vflui[1] = norm_vit * vflui[1] * inv_norm;
+  vflui[2] = norm_vit * vflui[2] * inv_norm;
 
   /* 2.5 Particle force: - pressure gradient/romp + external force + g   */
 
@@ -898,7 +893,7 @@ _lagesd(cs_real_t           dtp,
   /* 2.7 - tlag */
 
   cs_real_t tlp = cs_math_epzero;
-  if (energi > 0.0) {
+  if (dissip > cs_math_zero_threshold) {
 
     tlp = cl * energi / dissip;
     tlp = CS_MAX(tlp, cs_math_epzero);
