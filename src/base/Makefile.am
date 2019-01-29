@@ -398,9 +398,6 @@ endif
 
 if HAVE_PARAMEDMEM
 pkginclude_HEADERS += cs_paramedmem_coupling.hxx
-if HAVE_MEDCOUPLING_LOADER
-pkginclude_HEADERS += cs_paramedmem_remapper.hxx
-endif
 endif
 
 if HAVE_PLUGIN_MEDCOUPLING
