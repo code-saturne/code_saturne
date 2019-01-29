@@ -414,9 +414,6 @@ cs_lagr_internal_condition_t  *cs_glob_lagr_internal_conditions = NULL;
 /* Geometry helper arrays */
 /*------------------------*/
 
-/*! Unit normals and offsets of boundary faces */
-cs_real_4_t  *cs_glob_lagr_b_u_normal = NULL;
-
 /*! Projection matrices for global to local coordinates on boundary faces */
 
 cs_real_33_t  *cs_glob_lagr_b_face_proj = NULL;
@@ -1132,7 +1129,6 @@ cs_lagr_finalize(void)
 
   /* geometry */
 
-  BFT_FREE(cs_glob_lagr_b_u_normal);
   BFT_FREE(cs_glob_lagr_b_face_proj);
 
   /* encrustation pointers */

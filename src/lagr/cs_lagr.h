@@ -1119,9 +1119,6 @@ extern const cs_lagr_zone_data_t             *cs_glob_lagr_boundary_conditions;
 extern const cs_lagr_zone_data_t             *cs_glob_lagr_volume_conditions;
 extern cs_lagr_internal_condition_t          *cs_glob_lagr_internal_conditions;
 
-/* Unit normals and offsets of boundary faces */
-extern cs_real_4_t   *cs_glob_lagr_b_u_normal;
-
 /* Projection matrices for global to local coordinates on boundary faces */
 extern cs_real_33_t  *cs_glob_lagr_b_face_proj;
 

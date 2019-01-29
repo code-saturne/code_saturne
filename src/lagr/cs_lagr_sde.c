@@ -1995,6 +1995,7 @@ _lagesd(cs_real_t           dtp,
    * 3. Reference frame change:
    * --------------------------
    * local reference frame for the boundary face --> global reference frame
+   * NB: Inverse transformation: transpose of rot_m
    * ======================================================================== */
 
   /* 3.1 - Displacement   */
