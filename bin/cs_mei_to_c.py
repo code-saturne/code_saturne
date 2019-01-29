@@ -297,6 +297,9 @@ class mei_to_c_interpreter:
 
         usr_code = usr_code.replace(required[0][0], 'f->val[c_id]', 1)
 
+        # Change comments symbol from # to //
+        usr_code = usr_code.replace('#', '//')
+
         # Write the block
         usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(vz->name, "%s") == 0) {\n' \
                 % (name, zone)
@@ -466,6 +469,9 @@ class mei_to_c_interpreter:
             usr_code += '\n' + (ntabs-1)*tab + '}\n'
         else:
             usr_code += '\n'
+
+        # Change comments symbol from # to //
+        usr_code = usr_code.replace('#', '//')
 
         for ir in range(len(required)):
             if need_for_loop:
