@@ -1728,7 +1728,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     /* If the deposition model is activated */
 
-    if (lagr_model->deposition >= 1) {
+    if (lagr_model->deposition > 0) {
 
       cs_real_t ustarmoy = 0.0;
       cs_real_t surftot  = 0.0;

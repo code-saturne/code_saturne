@@ -70,7 +70,6 @@
 
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
-#include "cs_lagr_geom.h"
 #include "cs_lagr_new.h"
 #include "cs_lagr_precipitation_model.h"
 #include "cs_lagr_prototypes.h"
