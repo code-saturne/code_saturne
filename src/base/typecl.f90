@@ -83,6 +83,7 @@ use cstnum
 use cstphy
 use dimens, only: ndimfb
 use pointe, only: b_head_loss
+use lagran, only: iilagr
 use entsor
 use parall
 use ppppar
@@ -734,7 +735,8 @@ elseif (ixyzp0.eq.-1) then
   ixyzp0 = 0
 endif
 
-if (itbslb.gt.0) then
+! No need of computing pressure gradient for frozen field computations
+if (itbslb.gt.0.and.iilagr.ne.3) then
 
   if (iphydr.eq.1) then
     call field_get_val_v_by_name('volume_forces', frcxt)
