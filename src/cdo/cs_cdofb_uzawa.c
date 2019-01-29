@@ -350,9 +350,12 @@ _update_pr_div_rhs(const cs_property_t          *relax,
 
       /* If (hmg or nhmg) Dirichlet boundary face, we should leave the rhs
        * null --> velocity is already known and thus increment is zero */
-      if ((bf_id > -1) && /* Boundary face and... */
-          cs_cdo_bc_is_dirichlet(bc_flag[bf_id]))
+      if (bf_id > -1) { /* Boundary face and... */
+        /* ... Dirichlet or sliding BCs */
+        if (cs_cdo_bc_is_dirichlet(bc_flag[bf_id]) ||
+            cs_cdo_bc_is_sliding(bc_flag[bf_id]))
           continue;
+      }
 
       const cs_nvec3_t pfq = cs_quant_set_face_nvec(f_id, quant);
 
