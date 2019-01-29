@@ -1917,6 +1917,9 @@ _local_propagation(void                           *particle,
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
@@ -2015,62 +2018,25 @@ _local_propagation(void                           *particle,
 
       if (*particle_yplus < 100.) {
 
-        cs_real_t flow_velo_x, flow_velo_y, flow_velo_z;
+        cs_real_t *fluid_vel = &(u->val[cell_id*3]);
+        cs_real_t fluid_vel_proj[3];
 
-        const cs_real_3_t *rot_m
-          = (const cs_real_3_t *)(  cs_glob_lagr_b_face_proj
-                                  + *neighbor_face_id);
+        /* normal vector coordinates */
+        cs_real_3_t normal;
+        cs_math_3_normalise(b_face_normal[*neighbor_face_id], normal);
 
-        flow_velo_x = u->val[cell_id*3];
-        flow_velo_y = u->val[cell_id*3 + 1];
-        flow_velo_z = u->val[cell_id*3 + 2];
+        /* (V . n) * n  */
+        cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen, normal);
 
-        /* e1 (normal) vector coordinates */
-        cs_real_t e1_x = cs_glob_lagr_b_u_normal[*neighbor_face_id][0];
-        cs_real_t e1_y = cs_glob_lagr_b_u_normal[*neighbor_face_id][1];
-        cs_real_t e1_z = cs_glob_lagr_b_u_normal[*neighbor_face_id][2];
-
-        /* e2 vector coordinates */
-        cs_real_t e2_x = rot_m[1][0];
-        cs_real_t e2_y = rot_m[1][1];
-        cs_real_t e2_z = rot_m[1][2];
-
-        /* e3 vector coordinates */
-        cs_real_t e3_x = rot_m[2][0];
-        cs_real_t e3_y = rot_m[2][1];
-        cs_real_t e3_z = rot_m[2][2];
-
-        /* V_n * e1 */
-
-        cs_real_t v_n_e1[3] = {particle_velocity_seen[0] * e1_x,
-                               particle_velocity_seen[0] * e1_y,
-                               particle_velocity_seen[0] * e1_z};
-
-        /* (U . e2) * e2 */
-
-        cs_real_t flow_e2 =   flow_velo_x * e2_x
-                            + flow_velo_y * e2_y
-                            + flow_velo_z * e2_z;
-
-        cs_real_t u_e2[3] = {flow_e2 * e2_x,
-                             flow_e2 * e2_y,
-                             flow_e2 * e2_z};
-
-        /* (U . e3) * e3 */
-
-        cs_real_t flow_e3 =   flow_velo_x * e3_x
-                            + flow_velo_y * e3_y
-                            + flow_velo_z * e3_z;
-
-        cs_real_t u_e3[3] = {flow_e3 * e3_x,
-                             flow_e3 * e3_y,
-                             flow_e3 * e3_z};
+        /* tangential projection to the wall:
+         * (Id -n (x) n) U */
+        cs_math_3_orthogonal_projection(normal, fluid_vel, fluid_vel_proj);
 
         /* Update of the flow seen velocity */
 
-        particle_velocity_seen[0] =  v_n_e1[0] + u_e2[0] + u_e3[0];
-        particle_velocity_seen[1] =  v_n_e1[1] + u_e2[1] + u_e3[1];
-        particle_velocity_seen[2] =  v_n_e1[2] + u_e2[2] + u_e3[2];
+        particle_velocity_seen[0] = v_dot_n * normal[0] + fluid_vel_proj[0];
+        particle_velocity_seen[1] = v_dot_n * normal[1] + fluid_vel_proj[1];
+        particle_velocity_seen[2] = v_dot_n * normal[2] + fluid_vel_proj[2];
       }
     }
 
@@ -2266,116 +2232,43 @@ _local_propagation(void                           *particle,
           particle_state = CS_LAGR_PART_TO_SYNC;
           move_particle = CS_LAGR_PART_MOVE_OFF;
 
-          /* Specific treatment for the particle deposition model */
+          /* Specific treatment for the particle deposition model:
+           * mark it so that it will be treated in the next iteration */
 
-          if (lagr_model->deposition > 0 && *particle_yplus < 100.) {
-
-            /* Marking of particles */
-
-            *particle_yplus = - *particle_yplus;
-            //FIXME... a projection was made, it
-            //is safer to project when we use it !
-
-          }
+          if (lagr_model->deposition > 0)
+            *particle_yplus = - 1.;
 
         } /* end of case where particle changes rank */
 
+        /* Update values for depositing particles */
+
         else if (lagr_model->deposition > 0) {
-
-          /* Specific treatment for the particle deposition model */
-
-          cs_real_t save_yplus = *particle_yplus;
-
-          /* Wall cell detection */
 
           cs_lagr_test_wall_cell(particle, p_am, visc_length,
                                  particle_yplus, neighbor_face_id);
 
-          if (save_yplus < 100.) {
+          if (*particle_yplus < 100.) {
 
-            cs_real_t intersect_pt[3], vect_cen[3];
-            cs_real_t bc_epsilon = 1e-8;
-            cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+            cs_real_t *fluid_vel = &(u->val[cell_id*3]);
+            cs_real_t fluid_vel_proj[3];
 
-            for (int k = 0; k < 3; k++)
-              intersect_pt[k]
-                =   (particle_coord[k] - prev_location[k])*t_intersect
-                  + prev_location[k];
+            /* normal vector coordinates */
+            cs_real_3_t normal;
+            cs_math_3_normalise(b_face_normal[*neighbor_face_id], normal);
 
-            for (int k = 0; k < 3; k++) {
-              vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
-              particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
-            }
+            /* (V . n) * n  */
+            cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen, normal);
 
-            if (*particle_yplus < 100.0) {
+            /* tangential projection to the wall:
+             * (Id -n (x) n) U */
+            cs_math_3_orthogonal_projection(normal, fluid_vel, fluid_vel_proj);
 
-              cs_real_t flow_velo_x = u->val[cell_id*3];
-              cs_real_t flow_velo_y = u->val[cell_id*3 + 1];
-              cs_real_t flow_velo_z = u->val[cell_id*3 + 2];
+            /* Update of the flow seen velocity */
 
-              /* The particle is still in the boundary layer */
-
-              const cs_real_3_t *rot_m
-                = (const cs_real_3_t *)(  cs_glob_lagr_b_face_proj
-                                        + *neighbor_face_id);
-
-              /* e1 (normal) vector coordinates */
-              cs_real_t e1_x = cs_glob_lagr_b_u_normal[*neighbor_face_id][0];
-              cs_real_t e1_y = cs_glob_lagr_b_u_normal[*neighbor_face_id][1];
-              cs_real_t e1_z = cs_glob_lagr_b_u_normal[*neighbor_face_id][2];
-
-              /* e2 vector coordinates */
-              cs_real_t e2_x = rot_m[1][0];
-              cs_real_t e2_y = rot_m[1][1];
-              cs_real_t e2_z = rot_m[1][2];
-
-              /* e3 vector coordinates */
-              cs_real_t e3_x = rot_m[2][0];
-              cs_real_t e3_y = rot_m[2][1];
-              cs_real_t e3_z = rot_m[2][2];
-
-              cs_real_t old_fl_seen_norm
-                =   particle_velocity_seen[0] * e1_x
-                  + particle_velocity_seen[1] * e1_y
-                  + particle_velocity_seen[2] * e1_z;
-              //FIXME check that it is the new normal to use...
-
-              /* V_n * e1 */
-
-              cs_real_t v_n_e1[3] = {old_fl_seen_norm * e1_x,
-                                     old_fl_seen_norm * e1_y,
-                                   old_fl_seen_norm * e1_z};
-
-              /* (U . e2) * e2 */
-
-              cs_real_t flow_e2 =   flow_velo_x * e2_x
-                + flow_velo_y * e2_y
-                + flow_velo_z * e2_z;
-
-              cs_real_t u_e2[3] = {flow_e2 * e2_x,
-                                   flow_e2 * e2_y,
-                                   flow_e2 * e2_z};
-
-              /* (U . e3) * e3 */
-
-              cs_real_t flow_e3 =   flow_velo_x * e3_x
-                + flow_velo_y * e3_y
-                + flow_velo_z * e3_z;
-
-              cs_real_t u_e3[3] = {flow_e3 * e3_x,
-                                   flow_e3 * e3_y,
-                                   flow_e3 * e3_z};
-
-              /* Update of the flow seen velocity */
-
-              particle_velocity_seen[0] = v_n_e1[0] + u_e2[0] + u_e3[0];
-              particle_velocity_seen[1] = v_n_e1[1] + u_e2[1] + u_e3[1];
-              particle_velocity_seen[2] = v_n_e1[2] + u_e2[2] + u_e3[2];
-            }
-
-            move_particle =  CS_LAGR_PART_MOVE_OFF;
-            particle_state = CS_LAGR_PART_TREATED;
-          } /* end of case for y+ <100 */
+            particle_velocity_seen[0] = v_dot_n * normal[0] + fluid_vel_proj[0];
+            particle_velocity_seen[1] = v_dot_n * normal[1] + fluid_vel_proj[1];
+            particle_velocity_seen[2] = v_dot_n * normal[2] + fluid_vel_proj[2];
+          }
 
         } /* end of case for deposition model */
 
@@ -3390,21 +3283,21 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
       unsigned char *particle = particles->p_buffer + p_am->extents * i;
 
-      cs_lnum_t *cur_neighbor_face_id
+      cs_lnum_t *neighbor_face_id
         = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
-      cs_real_t *cur_part_yplus
+      cs_real_t *particle_yplus
         = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
 
       cs_lagr_test_wall_cell(particle, p_am, visc_length,
-                             cur_part_yplus, cur_neighbor_face_id);
+                             particle_yplus, neighbor_face_id);
 
       /* Modification of MARKO pointer */
-      if (*cur_part_yplus > 100.0)
+      if (*particle_yplus > 100.0)
         cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, CS_LAGR_COHERENCE_STRUCT_BULK);
 
       else {
 
-        if (*cur_part_yplus <
+        if (*particle_yplus <
             cs_lagr_particles_get_real(particles, i, CS_LAGR_INTERF)) {
 
           if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE) < 0)
@@ -3620,9 +3513,16 @@ cs_lagr_test_wall_cell(const void                     *particle,
   cs_lnum_t  *cell_b_face_idx = cs_glob_mesh_adjacencies->cell_b_faces_idx;
   cs_lnum_t  *cell_b_faces = cs_glob_mesh_adjacencies->cell_b_faces;
   cs_lnum_t cell_id = cell_num - 1;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_normal;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_cog;
 
   *yplus = 10000;
   *face_id = -1;
+
+  const cs_real_t  *particle_coord
+    = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
 
   cs_lnum_t  start = cell_b_face_idx[cell_id];
   cs_lnum_t  end =  cell_b_face_idx[cell_id + 1];
@@ -3638,18 +3538,15 @@ cs_lagr_test_wall_cell(const void                     *particle,
         || (b_type == CS_LAGR_DEPO2)
         || (b_type == CS_LAGR_DEPO_DLVO)) {
 
-      cs_real_t x_face = cs_glob_lagr_b_u_normal[f_id][0];
-      cs_real_t y_face = cs_glob_lagr_b_u_normal[f_id][1];
-      cs_real_t z_face = cs_glob_lagr_b_u_normal[f_id][2];
+      /* normal vector coordinates */
+      cs_real_3_t normal;
+      cs_math_3_normalise(b_face_normal[f_id], normal);
 
-      cs_real_t offset_face = cs_glob_lagr_b_u_normal[f_id][3];
-      const cs_real_t  *particle_coord
-        = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
-
-      cs_real_t dist_norm = CS_ABS(  particle_coord[0] * x_face
-                                   + particle_coord[1] * y_face
-                                   + particle_coord[2] * z_face
-                                   + offset_face) / visc_length[f_id];
+      /* [(x_f - x_p) . n ] / L */
+      cs_real_t dist_norm = CS_ABS(
+          cs_math_3_distance_dot_product(b_face_cog[f_id],
+                                         particle_coord,
+                                         normal)) / visc_length[f_id];
       if (dist_norm  < *yplus) {
         *yplus = dist_norm;
         *face_id = f_id;
