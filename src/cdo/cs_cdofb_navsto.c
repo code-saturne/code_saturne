@@ -416,7 +416,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
    * 2008 Society for Industrial and Applied Mathematics
    */
 
-  const cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
+  cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
 
   if (cs_glob_n_ranks > 1)
     cs_parall_sum(1, CS_REAL_TYPE, &intgr);
@@ -541,7 +541,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                     "Symmetry", z->name, boundary_fluxes[b_id]);
       break;
     default:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n"
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-20s |%-32s |% -5.3e\n",
                     "Other", z->name, boundary_fluxes[b_id]);
       break;
 
