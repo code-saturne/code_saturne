@@ -1485,7 +1485,7 @@ endif
 
 deallocate(byplus)
 deallocate(buk)
-deallocate(buet)
+if (allocated(buet)) deallocate(buet)
 if (allocated(bcfnns_loc)) deallocate(bcfnns_loc)
 
 !===============================================================================
