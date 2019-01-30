@@ -666,28 +666,6 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   cs_field_t  *nflx
     = cs_advection_field_get_field(adv_field, CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  /* Retrieve the face velocity values (also possible to retrieve it from the
-     advection field -- through the input member of the cs_xdef_t structure) */
-  cs_real_t *face_vel = NULL;
-
-  switch (nsp->coupling) {
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-  case CS_NAVSTO_COUPLING_UZAWA:
-    face_vel = cs_equation_get_face_values(cs_equation_by_name("momentum"));
-    break;
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-  case CS_NAVSTO_COUPLING_PROJECTION:
-  default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling algorithm",
-              __func__);
-    break;
-  }
-
-  assert(face_vel != NULL);
-
   /* 1. Compute for each boundary the integrated flux */
   _Bool  *belong_to_default = NULL;
   BFT_MALLOC(belong_to_default, quant->n_b_faces, _Bool);
@@ -913,9 +891,8 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
   assert(cm != NULL && csys != NULL);
 
   cs_sdm_t  *m = csys->mat;
-  cs_sdm_block_t  *bd = m->block_desc;
-  assert(bd != NULL);
-  assert(bd->n_row_blocks == cm->n_fc);
+  assert(m->block_desc != NULL);
+  assert(m->block_desc->n_row_blocks == cm->n_fc);
 
   const cs_flag_t  *_flag = csys->dof_flag + 3*f;
   const cs_real_t  *_dir_val = csys->dir_values + 3*f;

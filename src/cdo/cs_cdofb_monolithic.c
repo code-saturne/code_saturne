@@ -146,9 +146,8 @@ typedef struct {
 
   /*!
    * @}
-   * @name Performance monitoring
-   * Monitoring the efficiency of the algorithm used to solve the Navier-Stokes
-   * system
+   * @name Boundary conditions (BC) management
+   * Routines and elements used for enforcing the BCs
    * @{
    *
    *  \var bf_type
@@ -164,7 +163,6 @@ typedef struct {
    */
 
   cs_cdo_bc_face_t               *pressure_bc;
-
 
   /*! \var apply_fixed_wall
    *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
@@ -839,7 +837,6 @@ _build_shared_structures(void)
  *
  * \param[in]      sc          pointer to a cs_cdofb_monolithic_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -850,13 +847,11 @@ _build_shared_structures(void)
 static void
 _apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
                  const cs_equation_param_t     *eqp,
-                 const cs_cdofb_vecteq_t       *eqc,
                  const cs_cell_mesh_t          *cm,
                  const cs_boundary_type_t      *bf_type,
                  cs_cell_sys_t                 *csys,
                  cs_cell_builder_t             *cb)
 {
-  CS_UNUSED(eqc);
   assert(cs_equation_param_has_diffusion(eqp) == true);
 
   if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
@@ -1789,7 +1784,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, csys, cb);
+      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -2024,7 +2019,7 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, csys, cb);
+      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
 
       /* 4- TIME CONTRIBUTION */
       /* ==================== */
@@ -2301,7 +2296,7 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, csys, cb);
+      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */
