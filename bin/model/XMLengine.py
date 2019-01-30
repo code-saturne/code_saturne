@@ -1463,12 +1463,12 @@ class Case(Dico, XMLDocument):
 
             if self['package'].code_name == 'Code_Saturne':
                 file.write('import cs_package\n')
-                file.write('from Base.XMLinitialize import XMLinit\n')
+                file.write('from model.XMLinitialize import XMLinit\n')
             else:
                 file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['pythondir'][1], "code_saturne") + '")\n\n')
                 file.write('import nc_package\n')
-                file.write('from core.XMLinitialize import XMLinit\n')
-            file.write('from Base.XMLengine import Case\n\n')
+                file.write('from model.XMLinitializeNeptune import XMLinit\n')
+            file.write('from model.XMLengine import Case\n\n')
 
             if self['xmlfile']:
                 file.write("fp = '" + self['xmlfile'] + "'\n")

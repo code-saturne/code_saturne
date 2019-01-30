@@ -249,7 +249,7 @@ class cfd_openturns_study:
         Creating the case for a given evaluation based on the user defined
         reference case
         """
-        from code_saturne.Pages.NotebookModel import NotebookModel
+        from code_saturne.model.NotebookModel import NotebookModel
 
         # Creating the case from the ref case
         from code_saturne.cs_script import master_script
@@ -274,8 +274,8 @@ class cfd_openturns_study:
         data
         """
 
-        from code_saturne.Base.XMLengine import Case
-        from code_saturne.Base.XMLinitialize import XMLinit
+        from code_saturne.model.XMLengine import Case
+        from code_saturne.model.XMLinitialize import XMLinit
 
         paramfile = self.cfg.get('study_parameters', 'xmlfile')
         fp = os.path.join(self.study_path, self.case_id, 'DATA', paramfile)
@@ -300,7 +300,7 @@ class cfd_openturns_study:
         """
 
         # Update xml file
-        from code_saturne.Pages.NotebookModel import NotebookModel
+        from code_saturne.model.NotebookModel import NotebookModel
         nb = NotebookModel(self.case)
         nb_ids = nb.getVarList()
         nb_names = nb.getVarNameList()
@@ -323,7 +323,7 @@ class cfd_openturns_study:
         This method sets the restart path in the code xml input file
         """
 
-        from code_saturne.Pages.StartRestartModel import StartRestartModel
+        from code_saturne.model.StartRestartModel import StartRestartModel
 
         rs = StartRestartModel(self.case)
 

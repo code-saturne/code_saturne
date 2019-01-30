@@ -1339,7 +1339,7 @@ from optparse import OptionParser
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
-from Pages.ScriptRunningModel import ScriptRunningModel
+from model.ScriptRunningModel import ScriptRunningModel
 
 #-------------------------------------------------------------------------------
 
@@ -1359,9 +1359,6 @@ def process_cmd_line(argv):
     parser.add_option("-n", "--iter-num", dest="iterationsNumber", type="int",
                       help="New iteration number")
 
-    parser.add_option("-u", "--n-procs", dest="n_procs", type="int",
-                      help="Number of processes (units)")
-
     parser.add_option("-t", "--time-step", dest="timeStep", type="float",
                       help="New time step")
 
@@ -1376,11 +1373,10 @@ def process_cmd_line(argv):
 
 def main(options):
     from cs_package import package
-    from Base.XMLengine import Case
-    from Base.XMLinitialize import XMLinit
-    from Pages.SolutionDomainModel import SolutionDomainModel
-    from Pages.TimeStepModel import TimeStepModel
-    from Pages.SteadyManagementModel import SteadyManagementModel
+    from model.XMLengine import Case
+    from model.XMLinitialize import XMLinit
+    from model.SolutionDomainModel import SolutionDomainModel
+    from model.TimeStepModel import TimeStepModel
 
     fp = os.path.join(options.case, "DATA", options.param)
     if os.path.isfile(fp):
@@ -1405,20 +1401,12 @@ def main(options):
             s.setRotationAngle(0, options.rotationAngle)
 
         if (options.iterationsNumber):
-            s = SteadyManagementModel(case)
             t = TimeStepModel(case)
-            if s.getSteadyFlowManagement() == 'on':
-                s.setNbIter(options.iterationsNumber)
-            else:
-                t.setIterationsNumber(options.iterationsNumber)
+            t.setStopCriterion('iterations', options.iterationsNumber)
 
         if (options.TimeStep):
             t = TimeStepModel(case)
             t.setTimeStep(options.TimeStep)
-
-        if (options.n_procs):
-            mdl = ScriptRunningModel(case)
-            mdl.setString('n_procs', str(options.n_procs))
 
         case.xmlSaveDocument()
 
