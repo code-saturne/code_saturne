@@ -3536,28 +3536,33 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
 
   const cs_volume_zone_t *z_all = cs_volume_zone_by_name("all_cells");
 
-  /* law for density */
-  if (!cs_gui_strcmp(vars->model, "compressible_model")) {
-      if (cs_glob_fluid_properties->irovar == 1) {
-          cs_field_t *c_rho = CS_F_(rho);
-          _physical_property(c_rho, z_all);
-      }
+  /* NOTE: currently, all integrated physical models have built-in or constant
+     base physical properties. If necessary, finer checks on models using
+     cs_glob_physical_model_flag[] or using a separate xml/tree flag for model or
+     user variable definition could be added */
+
+  bool properties_from_model = (vars->model == NULL) ? false : true;
+
+  /* law for density (built-in for all current integrated physical models) */
+  if (cs_glob_fluid_properties->irovar == 1 && properties_from_model == false) {
+    cs_field_t *c_rho = CS_F_(rho);
+    _physical_property(c_rho, z_all);
   }
 
   /* law for molecular viscosity */
-  if (cs_glob_fluid_properties->ivivar == 1) {
+  if (cs_glob_fluid_properties->ivivar == 1 && properties_from_model == false) {
     cs_field_t *c_mu = CS_F_(mu);
     _physical_property(c_mu, z_all);
   }
 
   /* law for specific heat */
-  if (cs_glob_fluid_properties->icp > 0) {
+  if (cs_glob_fluid_properties->icp > 0 && properties_from_model == false) {
     cs_field_t *c_cp = CS_F_(cp);
     _physical_property(c_cp, z_all);
   }
 
   /* law for thermal conductivity */
-  if (iscalt > 0) {
+  if (iscalt > 0 && properties_from_model == false) {
 
     cs_field_t  *cond_dif = NULL;
 
@@ -3694,8 +3699,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
 
 void CS_PROCF (uiexop, UIEXOP)(void)
 {
-    cs_gui_balance_by_zone();
-    cs_gui_pressure_drop_by_zone();
+  cs_gui_balance_by_zone();
+  cs_gui_pressure_drop_by_zone();
 }
 
 /*----------------------------------------------------------------------------
