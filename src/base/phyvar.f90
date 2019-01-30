@@ -167,12 +167,7 @@ if (iihmpr.eq.1) then
   endif
 endif
 
-
-call usphyv &
-( nvar   , nscal  ,                                              &
-  mbrom  ,                                                       &
-  dt     )
-
+call usphyv(nvar, nscal, mbrom, dt)
 
 ! Finalization of physical properties for specific physics
 ! AFTER the user
