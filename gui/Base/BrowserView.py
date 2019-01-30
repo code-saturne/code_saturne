@@ -51,6 +51,7 @@ from code_saturne.Base.Toolbox import displaySelectedPage
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 import resource_base_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -931,9 +932,9 @@ Calculation management
             ncfd_fields = len(fields)
 
         if ncfd_fields > 1:
-            from code_saturne.Pages.MainFieldsModel import MainFieldsModel
-            from code_saturne.Pages.NonCondensableModel import NonCondensableModel
-            from code_saturne.Pages.InterfacialForcesModel import InterfacialForcesModel
+            from code_saturne.model.MainFieldsModel import MainFieldsModel
+            from code_saturne.model.NonCondensableModel import NonCondensableModel
+            from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
             predefined_flow = MainFieldsModel(case).getPredefinedFlow()
 
             if (len(MainFieldsModel(case).getSolidFieldIdList()) > 0):
