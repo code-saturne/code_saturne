@@ -237,12 +237,12 @@ class Case(object):
         # 1) Load the xml file of parameters in order to update it
         #    with the __backwardCompatibility method.
 
-        from Base.XMLengine import Case
+        from model.XMLengine import Case
 
         if self.exe == "code_saturne":
-            from Base.XMLinitialize import XMLinit
+            from model.XMLinitialize import XMLinit
         elif self.exe == "neptune_cfd":
-            from core.XMLinitialize import XMLinit
+            from model.XMLinitializeNeptune import XMLinit
 
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)
