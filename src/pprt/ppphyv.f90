@@ -130,7 +130,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_physprop(mbrom, izfppp)
 endif
 
-
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
 !      des particules de charbon
 
@@ -143,7 +142,6 @@ endif
 if (ippmod(icfuel).ge.0) then
   call cs_fuel_physprop(mbrom, izfppp)
 endif
-
 
 ! ---> Physique particuliere : Versions electriques
 !          Effet Joule
@@ -162,7 +160,7 @@ endif
 ! ---> Aerorefrigerants
 
 if (ippmod(iaeros).ge.0) then
-   call ctphyv
+  call ctphyv
 endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
@@ -177,7 +175,6 @@ endif
 
 return
 end subroutine cs_physical_properties1
-
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -261,7 +258,6 @@ endif
 if (ippmod(idarcy).ge.1) then
   call cs_gwf_delay_update
 endif
-
 
 !----
 ! End
