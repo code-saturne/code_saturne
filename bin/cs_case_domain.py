@@ -596,8 +596,8 @@ class domain(base_domain):
         if self.exec_solver and len(src_files) > 0:
             return True
         elif self.param != None:
-            from Base.XMLengine import Case
-            from Base.XMLinitialize import XMLinit
+            from model.XMLengine import Case
+            from model.XMLinitialize import XMLinit
 
             fp = os.path.join(self.data_dir, self.param)
             case = Case(package=self.package, file_name=fp)
