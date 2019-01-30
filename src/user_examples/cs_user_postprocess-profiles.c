@@ -321,7 +321,8 @@ cs_user_postprocess_values(const char            *mesh_name,
           || turb_mdl->itytur == 5
           || turb_mdl->itytur == 6) {
 
-        cs_post_evm_reynolds_stresses(n_cells, cell_list, rij);
+        cs_real_3_t *coords = NULL; /* profile points are cell centers */
+        cs_post_evm_reynolds_stresses(n_cells, cell_list, coords, rij);
 
       } else if (turb_mdl->itytur == 3 && turb_rans_mdl->irijco == 0) {
 
