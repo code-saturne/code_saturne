@@ -337,6 +337,12 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
       }
     }
   } /* End for extended neighborhood */
+
+  /* Synchronisation */
+  if (m->halo != NULL) {
+    cs_halo_sync_var(m->halo, halo_type, local_min);
+    cs_halo_sync_var(m->halo, halo_type, local_max);
+  }
 }
 
 /*============================================================================
