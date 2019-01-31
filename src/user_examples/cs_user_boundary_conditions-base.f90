@@ -157,6 +157,7 @@ call field_get_val_s(ibrom, bfpro_rom)
 !< [example_1]
 call getfbr('2 and x < 0.01', nlelt, lstelt)
 
+
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
@@ -188,8 +189,8 @@ do ilelt = 1, nlelt
   !     it is consistent with the processing in 'usphyv', in case of
   !     variable density)
 
-  !     Hydraulic diameter
-  xdh     = 0.075d0
+  ! Hydraulic diameter: to be defined in the notebook GUI
+  xdh = notebook_parameter_value_by_name('hydraulic_diam')
 
   !   Calculation of turbulent inlet conditions using
   !     standard laws for a circular pipe
@@ -235,11 +236,11 @@ do ilelt = 1, nlelt
   ! We will be careful to specify a hydraulic diameter adapted
   !   to the current inlet.
 
-  ! Hydraulic diameter
+  ! Hydraulic diameter: to be defined in the notebook GUI
+  xdh = notebook_parameter_value_by_name('hydraulic_diam')
 
-  xdh   = 0.075d0
-  ! Turbulence intensity
-  xitur = 0.02d0
+  ! Turbulence intensity: to be defined in the notebook GUI
+  xitur = notebook_parameter_value_by_name('turb_intensity')
 
   ! Calculation of turbulent inlet conditions using
   !   the turbulence intensity and standard laws for a circular pipe

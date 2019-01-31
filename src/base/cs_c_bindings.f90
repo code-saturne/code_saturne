@@ -2456,6 +2456,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function to get notebook parameter value
+
+    function cs_f_notebook_parameter_value_by_name(name) result(val) &
+        bind(C, name='cs_notebook_parameter_value_by_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
+      real(kind=c_double) :: val
+    end function cs_f_notebook_parameter_value_by_name
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -5399,6 +5411,32 @@ contains
 
   !=============================================================================
 
+  !> \brief Return notebook parameter value
+
+  !> \param[in]     name      name of the notebook parameter
+  !> \result        val
+
+  function notebook_parameter_value_by_name(name) result(val)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+    double precision :: val
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    real(kind=c_double) :: c_val
+
+    c_name = trim(name)//c_null_char
+
+    c_val = cs_f_notebook_parameter_value_by_name(c_name)
+    val = c_val
+
+  end function notebook_parameter_value_by_name
 
   !=============================================================================
 
