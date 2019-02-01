@@ -347,7 +347,7 @@ class FluidCharacteristicsModel(Variables, Model):
         if material == "user_material":
             for node in self.node_fluid.xmlGetChildNodeList('property'):
                 if node['choice'] == "thermal_law":
-                    node['choice'] = "variable"
+                    node['choice'] = "user_law"
 
 
     @Variables.noUndo
@@ -624,7 +624,7 @@ class FluidCharacteristicsModel(Variables, Model):
                             'volume_viscosity'))
         node = self.__nodeFromTag(tag)
         c = node['choice']
-        self.isInList(c, ('constant', 'thermal_law', 'variable'))
+        self.isInList(c, ('constant', 'thermal_law', 'user_law', 'predefined_law'))
         return c
 
 
@@ -634,7 +634,8 @@ class FluidCharacteristicsModel(Variables, Model):
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity'))
-        self.isInList(choice, ('constant', 'thermal_law', 'variable'))
+        self.isInList(choice, ('constant', 'thermal_law',
+                               'user_law', 'predefined_law'))
 
         node = self.__nodeFromTag(tag)
         node['choice'] = choice
@@ -940,13 +941,13 @@ class FluidCharacteristicsModelTestCase(ModelTest):
     def checkSetandGetPropertyMode(self):
         """Check whether choice constant or variable could be set and get"""
         mdl = FluidCharacteristicsModel(self.case)
-        mdl.setPropertyMode('density', 'variable')
-        doc = '''<property choice="variable" label="Density" name="density">
+        mdl.setPropertyMode('density', 'user_law')
+        doc = '''<property choice="user_law" label="Density" name="density">
                     <initial_value>1.17862</initial_value>
                  </property>'''
         assert mdl.node_density == self.xmlNodeFromString(doc),\
         'Could not set choice constant or variable for property'
-        assert mdl.getPropertyMode('density') == 'variable',\
+        assert mdl.getPropertyMode('density') == 'user_law',\
         'Could not get choice constant or variable for property'
 
         mdl.setPropertyMode('density', 'constant')

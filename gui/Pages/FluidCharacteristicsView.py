@@ -335,40 +335,40 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelPhas     = ComboModel(self.comboBoxPhas,     2, 1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
-        self.modelRho.addItem(self.tr('variable'), 'variable')
+        self.modelRho.addItem(self.tr('user law'), 'user_law')
         self.modelRho.addItem(self.tr('material law'), 'thermal_law')
         if mdl_atmo != 'off':
-            self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
+            self.modelRho.addItem(self.tr('defined in atphyv'), 'predefined_law')
         elif mdl_joule == 'arc':
-            self.modelRho.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelRho.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelMu.addItem(self.tr('constant'), 'constant')
-        self.modelMu.addItem(self.tr('variable'), 'variable')
+        self.modelMu.addItem(self.tr('user law'), 'user_law')
         self.modelMu.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
-            self.modelMu.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelMu.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
-        self.modelCp.addItem(self.tr('variable'), 'variable')
+        self.modelCp.addItem(self.tr('user law'), 'user_law')
         self.modelCp.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
-            self.modelCp.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelCp.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelAl.addItem(self.tr('constant'), 'constant')
-        self.modelAl.addItem(self.tr('variable'), 'variable')
+        self.modelAl.addItem(self.tr('user law'), 'user_law')
         self.modelAl.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
-            self.modelAl.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelAl.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
-        self.modelDiff.addItem(self.tr('variable'), 'variable')
+        self.modelDiff.addItem(self.tr('user law'), 'user_law')
 
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
-        self.modelViscv0.addItem(self.tr('variable'), 'variable')
+        self.modelViscv0.addItem(self.tr('user law'), 'user_law')
         self.modelViscv0.addItem(self.tr('material law'), 'thermal_law')
 
         self.modelDiftl0.addItem(self.tr('constant'), 'constant')
-        self.modelDiftl0.addItem(self.tr('variable'), 'variable')
+        self.modelDiftl0.addItem(self.tr('user law'), 'user_law')
         self.modelDiftl0.addItem(self.tr('material law'), 'thermal_law')
 
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
@@ -436,13 +436,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditFuel.textChanged[str].connect(self.slotTempFuel)
         self.lineEditMassMolar.textChanged[str].connect(self.slotMassemol)
 
-        self.comboBoxRho.activated[str].connect(self.slotStateRho)
-        self.comboBoxMu.activated[str].connect(self.slotStateMu)
-        self.comboBoxCp.activated[str].connect(self.slotStateCp)
-        self.comboBoxAl.activated[str].connect(self.slotStateAl)
-        self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
+        self.comboBoxRho.currentIndexChanged[str].connect(self.slotStateRho)
+        self.comboBoxMu.currentIndexChanged[str].connect(self.slotStateMu)
+        self.comboBoxCp.currentIndexChanged[str].connect(self.slotStateCp)
+        self.comboBoxAl.currentIndexChanged[str].connect(self.slotStateAl)
+        self.comboBoxDiff.currentIndexChanged[str].connect(self.slotStateDiff)
         self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
-        self.comboBoxViscv0.activated[str].connect(self.slotStateViscv0)
+        self.comboBoxViscv0.currentIndexChanged[str].connect(self.slotStateViscv0)
         self.comboBoxMaterial.activated[str].connect(self.slotMaterial)
         self.comboBoxMethod.activated[str].connect(self.slotMethod)
         self.comboBoxPhas.activated[str].connect(self.slotPhas)
@@ -572,10 +572,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             diff_choice =  self.m_sca.getScalarDiffusivityChoice(self.scalar)
             self.modelDiff.setItem(str_model=diff_choice)
             self.modelNameDiff.setItem(str_model=str(self.scalar))
-            if diff_choice  != 'variable':
+            if diff_choice  != 'user_law':
+                self.pushButtonDiff.hide()
                 self.pushButtonDiff.setEnabled(False)
                 self.pushButtonDiff.setStyleSheet("background-color: None")
             else:
+                self.pushButtonDiff.show()
                 self.pushButtonDiff.setEnabled(True)
                 name = self.m_sca.getScalarDiffusivityName(self.scalar)
                 exp = self.m_sca.getDiffFormula(self.scalar)
@@ -596,10 +598,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 __labelv = getattr(self, "labelVar"   + symbol)
                 c = self.mdl.getPropertyMode(tag)
                 __model.setItem(str_model=c)
-                if c == 'variable':
+                if c == 'user_law':
+                    __button.show()
                     __button.setEnabled(True)
                     __label.setText(self.tr("Reference value"))
                 else:
+                    __button.hide()
                     __button.setEnabled(False)
                     __label.setText(self.tr("Reference value"))
                 if c == 'thermal_law':
@@ -640,17 +644,19 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             # Gas or coal combustion
             if mdl_gas != 'off' or mdl_coal != 'off':
                 if tag == 'density':
-                    __model.setItem(str_model='variable')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
-                    self.mdl.setPropertyMode(tag, 'variable')
+                    __button.hide()
+                    self.mdl.setPropertyMode(tag, 'predefined_law')
                     __label.setText(self.tr("Calculation by\n perfect gas law"))
                     __line.setText(str(""))
                     __line.setEnabled(False)
                 elif tag == 'dynamic_diffusion':
-                    __model.setItem(str_model='variable')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
                 else:
                     __model.setItem(str_model='constant')
                     self.mdl.setPropertyMode(tag, 'constant')
@@ -658,47 +664,52 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             # Joule
             if mdl_joule == 'arc':
                 __model.disableItem(str_model='constant')
-                __model.disableItem(str_model='variable')
-                __model.setItem(str_model='variable')
+                __model.disableItem(str_model='predefined_law')
+                __model.setItem(str_model='predefined_law')
                 __combo.setEnabled(False)
                 __button.setEnabled(False)
-                self.mdl.setPropertyMode(tag, 'variable')
+                __button.hide()
+                self.mdl.setPropertyMode(tag, 'predefined_law')
             if mdl_joule == 'joule':
-                __model.setItem(str_model='variable')
+                __model.setItem(str_model='predefined_law')
                 __model.disableItem(str_model='constant')
-                self.mdl.setPropertyMode(tag, 'variable')
+                self.mdl.setPropertyMode(tag, 'predefined_law')
+                __button.hide()
 
             # Atmospheric Flows
             if mdl_atmo != 'off':
                 if tag == 'density':
                     __model.disableItem(str_model='constant')
-                    __model.disableItem(str_model='variable')
-                    __model.setItem(str_model='variable')
+                    __model.disableItem(str_model='predefined_law')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
 
             # Compressible Flows
             if mdl_comp != 'off':
                 self.groupBoxViscv0.show()
                 if tag == 'density':
-                    __model.setItem(str_model='variable')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
                     __combo.hide()
                     __button.hide()
-                    self.mdl.setPropertyMode(tag, 'variable')
+                    self.mdl.setPropertyMode(tag, 'predefined_law')
                     __line.setEnabled(True)
                 if tag == 'specific_heat':
                     __model.setItem(str_model='constant')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
                     self.mdl.setPropertyMode(tag, 'constant')
                     self.groupBoxCp.setTitle('Isobaric specific heat')
 
                 if tag == 'volume_viscosity':
                     __combo.setEnabled(True)
                     c = self.mdl.getPropertyMode(tag)
-                    if c == 'variable':
+                    if c == 'predefined_law':
                         __button.setEnabled(True)
                     else:
                         __button.setEnabled(False)
@@ -913,10 +924,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         choice = self.modelDiff.dicoV2M[str(text)]
         log.debug("slotStateDiff -> %s" % (text))
 
-        if choice != 'variable':
+        if choice != 'user_law':
             self.pushButtonDiff.setEnabled(False)
             self.pushButtonDiff.setStyleSheet("background-color: None")
+            self.pushButtonDiff.hide()
         else:
+            self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
             name = self.m_sca.getScalarDiffusivityName(self.scalar)
             exp = self.m_sca.getDiffFormula(self.scalar)
@@ -943,10 +956,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.modelDiff.setItem(str_model=mdl)
 
-        if  mdl!= 'variable':
+        if  mdl!= 'user_law':
+            self.pushButtonDiff.hide()
             self.pushButtonDiff.setEnabled(False)
             self.pushButtonDiff.setStyleSheet("background-color: None")
         else:
+            self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
             name = self.m_sca.getScalarDiffusivityName(self.scalar)
             exp = self.m_sca.getDiffFormula(self.scalar)
@@ -972,11 +987,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         choice = __model.dicoV2M[text]
         log.debug("__changeChoice -> %s, %s" % (text, choice))
 
-        if choice != 'variable':
+        if choice != 'user_law':
+            __button.hide()
             __button.setEnabled(False)
             __button.setStyleSheet("background-color: None")
         else:
             __button.setEnabled(True)
+            __button.show()
             exp = None
             if sym == "Rho":
                 exp = self.mdl.getFormula('density')
@@ -1201,7 +1218,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for thermal conductivity
         """
-        exp, req, sca, symbols_al, exa = self.mdl.getFormulaAlComponents()
+        exp, req, sca, symbols_al = self.mdl.getFormulaAlComponents()
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()

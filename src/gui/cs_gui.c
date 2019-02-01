@@ -265,7 +265,7 @@ _physical_property(cs_field_t       *c_prop,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
-  if (cs_gui_strcmp(prop_choice, "variable"))
+  if (cs_gui_strcmp(prop_choice, "user_law"))
     user_law = 1;
 
   if (user_law) {
@@ -640,7 +640,9 @@ _properties_choice_id(const char  *property_name,
   if (buff)
   {
     iok = 1;
-    if (cs_gui_strcmp(buff, "variable") || cs_gui_strcmp(buff, "thermal_law"))
+    if (cs_gui_strcmp(buff, "user_law")       ||
+        cs_gui_strcmp(buff, "predefined_law") ||
+        cs_gui_strcmp(buff, "thermal_law") )
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
@@ -1778,7 +1780,8 @@ void CS_PROCF (csivis, CSIVIS) (void)
   if (cs_gui_strcmp(vars->model, "compressible_model")) {
     int d_f_id = -1;
     const char *prop_choice = _properties_choice("thermal_conductivity");
-    if (cs_gui_strcmp(prop_choice, "variable"))
+    if (cs_gui_strcmp(prop_choice, "user_law") ||
+        cs_gui_strcmp(prop_choice, "predefined_law"))
       d_f_id = 0;
     cs_field_t *c_temp = cs_field_by_name("temperature");
     cs_field_set_key_int(c_temp, kivisl, d_f_id);
@@ -3615,7 +3618,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
         strcat(tmp, "_diffusivity");
 
         const char *prop_choice = _properties_choice(tmp);
-        if (cs_gui_strcmp(prop_choice, "variable"))
+        if (cs_gui_strcmp(prop_choice, "user_law"))
           user_law = 1;
         BFT_FREE(tmp);
       }

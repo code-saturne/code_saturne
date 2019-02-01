@@ -1648,6 +1648,21 @@ class XMLinit(Variables):
                 nodeF.xmlSetData('reference_' + ref_str, value)
                 nodeF.xmlRemoveChild(ref_str)
 
+        # New distinction for physical properties:
+        # Constant/user_law/predefined_law instead of Constant/variable, where
+        # variable was used for both user_law and predefined_law
+        XMLFluidPropertiesNode = self.case.xmlInitNode('physical_properties')
+        nodeFluidProp = XMLFluidPropertiesNode.xmlInitNode('fluid_properties')
+
+        for nodep in nodeFluidProp.xmlGetNodeList('property'):
+            if nodep['choice'] == 'variable':
+                nodef = nodep.xmlGetNode('formula')
+                if nodef:
+                    nodep['choice'] = 'user_law'
+                else:
+                    nodep['choice'] = 'predefined_law'
+
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------
