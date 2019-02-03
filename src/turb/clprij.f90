@@ -444,11 +444,11 @@ do iel = 1, ncel
     eigen_max = maxval(eigen_vals(1:3))
 
     if ( (eigen_min .le. (eigen_tol*eigen_max)) .or. &
-      (eigen_min .le. epzero*rijref) ) then
+      (eigen_min .le. epzero) ) then
 
       is_clipped = 1
 
-      eigen_offset = (eigen_tol*eigen_max - eigen_min) * trrij
+      eigen_offset = (eigen_tol - eigen_min) * trrij
 
       eigen_offset = max(eigen_offset, epzero*rijref)
 
