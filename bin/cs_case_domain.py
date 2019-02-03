@@ -591,11 +591,14 @@ class domain(base_domain):
         """
         # Check if there are files to compile in source path
 
+        needs_comp = False
+
         src_files = cs_compile.files_to_compile(self.src_dir)
 
         if self.exec_solver and len(src_files) > 0:
-            return True
-        elif self.param != None:
+            needs_comp = True
+
+        if self.param != None:
             from model.XMLengine import Case
             from model.XMLinitialize import XMLinit
 
@@ -608,13 +611,13 @@ class domain(base_domain):
 
             case['case_path'] = self.exec_dir
             self.mci = mei_to_c_interpreter(case)
+
             if self.mci.has_meg_code():
-                return True
+                needs_comp = True
             else:
                 self.mci = None
-                return False
-        else:
-            return False
+
+        return needs_comp
 
     #---------------------------------------------------------------------------
 
