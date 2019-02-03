@@ -546,7 +546,7 @@ class mei_to_c_interpreter:
 
             fcm = FluidCharacteristicsModel(self.case)
             for fk in authorized_fields:
-                if fcm.getPropertyMode(fk) == 'variable':
+                if fcm.getPropertyMode(fk) == 'user_law':
                     exp, req, sca, sym = fcm.getFormulaComponents(fk)
                     self.init_cell_block(exp, req, sym, sca, fk)
 
