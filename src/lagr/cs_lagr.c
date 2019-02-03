@@ -210,10 +210,16 @@ cs_lagr_specific_physics_t *cs_glob_lagr_specific_physics
   = &_cs_glob_lagr_specific_physics;
 
 /* lagr reentrained model structure and associated pointer */
-static cs_lagr_reentrained_model_t _cs_glob_lagr_reentrained_model
-  = {0, 0, 0, 0, 0, 0, 0};
+static cs_lagr_reentrained_model_t _lagr_reentrained_model
+  = {.ireent = 0,
+     .iflow = 0,
+     .espasg = 0.,
+     .denasp = 0.,
+     .modyeq = 0.,
+     .rayasp = 0.,
+     .rayasg = 0.};
 cs_lagr_reentrained_model_t *cs_glob_lagr_reentrained_model
-  = &_cs_glob_lagr_reentrained_model;
+  = &_lagr_reentrained_model;
 
 /* lagr precipitation model structure and associated pointer */
 static cs_lagr_precipitation_model_t _cs_glob_lagr_precipitation_model
@@ -426,6 +432,7 @@ cs_real_33_t  *cs_glob_lagr_b_face_proj = NULL;
 void
 cs_f_lagr_params_pointers(cs_int_t  **p_iilagr,
                           cs_int_t  **p_idepst,
+                          cs_int_t  **p_iflow,
                           cs_int_t  **p_ipreci);
 
 void
@@ -503,16 +510,19 @@ cs_f_lagr_coal_comb(cs_int_t   *ih2o,
  * parameters:
  *   p_iilagr --> lagrangian model type
  *   p_idepo  --> deposition option flag
+ *   p_iflow  -->
  *   p_ipreci --> precipitation option flag
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_lagr_params_pointers(cs_int_t  **p_iilagr,
                           cs_int_t  **p_idepst,
+                          cs_int_t  **p_iflow,
                           cs_int_t  **p_ipreci)
 {
   *p_iilagr = &_lagr_time_scheme.iilagr;
   *p_idepst = &_lagr_model.deposition;
+  *p_iflow= &_lagr_reentrained_model.iflow;
   *p_ipreci  = &_lagr_model.precipitation;
 }
 
@@ -1351,7 +1361,7 @@ cs_get_lagr_specific_physics(void)
 cs_lagr_reentrained_model_t *
 cs_get_lagr_reentrained_model(void)
 {
-  return &_cs_glob_lagr_reentrained_model;
+  return &_lagr_reentrained_model;
 }
 
 /*----------------------------------------------------------------------------*/
