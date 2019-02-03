@@ -248,7 +248,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         model = self.model.getTurbulenceModel()
         self.modelTurbModel.setItem(str_model=model)
-        self.slotTurbulenceModel(self.comboBoxTurbModel.currentText())
+        self.__initializeView()
 
         # Length scale
 
@@ -256,6 +256,30 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.lineEditLength.setText(str(l_scale))
 
         self.case.undoStartGlobal()
+
+
+    def __initializeView(self):
+        """
+        Private Method.
+        initalize view for a turbulence model
+        """
+        model = self.model.getTurbulenceModel()
+
+        self.frameAdvanced.hide()
+        self.frameLength.hide()
+
+        if model == 'mixing_length':
+            self.frameLength.show()
+            self.frameAdvanced.hide()
+            self.model.getLengthScale()
+        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
+            self.frameLength.hide()
+            self.frameAdvanced.show()
+
+        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
+            self.line.hide()
+        else:
+            self.line.show()
 
 
     @pyqtSlot(str)
@@ -277,23 +301,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         """
         model = self.modelTurbModel.dicoV2M[str(text)]
         self.model.setTurbulenceModel(model)
-
-        self.frameAdvanced.hide()
-        self.frameLength.hide()
-
-        if model == 'mixing_length':
-            self.frameLength.show()
-            self.frameAdvanced.hide()
-            self.model.getLengthScale()
-        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
-            self.frameLength.hide()
-            self.frameAdvanced.show()
-
-        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
-            self.line.hide()
-        else:
-            self.line.show()
-
+        self.__initializeView()
 
     @pyqtSlot()
     def slotAdvancedOptions(self):
