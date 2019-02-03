@@ -3,6 +3,9 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix in GUI of turbulence model view initalization by moving out of
+  turbulence model slot the view initalization code.
+
 - Fix in TVD convective schemes in parallel mode.
 
 Release 5.3.2 - January 29, 2019
