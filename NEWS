@@ -5,6 +5,11 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Fix in GUI of turbulence model view initalization by moving out of
+  turbulence model slot the view initalization code.
+
+- Fix in TVD convective schemes in parallel mode.
+
 - Fix crash when using multiple GUI-defined scalar balance zones.
 
 - Fix memory leak leading to crash in legacy porosity model.
