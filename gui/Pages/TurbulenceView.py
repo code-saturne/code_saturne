@@ -262,7 +262,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         model = self.model.getTurbulenceModel()
         self.modelTurbModel.setItem(str_model=model)
-        self.slotTurbulenceModel(self.comboBoxTurbModel.currentText())
+        self.__initializeView()
 
         # Length scale
 
@@ -289,25 +289,12 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.case.undoStartGlobal()
 
 
-    @pyqtSlot(str)
-    def slotLengthScale(self, text):
+    def __initializeView(self):
         """
-        Private slot.
-        Input XLOMLG.
+        Private Method.
+        initalize view for a turbulence model
         """
-        if self.lineEditLength.validator().state == QValidator.Acceptable:
-            l_scale = from_qvariant(text, float)
-            self.model.setLengthScale(l_scale)
-
-
-    @pyqtSlot(str)
-    def slotTurbulenceModel(self, text):
-        """
-        Private slot.
-        Input ITURB.
-        """
-        model = self.modelTurbModel.dicoV2M[str(text)]
-        self.model.setTurbulenceModel(model)
+        model = self.model.getTurbulenceModel()
 
         self.frameAdvanced.hide()
         self.frameLength.hide()
@@ -329,6 +316,27 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         else:
             self.line.show()
 
+
+    @pyqtSlot(str)
+    def slotLengthScale(self, text):
+        """
+        Private slot.
+        Input XLOMLG.
+        """
+        if self.lineEditLength.validator().state == QValidator.Acceptable:
+            l_scale = from_qvariant(text, float)
+            self.model.setLengthScale(l_scale)
+
+
+    @pyqtSlot(str)
+    def slotTurbulenceModel(self, text):
+        """
+        Private slot.
+        Input ITURB.
+        """
+        model = self.modelTurbModel.dicoV2M[str(text)]
+        self.model.setTurbulenceModel(model)
+        self.__initializeView()
 
     @pyqtSlot(str)
     def slotVelocity(self,  text):
