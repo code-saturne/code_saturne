@@ -477,6 +477,11 @@ if (iporos.ge.1) then
   endif
 
   do iel = 1, ncelet
+    ! Penalisation of solid cells
+    if (porosi(iel).lt.epzero) then
+      porosi  (iel) = 0.d0
+      isolid_0(iel) = 1
+    endif
     cell_f_vol(iel) = volume(iel) * porosi(iel)
   enddo
 
@@ -485,18 +490,12 @@ if (iporos.ge.1) then
     do ifac = 1, nfac
       !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
       ! epsilon_i*surface/f_surface
-      if (porosi(ifacel(1, ifac)).lt.epzero) then
-        porosi(ifacel(1, ifac)) = 0.d0
-        isolid_0(ifacel(1, ifac)) = 1
-
+      if (isolid_0(ifacel(1, ifac)) .eq. 1) then
         suffac(1, ifac) = 0.d0
         suffac(2, ifac) = 0.d0
         suffac(3, ifac) = 0.d0
         suffan(ifac) = 0.d0
-      else if (porosi(ifacel(2, ifac)).lt.epzero) then
-        porosi(ifacel(2, ifac)) = 0.d0
-        isolid_0(ifacel(2, ifac)) = 1
-
+      else if (isolid_0(ifacel(2, ifac)).eq.1) then
         suffac(1, ifac) = 0.d0
         suffac(2, ifac) = 0.d0
         suffac(3, ifac) = 0.d0
@@ -507,10 +506,7 @@ if (iporos.ge.1) then
     do ifac = 1, nfabor
       !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
       ! epsilon_i*surface/f_surface
-      if (porosi(ifabor(ifac)).lt.epzero) then
-        porosi(ifabor(ifac)) = 0.d0
-        isolid_0(ifabor(ifac)) = 1
-
+      if (isolid_0(ifabor(ifac)) .eq. 1) then
         suffbo(1, ifac) = 0.d0
         suffbo(2, ifac) = 0.d0
         suffbo(3, ifac) = 0.d0
