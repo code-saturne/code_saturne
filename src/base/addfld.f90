@@ -345,12 +345,18 @@ if (idries.eq.-1) then
 endif
 
 ! Wall distance for some turbulence models
+! and for Lagragian multilayer deposition
 
 if ( iturb.eq.23.or.                                &
      (iturb.eq.30.and.irijec.eq.1).or.              &
      (itytur.eq.4.and.idries.eq.1).or.              &
-     iturb.eq.60.or.iturb.eq.70      ) then
+     iturb.eq.60.or.iturb.eq.70.or.                 &
+     iflow.eq.1) then
   ineedy = 1
+endif
+
+! User may set ineedy to 1
+if (ineedy.eq.1) then
   f_name  = 'wall_distance'
   f_label = 'Wall distance'
   call add_variable_field(f_name, f_label, 1, ivar, iloc1)

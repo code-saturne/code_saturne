@@ -121,6 +121,12 @@ call cs_rad_transfer_options
 
 if (ippmod(iatmos).ge.0) call cs_at_data_assim_initialize
 
+! Lagrangian model options
+
+call lagran_init_map
+
+call lagopt(isuite, iccvfg, iscalt, dtref)
+
 ! Additional fields if not in CDO mode only
 
 if (icdo.lt.2) then
@@ -144,12 +150,6 @@ ttsuit = -1.d0
 wtsuit = -1.d0
 
 call dflsui(ntsuit, ttsuit, wtsuit);
-
-! Lagrangian model options
-
-call lagran_init_map
-
-call lagopt(isuite, iccvfg, iscalt, dtref)
 
 !===============================================================================
 ! 3. MODIFS APRES USINI1
