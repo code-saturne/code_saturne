@@ -5,6 +5,9 @@ Release 5.0.10 (unreleased)
 Bug fixes
 ---------
 
+- Fix in GUI of turbulence model view initalization by moving out of
+  turbulence model slot the view initalization code.
+
 - Fix in TVD convective schemes (parallel mode).
 
 - Fix crash when using multiple GUI-defined scalar balance zones.
