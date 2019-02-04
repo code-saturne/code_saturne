@@ -59,8 +59,15 @@ _file_header = \
  *----------------------------------------------------------------------------*/
 
 #include "cs_headers.h"
+"""
 
-/*----------------------------------------------------------------------------*/
+_file_header2 = \
+"""#include "nc_phases.h"
+
+"""
+
+_file_header3 = \
+"""/*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
@@ -99,6 +106,22 @@ cs_meg_boundary_function(const char               *field_name,
 _cs_math_internal_name = {'abs':'cs_math_fabs',
                           'min':'cs_math_fmin',
                           'max':'cs_math_fmax'}
+
+_pkg_fluid_prop_dict = {}
+_pkg_fluid_prop_dict['code_saturne'] = {'rho0':'ro0',
+                                        'mu0':'viscl0',
+                                        'p0':'p0',
+                                        'cp0':'cp0'}
+
+_pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
+                                       'mu0':'viscl0',
+                                       'cp0':'cp0',
+                                       'lambda0':'lambda0'}
+
+_pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
+                    'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
+
+
 
 #===============================================================================
 # Main class
@@ -226,6 +249,18 @@ class mei_to_c_interpreter:
                         l = 'cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
                                 % (sn, sn)
                         usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
+                    elif sn in _pkg_fluid_prop_dict[self.pkg_name].keys():
+                        if len(name.split("_")) > 1:
+                            phase_id = int(name.split('_')[-1])-1
+                        else:
+                            phase_id = -1
+                        gs = _pkg_glob_struct[self.pkg_name].replace('PHASE_ID',
+                                                                     str(phase_id))
+                        pn = _pkg_fluid_prop_dict[self.pkg_name][sn]
+                        ms = 'const cs_real_t %s = %s->%s;\n' %(sn, gs, pn)
+                        usr_defs += ntabs*tab + ms
                         known_symbols.append(sn)
 
                     elif s not in scalars:
@@ -763,7 +798,10 @@ class mei_to_c_interpreter:
         # Generate the functions code if needed
         code_to_write = ''
         if len(self.vol_funcs.keys()) > 0:
-            code_to_write = _file_header + _vol_function_header
+            code_to_write = _file_header
+            if self.pkg_name != "code_saturne":
+                code_to_write += _file_header2
+            code_to_write += _file_header3 + _vol_function_header
             for key in self.vol_funcs.keys():
                 m1 = 'User defined formula for variable %s over zone %s' \
                         % (key, self.vol_funcs[key]['zone'])
@@ -795,7 +833,7 @@ class mei_to_c_interpreter:
         # Write the functions if needed
         code_to_write = ''
         if len(self.bnd_funcs.keys()) > 0:
-            code_to_write = _file_header + _bnd_function_header
+            code_to_write = _file_header + _file_header3 + _bnd_function_header
             for key in self.bnd_funcs.keys():
                 bnd, varname = key.split('::')
                 m1 = 'User defined formula for "%s" over BC=%s' \
