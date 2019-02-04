@@ -176,7 +176,7 @@ class FluidCharacteristicsModel(Variables, Model):
         default['specific_heat']        = 1017.24
         default['thermal_conductivity'] = 0.02495
         default['dynamic_diffusion']    = 0.01
-        default['volume_viscosity']    = 0.
+        default['volume_viscosity']     = 0.
         default['material']             = "user_material"
         default['method']               = "user_properties"
         default['phas']                 = "liquid"
@@ -531,14 +531,14 @@ class FluidCharacteristicsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getInitialValueVolumicViscosity(self):
-        """Return initial value of volumic viscosity"""
+    def getInitialValueVolumeViscosity(self):
+        """Return initial value of volume viscosity"""
         return self.getInitialValue('volume_viscosity')
 
 
     @Variables.undoLocal
-    def setInitialValueVolumicViscosity(self, val):
-        """Put initial value for volumic viscosity"""
+    def setInitialValueVolumeViscosity(self, val):
+        """Put initial value for volume viscosity"""
         self.setInitialValue('volume_viscosity', val)
 
 
@@ -773,16 +773,16 @@ class FluidCharacteristicsModel(Variables, Model):
         User formula for volumic viscosity
         """
         exp = self.getFormula('volume_viscosity')
-        req = [('volume_viscosity', 'Volumic viscosity')]
+        req = [('volume_viscosity', 'Volume viscosity')]
 
         symbols = []
         for s in self.list_scalars:
            symbols.append(s)
 
-        viscv0_value = self.getInitialValueVolumicViscosity()
+        viscv0_value = self.getInitialValueVolumeViscosity()
         ref_pressure = self.getPressure()
         ref_temperature = self.getTemperature()
-        symbols.append(('viscv0', 'Volumic viscosity (reference value) = '+str(viscv0_value)+' J/kg/K'))
+        symbols.append(('viscv0', 'Volume viscosity (J/kg/K) = '+str(viscv0_value)))
         symbols.append(('p0', 'Reference pressure (Pa) = '+str(ref_pressure)))
         symbols.append(('t0', 'Reference temperature (K) = '+str(ref_temperature)))
         symbols.append(('T', 'Temperature'))
