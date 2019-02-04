@@ -1062,7 +1062,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditViscv0.validator().state == QValidator.Acceptable:
             viscv0 = from_qvariant(text, float)
-            self.mdl.setInitialValueVolumicViscosity(viscv0)
+            self.mdl.setInitialValueVolumeViscosity(viscv0)
 
 
     @pyqtSlot(str)
