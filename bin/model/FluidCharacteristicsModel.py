@@ -102,7 +102,7 @@ class FluidCharacteristicsModel(Variables, Model):
         tsm = thm.getThermalScalarModel()
 
         if tsm == "temperature_celsius":
-            self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (C)")))
+            self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (\xB0 C)")))
         elif tsm == "temperature_kelvin":
             self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (K)")))
         elif tsm != "off":
@@ -155,10 +155,16 @@ class FluidCharacteristicsModel(Variables, Model):
         default = {}
 
         default['reference_pressure']    = 1.01325e+5
-        default['reference_temperature'] = 293.15
+
+        tsm = ThermalScalarModel(self.case).getThermalScalarModel()
+
+        if tsm == "temperature_celsius":
+           default['reference_temperature'] = 20.
+        else:
+           default['reference_temperature'] = 293.15
+
         default['fuel_temperature']      = 436.
         default['oxydant_temperature']   = 353.
-        default['reference_temperature'] = 293.15
         # molar mass for dry air
         default['reference_molar_mass'] = 28.966e-3
 

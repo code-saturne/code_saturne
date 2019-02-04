@@ -491,23 +491,22 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if mdl_atmo != "off":
             self.labelInfoT0.hide()
         elif mdl_comp != "off" or mdl_coal != "off":
+            m = self.mdl.getMassemol()
+            self.lineEditMassMolar.setText(str(m))
             self.groupBoxMassMolar.show()
-        elif all(mdl == "off" for mdl in mdls):
-            thmodel = ThermalScalarModel(self.case).getThermalScalarModel()
-            if thmodel == "enthalpy":
-                self.labelT0.setText("enthalpy")
-                self.labelUnitT0.setText("J/kg")
-                self.groupBoxTemperature.setTitle("Reference enthalpy")
-            elif thmodel == "temperature_celsius":
-                self.labelUnitT0.setText("C")
+
+        if mdl_thermal != "off":
+            t = self.mdl.getTemperature()
+            self.lineEditT0.setText(str(t))
+            if mdl_thermal == "temperature_celsius":
+                self.labelUnitT0.setText("\xB0 C")
 
             if self.mdl.getMaterials() != "user_material":
                 self.labelInfoT0.hide()
         else:
             self.groupBoxTemperature.hide()
 
-        gas_comb = GasCombustionModel(self.case).getGasCombustionModel()
-        if gas_comb == 'd3p':
+        if mdl_gas == 'd3p':
             self.groupBoxTempd3p.show()
             t_oxy  = self.mdl.getTempOxydant()
             t_fuel = self.mdl.getTempFuel()
@@ -522,18 +521,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             p = self.mdl.getPressure()
             self.lineEditP0.setText(str(p))
-
-        if mdl_atmo != "off":
-            t = self.mdl.getTemperature()
-            self.lineEditT0.setText(str(t))
-        elif all(mdl == "off" for mdl in mdls):
-            t = self.mdl.getTemperature()
-            self.lineEditT0.setText(str(t))
-            m = self.mdl.getMassemol()
-            self.lineEditMassMolar.setText(str(m))
-        else:
-            t = self.mdl.getTemperature()
-            self.lineEditT0.setText(str(t))
 
         if (self.freesteam == 1 or EOS == 1 or coolprop_fluids):
             self.tables = True
