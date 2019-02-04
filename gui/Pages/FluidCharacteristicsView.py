@@ -341,8 +341,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.modelRho.addItem(self.tr('defined in atphyv'), 'predefined_law')
         elif mdl_joule == 'arc':
             self.modelRho.addItem(self.tr('defined in elphyv'), 'predefined_law')
-        elif mdl_joule == 'joule':
-            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
         elif mdl_comp != 'off':
             self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
         elif mdl_gas != 'off' or mdl_coal != 'off':
@@ -353,24 +351,18 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelMu.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelMu.addItem(self.tr('defined in elphyv'), 'predefined_law')
-        elif mdl_joule == 'joule':
-            self.modelMu.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
         self.modelCp.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelCp.addItem(self.tr('defined in elphyv'), 'predefined_law')
-        elif mdl_joule == 'joule':
-            self.modelCp.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
         self.modelAl.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelAl.addItem(self.tr('defined in elphyv'), 'predefined_law')
-        elif mdl_joule == 'joule':
-            self.modelAl.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
@@ -677,10 +669,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 __button.hide()
                 self.mdl.setPropertyMode(tag, 'predefined_law')
             if mdl_joule == 'joule':
-                __model.setItem(str_model='predefined_law')
+                __model.setItem(str_model='user_law')
                 __model.disableItem(str_model='constant')
-                self.mdl.setPropertyMode(tag, 'predefined_law')
-                __button.hide()
+                self.mdl.setPropertyMode(tag, 'user_law')
 
             # Atmospheric Flows
             if mdl_atmo != 'off':
