@@ -176,7 +176,7 @@ class AtmosphericFlowsModel(Model):
                 self.__removeProperty(node, 'liquid_water')
                 self.__setProperty(node, 'RealTemp', 'real_temperature')
                 if self.__fluidProp.getPropertyMode('density') == 'constant':
-                    self.__fluidProp.setPropertyMode('density', 'variable')
+                    self.__fluidProp.setPropertyMode('density', 'predefined_law')
 
             elif model == AtmosphericFlowsModel.humid:
                 self.__setScalar(node, 'TotWater', 'total_water', 'model')
@@ -184,7 +184,7 @@ class AtmosphericFlowsModel(Model):
                 self.__setProperty(node, 'RealTemp', 'real_temperature')
                 self.__setProperty(node, 'LiqWater', 'liquid_water')
                 if self.__fluidProp.getPropertyMode('density') == 'constant':
-                    self.__fluidProp.setPropertyMode('density', 'variable')
+                    self.__fluidProp.setPropertyMode('density', 'predefined_law')
 
             elif model == AtmosphericFlowsModel.constant:
                 self.__removeScalar(node, 'total_water')

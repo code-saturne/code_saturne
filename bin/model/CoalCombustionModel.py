@@ -407,9 +407,9 @@ class CoalCombustionModel(Variables, Model):
         mdl = FluidCharacteristicsModel(self.case)
 
         if model != 'off':
-            mdl.setPropertyMode('density', 'variable')
+            mdl.setPropertyMode('density', 'predefined_law')
             if mdl.getPropertyMode('density') == 'constant':
-                mdl.setPropertyMode('density', 'variable')
+                mdl.setPropertyMode('density', 'predefined_law')
 
 
     def __createCoalModelScalars(self, coalsNumber, coalClassesNumber, classesNumber):

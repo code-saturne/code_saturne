@@ -341,24 +341,36 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.modelRho.addItem(self.tr('defined in atphyv'), 'predefined_law')
         elif mdl_joule == 'arc':
             self.modelRho.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        elif mdl_joule == 'joule':
+            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
+        elif mdl_comp != 'off':
+            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
+        elif mdl_gas != 'off' or mdl_coal != 'off':
+            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelMu.addItem(self.tr('constant'), 'constant')
         self.modelMu.addItem(self.tr('user law'), 'user_law')
         self.modelMu.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelMu.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        elif mdl_joule == 'joule':
+            self.modelMu.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
         self.modelCp.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelCp.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        elif mdl_joule == 'joule':
+            self.modelCp.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelAl.addItem(self.tr('constant'), 'constant')
         self.modelAl.addItem(self.tr('user law'), 'user_law')
         self.modelAl.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelAl.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        elif mdl_joule == 'joule':
+            self.modelAl.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
@@ -370,6 +382,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelDiftl0.addItem(self.tr('constant'), 'constant')
         self.modelDiftl0.addItem(self.tr('user law'), 'user_law')
         self.modelDiftl0.addItem(self.tr('material law'), 'thermal_law')
+        if mdl_gas != 'off' or mdl_coal != 'off':
+            self.modelDiftl0.addItem(self.tr('predefined law'), 'predefined_law')
+
 
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
@@ -597,6 +612,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             if tag != 'dynamic_diffusion':
                 __labelv = getattr(self, "labelVar"   + symbol)
                 c = self.mdl.getPropertyMode(tag)
+                if c not in __model.getItems():
+                    c = 'constant'
+                    self.mdl.setPropertyMode(tag, c)
+
                 __model.setItem(str_model=c)
                 if c == 'user_law':
                     __button.show()
