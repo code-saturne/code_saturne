@@ -1644,9 +1644,12 @@ class XMLinit(Variables):
         for ref_str in ['pressure', 'temperature', 'oxydant_temperature', \
                         'fuel_temperature', 'mass_molar']:
             value = nodeRefValues.xmlGetDouble(ref_str)
+            nodeRefValues.xmlRemoveChild(ref_str)
             if value:
+                if ref_str == 'mass_molar':
+                    ref_str = 'molar_mass'
                 nodeF.xmlSetData('reference_' + ref_str, value)
-                nodeF.xmlRemoveChild(ref_str)
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
