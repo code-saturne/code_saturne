@@ -1163,6 +1163,62 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the velocity field for a sliding wall boundary using a
+ *         uniform value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      values    array of three real values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
+                                     const char           *z_name,
+                                     cs_real_t            *values)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+  if (z_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not exist.\n"
+              " Please check your settings.", __func__, z_name);
+
+  int  bdy_id = cs_boundary_id_by_zone_id(nsp->boundaries, z_id);
+  if (bdy_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not belong to an existing boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_SLIDING_WALL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" is not related to a sliding wall boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                          3,    /* dim */
+                                          z_id,
+                                          CS_FLAG_STATE_UNIFORM, /* state */
+                                          CS_CDO_BC_DIRICHLET,
+                                          (void *)values);
+
+  int  new_id = nsp->n_velocity_bc_defs;
+
+  nsp->n_velocity_bc_defs += 1;
+  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  nsp->velocity_bc_defs[new_id] = d;
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  assert(eqp != NULL);
+  cs_equation_add_xdef_bc(eqp, d);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the velocity field for an inlet boundary using a uniform
  *         value
  *

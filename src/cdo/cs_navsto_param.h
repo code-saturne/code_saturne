@@ -727,6 +727,23 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the velocity field for a sliding wall boundary using a
+ *         uniform value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      values    array of three real values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
+                                     const char           *z_name,
+                                     cs_real_t            *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the velocity field for an inlet boundary using a uniform
  *         value
  *
