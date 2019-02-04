@@ -184,7 +184,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Gas Combustion Reference temperature</string>
+      <string>Gas Combustion Reference temperatures</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="1">
@@ -1538,7 +1538,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Reference pressure</string>
+      <string>Reference total pressure</string>
      </property>
      <layout class="QGridLayout" name="_7">
       <item row="0" column="0">
@@ -1549,7 +1549,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Reference value for total pressure</string>
+           <string>value</string>
           </property>
          </widget>
         </item>
@@ -1605,7 +1605,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Reference temperature</string>
+           <string>value</string>
           </property>
          </widget>
         </item>
@@ -1688,7 +1688,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Molar mass reference</string>
+           <string>value</string>
           </property>
          </widget>
         </item>
@@ -1726,19 +1726,6 @@
       </item>
       <item row="1" column="0">
        <layout class="QHBoxLayout" name="_14">
-        <item>
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item>
          <widget class="QLabel" name="labelInfoMassMolar">
           <property name="toolTip">
