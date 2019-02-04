@@ -536,7 +536,7 @@ class mei_to_c_interpreter:
 
     def generate_volume_code(self):
 
-        if self.pkg.name == 'code_saturne':
+        if self.pkg_name == 'code_saturne':
             authorized_fields = ['density', 'molecular_viscosity',
                                  'specific_heat', 'thermal_conductivity']
             from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
@@ -600,7 +600,7 @@ class mei_to_c_interpreter:
 
     def generate_boundary_code(self):
 
-        if self.pkg.name == 'code_saturne':
+        if self.pkg_name == 'code_saturne':
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.Boundary import Boundary
             from code_saturne.model.TurbulenceModel import TurbulenceModel
