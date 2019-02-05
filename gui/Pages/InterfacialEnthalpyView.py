@@ -54,9 +54,9 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from InterfacialEnthalpy import Ui_InterfacialEnthalpy
-from InterfacialEnthalpyModel import InterfacialEnthalpyModel
-from NonCondensableModel import NonCondensableModel
-from InterfacialForcesModel import InterfacialForcesModel
+from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
+from code_saturne.model.NonCondensableModel import NonCondensableModel
+from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 
 #-------------------------------------------------------------------------------
 # log config
