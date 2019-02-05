@@ -212,10 +212,9 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
             return
 
         prev_model = self.getThermalScalarModel()
+        self.node_therm['model'] = thermal_scalar
         if thermal_scalar == prev_model:
             return
-
-        self.node_therm['model'] = thermal_scalar
 
         if thermal_scalar != 'off':
             node = self.node_therm.xmlGetNode('variable', type='thermal')
