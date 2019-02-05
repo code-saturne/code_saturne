@@ -337,6 +337,7 @@ class mei_to_c_interpreter:
         for s in required:
             known_symbols.append(s[0]);
 
+        known_symbols.append('#')
 
         ntabs += 1
         if_loop = False
