@@ -645,7 +645,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """Return choice of node I{tag}. Choice is constant or variable"""
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
-                            'volume_viscosity'))
+                            'volume_viscosity', 'dynamic_diffusion'))
         node = self.__nodeFromTag(tag)
         c = node['choice']
         self.isInList(c, ('constant', 'thermal_law', 'user_law', 'predefined_law'))
@@ -657,7 +657,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """Put choice in xml file's node I{tag}"""
         self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
-                            'volume_viscosity'))
+                            'volume_viscosity', 'dynamic_diffusion'))
         self.isInList(choice, ('constant', 'thermal_law',
                                'user_law', 'predefined_law'))
 
