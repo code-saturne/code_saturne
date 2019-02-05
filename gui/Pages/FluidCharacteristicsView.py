@@ -624,9 +624,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.getInitialValue(tag)
             __line.setText(str(self.mdl.getInitialValue(tag)))
 
-        # no 'thermal_conductivity' if not Joule and not Thermal scalar and not
-        if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off' and\
-           CompressibleModel(self.case).getCompressibleModel() == 'off':
+        # If no thermal scalar, hide specific heat and thermal conductivity.
+        if mdl_thermal == 'off':
+            self.groupBoxCp.hide()
             self.groupBoxAl.hide()
 
         if mdl_gas != 'off' or mdl_coal != 'off':

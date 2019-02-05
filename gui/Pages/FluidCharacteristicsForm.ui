@@ -154,7 +154,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>kg/m/s</string>
+             <string>kg/(m.s)</string>
             </property>
            </widget>
           </item>
@@ -583,7 +583,7 @@
            <widget class="QLabel" name="labelVarRho">
             <property name="font">
              <font>
-              <family>Symbol</family>
+              <family>Standard Symbols L</family>
              </font>
             </property>
             <property name="toolTip">
@@ -762,7 +762,7 @@
            <widget class="QLabel" name="labelVarMu">
             <property name="font">
              <font>
-              <family>Symbol</family>
+              <family>Standard Symbols L</family>
              </font>
             </property>
             <property name="toolTip">
@@ -939,11 +939,18 @@
           </item>
           <item>
            <widget class="QLabel" name="labelVarCp">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <italic>true</italic>
+              <bold>true</bold>
+             </font>
+            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Cp</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;C&lt;span style=&quot; vertical-align:sub;&quot;&gt;p&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -1113,11 +1120,16 @@
           </item>
           <item>
            <widget class="QLabel" name="labelVarViscv0">
+            <property name="font">
+             <font>
+              <family>Standard Symbols L</family>
+             </font>
+            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Viscv0</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;m&lt;span style=&quot; vertical-align:sub;font-family:Cantarell;&quot;&gt;v&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -1289,7 +1301,7 @@
            <widget class="QLabel" name="labelVarAl">
             <property name="font">
              <font>
-              <family>Symbol</family>
+              <family>Standard Symbols L</family>
              </font>
             </property>
             <property name="toolTip">
