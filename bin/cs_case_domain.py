@@ -600,7 +600,6 @@ class domain(base_domain):
 
         if self.param != None:
             from model.XMLengine import Case
-            from model.XMLinitialize import XMLinit
             from code_saturne.model.SolutionDomainModel import getRunType
 
             fp = os.path.join(self.data_dir, self.param)
@@ -609,6 +608,10 @@ class domain(base_domain):
             case.xmlCleanAllBlank(case.xmlRootNode())
 
             prepro = (getRunType(case) != 'standard')
+            if case['package'].name == 'code_saturne':
+                from model.XMLinitialize import XMLinit
+            else:
+                from model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
             XMLinit(case).initialize(prepro)
             case.xmlSaveDocument()
 
