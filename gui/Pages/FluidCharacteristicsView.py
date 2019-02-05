@@ -282,29 +282,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if cfg.libs['freesteam'].have != "no":
             self.freesteam = 1
 
-        if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            self.lst = [('density', 'Rho'),
-                        ('molecular_viscosity', 'Mu'),
-                        ('specific_heat', 'Cp'),
-                        ('thermal_conductivity', 'Al'),
-                        ('volume_viscosity', 'Viscv0'),
-                        ('dynamic_diffusion', 'Diftl0')]
-        elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off' or \
-             GasCombustionModel(self.case).getGasCombustionModel() != 'off':
-            self.lst = [('density', 'Rho'),
-                        ('molecular_viscosity', 'Mu'),
-                        ('specific_heat', 'Cp'),
-                        ('dynamic_diffusion', 'Diftl0')]
-        else:
-            self.lst = [('density', 'Rho'),
-                        ('molecular_viscosity', 'Mu'),
-                        ('specific_heat', 'Cp'),
-                        ('thermal_conductivity', 'Al')]
+        self.lst = [('density', 'Rho'),('molecular_viscosity', 'Mu')]
 
         self.list_scalars = []
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
+
+        if mdl != "off":
+            self.lst.extend([('specific_heat', 'Cp'), \
+                             ('thermal_conductivity', 'Al')])
 
         if mdl == "temperature_celsius":
             self.list_scalars.append((s, self.tr("Thermal scalar: temperature (C)")))
@@ -316,6 +303,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.m_sca = DefineUserScalarsModel(self.case)
         for s in self.m_sca.getUserScalarNameList():
             self.list_scalars.append((s, self.tr("Additional scalar")))
+
+        if CompressibleModel(self.case).getCompressibleModel() != 'off':
+            self.lst.append(('volume_viscosity', 'Viscv0'))
+        elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off' or \
+             GasCombustionModel(self.case).getGasCombustionModel() != 'off':
+            self.lst.append(('dynamic_diffusion', 'Diftl0'))
 
         # Particular Widget initialization taking into account of "Calculation Features"
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = self.mdl.getThermoPhysicalModel()
