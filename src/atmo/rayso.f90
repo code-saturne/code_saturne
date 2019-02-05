@@ -249,29 +249,30 @@ call raysze(xlat, xlon, qureel, heuray, imer1, albe, muzero, fo)
 
 if (muzero.gt.epzero) then
 
-! correction for very low zenithal angles
+  ! correction for very low zenithal angles
 
   rr1 = 0.1255d-2
   muzero = rr1/(sqrt(muzero**2 + rr1*(rr1 + 2.d0)) - muzero)
   m = 35.d0/sqrt(1224.d0*muzero*muzero + 1.d0)
   mbar = 1.9d0
 
-!  3 -  albedoes for O3 and Rayleigh diffusion
-!  ==================================================================
+  !  3 -  albedoes for O3 and Rayleigh diffusion
+
   rabar = 0.219d0/(1.d0 + 0.816d0*muzero)
   rabar2 = 0.144d0
   rbar = rabar + (1.d0 - rabar)*(1.d0 - rabar2)*albe/(1.d0 - rabar2*albe)
   rrbar = 0.28d0/(1.d0 + 6.43d0*muzero)
   rrbar2s = 0.0685d0
 
-! absorption for direct radiation at the first level (Atwater)
+  ! absorption for direct radiation at the first level (atwater)
+  if (soldu.eq.1) then
+    do i = 1, kmx
+      absatw(i)=1.d0-(1.041d0-0.16d0 * sqrt(m*(949d-8*preray(i)+0.051d0)))
+    enddo
+  endif
 
-  do i=1, kmx
-    absatw(i)=1.d0-(1.041d0-0.16d0 * sqrt(m*(949d-8*preray(i)+0.051d0)))
-  enddo
+  !  4 - addition of one level for solar radiation
 
-!  4 - addition of one level for solar radiation
-!  ========================================================
   zqq(kmray+1) = 16000.d0
   qqvtot = qqvinf + qqqv(kmray)
   qqv(kmray+1) = qqvtot - qqvinf/4.d0

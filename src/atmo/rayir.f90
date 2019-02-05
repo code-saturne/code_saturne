@@ -49,6 +49,8 @@
 !> \param[in]   daco2s      idem dacinfe but for CO2 only
 !> \param[in]   acsup       idem acinfe, for (z,0)
 !> \param[in]   dacsup      idem dacinfe, for (z,0)
+!> \param[in]   acsups      idem acinfe, for (z,0)
+!> \param[in]   dacsups     idem dacinfe, for (z,0)
 !> \param[in]   zray        altitude (physical mesh)
 !> \param[in]   temray      temperature in Celsius
 !> \param[in]   qvray       specific humidity for water vapor
@@ -131,9 +133,6 @@ double precision, allocatable :: dz0(:)
 double precision, allocatable :: kliq(:)
 
 double precision, allocatable :: dfir(:), ufir(:)
-double precision, allocatable :: dfir0(:), ufir0(:)
-double precision, allocatable :: dfir1(:), ufir1(:)
-double precision, allocatable :: dfir2(:), ufir2(:)
 
 double precision a3, tvsups, dtvsups
 double precision foirs, foirs1, foirs2
@@ -150,9 +149,6 @@ allocate(kliq(kmx+1))
 
 if (irdu.eq.1) then
   allocate(dfir(kmx), ufir(kmx))
-  allocate(dfir0(kmx), ufir0(kmx))
-  allocate(dfir1(kmx), ufir1(kmx))
-  allocate(dfir2(kmx), ufir2(kmx))
 endif
 
 ! local initializations
@@ -222,9 +218,6 @@ enddo
 ! indexes for presence of clouds, aerosols
 inua = 0
 iaer = 0
-
-! index to compute or not the downward and upward IR fluxes
-irdu = 1
 
 ! constant for aerosol concentration which has to be in µg/m3
 caero = 1.d-9
@@ -374,7 +367,7 @@ fo = 0.d0
 t4zt = (temray(kmray) + tkelvi)**4
 t41 = (temray(k1) + tkelvi)**4
 
-if(inua.ne.1) then
+if (inua.ne.1) then
   ! for clear sky
   do k = k1+1, kmray
     ! transmissivity for water vapor and its dimer
@@ -445,15 +438,9 @@ if(inua.ne.1) then
       if(i.gt.k1) then
         call rayive(tauv,dtauv,qqqv(i),qv0(k1),qqqc(i),qc(k1),romray(k1))
 
-        ufir0(i) =  sig*ufir(i)                                 &
-                   +(tauv-acinfe(i))*(1.d0-emis)*(foir-sig*t41) &
-                   +sig*t41
-        ufir1(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
-        ufir(i) = ufir1(i)
+        ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
       else
-        ufir0(k1) = (1.-emis)*foir+emis*sig*t41
-        ufir1(k1) = ufir0(k1)
-        ufir(k1) = ufir0(k1)
+        ufir(k1) = (1.-emis)*foir+emis*sig*t41
       endif
     enddo
   endif ! irdu.eq.1
@@ -573,14 +560,9 @@ else
 
         call rayive(tauv, dtauv, qqqv(i), qv0(k1), qqqc(i), qc(k1), romray(k1))
 
-        ufir0(i) = sig*ufir(i)+(1.d0+fn*(taul-1.d0))*(tauv-acinfe(i))         &
-                  *(1.d0-emis)*(foir-sig*t41)+sig*t41
-        ufir1(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
-        ufir(i) = ufir1(i)
+        ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
       else
-        ufir0(k1) = (1.-emis)*foir+emis*sig*t41
-        ufir1(k1) = ufir0(k1)
-        ufir(k1) = ufir0(k1)
+        ufir(k1) = (1.-emis)*foir+emis*sig*t41
       endif
 
     enddo
@@ -802,7 +784,6 @@ if (irdu.eq.1) then
   enddo
 
   deallocate(ufir,dfir)
-  deallocate(ufir0,dfir0,ufir1,dfir1,ufir2,dfir2)
 endif
 
 deallocate(rov,roc,rol,qv0,qc)
