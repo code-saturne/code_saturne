@@ -134,9 +134,6 @@ from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsMod
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
-from code_saturne.model.CompressibleModel import CompressibleModel
-from code_saturne.model.CoalCombustionModel import CoalCombustionModel
-from code_saturne.model.GasCombustionModel import GasCombustionModel
 from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
@@ -283,33 +280,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if cfg.libs['freesteam'].have != "no":
             self.freesteam = 1
 
-        self.lst = [('density', 'Rho'),('molecular_viscosity', 'Mu')]
-
-        self.list_scalars = []
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
-        mdl = self.m_th.getThermalScalarModel()
-
-        if mdl != "off":
-            self.lst.extend([('specific_heat', 'Cp'), \
-                             ('thermal_conductivity', 'Al')])
-
-        if mdl == "temperature_celsius":
-            self.list_scalars.append((s, self.tr("Thermal scalar: temperature (C)")))
-        elif mdl == "temperature_kelvin":
-            self.list_scalars.append((s, self.tr("Thermal scalar: temperature (K)")))
-        elif mdl != "off":
-            self.list_scalars.append((s, self.tr("Thermal scalar")))
-
-        self.m_sca = DefineUserScalarsModel(self.case)
-        for s in self.m_sca.getUserScalarNameList():
-            self.list_scalars.append((s, self.tr("Additional scalar")))
-
-        if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            self.lst.append(('volume_viscosity', 'Viscv0'))
-        elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off' or \
-             GasCombustionModel(self.case).getGasCombustionModel() != 'off':
-            self.lst.append(('dynamic_diffusion', 'Diftl0'))
+        tsm = self.mdl.tsm
 
         # Particular Widget initialization taking into account of "Calculation Features"
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = self.mdl.getThermoPhysicalModel()
@@ -371,13 +344,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if mdl_gas != 'off' or mdl_coal != 'off':
             self.modelDiftl0.addItem(self.tr('predefined law'), 'predefined_law')
 
-
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
 
         self.scalar = ""
-        scalar_list = self.m_sca.getUserScalarNameList()
-        for s in self.m_sca.getScalarsVarianceList():
+        scalar_list = self.mdl.m_sca.getUserScalarNameList()
+        for s in self.mdl.m_sca.getScalarsVarianceList():
             if s in scalar_list: scalar_list.remove(s)
 
         if scalar_list != []:
@@ -555,9 +527,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.groupBoxDiff.hide()
         else :
             self.groupBoxDiff.show()
-            self.lineEditDiff.setText(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
+            self.lineEditDiff.setText(str(self.mdl.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
 
-            diff_choice =  self.m_sca.getScalarDiffusivityChoice(self.scalar)
+            diff_choice =  self.mdl.m_sca.getScalarDiffusivityChoice(self.scalar)
             self.modelDiff.setItem(str_model=diff_choice)
             self.modelNameDiff.setItem(str_model=str(self.scalar))
             if diff_choice  != 'user_law':
@@ -567,8 +539,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             else:
                 self.pushButtonDiff.show()
                 self.pushButtonDiff.setEnabled(True)
-                name = self.m_sca.getScalarDiffusivityName(self.scalar)
-                exp = self.m_sca.getDiffFormula(self.scalar)
+                name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+                exp = self.mdl.m_sca.getDiffFormula(self.scalar)
                 if exp:
                     self.pushButtonDiff.setStyleSheet("background-color: green")
                     self.pushButtonDiff.setToolTip(exp)
@@ -576,7 +548,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     self.pushButtonDiff.setStyleSheet("background-color: red")
 
         # Standard Widget initialization
-        for tag, symbol in self.lst:
+        for tag, symbol in self.mdl.lst:
             __model  = getattr(self, "model"      + symbol)
             __line   = getattr(self, "lineEdit"   + symbol)
             __button = getattr(self, "pushButton" + symbol)
@@ -626,7 +598,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if mdl_gas != 'off' or mdl_coal != 'off':
             self.groupBoxDiftl0.show()
 
-        for tag, symbol in self.lst:
+        for tag, symbol in self.mdl.lst:
             __model  = getattr(self, "model" + symbol)
             __line   = getattr(self, "lineEdit" + symbol)
             __button = getattr(self, "pushButton" + symbol)
@@ -713,7 +685,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         add/suppress thermo tables for each properties
         """
-        for tag, symbol in self.lst:
+        for tag, symbol in self.mdl.lst:
             __model  = getattr(self, "model" + symbol)
             if self.mdl.getMaterials() == "user_material":
                 __model.disableItem(str_model='thermal_law')
@@ -916,15 +888,15 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
-            name = self.m_sca.getScalarDiffusivityName(self.scalar)
-            exp = self.m_sca.getDiffFormula(self.scalar)
+            name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+            exp = self.mdl.m_sca.getDiffFormula(self.scalar)
             if exp:
                 self.pushButtonDiff.setStyleSheet("background-color: green")
                 self.pushButtonDiff.setToolTip(exp)
             else:
                 self.pushButtonDiff.setStyleSheet("background-color: red")
 
-        self.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
+        self.mdl.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
 
 
     @pyqtSlot(str)
@@ -935,9 +907,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         choice = self.modelNameDiff.dicoV2M[str(text)]
         log.debug("slotStateDiff -> %s" % (text))
         self.scalar = str(text)
-        self.lineEditDiff.setText(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
+        self.lineEditDiff.setText(str(self.mdl.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
 
-        mdl = self.m_sca.getScalarDiffusivityChoice(self.scalar)
+        mdl = self.mdl.m_sca.getScalarDiffusivityChoice(self.scalar)
 
         self.modelDiff.setItem(str_model=mdl)
 
@@ -948,8 +920,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
-            name = self.m_sca.getScalarDiffusivityName(self.scalar)
-            exp = self.m_sca.getDiffFormula(self.scalar)
+            name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+            exp = self.mdl.m_sca.getDiffFormula(self.scalar)
             if exp:
                 self.pushButtonDiff.setStyleSheet("background-color: green")
                 self.pushButtonDiff.setToolTip(exp)
@@ -991,8 +963,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             elif sym == "Al":
                 exp = self.mdl.getFormula('thermal_conductivity')
             elif sym == "Diff":
-                name = self.m_sca.getScalarDiffusivityName(self.scalar)
-                exp = self.m_sca.getDiffFormula(self.scalar)
+                name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+                exp = self.mdl.m_sca.getDiffFormula(self.scalar)
 
             if exp:
                 __button.setStyleSheet("background-color: green")
@@ -1080,7 +1052,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditDiff.validator().state == QValidator.Acceptable:
             diff = from_qvariant(text, float)
-            self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
+            self.mdl.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
     @pyqtSlot()
@@ -1249,7 +1221,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         exa = ''
 
-        dname = self.m_sca.getScalarDiffusivityName(self.scalar)
+        dname = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
         mci = mei_to_c_interpreter(self.case, False)
         mci.init_cell_block(exp, req, sym, sca, dname)
 
@@ -1262,7 +1234,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
-            self.m_sca.setDiffFormula(self.scalar, str(result))
+            self.mdl.m_sca.setDiffFormula(self.scalar, str(result))
             self.pushButtonDiff.setToolTip(result)
             self.pushButtonDiff.setStyleSheet("background-color: green")
 
