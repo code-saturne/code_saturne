@@ -54,7 +54,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from TimeStep import Ui_TimeStep
-from TimeStepModelNeptune import TimeStepModel
+from code_saturne.model.TimeStepModelNeptune import TimeStepModel
 
 #-------------------------------------------------------------------------------
 # log config
