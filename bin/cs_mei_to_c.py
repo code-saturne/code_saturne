@@ -131,10 +131,12 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, case):
+    def __init__(self, case, create_functions=True):
 
         self.case = case
         self.pkg_name = case['package'].name
+
+        self.tmp_path = os.path.join(case['case_path'], 'DATA', 'tmp')
 
         # function name to file name dictionary
         self.vol_funcs = {}
@@ -147,11 +149,12 @@ class mei_to_c_interpreter:
         for (nme, val) in nb.getNotebookList():
             self.notebook[nme] = str(val)
 
-        # Volume code
-        self.generate_volume_code()
+        if create_functions:
+            # Volume code
+            self.generate_volume_code()
 
-        # Bouondary code
-        self.generate_boundary_code()
+            # Bouondary code
+            self.generate_boundary_code()
 
     #---------------------------------------------------------------------------
 
@@ -168,6 +171,13 @@ class mei_to_c_interpreter:
             expression_lines.append(line_comp)
 
         return expression_lines
+
+    #---------------------------------------------------------------------------
+
+    def update_cell_block_expression(self, new_exp, key):
+
+        self.vol_funcs[key]['exp'] = new_exp
+        self.vol_funcs[key]['lines'] = self.break_expression(new_exp)
 
     #---------------------------------------------------------------------------
 
@@ -229,31 +239,34 @@ class mei_to_c_interpreter:
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
-                        usr_defs += 'cs_real_t dt = cs_glob_time_step->dt;\n'
+                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt;\n'
                         known_symbols.append(sn)
                     elif sn == 't':
                         usr_defs += ntabs*tab
-                        usr_defs += 'cs_real_t time = cs_glob_time_step->t_cur;\n'
+                        usr_defs += 'const cs_real_t time = cs_glob_time_step->t_cur;\n'
                         known_symbols.append(sn)
                     elif sn == 'iter':
                         usr_defs += ntabs*tab
-                        usr_defs += 'int iter = cs_glob_time_step->nt_cur;\n'
+                        usr_defs += 'const int iter = cs_glob_time_step->nt_cur;\n'
                         known_symbols.append(sn)
                     elif sn in coords:
                         ic = coords.index(sn)
-                        lxyz = 'cs_real_t %s = xyz[c_id][%s];\n' % (sn, str(ic))
+                        lxyz = 'const cs_real_t %s = xyz[c_id][%s];\n' % (sn, str(ic))
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
                     elif sn in self.notebook.keys():
-                        l = 'cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
+                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
                                 % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
                     elif sn in _pkg_fluid_prop_dict[self.pkg_name].keys():
                         if len(name.split("_")) > 1:
-                            phase_id = int(name.split('_')[-1])-1
+                            try:
+                                phase_id = int(name.split('_')[-1])-1
+                            except:
+                                phase_id = -1
                         else:
                             phase_id = -1
                         gs = _pkg_glob_struct[self.pkg_name].replace('PHASE_ID',
@@ -266,14 +279,14 @@ class mei_to_c_interpreter:
                     elif s not in scalars:
                         if len(s[1].split('=')) > 1:
                             sval = s[1].split('=')[-1]
-                            usr_defs += ntabs*tab + 'cs_real_t '+sn+' = '+str(sval)+';\n'
+                            usr_defs += ntabs*tab + 'const cs_real_t '+sn+' = '+str(sval)+';\n'
                             known_symbols.append(sn)
                         else:
                             internal_fields.append((sn, s[1].lower()))
 
         if need_coords:
             usr_defs = ntabs*tab \
-                     + 'cs_real_3_t xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
+                     + 'const cs_real_3_t xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
                      + '\n\n' \
                      + usr_defs
 
@@ -282,11 +295,11 @@ class mei_to_c_interpreter:
             for line in exp_lines_comp:
                 if f[0] in line:
                     use_internal_fields = True
-                    l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
+                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
                             % (f[0], f[1])
                     usr_defs += ntabs*tab + l
                     known_symbols.append(f[0])
-                    usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n'\
+                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
                             % (f[0], f[0])
 
                     break
@@ -300,11 +313,11 @@ class mei_to_c_interpreter:
             for line in exp_lines_comp:
                 if sn in line:
                     use_scalars = True
-                    l = 'cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
+                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
                     % (sn,sn)
                     usr_defs += ntabs*tab + l
                     known_symbols.append(sn)
-                    usr_code += (ntabs+1)*tab + 'cs_real_t %s = %s_vals[c_id];\n' \
+                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n' \
                     % (sn, sn)
                     break
 
@@ -319,7 +332,7 @@ class mei_to_c_interpreter:
 
         for line in exp_lines_comp:
             if 'pi' in line:
-                usr_defs += ntabs*tab + 'cs_real_t pi = cs_math_pi;\n'
+                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
 
         for s in required:
             known_symbols.append(s[0]);
@@ -334,7 +347,7 @@ class mei_to_c_interpreter:
                 lf = l.split('=')
                 if len(lf) > 1 and lf[0].rstrip() not in known_symbols:
                     known_symbols.append(lf[0])
-                    l = 'cs_real_t '+l
+                    l = 'const cs_real_t '+l
 
                 if l[:2] == 'if' and l[-1] != '{':
                     l = l + ' {'
@@ -444,9 +457,9 @@ class mei_to_c_interpreter:
 
         # allocate the new array
         if need_for_loop:
-            usr_defs += ntabs*tab + 'int vals_size = bz->n_faces * %d;\n' % (len(required))
+            usr_defs += ntabs*tab + 'const int vals_size = bz->n_faces * %d;\n' % (len(required))
         else:
-            usr_defs += ntabs*tab + 'int vals_size = %d;\n' % (len(required))
+            usr_defs += ntabs*tab + 'const int vals_size = %d;\n' % (len(required))
 
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
@@ -458,32 +471,32 @@ class mei_to_c_interpreter:
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
-                        usr_defs += 'cs_real_t dt = cs_glob_time_step->dt;\n'
+                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt;\n'
                         known_symbols.append(sn)
                     elif sn == 't':
                         usr_defs += ntabs*tab
-                        usr_defs += 'cs_real_t t = cs_glob_time_step->t_cur;\n'
+                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
                         known_symbols.append(sn)
                     elif sn == 'iter':
                         usr_defs += ntabs*tab
-                        usr_defs += 'int iter = cs_glob_time_step->nt_cur;\n'
+                        usr_defs += 'const int iter = cs_glob_time_step->nt_cur;\n'
                         known_symbols.append(sn)
                     elif sn in coords:
                         ic = coords.index(sn)
-                        lxyz = 'cs_real_t %s = xyz[f_id][%s];\n' % (sn, str(ic))
+                        lxyz = 'const cs_real_t %s = xyz[f_id][%s];\n' % (sn, str(ic))
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
             for nb in self.notebook.keys():
                 if nb in line_comp and nb not in known_symbols:
-                        l = 'cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
+                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
                                 % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
         if need_coords:
             usr_defs = ntabs*tab \
-                     + 'cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;' \
+                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;' \
                      + '\n\n' \
                      + usr_defs
 
@@ -495,7 +508,7 @@ class mei_to_c_interpreter:
 
         for line in exp_lines_comp:
             if 'pi' in line:
-                usr_defs += ntabs*tab + 'cs_real_t pi = cs_math_pi;\n'
+                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
 
         if need_for_loop:
             ntabs += 1
@@ -509,7 +522,7 @@ class mei_to_c_interpreter:
                 lf = l.split('=')
                 if len(lf) > 1 and lf[0].rstrip() not in known_symbols:
                     known_symbols.append(lf[0])
-                    l = 'cs_real_t '+l
+                    l = 'const cs_real_t '+l
 
                 if l[:2] == 'if' and l[-1] != '{':
                     l = l + ' {'
@@ -747,6 +760,55 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def check_volume_code_syntax(self):
+
+        if not os.path.exists(self.tmp_path):
+            os.makedirs(self.tmp_path)
+
+        self.save_volume_function(self.tmp_path)
+
+        from code_saturne import cs_compile
+
+        os.chdir(self.tmp_path)
+        out = open('comp.out', 'w')
+        err = open('comp.err', 'w')
+        compilation_test = cs_compile.compile_and_link(self.case['package'],
+                                                       self.tmp_path,
+                                                       opt_cflags='-w',
+                                                       stdout=out,
+                                                       stderr=err)
+        out.close()
+        err.close()
+
+        n_errors = 0
+        if compilation_test != 0:
+            errors = open('comp.err', 'r').readlines()
+            for i in range(len(errors)):
+                if 'error:' in errors[i]:
+                    msg = (errors[i].split('error:')[-1].rstrip()).lstrip()+'\n'
+                    msg += (errors[i+1].rstrip()).lstrip() + '\n'
+
+                    n_errors += 1
+        else:
+            msg = None
+
+        return compilation_test, msg, n_errors
+
+    #---------------------------------------------------------------------------
+
+    def clean_tmp_dir(self):
+
+        if os.path.exists(self.tmp_path):
+            fl = os.listdir(self.tmp_path)
+            for f in fl:
+                self.delete_file(f, self.tmp_path)
+            os.rmdir(self.tmp_path)
+
+    #---------------------------------------------------------------------------
+
+
+    #---------------------------------------------------------------------------
+
     def has_meg_code(self):
 
         retcode = False
@@ -758,22 +820,32 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def delete_file(self, c_file_name):
+    def delete_file(self, c_file_name, hard_path=None):
 
         # Copy function file if needed
-        fpath = os.path.join(self.case['case_path'], 'SRC', c_file_name);
+        if hard_path:
+            fpath = os.path.join(hard_path, c_file_name)
+        else:
+            fpath = os.path.join(self.case['case_path'], 'SRC', c_file_name);
+
         if os.path.isfile(fpath):
             os.remove(fpath)
 
     #---------------------------------------------------------------------------
 
-    def save_file(self, c_file_name, code_to_write):
+    def save_file(self, c_file_name, code_to_write, hard_path=None):
 
         if code_to_write != '':
             # Try and write the volume function in the src if in RESU folder
             # For debugging purposes
             try:
-                fpath = os.path.join(self.case['case_path'], 'src', c_file_name)
+                if hard_path:
+                    fpath = os.path.join(hard_path, c_file_name)
+                else:
+                    fpath = os.path.join(self.case['case_path'],
+                                         'src',
+                                         c_file_name)
+
                 new_file = open(fpath, 'w')
                 new_file.write(code_to_write)
                 new_file.close()
@@ -789,7 +861,7 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def save_volume_function(self):
+    def save_volume_function(self, hard_path = None):
 
         # Delete previous existing file
         file2write = 'cs_meg_volume_function.c'
@@ -818,7 +890,9 @@ class mei_to_c_interpreter:
             code_to_write += _file_footer
 
         # Write the C file if necessary
-        write_status = self.save_file(file2write, code_to_write)
+        write_status = self.save_file(file2write,
+                                      code_to_write,
+                                      hard_path = hard_path)
 
         return write_status
 
