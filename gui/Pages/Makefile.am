@@ -99,6 +99,7 @@ PerformanceTuningView.py \
 PorosityView.py \
 PreprocessingView.py \
 ProfilesView.py \
+QMegEditorView.py \
 QMeiEditorView.py \
 SalomeActors.py \
 SalomeHandler.py \

@@ -137,9 +137,10 @@ from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 from code_saturne.model.GasCombustionModel import GasCombustionModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
+from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -867,12 +868,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         self.__changeChoice(str(text), 'Rho', 'density')
 
-        # Delete C function if necessary
-#        if text == 'constant':
-#            self.mci.delete_c_function('cs_gui_user_density')
-#        else:
-#            self.mci.write_c_function('cs_gui_user_density')
-
 
     @pyqtSlot(str)
     def slotStateMu(self, text):
@@ -1108,8 +1103,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.density
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
+        mci = mei_to_c_interpreter(self.case, False)
+        mci.init_cell_block(exp, req, symbols_rho, sca, 'density')
+        dialog = QMegEditorView(self,
+                                mei_to_c   = mci,
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbols_rho,
@@ -1143,8 +1140,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.molecular_viscosity
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
+        mci = mei_to_c_interpreter(self.case, False)
+        mci.init_cell_block(exp, req, symbols_mu, sca, 'molecular_viscosity')
+        dialog = QMegEditorView(self,
+                                mei_to_c   = mci,
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbols_mu,
@@ -1166,8 +1165,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         exa = FluidCharacteristicsView.specific_heat
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
+        mci = mei_to_c_interpreter(self.case, False)
+        mci.init_cell_block(exp, req, symbols_cp, sca, 'specific_heat')
+        dialog = QMegEditorView(self,
+                                mei_to_c   = mci,
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbols_cp,
@@ -1189,8 +1190,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         exa = FluidCharacteristicsView.volume_viscosity
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
+        mci = mei_to_c_interpreter(self.case, False)
+        mci.init_cell_block(exp, req, symbols_viscv0, sca, 'volume_viscosity')
+        dialog = QMegEditorView(self,
+                                mei_to_c   = mci,
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbols_viscv0,
@@ -1221,8 +1224,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.thermal_conductivity
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
+        mci = mei_to_c_interpreter(self.case, False)
+        mci.init_cell_block(exp, req, symbols_al, sca, 'thermal_conductivity')
+        dialog = QMegEditorView(self,
+                                mei_to_c   = mci,
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbols_al,
@@ -1244,8 +1249,12 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         exa = ''
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
+        dname = self.m_sca.getScalarDiffusivityName(self.scalar)
+        mci = mei_to_c_interpreter(self.case, False)
+        mci.init_cell_block(exp, req, sym, sca, dname)
+
+        dialog = QMegEditorView(self,
+                                mei_to_c   = mci,
                                 expression = exp,
                                 required   = req,
                                 symbols    = sym,
