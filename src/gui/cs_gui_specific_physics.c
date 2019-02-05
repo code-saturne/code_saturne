@@ -569,17 +569,15 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICPI2 (Toxy, Tfuel)
- * *****************
- * DOUBLE PRECISION Toxy   <--   Oxidant temperature
- * DOUBLE PRECISION Tfuel  <--   Fuel temperature
+ * Toxy   <--   Oxidant temperature
+ * Tfuel  <--   Fuel temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel)
 {
-  cs_gui_reference_initialization("oxydant_temperature", toxy);
-  cs_gui_reference_initialization("fuel_temperature", tfuel);
+  cs_gui_fluid_properties_value("reference_oxydant_temperature", toxy);
+  cs_gui_fluid_properties_value("reference_fuel_temperature", tfuel);
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--toxy  = %f\n", *toxy);

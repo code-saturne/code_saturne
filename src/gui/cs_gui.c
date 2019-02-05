@@ -2143,7 +2143,7 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
     phys_cst->icorio = 0;
 
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
-  cs_gui_reference_initialization("pressure", &(phys_pp->p0));
+  cs_gui_fluid_properties_value("reference_pressure", &(phys_pp->p0));
 
   /* Variable rho and viscl */
   if (_properties_choice_id("density", &choice))
@@ -2156,10 +2156,10 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
       phys_pp->ivivar = choice;
 
   /* Read T0 in each case for user */
-  cs_gui_reference_initialization("temperature", &(phys_pp->t0));
+  cs_gui_fluid_properties_value("reference_temperature", &(phys_pp->t0));
 
   if (cs_gui_strcmp(vars->model, "compressible_model"))
-    cs_gui_reference_initialization("mass_molar", &(phys_pp->xmasmr));
+    cs_gui_fluid_properties_value("reference_molar_mass", &(phys_pp->xmasmr));
 
   material = _thermal_table_choice("material");
   if (material != NULL) {
@@ -2388,7 +2388,7 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
           if (cs_gui_strcmp(vars->model, "solid_fuels")) {
             /* Air molar mass */
             result = 0.028966;
-            cs_gui_reference_initialization("mass_molar", &result);
+            cs_gui_fluid_properties_value("reference_molar_mass", &result);
             if (result <= 0)
               bft_error(__FILE__, __LINE__, 0,
                         _("mass molar value is zero or not found in the xml file.\n"));
@@ -4992,11 +4992,11 @@ cs_gui_properties_value(const char  *property_name,
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_reference_initialization(const char  *param,
-                                double      *value)
+cs_gui_fluid_properties_value(const char  *param,
+                              double      *value)
 {
   cs_tree_node_t *tn
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/reference_values");
+    = cs_tree_get_node(cs_glob_tree, "physical_properties/fluid_properties");
   tn = cs_tree_get_node(tn, param);
 
   cs_gui_node_get_real(tn, value);
