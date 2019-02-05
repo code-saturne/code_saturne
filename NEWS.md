@@ -3,6 +3,9 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix in GUI for gas combustion model. Use variable name instead of label to get
+  numerical scheme.
+
 - Fix in GUI of turbulence model view initalization by moving out of
   turbulence model slot the view initalization code.
 
