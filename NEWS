@@ -1,9 +1,11 @@
-
 Release 5.1.7 (unreleased)
- ==========================
+==========================
 
    Bug fixes
     ---------
+
+- Fix in GUI for gas combustion model. Use variable name instead of label to get
+  numerical scheme.
 
 - Lagrangian module: fix division by 0 in boundary stats.
 
