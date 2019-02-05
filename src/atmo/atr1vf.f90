@@ -164,12 +164,11 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call gripol(igrid, cvara_totwt, qwvert)
 
     ! deduce vapor content interpolation
-    do ii = 1, kmx*nvert
-      if (qwvert(ii).lt.qlvert(ii)) then
-        qvvert(ii) = 0.d0
-      else
-        qvvert(ii) = qwvert(ii) - qlvert(ii)
-      endif
+    do ii = 1, nvert
+      do k = 1, kvert
+        jj = (ii-1)*kmx + k
+        qvvert(jj) = qwvert(jj)-qlvert(jj)
+      enddo
     enddo
 
     call gripol(igrid, cvara_ntdrp, ncvert)
@@ -304,7 +303,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call rayir(ii, k1, kmray, ico2, emis,                         &
                tauzq, tauz, tausup, zq,                           &
                acinfe, dacinfe, aco2, daco2, aco2s, daco2s,       &
-               acsup, dacsup,                                     &
+               acsup, dacsup, acsups, dacsups,                    &
                zray, temray, qvray,                               &
                qlray, fneray, romray, preray, aeroso,             &
                foir, rayi(:,ii), ncray)
