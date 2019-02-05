@@ -732,8 +732,6 @@ class mei_to_c_interpreter:
                         exp  = boundary.getHydraulicHeadFormula()
                         self.init_bnd_block(exp, req, name, zone._label, c)
 
-
-
                 # Scalars
                 scalar_list = boundary.sca_model.getScalarNameList()
                 if boundary.sca_model.getMeteoScalarsNameList() != None:
@@ -742,7 +740,7 @@ class mei_to_c_interpreter:
                 if len(boundary.sca_model.getThermalScalarName()) > 0:
                     scalar_list.append(boundary.sca_model.getThermalScalarName()[0])
 
-                if zone._nature != 'free_inlet_outlet':
+                if zone._nature not in ['free_inlet_outlet', 'free_surface']:
                   for sca in scalar_list:
                       c = boundary.getScalarChoice(sca)
                       if '_formula' in c:
