@@ -586,16 +586,11 @@ class mei_to_c_interpreter:
     def generate_volume_code(self):
 
         if self.pkg_name == 'code_saturne':
-            authorized_fields = ['density', 'molecular_viscosity',
-                                 'specific_heat', 'thermal_conductivity']
-            from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
-
-            from code_saturne.model.CompressibleModel import CompressibleModel
-            if CompressibleModel(self.case).getCompressibleModel() != 'off':
-                authorized_fields.append('volume_viscosity')
+            from code_saturne.model.FluidCharacteristicsModel \
+                import FluidCharacteristicsModel
 
             fcm = FluidCharacteristicsModel(self.case)
-            for fk in authorized_fields:
+            for (fk,sym) in fcm.lst:
                 if fcm.getPropertyMode(fk) == 'user_law':
                     exp, req, sca, sym = fcm.getFormulaComponents(fk)
                     self.init_cell_block(exp, req, sym, sca, fk)

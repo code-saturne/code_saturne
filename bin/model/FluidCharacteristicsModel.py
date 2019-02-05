@@ -48,7 +48,6 @@ from code_saturne.model.XMLmodel import XMLmodel, ModelTest
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.NotebookModel import NotebookModel
-from code_saturne.model.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # EOS
@@ -80,26 +79,56 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_gas    = self.node_models.xmlInitNode('gas_combustion',     'model')
         self.node_coal   = self.node_models.xmlInitNode('solid_fuels',        'model')
 
-        self.node_density   = self.setNewFluidProperty(self.node_fluid, 'density')
-        self.node_viscosity = self.setNewFluidProperty(self.node_fluid, 'molecular_viscosity')
-        self.node_heat      = self.setNewFluidProperty(self.node_fluid, 'specific_heat')
-        self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
+        # Base model needs density and molecular viscosity
 
-        import code_saturne.cs_config as cs_config
-        cfg = cs_config.config()
-        self.freesteam = 0
-        if cfg.libs['freesteam'].have != "no":
-            self.freesteam = 1
+        self.lst = [('density', 'Rho'),('molecular_viscosity', 'Mu')]
+        self.node_density   = self.setNewFluidProperty(self.node_fluid, \
+                                                       'density')
+        self.node_viscosity = self.setNewFluidProperty(self.node_fluid, \
+                                                       'molecular_viscosity')
+        self.node_lst = [self.node_density, self.node_viscosity]
 
-        self.coolprop = 0
-        if cfg.libs['coolprop'].have != "no":
-            self.coolprop = 1
+        self.node_heat = None
+        self.node_cond = None
+        self.node_vol_visc = None
+        self.node_dyn = None
 
-        # Scalars list
-        self.list_scalars = []
+        # Get thermal scalar and model
+
         thm = ThermalScalarModel(self.case)
         tsn = thm.getThermalScalarName()
         self.tsm = thm.getThermalScalarModel()
+
+        # If thermal model enabled, add thermal conductivity and specific heat
+
+        if self.tsm != "off":
+            self.lst.extend([('specific_heat', 'Cp'), \
+                             ('thermal_conductivity', 'Al')])
+            self.node_heat = self.setNewFluidProperty(self.node_fluid, \
+                                                      'specific_heat')
+            self.node_cond = self.setNewFluidProperty(self.node_fluid, \
+                                                      'thermal_conductivity')
+            self.node_lst.extend([self.node_heat, self.node_cond])
+
+        # Define volume viscosity for compressible model
+
+        if self.node_comp['model'] not in [None, "off"]:
+            self.lst.append(('volume_viscosity', 'Viscv0'))
+            self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, \
+                                                           'volume_viscosity')
+            self.node_lst.append(self.node_vol_visc)
+
+        # Define dynamic diffusion for reactive flow
+        elif self.node_coal['model'] not in [None, "off"] \
+             or self.node_gas['model'] not in [None, "off"]:
+            self.lst.append(('dynamic_diffusion', 'Diftl0'))
+            self.node_dyn = self.setNewFluidProperty(self.node_fluid, \
+                                                     'dynamic_diffusion')
+            self.node_lst.append(self.node_dyn)
+
+        # Build scalars list
+
+        self.list_scalars = []
 
         if self.tsm == "temperature_celsius":
             self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (\xB0 C)")))
@@ -112,33 +141,28 @@ class FluidCharacteristicsModel(Variables, Model):
         for s in self.m_sca.getUserScalarNameList():
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
-        # Notebook
-        self.notebook = NotebookModel(self.case)
+        # Look for thermo tables
 
+        import code_saturne.cs_config as cs_config
+        cfg = cs_config.config()
+        self.freesteam = 0
+        if cfg.libs['freesteam'].have != "no":
+            self.freesteam = 1
+
+        self.coolprop = 0
+        if cfg.libs['coolprop'].have != "no":
+            self.coolprop = 1
+
+        # Notebook
+
+        self.notebook = NotebookModel(self.case)
 
 
     def __nodeFromTag(self, name):
         """
         Private method : return node with attibute name 'name'
         """
-        # no thermal model
-        self.nodeList = [self.node_density, self.node_viscosity]
-
-        # any thermal model enabled
-        if self.tsm != "off":
-           self.nodeList.extend([self.node_heat, self.node_cond])
-
-        # handle coal / gas combustion
-        if self.node_coal['model'] not in [None, "off"] \
-           or self.node_gas['model'] not in [None, "off"]:
-           self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
-           self.nodeList.append(self.node_dyn)
-        # or compressible
-        elif self.node_comp['model'] not in [None, "off"]:
-            self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, 'volume_viscosity')
-            self.nodeList.append(self.node_vol_visc)
-
-        for node in self.nodeList:
+        for node in self.node_lst:
             if node['name'] == name:
                 return node
 
