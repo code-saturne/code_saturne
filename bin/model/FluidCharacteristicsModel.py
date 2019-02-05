@@ -99,13 +99,13 @@ class FluidCharacteristicsModel(Variables, Model):
         self.list_scalars = []
         thm = ThermalScalarModel(self.case)
         tsn = thm.getThermalScalarName()
-        tsm = thm.getThermalScalarModel()
+        self.tsm = thm.getThermalScalarModel()
 
-        if tsm == "temperature_celsius":
+        if self.tsm == "temperature_celsius":
             self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (\xB0 C)")))
-        elif tsm == "temperature_kelvin":
+        elif self.tsm == "temperature_kelvin":
             self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (K)")))
-        elif tsm != "off":
+        elif self.tsm != "off":
             self.list_scalars.append((tsn, self.tr("Thermal scalar")))
 
         self.m_sca = DefineUserScalarsModel(self.case)
@@ -121,26 +121,22 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         Private method : return node with attibute name 'name'
         """
-        if self.node_coal['model'] != None and self.node_coal['model'] != 'off':
-            self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
-            self.nodeList = (self.node_density, self.node_viscosity,
-                             self.node_heat, self.node_cond, self.node_dyn)
+        # no thermal model
+        self.nodeList = [self.node_density, self.node_viscosity]
 
-        elif self.node_gas['model'] != None and self.node_gas['model'] != 'off':
-            self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
-            self.nodeList = (self.node_density, self.node_viscosity,
-                             self.node_heat, self.node_dyn)
+        # any thermal model enabled
+        if self.tsm != "off":
+           self.nodeList.extend([self.node_heat, self.node_cond])
 
-        elif self.node_comp['model'] != None and self.node_comp['model'] != 'off':
+        # handle coal / gas combustion
+        if self.node_coal['model'] not in [None, "off"] \
+           or self.node_gas['model'] not in [None, "off"]:
+           self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
+           self.nodeList.append(self.node_dyn)
+        # or compressible
+        elif self.node_comp['model'] not in [None, "off"]:
             self.node_vol_visc  = self.setNewFluidProperty(self.node_fluid, 'volume_viscosity')
-            self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
-            self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
-            self.nodeList = (self.node_density, self.node_viscosity,
-                             self.node_heat, self.node_vol_visc, self.node_dyn, self.node_cond)
-        else:
-            self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
-            self.nodeList = (self.node_density, self.node_viscosity,
-                             self.node_heat, self.node_cond)
+            self.nodeList.append(self.node_vol_visc)
 
         for node in self.nodeList:
             if node['name'] == name:
@@ -156,9 +152,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
         default['reference_pressure']    = 1.01325e+5
 
-        tsm = ThermalScalarModel(self.case).getThermalScalarModel()
-
-        if tsm == "temperature_celsius":
+        if self.tsm == "temperature_celsius":
            default['reference_temperature'] = 20.
         else:
            default['reference_temperature'] = 293.15
