@@ -127,6 +127,7 @@ _create_cdo_context(int     cdo_mode)
   /* Metadata related to each family of schemes */
   cc->vb_scheme_flag = 0;
   cc->vcb_scheme_flag = 0;
+  cc->eb_scheme_flag = 0;
   cc->fb_scheme_flag = 0;
   cc->hho_scheme_flag = 0;
 

@@ -161,6 +161,13 @@ _set_scheme_flags(cs_domain_t    *domain)
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
+    case CS_SPACE_SCHEME_CDOEB:
+      cc->eb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
+      assert(vardim == 3);
+      /* vardim should equal to 3 but each edge is associated a scalar-valued
+         quantity */
+      break;
+
     case CS_SPACE_SCHEME_CDOFB:
       cc->fb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
@@ -225,6 +232,10 @@ _set_scheme_flags(cs_domain_t    *domain)
 
     case CS_SPACE_SCHEME_CDOVCB:
       cc->vcb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
+      break;
+
+    case CS_SPACE_SCHEME_CDOEB:
+      cc->eb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
@@ -515,9 +526,10 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
      Update mesh structure with range set structures */
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
   domain->connect = cs_cdo_connect_init(domain->mesh,
+                                        cc->eb_scheme_flag,
+                                        cc->fb_scheme_flag,
                                         cc->vb_scheme_flag,
                                         cc->vcb_scheme_flag,
-                                        cc->fb_scheme_flag,
                                         cc->hho_scheme_flag);
 
   /* Build additional mesh quantities in a seperate structure */
@@ -540,16 +552,18 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
   cs_equation_common_init(domain->connect,
                           domain->cdo_quantities,
                           domain->time_step,
+                          cc->eb_scheme_flag,
+                          cc->fb_scheme_flag,
                           cc->vb_scheme_flag,
                           cc->vcb_scheme_flag,
-                          cc->fb_scheme_flag,
                           cc->hho_scheme_flag);
 
   /* Allocate matrix-related structures for the assembly stage */
   cs_equation_assemble_init(domain->connect,
+                            cc->eb_scheme_flag,
+                            cc->fb_scheme_flag,
                             cc->vb_scheme_flag,
                             cc->vcb_scheme_flag,
-                            cc->fb_scheme_flag,
                             cc->hho_scheme_flag);
 
   /* Set the range set structure for synchronization in parallel computing */
@@ -558,9 +572,10 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
   cs_equation_set_shared_structures(domain->connect,
                                     domain->cdo_quantities,
                                     domain->time_step,
+                                    cc->eb_scheme_flag,
+                                    cc->fb_scheme_flag,
                                     cc->vb_scheme_flag,
                                     cc->vcb_scheme_flag,
-                                    cc->fb_scheme_flag,
                                     cc->hho_scheme_flag);
 
 }

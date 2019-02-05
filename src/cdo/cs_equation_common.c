@@ -104,9 +104,10 @@ static const cs_time_step_t  *cs_shared_time_step;
  * \param[in]  connect      pointer to a cs_cdo_connect_t structure
  * \param[in]  quant        pointer to additional mesh quantities struct.
  * \param[in]  time_step    pointer to a time step structure
- * \param[in]  vb_flag      metadata for Vb schemes
- * \param[in]  vcb_flag     metadata for V+C schemes
- * \param[in]  fb_flag      metadata for Fb schemes
+ * \param[in]  eb_flag      metadata for Edge-based schemes
+ * \param[in]  fb_flag      metadata for Face-based schemes
+ * \param[in]  vb_flag      metadata for Vertex-based schemes
+ * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
  * \param[in]  hho_flag     metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
@@ -115,9 +116,10 @@ void
 cs_equation_common_init(const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *quant,
                         const cs_time_step_t         *time_step,
+                        cs_flag_t                     eb_flag,
+                        cs_flag_t                     fb_flag,
                         cs_flag_t                     vb_flag,
                         cs_flag_t                     vcb_flag,
-                        cs_flag_t                     fb_flag,
                         cs_flag_t                     hho_flag)
 {
   assert(connect != NULL && quant != NULL); /* Sanity check */
@@ -128,6 +130,7 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
   const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  n_faces = connect->n_faces[0];
   const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_lnum_t  n_edges = connect->n_edges;
 
   /* Allocate shared buffer and initialize shared structures */
   size_t  cwb_size = n_cells; /* initial cell-wise buffer size */
@@ -157,6 +160,18 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
     } /* vector-valued equations */
 
   } /* Vertex-based schemes and related ones */
+
+  if (eb_flag > 0) {
+
+    if (eb_flag & CS_FLAG_SCHEME_VECTOR) {
+
+      cwb_size *= 3; /* 3*n_cells by default */
+      if (eb_flag & CS_FLAG_SCHEME_VECTOR)
+        cwb_size = CS_MAX(cwb_size, (size_t)n_edges);
+
+    } /* vector-valued equations */
+
+  } /* Edge-based schemes */
 
   if (fb_flag > 0 || hho_flag > 0) {
 

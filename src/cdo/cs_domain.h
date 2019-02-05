@@ -73,6 +73,7 @@ typedef struct {
 
   /* Flag to know if scalar or vector equations are requested and which kind
      of numerical schemes is requested to solve these equations */
+  cs_flag_t                 eb_scheme_flag;
   cs_flag_t                 fb_scheme_flag;
   cs_flag_t                 vb_scheme_flag;
   cs_flag_t                 vcb_scheme_flag;

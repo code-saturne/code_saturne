@@ -70,6 +70,7 @@ cs_param_space_scheme_name[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
   { N_("Legacy Finite Volume"),
     N_("CDO vertex-based"),
     N_("CDO vertex+cell-based"),
+    N_("CDO edge-based"),
     N_("CDO face-based"),
     N_("HHO-P0"),
     N_("HHO-P1"),

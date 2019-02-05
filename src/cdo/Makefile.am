@@ -59,6 +59,7 @@ cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_time.h \
 cs_cdofb_ac.h \
+cs_cdoeb_vecteq.h \
 cs_cdofb_monolithic.h \
 cs_cdofb_navsto.h \
 cs_cdofb_predco.h \
@@ -123,6 +124,7 @@ cs_cdo_local.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \
 cs_cdo_time.c \
+cs_cdoeb_vecteq.c \
 cs_cdofb_ac.c \
 cs_cdofb_monolithic.c \
 cs_cdofb_navsto.c \

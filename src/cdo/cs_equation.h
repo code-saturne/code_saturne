@@ -413,9 +413,10 @@ cs_equation_set_sles(void);
  * \param[in]  connect          pointer to a cs_cdo_connect_t structure
  * \param[in]  quant            pointer to additional mesh quantities struct.
  * \param[in]  time_step        pointer to a time step structure
+ * \param[in]  eb_scheme_flag   metadata for Eb schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
  * \param[in]  vb_scheme_flag   metadata for Vb schemes
  * \param[in]  vcb_scheme_flag  metadata for V+C schemes
- * \param[in]  fb_scheme_flag   metadata for Fb schemes
  * \param[in]  hho_scheme_flag  metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
@@ -424,9 +425,10 @@ void
 cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
                                   const cs_cdo_quantities_t   *quant,
                                   const cs_time_step_t        *time_step,
+                                  cs_flag_t                    eb_scheme_flag,
+                                  cs_flag_t                    fb_scheme_flag,
                                   cs_flag_t                    vb_scheme_flag,
                                   cs_flag_t                    vcb_scheme_flag,
-                                  cs_flag_t                    fb_scheme_flag,
                                   cs_flag_t                    hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/

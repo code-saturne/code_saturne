@@ -425,8 +425,9 @@ typedef struct {
  * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
  *   Enable a better accuracy. (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP)
  * - "cip_cw" --> means "continuous interior penalty" (only for CDOVCB schemes).
- *   Enable a better accuracy. Consider a cellwise approximation of the advection
- *   field (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW)
+ *   Enable a better accuracy.
+ *   Consider a cellwise approximation of the advection field.
+ *   (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW)
  *
  * \var CS_EQKEY_ADV_UPWIND_PORTION
  * Value between 0 and 1 specifying the portion of upwind added to a centered
@@ -610,6 +611,7 @@ typedef struct {
  * - "cdo_vb"  for CDO vertex-based scheme
  * - "cdo_vcb" for CDO vertex+cell-based scheme
  * - "cdo_fb"  for CDO face-based scheme
+ * - "cdo_eb"  for CDO edge-based scheme
  * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
  * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
  *

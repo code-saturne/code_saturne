@@ -863,6 +863,12 @@ _set_key(const char            *label,
       eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
     }
+    else if (strcmp(keyval, "cdo_eb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOEB;
+      eqp->space_poly_degree = 0;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_FPED;
+    }
+
     /* Only diffusion is implemented for HHO schemes up to now */
     else if (strcmp(keyval, "hho_p0") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;

@@ -969,18 +969,20 @@ cs_equation_assemble_get(int    t_id)
  *
  * \param[in]  connect      pointer to a cs_cdo_connect_t structure
  * \param[in]  time_step    pointer to a time step structure
- * \param[in]  vb_flag      metadata for Vb schemes
- * \param[in]  vcb_flag     metadata for V+C schemes
- * \param[in]  fb_flag      metadata for Fb schemes
+ * \param[in]  eb_flag      metadata for Edge-based schemes
+ * \param[in]  fb_flag      metadata for Face-based schemes
+ * \param[in]  vb_flag      metadata for Vertex-based schemes
+ * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
  * \param[in]  hho_flag     metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
+                          cs_flag_t                     eb_flag,
+                          cs_flag_t                     fb_flag,
                           cs_flag_t                     vb_flag,
                           cs_flag_t                     vcb_flag,
-                          cs_flag_t                     fb_flag,
                           cs_flag_t                     hho_flag)
 {
   assert(connect != NULL); /* Sanity check */
@@ -1004,8 +1006,13 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
   const cs_lnum_t  n_faces = connect->n_faces[0];
   const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_lnum_t  n_edges = connect->n_edges;
 
-  /* Allocate shared buffer and initialize shared structures */
+  /* Allocate shared buffer and initialize shared structures
+     Number max of DoFs at the cell level: n_max_cw_dofs
+     Greatest dimension of the diagonal block: max_ddim
+     Greatest dimension of the extra-diagonal block: max_edim
+   */
   int  n_max_cw_dofs = 0, max_ddim = 1, max_edim = 1;
 
   /* Allocate and initialize matrix assembler and matrix structures */
@@ -1013,6 +1020,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
     const cs_adjacency_t  *v2v = connect->v2v;
 
+    assert(v2v != NULL);
     n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_vbyc);
 
     if (vb_flag & CS_FLAG_SCHEME_SCALAR || vcb_flag & CS_FLAG_SCHEME_SCALAR) {
@@ -1022,8 +1030,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
       /* Build the matrix structure and the matrix assembler structure */
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
-      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
-                                                           1, v2v, rs);
+      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices, 1, v2v,
+                                                           rs);
       cs_matrix_structure_t  *ms
         = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
@@ -1033,7 +1041,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
 
-    } /* scalar-valued equations */
+    } /* scalar-valued DoFs */
 
     if (vb_flag & CS_FLAG_SCHEME_VECTOR || vcb_flag & CS_FLAG_SCHEME_VECTOR) {
 
@@ -1041,8 +1049,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
 
-      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
-                                                           3, connect->v2v, rs);
+      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices, 3, v2v,
+                                                           rs);
       cs_matrix_structure_t  *ms
         = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
@@ -1055,9 +1063,38 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
       max_ddim = CS_MAX(max_ddim, 3);
       max_edim = CS_MAX(max_edim, 3);
 
-    } /* vector-valued equations */
+    } /* vector-valued DoFs */
 
   } /* Vertex-based schemes and related ones */
+
+  /* Allocate and initialize matrix assembler and matrix structures */
+  if (eb_flag > 0) {
+
+    const cs_adjacency_t  *e2e = connect->e2e;
+
+    assert(e2e != NULL);
+    n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_ebyc);
+
+    if (eb_flag & CS_FLAG_SCHEME_SCALAR) {
+
+      t0 = cs_timer_time();
+
+      /* Build the matrix structure and the matrix assembler structure */
+      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
+
+      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_edges, 1, e2e, rs);
+      cs_matrix_structure_t  *ms
+        = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+      cs_equation_assemble_ma[CS_CDO_CONNECT_EDGE_SCAL] = ma;
+      cs_equation_assemble_ms[CS_CDO_CONNECT_EDGE_SCAL] = ms;
+
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
+
+    } /* scalar-valued DoFs */
+
+  } /* Edge-based schemes and related ones */
 
   if (fb_flag > 0 || hho_flag > 0) {
 

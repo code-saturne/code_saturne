@@ -291,9 +291,10 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
  * \param[in]  connect      pointer to a cs_cdo_connect_t structure
  * \param[in]  quant        pointer to additional mesh quantities struct.
  * \param[in]  time_step    pointer to a time step structure
- * \param[in]  vb_flag      metadata for Vb schemes
- * \param[in]  vcb_flag     metadata for V+C schemes
- * \param[in]  fb_flag      metadata for Fb schemes
+ * \param[in]  eb_flag      metadata for Edge-based schemes
+ * \param[in]  fb_flag      metadata for Face-based schemes
+ * \param[in]  vb_flag      metadata for Vertex-based schemes
+ * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
  * \param[in]  hho_flag     metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
@@ -302,9 +303,10 @@ void
 cs_equation_common_init(const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *quant,
                         const cs_time_step_t         *time_step,
+                        cs_flag_t                     eb_flag,
+                        cs_flag_t                     fb_flag,
                         cs_flag_t                     vb_flag,
                         cs_flag_t                     vcb_flag,
-                        cs_flag_t                     fb_flag,
                         cs_flag_t                     hho_flag);
 
 /*----------------------------------------------------------------------------*/

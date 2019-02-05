@@ -106,6 +106,9 @@ typedef void
  * \var CS_SPACE_SCHEME_CDOVCB
  * CDO scheme with vertex+cell-based positionning
  *
+ * \var CS_SPACE_SCHEME_CDOEB
+ * CDO scheme with edge-based positionning
+ *
  * \var CS_SPACE_SCHEME_CDOFB
  * CDO scheme with face-based positionning
  *
@@ -127,6 +130,7 @@ typedef enum {
   CS_SPACE_SCHEME_LEGACY,
   CS_SPACE_SCHEME_CDOVB,
   CS_SPACE_SCHEME_CDOVCB,
+  CS_SPACE_SCHEME_CDOEB,
   CS_SPACE_SCHEME_CDOFB,
   CS_SPACE_SCHEME_HHO_P0,
   CS_SPACE_SCHEME_HHO_P1,

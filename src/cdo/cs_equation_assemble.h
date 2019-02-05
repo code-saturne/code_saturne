@@ -111,18 +111,21 @@ cs_equation_assemble_get(int    t_id);
  *         the type of discretization used for this simulation
  *
  * \param[in]  connect      pointer to a cs_cdo_connect_t structure
- * \param[in]  vb_flag      metadata for Vb schemes
- * \param[in]  vcb_flag     metadata for V+C schemes
- * \param[in]  fb_flag      metadata for Fb schemes
+ * \param[in]  time_step    pointer to a time step structure
+ * \param[in]  eb_flag      metadata for Edge-based schemes
+ * \param[in]  fb_flag      metadata for Face-based schemes
+ * \param[in]  vb_flag      metadata for Vertex-based schemes
+ * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
  * \param[in]  hho_flag     metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
+                          cs_flag_t                     eb_flag,
+                          cs_flag_t                     fb_flag,
                           cs_flag_t                     vb_flag,
                           cs_flag_t                     vcb_flag,
-                          cs_flag_t                     fb_flag,
                           cs_flag_t                     hho_flag);
 
 /*----------------------------------------------------------------------------*/

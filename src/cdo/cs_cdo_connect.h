@@ -50,18 +50,20 @@ BEGIN_C_DECLS
 /* Main categories to consider for high-level structures
    Remark: scalar-valued HHO-P1 and vector-valued CDO-Fb shares the same
    structures
+   DoF = Degrees of Freedom
 */
-#define CS_CDO_CONNECT_VTX_SCAL   0 /* Vb or VCb scalar-valued eq. */
-#define CS_CDO_CONNECT_VTX_VECT   1 /* Vb or VCb vector-valued eq. */
-#define CS_CDO_CONNECT_FACE_SP0   2 /* Fb or HHO-P0 scalar-valued eq. */
-#define CS_CDO_CONNECT_FACE_VP0   3 /* Fb vector-valued eq. */
+#define CS_CDO_CONNECT_VTX_SCAL   0 /* Vb or VCb scalar-valued DoF */
+#define CS_CDO_CONNECT_VTX_VECT   1 /* Vb or VCb vector-valued DoF */
+#define CS_CDO_CONNECT_FACE_SP0   2 /* Fb or HHO-P0 scalar-valued DoF */
+#define CS_CDO_CONNECT_FACE_VP0   3 /* Fb vector-valued DoF */
 #define CS_CDO_CONNECT_FACE_SP1   3 /* HHO-P1 scalar-valued */
-#define CS_CDO_CONNECT_FACE_SP2   4 /* HHO-P2 scalar-valued eq. */
-#define CS_CDO_CONNECT_FACE_VHP0  3 /* HHO-P0 vector-valued eq. */
-#define CS_CDO_CONNECT_FACE_VHP1  5 /* HHO-P1 vector-valued eq. */
-#define CS_CDO_CONNECT_FACE_VHP2  6 /* HHO-P2 vector-valued eq. */
+#define CS_CDO_CONNECT_FACE_SP2   4 /* HHO-P2 scalar-valued DoF */
+#define CS_CDO_CONNECT_FACE_VHP0  3 /* HHO-P0 vector-valued DoF */
+#define CS_CDO_CONNECT_FACE_VHP1  5 /* HHO-P1 vector-valued DoF */
+#define CS_CDO_CONNECT_FACE_VHP2  6 /* HHO-P2 vector-valued DoF */
+#define CS_CDO_CONNECT_EDGE_SCAL  7 /* Eb scalar-valued DoF */
 
-#define CS_CDO_CONNECT_N_CASES    7
+#define CS_CDO_CONNECT_N_CASES    8
 
 /* Additional macros */
 #define CS_TRIANGLE_CASE          3 /* Number of vertices in a triangle */
@@ -110,9 +112,10 @@ typedef struct {
   int  n_max_v2fc;   /* max. number of faces connected to a vertex in a cell */
   int  n_max_v2ec;   /* max. number of edges connected to a vertex in a cell */
 
-  /* Adjacency related to most of the linear systems */
+  /* Adjacency related to linear systems (allocated only if needed) */
   cs_adjacency_t       *v2v;    /* vertex to vertices through cells */
   cs_adjacency_t       *f2f;    /* face to faces through cells */
+  cs_adjacency_t       *e2e;    /* edge to edges through cells */
 
   /* Structures to handle parallelism/assembler */
   cs_range_set_t       *range_sets[CS_CDO_CONNECT_N_CASES];
@@ -171,11 +174,12 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
  *        cs_range_set_t structure related to vertices is shared the cs_mesh_t
  *        structure (the global one)
  *
- * \param[in, out]  mesh             pointer to a cs_mesh_t structure
- * \param[in]       vb_scheme_flag   metadata for Vb schemes
- * \param[in]       vcb_scheme_flag  metadata for V+C schemes
- * \param[in]       fb_scheme_flag   metadata for Fb schemes
- * \param[in]       hho_scheme_flag  metadata for HHO schemes
+ * \param[in, out]  mesh              pointer to a cs_mesh_t structure
+ * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]       fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ * \param[in]       hho_scheme_flag   metadata for HHO schemes
  *
  * \return  a pointer to a cs_cdo_connect_t structure
  */
@@ -183,9 +187,10 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
 
 cs_cdo_connect_t *
 cs_cdo_connect_init(cs_mesh_t      *mesh,
+                    cs_flag_t       eb_scheme_flag,
+                    cs_flag_t       fb_scheme_flag,
                     cs_flag_t       vb_scheme_flag,
                     cs_flag_t       vcb_scheme_flag,
-                    cs_flag_t       fb_scheme_flag,
                     cs_flag_t       hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/

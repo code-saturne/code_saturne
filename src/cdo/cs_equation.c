@@ -50,6 +50,7 @@
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovb_vecteq.h"
 #include "cs_cdovcb_scaleq.h"
+#include "cs_cdoeb_vecteq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_equation_bc.h"
@@ -1322,9 +1323,10 @@ cs_equation_set_sles(void)
  * \param[in]  connect          pointer to a cs_cdo_connect_t structure
  * \param[in]  quant            pointer to additional mesh quantities struct.
  * \param[in]  time_step        pointer to a time step structure
+ * \param[in]  eb_scheme_flag   metadata for Eb schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
  * \param[in]  vb_scheme_flag   metadata for Vb schemes
  * \param[in]  vcb_scheme_flag  metadata for V+C schemes
- * \param[in]  fb_scheme_flag   metadata for Fb schemes
  * \param[in]  hho_scheme_flag  metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
@@ -1333,9 +1335,10 @@ void
 cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
                                   const cs_cdo_quantities_t   *quant,
                                   const cs_time_step_t        *time_step,
+                                  cs_flag_t                    eb_scheme_flag,
+                                  cs_flag_t                    fb_scheme_flag,
                                   cs_flag_t                    vb_scheme_flag,
                                   cs_flag_t                    vcb_scheme_flag,
-                                  cs_flag_t                    fb_scheme_flag,
                                   cs_flag_t                    hho_scheme_flag)
 {
   if (vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
@@ -1352,7 +1355,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
       if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
         cs_cdovcb_scaleq_init_common(quant, connect, time_step, ms);
 
-    } /* scalar-valued */
+    } /* scalar-valued DoFs */
 
     if (vb_scheme_flag  & CS_FLAG_SCHEME_VECTOR ||
         vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
@@ -1363,11 +1366,24 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
       if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
         cs_cdovb_vecteq_init_common(quant, connect, time_step, ms);
 
-      /* TODO: VCb schemes */
+      /* TODO: VCb schemes DoFs */
 
-    } /* vector-valued */
+    } /* vector-valued DoFs */
 
   } /* Vertex-based class of discretization schemes */
+
+  if (eb_scheme_flag > 0) {
+
+    if (eb_scheme_flag  & CS_FLAG_SCHEME_SCALAR) {
+
+      cs_matrix_structure_t  *ms
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_EDGE_SCAL);
+
+      cs_cdoeb_vecteq_init_common(quant, connect, time_step, ms);
+
+    } /* scalar-valued DoFs */
+
+  } /* Edge-based class of discretization schemes */
 
   if (fb_scheme_flag > 0 || hho_scheme_flag > 0) {
 
@@ -1379,7 +1395,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
 
       cs_cdofb_scaleq_init_common(quant, connect, time_step, ms);
 
-    } /* Scalar-valued CDO-Fb */
+    } /* Scalar-valued CDO-Fb DoFs */
 
     if (cs_flag_test(fb_scheme_flag,
                      CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
@@ -1389,7 +1405,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
 
       cs_cdofb_vecteq_init_common(quant, connect, time_step, ms);
 
-    } /* Vector-valued CDO-Fb */
+    } /* Vector-valued CDO-Fb DoFs */
 
     if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
@@ -1404,7 +1420,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
                                 quant, connect, time_step,
                                 ms0, ms1, ms2);
 
-    } /* Scalar-valued HHO schemes */
+    } /* Scalar-valued HHO schemes DoFs */
 
     if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
@@ -1419,7 +1435,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
                                 quant, connect, time_step,
                                 ms0, ms1, ms2);
 
-    } /* Vector-valued HHO schemes */
+    } /* Vector-valued HHO schemes DoFs */
 
   } /* Face-based class of discretization schemes */
 
@@ -2025,6 +2041,7 @@ cs_equation_create_fields(void)
     case CS_SPACE_SCHEME_CDOVCB:
       location_id = cs_mesh_location_get_id_by_name("vertices");
       break;
+    case CS_SPACE_SCHEME_CDOEB:
     case CS_SPACE_SCHEME_CDOFB:
     case CS_SPACE_SCHEME_HHO_P0:
     case CS_SPACE_SCHEME_HHO_P1:

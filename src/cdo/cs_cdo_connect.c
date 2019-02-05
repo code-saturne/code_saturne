@@ -41,6 +41,8 @@
 
 #include "bft_mem.h"
 
+#include "fvm_io_num.h"
+
 #include "cs_flag.h"
 #include "cs_log.h"
 #include "cs_mesh_adjacencies.h"
@@ -302,6 +304,38 @@ _build_f2f_through_cell(const cs_cdo_connect_t     *connect)
   cs_adjacency_remove_self_entries(f2f);
 
   return f2f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a connectivity edge -> edges through cells
+ *
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_adjacency_t *
+_build_e2e_through_cell(const cs_cdo_connect_t     *connect)
+{
+  const cs_lnum_t  n_edges = connect->n_edges;
+
+  /* Build a edge -> edge connectivity */
+  cs_adjacency_t  *e2c = cs_adjacency_transpose(n_edges, connect->c2e);
+  assert(e2c != NULL);
+  cs_adjacency_t  *e2e = cs_adjacency_compose(n_edges, e2c, connect->c2e);
+
+  cs_adjacency_sort(e2e);
+
+  /* Update index (e2e has a diagonal entry. We remove it since we have in
+     mind an index structure for a matrix stored using the MSR format */
+  cs_adjacency_remove_self_entries(e2e);
+
+  /* Free temporary buffers */
+  cs_adjacency_destroy(&e2c);
+
+  return e2e;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -607,6 +641,100 @@ _build_cell_type_and_flag(cs_cdo_connect_t   *connect)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate and define a \ref cs_range_set_t structure and a
+ *        \ref cs_interface_set_t structure for schemes with DoFs at edges.
+ *
+ * \param[in]       mesh          pointer to a cs_mesh_t structure
+ * \param[in]       n_faces       number of faces (interior + border)
+ * \param[in]       n_face_dofs   number of DoFs per face
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_assign_edge_ifs_rs(const cs_mesh_t       *mesh,
+                    cs_cdo_connect_t      *connect,
+                    int                    stride,
+                    cs_interface_set_t   **p_ifs,
+                    cs_range_set_t       **p_rs)
+{
+  assert(stride == 1); /* Up to now, only sscalar-valued edge DoFs are
+                          handled */
+
+  const cs_lnum_t  n_edges = connect->n_edges;
+  cs_gnum_t n_g_edges = n_edges;
+  cs_gnum_t *edge_gnum = NULL;
+
+  BFT_MALLOC(edge_gnum, n_edges, cs_gnum_t);
+
+  if (cs_glob_n_ranks > 1) {
+
+    const cs_adjacency_t  *e2v = connect->e2v;
+
+    /* Build global edge numbering and edges interface */
+
+    cs_gnum_t *g_e_vtx = NULL;
+    BFT_MALLOC(g_e_vtx, n_edges*2, cs_gnum_t);
+
+    for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+
+      cs_gnum_t  *v_gids = g_e_vtx + 2*e_id;
+      const cs_lnum_t  *_v_ids = e2v->ids + 2*e_id;
+      const cs_gnum_t v0_gid = mesh->global_vtx_num[_v_ids[0]];
+      const cs_gnum_t v1_gid = mesh->global_vtx_num[_v_ids[1]];
+
+      if (v0_gid < v1_gid)
+        v_gids[0] = v0_gid, v_gids[1] = v1_gid;
+      else
+        v_gids[0] = v1_gid, v_gids[1] = v0_gid;
+
+    } /* Loop on edges */
+
+    fvm_io_num_t *edge_io_num
+      = fvm_io_num_create_from_adj_s(NULL, g_e_vtx, n_edges, 2);
+
+    BFT_FREE(g_e_vtx);
+
+    const cs_gnum_t *_g_num =  fvm_io_num_get_global_num(edge_io_num);
+    memcpy(edge_gnum, _g_num, n_edges*sizeof(cs_gnum_t));
+
+    edge_io_num = fvm_io_num_destroy(edge_io_num);
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_edges > CS_THR_MIN)
+    for (cs_gnum_t i = 0; i < n_g_edges; i++) edge_gnum[i] = i + 1;
+
+  } /* Sequential or parallel run */
+
+  /* Do not consider periodicity up to now. Should split the face interface
+     into interior and border faces to do this, since only boundary faces
+     can be associated to a periodicity */
+  cs_interface_set_t  *ifs = cs_interface_set_create(n_edges,
+                                                     NULL,
+                                                     edge_gnum,
+                                                     mesh->periodicity,
+                                                     0,
+                                                     NULL, NULL, NULL);
+
+  cs_range_set_t  *rs = cs_range_set_create(ifs,   /* interface set */
+                                            NULL,  /* halo */
+                                            n_edges,
+                                            false, /* TODO: Ask Yvan */
+                                            0);    /* g_id_base */
+
+  /* Free memory */
+  BFT_FREE(edge_gnum);
+
+  /* Return pointers */
+  *p_ifs = ifs;
+  *p_rs = rs;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a \ref cs_range_set_t structure and a
  *        \ref cs_interface_set_t structure for schemes with DoFs at faces.
  *
  * \param[in]       mesh          pointer to a cs_mesh_t structure
@@ -783,11 +911,12 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
  *        cs_range_set_t structure related to vertices is shared the cs_mesh_t
  *        structure (the global one)
  *
- * \param[in, out]  mesh             pointer to a cs_mesh_t structure
- * \param[in]       vb_scheme_flag   metadata for Vb schemes
- * \param[in]       vcb_scheme_flag  metadata for V+C schemes
- * \param[in]       fb_scheme_flag   metadata for Fb schemes
- * \param[in]       hho_scheme_flag  metadata for HHO schemes
+ * \param[in, out]  mesh              pointer to a cs_mesh_t structure
+ * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]       fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ * \param[in]       hho_scheme_flag   metadata for HHO schemes
  *
  * \return  a pointer to a cs_cdo_connect_t structure
  */
@@ -795,9 +924,10 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
 
 cs_cdo_connect_t *
 cs_cdo_connect_init(cs_mesh_t      *mesh,
+                    cs_flag_t       eb_scheme_flag,
+                    cs_flag_t       fb_scheme_flag,
                     cs_flag_t       vb_scheme_flag,
                     cs_flag_t       vcb_scheme_flag,
-                    cs_flag_t       fb_scheme_flag,
                     cs_flag_t       hho_scheme_flag)
 {
   cs_timer_t t0 = cs_timer_time();
@@ -870,6 +1000,11 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   else
     connect->f2f = NULL;
 
+  if (eb_scheme_flag > 0)
+    connect->e2e = _build_e2e_through_cell(connect);
+  else
+    connect->e2e = NULL;
+
   /* Members to handle assembly process and parallel sync. */
   for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++) {
     connect->range_sets[i] = NULL;
@@ -940,6 +1075,12 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
     _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_2ND,
                         connect->interfaces + CS_CDO_CONNECT_FACE_VHP2,
                         connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
+
+  /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
+  if (eb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+    _assign_edge_ifs_rs(mesh, connect, 1,
+                        connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL,
+                        connect->range_sets + CS_CDO_CONNECT_EDGE_SCAL);
 
   /* Build the cell flag and associate a cell type to each cell */
   _build_cell_type_and_flag(connect);
