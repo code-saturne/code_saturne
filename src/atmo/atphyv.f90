@@ -29,7 +29,7 @@
 !>
 
 !-------------------------------------------------------------------------------
-subroutine atphyv ()
+subroutine atphyv
 
 !===============================================================================
 ! Module files
@@ -473,4 +473,3 @@ call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
 
 end subroutine grad_qw
 end subroutine atphyv
-
