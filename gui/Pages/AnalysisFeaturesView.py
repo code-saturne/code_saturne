@@ -343,16 +343,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             elif gas != 'off':
                 self.gas.setGasCombustionModel('off')
                 gas = 'off'
-            elif joule != 'off':
-                self.elect.setElectricalModel('off')
-                joule = 'off'
 
             self.radioButtonReactiveFlows.setEnabled(False)
-            self.radioButtonJouleEffect.setEnabled(False)
-
         else:
             self.radioButtonReactiveFlows.setEnabled(True)
-            self.radioButtonJouleEffect.setEnabled(True)
 
         # Set combobox values
 
