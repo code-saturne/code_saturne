@@ -315,9 +315,9 @@ class GasCombustionModel(Variables, Model):
 
             NPE = NumericalParamEquationModel(self.case)
             for node in self.node_gas.xmlGetChildNodeList('variable'):
-                NPE.setBlendingFactor(node['label'], 0.)
-                NPE.setScheme(node['label'], 'upwind')
-                NPE.setFluxReconstruction(node['label'], 'off')
+                NPE.setBlendingFactor(node['name'], 0.)
+                NPE.setScheme(node['name'], 'upwind')
+                NPE.setFluxReconstruction(node['name'], 'off')
 
 
     @Variables.noUndo
