@@ -54,7 +54,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, RegExpValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Species import Ui_Species
-from SpeciesModel import SpeciesModel
+from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
 #-------------------------------------------------------------------------------

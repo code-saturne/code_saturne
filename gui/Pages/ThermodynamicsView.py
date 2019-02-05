@@ -67,7 +67,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from Thermodynamics import Ui_Thermodynamics
-from ThermodynamicsModel import *
+from code_saturne.model.ThermodynamicsModel import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.OutputFieldsModel import OutputFieldsModel

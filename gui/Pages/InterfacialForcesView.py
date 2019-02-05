@@ -58,7 +58,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, to_qvariant, from_qvariant, to_text_string
 from InterfacialForces import Ui_InterfacialForces
-from InterfacialForcesModel import InterfacialForcesModel
+from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 
 #-------------------------------------------------------------------------------
 # log config

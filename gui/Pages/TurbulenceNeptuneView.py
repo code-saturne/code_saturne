@@ -55,7 +55,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from TurbulenceNeptune import Ui_Turbulence
-from TurbulenceNeptuneModel import TurbulenceModel, TurbulenceModelsDescription
+from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel, TurbulenceModelsDescription
 
 #-------------------------------------------------------------------------------
 # log config

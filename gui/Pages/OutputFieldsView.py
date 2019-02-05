@@ -56,7 +56,7 @@ from code_saturne.Base.QtPage import ComboModel, RegExpValidator, PYQT_API_1
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from OutputFields import Ui_OutputFields
-from OutputFieldsModel import *
+from code_saturne.model.OutputFieldsModel import *
 
 #-------------------------------------------------------------------------------
 # log config
