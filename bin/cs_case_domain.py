@@ -601,12 +601,15 @@ class domain(base_domain):
         if self.param != None:
             from model.XMLengine import Case
             from model.XMLinitialize import XMLinit
+            from code_saturne.model.SolutionDomainModel import getRunType
 
             fp = os.path.join(self.data_dir, self.param)
             case = Case(package=self.package, file_name=fp)
             case['xmlfile'] = fp
             case.xmlCleanAllBlank(case.xmlRootNode())
-            XMLinit(case).initialize()
+
+            prepro = (getRunType(case) != 'standard')
+            XMLinit(case).initialize(prepro)
             case.xmlSaveDocument()
 
             case['case_path'] = self.exec_dir
