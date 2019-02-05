@@ -746,17 +746,18 @@ class mei_to_c_interpreter:
                 if len(boundary.sca_model.getThermalScalarName()) > 0:
                     scalar_list.append(boundary.sca_model.getThermalScalarName()[0])
 
-                for sca in scalar_list:
-                    c = boundary.getScalarChoice(sca)
-                    if '_formula' in c:
-                        exp = boundary.getScalarFormula(sca, c)
-                        if c == 'dirichlet_formula':
-                            req = [sca]
-                        elif c == 'neumann_formula':
-                            req = ['flux']
-                        else:
-                            req = [sca, 'hc']
-                        self.init_bnd_block(exp, req, sca, zone._label, c)
+                if zone._nature != 'free_inlet_outlet':
+                  for sca in scalar_list:
+                      c = boundary.getScalarChoice(sca)
+                      if '_formula' in c:
+                          exp = boundary.getScalarFormula(sca, c)
+                          if c == 'dirichlet_formula':
+                              req = [sca]
+                          elif c == 'neumann_formula':
+                              req = ['flux']
+                          else:
+                              req = [sca, 'hc']
+                          self.init_bnd_block(exp, req, sca, zone._label, c)
 
     #---------------------------------------------------------------------------
 
