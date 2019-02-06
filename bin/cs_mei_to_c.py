@@ -345,11 +345,23 @@ class mei_to_c_interpreter:
 
         exp_lines = expression.split("\n")
         for l in exp_lines:
+            lidx = exp_lines.index(l)
             if len(l) > 0:
                 lf = l.split('=')
-                if len(lf) > 1 and lf[0].rstrip() not in known_symbols:
-                    known_symbols.append(lf[0])
-                    l = 'const cs_real_t '+l
+                if len(lf) > 1 :
+                    if lf[0].rstrip() not in known_symbols:
+                        known_symbols.append(lf[0])
+                        l = 'const cs_real_t '+l
+
+                    elif lf[0].rstrip() == required[0][0]:
+                        l = 'f->val[c_id] = '+lf[1]
+
+                # Check for power functions
+                for elt in exp_lines_comp[lidx]:
+                    if "^" in elt:
+                        b, p = elt.split('^')
+                        new_l = 'pow(%s, %s)' % (b, p)
+                        l = l.replace(elt, new_l)
 
                 if l[:2] == 'if' and l[-1] != '{':
                     l = l + ' {'
@@ -374,8 +386,6 @@ class mei_to_c_interpreter:
             usr_code += '\n' + (ntabs-1)*tab + '}\n'
         else:
             usr_code += '\n'
-
-        usr_code = usr_code.replace(required[0][0], 'f->val[c_id]', 1)
 
         # Change comments symbol from # to //
         usr_code = usr_code.replace('#', '//')
@@ -520,11 +530,29 @@ class mei_to_c_interpreter:
         # Parse the Mathematical expression and generate the C block code
         exp_lines = expression.split("\n")
         for l in exp_lines:
+            lidx = exp_lines.index(l)
             if len(l) > 0:
                 lf = l.split('=')
-                if len(lf) > 1 and lf[0].rstrip() not in known_symbols:
-                    known_symbols.append(lf[0])
-                    l = 'const cs_real_t '+l
+                if len(lf) > 1:
+                    if lf[0].rstrip() not in known_symbols:
+                        known_symbols.append(lf[0])
+                        l = 'const cs_real_t '+l
+
+                    elif lf[0].rstrip() in required:
+                        ir = required.index(lf[0].rstrip())
+                        if need_for_loop:
+                            new_v = 'new_vals[%d * bz->n_faces + e_id]' % (ir)
+                        else:
+                            new_v = 'new_vals[%d]' % (ir)
+
+                        l = new_v + ' = ' + lf[1]
+
+                # Check for power functions
+                for elt in exp_lines_comp[lidx]:
+                    if "^" in elt:
+                        b, p = elt.split('^')
+                        new_l = 'pow(%s, %s)' % (b, p)
+                        l = l.replace(elt, new_l)
 
                 if l[:2] == 'if' and l[-1] != '{':
                     l = l + ' {'
@@ -552,14 +580,6 @@ class mei_to_c_interpreter:
 
         # Change comments symbol from # to //
         usr_code = usr_code.replace('#', '//')
-
-        for ir in range(len(required)):
-            if need_for_loop:
-                new_v = 'new_vals[%d * bz->n_faces + e_id]' % (ir)
-            else:
-                new_v = 'new_vals[%d]' % (ir)
-
-            usr_code = usr_code.replace(required[ir], new_v, 1)
 
         # Write the block
         block_cond  = tab + 'if (strcmp(field_name, "%s") == 0 &&\n' % (field_name)
