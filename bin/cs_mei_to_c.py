@@ -348,7 +348,7 @@ class mei_to_c_interpreter:
             lidx = exp_lines.index(l)
             if len(l) > 0:
                 lf = l.split('=')
-                if len(lf) > 1 :
+                if len(lf) > 1 and l[0] != "#":
                     if lf[0].rstrip() not in known_symbols:
                         known_symbols.append(lf[0])
                         l = 'const cs_real_t '+l
@@ -533,7 +533,7 @@ class mei_to_c_interpreter:
             lidx = exp_lines.index(l)
             if len(l) > 0:
                 lf = l.split('=')
-                if len(lf) > 1:
+                if len(lf) > 1 and l[0] != "#":
                     if lf[0].rstrip() not in known_symbols:
                         known_symbols.append(lf[0])
                         l = 'const cs_real_t '+l
