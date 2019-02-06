@@ -449,9 +449,6 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Timer statistics */
   cs_timer_stats_start(cs_cdo_ts_id);
 
-  /* Finalize user-defined extra operations */
-  cs_user_extra_operations_finalize(domain);
-
   /* Write a restart file if needed */
   cs_domain_write_restart(domain);
 
