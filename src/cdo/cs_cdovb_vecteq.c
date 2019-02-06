@@ -434,6 +434,73 @@ _vbv_advection_diffusion_reaction(double                         time_eval,
 #endif
   }
 
+  if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) { /* MASS MATRIX
+                                                  * =========== */
+
+    /* Build the mass matrix and store it in cb->hdg */
+    eqc->get_mass_matrix(eqc->hdg_mass, cm, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys)) {
+      cs_log_printf(CS_LOG_DEFAULT, ">> Cell mass matrix");
+      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
+    }
+#endif
+  }
+
+  if (cs_equation_param_has_reaction(eqp)) { /* REACTION TERM
+                                              * ============= */
+
+    if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
+
+      /* |c|*wvc = |dual_cell(v) cap c| */
+      assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+      const double  ptyc = cb->rpty_val * cm->vol_c;
+
+      /* Only the diagonal block and its diagonal entries are modified */
+      for (short int bi = 0; bi < cm->n_vc; bi++) {
+
+        const double  vpty = cm->wvc[bi] * ptyc;
+
+        /* Retrieve the 3x3 matrix */
+        cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, bi, bi);
+        assert(bii->n_rows == 3 && bii->n_cols == 3);
+
+        bii->val[0] += vpty;
+        bii->val[4] += vpty;
+        bii->val[8] += vpty;
+
+      }
+
+    }
+    else {
+
+      assert(cs_flag_test(eqb->sys_flag, CS_FLAG_SYS_MASS_MATRIX));
+
+      /* Add the local mass matrix (stored in cb->hdg) to the local system */
+      const cs_real_t  *mval = cb->hdg->val;
+      for (int bi = 0; bi < cm->n_vc; bi++) {
+        for (int bj = 0; bj < cm->n_vc; bj++) {
+
+          /* Retrieve the 3x3 matrix */
+          cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+          assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+          const cs_real_t  _val = cb->rpty_val * mval[cm->n_vc*bi+bj];
+          bij->val[0] += _val;
+          bij->val[4] += _val;
+          bij->val[8] += _val;
+
+        }
+      }
+
+    } /* Lumping or not lumping */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after adding reaction", csys);
+#endif
+  } /* Reaction term */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -919,15 +986,28 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_reaction(eqp)) {
 
-    if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ |
-        CS_CDO_LOCAL_HFQ;
-      eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid choice of algorithm for the reaction term.",
-                __func__);
+    if (eqp->do_lumping)
+      eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
+    else {
+
+      switch (eqp->reaction_hodge.algo) {
+
+      case CS_PARAM_HODGE_ALGO_VORONOI:
+        eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
+        break;
+      case CS_PARAM_HODGE_ALGO_WBS:
+        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
+          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid choice of algorithm for the reaction term.",
+                  __func__);
+        break;
+      }
+
+    } /* Lumping or not lumping */
 
   } /* Reaction */
 
@@ -936,18 +1016,28 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_time(eqp)) {
 
-    if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
+    if (eqp->do_lumping)
       eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
-    }
-    else if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      if (eqp->do_lumping)
+    else {
+
+      switch (eqp->time_hodge.algo) {
+
+      case CS_PARAM_HODGE_ALGO_VORONOI:
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
-      else {
-        eqb->msh_flag |= CS_CDO_LOCAL_PVQ|CS_CDO_LOCAL_DEQ|CS_CDO_LOCAL_PFQ |
-          CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        break;
+      case CS_PARAM_HODGE_ALGO_WBS:
+        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
+          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid choice of algorithm for the time term.",
+                  __func__);
+        break;
       }
-    }
+
+    } /* Lumping or not lumping */
 
   } /* Time part */
 
