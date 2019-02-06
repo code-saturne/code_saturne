@@ -379,31 +379,23 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
  *          stored in cb->hdg.
  *          Case of vector-valued CDO-Vb schemes
  *
- * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] fm          pointer to a facewise view of the mesh
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_vbv_advection_diffusion_reaction(double                         time_eval,
-                                  const cs_equation_param_t     *eqp,
+_vbv_advection_diffusion_reaction(const cs_equation_param_t     *eqp,
                                   const cs_equation_builder_t   *eqb,
                                   const cs_cdovb_vecteq_t       *eqc,
                                   const cs_cell_mesh_t          *cm,
-                                  cs_face_mesh_t                *fm,
                                   cs_cell_sys_t                 *csys,
                                   cs_cell_builder_t             *cb)
 {
-  CS_UNUSED(time_eval);
-  CS_UNUSED(fm);
-  CS_UNUSED(eqb);
-
   if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
                                                  * ============== */
 
@@ -1393,8 +1385,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed (stored it cb->hdg) */
-      _vbv_advection_diffusion_reaction(time_eval,
-                                        eqp, eqb, eqc, cm, fm, csys, cb);
+      _vbv_advection_diffusion_reaction(eqp, eqb, eqc, cm, csys, cb);
 
       if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
                                                     * =========== */
