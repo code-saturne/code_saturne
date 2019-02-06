@@ -220,6 +220,79 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add contribution related to the pressure if Nitsche's method for the
+ *         boundary conditions (Dirichlet or Sliding) is requested
+ *
+ * \param[in]       eqp         pointer to \ref cs_equation_param_t structure
+ * \param[in]       cm          pointer to \ref cs_cell_mesh_t structure
+ * \param[in]       prs_c       value of the pressure at the current cell
+ * \param[in, out]  csys        pointer to \ref cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_pressure_nitsche(const cs_equation_param_t *eqp,
+                                 const cs_cell_mesh_t      *cm,
+                                 const cs_real_t            prs_c,
+                                 cs_cell_sys_t             *csys)
+{
+  /* Boundary condition contribution to the algebraic system
+   * Operations that have to be performed BEFORE the static condensation */
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+
+    assert(cs_equation_param_has_diffusion(eqp));
+
+    /* Since the sliding BCs are based on the Nitsche method, the procedure is
+     * the same as in Dirichlet Nitsche. However, it is better to separate them
+     * in order to avoid errors if a cell has a sliding face and a Dirichlet one
+     * but not enforceed with the Nitsche technique
+     */
+
+    /* Nitsche's method for Dirichlet BCs */
+    if (csys->has_dirichlet &&
+        (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)) {
+      for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+        /* Get the boundary face in the cell numbering */
+        const short int  f = csys->_f_ids[i];
+
+        if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
+          const cs_quant_t pfq = cm->face[f];
+          const cs_real_t f_prs = pfq.meas * prs_c;
+          cs_real_t *f_rhs = csys->rhs + 3*f;
+          f_rhs[0] -= f_prs * pfq.unitv[0];
+          f_rhs[1] -= f_prs * pfq.unitv[1];
+          f_rhs[2] -= f_prs * pfq.unitv[2];
+        } /* If Dirichlet boundary face */
+
+      } /* Loop on boundary faces */
+    } /* Dirichlet face enforced with a Nitsche technique */
+
+    /* Sliding BCs */
+    if (csys->has_sliding) {
+      for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+        /* Get the boundary face in the cell numbering */
+        const short int  f = csys->_f_ids[i];
+
+        if (cs_cdo_bc_is_sliding(csys->bf_flag[f])) {
+          const cs_quant_t pfq = cm->face[f];
+          const cs_real_t f_prs = pfq.meas * prs_c;
+          cs_real_t *f_rhs = csys->rhs + 3*f;
+          f_rhs[0] -= f_prs * pfq.unitv[0];
+          f_rhs[1] -= f_prs * pfq.unitv[1];
+          f_rhs[2] -= f_prs * pfq.unitv[2];
+        } /* If sliding boundary face */
+
+      } /* Loop on boundary faces */
+    } /* Sliding */
+
+  } /* Boundary cell */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add the grad-div part to the local matrix (i.e. for the current
  *         cell)
  *
@@ -720,15 +793,15 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
 
     cs_real_t  *_rhs = csys->rhs + 3*f;
     for (int k = 0; k < 3; k++) {
-      mFF->val[4*k] += eqp->bc_penalization_coeff; /* 4 == mFF->n_rows + 1 */
-      _rhs[k] += _dir_val[k] * eqp->bc_penalization_coeff;
+      mFF->val[4*k] += eqp->strong_pena_bc_coeff; /* 4 == mFF->n_rows + 1 */
+      _rhs[k] += _dir_val[k] * eqp->strong_pena_bc_coeff;
     }
 
   }
   else {
 
     for (int k = 0; k < 3; k++)
-      mFF->val[4*k] += eqp->bc_penalization_coeff; /* 4 == mFF->n_rows + 1 */
+      mFF->val[4*k] += eqp->strong_pena_bc_coeff; /* 4 == mFF->n_rows + 1 */
 
   } /* Homogeneous BC */
 }
@@ -761,7 +834,6 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
-
   assert(cs_equation_param_has_diffusion(eqp));
   assert(h_info.is_iso == true);
 
@@ -787,7 +859,7 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
   /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
 
   /* coeff * \meas{f} / h_f  */
-  const cs_real_t pcoef = eqp->bc_penalization_coeff * sqrt(cm->face[f].meas);
+  const cs_real_t pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[f].meas);
 
   bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
 
@@ -841,7 +913,6 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
-
   assert(cs_equation_param_has_diffusion(eqp));
   assert(h_info.is_iso == true);
 
@@ -883,7 +954,7 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
   /* 3) Update the bc_op matrix and the RHS with the penalization */
 
   /* coeff * \meas{f} / h_f  */
-  const cs_real_t pcoef = eqp->bc_penalization_coeff * sqrt(cm->face[f].meas);
+  const cs_real_t pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[f].meas);
 
   bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
 
@@ -932,11 +1003,10 @@ cs_cdofb_symmetry(short int                       f,
                   cs_cell_builder_t              *cb,
                   cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
-
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
   assert(h_info.is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
 
@@ -968,7 +1038,7 @@ cs_cdofb_symmetry(short int                       f,
                                 {nf[2]*nf[0], nf[2]*nf[1], nf[2]*nf[2]} };
 
   /* chi * \meas{f} / h_f  */
-  const cs_real_t  pcoef = eqp->bc_penalization_coeff * sqrt(pfq.meas);
+  const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
 
   /* Handle the diagonal block: Retrieve the 3x3 matrix */
   cs_sdm_t  *bFF = cs_sdm_get_block(csys->mat, f, f);
@@ -1035,9 +1105,7 @@ cs_cdofb_fixed_wall(short int                       f,
                     cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(cb);
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cm != NULL && csys != NULL);  /* Sanity checks */
 
   const cs_quant_t  pfq = cm->face[f];
   const cs_real_t  *ni = pfq.unitv;
@@ -1046,7 +1114,7 @@ cs_cdofb_fixed_wall(short int                       f,
                                 ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
 
   /* chi * \meas{f} / h_f  */
-  const cs_real_t  pcoef = eqp->bc_penalization_coeff * sqrt(pfq.meas);
+  const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
 
   cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, f, f);
   assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);

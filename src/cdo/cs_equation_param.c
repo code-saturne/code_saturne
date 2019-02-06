@@ -77,8 +77,8 @@ BEGIN_C_DECLS
  * Local private variables
  *============================================================================*/
 
-static const cs_real_t  _bc_weak_penalization_coef_by_default = 50.;
-static const cs_real_t  _bc_strong_penalization_coef_by_default = 1e12;
+static const cs_real_t  _weak_pena_bc_coef_by_default = 100.;
+static const cs_real_t  _strong_pena_bc_coef_by_default = 1e12;
 
 static const char _err_empty_eqp[] =
   N_(" Stop setting an empty cs_equation_param_t structure.\n"
@@ -690,22 +690,13 @@ _set_key(const char            *label,
 
   case CS_EQKEY_BC_ENFORCEMENT:
     if (strcmp(keyval, "algebraic") == 0)
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-    else if (strcmp(keyval, "penalization") == 0) {
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
-      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = _bc_strong_penalization_coef_by_default;
-    }
-    else if (strcmp(keyval, "weak_sym") == 0) {
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
-      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = _bc_weak_penalization_coef_by_default;
-    }
-    else if (strcmp(keyval, "weak") == 0) {
-      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
-      if (eqp->bc_penalization_coeff < 0.) /* Set a default value */
-        eqp->bc_penalization_coeff = _bc_weak_penalization_coef_by_default;
-    }
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
+    else if (strcmp(keyval, "penalization") == 0)
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
+    else if (strcmp(keyval, "weak_sym") == 0)
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
+    else if (strcmp(keyval, "weak") == 0)
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -713,13 +704,22 @@ _set_key(const char            *label,
     }
     break;
 
-  case CS_EQKEY_BC_PENA_COEFF:
-    eqp->bc_penalization_coeff = atof(keyval);
-    if (eqp->bc_penalization_coeff < 0.)
+  case CS_EQKEY_BC_STRONG_PENA_COEFF:
+    eqp->strong_pena_bc_coeff = atof(keyval);
+    if (eqp->strong_pena_bc_coeff < 1.)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value of the penalization coefficient %5.3e\n"
+                " This should be positive and large.",
+                __func__, eqp->strong_pena_bc_coeff);
+    break;
+
+  case CS_EQKEY_BC_WEAK_PENA_COEFF:
+    eqp->weak_pena_bc_coeff = atof(keyval);
+    if (eqp->weak_pena_bc_coeff < 0.)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value of the penalization coefficient %5.3e\n"
                 " This should be positive.",
-                __func__, eqp->bc_penalization_coeff);
+                __func__, eqp->weak_pena_bc_coeff);
     break;
 
   case CS_EQKEY_BC_QUADRATURE:
@@ -892,10 +892,12 @@ cs_equation_create_param(const char            *name,
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
-  eqp->enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-  eqp->bc_penalization_coeff = -1; /* Not set */
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
+
+  eqp->default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
+  eqp->strong_pena_bc_coeff = _strong_pena_bc_coef_by_default;
+  eqp->weak_pena_bc_coeff = _weak_pena_bc_coef_by_default;
 
   /* Initial condition (zero value by default) */
   eqp->n_ic_defs = 0;
@@ -997,8 +999,8 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
   /* Boundary conditions structure */
   dst->default_bc = ref->default_bc;
-  dst->enforcement = ref->enforcement;
-  dst->bc_penalization_coeff = ref->bc_penalization_coeff;
+  dst->default_enforcement = ref->default_enforcement;
+  dst->strong_pena_bc_coeff = ref->strong_pena_bc_coeff;
   dst->n_bc_defs = ref->n_bc_defs;
   BFT_MALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
   for (int i = 0; i < ref->n_bc_defs; i++)

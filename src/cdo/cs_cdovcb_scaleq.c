@@ -483,8 +483,8 @@ _vcb_apply_weak_bc(cs_real_t                      time_eval,
         eqc->enforce_robin_bc(eqp, cm, fm, cb, csys);
       }
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-          eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+      if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+          eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
         eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
@@ -531,8 +531,8 @@ _vcb_enforce_values(const cs_equation_param_t     *eqp,
    * Operations that have to be performed AFTER the static condensation */
   if (csys->cell_flag > 0 && csys->has_dirichlet) {
 
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
       /* Strongly enforced Dirichlet BCs for cells attached to the boundary
          csys is updated inside (matrix and rhs) */
@@ -878,7 +878,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
   eqc->enforce_dirichlet = NULL;
-  switch (eqp->enforcement) {
+  switch (eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
     eqc->enforce_dirichlet = cs_cdo_diffusion_alge_dirichlet;
@@ -937,7 +937,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   }
   else {
 
-    if (eqp->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
+    if (eqp->default_enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
       eqb->sys_flag |= CS_FLAG_SYS_SYM; /* Algebraic system is symmetric */
 
   }
@@ -1678,8 +1678,8 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
         rhs[v] += tcoef * eqc->source_terms[v];
       memset(eqc->source_terms, 0, n_vertices * sizeof(cs_real_t));
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
-          eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+      if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
+          eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
 
         assert(eqc->vtx_bc_flag != NULL);
         for (cs_lnum_t v = 0; v < n_vertices; v++) {

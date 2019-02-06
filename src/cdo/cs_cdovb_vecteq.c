@@ -471,8 +471,8 @@ _vbv_apply_weak_bc(cs_real_t                      time_eval,
     if (cs_equation_param_has_diffusion(eqp)) {
 
       if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
           eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
@@ -516,8 +516,8 @@ _vbv_enforce_values(const cs_equation_param_t     *eqp,
 
     /* Boundary element (through either vertices or faces) */
 
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
 
       /* csys is updated inside (matrix and rhs) */
       eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
@@ -964,7 +964,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
   eqc->enforce_dirichlet = NULL;
-  switch (eqp->enforcement) {
+  switch (eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
     eqc->enforce_dirichlet = cs_cdo_diffusion_alge_block_dirichlet;
