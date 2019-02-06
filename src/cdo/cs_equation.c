@@ -1503,6 +1503,9 @@ cs_equation_assign_functions(void)
     else
       cs_equation_set_param(eqp, CS_EQKEY_TIME_SCHEME, "steady");
 
+    /* Apply the last modifications to the cs_equation_param_t structure */
+    cs_equation_param_last_stage(eqp);
+
     /* Set function pointers */
     switch(eqp->space_scheme) {
 

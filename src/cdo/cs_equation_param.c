@@ -403,57 +403,134 @@ _set_key(const char            *label,
 
   switch(key) {
 
-  case CS_EQKEY_SPACE_SCHEME:
-    if (strcmp(keyval, "cdo_vb") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+  case CS_EQKEY_ADV_FORMULATION:
+    if (strcmp(keyval, "conservative") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
+    else if (strcmp(keyval, "non_conservative") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_ADV_FORMULATION");
     }
-    else if (strcmp(keyval, "cdo_vcb") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
-      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-    }
-    else if (strcmp(keyval, "cdo_fb") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->diffusion_hodge.coef = 1./sqrt(3.); /* SUSHI algo. */
-    }
-    /* Only diffusion is implemented for HHO schemes up to now */
-    else if (strcmp(keyval, "hho_p0") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
-      eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-    }
-    else if (strcmp(keyval, "hho_p1") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
-      eqp->space_poly_degree = 1;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-    }
-    else if (strcmp(keyval, "hho_p2") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
-      eqp->space_poly_degree = 2;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+    break;
+
+  case CS_EQKEY_ADV_SCHEME:
+    if (strcmp(keyval, "upwind") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+    else if (strcmp(keyval, "samarskii") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
+    else if (strcmp(keyval, "sg") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
+    else if (strcmp(keyval, "centered") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
+    else if (strcmp(keyval, "mix_centered_upwind") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND;
+    else if (strcmp(keyval, "cip") == 0) {
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+      /* Automatically switch to a non-conservative formulation */
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
     }
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_SPACE_SCHEME");
+                emsg, __func__, label, _val, "CS_EQKEY_ADV_SCHEME");
     }
+    break;
+
+  case CS_EQKEY_ADV_UPWIND_PORTION:
+    eqp->upwind_portion = atof(keyval);
+    break;
+
+  case CS_EQKEY_AMG_TYPE:
+    if (strcmp(keyval, "none") == 0 || strcmp(keyval, "") == 0)
+      eqp->sles_param.amg_type = CS_PARAM_AMG_NONE;
+    else if (strcmp(keyval, "v_cycle") == 0) {
+      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_V;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
+    }
+    else if (strcmp(keyval, "k_cycle") == 0) {
+      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
+    }
+    else if (strcmp(keyval, "boomer") == 0) {
+      eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
+    }
+    else if (strcmp(keyval, "gamg") == 0) {
+      eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
+    }
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_AMG_TYPE");
+    }
+    break;
+
+  case CS_EQKEY_BC_ENFORCEMENT:
+    if (strcmp(keyval, "algebraic") == 0)
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
+    else if (strcmp(keyval, "penalization") == 0)
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
+    else if (strcmp(keyval, "weak_sym") == 0)
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
+    else if (strcmp(keyval, "weak") == 0)
+      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_BC_ENFORCEMENT");
+    }
+    break;
+
+  case CS_EQKEY_BC_QUADRATURE:
+    {
+      cs_quadrature_type_t  qtype = CS_QUADRATURE_NONE;
+
+      if (strcmp(keyval, "bary") == 0)
+        qtype = CS_QUADRATURE_BARY;
+      else if (strcmp(keyval, "bary_subdiv") == 0)
+        qtype = CS_QUADRATURE_BARY_SUBDIV;
+      else if (strcmp(keyval, "higher") == 0)
+        qtype = CS_QUADRATURE_HIGHER;
+      else if (strcmp(keyval, "highest") == 0)
+        qtype = CS_QUADRATURE_HIGHEST;
+      else {
+        const char *_val = keyval;
+        bft_error(__FILE__, __LINE__, 0,
+                  emsg, __func__, label, _val, "CS_EQKEY_BC_QUADRATURE");
+      }
+
+      for (int i = 0; i < eqp->n_bc_defs; i++)
+        cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
+
+    }
+    break;
+
+  case CS_EQKEY_BC_STRONG_PENA_COEFF:
+    eqp->strong_pena_bc_coeff = atof(keyval);
+    if (eqp->strong_pena_bc_coeff < 1.)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value of the penalization coefficient %5.3e\n"
+                " This should be positive and large.",
+                __func__, eqp->strong_pena_bc_coeff);
+    break;
+
+  case CS_EQKEY_BC_WEAK_PENA_COEFF:
+    eqp->weak_pena_bc_coeff = atof(keyval);
+    if (eqp->weak_pena_bc_coeff < 0.)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value of the penalization coefficient %5.3e\n"
+                " This should be positive.",
+                __func__, eqp->weak_pena_bc_coeff);
+    break;
+
+  case CS_EQKEY_DO_LUMPING:
+    if (strcmp(keyval, "true") == 0 || strcmp(keyval, "1") == 0)
+      eqp->do_lumping = true;
+    else
+      eqp->do_lumping = false;  /* Should be the default behavior */
     break;
 
   case CS_EQKEY_DOF_REDUCTION:
@@ -465,6 +542,22 @@ _set_key(const char            *label,
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, label, _val, "CS_EQKEY_DOF_REDUCTION");
+    }
+    break;
+
+  case CS_EQKEY_EXTRA_OP:
+    if (strcmp(keyval, "balance") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_BALANCE;
+    else if (strcmp(keyval, "peclet") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_PECLET;
+    else if (strcmp(keyval, "upwind_coef") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
+    else if (strcmp(keyval, "normal_flux") == 0)
+      eqp->process_flag |= CS_EQUATION_POST_NORMAL_FLUX;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_EXTRA_OP");
     }
     break;
 
@@ -519,42 +612,45 @@ _set_key(const char            *label,
     }
     break;
 
-  case CS_EQKEY_SOLVER_FAMILY:
-    if (strcmp(keyval, "cs") == 0)
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
-    else if (strcmp(keyval, "petsc") == 0)
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+  case CS_EQKEY_ITSOL:
+    if (strcmp(keyval, "amg") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_AMG;
+    else if (strcmp(keyval, "bicg") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_BICG;
+    else if (strcmp(keyval, "bicgstab2") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_BICGSTAB2;
+    else if (strcmp(keyval, "cg") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_CG;
+    else if (strcmp(keyval, "cr3") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_CR3;
+    else if (strcmp(keyval, "fcg") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_FCG;
+    else if (strcmp(keyval, "gmres") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_GMRES;
+    else if (strcmp(keyval, "jacobi") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_JACOBI;
+    else if (strcmp(keyval, "minres") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_SOLVER_FAMILY");
+                emsg, __func__, label, _val, "CS_EQKEY_ITSOL");
     }
     break;
 
-  case CS_EQKEY_AMG_TYPE:
-    if (strcmp(keyval, "none") == 0 || strcmp(keyval, "") == 0)
-      eqp->sles_param.amg_type = CS_PARAM_AMG_NONE;
-    else if (strcmp(keyval, "v_cycle") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_V;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
-    }
-    else if (strcmp(keyval, "k_cycle") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
-    }
-    else if (strcmp(keyval, "boomer") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
-    }
-    else if (strcmp(keyval, "gamg") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
-    }
-    else {
-      const char *_val = keyval;
-      bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_AMG_TYPE");
-    }
+  case CS_EQKEY_ITSOL_MAX_ITER:
+    eqp->sles_param.n_max_iter = atoi(keyval);
+    break;
+
+  case CS_EQKEY_ITSOL_EPS:
+    eqp->sles_param.eps = atof(keyval);
+    break;
+
+  case CS_EQKEY_ITSOL_RESNORM:
+    if (strcmp(keyval, "true") == 0)
+      eqp->sles_param.resid_normalized = true;
+    else
+      eqp->sles_param.resid_normalized = false;
     break;
 
   case CS_EQKEY_PRECOND:
@@ -604,166 +700,73 @@ _set_key(const char            *label,
     }
     break;
 
-  case CS_EQKEY_ITSOL:
-    if (strcmp(keyval, "amg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_AMG;
-    else if (strcmp(keyval, "bicg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_BICG;
-    else if (strcmp(keyval, "bicgstab2") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_BICGSTAB2;
-    else if (strcmp(keyval, "cg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_CG;
-    else if (strcmp(keyval, "cr3") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_CR3;
-    else if (strcmp(keyval, "fcg") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_FCG;
-    else if (strcmp(keyval, "gmres") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_GMRES;
-    else if (strcmp(keyval, "jacobi") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_JACOBI;
-    else if (strcmp(keyval, "minres") == 0)
-      eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
-    else {
-      const char *_val = keyval;
-      bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ITSOL");
-    }
-    break;
-
-  case CS_EQKEY_ITSOL_MAX_ITER:
-    eqp->sles_param.n_max_iter = atoi(keyval);
-    break;
-
-  case CS_EQKEY_ITSOL_EPS:
-    eqp->sles_param.eps = atof(keyval);
-    break;
-
-  case CS_EQKEY_ITSOL_RESNORM:
-    if (strcmp(keyval, "true") == 0)
-      eqp->sles_param.resid_normalized = true;
-    else
-      eqp->sles_param.resid_normalized = false;
-    break;
-
-  case CS_EQKEY_VERBOSITY: /* "verbosity" */
-    eqp->verbosity = atoi(keyval);
-    break;
-
   case CS_EQKEY_SLES_VERBOSITY: /* "verbosity" for SLES structures */
     eqp->sles_param.verbosity = atoi(keyval);
     break;
 
-  case CS_EQKEY_BC_ENFORCEMENT:
-    if (strcmp(keyval, "algebraic") == 0)
-      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
-    else if (strcmp(keyval, "penalization") == 0)
-      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_PENALIZED;
-    else if (strcmp(keyval, "weak_sym") == 0)
-      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
-    else if (strcmp(keyval, "weak") == 0)
-      eqp->default_enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
+  case CS_EQKEY_SOLVER_FAMILY:
+    if (strcmp(keyval, "cs") == 0)
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
+    else if (strcmp(keyval, "petsc") == 0)
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_BC_ENFORCEMENT");
+                emsg, __func__, label, _val, "CS_EQKEY_SOLVER_FAMILY");
     }
     break;
 
-  case CS_EQKEY_BC_STRONG_PENA_COEFF:
-    eqp->strong_pena_bc_coeff = atof(keyval);
-    if (eqp->strong_pena_bc_coeff < 1.)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value of the penalization coefficient %5.3e\n"
-                " This should be positive and large.",
-                __func__, eqp->strong_pena_bc_coeff);
-    break;
-
-  case CS_EQKEY_BC_WEAK_PENA_COEFF:
-    eqp->weak_pena_bc_coeff = atof(keyval);
-    if (eqp->weak_pena_bc_coeff < 0.)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value of the penalization coefficient %5.3e\n"
-                " This should be positive.",
-                __func__, eqp->weak_pena_bc_coeff);
-    break;
-
-  case CS_EQKEY_BC_QUADRATURE:
-    {
-      cs_quadrature_type_t  qtype = CS_QUADRATURE_NONE;
-
-      if (strcmp(keyval, "bary") == 0)
-        qtype = CS_QUADRATURE_BARY;
-      else if (strcmp(keyval, "bary_subdiv") == 0)
-        qtype = CS_QUADRATURE_BARY_SUBDIV;
-      else if (strcmp(keyval, "higher") == 0)
-        qtype = CS_QUADRATURE_HIGHER;
-      else if (strcmp(keyval, "highest") == 0)
-        qtype = CS_QUADRATURE_HIGHEST;
-      else {
-        const char *_val = keyval;
-        bft_error(__FILE__, __LINE__, 0,
-                  emsg, __func__, label, _val, "CS_EQKEY_BC_QUADRATURE");
-      }
-
-      for (int i = 0; i < eqp->n_bc_defs; i++)
-        cs_xdef_set_quadrature(eqp->bc_defs[i], qtype);
-
+  case CS_EQKEY_SPACE_SCHEME:
+    if (strcmp(keyval, "cdo_vb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
+      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
     }
-    break;
-
-  case CS_EQKEY_EXTRA_OP:
-    if (strcmp(keyval, "balance") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_BALANCE;
-    else if (strcmp(keyval, "peclet") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_PECLET;
-    else if (strcmp(keyval, "upwind_coef") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
-    else if (strcmp(keyval, "normal_flux") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_NORMAL_FLUX;
-    else {
-      const char *_val = keyval;
-      bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_EXTRA_OP");
+    else if (strcmp(keyval, "cdo_vcb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
+      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
     }
-    break;
-
-  case CS_EQKEY_ADV_FORMULATION:
-    if (strcmp(keyval, "conservative") == 0)
-      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
-    else if (strcmp(keyval, "non_conservative") == 0)
-      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
-    else {
-      const char *_val = keyval;
-      bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ADV_FORMULATION");
+    else if (strcmp(keyval, "cdo_fb") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->diffusion_hodge.coef = 1./sqrt(3.); /* SUSHI algo. */
     }
-    break;
-
-  case CS_EQKEY_ADV_SCHEME:
-    if (strcmp(keyval, "upwind") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-    else if (strcmp(keyval, "samarskii") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
-    else if (strcmp(keyval, "sg") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
-    else if (strcmp(keyval, "centered") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
-    else if (strcmp(keyval, "mix_centered_upwind") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND;
-    else if (strcmp(keyval, "cip") == 0) {
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
-      /* Automatically switch to a non-conservative formulation */
-      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+    /* Only diffusion is implemented for HHO schemes up to now */
+    else if (strcmp(keyval, "hho_p0") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+    }
+    else if (strcmp(keyval, "hho_p1") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
+      eqp->space_poly_degree = 1;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+    }
+    else if (strcmp(keyval, "hho_p2") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
+      eqp->space_poly_degree = 2;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
     }
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ADV_SCHEME");
+                emsg, __func__, label, _val, "CS_EQKEY_SPACE_SCHEME");
     }
-    break;
-
-  case CS_EQKEY_ADV_UPWIND_PORTION:
-    eqp->upwind_portion = atof(keyval);
     break;
 
   case CS_EQKEY_TIME_SCHEME:
@@ -794,6 +797,10 @@ _set_key(const char            *label,
 
   case CS_EQKEY_TIME_THETA:
     eqp->theta = atof(keyval);
+    break;
+
+  case CS_EQKEY_VERBOSITY: /* "verbosity" */
+    eqp->verbosity = atoi(keyval);
     break;
 
   default:
@@ -1462,6 +1469,39 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
 
     /* Set verbosity */
     cs_sles_set_verbosity(sles, slesp.verbosity);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last modification of the cs_equation_param_t structure before
+ *         launching the computation
+ *
+ * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_last_stage(cs_equation_param_t   *eqp)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  if (eqp->flag & CS_EQUATION_LOCKED)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Equation %s is not modifiable anymore.\n"
+                " Please check your settings."), eqp->name, __func__);
+
+  if (eqp->do_lumping) { /* Activate a set of options */
+
+    eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+
+    /* A simple barycentric quadrature rule is applied to all source terms */
+    for (int i = 0; i < eqp->n_source_terms; i++)
+      cs_xdef_set_quadrature(eqp->source_terms[i], CS_QUADRATURE_BARY);
 
   }
 
