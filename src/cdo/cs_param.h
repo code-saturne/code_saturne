@@ -107,16 +107,19 @@ typedef cs_real_t
  * CDO scheme with vertex+cell-based positionning
  *
  * \var CS_SPACE_SCHEME_CDOFB
- * CDO scheme with vertex+cell-based positionning
+ * CDO scheme with face-based positionning
  *
  * \var CS_SPACE_SCHEME_HHO_P0
- * CDO scheme with vertex+cell-based positionning
+ * Hybrid High Order (HHO) schemes
+ * HHO scheme with face-based positionning (lowest order)
  *
  * \var CS_SPACE_SCHEME_HHO_P1
- * CDO scheme with vertex+cell-based positionning
+ * Hybrid High Order (HHO) schemes
+ * HHO scheme with face-based positionning (k=1 up to order 3)
  *
  * \var CS_SPACE_SCHEME_HHO_P2
- * CDO scheme with vertex+cell-based positionning
+ * Hybrid High Order (HHO) schemes
+ * HHO scheme with face-based positionning (k=2 up to order 4)
  */
 
 typedef enum {

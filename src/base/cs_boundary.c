@@ -79,6 +79,7 @@ cs_boundary_name[CS_BOUNDARY_N_TYPES][CS_BASE_STRING_LEN] =
     N_("sliding wall"),
     N_("inlet"),
     N_("outlet"),
+    N_("imposed pressure (inlet/outlet)"),
     N_("symmetry"),
     /* ALE boundaries */
     N_("ALE fixed surface"),
@@ -243,6 +244,30 @@ cs_boundary_get_name(cs_boundary_type_t  type)
     return cs_boundary_name[type];
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Check if there is a pressure-related boundary among the prescribed
+ *          bounadries
+ *
+ * \param[in] boundaries       pointer to a cs_boundary_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+_Bool
+cs_boundary_has_pressure_boundary(const cs_boundary_t  *boundaries)
+{
+  if (boundaries == NULL)
+    return false;
+
+  for (int i = 0; i < boundaries->n_boundaries; i++) {
+    if (boundaries->types[i] == CS_BOUNDARY_PRESSURE_INLET_OUTLET)
+      return true;
+  }
+
+  return false;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

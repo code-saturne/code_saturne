@@ -5187,6 +5187,9 @@ msgstr "entrée"
 msgid "outlet"
 msgstr "sortie"
 
+msgid "imposed pressure (inlet/outlet)"
+msgstr ""
+
 msgid "symmetry"
 msgstr "symmétrie"
 
@@ -9735,6 +9738,18 @@ msgstr ""
 msgid ""
 " %s: Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid type of reduction.\n"
+" Stop computing the Dirichlet value.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid type of definition.\n"
+" Stop computing the Dirichlet value.\n"
 msgstr ""
 
 #, c-format

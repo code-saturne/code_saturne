@@ -302,6 +302,17 @@ cs_navsto_system_get_param(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve a pointer to the equation related to the momentum equation
+ *
+ * \return NULL or the pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_system_get_momentum_eq(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the Navier-Stokes system
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.

@@ -61,9 +61,70 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Structure storing additional arrays related to the building of the system in
+   case of CDO Face-based scheme. This structure is associated to a cell-wise
+   building */
+
+typedef struct {
+
+  /* Operator */
+  cs_real_t           *div_op;           /* Size: 3*n_fc
+                                            div_op = -|c|div */
+
+  /* Boundary conditions */
+  cs_boundary_type_t  *bf_type;          /* Size: n_fc */
+  cs_real_t           *pressure_bc_val;  /* Size: n_fc */
+
+} cs_cdofb_navsto_builder_t;
+
 /*============================================================================
  * Static inline public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and allocate a local NavSto builder when Fb schemes are used
+ *
+ * \param[in] connect        pointer to a cs_cdo_connect_t structure
+ *
+ * \return a cs_cdofb_navsto_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_cdofb_navsto_builder_t
+cs_cdofb_navsto_create_builder(const cs_cdo_connect_t   *connect)
+{
+  cs_cdofb_navsto_builder_t  nsb = {.div_op = NULL,
+                                    .bf_type = NULL,
+                                    .pressure_bc_val = NULL };
+
+  if (connect == NULL)
+    return nsb;
+
+  BFT_MALLOC(nsb.div_op, 3*connect->n_max_fbyc, cs_real_t);
+  BFT_MALLOC(nsb.bf_type, connect->n_max_fbyc, cs_boundary_type_t);
+  BFT_MALLOC(nsb.pressure_bc_val, connect->n_max_fbyc, cs_real_t);
+
+  return nsb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy the given cs_cdofb_navsto_builder_t structure
+ *
+ * \param[in, out] nsb   pointer to the cs_cdofb_navsto_builder_t to free
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb)
+{
+  if (nsb != NULL) {
+    BFT_FREE(nsb->div_op);
+    BFT_FREE(nsb->bf_type);
+    BFT_FREE(nsb->pressure_bc_val);
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -98,53 +159,32 @@ cs_cdofb_navsto_divergence_vect(const cs_cell_mesh_t  *cm,
   } /* Loop on cell faces */
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add contribution related to the pressure if Nitsche's method for the
- *         boundary conditions is requested
- *
- * \param[in]       eqp         pointer to \ref cs_equation_param_t structure
- * \param[in]       cm          pointer to \ref cs_cell_mesh_t structure
- * \param[in]       prs_c       value of the pressure at the current cell
- * \param[in, out]  csys        pointer to \ref cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_cdofb_navsto_pressure_nitsche(const cs_equation_param_t *eqp,
-                                 const cs_cell_mesh_t      *cm,
-                                 const cs_real_t            prs_c,
-                                 cs_cell_sys_t             *csys)
-{
-  /* Boundary condition contribution to the algebraic system
-   * Operations that have to be performed BEFORE the static condensation */
-  if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)           &&
-      cs_equation_param_has_diffusion(eqp)                        &&
-      (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-       eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-     ) {
-    for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-      /* Get the boundary face in the cell numbering */
-      const short int  f = csys->_f_ids[i];
-
-      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
-        const cs_quant_t pfq = cm->face[f];
-        const cs_real_t f_prs = pfq.meas * prs_c;
-        cs_real_t *f_rhs = csys->rhs + 3*f;
-        f_rhs[0] -= f_prs * pfq.unitv[0];
-        f_rhs[1] -= f_prs * pfq.unitv[1];
-        f_rhs[2] -= f_prs * pfq.unitv[2];
-      } /* If Dirichlet boundary face */
-
-    } /* Loop on i */
-
-  } /* Boundary cell */
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the members of the cs_cdofb_navsto_builder_t structure
+ *
+ * \param[in]      t_eval     time at which one evaluates the pressure BC
+ * \param[in]      nsp        set of parameters to define the NavSto system
+ * \param[in]      cm         cellwise view of the mesh
+ * \param[in]      csys       cellwise view of the algebraic system
+ * \param[in]      pr_bc      set of definitions for the presuure BCs
+ * \param[in]      bf_type    type of boundaries for all boundary faces
+ * \param[in, out] nsb        builder to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
+                               const cs_navsto_param_t     *nsp,
+                               const cs_cell_mesh_t        *cm,
+                               const cs_cell_sys_t         *csys,
+                               const cs_cdo_bc_face_t      *pr_bc,
+                               const cs_boundary_type_t    *bf_type,
+                               cs_cdofb_navsto_builder_t   *nsb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -154,7 +194,7 @@ cs_cdofb_navsto_pressure_nitsche(const cs_equation_param_t *eqp,
  * \param[in]     c_id         cell id
  * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
  * \param[in]     c2f          pointer to cell-to-face \ref cs_adjacency_t
- * \param[in]     f_dof        values of the face DoFs
+ * \param[in]     f_vals       values of the face DoFs
  *
  * \return the divergence for the corresponding cell
  */
@@ -164,25 +204,7 @@ cs_real_t
 cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
                                 const cs_cdo_quantities_t    *quant,
                                 const cs_adjacency_t         *c2f,
-                                const cs_real_t              *f_dof);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add contribution related to the pressure if Nitsche's method for the
- *         boundary conditions (Dirichlet or Sliding) is requested
- *
- * \param[in]       eqp         pointer to \ref cs_equation_param_t structure
- * \param[in]       cm          pointer to \ref cs_cell_mesh_t structure
- * \param[in]       prs_c       value of the pressure at the current cell
- * \param[in, out]  csys        pointer to \ref cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_pressure_nitsche(const cs_equation_param_t *eqp,
-                                 const cs_cell_mesh_t      *cm,
-                                 const cs_real_t            prs_c,
-                                 cs_cell_sys_t             *csys);
+                                const cs_real_t              *f_vals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -218,6 +240,24 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
                               const cs_cdo_quantities_t   *quant,
                               const cs_time_step_t        *ts,
                               cs_field_t                  *pr);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize the pressure values when the pressure is defined at
+ *         faces
+ *
+ * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts      pointer to a \ref cs_time_step_t structure
+ * \param[in, out]  pr_f    pointer to the pressure values at faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
+                                   const cs_cdo_quantities_t   *quant,
+                                   const cs_time_step_t        *ts,
+                                   cs_real_t                   *pr_f);
 
 /*----------------------------------------------------------------------------*/
 /*!

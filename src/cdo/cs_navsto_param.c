@@ -234,21 +234,50 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
   param->lami_viscosity = cs_property_add("laminar_viscosity", CS_PROPERTY_ISO);
 
   /* Remark: As velocity and pressure may not be associated to an equation
-     directly, one stores it at this level */
+     directly, one stores the definition of initial conditions and boundary
+     conditions at this level */
 
-  /* Initial conditions for the velocity */
-  param->velocity_ic_is_owner = false;
-  param->n_velocity_ic_defs = 0;
-  param->velocity_ic_defs = NULL;
+  switch (algo_coupling) {
 
-  /* Initial conditions for the pressure */
-  param->pressure_ic_is_owner = true;
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+  case CS_NAVSTO_COUPLING_UZAWA:
+    param->velocity_ic_is_owner = false;
+    param->velocity_bc_is_owner = false;
+    param->pressure_ic_is_owner = true;
+    param->pressure_bc_is_owner = true;
+    break;
+
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    param->velocity_ic_is_owner = false;
+    param->velocity_bc_is_owner = false;
+    param->pressure_ic_is_owner = false;
+    param->pressure_bc_is_owner = false;
+    break;
+
+  default:
+    /* Nothing done */
+    break;
+  }
+
+  /* Initial conditions for the pressure field */
   param->n_pressure_ic_defs = 0;
   param->pressure_ic_defs = NULL;
 
-  param->n_velocity_inlets = 0;
-  param->velocity_inlet_boundary_ids = NULL;
+  /* Initial conditions for the velocity field */
+  param->n_velocity_ic_defs = 0;
+  param->velocity_ic_defs = NULL;
 
+  /* Boundary conditions for the pressure field */
+  param->n_pressure_bc_defs = 0;
+  param->pressure_bc_defs = NULL;
+
+  /* Boundary conditions for the velocity field */
+  param->n_velocity_bc_defs = 0;
+  param->velocity_bc_defs = NULL;
+
+  /* Boundary conditions for the pressure field */
   return param;
 }
 
@@ -268,6 +297,8 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
   if (param == NULL)
     return param;
 
+  /* Velocity initial conditions */
+
   if (param->n_velocity_ic_defs > 0) {
 
     /* Otherwise this is freed inside the related equation */
@@ -278,7 +309,9 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
     BFT_FREE(param->velocity_ic_defs);
     param->velocity_ic_defs = NULL;
 
-  } /* Velocity initial conditions */
+  }
+
+  /* Pressure initial conditions */
 
   if (param->n_pressure_ic_defs > 0) {
 
@@ -289,11 +322,33 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
     BFT_FREE(param->pressure_ic_defs);
     param->pressure_ic_defs = NULL;
 
-  } /* Pressure initial conditions */
+  }
 
-  if (param->n_velocity_inlets > 0)
-    BFT_FREE(param->velocity_inlet_boundary_ids);
+  /* Velocity boundary conditions */
 
+  if (param->n_velocity_bc_defs > 0) {
+    if (param->velocity_bc_is_owner) {
+      for (int i = 0; i < param->n_velocity_bc_defs; i++)
+        param->velocity_bc_defs[i] = cs_xdef_free(param->velocity_bc_defs[i]);
+    }
+    BFT_FREE(param->velocity_bc_defs);
+    param->velocity_bc_defs = NULL;
+  }
+
+  /* Pressure boundary conditions */
+
+  if (param->n_pressure_bc_defs > 0) {
+
+    if (param->pressure_bc_is_owner) {
+      for (int i = 0; i < param->n_pressure_bc_defs; i++)
+        param->pressure_bc_defs[i] = cs_xdef_free(param->pressure_bc_defs[i]);
+    }
+    BFT_FREE(param->pressure_bc_defs);
+    param->pressure_bc_defs = NULL;
+
+  }
+
+  /* Free the main structure */
   BFT_FREE(param);
 
   return NULL;
@@ -914,14 +969,23 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t    *nsp)
   for (int i = 0; i < bdy->n_boundaries; i++) {
     if (bdy->types[i] == CS_BOUNDARY_WALL) {
 
+      /* Homogeneous Dirichlet on the velocity field. Nothing to enforce on the
+         pressure field */
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                               3,    /* dim */
                                               bdy->zone_ids[i],
                                               CS_FLAG_STATE_UNIFORM, /* state */
                                               CS_CDO_BC_HMG_DIRICHLET,
                                               (void *)zero);
+      int  new_id = nsp->n_velocity_bc_defs;
+
+      nsp->n_velocity_bc_defs += 1;
+      BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+      nsp->velocity_bc_defs[new_id] = d;
 
       cs_equation_add_xdef_bc(eqp, d);
+
+      /* Homogeneous Neumann on the pressure field --> default BC */
 
     } /* Fixed wall */
   } /* Loop on domain boundaries */
@@ -952,7 +1016,9 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp)
   for (int i = 0; i < bdy->n_boundaries; i++) {
     if (bdy->types[i] == CS_BOUNDARY_SYMMETRY) {
 
-      /* Add the homogeneous Dirichlet on the normal component */
+      /* Homogeneous Dirichlet on the normal component of the velocity field
+         and homogenous Neumann on the normal stress (balance betwwen the
+         pressure gradient and the viscous term) */
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                               1,    /* dim */
                                               bdy->zone_ids[i],
@@ -961,6 +1027,15 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp)
                                               (void *)&zero);
 
       cs_equation_add_xdef_bc(eqp, d);
+
+      int  new_id = nsp->n_velocity_bc_defs;
+
+      nsp->n_velocity_bc_defs += 1;
+      BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+      nsp->velocity_bc_defs[new_id] = d;
+
+      /* Homogeneous Neumann on the pressure field --> default BC (Nothing to
+         do) */
 
     } /* Symmetry */
   } /* Loop on domain boundaries */
@@ -991,18 +1066,164 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
   for (int i = 0; i < bdy->n_boundaries; i++) {
     if (bdy->types[i] == CS_BOUNDARY_OUTLET) {
 
-      /* Add the homogeneous Dirichlet on the normal component */
+      /* Add the homogeneous Neumann on the normal component */
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                               9,    /* dim */
                                               bdy->zone_ids[i],
                                               CS_FLAG_STATE_UNIFORM, /* state */
                                               CS_CDO_BC_HMG_NEUMANN,
                                               (void *)&zero);
-
       cs_equation_add_xdef_bc(eqp, d);
+
+      int  new_id = nsp->n_velocity_bc_defs;
+
+      nsp->n_velocity_bc_defs += 1;
+      BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+      nsp->velocity_bc_defs[new_id] = d;
+
+      /* Homogeneous Neumann on the pressure field --> default BC.
+         At the end of the day, we end up with a balance between the pressure
+         gradient and the viscous term (and advection term in Navier-Stokes) */
 
     } /* Symmetry */
   } /* Loop on domain boundaries */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the pressure field on a boundary using a uniform value.
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      value     value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_real_t            *values)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+  if (z_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not exist.\n"
+              " Please check your settings.", __func__, z_name);
+
+  int  bdy_id = cs_boundary_id_by_zone_id(nsp->boundaries, z_id);
+  if (bdy_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not belong to an existing boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_PRESSURE_INLET_OUTLET)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" is not related to a pressure boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  /* Set the boundary condition for the pressure field */
+  cs_xdef_t  *dp = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                           1, /* dim */
+                                           z_id,
+                                           CS_FLAG_STATE_UNIFORM, /* state */
+                                           CS_CDO_BC_DIRICHLET,
+                                           (void *)values);
+
+  int  pnew_id = nsp->n_pressure_bc_defs;
+
+  nsp->n_pressure_bc_defs += 1;
+  BFT_REALLOC(nsp->pressure_bc_defs, nsp->n_pressure_bc_defs, cs_xdef_t *);
+  nsp->pressure_bc_defs[pnew_id] = dp;
+
+  if (!nsp->pressure_bc_is_owner) {
+    bft_error(__FILE__, __LINE__, 0, "%s: Not implemented yet", __func__);
+#if 0 /* TODO */
+    /* Retrieve the equation related to the pressure */
+    cs_equation_param_t  *p_eqp = NULL;
+    assert(p_eqp != NULL);
+#endif
+  }
+
+  /* Add a new cs_xdef_t structure. For the momentum equation, this is a
+   * homogeneous BC for the velocity */
+  cs_real_33_t  zero = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+
+  cs_xdef_t  *du = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                           9, /* dim */
+                                           z_id,
+                                           CS_FLAG_STATE_UNIFORM, /* state */
+                                           CS_CDO_BC_HMG_NEUMANN,
+                                           (void *)zero);
+
+  int  unew_id = nsp->n_velocity_bc_defs;
+
+  nsp->n_velocity_bc_defs += 1;
+  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  nsp->velocity_bc_defs[unew_id] = du;
+
+  cs_equation_param_t *u_eqp = _get_momentum_param(nsp);
+  assert(u_eqp != NULL);
+  cs_equation_add_xdef_bc(u_eqp, du);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the velocity field for a sliding wall boundary using a
+ *         uniform value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      values    array of three real values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
+                                     const char           *z_name,
+                                     cs_real_t            *values)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  int  z_id = cs_get_bdy_zone_id(z_name);
+  if (z_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not exist.\n"
+              " Please check your settings.", __func__, z_name);
+
+  int  bdy_id = cs_boundary_id_by_zone_id(nsp->boundaries, z_id);
+  if (bdy_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" does not belong to an existing boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_SLIDING_WALL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Zone \"%s\" is not related to a sliding wall boundary.\n"
+              " Please check your settings.", __func__, z_name);
+
+  /* Add a new cs_xdef_t structure */
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                          3,    /* dim */
+                                          z_id,
+                                          CS_FLAG_STATE_UNIFORM, /* state */
+                                          CS_CDO_BC_DIRICHLET,
+                                          (void *)values);
+
+  int  new_id = nsp->n_velocity_bc_defs;
+
+  nsp->n_velocity_bc_defs += 1;
+  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  nsp->velocity_bc_defs[new_id] = d;
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  assert(eqp != NULL);
+  cs_equation_add_xdef_bc(eqp, d);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1025,11 +1246,6 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  new_id = nsp->n_velocity_inlets;
-
-  nsp->n_velocity_inlets += 1;
-  BFT_REALLOC(nsp->velocity_inlet_boundary_ids, nsp->n_velocity_inlets, int);
-
   int  z_id = cs_get_bdy_zone_id(z_name);
   if (z_id < 0)
   bft_error(__FILE__, __LINE__, 0,
@@ -1047,8 +1263,6 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
               " %s: Zone \"%s\" is not related to an inlet boundary.\n"
               " Please check your settings.", __func__, z_name);
 
-  nsp->velocity_inlet_boundary_ids[new_id] = bdy_id;
-
   /* Add a new cs_xdef_t structure */
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           3,    /* dim */
@@ -1057,7 +1271,14 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
                                           CS_CDO_BC_DIRICHLET,
                                           (void *)values);
 
+  int  new_id = nsp->n_velocity_bc_defs;
+
+  nsp->n_velocity_bc_defs += 1;
+  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  nsp->velocity_bc_defs[new_id] = d;
+
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
+  assert(eqp != NULL);
   cs_equation_add_xdef_bc(eqp, d);
 }
 
@@ -1083,11 +1304,6 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  int  new_id = nsp->n_velocity_inlets;
-
-  nsp->n_velocity_inlets += 1;
-  BFT_REALLOC(nsp->velocity_inlet_boundary_ids, nsp->n_velocity_inlets, int);
-
   int  z_id = cs_get_bdy_zone_id(z_name);
   if (z_id < 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -1105,8 +1321,6 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
               " %s: Zone \"%s\" is not related to an inlet boundary.\n"
               " Please check your settings.", __func__, z_name);
 
-  nsp->velocity_inlet_boundary_ids[new_id] = bdy_id;
-
   /* Add a new cs_xdef_t structure */
   cs_xdef_analytic_input_t  anai = {.func = ana, .input = input };
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
@@ -1115,6 +1329,12 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
                                           0,    /* state */
                                           CS_CDO_BC_DIRICHLET,
                                           &anai);
+
+  int  new_id = nsp->n_velocity_bc_defs;
+
+  nsp->n_velocity_bc_defs += 1;
+  BFT_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
+  nsp->velocity_bc_defs[new_id] = d;
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
   cs_equation_add_xdef_bc(eqp, d);

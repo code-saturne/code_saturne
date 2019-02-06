@@ -54,6 +54,7 @@ typedef enum {
   CS_BOUNDARY_SLIDING_WALL,
   CS_BOUNDARY_INLET,
   CS_BOUNDARY_OUTLET,
+  CS_BOUNDARY_PRESSURE_INLET_OUTLET,
   CS_BOUNDARY_SYMMETRY,
 
   /* Physic-driven boundary types for ALE*/
@@ -106,6 +107,20 @@ extern cs_boundary_t  *cs_glob_boundaries; /* Pointer to the shared boundaries
 
 const char *
 cs_boundary_get_name(cs_boundary_type_t  type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Check if there is a pressure-related boundary among the prescribed
+ *          bounadries
+ *
+ * \param[in] boundaries       pointer to a cs_boundary_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+_Bool
+cs_boundary_has_pressure_boundary(const cs_boundary_t  *boundaries);
 
 /*----------------------------------------------------------------------------*/
 /*!

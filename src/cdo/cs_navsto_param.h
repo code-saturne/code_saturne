@@ -314,39 +314,37 @@ typedef struct {
    *  True if the definitions are stored inside this structure, otherwise
    *  the definitions are stored inside the a \ref cs_equation_param_t
    *  structure dedicated to the momentum equation.
-   */
-  bool  velocity_ic_is_owner;
-
-  /*! \var n_velocity_ic_defs
+   *
+   * \var n_velocity_ic_defs
    *  Number of initial conditions associated to the velocity
-   */
-  int   n_velocity_ic_defs;
-
-  /*! \var velocity_ic_defs
+   *
+   * \var velocity_ic_defs
    *  Pointers to the definitions of the initial conditions associated to the
    *  velocity.
    *  The code does not check if the resulting initial velocity satisfies the
    *  divergence constraint.
    */
+
+  _Bool        velocity_ic_is_owner;
+  int          n_velocity_ic_defs;
   cs_xdef_t  **velocity_ic_defs;
 
   /*! \var pressure_ic_is_owner
    *  True if the definitions are stored inside this structure, otherwise
    *  the definitions are stored inside a dedicated \ref cs_equation_param_t
-   */
-  bool  pressure_ic_is_owner;
-
-  /*! \var n_pressure_ic_defs
+   *
+   * \var n_pressure_ic_defs
    *  Number of initial conditions associated to the pressure
-   */
-  int   n_pressure_ic_defs;
-
-  /*! \var pressure_ic_defs
+   *
+   * \var pressure_ic_defs
    *  Pointers to the definitions of the initial conditions associated to the
    *  pressure.
    *  In order to force a zero-mean pressure, the code can compute the average
    *  of the resulting pressure and subtract it
    */
+
+  _Bool        pressure_ic_is_owner;
+  int          n_pressure_ic_defs;
   cs_xdef_t  **pressure_ic_defs;
 
   /*! @}
@@ -362,19 +360,46 @@ typedef struct {
    */
   const cs_boundary_t   *boundaries;
 
-  /* \var n_velocity_inlets
-   * Number of inlets with a Dirichlet of the velocity field
+  /*! \var velocity_bc_is_owner
+   *  True if the definitions are stored inside this structure, otherwise
+   *  the definitions are stored inside a dedicated \ref cs_equation_param_t
+   *  Most of the time this should be false since an equation is associated to
+   *  to the resolution of the velocity field (the momentum equation).
    *
-   * \var velocity_inlet_boundary_ids
-   * List of boundary ids related to each velocity inlets
+   * \var n_velocity_bc_defs
+   * Number of definitions related to the settings of the boundary conditions
+   * for the velocity field.
+   *
+   * \var velocity_bc_defs
+   * Array of pointers to the definition of boundary conditions for the velocity
+   * field
    */
 
-  int                    n_velocity_inlets;
-  int                   *velocity_inlet_boundary_ids;
+  _Bool        velocity_bc_is_owner;
+  int          n_velocity_bc_defs;
+  cs_xdef_t  **velocity_bc_defs;
+
+  /*! \var pressure_bc_is_owner
+   *  True if the definitions are stored inside this structure, otherwise
+   *  the definitions are stored inside a dedicated \ref cs_equation_param_t
+   *  if an equation solves the pressure field.
+   *
+   * \var n_pressure_bc_defs
+   *  Number of boundary conditions associated to the pressure field.
+   *
+   * \var pressure_bc_defs
+   *  Pointers to the definitions of the boundary conditions associated to the
+   *  pressure field.
+   */
+
+  _Bool        pressure_bc_is_owner;
+  int          n_pressure_bc_defs;
+  cs_xdef_t  **pressure_bc_defs;
 
   /*! @} */
 
 } cs_navsto_param_t;
+
 
 /*! \enum cs_navsto_key_t
  *  \brief List of available keys for setting the parameters of the
@@ -683,6 +708,39 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp);
 
 void
 cs_navsto_set_outlets(cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the pressure field on a boundary using a uniform value.
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      value     value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
+                                   const char           *z_name,
+                                   cs_real_t            *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the velocity field for a sliding wall boundary using a
+ *         uniform value
+ *
+ * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           boundary faces are considered)
+ * \param[in]      values    array of three real values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
+                                     const char           *z_name,
+                                     cs_real_t            *values);
 
 /*----------------------------------------------------------------------------*/
 /*!

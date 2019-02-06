@@ -1,9 +1,9 @@
-#ifndef __CS_CDOFB_AC_H__
-#define __CS_CDOFB_AC_H__
+#ifndef __CS_CDOFB_PREDCO_H__
+#define __CS_CDOFB_PREDCO_H__
 
 /*============================================================================
  * Build an algebraic CDO face-based system for the Navier-Stokes equations
- * and solved it with an artificial compressibility algorithm
+ * and solved it with an Augmented Lagrangian-Uzawa algorithm
  *============================================================================*/
 
 /*
@@ -61,30 +61,21 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Inline static function prototypes
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the values of the velocity on the faces
+ * \brief  Retrieve the values of the pressure at faces
  *
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]  context     pointer to a scheme context structure
  *
- * \return a pointer to an array of \ref cs_real_t
+ * \return a pointer to the pressure values
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t *
-cs_cdofb_ac_get_face_velocity(void    *scheme_context)
-{
-  CS_UNUSED(scheme_context);
-
-  return cs_equation_get_face_values(cs_equation_by_name("momentum"));
-}
-
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
+cs_real_t *
+cs_cdofb_predco_get_face_pressure(void     *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -97,30 +88,30 @@ cs_cdofb_ac_get_face_velocity(void    *scheme_context)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
+cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
                         const cs_cdo_connect_t        *connect,
                         const cs_time_step_t          *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a \ref cs_cdofb_ac_t structure
+ * \brief  Initialize a \ref cs_cdofb_predco_t structure
  *
  * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
  * \param[in] fb_type    type of boundary for each boundary face
  * \param[in] nsc_input  pointer to a \ref cs_navsto_ac_t structure
  *
- * \return a pointer to a new allocated \ref cs_cdofb_ac_t structure
+ * \return a pointer to a new allocated \ref cs_cdofb_predco_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t    *nsp,
+cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t    *nsp,
                                 cs_boundary_type_t         *fb_type,
                                 void                       *nsc_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a \ref cs_cdofb_ac_t structure
+ * \brief  Destroy a \ref cs_cdofb_predco_t structure
  *
  * \param[in] scheme_context   pointer to a scheme context structure to free
  *
@@ -129,7 +120,7 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_ac_free_scheme_context(void   *scheme_context);
+cs_cdofb_predco_free_scheme_context(void   *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -143,14 +134,13 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
+cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
                      void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a Artificial Compressibility approach and an implicit Euler
- *         time scheme
+ *         using a Artificial Compressibility approach and an Euler time scheme
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
@@ -159,7 +149,7 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
+cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                              const cs_navsto_param_t      *nsp,
                              void                         *scheme_context);
 
@@ -175,7 +165,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
+cs_cdofb_predco_compute_theta(const cs_mesh_t              *mesh,
                           const cs_navsto_param_t      *nsp,
                           void                         *scheme_context);
 
@@ -183,4 +173,4 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_CDOFB_AC_H__ */
+#endif /* __CS_CDOFB_PREDCO_H__ */

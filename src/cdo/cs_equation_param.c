@@ -776,7 +776,6 @@ _set_key(const char            *label,
       eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
       eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->diffusion_hodge.coef = 1./sqrt(3.); /* SUSHI algo. */
     }
     /* Only diffusion is implemented for HHO schemes up to now */
     else if (strcmp(keyval, "hho_p0") == 0) {
