@@ -510,7 +510,7 @@ cs_gui_properties_value(const char  *property_name,
                         double      *value);
 
 /*-----------------------------------------------------------------------------
- * Initialization choice of the reference variables parameters.
+ * Get value of reference fluid properties parameter.
  *
  * parameters:
  *   name            <--   parameter name
@@ -518,8 +518,8 @@ cs_gui_properties_value(const char  *property_name,
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_reference_initialization(const char  *param,
-                                double      *value);
+cs_gui_fluid_properties_value(const char  *param,
+                              double      *value);
 
 /*----------------------------------------------------------------------------
  * Get thermal scalar model.

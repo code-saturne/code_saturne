@@ -4984,7 +4984,7 @@ cs_gui_properties_value(const char  *property_name,
 }
 
 /*-----------------------------------------------------------------------------
- * Initialization choice of the reference variables parameters.
+ * Get value of reference fluid properties parameter.
  *
  * parameters:
  *   name            <--   parameter name
