@@ -872,22 +872,22 @@ _apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
       switch (bf_type[i]) {
 
       case CS_BOUNDARY_INLET:
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
           sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
         }
         break;
 
       case CS_BOUNDARY_SLIDING_WALL:
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
           sc->apply_sliding_wall(f, eqp, cm, cb, csys);
         }
         break;
 
       case CS_BOUNDARY_WALL:
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
           sc->apply_fixed_wall(f, eqp, cm, cb, csys);
         }
         break;
@@ -965,8 +965,8 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
 
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
         }
         break;
@@ -985,8 +985,8 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
 
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           sc->apply_sliding_wall(f, eqp, cm, cb, csys);
         }
         break;
@@ -999,8 +999,8 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
 
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
-        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           sc->apply_fixed_wall(f, eqp, cm, cb, csys);
         }
         break;
@@ -1460,7 +1460,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
    */
   sc->apply_symmetry = cs_cdofb_symmetry;
 
-  switch (mom_eqp->enforcement) {
+  switch (mom_eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
     sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_alge;

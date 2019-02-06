@@ -855,9 +855,7 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
-
-  /* Sanity checks */
-  assert(cm != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
@@ -867,11 +865,11 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
-      csys->mat->val[i + csys->n_dofs*i] += eqp->bc_penalization_coeff;
+      csys->mat->val[i + csys->n_dofs*i] += eqp->strong_pena_bc_coeff;
     }
     else if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
-      csys->mat->val[i + csys->n_dofs*i] += eqp->bc_penalization_coeff;
-      csys->rhs[i] += csys->dir_values[i] * eqp->bc_penalization_coeff;
+      csys->mat->val[i + csys->n_dofs*i] += eqp->strong_pena_bc_coeff;
+      csys->rhs[i] += csys->dir_values[i] * eqp->strong_pena_bc_coeff;
     }
 
   } /* Loop on degrees of freedom */
@@ -903,9 +901,7 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
-
-  /* Sanity checks */
-  assert(cm != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
@@ -928,11 +924,11 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
     for (int i = 0; i < mII->n_rows; i++) {
 
       if (_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
-        mII->val[i + mII->n_rows*i] += eqp->bc_penalization_coeff;
+        mII->val[i + mII->n_rows*i] += eqp->strong_pena_bc_coeff;
       }
       else if (_flag[i] & CS_CDO_BC_DIRICHLET) {
-        mII->val[i + mII->n_rows*i] += eqp->bc_penalization_coeff;
-        _rhs[i] += _dir_val[i] * eqp->bc_penalization_coeff;
+        mII->val[i + mII->n_rows*i] += eqp->strong_pena_bc_coeff;
+        _rhs[i] += _dir_val[i] * eqp->strong_pena_bc_coeff;
       }
 
     }
@@ -976,6 +972,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
@@ -1051,6 +1048,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
@@ -1155,18 +1153,17 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(fm);
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
+  assert(cm != NULL && cb != NULL);
+  assert(cs_equation_param_has_diffusion(eqp));
+
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const double chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1248,18 +1245,17 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(fm);
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
+  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cs_equation_param_has_diffusion(eqp));
+
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double  chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1356,18 +1352,17 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                    cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(fm);
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
+  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cs_equation_param_has_diffusion(eqp));
+
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1463,18 +1458,17 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(fm);
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
+  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cs_equation_param_has_diffusion(eqp));
+
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double  chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
 
   /* First step: pre-compute the product between diffusion property and the
@@ -1598,20 +1592,20 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
                                   cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(fm);
-
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(csys != NULL);
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_sliding == false)
     return;  /* Nothing to do */
 
-  const double  chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL);
+  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(cs_equation_param_has_diffusion(eqp));
+
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
   const short int  n_f = cm->n_fc;
   const short int  n_dofs = n_f + 1; /* n_blocks or n_scalar_dofs */
 
@@ -1933,16 +1927,17 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
                                          cs_cell_builder_t              *cb,
                                          cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
+  assert(cm != NULL && cb != NULL);
+  assert(cs_equation_param_has_diffusion(eqp));
+
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2008,16 +2003,15 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
                                          cs_cell_builder_t              *cb,
                                          cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
+  assert(cm != NULL && cb != NULL);
 
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2161,7 +2155,7 @@ cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
 #endif
 
       /* Add contribution to the linear system of the penalized part */
-      const double  pcoef = eqp->bc_penalization_coeff/sqrt(cm->face[f].meas);
+      const double  pcoef = eqp->weak_pena_bc_coeff/sqrt(cm->face[f].meas);
 
       for (int vfi = 0; vfi < fm->n_vf; vfi++) {
 
@@ -2240,8 +2234,7 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
     return;  /* Nothing to do */
 
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
   cs_sdm_t  *ntrgrd_tr = cb->aux;
@@ -2315,13 +2308,13 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
                                cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(eqp);
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Robin BCs */
   if (csys->has_robin == false)
     return;  /* Nothing to do */
+
+  assert(cm != NULL && cb != NULL);
 
   /* Robin BC expression: K du/dn + alpha*(u - u0) = g
    * Store x = alpha*u0 + g
@@ -2411,15 +2404,14 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
+  assert(cm != NULL && cb != NULL);
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2444,7 +2436,7 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
       _vb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
-#if 1
+#if 1 /* Default choice */
       _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
@@ -2486,14 +2478,15 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
                                         cs_cell_builder_t             *cb,
                                         cs_cell_sys_t                 *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi = eqp->bc_penalization_coeff*fabs(cb->eig_ratio)*cb->eig_max;
+  assert(cm != NULL && cb != NULL);
+
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2528,7 +2521,7 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-#if 1
+#if 1 /* Default choice */
       _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
@@ -2569,15 +2562,14 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
+  assert(cm != NULL && cb != NULL);
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2602,7 +2594,7 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
       _vcb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
-#if 1
+#if 1 /* Default choice */
       _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
@@ -2644,15 +2636,15 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const double chi =
-    eqp->bc_penalization_coeff * fabs(cb->eig_ratio) * cb->eig_max;
+  assert(cm != NULL && cb != NULL);
+
+  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2687,7 +2679,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-#if 1
+#if 1 /* Default choice */
       _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);

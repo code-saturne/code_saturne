@@ -414,8 +414,8 @@ _fb_apply_bc_partly(cs_real_t                      time_eval,
        csys is updated inside (matrix and rhs) */
     if (cs_equation_param_has_diffusion(eqp)) {
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-          eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+      if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+          eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
         eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
@@ -458,8 +458,8 @@ _fb_apply_remaining_bc(const cs_equation_param_t     *eqp,
    * Operations that have to be performed AFTER the static condensation */
   if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
       /* Enforced Dirichlet BCs for cells attached to the boundary
        * csys is updated inside (matrix and rhs). This is close to a strong
@@ -845,7 +845,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Dirichlet boundary condition enforcement */
   eqc->enforce_dirichlet = NULL;
-  switch (eqp->enforcement) {
+  switch (eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
     eqc->enforce_dirichlet = cs_cdo_diffusion_alge_dirichlet;

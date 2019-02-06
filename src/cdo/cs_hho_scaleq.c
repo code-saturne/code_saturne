@@ -897,7 +897,7 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_diffusion(eqp)) {
 
-    switch (eqp->enforcement) {
+    switch (eqp->default_enforcement) {
 
     case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
       eqc->enforce_dirichlet = cs_cdo_diffusion_alge_block_dirichlet;
@@ -1069,8 +1069,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
   /* Sanity checks */
   assert(rhs != NULL && matrix != NULL && eqp != NULL && eqb != NULL);
   /* The only way to set a Dirichlet up to now */
-  assert(eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-         eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC);
+  assert(eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC);
 
   /* Test to remove */
   if (cs_equation_param_has_convection(eqp))

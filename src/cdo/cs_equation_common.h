@@ -228,8 +228,8 @@ cs_equation_set_diffusion_property(const cs_equation_param_t  *eqp,
   /* Set additional quantities in case of more advanced way of enforcing the
      Dirichlet BCs */
   if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
       cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
                        &(cb->eig_ratio),
                        &(cb->eig_max));
@@ -268,8 +268,8 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
   /* Set additional quantities in case of more advanced way of enforcing the
      Dirichlet BCs */
   if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
       cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
                        &(cb->eig_ratio),
                        &(cb->eig_max));

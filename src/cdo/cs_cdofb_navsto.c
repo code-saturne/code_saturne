@@ -387,8 +387,8 @@ cs_cdofb_navsto_pressure_nitsche(const cs_equation_param_t *eqp,
 
     /* Nitsche's method for Dirichlet BCs */
     if (csys->has_dirichlet &&
-        (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-         eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)) {
+        (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)) {
       for (short int i = 0; i < csys->n_bc_faces; i++) {
 
         /* Get the boundary face in the cell numbering */
@@ -911,15 +911,15 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
 
     cs_real_t  *_rhs = csys->rhs + 3*f;
     for (int k = 0; k < 3; k++) {
-      mFF->val[4*k] += eqp->bc_penalization_coeff; /* 4 == mFF->n_rows + 1 */
-      _rhs[k] += _dir_val[k] * eqp->bc_penalization_coeff;
+      mFF->val[4*k] += eqp->strong_pena_bc_coeff; /* 4 == mFF->n_rows + 1 */
+      _rhs[k] += _dir_val[k] * eqp->strong_pena_bc_coeff;
     }
 
   }
   else {
 
     for (int k = 0; k < 3; k++)
-      mFF->val[4*k] += eqp->bc_penalization_coeff; /* 4 == mFF->n_rows + 1 */
+      mFF->val[4*k] += eqp->strong_pena_bc_coeff; /* 4 == mFF->n_rows + 1 */
 
   } /* Homogeneous BC */
 }
@@ -952,7 +952,6 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
-
   assert(cs_equation_param_has_diffusion(eqp));
   assert(h_info.is_iso == true);
 
@@ -978,7 +977,7 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
   /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
 
   /* coeff * \meas{f} / h_f  */
-  const cs_real_t pcoef = eqp->bc_penalization_coeff * sqrt(cm->face[f].meas);
+  const cs_real_t pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[f].meas);
 
   bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
 
@@ -1032,7 +1031,6 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
-
   assert(cs_equation_param_has_diffusion(eqp));
   assert(h_info.is_iso == true);
 
@@ -1074,7 +1072,7 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
   /* 3) Update the bc_op matrix and the RHS with the penalization */
 
   /* coeff * \meas{f} / h_f  */
-  const cs_real_t pcoef = eqp->bc_penalization_coeff * sqrt(cm->face[f].meas);
+  const cs_real_t pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[f].meas);
 
   bc_op->val[f*(n_dofs + 1)] += pcoef; /* Diagonal term */
 
@@ -1123,11 +1121,10 @@ cs_cdofb_symmetry(short int                       f,
                   cs_cell_builder_t              *cb,
                   cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
-
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
   assert(h_info.is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
 
@@ -1159,7 +1156,7 @@ cs_cdofb_symmetry(short int                       f,
                                 {nf[2]*nf[0], nf[2]*nf[1], nf[2]*nf[2]} };
 
   /* chi * \meas{f} / h_f  */
-  const cs_real_t  pcoef = eqp->bc_penalization_coeff * sqrt(pfq.meas);
+  const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
 
   /* Handle the diagonal block: Retrieve the 3x3 matrix */
   cs_sdm_t  *bFF = cs_sdm_get_block(csys->mat, f, f);
@@ -1226,9 +1223,7 @@ cs_cdofb_fixed_wall(short int                       f,
                     cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(cb);
-
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cm != NULL && csys != NULL);  /* Sanity checks */
 
   const cs_quant_t  pfq = cm->face[f];
   const cs_real_t  *ni = pfq.unitv;
@@ -1237,7 +1232,7 @@ cs_cdofb_fixed_wall(short int                       f,
                                 ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
 
   /* chi * \meas{f} / h_f  */
-  const cs_real_t  pcoef = eqp->bc_penalization_coeff * sqrt(pfq.meas);
+  const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
 
   cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, f, f);
   assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);

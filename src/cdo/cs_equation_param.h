@@ -187,29 +187,38 @@ typedef struct {
    * - \ref CS_PARAM_BC_HMG_NEUMANN
    * - \ref CS_PARAM_BC_HMG_DIRICHLET
    *
-   * \var enforcement
-   * Type of enforcement for the Dirichlet boundary conditions.
-   * See \ref cs_param_bc_enforce_t for more details.
-   *
-   * \var bc_penalization_coeff
-   * Value of penalization coefficient used to enforce the Dirichlet boundary
-   * conditions (useful if the technique used to enforce the Dirichlet boundary
-   * condition is \ref CS_PARAM_BC_ENFORCE_PENALIZED,
-   * \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE or \ref CS_PARAM_BC_ENFORCE_WEAK_SYM)
-   * See \ref CS_EQKEY_BC_PENA_COEFF for more details.
-   *
    * \var n_bc_defs
    * Number of boundary conditions which are defined for this equation
    *
    * \var bc_defs
    * Pointers to the definitions of the boundary conditions
+   *
+   * \var default_enforcement
+   * Type of strategy to enforce an essential boundary conditions (Dirichlet for
+   * instance) when no predefined strategy is prescribed.  See \ref
+   * cs_param_bc_enforce_t for more details.
+   *
+   * \var strong_pena_bc_coeff
+   * Value of the penalization coefficient used to enforce the Dirichlet
+   * boundary conditions when \ref CS_PARAM_BC_ENFORCE_PENALIZED is set. This
+   * value should be sufficiently large in order to neglect off-diagonal terms.
+   *
+   * \var weak_pena_bc_coeff
+   * Value of the penalization coefficient used to enforce the Dirichlet
+   * boundary condition when \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE or \ref
+   * CS_PARAM_BC_ENFORCE_WEAK_SYM is set. This two latter strategies have a
+   * lesser influence on the conditioning number of the linear system than the
+   * choice \ref CS_PARAM_BC_ENFORCE_PENALIZED
+   *
    */
 
   cs_param_bc_type_t            default_bc;
-  cs_param_bc_enforce_t         enforcement;
-  cs_real_t                     bc_penalization_coeff;
   int                           n_bc_defs;
   cs_xdef_t                   **bc_defs;
+
+  cs_param_bc_enforce_t         default_enforcement;
+  cs_real_t                     strong_pena_bc_coeff;
+  cs_real_t                     weak_pena_bc_coeff;
 
   /*!
    * @}
@@ -532,11 +541,6 @@ typedef struct {
  * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
  * technique is available up to now.
  *
- * \var CS_EQKEY_BC_PENA_COEFF
- * Set the value of the penalization coefficient either when "penalization" is
- * activated or when "weak"/"weak_sym" is activated. In the former case, the
- * default is about 1e12 and in the latter case, the default value is about 100.
- *
  * \var CS_EQKEY_BC_QUADRATURE
  * Set the quadrature algorithm used for evaluating integral quantities on
  * faces or volumes. Available choices are:
@@ -546,6 +550,17 @@ typedef struct {
  *
  * Remark: "higher" and "highest" implies automatically a subdivision into
  * tetrahedra of each cell.
+ *
+ * \var CS_EQKEY_BC_STRONG_PENA_COEFF
+ * Set the value of the penalization coefficient when "penalization" is
+ * activated The default value is 1e12.
+ * cf. \ref CS_PARAM_BC_ENFORCE_PENALIZED
+ *
+ * \var CS_EQKEY_BC_WEAK_PENA_COEFF
+ * Set the value of the penalization coefficient when "weak" or "weak_sym" is
+ * activated. The default value is 100.
+ * cf. \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
+ * or  \ref CS_PARAM_BC_ENFORCE_WEAK_SYM
  *
  * \var CS_EQKEY_TIME_SCHEME
  * Set the scheme for the temporal discretization. Available choices are:
@@ -599,8 +614,9 @@ typedef enum {
   CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
-  CS_EQKEY_BC_PENA_COEFF,
   CS_EQKEY_BC_QUADRATURE,
+  CS_EQKEY_BC_STRONG_PENA_COEFF,
+  CS_EQKEY_BC_WEAK_PENA_COEFF,
   CS_EQKEY_DOF_REDUCTION,
   CS_EQKEY_EXTRA_OP,
   CS_EQKEY_HODGE_DIFF_ALGO,
