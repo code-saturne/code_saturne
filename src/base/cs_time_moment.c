@@ -1382,6 +1382,27 @@ _ensure_init_weight_accumulator(cs_time_moment_wa_t  *mwa)
 }
 
 /*----------------------------------------------------------------------------
+ * Reset weight accumulator
+ *
+ * parameters:
+ *   mwa <-- moment weight accumulator
+ *----------------------------------------------------------------------------*/
+
+static void
+_reset_weight_accumulator(cs_time_moment_wa_t  *mwa)
+{
+  if (mwa->location_id == CS_MESH_LOCATION_NONE)
+    mwa->val0 = 0.;
+  else {
+    assert(mwa->val != NULL);
+
+    cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
+    for (cs_lnum_t i = 0; i < n_w_elts; i++)
+      mwa->val[i] = 0.;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Update weight accumulator
  *
  * parameters:
@@ -1856,6 +1877,46 @@ cs_time_moment_is_active(int  moment_id)
     retval = 0;
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset a time moment.
+ *
+ * \param[in]   moment_id  id of associated moment
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_reset(int   moment_id)
+{
+  const cs_time_moment_t *mt = _moment + moment_id;
+  cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
+
+  cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+
+  cs_field_t *f = cs_field_by_id(mt->f_id);
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    /* reset moment values */
+    f->val[i] = 0.;
+  }
+
+  _reset_weight_accumulator(mwa);
+
+  /* sub-moments (means for variance) */
+
+  mt = _moment + mt->l_id;
+  mwa = _moment_wa + mt->wa_id;
+
+  f = cs_field_by_id(mt->f_id);
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    /* reset moment values */
+    f->val[i] = 0.;
+  }
+
+  _reset_weight_accumulator(mwa);
 }
 
 /*----------------------------------------------------------------------------*/

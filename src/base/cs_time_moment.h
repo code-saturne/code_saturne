@@ -298,6 +298,17 @@ cs_time_moment_get_field(int  moment_id);
 int
 cs_time_moment_is_active(int  moment_id);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset a time moment.
+ *
+ * \param[in]   moment_id  id of associated moment
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_reset(int   moment_id);
+
 /*----------------------------------------------------------------------------
  * Update all moment accumulators.
  ----------------------------------------------------------------------------*/
