@@ -240,6 +240,16 @@ typedef struct {
    * @name Numerical settings for the time-dependent parameters
    * @{
    *
+   * \var do_lumping
+   * Set to true or false. Activate several actions:
+   * Perform a mass lumping of the matrices related to the time and reaction
+   * discretization. All source terms are evaluated using a barycentric
+   * quadrature.
+   */
+
+  bool                          do_lumping;
+
+  /*!
    * \var time_hodge
    * Set of parameters for the discrete Hodge operator related to the unsteady
    * term
@@ -253,16 +263,12 @@ typedef struct {
    * \var theta
    * Value of the coefficient for a theta scheme (between 0 and 1)
    *
-   * \var do_lumping
-   * Perform a mass lumping on the matrix related to the time discretization.
-   * - true or false
    */
 
   cs_param_hodge_t              time_hodge;
   cs_property_t                *time_property;
   cs_param_time_scheme_t        time_scheme;
   cs_real_t                     theta;
-  bool                          do_lumping;
 
   /*!
    * @}
@@ -389,13 +395,83 @@ typedef struct {
 /*! \enum cs_equation_key_t
  *  \brief List of available keys for setting the parameters of an equation
  *
- * \var CS_EQKEY_SPACE_SCHEME
- * Set the space discretization scheme. Available choices are:
- * - "cdo_vb"  for CDO vertex-based scheme
- * - "cdo_vcb" for CDO vertex+cell-based scheme
- * - "cdo_fb"  for CDO face-based scheme
- * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
- * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
+ * \var CS_EQKEY_ADV_FORMULATION
+ * Kind of formulation of the advective term. Available choices are:
+ * - "conservative"
+ * - "non_conservative"
+ *
+ * \var CS_EQKEY_ADV_SCHEME
+ * Type of numerical scheme for the advective term. The available choices
+ * depend on the space discretization scheme.
+ * - "upwind" (cf. \ref CS_PARAM_ADVECTION_SCHEME_UPWIND)
+ * - "centered" (cf. \ref CS_PARAM_ADVECTION_SCHEME_CENTERED)
+ * - "mix_centered_upwind" (\ref CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND)
+ * - "samarskii" --> switch smoothly betwwen an upwind and a centered scheme
+ *   thanks to a weight depending on the Peclet number. (cf.
+ * \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII). Only for CDO-Vb schemes.
+ * - "sg" --> closely related to "samarskii" but with a different definition of
+ *   the weight (cf. \ref CS_PARAM_ADVECTION_SCHEME_SG). Only for CDO-Vb schemes
+ * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
+ *   Enable a better accuracy. (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP)
+ *
+ * \var CS_EQKEY_ADV_UPWIND_PORTION
+ * Value between 0 and 1 specifying the portion of upwind added to a centered
+ * discretization.
+ *
+ * \var CS_EQKEY_AMG_TYPE
+ * Specify which type of algebraic multigrid (AMG) to choose.
+ * Available choices are:
+ * - "none" --> (default) No predefined AMG solver
+ * - "boomer" --> Boomer AMG multigrid from the Hypre library
+ * - "gamg" --> GAMG multigrid from the PETSc library
+ * - "v_cycle" --> Code_Saturne's in house multigrid with a V-cycle strategy
+ * - "k_cycle" --> Code_Saturne's in house multigrid with a K-cycle strategy
+ * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
+ * PETSc in this case
+ *
+ * \var CS_EQKEY_BC_ENFORCEMENT
+ * Set the type of enforcement of the boundary conditions.
+ * Available choices are:
+ * - "algebraic": Modify the linear system so as to add the contribution of the
+ * Dirichlet in the right-hand side and replace the line associated to a
+ * Dirichlet BC by identity. This is a good choice for pure diffusinon or pure
+ * convection problem.
+ * - "penalization": Add a huge penalization coefficient on the diagonal term
+ * of the line related to DoFs associated a Dirichlet BC. The right-hand side is
+ * also modified to take into account this penalization. Be aware that it may
+ * worsen the matrix conditioning.
+ * - "weak": weak enforcement using the Nitsche method (there is also
+ * penalization term but the scaling is such that a moderate value (1-100) of
+ * the penalization coefficient is sufficient). This a good choice for
+ * convection/diffusion problem.
+ * - "weak_sym": Same as the "weak" option but with a modification so as to
+ * add a symmetric contribution to the system. If the problem yields a symmetric
+ * matrix. This choice is more relevant than "weak". This a good choice for a
+ * diffusion problem.
+ *
+ * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
+ * technique is available up to now.
+ *
+ * \var CS_EQKEY_BC_QUADRATURE
+ * Set the quadrature algorithm used for evaluating integral quantities on
+ * faces or volumes. Available choices are:
+ * - "bary"    used the barycenter approximation
+ * - "higher"  used 4 Gauss points for approximating the integral
+ * - "highest" used 5 Gauss points for approximating the integral
+ *
+ * Remark: "higher" and "highest" implies automatically a subdivision into
+ * tetrahedra of each cell.
+ *
+ * \var CS_EQKEY_BC_STRONG_PENA_COEFF
+ * Set the value of the penalization coefficient when "penalization" is
+ * activated The default value is 1e12.
+ * cf. \ref CS_PARAM_BC_ENFORCE_PENALIZED
+ *
+ * \var CS_EQKEY_BC_WEAK_PENA_COEFF
+ * Set the value of the penalization coefficient when "weak" or "weak_sym" is
+ * activated. The default value is 100.
+ * cf. \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
+ * or  \ref CS_PARAM_BC_ENFORCE_WEAK_SYM
  *
  * \var CS_EQKEY_DOF_REDUCTION
  * Set how is defined each degree of freedom (DoF).
@@ -404,12 +480,13 @@ typedef struct {
  *   face for fluxes and integral inside a cell for densities
  * - "average": DoF are defined as the average on the element
  *
- * \var CS_EQKEY_VERBOSITY
- * Set the level of details written by the code for an equation.
- * The higher the more detailed information is displayed.
- * - "0" (default)
- * - "1" detailed setup resume and coarse grain timer stats
- * - "2" fine grain for timer stats
+ * \var CS_EQKEY_EXTRA_OP
+ * Set the additional post-processing to perform. Available choices are:
+ * - "balance"  post-process the balance result in each control volume for
+ *              each main term of an equation (diffusion, convection, time...)
+ * - "peclet"  post-process an estimation of the Peclet number in each cell
+ * - "upwind_coef"  post-process an estimation of the upwinding coefficient
+ * - "normal_flux"  post-process the normal flux across boundary faces
  *
  * \var CS_EQKEY_HODGE_DIFF_ALGO
  * Set the algorithm used for building the discrete Hodge operator used
@@ -440,31 +517,13 @@ typedef struct {
  *   computation of the cell barycenter
  *
  * \var CS_EQKEY_HODGE_REAC_ALGO
- * Set the algorithm used for building the discrete Hodge operator used
- * in the reaction term. Available choices are:
- * - "voronoi" --> leads to diagonal discrete Hodge operator but is not
- *   consistent for all meshes.  Require an "orthogonal" (or admissible) mesh;
+ * Set the algorithm used for building the discrete Hodge operator used in the
+ * reaction term. Available choices are:
+ * - "voronoi" --> leads to diagonal discrete Hodge operator (similar to a
+ * lumping).
  * - "wbs" --> (default) is robust and accurate but is limited to the
- *   reconstruction of potential-like degrees of freedom and needs a correct
- *   computation of the cell barycenter
- *
- * \var CS_EQKEY_SOLVER_FAMILY
- * Specify which class of solver are possible. Available choices are:
- * - "cs" --> (default) List of possible iterative solvers are those of
- *   Code_Saturne,
- * - "petsc" --> List of possible iterative solvers are those of the PETSc
- *   library. WARNING: one needs to install Code_Saturne with PETSc in this case
- *
- * \var CS_EQKEY_AMG_TYPE
- * Specify which type of algebraic multigrid (AMG) to choose.
- * Available choices are:
- * - "none" --> (default) No predefined AMG solver
- * - "boomer" --> Boomer AMG multigrid from the Hypre library
- * - "gamg" --> GAMG multigrid from the PETSc library
- * - "v_cycle" --> Code_Saturne's in house multigrid with a V-cycle strategy
- * - "k_cycle" --> Code_Saturne's in house multigrid with a K-cycle strategy
- * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
- * PETSc in this case
+ * reconstruction of potential-like degrees of freedom and needs a correct
+ * computation of the cell barycenter
  *
  * \var CS_EQKEY_ITSOL
  * Specify the iterative solver for solving the linear system related to an
@@ -531,49 +590,13 @@ typedef struct {
  * Level of details written by the code for the resolution of the linear system
  * - Examples: "0", "1", "2" or higher
  *
- * \var CS_EQKEY_BC_ENFORCEMENT
- * Set the type of enforcement of the boundary conditions.
- * Available choices are:
- * - "algebraic": Modify the linear system so as to add the contribution of the
- * Dirichlet in the right-hand side and replace the line associated to a
- * Dirichlet BC by identity. This is a good choice for pure diffusinon or pure
- * convection problem.
- * - "penalization": Add a huge penalization coefficient on the diagonal term
- * of the line related to DoFs associated a Dirichlet BC. The right-hand side is
- * also modified to take into account this penalization. Be aware that it may
- * worsen the matrix conditioning.
- * - "weak": weak enforcement using the Nitsche method (there is also
- * penalization term but the scaling is such that a moderate value (1-100) of
- * the penalization coefficient is sufficient). This a good choice for
- * convection/diffusion problem.
- * - "weak_sym": Same as the "weak" option but with a modification so as to
- * add a symmetric contribution to the system. If the problem yields a symmetric
- * matrix. This choice is more relevant than "weak". This a good choice for a
- * diffusion problem.
- *
- * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
- * technique is available up to now.
- *
- * \var CS_EQKEY_BC_QUADRATURE
- * Set the quadrature algorithm used for evaluating integral quantities on
- * faces or volumes. Available choices are:
- * - "bary"    used the barycenter approximation
- * - "higher"  used 4 Gauss points for approximating the integral
- * - "highest" used 5 Gauss points for approximating the integral
- *
- * Remark: "higher" and "highest" implies automatically a subdivision into
- * tetrahedra of each cell.
- *
- * \var CS_EQKEY_BC_STRONG_PENA_COEFF
- * Set the value of the penalization coefficient when "penalization" is
- * activated The default value is 1e12.
- * cf. \ref CS_PARAM_BC_ENFORCE_PENALIZED
- *
- * \var CS_EQKEY_BC_WEAK_PENA_COEFF
- * Set the value of the penalization coefficient when "weak" or "weak_sym" is
- * activated. The default value is 100.
- * cf. \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
- * or  \ref CS_PARAM_BC_ENFORCE_WEAK_SYM
+ * \var CS_EQKEY_SPACE_SCHEME
+ * Set the space discretization scheme. Available choices are:
+ * - "cdo_vb"  for CDO vertex-based scheme
+ * - "cdo_vcb" for CDO vertex+cell-based scheme
+ * - "cdo_fb"  for CDO face-based scheme
+ * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
+ * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
  *
  * \var CS_EQKEY_TIME_SCHEME
  * Set the scheme for the temporal discretization. Available choices are:
@@ -588,36 +611,13 @@ typedef struct {
  * "theta_scheme"
  * - Example: "0.75" (keyval must be between 0 and 1)
  *
- * \var CS_EQKEY_ADV_FORMULATION
- * Kind of formulation of the advective term. Available choices are:
- * - "conservative"
- * - "non_conservative"
+ * \var CS_EQKEY_VERBOSITY
+ * Set the level of details written by the code for an equation.
+ * The higher the more detailed information is displayed.
+ * - "0" (default)
+ * - "1" detailed setup resume and coarse grain timer stats
+ * - "2" fine grain for timer stats
  *
- * \var CS_EQKEY_ADV_SCHEME
- * Type of numerical scheme for the advective term. The available choices
- * depend on the space discretization scheme.
- * - "upwind" (cf. \ref CS_PARAM_ADVECTION_SCHEME_UPWIND)
- * - "centered" (cf. \ref CS_PARAM_ADVECTION_SCHEME_CENTERED)
- * - "mix_centered_upwind" (\ref CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND)
- * - "samarskii" --> switch smoothly betwwen an upwind and a centered scheme
- *   thanks to a weight depending on the Peclet number. (cf.
- * \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII). Only for CDO-Vb schemes.
- * - "sg" --> closely related to "samarskii" but with a different definition of
- *   the weight (cf. \ref CS_PARAM_ADVECTION_SCHEME_SG). Only for CDO-Vb schemes
- * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
- *   Enable a better accuracy. (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP)
- *
- * \var CS_EQKEY_ADV_UPWIND_PORTION
- * Value between 0 and 1 specifying the portion of upwind added to a centered
- * discretization.
- *
- * \var CS_EQKEY_EXTRA_OP
- * Set the additional post-processing to perform. Available choices are:
- * - "balance"  post-process the balance result in each control volume for
- *              each main term of an equation (diffusion, convection, time...)
- * - "peclet"  post-process an estimation of the Peclet number in each cell
- * - "upwind_coef"  post-process an estimation of the upwinding coefficient
- * - "normal_flux"  post-process the normal flux across boundary faces
  */
 
 typedef enum {
@@ -630,6 +630,7 @@ typedef enum {
   CS_EQKEY_BC_QUADRATURE,
   CS_EQKEY_BC_STRONG_PENA_COEFF,
   CS_EQKEY_BC_WEAK_PENA_COEFF,
+  CS_EQKEY_DO_LUMPING,
   CS_EQKEY_DOF_REDUCTION,
   CS_EQKEY_EXTRA_OP,
   CS_EQKEY_HODGE_DIFF_ALGO,
@@ -885,6 +886,18 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 void
 cs_equation_param_set_sles(cs_equation_param_t     *eqp,
                            int                      field_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last modification of the cs_equation_param_t structure before
+ *         launching the computation
+ *
+ * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_last_stage(cs_equation_param_t   *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!

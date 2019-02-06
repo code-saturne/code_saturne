@@ -59,10 +59,10 @@ BEGIN_C_DECLS
 
 #define CS_FLAG_SYS_MASS_MATRIX  (1 << 0) /*!<  1: build a mass matrix */
 #define CS_FLAG_SYS_SYM          (1 << 1) /*!<  2: system matrix is symmetric */
-#define CS_FLAG_SYS_TIME_DIAG    (1 << 2) /*!<  4: lumping by construction */
-#define CS_FLAG_SYS_SOURCES_HLOC (1 << 3) /*!<  8: Hodge op. for source terms */
-#define CS_FLAG_SYS_VECTOR       (1 << 4) /*!< 16: vector-valued variable */
-#define CS_FLAG_SYS_DEBUG        (1 << 5) /*!< 32: activate debug mode */
+#define CS_FLAG_SYS_TIME_DIAG    (1 << 2) /*!<  4: lump the time term */
+#define CS_FLAG_SYS_REAC_DIAG    (1 << 3) /*!<  8: lump the reaction term */
+#define CS_FLAG_SYS_SOURCES_HLOC (1 << 4) /*!< 16: Hodge op. for source terms */
+#define CS_FLAG_SYS_VECTOR       (1 << 5) /*!< 32: vector-valued variable */
 
 /*!
  * @}

@@ -430,9 +430,24 @@ _vbs_advection_diffusion_reaction(double                         time_eval,
   if (cs_equation_param_has_reaction(eqp)) { /* REACTION TERM
                                               * ============= */
 
-    /* Update local system matrix with the reaction term
-       cb->hdg corresponds to the current mass matrix */
-    cs_sdm_add_mult(csys->mat, cb->rpty_val, cb->hdg);
+    if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
+
+      /* |c|*wvc = |dual_cell(v) cap c| */
+      assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+      const double  ptyc = cb->rpty_val * cm->vol_c;
+      for (short int i = 0; i < cm->n_vc; i++)
+        csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * ptyc;
+
+    }
+    else {
+
+      assert(cs_flag_test(eqb->sys_flag, CS_FLAG_SYS_MASS_MATRIX));
+
+      /* Update local system matrix with the reaction term
+         cb->hdg corresponds to the current mass matrix */
+      cs_sdm_add_mult(csys->mat, cb->rpty_val, cb->hdg);
+
+    }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1112,32 +1127,56 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* REACTION */
   if (cs_equation_param_has_reaction(eqp)) {
 
-    if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
-        | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
-      eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " Invalid choice of algorithm for the reaction term.");
+    if (eqp->do_lumping)
+      eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
+    else {
+
+      switch (eqp->reaction_hodge.algo) {
+
+      case CS_PARAM_HODGE_ALGO_VORONOI:
+        eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
+        break;
+      case CS_PARAM_HODGE_ALGO_WBS:
+        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
+          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid choice of algorithm for the reaction term.",
+                  __func__);
+        break;
+      }
+
+    } /* Lumping or not lumping */
 
   } /* Reaction */
 
   /* TIME */
   if (cs_equation_param_has_time(eqp)) {
 
-    if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
+    if (eqp->do_lumping)
       eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
-    }
-    else if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      if (eqp->do_lumping)
+    else {
+
+      switch (eqp->time_hodge.algo) {
+
+      case CS_PARAM_HODGE_ALGO_VORONOI:
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
-      else {
+        break;
+      case CS_PARAM_HODGE_ALGO_WBS:
         eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
           | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid choice of algorithm for the time term.",
+                  __func__);
+        break;
       }
-    }
+
+    } /* Lumping or not lumping */
 
   } /* Time part */
 
