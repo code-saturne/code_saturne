@@ -752,6 +752,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
         symbols.append(('rho', 'Density'))
 
+        from code_saturne.model.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() == 'on':
             symbols.append(('T', 'Temperature'))
             ref_temperature = self.getTemperature()
