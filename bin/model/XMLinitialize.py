@@ -144,10 +144,8 @@ class XMLinit(Variables):
             # Thermodynamics definitinon
 
             m = FluidCharacteristicsModel(self.case)
-            for tag in ('density',
-                        'molecular_viscosity',
-                        'specific_heat',
-                        'thermal_conductivity'):
+
+            for (tag, sym) in m.lst:
                 m.getInitialValue(tag)
 
             # Calculation features
