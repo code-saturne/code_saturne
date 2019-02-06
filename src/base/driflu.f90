@@ -286,21 +286,24 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 !===============================================================================
 
   ! Test if a deviation velocity of particles class exists
-  write(fname,'(a,i2.2)')'vd_p_' ,icla
-  call field_get_id_try(fname, id_vdp_i)
 
-  if (icla.ge.1.and.id_vdp_i.ne.-1) then
+  if (icla.ge.1) then
 
-    call field_get_val_v(id_vdp_i, vdp_i)
+    write(fname,'(a,i2.2)')'vd_p_' ,icla
+    call field_get_id_try(fname, id_vdp_i)
 
-    do iel = 1, ncel
+    if (id_vdp_i.ne.-1) then
+      call field_get_val_v(id_vdp_i, vdp_i)
 
-      rho = crom(iel)
-      cpro_drift(1, iel) = rho*vdp_i(1, iel)
-      cpro_drift(2, iel) = rho*vdp_i(2, iel)
-      cpro_drift(3, iel) = rho*vdp_i(3, iel)
+      do iel = 1, ncel
 
-    enddo
+        rho = crom(iel)
+        cpro_drift(1, iel) = rho*vdp_i(1, iel)
+        cpro_drift(2, iel) = rho*vdp_i(2, iel)
+        cpro_drift(3, iel) = rho*vdp_i(3, iel)
+
+      enddo
+    endif
 
   else if (icla.ge.0.and.id_pro.ne.-1.and.id_drift.ne.-1) then
 
