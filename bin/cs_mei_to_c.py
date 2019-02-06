@@ -136,7 +136,8 @@ class mei_to_c_interpreter:
         self.case = case
         self.pkg_name = case['package'].name
 
-        self.tmp_path = os.path.join(case['case_path'], 'DATA', 'tmp')
+        self.data_path = os.path.join(case['case_path'], 'DATA')
+        self.tmp_path = os.path.join(self.data_path, 'tmp')
 
         # function name to file name dictionary
         self.vol_funcs = {}
@@ -774,6 +775,8 @@ class mei_to_c_interpreter:
                                                        stderr=err)
         out.close()
         err.close()
+
+        os.chdir(self.data_path)
 
         n_errors = 0
         if compilation_test != 0:
