@@ -478,7 +478,7 @@ cs_advection_field_log_setup(void)
                     "Related to the \"Groundwater Flow\" module\n");
       break;
     case CS_ADVECTION_FIELD_USER:
-      cs_log_printf(CS_LOG_SETUP, " User-defined\n");
+      cs_log_printf(CS_LOG_SETUP, "User-defined\n");
       break;
 
     default:
@@ -526,7 +526,7 @@ cs_advection_field_log_setup(void)
 
     /* Boundary flux definition */
     cs_log_printf(CS_LOG_SETUP,
-                  " <AdvectionField/%s> number of definitions related to"
+                  " <AdvectionField/%s> Number of definitions related to"
                   " the boundary flux: %d\n", adv->name, adv->n_bdy_flux_defs);
     for (int ib = 0; ib < adv->n_bdy_flux_defs; ib++)
       cs_xdef_log(adv->bdy_flux_defs[ib]);
