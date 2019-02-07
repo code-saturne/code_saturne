@@ -164,13 +164,15 @@ double precision rctse
 double precision eigen_max
 double precision eigen_vals(3)
 double precision turb_schmidt
-double precision gradchk, gradro_impl
+double precision gradchk, gradro_impl, tr_impl, const
 double precision kseps
 double precision matrn(6), oo_matrn(6)
 double precision ceps_impl, cphi3impl, cphiw_impl
 double precision impl_drsm(6,6)
 double precision implmat2add(3,3)
 double precision impl_lin_cst, impl_id_cst
+double precision grav(3)
+double precision gkks3
 
 character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
@@ -320,8 +322,8 @@ call cs_user_turbulence_source_terms2 &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
-  !     If we extrapolate the source terms
 do isou = 1, dimrij
+  ! If we extrapolate the source terms
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       ! Save for exchange
@@ -841,6 +843,9 @@ endif
 
 if (igrari.eq.1) then
 
+  grav(1) = gx
+  grav(2) = gy
+  grav(3) = gz
   call field_get_id_try("rij_buoyancy", f_id)
   if (f_id.ge.0) then
     call field_get_val_v(f_id, cpro_buoyancy)
@@ -872,17 +877,9 @@ if (igrari.eq.1) then
   ! Implicit buoyancy term
   if (iscalt.gt.0 .and. nscal.ge.iscalt) then
     call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
-    if (iturb .eq. 32) then
-      gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-cebmr6)
-    else
-      gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-crij3)
-    end if
+    const = -1.5d0 * cmu / turb_schmidt
   else
-    if (iturb .eq. 32) then
-      gradro_impl = -1.5d0*cmu*(1.0d0-cebmr6)
-    else
-      gradro_impl = -1.5d0*cmu*(1.0d0-crij3)
-    end if
+    const = -1.5d0 * cmu
   end if
 
   do iel = 1, ncel
@@ -894,17 +891,65 @@ if (igrari.eq.1) then
     end do
     implmat2add(:,:) = 0.0d0
 
-    gradchk = gx*gradro(1,iel) + gy*gradro(2,iel) + gz*gradro(3,iel)
-    if (gradchk .gt. 0.0d0) then
-      kseps = (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel)) &
-              / (2.0d0*cvara_ep(iel))
+    kseps = (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel)) &
+      / (2.0d0*cvara_ep(iel))
 
-      do jsou = 1, 3
-        implmat2add(1,jsou) = kseps * gradro_impl * gx * gradro(jsou,iel)
-        implmat2add(2,jsou) = kseps * gradro_impl * gy * gradro(jsou,iel)
-        implmat2add(3,jsou) = kseps * gradro_impl * gz * gradro(jsou,iel)
+    xrij(1,1) = cvara_var(1,iel)
+    xrij(2,2) = cvara_var(2,iel)
+    xrij(3,3) = cvara_var(3,iel)
+    xrij(1,2) = cvara_var(4,iel)
+    xrij(2,3) = cvara_var(5,iel)
+    xrij(1,3) = cvara_var(6,iel)
+    xrij(2,1) = xrij(1,2)
+    xrij(3,1) = xrij(1,3)
+    xrij(3,2) = xrij(2,3)
+
+    trrij = 0.5d0 * (xrij(1,1) + xrij(2,2) + xrij(3,3))
+
+    gkks3 = 0.d0
+    do jsou = 1, 3
+      do isou = 1, 3
+        gkks3 = gkks3 + grav(isou) * gradro(jsou,iel) * xrij(isou, jsou)
+      enddo
+    enddo
+    gkks3 = const * kseps * gkks3 * crij3 * 2.d0 / 3.d0
+
+    if (gkks3.le.0.d0) then
+      ! Term "C3 tr(G) Id"
+      ! Computing the inverse matrix of R^n
+      ! Scaling by tr(R) in order to dodge inversion errors
+      do isou = 1, 6
+        matrn(isou) = cvara_var(isou,iel)/trrij
+        oo_matrn(isou) = 0.0d0
       end do
 
+      ! Inversing the matrix
+      call symmetric_matrix_inverse(matrn, oo_matrn)
+      do isou = 1, 6
+        oo_matrn(isou) = oo_matrn(isou)/trrij
+      end do
+
+      do jsou = 1, 3
+        do isou = 1, 3
+          iii = t2v(isou,jsou)
+          implmat2add(isou,jsou) = - 0.5d0 * gkks3 * oo_matrn(iii)
+        end do
+      end do
+
+    endif
+
+    gradchk = grav(1)*gradro(1,iel) + grav(2)*gradro(2,iel) + grav(3)*gradro(3,iel)
+    if (gradchk .gt. 0.0d0) then
+
+      ! Implicit term written as:
+      !   Po . R^n+1 + R^n+1 . Po^t
+      ! with Po proportional to "g (x) Grad rho"
+      gradro_impl = const * (1.0d0-crij3) * kseps
+      do jsou = 1, 3
+        do isou = 1, 3
+          implmat2add(isou,jsou) = implmat2add(isou,jsou) - gradro_impl * grav(isou) * gradro(jsou,iel)
+        end do
+      end do
     end if
 
     ! Compute the 6x6 matrix A which verifies
@@ -913,7 +958,9 @@ if (igrari.eq.1) then
 
     do isou = 1, dimrij
       do jsou = 1, dimrij
-        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) - cell_f_vol(iel) &
+        ! Carefull ! Inversion of the order of the coefficients since
+        ! rovsdt matrix is then used by a c function for the linear solving
+        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
                                 * impl_drsm(isou,jsou)
       end do
     end do

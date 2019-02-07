@@ -73,8 +73,7 @@ double precision buoyancy(6,ncelet)
 integer          iel, dimrij, isou, i, j
 double precision dij
 
-double precision uns3, const, kseps, csttmp
-double precision prdtur
+double precision uns3, const, kseps
 double precision rit(3), gij(3, 3), grav(3)
 double precision gkks3
 double precision turb_schmidt
@@ -88,21 +87,13 @@ double precision, dimension(:,:), pointer :: cvara_rij
 ! 1. Initialization
 !===============================================================================
 
-! ebrsm
-if (iturb.eq.32) then
-  csttmp = cebmr6
-else
-  csttmp = crij3
-endif
-
 if(iscalt.gt.0.and.nscal.ge.iscalt) then
   call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
-  prdtur = turb_schmidt
+  const = -1.5d0 * cmu / turb_schmidt
 else
-  prdtur = 1.d0
+  const = -1.5d0 * cmu
 endif
 
-const = -1.5d0*cmu/prdtur
 uns3  = 1.d0/3.d0
 
 grav(1) = gx
@@ -119,7 +110,7 @@ call field_get_dim(ivarfl(irij), dimrij)
 ! 2. Terms for Rij:
 !      rom*volume*dRij/dt =
 !                     ... + (Gij - crij3*(Gij-Delta ij Gkk/3))*volume
-!            With Gij = -(1.5 cmu/prdtur) (k/eps) (Rit Gj + Rjt Gi)
+!            With Gij = -(1.5 cmu/PrT) (k/eps) (Rit Gj + Rjt Gi)
 !                 Rit = Rik drom/dxk (sum on k)
 !            Note that in tensorial notation Gij is:
 !                 G = a [R.( Grho x g) + (g x Grho).R]
@@ -174,7 +165,7 @@ do iel = 1, ncel
       dij = 0.0d0
     endif
 
-    buoyancy(isou,iel) = gij(i,j) * (1.d0 - csttmp) + csttmp * dij * gkks3
+    buoyancy(isou,iel) = gij(i,j) * (1.d0 - crij3) + crij3 * dij * gkks3
 
   enddo
 enddo
@@ -232,8 +223,8 @@ double precision smbr(ncelet)
 
 integer          iel
 
-double precision uns3, const, csttmp
-double precision prdtur, r1t, r2t, r3t
+double precision uns3, const
+double precision r1t, r2t, r3t
 double precision g11p, g22p, g33p
 double precision aa, bb
 double precision turb_schmidt
@@ -247,21 +238,13 @@ double precision, dimension(:,:), pointer :: cvara_rij
 ! 1. Initialization
 !===============================================================================
 
-! EBRSM
-if (iturb.eq.32) then
-  csttmp = cebmr6
-else
-  csttmp = crij3
-endif
-
 if(iscalt.gt.0.and.nscal.ge.iscalt) then
   call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
-  prdtur = turb_schmidt
+  const = -1.5d0 * cmu / turb_schmidt
 else
-  prdtur = 1.d0
+  const = -1.5d0 * cmu
 endif
 
-const = -1.5d0*cmu/prdtur
 uns3  = 1.d0/3.d0
 
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
@@ -272,10 +255,10 @@ call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 ! 2. Terms for epsilon:
 !      rom*volumr*deps/dt =
 !                     ... + CEPS1*(EPS/K)*Max(0,(Gkk/2))*volume
-!            With Gij = -(1.5 cmu/prdtur) (k/eps) (Rit Gj + Rjt Gi)
+!            With Gij = -(1.5 cmu/PrT) (k/eps) (Rit Gj + Rjt Gi)
 !                 Rit = Rik drom/dxk (sum on k)
 !            We simplify (eps/k) by noting
-!                GijP = -(1.5 cmu/prdtur)         (Rit Gj + Rjt Gi)
+!                GijP = -(1.5 cmu/PrT)         (Rit Gj + Rjt Gi)
 !      rom*volume*deps/dt =
 !                     ... + CEPS1*        Max(0,(GkkP/2))*volume
 !===============================================================================
