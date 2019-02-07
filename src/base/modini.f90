@@ -832,6 +832,14 @@ else
   endif
 endif
 
+! Constant for the Buoyant production term of Rij
+! EBRSM
+if (iturb.eq.32) then
+  crij3 = 0.6d0
+else
+  crij3 = 0.55d0
+endif
+
 if (iturb.eq.60) then !sst-ddes
   cddes = 0.65d0
 elseif (iturb.eq.51) then !phif-ddes

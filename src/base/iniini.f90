@@ -783,7 +783,7 @@ cnl3  = 4.5d0
 cnl4  = 1.d3
 cnl5  = 1.d0
 
-!   pour le Rij-epsilon standard (et SSG pour CRIJ3)
+!   pour le Rij-epsilon LRR (et SSG pour crij3)
 crij1  = 1.80d0
 crij2  = 0.60d0
 crij3  = 0.55d0
@@ -808,8 +808,6 @@ cebmr2  = 0.80d0
 cebmr3  = 0.65d0
 cebmr4  = 0.625d0
 cebmr5  = 0.20d0
-! cebmr6  is used in the buoyant term
-cebmr6  = 0.6d0
 cebme2  = 1.83d0
 cebmmu  = 0.22d0
 xcl     = 0.122d0

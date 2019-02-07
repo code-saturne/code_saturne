@@ -484,10 +484,10 @@ double cs_turb_crij1 = 1.80;
 double cs_turb_crij2 = 0.60;
 
 /*!
- * Constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
- * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
+ * Constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ models.
+ * Value is 0.55 for SSG and LRR, 0.6 for EBRSM.
  */
-const double cs_turb_crij3 = 0.55;
+double cs_turb_crij3 = 0.55;
 
 /*!
  * Constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
@@ -565,7 +565,6 @@ const double cs_turb_cebmr2 = 0.80;
 const double cs_turb_cebmr3 = 0.65;
 const double cs_turb_cebmr4 = 0.625;
 const double cs_turb_cebmr5 = 0.20;
-const double cs_turb_cebmr6 = 0.6;
 
 /*!
  * Constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
@@ -1650,6 +1649,7 @@ cs_turb_constants_log_setup(void)
          cs_turb_ce1, cs_turb_cssge2, cs_turb_sigmae,
          cs_turb_cmu);
   } else if (cs_glob_turb_model->iturb == 32) {
+    cs_turb_crij3 = 0.6;
     cs_log_printf
       (CS_LOG_SETUP,
        _("   EBRSM Rij-epsilon     (iturb = 32)\n"
@@ -1660,7 +1660,7 @@ cs_turb_constants_log_setup(void)
          "    cebmr4:      %14.5e (Cr4 coeff.)\n"
          "    cebmr5:      %14.5e (Cr5 coeff.)\n"
          "    csrij:       %14.5e (Rij Cs diffusion coeff.)\n"
-         "    cebmr6:      %14.5e (Gravity term coeff.)\n"
+         "    crij3:       %14.5e (Gravity term coeff.)\n"
          "    cebme2:      %14.5e (Coef Ceps2)\n"
          "    ce1:         %14.5e (Coef Ceps1)\n"
          "    sigmae:      %14.5e (Coef sigma_eps)\n"
@@ -1670,7 +1670,7 @@ cs_turb_constants_log_setup(void)
          "    xct:         %14.5e (Coef CT)\n"),
          cs_turb_cebms1, cs_turb_cebmr1, cs_turb_cebmr2,
          cs_turb_cebmr3, cs_turb_cebmr4, cs_turb_cebmr5,
-         cs_turb_csrij, cs_turb_cebmr6, cs_turb_cebme2,
+         cs_turb_csrij, cs_turb_crij3,  cs_turb_cebme2,
          cs_turb_ce1, cs_turb_sigmae, cs_turb_xa1,
          cs_turb_sigmak, cs_turb_xceta, cs_turb_xct);
   } else if (cs_glob_turb_model->iturb == 50) {

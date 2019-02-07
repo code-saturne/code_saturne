@@ -381,9 +381,8 @@ module cstphy
   !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crij2
 
-  !> constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
-  !> Useful if and only if \ref iturb=30
-  !> (\f$R_{ij}-\varepsilon\f$ LRR)
+  !> constant \f$C_3\f$ for the buoyant production term \f$R_{ij}-\varepsilon\f$
+  !>  models.
   double precision, save :: crij3
 
   !> constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
@@ -445,7 +444,7 @@ module cstphy
   !> constant of the Rij-epsilon EBRSM
   double precision, save :: cebms2
 
-  double precision, save :: cebmr1, cebmr2, cebmr3, cebmr4, cebmr5, cebmr6
+  double precision, save :: cebmr1, cebmr2, cebmr3, cebmr4, cebmr5
 
   !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ models.
   double precision, save :: csrij

@@ -429,6 +429,7 @@ do iel = 1, ncel
       cvar_rij(isou+3,iel) = 0.0d0
 
       iclrij(isou) = iclrij(isou) + 1
+      iclrij(isou+3) = iclrij(isou+3) + 1
     end do
 
     is_clipped = 1

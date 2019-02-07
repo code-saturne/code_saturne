@@ -76,7 +76,7 @@ double precision smbr(ncelet)
 
 integer          iel
 
-double precision uns3, const, kseps, csttmp
+double precision uns3, const, kseps
 double precision prdtur, r1t, r2t, r3t
 double precision g11, g22, g33, g12, g13, g23, gkks3
 double precision g11p, g22p, g33p
@@ -93,13 +93,6 @@ double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
-
-! ebrsm
-if (iturb.eq.32) then
-  csttmp = cebmr6
-else
-  csttmp = crij3
-endif
 
 if(iscalt.gt.0.and.nscal.ge.iscalt) then
   call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
@@ -151,7 +144,7 @@ if     (ivar.eq.ir11) then
     g33 = const*kseps*2.d0*(r3t*gz       )
     gkks3 = uns3*(g11+g22+g33)
 
-    phit11 = -csttmp*(g11-gkks3)
+    phit11 = -crij3 *(g11-gkks3)
 
     smbr(iel) = smbr(iel) + (g11+phit11)*volume(iel)
 
@@ -179,7 +172,7 @@ elseif (ivar.eq.ir22) then
     g33 = const*kseps*2.d0*(r3t*gz       )
     gkks3 = uns3*(g11+g22+g33)
 
-    phit22 = -csttmp*(g22-gkks3)
+    phit22 = -crij3*(g22-gkks3)
 
     smbr(iel) = smbr(iel) + (g22+phit22)*volume(iel)
 
@@ -207,7 +200,7 @@ elseif (ivar.eq.ir33) then
     g33 = const*kseps*2.d0*(r3t*gz       )
     gkks3 = uns3*(g11+g22+g33)
 
-    phit33 = -csttmp*(g33-gkks3)
+    phit33 = -crij3*(g33-gkks3)
 
     smbr(iel) = smbr(iel) + (g33+phit33)*volume(iel)
 
@@ -229,7 +222,7 @@ elseif (ivar.eq.ir12) then
 
     g12 = const*kseps*     (r1t*gy+r2t*gx)
 
-    phit12 = -csttmp* g12
+    phit12 = -crij3* g12
 
     smbr(iel) = smbr(iel) + (g12+phit12)*volume(iel)
 
@@ -251,7 +244,7 @@ elseif (ivar.eq.ir13) then
 
     g13 = const*kseps*     (r1t*gz+r3t*gx)
 
-    phit13 = -csttmp* g13
+    phit13 = -crij3* g13
 
     smbr(iel) = smbr(iel) + (g13+phit13)*volume(iel)
 
@@ -273,7 +266,7 @@ elseif (ivar.eq.ir23) then
 
     g23 = const*kseps*(r2t*gz+r3t*gy)
 
-    phit23 = -csttmp* g23
+    phit23 = -crij3* g23
 
     smbr(iel) = smbr(iel) + (g23+phit23)*volume(iel)
 
