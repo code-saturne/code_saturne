@@ -605,6 +605,13 @@ cs_user_lagr_model(void)
    * ============================================== */
 
   cs_glob_lagr_log_frequency_n = 1;
+
+  /* Post-process particle attributes
+   * ================================ */
+
+  cs_lagr_post_set_attr(CS_LAGR_STAT_CLASS, true);
+
+
 }
 
 /*----------------------------------------------------------------------------*/
