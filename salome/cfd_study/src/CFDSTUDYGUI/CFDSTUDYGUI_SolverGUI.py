@@ -361,12 +361,11 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         log.debug("launchGUI")
         from cs_gui import process_cmd_line
+        from code_saturne.Base.MainView import MainView
         if CFD_Code() == CFD_Saturne:
             from cs_package import package
-            from code_saturne.Base.MainView import MainView
         elif CFD_Code() == CFD_Neptune:
             from nc_package import package
-            from neptune_cfd.core.MainView import MainView
 
         if sobjXML == None:
             Title = "unnamed"

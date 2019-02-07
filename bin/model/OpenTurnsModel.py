@@ -103,9 +103,9 @@ class OpenTurnsModel(Model):
         self.nprocs       = self.cfg_ot.get('batch_parameters', 'nprocs')
         self.wckey        = self.cfg_ot.get('batch_parameters', 'wckey')
         if self.batch_manager == 'none':
-            self.nnodes    = 1
-            self.ntasks    = 1
-            self.nthreads  = 1
+            self.nnodes    = '1'
+            self.ntasks    = '1'
+            self.nthreads  = '1'
             self.dist_wdir = 'none'
         else:
             self.nnodes    = self.cfg_ot.get('batch_parameters', 'number_of_nodes')
