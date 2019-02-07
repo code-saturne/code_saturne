@@ -753,7 +753,7 @@ cs_post_evm_reynolds_stresses(cs_lnum_t          n_cells,
   }
 
   BFT_FREE(gradv);
-  if (var_cal_opt.ircflu > 0) BFT_FREE(gradk);
+  if (var_cal_opt.ircflu > 0 && coords != NULL) BFT_FREE(gradk);
 }
 
 /*----------------------------------------------------------------------------*/
