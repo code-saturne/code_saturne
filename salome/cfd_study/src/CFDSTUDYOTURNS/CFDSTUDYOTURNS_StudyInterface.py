@@ -175,7 +175,7 @@ class cfd_openturns_study:
     # ---------------------------------------
 
     # ---------------------------------------
-    def code2study(self):
+    def code2study(self, n_values=1):
         """
         Opens the results file specified by the user.
         Returns a tuple of all the required values (needed by OpenTurns)
@@ -190,15 +190,16 @@ class cfd_openturns_study:
                              self.cs_launcher.run_id,
                              resfile)
 
-        r = open(rspth, 'r').readlines()
-        d = r[-1].split()
-
-        if len(d) > 1:
-            results = ()
+        results = ()
+        if os.path.exists(rspth):
+            r = open(rspth, 'r').readlines()
+            d = r[-1].split()
             for ed in d:
                 results += (float(ed),)
-        else:
-            results = float(d[0])
+
+        if len(results) == 0:
+            results = (float('nan'),)*n_values
+
 
         return results;
     # ---------------------------------------
@@ -287,6 +288,10 @@ class cfd_openturns_study:
         self.case = Case(package=self.pkg, file_name=fp)
         self.case['xmlfile'] = fp
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
+        if self.case['package'].name == 'code_saturne':
+            from code_saturne.model.XMLinitialize import XMLinit
+        else:
+            from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
         XMLinit(self.case).initialize()
 
 

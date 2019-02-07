@@ -412,7 +412,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
         exec_file_name = os.path.join(self.mdl.otstudy_path, 'cs_execute_job.py')
 
-        f = open(exec_file_name, 'wa')
+        f = open(exec_file_name, 'w')
 
         script_cmd = "\n"
         script_cmd += "# ============================================================================== \n"
@@ -467,13 +467,14 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         script_cmd += toffset + 'cfd_eval.study2code() \n\n'
         script_cmd += toffset + 'cfd_eval.run() \n\n'
 
-        vals_list = ''
-        for i in range(len(self.mdl.output_variables)):
-            if i > 0:
-                vals_list += ', '
-            vals_list += self.mdl.output_variables[i]
+        n_vals = len(self.mdl.output_variables)
+        vals_list = '('
+        for i in range(n_vals):
+            vals_list += self.mdl.output_variables[i] + ', '
+        vals_list += ') = cfd_eval.code2study(n_values=%d)\n' %(n_vals)
 
-        script_cmd += toffset + vals_list + ' = cfd_eval.code2study()\n\n'
+        script_cmd += toffset + vals_list
+        script_cmd += '\n'
 
         script_cmd += toffset + 'return '
         script_cmd += vals_list + '\n'

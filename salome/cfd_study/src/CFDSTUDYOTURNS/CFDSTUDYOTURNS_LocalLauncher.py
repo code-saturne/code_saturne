@@ -103,12 +103,10 @@ class cfd_openturns_local_launcher:
             self.run_id = self.run_prefix + '{:0>4}'.format(idx + 1)
 
         else:
-            from code_saturne.cs_script import master_script
+            from code_saturne.cs_run import run as get_run_id
             id_args = ['run', '--suggest-id']
-            ms = master_script(id_args, self.pkg)
-            retcode = ms.execute()
 
-            self.run_id = retcode[0]
+            self.run_id = get_run_id(id_args, self.pkg)[1]
 
     # --------------------------------------------------------------------------
 
