@@ -27,7 +27,7 @@
 !> \file visqke.f90
 !> \brief Calculation of turbulent viscosity for
 !>         the non-linear quadratic K-epsilon from
-!>         Baglietto et al. (2005)  
+!>         Baglietto et al. (2005)
 !>
 !> Edge faces types are vailable at the previous time step
 !>  (except at the first time step, when the itypfb anf itrifb tables

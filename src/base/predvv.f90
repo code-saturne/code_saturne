@@ -960,7 +960,7 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
   allocate(coefbt(6,6,nfabor))
 
   ! Reynolds Stress Models
-  if(itytur.eq.3) then 
+  if(itytur.eq.3) then
 
     if(irijco.eq.1) then !TODO change index of rij
       do iel = 1, ncelet
@@ -1030,13 +1030,13 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
         coefbt(6,6,ifac) = coef6(ifac)
       enddo
     endif
-  
+
   ! Baglietto et al. quadratic k-epislon model
   else if(iturb.eq.23) then
 
     ! --- Compute the non linear part of Rij
     call cnlevm (rij)
-    
+
     ! --- Boundary conditions : Homogeneous Neumann
     do ifac = 1, nfabor
       do ii = 1, 6

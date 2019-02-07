@@ -285,7 +285,7 @@ elseif (itytur.eq.2) then
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
   if (iturb.eq.22) then
-    
+
     ! 4.3.1 Launder-Sharma
     ! --------------------
 
@@ -303,9 +303,9 @@ elseif (itytur.eq.2) then
 
     ! 4.3.2 Non-linear quadratic Baglietto
     ! ------------------------------------
-    
+
     call visqke
-  
+
   else
 
     ! 4.3.3 Standard and Linear Production

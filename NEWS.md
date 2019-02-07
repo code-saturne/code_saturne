@@ -83,7 +83,7 @@ Bug fixes:
 Architectural changes:
 
 - Handle mathematical expression in GUI by generating corresponding C code
-  then inserted in a cs_meg_..._function.c file compiled with other run 
+  then inserted in a cs_meg_..._function.c file compiled with other run
   sources. This drastically improves performance when using MEI.
 
 - Move Reynolds stress tensor transformation matrix (alpha in clca66)

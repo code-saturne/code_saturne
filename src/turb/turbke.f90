@@ -475,18 +475,18 @@ if (iturb.eq.21) then
     smbrk(iel) = rho*cmueta*xs*cvara_k(iel)
     smbre(iel) = smbrk(iel)
   enddo
-! Compute turbulent production for the quadratic Baglietto 
+! Compute turbulent production for the quadratic Baglietto
 ! k-epsilon model (iturb =23).
 else if (iturb.eq.23) then
 
   do iel = 1,ncel
-   
+
     visct = cpro_pcvto(iel)
     rho   = crom(iel)
     xeps  = cvar_ep(iel)
     xk    = cvar_k(iel)
     xttke = xk/xeps
-    
+
     ! Sij
     xstrai(1,1) = gradv(1, 1, iel)
     xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
@@ -535,7 +535,7 @@ else if (iturb.eq.23) then
 
     xss  = xttke*sqrt(.5d0*sijsij)
     xcmu = d2s3/(3.9d0 + xss)
-    
+
     ! Evaluating "constants"
     xqc1 = cnl1/((cnl4 + cnl5*xss**3.d0)*xcmu)
     xqc2 = cnl2/((cnl4 + cnl5*xss**3.d0)*xcmu)
@@ -602,7 +602,7 @@ else
         xrey  = rho*xdist*sqrt(xk)/viscl(iel)
         xpk = smbrk(iel) -  d2s3*rho*xk*divu(iel)
         xpkp = 1.33d0*(1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))          &
-              *(xpk + 2.d0*viscl(iel)*xk/(xdist**2.d0))*exp(-3.75d-3*xrey**2.d0) 
+              *(xpk + 2.d0*viscl(iel)*xk/(xdist**2.d0))*exp(-3.75d-3*xrey**2.d0)
 
         ce1rc(iel) = (1.d0+xpkp/max(xpk,1.d-10))*ce1
       end do

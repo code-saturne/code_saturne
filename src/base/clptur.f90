@@ -987,7 +987,7 @@ do ifac = 1, nfabor
       ! Quadratic Baglietto k-epsilon model
       ! ===================================
       else if(iturb.eq.23) then
-        
+
         ! Dirichlet Boundary Condition on k
         !----------------------------------
         if (iwallf.eq.0) then
@@ -1029,7 +1029,7 @@ do ifac = 1, nfabor
           end if
 
         else
-          
+
           pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
         end if
 
