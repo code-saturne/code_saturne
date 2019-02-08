@@ -983,6 +983,8 @@ _default_p_rank(cs_block_dist_info_t  *p_bi,
   return default_rank;
 }
 
+#endif /* #if defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Check the presence of a given section in a restart file.
@@ -1458,7 +1460,6 @@ _write_section(cs_restart_t           *restart,
 #endif /* #if defined(HAVE_MPI) */
 }
 
-#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 /*!
