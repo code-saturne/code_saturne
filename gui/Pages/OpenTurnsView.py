@@ -468,12 +468,15 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         script_cmd += toffset + 'cfd_eval.run() \n\n'
 
         n_vals = len(self.mdl.output_variables)
-        vals_list = '('
+        vals_list = ""
         for i in range(n_vals):
-            vals_list += self.mdl.output_variables[i] + ', '
-        vals_list += ') = cfd_eval.code2study(n_values=%d)\n' %(n_vals)
+            if i != 0:
+                vals_list += ', '
+            vals_list += self.mdl.output_variables[i]
 
-        script_cmd += toffset + vals_list
+        cmd_m1 = '(%s,) = cfd_eval.code2study(n_values=%d)\n' %(vals_list, n_vals)
+        script_cmd += toffset + cmd_m1
+
         script_cmd += '\n'
 
         script_cmd += toffset + 'return '
