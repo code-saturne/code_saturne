@@ -53,6 +53,7 @@ class cfd_openturns_local_launcher:
         self.paramfile    = self.cfg.get('study_parameters', 'xmlfile')
 
         self.nprocs       = self.cfg.get('batch_parameters', 'nprocs')
+        self.results_file    = self.cfg.get('study_parameters', 'results_file')
 #        self.study_path   = os.path.split(case_dir)[0]
 
         self.run_prefix = None
