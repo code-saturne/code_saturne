@@ -1678,6 +1678,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                     = new_vals[ii * bz->n_faces + ifac];
                 }
               }
+              BFT_FREE(new_vals);
               break;
             }
 
@@ -1695,6 +1696,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                     = new_vals[ii * bz->n_faces + ifac];
                 }
               }
+              BFT_FREE(new_vals);
               break;
             }
 
@@ -1716,6 +1718,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                     = new_vals[f->dim * bz->n_faces + ifac];
                 }
               }
+              BFT_FREE(new_vals);
               break;
             }
         }
@@ -1971,8 +1974,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 = boundaries->dir[izone][ic] *
                   new_vals[ifac] / x_norm;
             }
-
           }
+          BFT_FREE(new_vals);
         }
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           if (boundaries->itype[izone] == CS_EPHCF) {
@@ -2026,6 +2029,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 = -b_face_normal[ifbr][i] *
                   new_vals[ifac] / b_face_surf[ifbr];
           }
+          BFT_FREE(new_vals);
         }
 
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
@@ -2168,6 +2172,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               rcodcl[ivare * n_b_faces + ifbr]
                 = new_vals[1 * bz->n_faces + ifac];
             }
+            BFT_FREE(new_vals);
           }
           else if (  cs_gui_strcmp(model, "Rij-epsilon")
                    ||cs_gui_strcmp(model, "Rij-SSG")) {
@@ -2196,6 +2201,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               rcodcl[ivare * n_b_faces + ifbr]
                 = new_vals[bz->n_faces * 6 + ifac];
             }
+            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
 
@@ -2229,6 +2235,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               rcodcl[ivara   * n_b_faces + ifbr]
                 = new_vals[bz->n_faces * 7 + ifac];
             }
+            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
             cs_real_t *new_vals = cs_meg_boundary_function("turbulence_v2f",
@@ -2257,6 +2264,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               rcodcl[ivara * n_b_faces + ifbr]
                 = new_vals[3 * bz->n_faces + ifac];
             }
+            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "k-omega-SST")) {
             cs_real_t *new_vals = cs_meg_boundary_function("turbulence_kw",
@@ -2275,6 +2283,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               rcodcl[ivaro * n_b_faces + ifbr]
                 = new_vals[1 * bz->n_faces + ifac];
             }
+            BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
             cs_real_t *new_vals = cs_meg_boundary_function("turbulence_spalart",
@@ -2288,6 +2297,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               cs_lnum_t ifbr = bz->face_ids[ifac];
               rcodcl[ivarnu * n_b_faces + ifbr] = new_vals[ifac];
             }
+            BFT_FREE(new_vals);
           }
           else
             bft_error(__FILE__, __LINE__, 0,
@@ -2482,6 +2492,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           rcodcl[1 * n_b_faces * (*nvar) + ivarp * n_b_faces + ifbr]
             = new_vals[ifac];
         }
+        BFT_FREE(new_vals);
       }
     }
 
@@ -2553,6 +2564,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             icodcl[ivar1 * n_b_faces + ifbr] = 1;
             rcodcl[ivar1 * n_b_faces + ifbr] = new_vals[ifac];
           }
+          BFT_FREE(new_vals);
         }
       }
 
