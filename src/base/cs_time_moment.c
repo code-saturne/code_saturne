@@ -1906,17 +1906,21 @@ cs_time_moment_reset(int   moment_id)
 
   /* sub-moments (means for variance) */
 
-  mt = _moment + mt->l_id;
-  mwa = _moment_wa + mt->wa_id;
+  if (mt->l_id > -1) {
+    int l_id = mt->l_id;
 
-  f = cs_field_by_id(mt->f_id);
+    mt = _moment + l_id;
+    mwa = _moment_wa + mt->wa_id;
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
-    /* reset moment values */
-    f->val[i] = 0.;
+    f = cs_field_by_id(mt->f_id);
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      /* reset moment values */
+      f->val[i] = 0.;
+    }
+
+    _reset_weight_accumulator(mwa);
   }
-
-  _reset_weight_accumulator(mwa);
 }
 
 /*----------------------------------------------------------------------------*/
