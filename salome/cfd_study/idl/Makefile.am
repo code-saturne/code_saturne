@@ -29,6 +29,8 @@ AUTOMAKE_OPTIONS = -Wno-portability
 
 include $(top_srcdir)/config/salome_module.mk
 
+if HAVE_SALOME_GUI
+
 MODULE_NAME = CFDSTUDY
 
 BUILT_SOURCES = CFDSTUDY_GenSK.cc
@@ -66,6 +68,8 @@ CLEANFILES = *.hh *SK.cc *.py *.hxx *.cxx
 
 EXTRA_DIST = $(IDL_FILES)
 # potential problem on parallel make on the following - multiple outputs
+
+endif
 
 install-data-local: $(IDL_FILES)
 	$(INSTALL) -d  $(DESTDIR)$(salomepythondir)
