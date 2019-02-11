@@ -249,8 +249,8 @@ _thermal_table_needed(const char *name)
  *----------------------------------------------------------------------------*/
 
 static void
-_physical_property(cs_field_t       *c_prop,
-                   cs_volume_zone_t *z)
+_physical_property(cs_field_t          *c_prop,
+                   const cs_zone_t     *z)
 {
   int user_law = 0;
   const char *law = NULL;
@@ -3528,7 +3528,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   cs_var_t  *vars = cs_glob_var;
   const int iscalt = cs_glob_thermal_model->iscalt;
 
-  const cs_volume_zone_t *z_all = cs_volume_zone_by_name("all_cells");
+  const cs_zone_t *z_all = cs_volume_zone_by_name("all_cells");
 
   /* NOTE: currently, all integrated physical models have built-in or constant
      base physical properties. If necessary, finer checks on models using

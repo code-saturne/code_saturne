@@ -60,17 +60,14 @@ BEGIN_C_DECLS
  *
  * \param[in, out]  f  pointer to cs_field_t
  * \param[in]       z  pointer to cs_volume_zone_t
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_volume_initialization(cs_field_t              *f,
-                             const cs_volume_zone_t  *vz)
+cs_meg_volume_initialization(cs_field_t         *f,
+                             const cs_zone_t    *vz)
 {
-
 
 }
 
 END_C_DECLS
-

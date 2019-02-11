@@ -762,60 +762,55 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
 void
 cs_user_gwf_setup(cs_domain_t   *domain);
 
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  *  MEG function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate GUI defined mathematical expressions over boundary zones.
+ * \brief This function is used to compute user defined values for fields over a
+ * given boundary zone
  *
- * \param[in]       field_name  name of the field (const char *)
- * \param[in]       condition   condition type (const char *)
- * \param[in]       z           pointer to cs_volume_zone_t
- * \param[in, out]  new_vals    pointer to cs_real_t to contain the computed values
+ * \param[in]  field_name   name of the field (const char *)
+ * \param[in]  condition    condition type (const char *)
+ * \param[in]  z            pointer to cs_zone_t structure related to boundary
  *
-*/
+ * \return a pointer to an array of cs_real_t values
+ */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_boundary_function(const char               *field_name,
-                         const char               *condition,
-                         const cs_boundary_zone_t *bz);
-
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate GUI defined mathematical expressions over volume zones.
- *
- * \param[in, out]   f    pointer to a cs_field_t structure
- * \param[in]        z    pointer to a cs_volume_zone_t structure
- *
-*/
-/*----------------------------------------------------------------------------*/
-
-void
-cs_meg_volume_function(cs_field_t             *f,
-                       const cs_volume_zone_t *vz);
-
-/*----------------------------------------------------------------------------*/
+cs_meg_boundary_function(const char          *field_name,
+                         const char          *condition,
+                         const cs_zone_t     *z);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate GUI defined mathematical expressions over volume zones for initialization.
+ * \brief This function is used to compute user defined values for fields over a
+ *        given volume zone
  *
- * \param[in, out]   f    pointer to a cs_field_t structure
- * \param[in]        z    pointer to a cs_volume_zone_t structure
- *
-*/
+ * \param[in, out]  f  pointer to cs_field_t
+ * \param[in]       z  pointer to cs_zone_t structure related to a volume
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_volume_initialization(cs_field_t             *f,
-                             const cs_volume_zone_t *vz);
+cs_meg_volume_function(cs_field_t         *f,
+                       const cs_zone_t    *vz);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate GUI defined mathematical expressions over volume zones for
+ *        initialization.
+ *
+ * \param[in, out]   f    pointer to a cs_field_t structure
+ * \param[in]        z    pointer to a cs_volume_zone_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_volume_initialization(cs_field_t          *f,
+                             const cs_zone_t     *vz);
 
 /*----------------------------------------------------------------------------*/
 
