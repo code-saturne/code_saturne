@@ -3,6 +3,8 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix memory leaks in parameters check.
+
 - Fix in GUI for gas combustion model. Use variable name instead of label to get
   numerical scheme.
 

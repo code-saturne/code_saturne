@@ -944,6 +944,7 @@ cs_parameters_check(void)
                                     "NVD scheme",
                                     limiter_choice,
                                     CS_NVD_GAMMA, CS_NVD_VOF_HRIC);
+      BFT_FREE(f_desc);
     }
   }
 
@@ -2055,7 +2056,8 @@ cs_parameters_check(void)
                                   t_ext,
                                   -1,
                                   3);
-    }
+    BFT_FREE(f_desc);
+  }
 
 
   /* Check the consistency of the restart_file key */
