@@ -264,7 +264,7 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         """
         Private slot.
         """
-        QObject.disconnect(self.textEditExpression)
+        self.textEditExpression.disconnect()
         doc = self.textEditExpression.document()
 
         for i in range(0, doc.blockCount()):
