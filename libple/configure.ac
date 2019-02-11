@@ -200,25 +200,41 @@ AC_ARG_ENABLE(python,
   ],
   [ python_bindings=no ]
 )
-AC_SUBST(python_bindings)
 
 if test "${python_bindings}" = "yes" ; then
+
   AX_PKG_SWIG(1.3.21) # check swig version
   AX_SWIG_PYTHON
   AM_PATH_PYTHON(2.6)
   AX_PYTHON_DEVEL([>='2.6'])
   AX_PYTHON_MODULE(mpi4py)
+
 fi
 
 AM_CONDITIONAL(HAVE_MPI4PY, [test "${HAVE_PYMOD_MPI4PY}" = yes])
-if test "${HAVE_PYMOD_MPI4PY}" = "yes"; then
-  AC_DEFINE([HAVE_MPI4PY], 1, [mpi4py module])
+AM_CONDITIONAL(HAVE_SWIG, [test "${SWIG}" != ""])
+
+AC_ARG_VAR([SWIG_PYTHON_FLAGS], [Additional flags for SWIG (usually -I<path>)])
+
+if test "${python_bindings}" = "yes" ; then
+
+  if test "${HAVE_PYMOD_MPI4PY}" = "yes"; then
+    AC_DEFINE([HAVE_MPI4PY], 1, [mpi4py module])
+  else
+    # AC_MSG_WARN(mpi4py MPI Python bindings not found])
+    python_bindings=no
+  fi
+
+  if test "${SWIG}" != ""; then
+    AC_DEFINE([HAVE_SWIG], 1, [swig presence])
+  else
+    # AC_MSG_WARN(SWIG not found])
+    python_bindings=no
+  fi
+
 fi
 
-AM_CONDITIONAL(HAVE_SWIG, [test "${SWIG}" != ""])
-if test "${SWIG}" != ""; then
-  AC_DEFINE([HAVE_SWIG], 1, [swig presence])
-fi
+AC_SUBST(python_bindings)
 
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
@@ -554,6 +570,7 @@ echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " MPI (Message Passing Interface) support: "$ple_have_mpi""
 echo " OpenMP support: "$ple_have_openmp""
+echo " Python bindings: "$python_bindings""
 echo
 echo "The package has been configured. Type:"
 echo " make"
