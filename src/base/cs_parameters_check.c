@@ -944,6 +944,8 @@ cs_parameters_check(void)
                                     "NVD scheme",
                                     limiter_choice,
                                     CS_NVD_GAMMA, CS_NVD_VOF_HRIC);
+
+      BFT_FREE(f_desc);
     }
   }
 
