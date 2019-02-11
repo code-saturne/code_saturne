@@ -329,7 +329,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
 
 fi
 
-if test "x$ple_have_mpi" = "xno"; then
+if test "x$ple_have_mpi" = "xno" -a "x$with_mpi" != "xno"; then
   if test "x$with_mpi" != "xcheck" ; then
     AC_MSG_FAILURE([MPI support is requested, but test for MPI failed!])
   else
