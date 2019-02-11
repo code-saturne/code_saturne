@@ -252,18 +252,9 @@ static void
 _physical_property(cs_field_t       *c_prop,
                    cs_volume_zone_t *z)
 {
-  cs_var_t  *vars = cs_glob_var;
-
   int user_law = 0;
   const char *law = NULL;
-  double time0;
-  mei_tree_t *ev_law = NULL;
-  cs_lnum_t i, iel;
-
   const char *prop_choice = _properties_choice(c_prop->name);
-
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
   if (cs_gui_strcmp(prop_choice, "user_law"))
     user_law = 1;
