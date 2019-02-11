@@ -165,7 +165,7 @@ class mei_to_c_interpreter:
 
         for line in exp.split('\n'):
             line_comp = []
-            for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,',line):
+            for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,|^',line):
                 if elt != '':
                     line_comp.append((elt.lstrip()).rstrip())
 
@@ -173,6 +173,72 @@ class mei_to_c_interpreter:
 
         return expression_lines
 
+    #---------------------------------------------------------------------------
+
+    def parse_parentheses(self, line):
+
+        istart = []
+        d = {}
+
+        for i, c in enumerate(line):
+            if c == '(':
+                istart.append(i)
+            if c == ')':
+                try:
+                    d[istart.pop()] = i
+                except IndexError:
+                    print('There are too many closing parentheses')
+
+        if istart:
+            print('A closing parenthese is missing!')
+
+        return d
+
+    #---------------------------------------------------------------------------
+
+    def search_and_replace_power(self,line):
+
+        symbs = ['+', '-', '*', '/', ' ', ';', '{', '}']
+        ps = [i for i, l in enumerate(line) if l == '^']
+
+        if ps == []:
+            return line
+        else:
+            for pos in ps:
+                b1 = pos - 1
+                b2 = pos
+
+                p1 = pos+1
+                p2 = pos+1
+
+                if line[b1] != ')':
+                    while b1 > 0 and line[b1-1] not in symbs:
+                        b1 -= 1
+                else:
+                    dp = self.parse_parentheses(line)
+                    for key in dp.keys():
+                        if dp[key] == b2-1:
+                            b1 = key
+                            break
+
+                if line[p2] != '(':
+                    while p2 < len(line)-2 and line[p2] not in symbs:
+                        p2 += 1
+                else:
+                    dp = self.parse_parentheses(line)
+                    p2 = dp[p1] + 1
+
+        if b1 == b2:
+            b2 +=1
+        if p1 == p2:
+            p2 +=1
+
+        m1 = '%s^%s' % (line[b1:b2], line[p1:p2])
+        m2 = 'pow(%s, %s)' % (line[b1:b2], line[p1:p2])
+
+        new_line = line.replace(m1,m2)
+
+        return new_line
     #---------------------------------------------------------------------------
 
     def update_cell_block_expression(self, new_exp, key):
@@ -350,33 +416,44 @@ class mei_to_c_interpreter:
                 lf = l.split('=')
                 if len(lf) > 1 and l[0] != "#":
                     if lf[0].rstrip() not in known_symbols:
-                        known_symbols.append(lf[0])
-                        l = 'const cs_real_t '+l
+                        known_symbols.append(lf[0].rstrip())
+                        # Test whether we are inside an if loop or not!
+                        if if_loop:
+                            usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
+                        else:
+                            l = 'const cs_real_t '+l
 
                     elif lf[0].rstrip() == required[0][0]:
                         l = 'f->val[c_id] = '+lf[1]
 
                 # Check for power functions
-                for elt in exp_lines_comp[lidx]:
-                    if "^" in elt:
-                        b, p = elt.split('^')
-                        new_l = 'pow(%s, %s)' % (b, p)
-                        l = l.replace(elt, new_l)
+                if '^' in l:
+                    l = self.search_and_replace_power(l)
 
-                if l[:2] == 'if' and l[-1] != '{':
-                    l = l + ' {'
+                if l[:2] == 'if':
                     if_loop = True
+                    if l[-1] != '{' and exp_lines[lidx+1][0] != '}':
+                        l = l + ' {'
 
                 if 'else' in l:
-                    if l[0] != '}':
+                    if l[0] != '}' and if_loop:
                         l = '} '+l
                     if l[-1] != '{':
                         l = l + ' {'
+                    if_loop = True
 
                 if l[0] == '}':
                     ntabs -= 1
+
                 usr_code += '\n'
-                usr_code += ntabs*tab + l
+                if l[-1] == '}':
+                    usr_code += ntabs*tab + l[:-1]
+                    ntabs -= 1
+                    usr_code += '\n' + ntabs*tab + '}'
+                    if_loop = False
+                else:
+                    usr_code += ntabs*tab + l
+
                 if l[-1] == '{':
                     ntabs += 1
             else:
@@ -404,6 +481,13 @@ class mei_to_c_interpreter:
         usr_blck += tab + '}\n'
 
         return usr_blck
+
+    #---------------------------------------------------------------------------
+
+    def update_bnd_block_expression(self, new_exp, key):
+
+        self.bnd_funcs[key]['exp'] = new_exp
+        self.bnd_funcs[key]['lines'] = self.break_expression(new_exp)
 
     #---------------------------------------------------------------------------
 
@@ -535,8 +619,12 @@ class mei_to_c_interpreter:
                 lf = l.split('=')
                 if len(lf) > 1 and l[0] != "#":
                     if lf[0].rstrip() not in known_symbols:
-                        known_symbols.append(lf[0])
-                        l = 'const cs_real_t '+l
+                        known_symbols.append(lf[0].rstrip())
+                        # Test whether we are inside an if loop or not!
+                        if if_loop:
+                            usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
+                        else:
+                            l = 'const cs_real_t '+l
 
                     elif lf[0].rstrip() in required:
                         ir = required.index(lf[0].rstrip())
@@ -548,28 +636,37 @@ class mei_to_c_interpreter:
                         l = new_v + ' = ' + lf[1]
 
                 # Check for power functions
-                for elt in exp_lines_comp[lidx]:
-                    if "^" in elt:
-                        b, p = elt.split('^')
-                        new_l = 'pow(%s, %s)' % (b, p)
-                        l = l.replace(elt, new_l)
+                if '^' in l:
+                    l = self.search_and_replace_power(l)
 
-                if l[:2] == 'if' and l[-1] != '{':
-                    l = l + ' {'
+                # If loop
+                if l[:2] == 'if':
                     if_loop = True
+                    if l[-1] != '{' and exp_lines[lidx+1][0] != '}':
+                        l = l + ' {'
 
                 if 'else' in l:
-                    if l[0] != '}':
+                    if l[0] != '}' and if_loop:
                         l = '} '+l
                     if l[-1] != '{':
                         l = l + ' {'
+                    if_loop = True
 
                 if l[0] == '}':
                     ntabs -= 1
+
                 usr_code += '\n'
-                usr_code += ntabs*tab + l
+                if l[-1] == '}':
+                    usr_code += ntabs*tab + l[:-1]
+                    ntabs -= 1
+                    usr_code += '\n' + ntabs*tab + '}'
+                    if_loop = False
+                else:
+                    usr_code += ntabs*tab + l
+
                 if l[-1] == '{':
                     ntabs += 1
+
             else:
                 usr_code += '\n'
 
@@ -776,12 +873,15 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def check_volume_code_syntax(self):
+    def check_meg_code_syntax(self, function_name):
 
         if not os.path.exists(self.tmp_path):
             os.makedirs(self.tmp_path)
 
-        self.save_volume_function(self.tmp_path)
+        if function_name == 'volume':
+            self.save_volume_function(self.tmp_path)
+        elif function_name == 'boundary':
+            self.save_boundary_function(self.tmp_path)
 
         from code_saturne import cs_compile
 
@@ -796,19 +896,19 @@ class mei_to_c_interpreter:
         out.close()
         err.close()
 
-        os.chdir(self.data_path)
-
         n_errors = 0
         if compilation_test != 0:
             errors = open('comp.err', 'r').readlines()
             for i in range(len(errors)):
                 if 'error:' in errors[i]:
-                    msg = (errors[i].split('error:')[-1].rstrip()).lstrip()+'\n'
-                    msg += (errors[i+1].rstrip()).lstrip() + '\n'
+                    msg = errors[i].split('error:')[-1].rstrip().lstrip()+'\n'
+                    msg += errors[i+1].rstrip().lstrip() + '\n'
 
                     n_errors += 1
         else:
             msg = None
+
+        os.chdir(self.data_path)
 
         return compilation_test, msg, n_errors
 
@@ -916,7 +1016,7 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def save_boundary_function(self):
+    def save_boundary_function(self, hard_path = None):
 
         # Delete previous existing file
         file2write = 'cs_meg_boundary_function.c'
@@ -943,7 +1043,9 @@ class mei_to_c_interpreter:
 
 
         # Write the C file if necessary
-        write_status = self.save_file(file2write, code_to_write)
+        write_status = self.save_file(file2write,
+                                      code_to_write,
+                                      hard_path = hard_path)
 
         return write_status
 

@@ -50,8 +50,10 @@ from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
+
+from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 
 #-------------------------------------------------------------------------------
 # log config
@@ -260,8 +262,14 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
+            mci = mei_to_c_interpreter(self.__case, False)
+            mci.init_bnd_block(expression = exp,
+                               required = ['k', 'epsilon'],
+                               name = 'turbulence_ke',
+                               bnd_name = self.__boundary._label,
+                               condition = 'formula')
+            dialog = QMegEditorView(self,
+                                    mei_to_c   = mci,
                                     expression = exp,
                                     required   = req,
                                     symbols    = sym,
@@ -331,12 +339,21 @@ r23 = 0;
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
+            mci = mei_to_c_interpreter(self.__case, False)
+            mci.init_bnd_block(expression = exp,
+                               required = ['r11', 'r22', 'r33',
+                                           'r12', 'r23', 'r13',
+                                           'epsilon'],
+                               name = 'turbulence_rije',
+                               bnd_name = self.__boundary._label,
+                               condition = 'formula')
+            dialog = QMegEditorView(self,
+                                    mei_to_c   = mci,
                                     expression = exp,
                                     required   = req,
                                     symbols    = sym,
                                     examples   = exa)
+
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -404,12 +421,21 @@ alpha =  1.;
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
+            mci = mei_to_c_interpreter(self.__case, False)
+            mci.init_bnd_block(expression = exp,
+                               required = ['r11', 'r22', 'r33',
+                                           'r12', 'r23', 'r13',
+                                           'epsilon', 'alpha'],
+                               name = 'turbulence_rije',
+                               bnd_name = self.__boundary._label,
+                               condition = 'formula')
+            dialog = QMegEditorView(self,
+                                    mei_to_c   = mci,
                                     expression = exp,
                                     required   = req,
                                     symbols    = sym,
                                     examples   = exa)
+
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -467,12 +493,19 @@ alpha = 0;"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
+            mci = mei_to_c_interpreter(self.__case, False)
+            mci.init_bnd_block(expression = exp,
+                               required = ['k', 'epsilon', 'phi', 'alpha'],
+                               name = 'turbulence_rije',
+                               bnd_name = self.__boundary._label,
+                               condition = 'formula')
+            dialog = QMegEditorView(self,
+                                    mei_to_c   = mci,
                                     expression = exp,
                                     required   = req,
                                     symbols    = sym,
                                     examples   = exa)
+
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -526,12 +559,19 @@ omega = eps/(cmu * k);"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
+            mci = mei_to_c_interpreter(self.__case, False)
+            mci.init_bnd_block(expression = exp,
+                               required = ['k', 'omega'],
+                               name = 'turbulence_ke',
+                               bnd_name = self.__boundary._label,
+                               condition = 'formula')
+            dialog = QMegEditorView(self,
+                                    mei_to_c   = mci,
                                     expression = exp,
                                     required   = req,
                                     symbols    = sym,
                                     examples   = exa)
+
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -584,12 +624,19 @@ nu_tilda = eps/(cmu * k);"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
+            mci = mei_to_c_interpreter(self.__case, False)
+            mci.init_bnd_block(expression = exp,
+                               required = ['nu_tilda'],
+                               name = 'turbulence_ke',
+                               bnd_name = self.__boundary._label,
+                               condition = 'formula')
+            dialog = QMegEditorView(self,
+                                    mei_to_c   = mci,
                                     expression = exp,
                                     required   = req,
                                     symbols    = sym,
                                     examples   = exa)
+
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))

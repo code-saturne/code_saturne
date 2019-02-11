@@ -294,15 +294,25 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         # The provided mei_to_c interpreter should have only one block.
         # Could, and should, be modified in the future to identify
         # the good key if needed...
-        k = self.mei_to_c.vol_funcs.keys()[0]
         new_exp = str(self.textEditExpression.toPlainText()) + '\n'
+        if len(self.mei_to_c.vol_funcs.keys()) > 0:
+            k = self.mei_to_c.vol_funcs.keys()[0]
+            self.mei_to_c.update_cell_block_expression(new_exp, k)
+            check, err_msg, n_errors = self.mei_to_c.check_meg_code_syntax('volume')
 
-        self.mei_to_c.update_cell_block_expression(new_exp, k)
+        elif len(self.mei_to_c.bnd_funcs.keys()) > 0:
+            k = self.mei_to_c.bnd_funcs.keys()[0]
+            self.mei_to_c.update_bnd_block_expression(new_exp, k)
+            check, err_msg, n_errors = self.mei_to_c.check_meg_code_syntax('boundary')
 
-        check, err_msg, n_errors = self.mei_to_c.check_volume_code_syntax()
+        else:
+            check = 0
+
         if check != 0:
+            err_msg = err_msg.decode('utf-8').replace(u"\u2018", "'")
+            err_msg = err_msg.replace(u"\u2019", "'")
             log.debug(err_msg)
-            QMessageBox.critical(self, self.tr('Expression Editor'), str(err_msg))
+            QMessageBox.critical(self, self.tr('Expression Editor'), err_msg)
             self.textEditExpression.textChanged.connect(self.slotClearBackground)
             return
 
