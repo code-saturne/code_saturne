@@ -31,18 +31,24 @@ AM_LDFLAGS = $(MPI_LDFLAGS)
 # SWIG Library for python
 BUILT_SOURCES = swig_wrap.c
 SWIG_SOURCES = swig.i
-PYSWIG_SOURCES = pyple.py swig_wrap.c
+#PYSWIG_SOURCES = pyple.py swig_wrap.c
 
-
-pkgpython_PYTHON = pyple.py __init__.py mpi_utilities.py
+pkgpython_PYTHON = __init__.py mpi_utilities.py
+nodist_pkgpython_PYTHON = pyple.py
 pkgpyexec_LTLIBRARIES = _pyple.la
-_pyple_la_SOURCES = $(BUILT_SOURCES) $(SWIG_SOURCES)
-_pyple_la_CPPFLAGS = $(AX_SWIG_PYTHON_CPPFLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
+_pyple_la_SOURCES = $(SWIG_SOURCES)
+nodist__pyple_la_SOURCES = $(BUILT_SOURCES)
+_pyple_la_CPPFLAGS = $(AX_SWIG_PYTHON_CPPFLAGS) $(SWIG_PYTHON_FLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
 _pyple_la_LDFLAGS = -module
 _pyple_la_LIBADD = ../src/libple.la
 
-$(PYSWIG_SOURCES) : $(SWIG_SOURCES)
-	$(SWIG) $(AX_SWIG_PYTHON_OPT) -I. $(AX_SWIG_PYTHON_CPPFLAGS) -I$(srcdir)/../src -o $@ $<
+$(BUILT_SOURCES): $(SWIG_SOURCES)
+	$(SWIG) $(AX_SWIG_PYTHON_OPT) -I. $(AX_SWIG_PYTHON_CPPFLAGS) $(SWIG_PYTHON_FLAGS) -I$(srcdir)/../src -o $@ $<
 
 endif
 endif
+
+# Distribution
+
+EXTRA_DIST = \
+swig.i

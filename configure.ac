@@ -521,7 +521,7 @@ AM_PATH_PYTHON(["2.6"])
 # On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
 # It seems better to use the standard way of installing Python modules,
 # as it is on Unix systems (whichever is chosen, Python modules will be
-# freezed by cx_freeze for Windows packaging).
+# frozen by cx_freeze for Windows packaging).
 # So, we choose to override some Python paths.
 if test "$host_os" = mingw32 ; then
 
