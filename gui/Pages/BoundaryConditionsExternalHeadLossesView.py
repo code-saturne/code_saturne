@@ -122,6 +122,8 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         """
         """
         exp = self.__boundary.getHeadLossesFormula()
+        if not exp:
+           exp = "K = 0.;"
 
         req = [('K', 'External head losses')]
 
