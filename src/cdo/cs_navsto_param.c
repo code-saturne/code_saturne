@@ -139,6 +139,24 @@ _quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
     "highest"
   };
 
+static const char
+_adv_formulation_key[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
+  {
+    "conservative",
+    "non_conservative"
+  };
+
+static const char
+_adv_scheme_key[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
+  {
+    "centered",
+    "cip",
+    "mix_centered_upwind",
+    "samarskii",
+    "sg",
+    "upwind"
+  };
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -209,7 +227,7 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
   param->verbosity = 1;
 
   /* Default numerical settings */
-  param->time_scheme =   CS_TIME_SCHEME_EULER_IMPLICIT;
+  param->time_scheme  = CS_TIME_SCHEME_EULER_IMPLICIT;
   param->theta = 1.0;
   param->space_scheme = CS_SPACE_SCHEME_CDOFB;
 
@@ -228,6 +246,9 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
   param->coupling = algo_coupling;
   param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
   param->max_algo_iter = 20;
+
+  param->adv_form   = CS_PARAM_N_ADVECTION_FORMULATIONS;
+  param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
 
   /* Main set of properties */
   param->density = cs_property_add("density", CS_PROPERTY_ISO);
@@ -380,6 +401,48 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
   val[strlen(keyval)] = '\0';
 
   switch(key) {
+
+  case CS_NSKEY_ADVECTION_FORMULATION:
+    if (strcmp(val, "conservative") == 0)
+      nsp->adv_form = CS_PARAM_ADVECTION_FORM_CONSERV;
+    else if (strcmp(val, "non_conservative") == 0)
+      nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid val %s related to key"
+                  " CS_NSKEY_ADVECTION_FORMULATION\n"
+                  " Choice between conservative, non_conservative"),
+                __func__, _val);
+    }
+    break;
+
+  case CS_NSKEY_ADVECTION_SCHEME:
+    if (strcmp(val, "upwind") == 0)
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+    else if (strcmp(val, "samarskii") == 0)
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
+    else if (strcmp(val, "sg") == 0)
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
+    else if (strcmp(val, "centered") == 0)
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
+    else if (strcmp(val, "mix_centered_upwind") == 0)
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND;
+    else if (strcmp(val, "cip") == 0) {
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+      /* Automatically switch to a non-conservative formulation */
+      nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
+    }
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Invalid val %s related to key"
+                  " CS_NSKEY_ADVECTION_SCHEME\n"
+                  " Choice between upwind, samarskii, sg, centered, cip"
+                  " mix_cenetered_upwind"),
+                __func__, _val);
+    }
+    break;
 
   case CS_NSKEY_DOF_REDUCTION:
     if (strcmp(val, "derham") == 0)
@@ -587,6 +650,17 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
 
   /*  Set quadratures type */
   const char  *quad_key = _quad_type_key[nsp->qtype];
+
+  /* If requested, add advection */
+  if (nsp->adv_form != CS_PARAM_N_ADVECTION_FORMULATIONS) {
+    /* If different from default value */
+    const char *form_key = _adv_formulation_key[nsp->adv_form];
+    cs_equation_set_param(eqp, CS_EQKEY_ADV_FORMULATION, form_key);
+
+    assert(nsp->adv_scheme != CS_PARAM_N_ADVECTION_SCHEMES);
+    const char *scheme_key = _adv_scheme_key[nsp->adv_scheme];
+    cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, scheme_key);
+  }
 
   cs_equation_set_param(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
 }
@@ -1435,6 +1509,32 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
 
   return cs_equation_add_source_term_by_array(eqp, z_name, loc,
                                               array, is_owner,index);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a advection field for the Oseen problem
+ *
+ * \param[in, out]    nsp        pointer to a \ref cs_navsto_param_t
+ * \param[in, out]    adv_fld    pointer to a \ref cs_adv_field_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_oseen_field(cs_navsto_param_t   *nsp,
+                          cs_adv_field_t      *adv_fld)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  if (nsp->model != CS_NAVSTO_MODEL_OSEEN)
+    bft_error(__FILE__, __LINE__, 0, " %s: Trying to set an external advection"
+                                     " where there should not be one. Stopping",
+                                     __func__);
+
+  cs_equation_param_t *eqp = _get_momentum_param(nsp);
+
+  cs_equation_add_advection(eqp, adv_fld);
 }
 
 /*----------------------------------------------------------------------------*/

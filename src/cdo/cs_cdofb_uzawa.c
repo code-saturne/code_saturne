@@ -487,6 +487,7 @@ _compute_residual(int              iter,
  *
  * \param[in]      sc          pointer to a cs_cdofb_uzawa_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in]      prs_c       value of the pressure at the cell
@@ -498,6 +499,7 @@ _compute_residual(int              iter,
 static void
 _apply_bc_partly(const cs_cdofb_uzawa_t        *sc,
                  const cs_equation_param_t     *eqp,
+                 const cs_cdofb_scaleq_t       *eqc,
                  const cs_cell_mesh_t          *cm,
                  const cs_boundary_type_t      *bf_type,
                  const cs_real_t                prs_c,
@@ -572,6 +574,10 @@ _apply_bc_partly(const cs_cdofb_uzawa_t        *sc,
       } /* End of switch */
 
     } /* Loop on boundary faces */
+
+    if (cs_equation_param_has_convection(eqp)) { /* Always weakly enforced */
+      eqc->adv_func_bc(eqp, cm, cb, csys);
+    }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -956,9 +962,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
        Get the cell-wise view of the mesh and the algebraic system */
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     cs_cdofb_vecteq_get(&csys, &cb);
@@ -1013,8 +1018,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_advection_diffusion(time_eval, mom_eqp, mom_eqc, cm,
+                                          csys, cb);
 
       /* Update the property */
       if ( !(sc->is_gdscale_uniform) )
@@ -1048,7 +1053,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, pr[c_id], csys, cb);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, pr[c_id],
+                       csys, cb);
 
       /* 4- TIME CONTRIBUTION */
       /* ==================== */
@@ -1319,7 +1325,6 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
   cs_timer_counter_add_diff(&(sc->timer), &t_cmp, &t_tmp);
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
@@ -1410,7 +1415,6 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
@@ -1468,8 +1472,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_advection_diffusion(time_eval, mom_eqp, mom_eqc, cm,
+                                          csys, cb);
 
       /* Update the property */
       if ( !(sc->is_gdscale_uniform) )
@@ -1500,7 +1504,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, pr[c_id], csys, cb);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, pr[c_id],
+                       csys, cb);
 
       /* 4- TIME CONTRIBUTION */
       /* ==================== */
@@ -1997,7 +2002,8 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, pr[c_id], csys, cb);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, pr[c_id],
+                       csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */

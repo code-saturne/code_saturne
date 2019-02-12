@@ -267,6 +267,28 @@ cs_cdofb_vecteq_diffusion(double                         time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build the local matrices arising from the diffusion, advection,
+ *          reaction terms in CDO-Fb schemes.
+ *
+ * \param[in]      time_eval   time at which analytic function are evaluated
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_advection_diffusion(double                         time_eval,
+                                    const cs_equation_param_t     *eqp,
+                                    const cs_cdofb_vecteq_t       *eqc,
+                                    const cs_cell_mesh_t          *cm,
+                                    cs_cell_sys_t                 *csys,
+                                    cs_cell_builder_t             *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the term source for a vector-valued CDO-Fb scheme
  *         and add it to the local rhs
  *
