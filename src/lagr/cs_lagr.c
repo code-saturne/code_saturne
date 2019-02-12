@@ -1237,8 +1237,10 @@ cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
   zis->injection_profile_func = NULL;
   zis->injection_profile_input = NULL;
 
-  zis->velocity_profile     = -2;
-  zis->temperature_profile  = -2;
+  /* Fluid velocity by default */
+  zis->velocity_profile     = -1;
+  /* Fluid temperature by default  */
+  zis->temperature_profile  = 0;
 
   if (cs_glob_lagr_model->physical_model == 2)
     zis->coal_number        = -2;

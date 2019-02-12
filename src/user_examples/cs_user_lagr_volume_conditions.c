@@ -106,6 +106,7 @@ cs_user_lagr_volume_conditions(void)
     zis->n_inject = 1000;
     zis->injection_frequency = 1; /* if <= 0, injection at
                                      initialization only */
+    zis->velocity_profile = -1; /* fluid velocity */
 
     zis->stat_weight = 1.0;
 
