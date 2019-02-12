@@ -272,20 +272,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
     def slotVelocityFormula(self):
         """
         """
-        exp = self.init.getVelocityFormula(self.zone)
-        if not exp:
-            exp = self.init.getDefaultVelocityFormula()
         exa = """#example: \n""" + self.init.getDefaultVelocityFormula()
-        req = [('velocity[0]', "velocity"),
-               ('velocity[1]', "velocity"),
-               ('velocity[2]', "velocity")]
-        sym = [('uref', 'reference velocity'),
-               ('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getVelocityFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -308,49 +297,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         turb_model = self.turb.getTurbulenceModel()
         exa = """#example \n""" + self.init.getDefaultTurbFormula(turb_model)
-        exp = self.init.getTurbFormula(self.zone, turb_model)
-        sym = [('rho0', 'density (reference value)'),
-               ('mu0', 'viscosity (reference value)'),
-               ('cp0', 'specific heat (reference value)'),
-               ('lambda0', 'thermal conductivity (reference value)'),
-               ('x','cell center coordinate'),
-               ('y','cell center coordinate'),
-               ('z','cell center coordinate'),
-               ('uref','reference velocity'),
-               ('almax','reference length')]
-        if turb_model in ('k-epsilon', 'k-epsilon-PL'):
-            req = [('k', "turbulent energy"),
-                   ('epsilon', "turbulent dissipation")]
-        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
-            req = [('r11', "Reynolds stress R11"),
-                   ('r22', "Reynolds stress R22"),
-                   ('r33', "Reynolds stress R33"),
-                   ('r12', "Reynolds stress R12"),
-                   ('r23', "Reynolds stress R23"),
-                   ('r13', "Reynolds stress R13"),
-                   ('epsilon', "turbulent dissipation")]
-        elif turb_model == 'Rij-EBRSM':
-            req = [('r11', "Reynolds stress R11"),
-                   ('r22', "Reynolds stress R22"),
-                   ('r33', "Reynolds stress R33"),
-                   ('r12', "Reynolds stress R12"),
-                   ('r23', "Reynolds stress R23"),
-                   ('r13', "Reynolds stress R13"),
-                   ('epsilon', "turbulent dissipation"),
-                   ('alpha', "alpha")]
-        elif turb_model == 'v2f-BL-v2/k':
-            req = [('k', "turbulent energy"),
-                   ('epsilon', "turbulent dissipation"),
-                   ('phi', "variable phi in v2f model"),
-                   ('alpha', "variable alpha in v2f model")]
-        elif turb_model == 'k-omega-SST':
-            req = [('k', "turbulent energy"),
-                   ('omega', "specific dissipation rate")]
-        elif turb_model == 'Spalart-Allmaras':
-            req = [('nu_tilda', "nusa")]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getTurbFormulaComponents(self.zone, turb_model)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -371,22 +319,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         Input the initial formula of thermal scalar
         """
-        exp = self.init.getThermalFormula(self.zone)
-        if not exp:
-            exp = self.init.getDefaultThermalFormula()
         exa = """#example \n""" + self.init.getDefaultThermalFormula()
-        if self.therm.getThermalScalarModel() == "enthalpy":
-            req = [('enthalpy', 'enthalpy')]
-        elif self.therm.getThermalScalarModel() == "total_energy":
-            req = [('total_energy', 'total energy')]
-        else:
-            req = [('temperature', 'temperature')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getThermalFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -407,18 +342,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         Input the initial formula of species
         """
-        exp = self.init.getSpeciesFormula(self.zone, self.scalar)
-        name = self.th_sca.getScalarName(self.scalar)
-        if not exp:
-            exp = str(name)+""" = 0;\n"""
-        exa = """#example: \n""" + str(name)+""" = 0;\n"""
-        req = [(str(name), str(name))]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+        exp, req, sym = self.init.getSpeciesFormulaComponents(self.zone, self.scalar)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exa = """#example: \n""" + str(name)+""" = 0;\n"""
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -438,18 +364,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
     def slotMeteoFormula(self):
         """
         """
-        exp = self.init.getMeteoFormula(self.zone, self.scalar_meteo)
         name = self.scalar_meteo
-        if not exp:
-            exp = str(name)+""" = 0;\n"""
         exa = """#example: \n""" + str(name)+""" = 0;\n"""
-        req = [(str(name), str(name))]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getMeteoFormulaComponents(self.zone, self.scalar_meteo)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -618,20 +536,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         Input the initial Pressure formula
         """
-        exp = self.init.getPressureFormula(self.zone)
-        if not exp:
-            exp = """p0 = 0.;
-g = 9.81;
-ro = 1.17862;
-pressure = p0 + g * ro * z;\n"""
         exa = """#example: """
-        req = [('pressure', 'pressure')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getPressureFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -653,17 +560,9 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Hydraulic Head formula
         """
-        exp = self.init.getHydraulicHeadFormula(self.zone)
-        if not exp:
-            exp = """H = z;\n"""
         exa = """#example: """
-        req = [('H', 'hydraulic head')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getHydraulicHeadFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -685,17 +584,9 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Density formula
         """
-        exp = self.init.getDensityFormula(self.zone)
-        if not exp:
-            exp = """density = 0;\n"""
         exa = """#example: """
-        req = [('density', 'density')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getDensityFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -717,17 +608,9 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Temperature formula
         """
-        exp = self.init.getTemperatureFormula(self.zone)
-        if not exp:
-            exp = """temperature = 0;\n"""
         exa = """#example: """
-        req = [('temperature', 'temperature')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getTemperatureFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -749,17 +632,9 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Energy formula
         """
-        exp = self.init.getEnergyFormula(self.zone)
-        if not exp:
-            exp = """total_energy = 0;\n"""
         exa = """#example: """
-        req = [('total_energy', 'Energy')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getEnergyFormulaComponenets(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

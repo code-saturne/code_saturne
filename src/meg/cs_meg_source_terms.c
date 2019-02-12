@@ -53,21 +53,30 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_volume_initialization.c
+ * \file cs_meg_source_terms.c
  *
- * \brief This function is used for initalization of fields over a
- * given volume zone
+ * \brief This function is used to compute source terms over a volume zone
  *
- * \param[in, out]  f  pointer to cs_field_t
- * \param[in]       z  pointer to cs_volume_zone_t
+ * \param[in]       z            pointer to cs_volume_zone_t
+ * \param[in]       name         char pointer: variable name
+ * \param[in]       source_type  char pointer: source term type
+ *
+ * \returns new_vals: a cs_real_t pointer containing the values
+ *
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_meg_volume_initialization(cs_field_t         *f,
-                             const cs_zone_t    *vz)
+cs_real_t *
+cs_meg_source_terms(const cs_zone_t  *vz,
+                    const char       *name,
+                    const char       *source_type)
 {
+
+  CS_UNUSED(vz);
+  CS_UNUSED(name);
+  CS_UNUSED(source_type);
 
 }
 
 END_C_DECLS
+

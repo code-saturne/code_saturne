@@ -67,15 +67,16 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_boundary_function(const char          *field_name,
-                         const char          *condition,
-                         const cs_zone_t     *z)
+cs_meg_boundary_function(const char      *field_name,
+                         const char      *condition,
+                         const cs_zone_t *bz)
 {
   CS_UNUSED(field_name);
   CS_UNUSED(condition);
-  CS_UNUSED(z);
+  CS_UNUSED(bz);
 }
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+

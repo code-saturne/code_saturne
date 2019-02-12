@@ -53,27 +53,26 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_volume_function.c
+ * \file cs_meg_volume_initialization.c
  *
- * \brief This function is used to compute user defined values for fields over a
- *        given volume zone
+ * \brief This function is used for initalization of fields over a
+ * given volume zone
  *
  * \param[in, out]  f  pointer to cs_field_t
- * \param[in]       z  pointer to cs_zone_t structure related to a volume
+ * \param[in]       z  pointer to cs_volume_zone_t
+ *
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_meg_volume_function(cs_field_t       *f,
-                       const cs_zone_t  *vz)
+cs_real_t *
+cs_meg_initialization(const char       *field_name,
+                      const cs_zone_t  *vz)
 {
 
-  CS_UNUSED(f);
+  CS_UNUSED(field_name);
   CS_UNUSED(vz);
 
 }
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

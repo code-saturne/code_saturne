@@ -2562,11 +2562,10 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
+  double Su, Sv, Sw;
   double dSudu, dSudv, dSudw;
   double dSvdu, dSvdv, dSvdw;
   double dSwdu, dSwdv, dSwdw;
-
-  mei_tree_t *ev_formula  = NULL;
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -2594,84 +2593,63 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
       const char *formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
-        ev_formula = mei_tree_new(formula);
-        mei_tree_insert(ev_formula,"x",0.0);
-        mei_tree_insert(ev_formula,"y",0.0);
-        mei_tree_insert(ev_formula,"z",0.0);
-        mei_tree_insert(ev_formula, "velocity[0]", 0.0);
-        mei_tree_insert(ev_formula, "velocity[1]", 0.0);
-        mei_tree_insert(ev_formula, "velocity[2]", 0.0);
-        mei_tree_insert(ev_formula, "rho", 0.0);
 
-        /* add variable from notebook */
-        cs_gui_add_notebook_variables(ev_formula);
+        cs_real_t *st_vals = cs_meg_source_terms(z,
+                                                 "momentum",
+                                                 "momentum_source_term");
 
-        /* try to build the interpreter */
-        if (mei_tree_builder(ev_formula))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not interpret expression: %s\n %i"),
-                    ev_formula->string, mei_tree_builder(ev_formula));
-        const char *symbols[] = {"Su","Sv","Sw",
-                                 "dSudu","dSudv","dSudw",
-                                 "dSvdu","dSvdv","dSvdw",
-                                 "dSwdu","dSwdv","dSwdw"};
-        if (mei_tree_find_symbols(ev_formula, 12, symbols))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not find the required symbol: %s\n%s\n%s\n%s\n"),
-                    "Su, Sv, Sw,",
-                    "dSudu, dSudv, dSudw,",
-                    "dSvdu, dSvdv, dSvdw,",
-                    "dSwdu, dSwdv or dSwdw");
-        for (cs_lnum_t i = 0; i < n_cells; i++) {
-          cs_lnum_t iel = cell_ids[i];
-          mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-          mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-          mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, "velocity[0]", vel[iel][0]);
-          mei_tree_insert(ev_formula, "velocity[1]", vel[iel][1]);
-          mei_tree_insert(ev_formula, "velocity[2]", vel[iel][2]);
-          mei_tree_insert(ev_formula, "rho", c_rho->val[iel]);
-          mei_evaluate(ev_formula);
+        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+          cs_lnum_t c_id = cell_ids[e_id];
 
-          dSudu = mei_tree_lookup(ev_formula,"dSudu");
-          dSudv = mei_tree_lookup(ev_formula,"dSudv");
-          dSudw = mei_tree_lookup(ev_formula,"dSudw");
-          dSvdu = mei_tree_lookup(ev_formula,"dSvdu");
-          dSvdv = mei_tree_lookup(ev_formula,"dSvdv");
-          dSvdw = mei_tree_lookup(ev_formula,"dSvdw");
-          dSwdu = mei_tree_lookup(ev_formula,"dSwdu");
-          dSwdv = mei_tree_lookup(ev_formula,"dSwdv");
-          dSwdw = mei_tree_lookup(ev_formula,"dSwdw");
+          /* Read values from the newly created array */
+          Su = st_vals[12*e_id];
+          Sv = st_vals[12*e_id + 1];
+          Sw = st_vals[12*e_id + 2];
 
-          tsimp[iel][0][0] = cell_f_vol[iel]*dSudu;
-          tsimp[iel][0][1] = cell_f_vol[iel]*dSudv;
-          tsimp[iel][0][2] = cell_f_vol[iel]*dSudw;
-          tsimp[iel][1][0] = cell_f_vol[iel]*dSvdu;
-          tsimp[iel][1][1] = cell_f_vol[iel]*dSvdv;
-          tsimp[iel][1][2] = cell_f_vol[iel]*dSvdw;
-          tsimp[iel][2][0] = cell_f_vol[iel]*dSwdu;
-          tsimp[iel][2][1] = cell_f_vol[iel]*dSwdv;
-          tsimp[iel][2][2] = cell_f_vol[iel]*dSwdw;
+          dSudu = st_vals[12*e_id + 3];
+          dSudv = st_vals[12*e_id + 4];
+          dSudw = st_vals[12*e_id + 5];
 
-          tsexp[iel][0] = mei_tree_lookup(ev_formula,"Su")
-                        - ( dSudu*vel[iel][0]
-                          + dSudv*vel[iel][1]
-                          + dSudw*vel[iel][2]);
-          tsexp[iel][0] *= cell_f_vol[iel];
-          tsexp[iel][1] = mei_tree_lookup(ev_formula,"Sv")
-                        - ( dSvdu*vel[iel][0]
-                          + dSvdv*vel[iel][1]
-                          + dSvdw*vel[iel][2]);
-          tsexp[iel][1] *= cell_f_vol[iel];
-          tsexp[iel][2] = mei_tree_lookup(ev_formula,"Sw")
-                        - ( dSwdu*vel[iel][0]
-                          + dSwdv*vel[iel][1]
-                          + dSwdw*vel[iel][2]);
-          tsexp[iel][2] *= cell_f_vol[iel];
+          dSvdu = st_vals[12*e_id + 6];
+          dSvdv = st_vals[12*e_id + 7];
+          dSvdw = st_vals[12*e_id + 8];
+
+          dSwdu = st_vals[12*e_id + 9];
+          dSwdv = st_vals[12*e_id + 10];
+          dSwdw = st_vals[12*e_id + 11];
+
+          /* Fill the explicit and implicit source terms' arrays */
+          tsexp[c_id][0] = cell_f_vol[c_id]
+                         * ( Su
+                           - dSudu * vel[c_id][0]
+                           - dSudv * vel[c_id][1]
+                           - dSudw * vel[c_id][2] );
+
+          tsexp[c_id][1] = cell_f_vol[c_id]
+                         * ( Sv
+                           - dSvdu * vel[c_id][0]
+                           - dSvdv * vel[c_id][1]
+                           - dSvdw * vel[c_id][2] );
+
+          tsexp[c_id][2] = cell_f_vol[c_id]
+                         * ( Sw
+                           - dSwdu * vel[c_id][0]
+                           - dSwdv * vel[c_id][1]
+                           - dSwdw * vel[c_id][2] );
+
+          tsimp[c_id][0][0] = cell_f_vol[c_id]*dSudu;
+          tsimp[c_id][0][1] = cell_f_vol[c_id]*dSudv;
+          tsimp[c_id][0][2] = cell_f_vol[c_id]*dSudw;
+          tsimp[c_id][1][0] = cell_f_vol[c_id]*dSvdu;
+          tsimp[c_id][1][1] = cell_f_vol[c_id]*dSvdv;
+          tsimp[c_id][1][2] = cell_f_vol[c_id]*dSvdw;
+          tsimp[c_id][2][0] = cell_f_vol[c_id]*dSwdu;
+          tsimp[c_id][2][1] = cell_f_vol[c_id]*dSwdv;
+          tsimp[c_id][2][2] = cell_f_vol[c_id]*dSwdw;
+
         }
-        mei_tree_destroy(ev_formula);
+        BFT_FREE(st_vals);
       }
-
     }
   }
 }
@@ -2701,11 +2679,9 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
-  double dS;
   const char *formula = NULL;
 
-  mei_tree_t *ev_formula  = NULL;
-  cs_field_t  *f = cs_field_by_id(*f_id);
+  cs_field_t *f = cs_field_by_id(*f_id);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -2740,42 +2716,19 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
 
       if (formula != NULL) {
         if (*idarcy == 0) {
-          ev_formula = mei_tree_new(formula);
-          mei_tree_insert(ev_formula,"x",0.);
-          mei_tree_insert(ev_formula,"y",0.);
-          mei_tree_insert(ev_formula,"z",0.);
-          mei_tree_insert(ev_formula, f->name, 0.0);
+          cs_real_t *st_vals = cs_meg_source_terms(z,
+                                                   f->name,
+                                                   "scalar_source_term");
 
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(ev_formula);
-
-          /* try to build the interpreter */
-          if (mei_tree_builder(ev_formula))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n %i"),
-                      ev_formula->string, mei_tree_builder(ev_formula));
-
-          const char *symbols[] = {"S","dS"};
-          if (mei_tree_find_symbols(ev_formula, 2, symbols))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"), "S or dS");
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-            mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-            mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-            mei_tree_insert(ev_formula, f->name, pvar[iel]);
-            mei_evaluate(ev_formula);
-            dS = mei_tree_lookup(ev_formula,"dS");
-            tsimp[iel] = cell_f_vol[iel]*dS;
-            tsexp[iel] = mei_tree_lookup(ev_formula,"S") - dS*pvar[iel];
-            tsexp[iel] *= cell_f_vol[iel];
+          for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+            cs_lnum_t c_id = cell_ids[e_id];
+            tsimp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id + 1];
+            tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
+                        - tsimp[c_id] * pvar[c_id];
           }
+          BFT_FREE(st_vals);
         }
-        mei_tree_destroy(ev_formula);
       }
-
     }
   }
 }
@@ -2806,8 +2759,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
   double dS;
   const char *formula = NULL;
 
-  mei_tree_t *ev_formula  = NULL;
-  cs_field_t  *f = cs_field_by_id(*f_id);
+  cs_field_t *f = cs_field_by_id(*f_id);
 
   /* number of volumic zone */
 
@@ -2844,41 +2796,20 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
       formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
-        ev_formula = mei_tree_new(formula);
-        mei_tree_insert(ev_formula,"x",0.);
-        mei_tree_insert(ev_formula,"y",0.);
-        mei_tree_insert(ev_formula,"z",0.);
-        mei_tree_insert(ev_formula, f->name, 0.0);
 
-        /* add variable from notebook */
-        cs_gui_add_notebook_variables(ev_formula);
+        cs_real_t *st_vals = cs_meg_source_terms(z,
+                                                 f->name,
+                                                 "thermal_source_term");
 
-        /* try to build the interpreter */
-        if (mei_tree_builder(ev_formula))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not interpret expression: %s\n %i"),
-                    ev_formula->string, mei_tree_builder(ev_formula));
+        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+          cs_lnum_t c_id = cell_ids[e_id];
 
-        const char *symbols[] = {"S","dS"};
-        if (mei_tree_find_symbols(ev_formula, 2, symbols))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not find the required symbol: %s\n"), "S or dS");
-
-        for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-          cs_lnum_t iel = cell_ids[icel];
-          mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-          mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-          mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, f->name, pvar[iel]);
-          mei_evaluate(ev_formula);
-          dS = mei_tree_lookup(ev_formula,"dS");
-          tsimp[iel] = cell_f_vol[iel]*dS;
-          tsexp[iel] = mei_tree_lookup(ev_formula,"S") - dS*pvar[iel];
-          tsexp[iel] *= cell_f_vol[iel];
+          tsimp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id + 1];
+          tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
+                      - tsimp[c_id] * pvar[c_id];
         }
-        mei_tree_destroy(ev_formula);
+        BFT_FREE(st_vals);
       }
-
     }
   }
 }
@@ -2936,39 +2867,13 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         cs_field_t *c_vel = cs_field_by_name("velocity");
 
         if (formula_uvw != NULL) {
-          mei_tree_t *ev_formula_uvw = mei_tree_new(formula_uvw);
-          mei_tree_insert(ev_formula_uvw, "x", 0.);
-          mei_tree_insert(ev_formula_uvw, "y", 0.);
-          mei_tree_insert(ev_formula_uvw, "z", 0.);
-          mei_tree_insert(ev_formula_uvw, "uref", cs_glob_turb_ref_values->uref);
-
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(ev_formula_uvw);
-
-          /* try to build the interpreter */
-          if (mei_tree_builder(ev_formula_uvw))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n %i"),
-                      ev_formula_uvw->string, mei_tree_builder(ev_formula_uvw));
-
-          const char *symbols_uvw[] = {"velocity[0]", "velocity[1]", "velocity[2]"};
-          if (mei_tree_find_symbols(ev_formula_uvw, 3, symbols_uvw))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"),
-                      "velocity[0], velocity[1] ou velocity[2]");
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            mei_tree_insert(ev_formula_uvw, "x", cell_cen[iel][0]);
-            mei_tree_insert(ev_formula_uvw, "y", cell_cen[iel][1]);
-            mei_tree_insert(ev_formula_uvw, "z", cell_cen[iel][2]);
-            mei_tree_insert(ev_formula_uvw, "uref", cs_glob_turb_ref_values->uref);
-            mei_evaluate(ev_formula_uvw);
-            c_vel->val[3 * iel    ] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
-            c_vel->val[3 * iel + 1] = mei_tree_lookup(ev_formula_uvw, "velocity[1]");
-            c_vel->val[3 * iel + 2] = mei_tree_lookup(ev_formula_uvw, "velocity[2]");
+          cs_real_t *ini_vals = cs_meg_initialization("velocity", z);
+          for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+            cs_lnum_t c_id = cell_ids[e_id];
+            for (int d = 0; d < 3; d++)
+              c_vel->val[3 * c_id + d] = ini_vals[3 * e_id + d];
           }
-          mei_tree_destroy(ev_formula_uvw);
+          BFT_FREE(ini_vals);
         }
         else {
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
@@ -2981,7 +2886,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         /* pressure initialization for groundwater model */
         if (*idarcy > 0) {
           const char *formula = NULL;
-          mei_tree_t *ev_formula = NULL;
 
           cs_tree_node_t *tn = _find_node_variable("hydraulic_head");
           tn = cs_tree_find_node(tn, "formula");
@@ -2991,20 +2895,16 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           cs_field_t *c = cs_field_by_name_try("hydraulic_head");
 
           if (formula != NULL) {
-            ev_formula = _init_mei_tree(formula, "H");
-            for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-              cs_lnum_t iel = cell_ids[icel];
-              mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-              mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-              mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-              mei_evaluate(ev_formula);
-              c->val[iel] = mei_tree_lookup(ev_formula, "H");
+            cs_real_t *ini_vals = cs_meg_initialization("hydraulic_head",
+                                                             z);
+            for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+              cs_lnum_t c_id = cell_ids[c_id];
+              c->val[c_id] = ini_vals[e_id];
             }
-            mei_tree_destroy(ev_formula);
+            BFT_FREE(ini_vals);
           }
 
         }
-
 
         /* Turbulence variables initialization */
         const char *choice = _turbulence_initialization_choice(z_id_str);
@@ -3020,497 +2920,318 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           formula_turb = cs_tree_node_get_value_str(tn_turb);
 
           if (formula_turb != NULL) {
-            mei_tree_t *ev_formula_turb = mei_tree_new(formula_turb);
-            mei_tree_insert(ev_formula_turb, "rho0", cs_glob_fluid_properties->ro0);
-            mei_tree_insert(ev_formula_turb, "mu0", cs_glob_fluid_properties->viscl0);
-            mei_tree_insert(ev_formula_turb, "cp0", cs_glob_fluid_properties->cp0);
-            mei_tree_insert(ev_formula_turb, "uref", cs_glob_turb_ref_values->uref);
-            mei_tree_insert(ev_formula_turb, "almax", cs_glob_turb_ref_values->almax);
-            mei_tree_insert(ev_formula_turb, "x", 0.0);
-            mei_tree_insert(ev_formula_turb, "y", 0.0);
-            mei_tree_insert(ev_formula_turb, "z", 0.0);
-
-            /* add variable from notebook */
-            cs_gui_add_notebook_variables(ev_formula_turb);
-
-            /* try to build the interpreter */
-
-            if (mei_tree_builder(ev_formula_turb))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not interpret expression: %s\n %i"),
-                        ev_formula_turb->string, mei_tree_builder(ev_formula_turb));
-
             const char *model = cs_gui_get_thermophysical_model("turbulence");
             if (model == NULL)
               break;
 
+            cs_real_t *ini_vals = cs_meg_initialization("turbulence", z);
+
             if (cs_gui_strcmp(model, "k-epsilon") ||
                 cs_gui_strcmp(model, "k-epsilon-PL")) {
-
-              const char *symbols[] = {"k","epsilon"};
-              if (mei_tree_find_symbols(ev_formula_turb, 2, symbols))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"),
-                          "k or epsilon");
 
               cs_field_t *c_k   = cs_field_by_name("k");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_k->val[iel]   = mei_tree_lookup(ev_formula_turb, "k");
-                c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                c_k->val[c_id]   = ini_vals[2 * e_id];
+                c_eps->val[c_id] = ini_vals[2 * e_id + 1];
               }
             }
-
             else if (   cs_gui_strcmp(model, "Rij-epsilon")
                      || cs_gui_strcmp(model, "Rij-SSG")) {
-              const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23",
-                                       "epsilon"};
-              if (mei_tree_find_symbols(ev_formula_turb, 7, symbols))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"),
-                          "r11, r22, r33, r12, r13, r23 or epsilon");
 
               cs_field_t *c_rij = cs_field_by_name_try("rij");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
 
               if (c_rij != NULL) {
-                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                  cs_lnum_t iel = cell_ids[icel];
-                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                  mei_evaluate(ev_formula_turb);
-                  c_rij->val[iel*6]   = mei_tree_lookup(ev_formula_turb, "r11");
-                  c_rij->val[iel*6+1] = mei_tree_lookup(ev_formula_turb, "r22");
-                  c_rij->val[iel*6+2] = mei_tree_lookup(ev_formula_turb, "r33");
-                  c_rij->val[iel*6+3] = mei_tree_lookup(ev_formula_turb, "r12");
-                  c_rij->val[iel*6+4] = mei_tree_lookup(ev_formula_turb, "r23");
-                  c_rij->val[iel*6+5] = mei_tree_lookup(ev_formula_turb, "r13");
-                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  for (int drij = 0; drij < 6; drij++) {
+                    c_rij->val[6*c_id + drij] = ini_vals[7*e_id + drij];
+                  c_eps->val[c_id] = ini_vals[7 * e_id + 6];
+                  }
                 }
-              }
-              else {
+              } else {
                 cs_field_t *c_r11 = cs_field_by_name("r11");
                 cs_field_t *c_r22 = cs_field_by_name("r22");
                 cs_field_t *c_r33 = cs_field_by_name("r33");
                 cs_field_t *c_r12 = cs_field_by_name("r12");
                 cs_field_t *c_r13 = cs_field_by_name("r13");
                 cs_field_t *c_r23 = cs_field_by_name("r23");
-
-                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                  cs_lnum_t iel = cell_ids[icel];
-                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                  mei_evaluate(ev_formula_turb);
-                  c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
-                  c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
-                  c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
-                  c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
-                  c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
-                  c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
-                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  c_r11->val[c_id] = ini_vals[7 * e_id];
+                  c_r22->val[c_id] = ini_vals[7 * e_id + 1];
+                  c_r33->val[c_id] = ini_vals[7 * e_id + 2];
+                  c_r12->val[c_id] = ini_vals[7 * e_id + 3];
+                  c_r23->val[c_id] = ini_vals[7 * e_id + 4];
+                  c_r13->val[c_id] = ini_vals[7 * e_id + 5];
+                  c_eps->val[c_id] = ini_vals[7 * e_id + 6];
                 }
               }
             }
-
             else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-              const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23",
-                                       "epsilon", "alpha"};
-              if (mei_tree_find_symbols(ev_formula_turb, 8, symbols))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"),
-                          "r11, r22, r33, r12, r13, r23, epsilon or alpha");
-
               cs_field_t *c_rij = cs_field_by_name_try("rij");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
               cs_field_t *c_alp = cs_field_by_name("alpha");
 
               if (c_rij != NULL) {
-                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                  cs_lnum_t iel = cell_ids[icel];
-                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                  mei_evaluate(ev_formula_turb);
-                  c_rij->val[iel*6]   = mei_tree_lookup(ev_formula_turb, "r11");
-                  c_rij->val[iel*6+1] = mei_tree_lookup(ev_formula_turb, "r22");
-                  c_rij->val[iel*6+2] = mei_tree_lookup(ev_formula_turb, "r33");
-                  c_rij->val[iel*6+3] = mei_tree_lookup(ev_formula_turb, "r12");
-                  c_rij->val[iel*6+4] = mei_tree_lookup(ev_formula_turb, "r23");
-                  c_rij->val[iel*6+5] = mei_tree_lookup(ev_formula_turb, "r13");
-                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
-                  c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  for (int drij = 0; drij < 6; drij++) {
+                    c_rij->val[6*c_id + drij] = ini_vals[8*e_id + drij];
+                  c_eps->val[c_id] = ini_vals[8 * e_id + 6];
+                  c_alp->val[c_id] = ini_vals[8 * e_id + 7];
+                  }
                 }
-              }
-              else {
+              } else {
                 cs_field_t *c_r11 = cs_field_by_name("r11");
                 cs_field_t *c_r22 = cs_field_by_name("r22");
                 cs_field_t *c_r33 = cs_field_by_name("r33");
                 cs_field_t *c_r12 = cs_field_by_name("r12");
                 cs_field_t *c_r13 = cs_field_by_name("r13");
                 cs_field_t *c_r23 = cs_field_by_name("r23");
-
-                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                  cs_lnum_t iel = cell_ids[icel];
-                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                  mei_evaluate(ev_formula_turb);
-                  c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
-                  c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
-                  c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
-                  c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
-                  c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
-                  c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
-                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
-                  c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  c_r11->val[c_id] = ini_vals[8 * e_id];
+                  c_r22->val[c_id] = ini_vals[8 * e_id + 1];
+                  c_r33->val[c_id] = ini_vals[8 * e_id + 2];
+                  c_r12->val[c_id] = ini_vals[8 * e_id + 3];
+                  c_r23->val[c_id] = ini_vals[8 * e_id + 4];
+                  c_r13->val[c_id] = ini_vals[8 * e_id + 5];
+                  c_eps->val[c_id] = ini_vals[8 * e_id + 6];
+                  c_alp->val[c_id] = ini_vals[8 * e_id + 7];
                 }
               }
             }
-
             else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-              const char *symbols[] = {"k", "epsilon", "phi", "alpha"};
-              if (mei_tree_find_symbols(ev_formula_turb, 4, symbols))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"),
-                          "k, epsilon, phi of al");
 
               cs_field_t *c_k   = cs_field_by_name("k");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
               cs_field_t *c_phi = cs_field_by_name("phi");
               cs_field_t *c_alp = cs_field_by_name("alpha");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_k->val[iel]   = mei_tree_lookup(ev_formula_turb, "k");
-                c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
-                c_phi->val[iel] = mei_tree_lookup(ev_formula_turb, "phi");
-                c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+
+                c_k->val[c_id]   = ini_vals[4 * e_id];
+                c_eps->val[c_id] = ini_vals[4 * e_id + 1];
+                c_phi->val[c_id] = ini_vals[4 * e_id + 2];
+                c_alp->val[c_id] = ini_vals[4 * e_id + 3];
               }
             }
-
             else if (cs_gui_strcmp(model, "k-omega-SST")) {
-              const char *symbols[] = {"k", "omega"};
-              if (mei_tree_find_symbols(ev_formula_turb, 2, symbols))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"),
-                          "k or omega");
 
               cs_field_t *c_k   = cs_field_by_name("k");
               cs_field_t *c_ome = cs_field_by_name("omega");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_k->val[iel]   = mei_tree_lookup(ev_formula_turb, "k");
-                c_ome->val[iel] = mei_tree_lookup(ev_formula_turb, "omega");
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+
+                c_k->val[c_id]   = ini_vals[2 * e_id];
+                c_ome->val[c_id] = ini_vals[2 * e_id + 1];
               }
             }
-
             else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-              const char *symbols[] = {"nu_tilda"};
-              if (mei_tree_find_symbols(ev_formula_turb, 1, symbols))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"),
-                          "nu_tilda");
-
               cs_field_t *c_nu = cs_field_by_name("nu_tilda");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_nu->val[iel] = mei_tree_lookup(ev_formula_turb, "nu_tilda");
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                c_nu->val[c_id] = ini_vals[e_id];
               }
             }
 
             else
               bft_error(__FILE__, __LINE__, 0,
-                        _("Invalid turbulence model: %s.\n"), model);
-            mei_tree_destroy(ev_formula_turb);
+                  _("Invalid turbulence model: %s.\n"), model);
+
+            BFT_FREE(ini_vals);
           }
         }
-      }
 
-      /* Thermal scalar initialization */
-      if (cs_gui_thermal_model()) {
+        /* Thermal scalar initialization */
+        if (cs_gui_thermal_model()) {
 
-        const char *formula_sca    = NULL;
-        mei_tree_t *ev_formula_sca   = NULL;
-        cs_tree_node_t *tn_sca
-          = cs_tree_get_node(cs_glob_tree,
-                             "thermophysical_models/thermal_scalar/variable/formula");
-        tn_sca = _add_zone_id_test_attribute(tn_sca, z->id);
-        formula_sca = cs_tree_node_get_value_str(tn_sca);
+          const char *formula_sca    = NULL;
+          mei_tree_t *ev_formula_sca   = NULL;
+          cs_tree_node_t *tn_sca
+            = cs_tree_get_node(cs_glob_tree,
+                               "thermophysical_models/thermal_scalar/variable/formula");
+          tn_sca = _add_zone_id_test_attribute(tn_sca, z->id);
+          formula_sca = cs_tree_node_get_value_str(tn_sca);
 
-        /* For non-specific physics defined with the GUI,
-           the thermal variable can only be temperature or enthalpy
-           (as the thermal model is on) */
+          /* For non-specific physics defined with the GUI,
+             the thermal variable can only be temperature or enthalpy
+             (as the thermal model is on) */
 
-        cs_field_t *c = cs_thermal_model_field();
+          cs_field_t *c = cs_thermal_model_field();
 
-        assert(c != NULL);
+          assert(c != NULL);
 
-        if (formula_sca != NULL) {
-          ev_formula_sca = mei_tree_new(formula_sca);
-          mei_tree_insert(ev_formula_sca, "x", 0.);
-          mei_tree_insert(ev_formula_sca, "y", 0.);
-          mei_tree_insert(ev_formula_sca, "z", 0.);
+          if (formula_sca != NULL) {
+            cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
 
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(ev_formula_sca);
-
-          /* try to build the interpreter */
-          if (mei_tree_builder(ev_formula_sca))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n %i"),
-                      ev_formula_sca->string, mei_tree_builder(ev_formula_sca));
-
-          if (mei_tree_find_symbol(ev_formula_sca, c->name))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"),
-                      c->name);
-
-          if (*isuite == 0) {
-            for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-              cs_lnum_t iel = cell_ids[icel];
-              mei_tree_insert(ev_formula_sca, "x", cell_cen[iel][0]);
-              mei_tree_insert(ev_formula_sca, "y", cell_cen[iel][1]);
-              mei_tree_insert(ev_formula_sca, "z", cell_cen[iel][2]);
-              mei_evaluate(ev_formula_sca);
-              c->val[iel] = mei_tree_lookup(ev_formula_sca, c->name);
+            for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+              cs_lnum_t c_id = cell_ids[e_id];
+              c->val[c_id]   = ini_vals[e_id];
             }
-          }
-          mei_tree_destroy(ev_formula_sca);
-        } else {
-          if (*isuite == 0) {
+
+            BFT_FREE(ini_vals);
+          } else {
             for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
               cs_lnum_t iel = cell_ids[icel];
               c->val[iel] = 0.0;
             }
           }
         }
-      }
 
-      /* User Scalars initialization */
-      int n_fields = cs_field_n_fields();
+        /* User Scalars initialization */
+        int n_fields = cs_field_n_fields();
 
-      for (int f_id = 0; f_id < n_fields; f_id++) {
+        for (int f_id = 0; f_id < n_fields; f_id++) {
 
-        const cs_field_t  *f = cs_field_by_id(f_id);
+          const cs_field_t  *f = cs_field_by_id(f_id);
 
-        if (f->type & CS_FIELD_USER && f->location_id == CS_MESH_LOCATION_CELLS) {
+          if (f->type & CS_FIELD_USER && f->location_id == CS_MESH_LOCATION_CELLS) {
 
-          const char *formula_sca    = NULL;
-          mei_tree_t *ev_formula_sca   = NULL;
+            const char *formula_sca    = NULL;
 
-          cs_tree_node_t *tn_sca = NULL;
-          tn_sca = cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
-          tn_sca = cs_tree_node_get_sibling_with_tag(tn_sca, "name", f->name);
-          tn_sca = cs_tree_get_node(tn_sca, "formula");
-          tn_sca = _add_zone_id_test_attribute(tn_sca, z->id);
-          formula_sca = cs_tree_node_get_value_str(tn_sca);
+            cs_tree_node_t *tn_sca = NULL;
+            tn_sca = cs_tree_get_node(cs_glob_tree, "additional_scalars/variable");
+            tn_sca = cs_tree_node_get_sibling_with_tag(tn_sca, "name", f->name);
+            tn_sca = cs_tree_get_node(tn_sca, "formula");
+            tn_sca = _add_zone_id_test_attribute(tn_sca, z->id);
+            formula_sca = cs_tree_node_get_value_str(tn_sca);
 
-          if (formula_sca != NULL) {
-            ev_formula_sca = mei_tree_new(formula_sca);
-            mei_tree_insert(ev_formula_sca, "x", 0.);
-            mei_tree_insert(ev_formula_sca, "y", 0.);
-            mei_tree_insert(ev_formula_sca, "z", 0.);
-
-            /* add variable from notebook */
-            cs_gui_add_notebook_variables(ev_formula_sca);
-
-            /* try to build the interpreter */
-            if (mei_tree_builder(ev_formula_sca))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not interpret expression: %s\n %i"),
-                        ev_formula_sca->string, mei_tree_builder(ev_formula_sca));
-
-            if (mei_tree_find_symbol(ev_formula_sca, f->name))
-                bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        f->name);
-
-            if (*isuite == 0) {
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_sca, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_sca, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_sca, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_sca);
-                f->val[iel] = mei_tree_lookup(ev_formula_sca, f->name);
+            if (formula_sca != NULL) {
+              cs_real_t *ini_vals = cs_meg_initialization(f->name, z);
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                f->val[c_id] = ini_vals[e_id];
               }
+              BFT_FREE(ini_vals);
             }
-            mei_tree_destroy(ev_formula_sca);
           }
-
         }
-      }
 
-      /* Meteo Scalars initialization */
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+        /* Meteo Scalars initialization */
+        if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
 
-        cs_tree_node_t *tn_m0
-          = cs_tree_get_node(cs_glob_tree,
-                             "thermophysical_models/atmospheric_flows");
+          cs_tree_node_t *tn_m0
+            = cs_tree_get_node(cs_glob_tree,
+                               "thermophysical_models/atmospheric_flows");
 
-        const char *name       = NULL;
-        const char *formula_meteo  = NULL;
-        mei_tree_t *ev_formula_meteo = NULL;
+          const char *name       = NULL;
+          const char *formula_meteo  = NULL;
+          mei_tree_t *ev_formula_meteo = NULL;
 
-        int size = cs_tree_get_sub_node_count_simple(tn_m0, "variable");
+          int size = cs_tree_get_sub_node_count_simple(tn_m0, "variable");
 
-        for (int j = 0; j < size; j++) {
-          cs_tree_node_t *tn_meteo = cs_tree_get_node(tn_m0, "variable");
-          for (int i = 1;
-               tn_meteo != NULL && i < j + 1;
-               i++) {
-           tn_meteo = cs_tree_node_get_next_of_name(tn_meteo);
-          }
-          cs_tree_node_t *tn_meteo2 = tn_meteo;
-          tn_meteo = cs_tree_get_node(tn_meteo, "name");
-          name = cs_tree_node_get_value_str(tn_meteo);
-
-          cs_field_t *c = cs_field_by_name_try(name);
-
-          snprintf(z_id_str, 31, "%d", z_id);
-          const char *zone_id
-            = cs_tree_node_get_child_value_str(tn_meteo2, "zone_id");
-
-          if (cs_gui_strcmp(zone_id, z_id_str))
-            tn_meteo2 = cs_tree_get_node(tn_meteo2, "formula");
-          else
-            tn_meteo2 = NULL;
-
-          formula_meteo = cs_tree_node_get_value_str(tn_meteo2);
-
-          if (formula_meteo != NULL) {
-            ev_formula_meteo = mei_tree_new(formula_meteo);
-            mei_tree_insert(ev_formula_meteo, "x", 0.);
-            mei_tree_insert(ev_formula_meteo, "y", 0.);
-            mei_tree_insert(ev_formula_meteo, "z", 0.);
-
-            /* add variable from notebook */
-            cs_gui_add_notebook_variables(ev_formula_meteo);
-
-            /* try to build the interpreter */
-            if (mei_tree_builder(ev_formula_meteo))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not interpret expression: %s\n %i"),
-                        ev_formula_meteo->string, mei_tree_builder(ev_formula_meteo));
-
-            if (mei_tree_find_symbol(ev_formula_meteo, name))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s\n"),
-                        name);
-
-            if (*isuite == 0) {
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_meteo, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_meteo, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_meteo, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_meteo);
-                c->val[iel] = mei_tree_lookup(ev_formula_meteo, name);
-              }
+          for (int j = 0; j < size; j++) {
+            cs_tree_node_t *tn_meteo = cs_tree_get_node(tn_m0, "variable");
+            for (int i = 1;
+                 tn_meteo != NULL && i < j + 1;
+                 i++) {
+             tn_meteo = cs_tree_node_get_next_of_name(tn_meteo);
             }
-            mei_tree_destroy(ev_formula_meteo);
-          }
-          else {
-            if (*isuite == 0) {
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                c->val[iel] = 0.0;
+            cs_tree_node_t *tn_meteo2 = tn_meteo;
+            tn_meteo = cs_tree_get_node(tn_meteo, "name");
+            name = cs_tree_node_get_value_str(tn_meteo);
+
+            cs_field_t *c = cs_field_by_name_try(name);
+
+            snprintf(z_id_str, 31, "%d", z_id);
+            const char *zone_id
+              = cs_tree_node_get_child_value_str(tn_meteo2, "zone_id");
+
+            if (cs_gui_strcmp(zone_id, z_id_str))
+              tn_meteo2 = cs_tree_get_node(tn_meteo2, "formula");
+            else
+              tn_meteo2 = NULL;
+
+            formula_meteo = cs_tree_node_get_value_str(tn_meteo2);
+
+            if (formula_meteo != NULL) {
+              cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                c->val[c_id] = ini_vals[e_id];
+              }
+              BFT_FREE(ini_vals);
+            } else {
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                c->val[c_id] = 0.0;
               }
             }
           }
-
         }
-      }
 
-      if (cs_gui_strcmp(vars->model, "compressible_model")) {
-        const char *formula        = NULL;
-        const char *buff           = NULL;
-        mei_tree_t *ev_formula       = NULL;
-        const char *name[] = {"pressure", "temperature", "total_energy",
-                              "density"};
+        if (cs_gui_strcmp(vars->model, "compressible_model")) {
+          const char *formula        = NULL;
+          const char *buff           = NULL;
+          mei_tree_t *ev_formula       = NULL;
+          const char *name[] = {"pressure", "temperature", "total_energy",
+                                "density"};
 
-        ccfth = 10000;
-        for (int j = 0; j < 4; j++) {
+          ccfth = 10000;
+          for (int j = 0; j < 4; j++) {
 
-          cs_tree_node_t *tn = NULL;
-          if (j < 3) {
-            tn = cs_tree_find_node(cs_glob_tree, "variable");
-            while (tn != NULL) {
-              const char *name_tn = cs_tree_node_get_child_value_str(tn, "name");
-              if (cs_gui_strcmp(name_tn, name[j]))
-                break;
-              else
-                tn = cs_tree_find_node_next(cs_glob_tree, tn, "variable");
-            }
-          }
-          else {
-            tn = cs_tree_find_node(cs_glob_tree, "property");
-            while (tn != NULL) {
-              const char *name_tn = cs_tree_node_get_child_value_str(tn, "name");
-              if (cs_gui_strcmp(name_tn, name[j]))
-                break;
-              else
-                tn = cs_tree_find_node_next(cs_glob_tree, tn, "property");
-            }
-          }
-          tn = cs_tree_get_node(tn, "formula");
-          tn =_add_zone_id_test_attribute(tn, z->id);
-          buff = cs_tree_node_get_child_value_str(tn, "status");
-
-          if (cs_gui_strcmp(buff, "on")) {
-            if (j == 0)
-              ccfth = ccfth * 2;
-            else if (j == 1)
-              ccfth = ccfth * 5;
-            else if (j == 2)
-              ccfth = ccfth * 7;
-            else if (j == 3)
-              ccfth = ccfth * 3;
-
-            cs_field_t *c = cs_field_by_name_try(name[j]);
-
-            formula = cs_tree_node_get_value_str(tn);
-
-            ev_formula = _init_mei_tree(formula, name[j]);
-            if (*isuite == 0) {
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula);
-                c->val[iel] = mei_tree_lookup(ev_formula, name[j]);
+            cs_tree_node_t *tn = NULL;
+            if (j < 3) {
+              tn = cs_tree_find_node(cs_glob_tree, "variable");
+              while (tn != NULL) {
+                const char *name_tn = cs_tree_node_get_child_value_str(tn, "name");
+                if (cs_gui_strcmp(name_tn, name[j]))
+                  break;
+                else
+                  tn = cs_tree_find_node_next(cs_glob_tree, tn, "variable");
               }
             }
-            mei_tree_destroy(ev_formula);
+            else {
+              tn = cs_tree_find_node(cs_glob_tree, "property");
+              while (tn != NULL) {
+                const char *name_tn = cs_tree_node_get_child_value_str(tn, "name");
+                if (cs_gui_strcmp(name_tn, name[j]))
+                  break;
+                else
+                  tn = cs_tree_find_node_next(cs_glob_tree, tn, "property");
+              }
+            }
+            tn = cs_tree_get_node(tn, "formula");
+            tn =_add_zone_id_test_attribute(tn, z->id);
+            buff = cs_tree_node_get_child_value_str(tn, "status");
+
+            if (cs_gui_strcmp(buff, "on")) {
+              if (j == 0)
+                ccfth = ccfth * 2;
+              else if (j == 1)
+                ccfth = ccfth * 5;
+              else if (j == 2)
+                ccfth = ccfth * 7;
+              else if (j == 3)
+                ccfth = ccfth * 3;
+
+              cs_field_t *c = cs_field_by_name_try(name[j]);
+
+              formula = cs_tree_node_get_value_str(tn);
+
+              if (formula != NULL) {
+                cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  c->val[c_id] = ini_vals[e_id];
+                }
+                BFT_FREE(ini_vals);
+              }
+            }
+
           }
-
+          *iccfth = ccfth;
         }
-        *iccfth = ccfth;
-      }
 
+      } /* END OF ISUITE == 0 */
     }
   } /* zones+1 */
 }

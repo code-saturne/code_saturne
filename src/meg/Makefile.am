@@ -78,8 +78,9 @@ EXTRA_DIST =
 
 megfiles = \
 cs_meg_boundary_function.c \
-cs_meg_volume_function.c \
-cs_meg_volume_initialization.c
+cs_meg_initialization.c \
+cs_meg_source_terms.c \
+cs_meg_volume_function.c
 
 noinst_LTLIBRARIES = libcsmeg.la
 libcsmeg_la_SOURCES = $(megfiles)

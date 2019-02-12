@@ -46,6 +46,9 @@ from code_saturne.model.XMLmodel import XMLmodel, ModelTest
 from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.LocalizationModel import LocalizationModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -68,6 +71,10 @@ class SourceTermsModel(Model):
         self.node_therm    = self.models.xmlGetNode('thermal_scalar', 'model')
         self.node_sterm   = self.models.xmlInitNode('source_terms')
 
+        self.therm   = ThermalScalarModel(self.case)
+        self.th_sca  = DefineUserScalarsModel(self.case)
+        self.notebook = NotebookModel(self.case)
+
 
     def __verifyZone(self, zone):
         """Private method.
@@ -75,6 +82,42 @@ class SourceTermsModel(Model):
         """
         self.isInt(int(zone))
         self.isInList(zone, LocalizationModel('VolumicZone', self.case).getCodeNumbersList())
+
+
+    def getMomentumFormulaComponents(self, zone):
+
+        exp = self.getMomentumFormula(zone)
+        if not exp:
+            exp = """Su = 0;\nSv = 0;\nSw = 0;\n
+dSudu = 0;\ndSudv = 0;\ndSudw = 0;\n
+dSvdu = 0;\ndSvdv = 0;\ndSvdw = 0;\n
+dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
+
+        req = [('Su', "x component of the momentum source term"),
+               ('Sv', "y component of the momentum source term"),
+               ('Sw', "z component of the momentum source term"),
+               ('dSudu', "x component x velocity derivative"),
+               ('dSudv', "x component y velocity derivative"),
+               ('dSudw', "x component z velocity derivative"),
+               ('dSvdu', "y component x velocity derivative"),
+               ('dSvdv', "y component y velocity derivative"),
+               ('dSvdw', "y component z velocity derivative"),
+               ('dSwdu', "z component x velocity derivative"),
+               ('dSwdv', "z component y velocity derivative"),
+               ('dSwdw', "z component z velocity derivative")]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        sym.append( ("velocity[0]", 'x velocity component'))
+        sym.append( ("velocity[1]", 'y velocity component'))
+        sym.append( ("velocity[2]", 'z velocity component'))
+        sym.append( ("rho", 'local density (kg/m^3)'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
     @Variables.undoLocal
@@ -104,6 +147,25 @@ class SourceTermsModel(Model):
         formula = node.xmlGetString('momentum_formula', zone_id=zone)
 
         return formula
+
+
+    def getSpeciesFormulaComponents(self, zone, scalar):
+
+        exp = self.getSpeciesFormula(zone, scalar)
+        if not exp:
+            exp = """S = 0;\ndS = 0;\n"""
+        req = [('S', 'species source term'),
+               ('dS', 'species source term derivative')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+        name = self.th_sca.getScalarName(self.scalar)
+        sym.append((name, 'current species'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
     @Variables.undoGlobal
@@ -141,6 +203,27 @@ class SourceTermsModel(Model):
         return formula
 
 
+    def getGroundWaterSpeciesFormulaComponents(self, zone, species):
+
+        exp = self.getGroundWaterSpeciesFormula(zone, scalar)
+        if not exp:
+            exp = """Q = 0;"""
+
+        req = [('Q', 'species source term')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate'),
+               ('t', 'current time')]
+
+        name = self.th_sca.getScalarName(self.scalar)
+        sym.append((name, 'current species'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
     @Variables.undoGlobal
     def setGroundWaterSpeciesFormula(self, zone, species, formula):
         """
@@ -176,6 +259,23 @@ class SourceTermsModel(Model):
         return formula
 
 
+    def getRichardsFormulaComponents(self, zone):
+        exp = self.getRichardsFormula(zone)
+        if not exp:
+            exp = """Qs = 0;\n"""
+
+        req = [('Qs', 'volumetric source term')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate'),
+               ('t', 'current time')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
     @Variables.undoGlobal
     def setRichardsFormula(self, zone, formula):
         """
@@ -205,6 +305,33 @@ class SourceTermsModel(Model):
         formula = node.xmlGetString('volumetric_source_term', zone_id=zone)
 
         return formula
+
+
+    def getThermalFormulaComponents(self, zone, scalar):
+
+        exp = self.getThermalFormula(zone, scalar)
+        if not exp:
+            exp = self.getDefaultThermalFormula(scalar)
+        req = [('S', 'thermal source term'),
+               ('dS', 'thermal source term derivative')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        if self.case['package'].name == 'code_saturne':
+            if self.therm.getThermalScalarModel() == 'enthalpy':
+                sym.append(('enthalpy', 'thermal scalar'))
+            if self.therm.getThermalScalarModel() == 'total_energy':
+                sym.append(('total_energy', 'thermal scalar'))
+            else:
+                sym.append(('temperature', 'thermal scalar'))
+        else:
+            sym.append(('enthalpy', 'Enthalpy'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
     @Variables.undoGlobal
