@@ -1392,8 +1392,6 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
   const cs_lnum_t  n_b_faces = cdoq->n_b_faces;
   const cs_lnum_t  n_i_faces = cdoq->n_i_faces;
 
-  cs_nvec3_t  nvec;
-
   if (adv->n_bdy_flux_defs == 0) {
 
     /* No specific definition of the boundary flux. Use the definition

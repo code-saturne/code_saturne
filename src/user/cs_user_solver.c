@@ -105,7 +105,8 @@ void
 cs_user_solver(const cs_mesh_t             *mesh,
                const cs_mesh_quantities_t  *mesh_quantities)
 {
-
+  CS_UNUSED(mesh);
+  CS_UNUSED(mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------*/

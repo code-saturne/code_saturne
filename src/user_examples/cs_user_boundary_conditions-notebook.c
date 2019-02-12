@@ -108,6 +108,8 @@ cs_user_boundary_conditions(int         nvar,
                             int         icodcl[],
                             cs_real_t   rcodcl[])
 {
+  CS_UNUSED(nvar);
+  CS_UNUSED(bc_type);
 
   /* TEST TO REMOVE FOR USAGE */
   if (true)
