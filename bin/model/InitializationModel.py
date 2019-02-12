@@ -50,6 +50,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.model.ElectricalModel import ElectricalModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -80,6 +81,7 @@ class InitializationModel(Model):
         self.turbulenceModes = ('formula',
                                 'reference_value')
         self.node_scalartherm = self.models.xmlGetNode('thermal_scalar')
+        self.notebook = NotebookModel(self.case)
 
 
     def __defaultValues(self):
@@ -202,6 +204,60 @@ omega = k^0.5/almax;"""
         node_init['choice'] = init_mode
 
 
+    def getTurbFormulaComponents(self, zone, turb_model):
+        """
+        public method.
+        Return formula components (exp, req and symbols)
+        """
+
+        exp = self.getTurbFormula(zone, turb_model)
+
+        if turb_model in ('k-epsilon', 'k-epsilon-PL'):
+            req = [('k', "turbulent energy"),
+                   ('epsilon', "turbulent dissipation")]
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r23', "Reynolds stress R23"),
+                   ('r13', "Reynolds stress R13"),
+                   ('epsilon', "turbulent dissipation")]
+        elif turb_model == 'Rij-EBRSM':
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r23', "Reynolds stress R23"),
+                   ('r13', "Reynolds stress R13"),
+                   ('epsilon', "turbulent dissipation"),
+                   ('alpha', "alpha")]
+        elif turb_model == 'v2f-BL-v2/k':
+            req = [('k', "turbulent energy"),
+                   ('epsilon', "turbulent dissipation"),
+                   ('phi', "variable phi in v2f model"),
+                   ('alpha', "variable alpha in v2f model")]
+        elif turb_model == 'k-omega-SST':
+            req = [('k', "turbulent energy"),
+                   ('omega', "specific dissipation rate")]
+        elif turb_model == 'Spalart-Allmaras':
+            req = [('nu_tilda', "nusa")]
+
+        sym = [('rho0', 'density (reference value)'),
+               ('mu0', 'viscosity (reference value)'),
+               ('cp0', 'specific heat (reference value)'),
+               ('x','cell center coordinate'),
+               ('y','cell center coordinate'),
+               ('z','cell center coordinate'),
+               ('uref','reference velocity'),
+               ('almax','reference length')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
     @Variables.noUndo
     def getTurbFormula(self, zone, turb_model):
         """
@@ -233,6 +289,25 @@ omega = k^0.5/almax;"""
         n.xmlSetTextNode(formula)
 
 
+    def getVelocityFormulaComponents(self, zone):
+        exp = self.getVelocityFormula(zone)
+        if not exp:
+            exp = self.getDefaultVelocityFormula()
+
+        req = [('velocity[0]', "velocity"),
+               ('velocity[1]', "velocity"),
+               ('velocity[2]', "velocity")]
+        sym = [('uref', 'reference velocity'),
+               ('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
     @Variables.undoLocal
     def setVelocityFormula(self, zone, formula):
         """
@@ -256,6 +331,27 @@ omega = k^0.5/almax;"""
 
         formula = node.xmlGetString('formula', zone_id=zone)
         return formula
+
+
+    def getThermalFormulaComponents(self, zone):
+        exp = self.getThermalFormula(zone)
+        if not exp:
+            exp = self.getDefaultThermalFormula()
+
+        if self.therm.getThermalScalarModel() == "enthalpy":
+            req = [('enthalpy', 'enthalpy')]
+        elif self.therm.getThermalScalarModel() == "total_energy":
+            req = [('total_energy', 'total energy')]
+        else:
+            req = [('temperature', 'temperature')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
     @Variables.undoLocal
@@ -389,6 +485,24 @@ omega = k^0.5/almax;"""
         n['status'] = status
 
 
+    def getPressureFormulaComponents(self, zone):
+        exp = self.getPressureFormula(zone)
+        if not exp:
+            exp = """p0 = 0.;
+g = 9.81;
+ro = 1.17862;
+pressure = p0 + g * ro * z;\n"""
+        req = [('pressure', 'pressure')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
     @Variables.undoLocal
     def setPressureFormula(self, zone, formula):
         """
@@ -420,6 +534,23 @@ omega = k^0.5/almax;"""
 
         formula = node.xmlGetString('formula', zone_id=zone)
         return formula
+
+
+    def getHydraulicHeadFormulaComponents(self, zone):
+
+        exp = self.getHydraulicHeadFormula(zone)
+        if not exp:
+            exp = """H = z;\n"""
+        req = [('H', 'hydraulic head')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
 
     @Variables.undoLocal
     def setHydraulicHeadFormula(self, zone, formula):
@@ -454,6 +585,23 @@ omega = k^0.5/almax;"""
         return formula
 
 
+    def getDensityFormulaComponents(self, zone):
+        exp = self.getDensityFormula(zone)
+        if not exp:
+            exp = """density = 0;\n"""
+
+        req = [('density', 'density')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
+
     @Variables.undoLocal
     def setDensityFormula(self, zone, formula):
         """
@@ -483,6 +631,22 @@ omega = k^0.5/almax;"""
 
         formula = node.xmlGetString('formula', zone_id=zone)
         return formula
+
+
+    def getTemperatureFormulaComponents(self, zone):
+        exp = self.getTemperatureFormula(zone)
+        if not exp:
+            exp = """temperature = 0;\n"""
+
+        req = [('temperature', 'temperature')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
     @Variables.undoLocal
@@ -516,6 +680,21 @@ omega = k^0.5/almax;"""
 
         formula = node.xmlGetString('formula', zone_id=zone)
         return formula
+
+
+    def getEnergyFormulaComponents(self, zone):
+        exp = self.getEnergyFormula(zone)
+        if not exp:
+            exp = """total_energy = 0;\n"""
+        req = [('total_energy', 'Energy')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
     @Variables.undoLocal
@@ -571,6 +750,23 @@ omega = k^0.5/almax;"""
         return box_list
 
 
+    def getSpeciesFormulaComponents(self, zone, species):
+        exp = self.getSpeciesFormula(zone, species)
+        name = DefineUserScalarsModel(self.case).getScalarName(species)
+        if not exp:
+            exp = str(name)+""" = 0;\n"""
+
+        req = [(str(name), str(name))]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+
     @Variables.undoLocal
     def setSpeciesFormula(self, zone, species, formula):
         """
@@ -603,6 +799,21 @@ omega = k^0.5/almax;"""
         formula = node.xmlGetString('formula', zone_id=zone)
 
         return formula
+
+
+    def getMeteoFormulaComponents(self, zone, scalar):
+        exp = self.getMeteoFormula(zone, scalar)
+        if not exp:
+            exp = str(scalar)+""" = 0;\n"""
+        req = [(str(scalar), str(scalar))]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
 
 
     @Variables.undoLocal

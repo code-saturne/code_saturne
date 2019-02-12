@@ -281,40 +281,13 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         """
         Set momentumFormula of the source term
         """
-        exp = self.mdl.getMomentumFormula(self.zone)
-        if not exp:
-            exp = """Su = 0;\nSv = 0;\nSw = 0;\n
-dSudu = 0;\ndSudv = 0;\ndSudw = 0;\n
-dSvdu = 0;\ndSvdv = 0;\ndSvdw = 0;\n
-dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exa = """#example:\n
 tau = 10.; # relaxation time (s)\n
 vel_x_imp = 1.5; #target velocity (m/s)\n
 Su = rho * (vel_x_imp - velocity[0]) / tau;\n
 dSudu = - rho / tau; # Jacobian of the source term"""
-        req = [('Su', "x component of the momentum source term"),
-               ('Sv', "y component of the momentum source term"),
-               ('Sw', "z component of the momentum source term"),
-               ('dSudu', "x component x velocity derivative"),
-               ('dSudv', "x component y velocity derivative"),
-               ('dSudw', "x component z velocity derivative"),
-               ('dSvdu', "y component x velocity derivative"),
-               ('dSvdv', "y component y velocity derivative"),
-               ('dSvdw', "y component z velocity derivative"),
-               ('dSwdu', "z component x velocity derivative"),
-               ('dSwdv', "z component y velocity derivative"),
-               ('dSwdw', "z component z velocity derivative")]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        sym.append( ("velocity[0]", 'x velocity component'))
-        sym.append( ("velocity[1]", 'y velocity component'))
-        sym.append( ("velocity[2]", 'z velocity component'))
-        sym.append( ("rho", 'local density (kg/m^3)'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.mdl.getMomentumFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -334,21 +307,9 @@ dSudu = - rho / tau; # Jacobian of the source term"""
     def slotSpeciesFormula(self):
         """
         """
-        exp = self.mdl.getSpeciesFormula(self.zone, self.scalar)
-        if not exp:
-            exp = """S = 0;\ndS = 0;\n"""
         exa = """#example: """
-        req = [('S', 'species source term'),
-               ('dS', 'species source term derivative')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        name = self.th_sca.getScalarName(self.scalar)
-        sym.append((name, 'current species'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.mdl.getSpeciesFormulaComponents(self.zone, self.scalar)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -368,21 +329,10 @@ dSudu = - rho / tau; # Jacobian of the source term"""
     def slotSpeciesGroundWaterFormula(self):
         """
         """
-        exp = self.mdl.getGroundWaterSpeciesFormula(self.zone, self.scalar)
-        if not exp:
-            exp = """Q = 0;"""
         exa = """#example: """
-        req = [('Q', 'species source term')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate'),
-               ('t', 'current time')]
 
-        name = self.th_sca.getScalarName(self.scalar)
-        sym.append((name, 'current species'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.mdl.getGroundWaterSpeciesFormulaComponents(self.zone,
+                                                                        self.scalar)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -402,18 +352,9 @@ dSudu = - rho / tau; # Jacobian of the source term"""
     def slotRichardsFormula(self):
         """
         """
-        exp = self.mdl.getRichardsFormula(self.zone)
-        if not exp:
-            exp = """Qs = 0;\n"""
         exa = """#example: """
-        req = [('Qs', 'volumetric source term')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate'),
-               ('t', 'current time')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.mdl.getRichardsFormulaComponents(self.zone)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -457,28 +398,10 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         """
         Input the initial formula of thermal scalar
         """
-        exp = self.mdl.getThermalFormula(self.zone, self.th_sca_name)
-        if not exp:
-            exp = self.mdl.getDefaultThermalFormula(self.th_sca_name)
         exa = """#example: """
-        req = [('S', 'thermal source term'),
-               ('dS', 'thermal source term derivative')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        if self.case['package'].name == 'code_saturne':
-            if self.therm.getThermalScalarModel() == 'enthalpy':
-                sym.append(('enthalpy', 'thermal scalar'))
-            if self.therm.getThermalScalarModel() == 'total_energy':
-                sym.append(('total_energy', 'thermal scalar'))
-            else:
-                sym.append(('temperature', 'thermal scalar'))
-        else:
-            sym.append(('enthalpy', 'Enthalpy'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone,
+                                                             self.th_sca_name)
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
