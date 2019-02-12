@@ -3208,18 +3208,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   const int *b_face_zone_id = cs_boundary_zone_face_class_id();
 
-  /* particles->n_part_new: handled in injection step */
-
-  particles->weight = 0.0;
-  particles->n_part_out = 0;
-  particles->n_part_dep = 0;
-  particles->n_part_fou = 0;
-  particles->weight_out = 0.0;
-  particles->weight_dep = 0.0;
-  particles->weight_fou = 0.0;
-  particles->n_failed_part = 0;
-  particles->weight_failed = 0.0;
-
   _initialize_displacement(particles,
                            part_b_mass_flux);
 
