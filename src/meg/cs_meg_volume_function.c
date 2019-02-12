@@ -56,21 +56,20 @@ BEGIN_C_DECLS
  * \file cs_meg_volume_function.c
  *
  * \brief This function is used to compute user defined values for fields over a
- * given volume zone
+ *        given volume zone
  *
  * \param[in, out]  f  pointer to cs_field_t
- * \param[in]       z  pointer to cs_volume_zone_t
- *
+ * \param[in]       z  pointer to cs_zone_t structure related to a volume
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_volume_function(cs_field_t              *f,
-                       const cs_volume_zone_t  *vz)
+cs_meg_volume_function(cs_field_t         *f,
+                       const cs_zone_t    *vz)
 {
-
 
 }
 
-END_C_DECLS
+/*----------------------------------------------------------------------------*/
 
+END_C_DECLS
