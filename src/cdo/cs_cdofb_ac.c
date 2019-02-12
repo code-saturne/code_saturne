@@ -387,6 +387,7 @@ _update_pr_div(const cs_property_t          *zeta,
  *
  * \param[in]      sc          pointer to a cs_cdofb_ac_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in]      prs_c       value of the pressure at the cell
@@ -398,6 +399,7 @@ _update_pr_div(const cs_property_t          *zeta,
 static void
 _apply_bc_partly(const cs_cdofb_ac_t           *sc,
                  const cs_equation_param_t     *eqp,
+                 const cs_cdofb_scaleq_t       *eqc,
                  const cs_cell_mesh_t          *cm,
                  const cs_boundary_type_t      *bf_type,
                  const cs_real_t                prs_c,
@@ -472,6 +474,10 @@ _apply_bc_partly(const cs_cdofb_ac_t           *sc,
       } /* End of switch */
 
     } /* Loop on boundary faces */
+
+    if (cs_equation_param_has_convection(eqp)) { /* Always weakly enforced */
+      eqc->adv_func_bc(eqp, cm, cb, csys);
+    }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -918,8 +924,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_advection_diffusion(time_eval, mom_eqp, mom_eqc, cm,
+                                          csys, cb);
 
       /* Update the property */
       if ( !(sc->is_zeta_uniform) )
@@ -956,7 +962,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, pr[c_id], csys, cb);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, pr[c_id],
+                       csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */
@@ -1239,8 +1246,8 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_advection_diffusion(time_eval, mom_eqp, mom_eqc, cm,
+                                          csys, cb);
 
       /* Update the property */
       if ( !(sc->is_zeta_uniform) )
@@ -1292,7 +1299,8 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, pr[c_id], csys, cb);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, pr[c_id],
+                       csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */

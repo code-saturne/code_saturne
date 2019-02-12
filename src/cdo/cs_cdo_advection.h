@@ -214,6 +214,43 @@ cs_cdo_advection_fb_bc_wdi(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Add the contribution of the boundary conditions to the local system
+ *          in CDO-Fb schemes (without diffusion). Vector-valued case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb      pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_fb_bc_v(const cs_equation_param_t   *eqp,
+                         const cs_cell_mesh_t        *cm,
+                         cs_cell_builder_t           *cb,
+                         cs_cell_sys_t               *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add the contribution of the boundary conditions to the local system
+ *          in CDO-Fb schemes (with a diffusion term activated). Vector-valued
+ *          case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb      pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_fb_bc_wdi_v(const cs_equation_param_t   *eqp,
+                             const cs_cell_mesh_t        *cm,
+                             cs_cell_builder_t           *cb,
+                             cs_cell_sys_t               *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme in the conservative formulation
  *         - upwind scheme

@@ -259,6 +259,12 @@ typedef struct {
    */
   int                           verbosity;
 
+  /*!
+   * @name Algorithm properties
+   * Set of properties: properties and their related fields are allocated
+   * according to the choice of model for Navier-Stokes
+   * @{
+   */
   /*! \var dof_reduction_mode
    *  How are defined the Degrees of freedom
    */
@@ -324,7 +330,7 @@ typedef struct {
 
   /*! \var residual_tolerance
    *  Tolerance at which the Navier--Stokes is resolved (apply to the residual
-   * of the coupling algorithm chosen to solve the Navier--Stokes system)
+   *  of the coupling algorithm chosen to solve the Navier--Stokes system)
    */
   cs_real_t                     residual_tolerance;
 
@@ -334,6 +340,15 @@ typedef struct {
    * for the iterative solver is taken into account
    */
   int                           max_algo_iter;
+
+  /*! \var adv_form
+   *  Type of formulation for the advection term
+   *
+   *  \var adv_scheme
+   *  Type of scheme for the advection term
+   */
+  cs_param_advection_form_t     adv_form;
+  cs_param_advection_scheme_t   adv_scheme;
 
   /*!
    * @}
@@ -463,6 +478,14 @@ typedef struct {
  *  \brief List of available keys for setting the parameters of the
  *         Navier-Stokes system
  *
+ * \var CS_NSKEY_ADVECTION_FORMULATION
+ * Set the type of formulation for the advection term, for example in the  Oseen
+ * problem . cf. cs_param.h
+ *
+ * \var CS_NSKEY_ADVECTION_SCHEME
+ * Set the type of scheme for the advection term, for example in the  Oseen
+ * problem . cf. cs_param.h
+ *
  * \var CS_NSKEY_DOF_REDUCTION
  * Set how the DoFs are defined (similar to \ref CS_EQKEY_DOF_REDUCTION)
  * Enable to set this type of DoFs definition for all related equations
@@ -507,6 +530,8 @@ typedef struct {
 
 typedef enum {
 
+  CS_NSKEY_ADVECTION_FORMULATION,
+  CS_NSKEY_ADVECTION_SCHEME,
   CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_GD_SCALE_COEF,
   CS_NSKEY_MAX_ALGO_ITER,
@@ -898,6 +923,19 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
                                    cs_real_t            *array,
                                    _Bool                 is_owner,
                                    cs_lnum_t            *index);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a advection field for the Oseen problem
+ *
+ * \param[in, out]    nsp        pointer to a \ref cs_navsto_param_t
+ * \param[in, out]    adv_fld    pointer to a \ref cs_adv_field_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_add_oseen_field(cs_navsto_param_t   *nsp,
+                          cs_adv_field_t      *adv_fld);
 
 /*----------------------------------------------------------------------------*/
 

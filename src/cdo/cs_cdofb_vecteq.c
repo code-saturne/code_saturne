@@ -122,6 +122,10 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
+  /* Since it relies on the scalar case, n_fc should be enough */
+  BFT_MALLOC(cb->adv_fluxes, n_fc, double);
+  memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
+
   BFT_MALLOC(cb->ids, n_dofs, int);
   memset(cb->ids, 0, n_dofs*sizeof(int));
 
@@ -428,6 +432,96 @@ cs_cdofb_vecteq_diffusion(double                         time_eval,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Local system after diffusion", csys);
+#endif
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build the local matrices arising from the diffusion, advection,
+ *          reaction terms in CDO-Fb schemes.
+ *
+ * \param[in]      time_eval   time at which analytic function are evaluated
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_advection_diffusion(double                         time_eval,
+                                    const cs_equation_param_t     *eqp,
+                                    const cs_cdofb_vecteq_t       *eqc,
+                                    const cs_cell_mesh_t          *cm,
+                                    cs_cell_sys_t                 *csys,
+                                    cs_cell_builder_t             *cb)
+{
+  CS_UNUSED(time_eval);
+
+  if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
+                                                 * ============== */
+
+    /* Define the local stiffness matrix: local matrix owned by the cellwise
+       builder (store in cb->loc) */
+    eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
+
+    if (eqp->diffusion_hodge.is_iso == false)
+      bft_error(__FILE__, __LINE__, 0, " %s: Case not handle yet\n",
+                __func__);
+
+    /* Add the local diffusion operator to the local system */
+    const cs_real_t  *sval = cb->loc->val;
+    for (int bi = 0; bi < cm->n_fc + 1; bi++) {
+      for (int bj = 0; bj < cm->n_fc + 1; bj++) {
+
+        /* Retrieve the 3x3 matrix */
+        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+        assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+        const cs_real_t  _val = sval[(cm->n_fc+1)*bi+bj];
+        bij->val[0] += _val;
+        bij->val[4] += _val;
+        bij->val[8] += _val;
+
+      }
+    }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Local system after diffusion", csys);
+#endif
+  }
+
+  if (cs_equation_param_has_convection(eqp)) {  /* ADVECTION TERM
+                                                 * ============== */
+
+    /* Define the local advection matrix and store the advection
+       fluxes across primal faces */
+    cs_cdofb_advection_build(eqp, cm, time_eval, eqc->adv_func, cb);
+
+    /* Add the local diffusion operator to the local system */
+    const cs_real_t  *sval = cb->loc->val;
+    for (int bi = 0; bi < cm->n_fc + 1; bi++) {
+      for (int bj = 0; bj < cm->n_fc + 1; bj++) {
+
+        /* Retrieve the 3x3 matrix */
+        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+        assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+        const cs_real_t  _val = sval[(cm->n_fc+1)*bi+bj];
+        bij->val[0] += _val;
+        bij->val[4] += _val;
+        bij->val[8] += _val;
+
+      }
+    }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Local system after advection", csys);
 #endif
   }
 
@@ -1427,7 +1521,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
-  } /* Diffusion */
+  } /* Diffusion part */
 
   eqc->enforce_dirichlet = NULL;
   switch (eqp->default_enforcement) {
@@ -1463,11 +1557,77 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
   }
 
-  /* Advection */
+  /* Advection part */
   eqc->adv_func = NULL;
   eqc->adv_func_bc = NULL;
 
-  /* Time */
+  if (cs_equation_param_has_convection(eqp)) {
+
+    cs_xdef_type_t  adv_deftype =
+      cs_advection_field_get_deftype(eqp->adv_field);
+
+    if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      eqb->msh_flag |= CS_FLAG_COMP_FEQ;
+
+    /* Boundary conditions for advection */
+    eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ;
+
+    switch (eqp->adv_formulation) {
+
+    case CS_PARAM_ADVECTION_FORM_CONSERV:
+      switch (eqp->adv_scheme) {
+
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_upwcsv_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi_v;
+        }
+        else {
+          eqc->adv_func = cs_cdo_advection_fb_upwcsv;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_v;
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid advection scheme for face-based discretization",
+                  __func__);
+
+      } /* Scheme */
+      break; /* Conservative formulation */
+
+    case CS_PARAM_ADVECTION_FORM_NONCONS:
+      switch (eqp->adv_scheme) {
+
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_upwnoc_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi_v;
+        }
+        else {
+          eqc->adv_func = cs_cdo_advection_fb_upwnoc;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_v;
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid advection scheme for face-based discretization",
+                  __func__);
+
+      } /* Scheme */
+      break; /* Non-conservative formulation */
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of formulation for the advection term",
+                __func__);
+
+    } /* Switch on the formulation */
+
+  }
+
+  /* Time part */
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
@@ -1484,7 +1644,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Source term */
+  /* Source term part */
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 

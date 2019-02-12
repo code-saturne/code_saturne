@@ -2462,7 +2462,6 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
     cs_cell_sys_t  *csys = NULL;
@@ -2518,9 +2517,8 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-
-      cs_cdofb_vecteq_diffusion(t_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_advection_diffusion(t_eval, mom_eqp, mom_eqc, cm,
+                                          csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
