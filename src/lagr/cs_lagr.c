@@ -1299,13 +1299,13 @@ cs_lagr_update_particle_counter(void)
   cs_lagr_particle_counter_t *pc = &_lagr_particle_counter;
 
   cs_gnum_t gcount[] = {p_set->n_particles,
-                         p_set->n_part_new,
-                         p_set->n_part_merged,
-                         p_set->n_part_out,
-                         p_set->n_part_dep,
-                         p_set->n_part_fou,
-                         p_set->n_part_resusp,
-                         p_set->n_failed_part};
+                        p_set->n_part_new,
+                        p_set->n_part_merged,
+                        p_set->n_part_out,
+                        p_set->n_part_dep,
+                        p_set->n_part_fou,
+                        p_set->n_part_resusp,
+                        p_set->n_failed_part};
 
   cs_real_t wsum[6] = {p_set->weight,
                        p_set->weight_new,
@@ -1837,6 +1837,17 @@ cs_lagr_solve_time_step(const int         itypfb[],
   part_c->w_fouling = 0;
   part_c->w_resuspended = 0;
 
+  /* particles->n_part_new: handled in injection step */
+  p_set->weight = 0.0;
+  p_set->n_part_out = 0;
+  p_set->n_part_dep = 0;
+  p_set->n_part_fou = 0;
+  p_set->weight_out = 0.0;
+  p_set->weight_dep = 0.0;
+  p_set->weight_fou = 0.0;
+  p_set->n_failed_part = 0;
+  p_set->weight_failed = 0.0;
+
   /* Initialization for the dlvo, roughness and clogging  model
      ---------------------------------------------------------- */
 
@@ -1963,6 +1974,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   part_c = cs_lagr_update_particle_counter();
 
+  /* GLobal number of particles > 0 */
   if (part_c->n_g_total > 0) {
 
   /* Record particle's starting cell and rank, and update rebound time id */
