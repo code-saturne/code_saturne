@@ -1564,8 +1564,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_t   *b_face_surf = mq->b_face_surf;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
-
   const cs_time_step_t *ts = cs_glob_time_step;
   const int n_fields = cs_field_n_fields();
 
@@ -1722,7 +1720,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             }
         }
       } /* switch */
-    }
+    } /* Loop on fields */
 
     if (cs_gui_strcmp(vars->model_value, "joule")) {
       if (cs_glob_elec_option->ielcor == 1) {
@@ -1738,7 +1736,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
         if (ieljou == 2 || ieljou == 4) {
           const cs_field_t  *fi = CS_F_(poti);
-          cs_lnum_t ivar = cs_field_get_key_int(fi, var_key_id) -1;
+          ivar = cs_field_get_key_int(fi, var_key_id) -1;
           for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
             cs_lnum_t ifbr = bz->elt_ids[ifac];
             rcodcl[ivar * n_b_faces + ifbr] *= cs_glob_elec_option->coejou;
@@ -2119,9 +2117,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           if (boundaries->itype[izone] == CS_EPHCF) {
-            cs_real_t *xvals = cs_meg_boundary_function("direction",
-                                                        "formula",
-                                                        bz);
+            xvals = cs_meg_boundary_function("direction",
+                                             "formula",
+                                             bz);
             for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
               cs_lnum_t ifbr = bz->elt_ids[ifac];
 
@@ -2240,8 +2238,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             cs_real_t *new_vals = cs_meg_boundary_function("turbulence_v2f",
                                                            "formula",
                                                            bz);
-
-            const char *symbols[] = {"k", "epsilon", "phi", "alpha"};
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2591,8 +2587,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
       for (int f_id = 0; f_id < n_fields; f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
-        const int var_key_id = cs_field_key_id("variable_id");
-        cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
         if (f->type & CS_FIELD_VARIABLE) {
           int interpolate = 0;

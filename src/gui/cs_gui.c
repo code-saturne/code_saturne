@@ -337,7 +337,7 @@ _physical_property(cs_field_t          *c_prop,
       _thermal_f_val = &_t0;
     }
 
-    cs_lnum_t ncel = z->n_cells;
+    const cs_lnum_t ncel = z->n_elts;
 
     cs_phys_prop_compute(property,
                          ncel,
@@ -3527,11 +3527,14 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
                               const cs_real_t *visls0,
                               const cs_real_t *viscv0)
 {
-  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+  CS_UNUSED(itempk);
+  CS_UNUSED(visls0);
+  CS_UNUSED(viscv0);
+
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const char *law = NULL;
-  double time0;
+  double time0 = cs_timer_wtime();
+
   cs_lnum_t i;
 
   cs_var_t  *vars = cs_glob_var;
