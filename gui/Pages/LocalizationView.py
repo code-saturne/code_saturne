@@ -558,7 +558,30 @@ class LocalizationSelectorDelegate(QItemDelegate):
 
 
     def createEditor(self, parent, option, index):
+
         editor = QLineEdit(parent)
+
+        # Auto completion for selection criteria!
+        comp_list = ['all[]']
+        if self.mdl._typeZone == 'BoundaryZone':
+            comp_list += ['normal[x, y, z, epsilon]']
+        comp_list += ['plane[a, b, c, d, epsilon]',
+                      'plane[a, b, c, d, inside]',
+                      'plane[a, b, c, d, outside]',
+                      'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
+                      'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
+                      'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
+                      'box[xmin, ymin, zmin, xmax, ymax, zmax]',
+                      'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
+                      'cylinder[x0, y0, z0, x1, y1, z1, radius]',
+                      'sphere[x_c, y_c, z_c, radius]']
+
+        completer = QCompleter()
+        editor.setCompleter(completer)
+        model = QStringListModel()
+        completer.setModel(model)
+        model.setStringList(comp_list)
+
         return editor
 
 

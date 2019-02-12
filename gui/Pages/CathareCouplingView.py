@@ -324,7 +324,8 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         delegateNeptuneBc = NcfdBcDelegate(self.tableViewCathare, case=case)
         self.tableViewCathare.setItemDelegateForColumn(3, delegateNeptuneBc)
 
-        delegateNeptune1dZone = CathareEltDelegate(self.tableViewCathare)
+        delegateNeptune1dZone = SelectionCriteriaDelegate(self.tableViewCathare,
+                                                          self.__model)
         self.tableViewCathare.setItemDelegateForColumn(4, delegateNeptune1dZone)
 
         # Connections
