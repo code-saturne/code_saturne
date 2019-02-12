@@ -86,16 +86,16 @@ END_C_DECLS
 
 _vol_function_header = \
 """void
-cs_meg_volume_function(cs_field_t              *f,
-                       const cs_volume_zone_t  *vz)
+cs_meg_volume_function(cs_field_t       *f,
+                       const cs_zone_t  *vz)
 {
 """
 
 _bnd_function_header = \
 """cs_real_t *
-cs_meg_boundary_function(const char               *field_name,
-                         const char               *condition,
-                         const cs_boundary_zone_t *bz)
+cs_meg_boundary_function(const char      *field_name,
+                         const char      *condition,
+                         const cs_zone_t *bz)
 {
   cs_real_t *new_vals = NULL;
 
@@ -473,8 +473,8 @@ class mei_to_c_interpreter:
 
         usr_blck += usr_defs + '\n'
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_cells; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->cell_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->elt_ids[e_id];\n'
 
         usr_blck += usr_code
         usr_blck += 2*tab + '}\n'
@@ -553,7 +553,7 @@ class mei_to_c_interpreter:
 
         # allocate the new array
         if need_for_loop:
-            usr_defs += ntabs*tab + 'const int vals_size = bz->n_faces * %d;\n' % (len(required))
+            usr_defs += ntabs*tab + 'const int vals_size = bz->n_elts * %d;\n' % (len(required))
         else:
             usr_defs += ntabs*tab + 'const int vals_size = %d;\n' % (len(required))
 
@@ -629,7 +629,7 @@ class mei_to_c_interpreter:
                     elif lf[0].rstrip() in required:
                         ir = required.index(lf[0].rstrip())
                         if need_for_loop:
-                            new_v = 'new_vals[%d * bz->n_faces + e_id]' % (ir)
+                            new_v = 'new_vals[%d * bz->n_elts + e_id]' % (ir)
                         else:
                             new_v = 'new_vals[%d]' % (ir)
 
@@ -687,8 +687,8 @@ class mei_to_c_interpreter:
         usr_blck += usr_defs + '\n'
 
         if need_for_loop:
-            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < bz->n_faces; e_id++) {\n'
-            usr_blck += 3*tab + 'cs_lnum_t f_id = bz->face_ids[e_id];\n'
+            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < bz->n_elts; e_id++) {\n'
+            usr_blck += 3*tab + 'cs_lnum_t f_id = bz->elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
