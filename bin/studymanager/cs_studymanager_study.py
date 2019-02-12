@@ -88,7 +88,7 @@ def create_base_xml_file(filepath):
     # using xml engine from Code_Saturne GUI
     smgr = XMLengine.Case(None, studymanager=True)
     smgr['xmlfile'] = filename
-    pm = PathesModel.PathesModel(smgr)
+    pm = PathesModel(smgr)
 
     # empty repo and dest
     pm.setRepositoryPath('')
