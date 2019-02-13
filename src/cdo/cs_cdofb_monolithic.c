@@ -372,15 +372,32 @@ _additive_amg_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   KSP  u_ksp = up_subksp[0];
-  KSPSetType(u_ksp, KSPCG);
+  KSPSetType(u_ksp, KSPPREONLY);
   KSPGetPC(u_ksp, &u_pc);
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
-  KSPSetTolerances(u_ksp,
-                   slesp.eps,   /* relative convergence tolerance */
-                   abstol,      /* absolute convergence tolerance */
-                   dtol,        /* divergence tolerance */
-                   5);          /* max number of iterations */
+
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_coarsen_type", "HMIS");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_interp_type", "ext+i-cc");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_agg_nl", "2");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_P_max", "4");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_strong_threshold", "0.5");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_no_CF", "");
+#else
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_coarsen_type","HMIS");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_interp_type","ext+i-cc");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_agg_nl","2");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_P_max","4");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_strong_threshold","0.5");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
+#endif
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -451,6 +468,7 @@ _diag_schur_gmres_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_SCHUR);
   PCFieldSplitSetSchurFactType(up_pc, PC_FIELDSPLIT_SCHUR_FACT_DIAG);
+  PCFieldSplitSetSchurPre(up_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
 
   _build_is_for_fieldsplit(&isp, &isv);
 
@@ -556,6 +574,7 @@ _upper_schur_gmres_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_SCHUR);
   PCFieldSplitSetSchurFactType(up_pc, PC_FIELDSPLIT_SCHUR_FACT_UPPER);
+  PCFieldSplitSetSchurPre(up_pc, PC_FIELDSPLIT_SCHUR_PRE_SELFP, NULL);
 
   _build_is_for_fieldsplit(&isp, &isv);
 
