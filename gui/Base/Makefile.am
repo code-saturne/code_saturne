@@ -39,6 +39,7 @@ endif
 PYFILES = \
 BrowserView.py \
 CommandMgrDialogView.py \
+CompletionTextEditor.py \
 MainView.py \
 QtCase.py \
 QtPage.py \

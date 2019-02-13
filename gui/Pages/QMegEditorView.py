@@ -48,6 +48,7 @@ import subprocess
 from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *
 from code_saturne.Base.QtWidgets import *
+from code_saturne.Base.CompletionTextEditor import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -189,6 +190,7 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         self.symbols  = symbols
 
         # Syntax highlighting
+        CompletionTextEdit(self.textEditExpression)
         self.h1 = QMeiHighlighter(self.textEditExpression, req, sym)
         self.h2 = QMeiHighlighter(self.textEditExamples, req, sym)
 
@@ -256,8 +258,21 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         self.textEditSymbols.setText(predif)
         self.textEditExamples.setText(examples)
 
-        self.expressionDoc = self.textEditExpression.document()
+        # Autocompletion test:
+        completer = QCompleter(parent=self.textEditExpression)
+        self.textEditExpression.setCompleter(completer)
 
+        qacm = QStringListModel()
+        self.textEditExpression.completer.setModel(qacm)
+        ll = []
+        for p, q in required:
+            ll.append(p)
+        if symbols:
+            for p, q in symbols:
+                ll.append(p)
+        qacm.setStringList(ll)
+
+        self.expressionDoc = self.textEditExpression.document()
 
     @pyqtSlot()
     def slotClearBackground(self):
