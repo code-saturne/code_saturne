@@ -3426,7 +3426,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   /* Local variables */
 
-  cs_field_t *f;
+  cs_field_t *f = NULL;
   char var_name[32];
 
   if (f_id != -1) {
@@ -7085,7 +7085,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   cs_real_6_t *w2;
   cs_real_3_t *grad;
 
-  cs_field_t *f;
+  cs_field_t *f = NULL;
 
   cs_real_t *gweight = NULL;
 
@@ -7813,7 +7813,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   cs_real_33_t *gradv;
   cs_real_t *bndcel;
 
-  cs_field_t *f;
+  cs_field_t *f = NULL;
 
   /* 1. Initialization */
 
@@ -8347,7 +8347,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
   cs_real_6_t *viscce;
   cs_real_33_t *grad;
 
-  cs_field_t *f;
+  cs_field_t *f = NULL;
 
   /* 1. Initialization */
 
@@ -9977,7 +9977,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_3_t *grad;
-  cs_field_t *f;
+  cs_field_t *f = NULL;
 
   cs_real_t *gweight = NULL;
 

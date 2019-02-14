@@ -957,6 +957,8 @@ cs_fan_cells_select(void         *input,
                     cs_lnum_t    *n_cells,
                     cs_lnum_t   **cell_ids)
 {
+  CS_UNUSED(input);
+
   cs_lnum_t _n_cells;
 
   int *cell_fan_id = NULL;

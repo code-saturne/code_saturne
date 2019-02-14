@@ -422,7 +422,7 @@ _update_bcs(const cs_domain_t  *domain)
           const cs_lnum_t  v_id = _cdo_bc->vtx_select[select_id][i];
           const cs_real_t  *_dpl = (cs_real_t *)disale + 3*v_id;
           const cs_real_t  *restrict  _xyz = vtx_coord + 3*v_id;
-          const cs_real_t  *restrict  _xyz0 = _vtx_coord0 + 3*v_id;
+          const cs_real_t  *restrict  _xyz0 = (cs_real_t *)_vtx_coord0 + 3*v_id;
 
           cs_real_t  *_val = _cdo_bc->vtx_values + 3*v_id;
 

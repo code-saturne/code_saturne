@@ -1134,9 +1134,12 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
   nsp->pressure_bc_defs[pnew_id] = dp;
 
   if (!nsp->pressure_bc_is_owner) {
-    cs_equation_param_t  *p_eqp = NULL;
+    bft_error(__FILE__, __LINE__, 0, "%s: Not implemented yet", __func__);
+#if 0 /* TODO */
     /* Retrieve the equation related to the pressure */
-    assert(p_eqp != NULL);      /* TODO */
+    cs_equation_param_t  *p_eqp = NULL;
+    assert(p_eqp != NULL);
+#endif
   }
 
   /* Add a new cs_xdef_t structure. For the momentum equation, this is a
