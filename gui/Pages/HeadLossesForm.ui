@@ -84,26 +84,9 @@
            <string notr="true">font: 9pt &quot;Sans Serif&quot;;abd</string>
           </property>
           <property name="text">
-           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Head losses coefficients(m&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt;):  &lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;r &lt;/span&gt;dU&lt;span style=&quot; vertical-align:sub;&quot;&gt;i &lt;/span&gt;/dt = -0.5 &lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;r a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ij &lt;/span&gt;|U| U&lt;span style=&quot; vertical-align:sub;&quot;&gt;j&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Head losses coefficients(m&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt;):  &lt;span style=&quot; font-family:'Symbol';&quot;&gt;&amp;rho;&lt;/span&gt;dU&lt;span style=&quot; vertical-align:sub;&quot;&gt;i &lt;/span&gt;/dt = -0.5 &lt;span style=&quot; font-family:'Symbol';&quot;&gt;&amp;rho;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ij &lt;/span&gt;|U| U&lt;span style=&quot; vertical-align:sub;&quot;&gt;j&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
-        </item>
-        <item row="0" column="1">
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>76</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
         <item row="1" column="0" colspan="2">
          <layout class="QHBoxLayout" name="horizontalLayout">
@@ -113,11 +96,7 @@ p, li { white-space: pre-wrap; }
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the first diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;XX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;XX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -147,11 +126,7 @@ p, li { white-space: pre-wrap; }
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the second diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;YY&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;YY&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -181,11 +156,7 @@ p, li { white-space: pre-wrap; }
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the third diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ZZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;span style=&quot; font-family:'Symbol';&quot;&gt;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ZZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -196,7 +167,33 @@ p, li { white-space: pre-wrap; }
             </property>
            </widget>
           </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
          </layout>
+        </item>
+        <item row="0" column="1">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>76</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </item>
@@ -250,16 +247,16 @@ p, li { white-space: pre-wrap; }
           <widget class="QLabel" name="label">
            <property name="font">
             <font>
-             <family>LMRoman10</family>
-             <pointsize>10</pointsize>
-             <italic>true</italic>
+             <family>Sans Serif</family>
+             <pointsize>9</pointsize>
+             <italic>false</italic>
             </font>
            </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Modify the reference frame transformation matrix to define a local frame.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
-            <string>Reference frame: (x, y, z )     Local frame: (X, Y, Z)</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reference frame: (x, y, z ) to Local frame: (X, Y, Z)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
