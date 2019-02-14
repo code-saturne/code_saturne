@@ -660,7 +660,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute matrix \tens{alpha} used in the computation of the
+    !> \brief Compute matrix \f$ \tens{alpha} \f$ used in the computation of the
     !>        Reynolds stress tensor boundary conditions.
     !>
     !> \param[in]      is_sym  Constant c in description above

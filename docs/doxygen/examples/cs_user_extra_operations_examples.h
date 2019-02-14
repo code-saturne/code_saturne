@@ -42,6 +42,7 @@
   - \subpage cs_user_extra_operations_examples_force_temperature_p
   - \subpage cs_user_extra_operations_examples_global_efforts_p
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
+  - \subpage cs_user_extra_operations_examples_stopping_criterion_p
 
 */
 // __________________________________________________________________________________
@@ -438,5 +439,26 @@
   in this example, we use 3 velocity values from process rank 0 (irangv).
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_15
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_stopping_criterion_p Stopping criterion based on L2 time residuals
+
+  \section cs_user_extra_operations_examples_stopping_criterion Stopping criterion based on L2 time residuals
+
+  This is an example of \ref cs_user_extra_operations allowing to properly stop a computation
+  when the L2 time residuals (displayed in the run_solver.log file) of all
+  solved variables have decreased below a value of 1e-3.
+
+  L2 time residuals of a variable at a given time step are a relative measure of
+  the unsteady term of its transport equation:
+
+  \f[
+  \sqrt{\int_\Omega \left| \der{\varia}{t} \right|^2 \dd \Omega / \int_\Omega \left| \varia \right|^2 \dd \Omega}
+  \f]
+
+  \snippet cs_user_extra_operations-stopping_criterion.c extra_stopping_criterion
 
 */
