@@ -360,13 +360,23 @@
         </property>
        </spacer>
       </item>
-      <item row="0" column="0">
+      <item row="2" column="0">
        <widget class="QCheckBox" name="checkBoxMeshRestart">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;In case of restart, automatically use the mesh_input from the matching checkpoint,&lt;/p&gt;&lt;p&gt;and skip all preprocessing modifications.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Use unmodified checkpoint mesh in case of restart</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="checkBoxMeshSave">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If preprocessing leads to mesh modification, save mesh_output for subsequent runs.&lt;/p&gt;&lt;p&gt;(mesh_output is moved to checkpoint/mesh_input at the first checkpoint output).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Save mesh if modified by proprocessing</string>
         </property>
        </widget>
       </item>

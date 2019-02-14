@@ -794,11 +794,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self._tableViewLayout()
 
-        # Checkbox for restart behavior
-
-        self.checkBoxMeshRestart.setChecked(not self.mdl.getPreprocessOnRestart())
-        self.checkBoxMeshRestart.clicked.connect(self.slotMeshRestart)
-
         # Combomodels
 
         self.modelArg_cs_verif = ComboModel(self.comboBoxRunType, 4, 1)
@@ -818,6 +813,16 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.modelArg_cs_verif.enableItem(str_model='none')
 
         self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
+
+        # Checkboxes
+
+        self.checkBoxMeshRestart.setChecked(not self.mdl.getPreprocessOnRestart())
+        self.checkBoxMeshRestart.clicked.connect(self.slotMeshRestart)
+
+        self.checkBoxMeshSave.setChecked(self.mdl.getMeshSaveOnModify())
+        self.checkBoxMeshSave.clicked.connect(self.slotMeshSaveOnModify)
+
+        # Undo/redo
 
         self.case.undoStartGlobal()
 
@@ -1137,6 +1142,14 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.mdl.setRunType(run_type)
         self.root.initCase()
         self.browser.configureTree(self.case)
+
+
+    @pyqtSlot()
+    def slotMeshSaveOnModify(self):
+        """
+        Input if mesh should be saved if modified or not
+        """
+        self.mdl.setMeshSaveOnModify(self.checkBoxMeshSave.isChecked())
 
 
     def tr(self, text):

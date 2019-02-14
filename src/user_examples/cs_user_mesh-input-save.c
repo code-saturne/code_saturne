@@ -124,10 +124,10 @@ cs_user_mesh_save(cs_mesh_t  *mesh)
 {
   /*! [mesh_save] */
   {
-    /* Mark mesh as not modified (0) to disable saving;
-       Mark it as modified (> 0) to force saving */
+    /* Disable saving of modified mesh by setting flag to 0;
+       Force saving of unmodified mesh by setting it to 2. */
 
-    mesh->modified = 0;
+    mesh->save_if_modified = 0;
 
   }
   /*! [mesh_save] */

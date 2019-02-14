@@ -91,6 +91,13 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh);
 void
 cs_gui_mesh_extrude(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------
+ * Define mesh save behavior trough the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_save_if_modified(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

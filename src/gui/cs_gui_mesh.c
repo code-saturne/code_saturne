@@ -595,6 +595,38 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Define mesh save behavior trough the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_save_if_modified(cs_mesh_t  *mesh)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  const char path0[] = "solution_domain/save_mesh_if_modified";
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+
+  if (tn == NULL)
+    return;
+
+  const char *s = cs_tree_node_get_value_str(tn);
+  if (s != NULL) {
+
+    if (!strcmp(s, "no"))
+      mesh->save_if_modified = 0;
+    else if (!strcmp(s, "yes"))
+      mesh->save_if_modified = 1;
+
+#if _XML_DEBUG_
+    bft_printf("==> %s\n", __func__);
+    bft_printf("--save_mesh_if_modified = %s\n", s);
+#endif
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

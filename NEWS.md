@@ -32,6 +32,8 @@ User changes:
   meshes do not change, use hard links where appropriate (and move mesh_output
   to checkpoint/mesh_input upon checkpointing).
 
+- Provide clean (advanced) option for deactivation of modified mesh output,
+  usable from the GUI.
 - Allow stopping criteria based on physical time and/or additional time.
 
 - Add cs_restart_map_set_mesh_input function to allow mapping restarts

@@ -1394,7 +1394,6 @@ class SolutionDomainModel(MeshModel, Model):
         val = False
         if self.node_ecs:
             s = self.node_ecs.xmlGetString('preprocess_on_restart')
-            print(s)
             if str(s) == 'yes':
                 val = True
 
@@ -1445,6 +1444,37 @@ class SolutionDomainModel(MeshModel, Model):
             node.xmlRemoveNode()
 
         self.case['run_type'] = run
+
+
+    # Methods to manage mesh saving behavior
+    #=======================================
+
+    @Variables.noUndo
+    def getMeshSaveOnModify(self):
+        """
+        Get save on preprocess/modify option.
+        """
+
+        val = True
+        if self.node_ecs:
+            s = self.node_ecs.xmlGetString('save_mesh_if_modified')
+            if str(s) == 'no':
+                val = False
+
+        return val
+
+
+    @Variables.undoLocal
+    def setMeshSaveOnModify(self, val):
+        """
+        Set run type.
+        """
+        if val == False:
+            self.node_ecs.xmlSetData('save_mesh_if_modified', 'no')
+        else:
+            node = self.node_ecs.xmlGetNode('save_mesh_if_modified')
+            if node:
+                node.xmlRemoveNode()
 
 
 #-------------------------------------------------------------------------------
