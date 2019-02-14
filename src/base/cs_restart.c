@@ -1548,10 +1548,10 @@ _update_mesh_checkpoint(void)
        (in case of a mesh_input directory, do nothing, since a
        directory should be created only in case of multiple meshes,
        and concatenation leads to a mesh_output being created,
-       unless the (avanced) user has explicitely deactivated that
+       unless the (advanced) user has explicitely deactivated that
        output, in which case we abide by that choice) */
 
-    else if (cs_file_isreg(opath_i)) {
+    else if (cs_glob_mesh->modified < 1 && cs_file_isreg(opath_i)) {
 
 #if defined(HAVE_LINKAT) && defined(HAVE_FCNTL_H)
 

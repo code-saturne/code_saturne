@@ -336,15 +336,23 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
     /* Now that mesh modification is finished, save mesh if modified */
 
+    cs_gui_mesh_save_if_modified(cs_glob_mesh);
     cs_user_mesh_save(cs_glob_mesh); /* Disable or force */
 
   }
 
   bool partition_preprocess = cs_partition_get_preprocess();
+  bool need_save = false;
+  if (   (cs_glob_mesh->modified > 0 && cs_glob_mesh->save_if_modified > 0)
+      || cs_glob_mesh->save_if_modified > 1)
+    need_save = true;
+
   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
     if (partition_preprocess) {
-      if (cs_glob_mesh->modified > 0)
+      if (need_save) {
         cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output");
+        need_save = false;
+      }
       else
         cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
       cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
@@ -352,9 +360,10 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
       cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
       cs_mesh_update_auxiliary(cs_glob_mesh);
     }
-    else
-      cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
   }
+
+  if (need_save)
+    cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
 
   /* Destroy the temporary structure used to build the main mesh */
 

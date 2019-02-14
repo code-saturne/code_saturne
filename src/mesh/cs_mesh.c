@@ -2220,6 +2220,7 @@ cs_mesh_create(void)
   mesh->n_g_free_faces = 0;
   mesh->verbosity = 1;
   mesh->modified = 0;
+  mesh->save_if_modified = 1;
 
   return (mesh);
 }

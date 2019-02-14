@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Provide clean (advanced) option for deactivation of modified mesh output,
+  usable from the GUI.
+
 - Save mesh_input in restart by default. To avoid using excess disk space when
   meshes do not change, use hard links where appropriate (and move mesh_output
   to checkpoint/mesh_input upon checkpointing).
