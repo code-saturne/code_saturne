@@ -941,7 +941,6 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
   MPI_Status   *halo_status = NULL;
 
   const cs_halo_t  *halo = mesh->halo;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
 
   /* Initialization */
 
@@ -954,7 +953,6 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
   }
 
   assert(halo != NULL);
-  assert(periodicity != NULL);
 
   /* Mark ghost cells with their periodicity number and halo rank id */
 

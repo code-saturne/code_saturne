@@ -352,6 +352,8 @@ _shell_get_row(Mat                 a,
                const PetscInt     *cols[],
                const PetscScalar  *vals[])
 {
+  CS_UNUSED(nnz);
+
   _mat_shell_t *sh;
 
   MatShellGetContext(a, &sh);
@@ -379,6 +381,8 @@ _shell_mat_duplicate(Mat                  a,
                      MatDuplicateOption   op,
                      Mat                 *m)
 {
+  CS_UNUSED(op);
+
   _mat_shell_t *sh;
 
   MatShellGetContext(a, &sh);
@@ -416,6 +420,8 @@ _shell_mat_destroy(Mat                  a,
                    MatDuplicateOption   op,
                    Mat                 *m)
 {
+  CS_UNUSED(m);
+
   _mat_shell_t *sh;
 
   MatShellGetContext(a, &sh);
@@ -1305,6 +1311,9 @@ cs_sles_petsc_solve(void                *context,
                     size_t               aux_size,
                     void                *aux_vectors)
 {
+  CS_UNUSED(aux_size);
+  CS_UNUSED(aux_vectors);
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_timer_t t0;
@@ -1514,6 +1523,11 @@ cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
                                    const cs_real_t              *rhs,
                                    cs_real_t                    *vx)
 {
+  CS_UNUSED(a);
+  CS_UNUSED(rotation_mode);
+  CS_UNUSED(rhs);
+  CS_UNUSED(vx);
+
   if (state >= CS_SLES_BREAKDOWN)
     return false;
 
