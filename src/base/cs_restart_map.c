@@ -175,7 +175,7 @@ _interpolate_p0(ple_locator_t          *locator,
   for (size_t i = 0; i < n_dist; i++) {
     const unsigned char  *src = _val_src + dist_loc[i]*loc_size;
     unsigned char  *dest = send_var + i*loc_size;
-    for (size_t j = 0; j <loc_size; j++)
+    for (size_t j = 0; j < loc_size; j++)
       dest[j] = src[j];
   }
 
