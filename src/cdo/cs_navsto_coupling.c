@@ -128,6 +128,10 @@ cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
 
+    /* Space scheme settings (default) */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
     /* Solver settings */
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
@@ -293,6 +297,10 @@ cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
 
+    /* Space scheme settings (default) */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
@@ -448,6 +456,10 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
 
+    /* Space scheme settings (default) */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
   }
@@ -462,6 +474,10 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
   /* Set the default solver settings for "Graddiv" */
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->graddiv);
+
+    /* Space scheme settings (default) */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
@@ -625,6 +641,10 @@ cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->momentum);
 
+    /* Space scheme settings (default) */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
     /* Solver settings */
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "none");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "gmres");
@@ -774,6 +794,11 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->prediction);
 
+    /* Space scheme settings (default) */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
+    /* Solver settings */
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
@@ -790,6 +815,11 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->correction);
 
+    /* Space scheme settings (default) */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
+    /* Solver settings */
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
   }
