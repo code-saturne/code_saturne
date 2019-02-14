@@ -71,7 +71,9 @@ cs_meg_boundary_function(const char          *field_name,
                          const char          *condition,
                          const cs_zone_t     *z)
 {
-
+  CS_UNUSED(field_name);
+  CS_UNUSED(condition);
+  CS_UNUSED(z);
 }
 
 /*----------------------------------------------------------------------------*/
