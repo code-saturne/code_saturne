@@ -1,3 +1,10 @@
+2019-02-14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Fix in PLE locator for local cases when some points fall outside
+	the mesh bounding box. This may also fix possible issues for local
+	cases where search extension would not switch to better fitting
+	locations relative to previous search.
+
 2018-03-16  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Release of PLE 2.0.2

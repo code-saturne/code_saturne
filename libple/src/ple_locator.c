@@ -1654,25 +1654,11 @@ _locate_all_local(ple_locator_t               *this_locator,
   int l;
   ple_lnum_t j, k;
   ple_lnum_t n_coords, n_interior, n_exterior, coord_idx;
-  ple_lnum_t *tag;
-  ple_coord_t *coords;
   _rank_intersects_t intersects;
-
-  ple_lnum_t *_location = location;
-  float *_distance = distance;
 
   const int dim = this_locator->dim;
   const int have_tags = this_locator->have_tags;
   const ple_lnum_t idb = this_locator->point_id_base;
-
-  /* Initialization */
-
-  PLE_MALLOC(coords, n_points * dim, ple_coord_t);
-
-  if (have_tags)
-    PLE_MALLOC(tag, n_points, ple_lnum_t);
-  else
-    tag = NULL;
 
   /* Update intersect for current point list */
 
@@ -1694,10 +1680,28 @@ _locate_all_local(ple_locator_t               *this_locator,
 
   if (intersects.n > 0) {
 
+    ple_lnum_t *_location = location;
+    float *_distance = distance;
+
+    ple_lnum_t *id, *tag;
+    ple_coord_t *coords;
+
+    PLE_MALLOC(coords, n_points * dim, ple_coord_t);
+    PLE_MALLOC(id, n_points, ple_lnum_t);
+
+    if (have_tags)
+      PLE_MALLOC(tag, n_points, ple_lnum_t);
+    else
+      tag = NULL;
+
     for (j = 0; j < n_points; j++) {
 
-      if (location[j] > -1)
-        continue;
+      if (location[j] > -1) {
+        if (distance == NULL)
+          continue;
+        else if (distance[j] < 1)
+          continue;
+      }
 
       if (point_list != NULL)
         coord_idx = point_list[j] - idb;
@@ -1712,6 +1716,8 @@ _locate_all_local(ple_locator_t               *this_locator,
           coords[n_coords*dim + k]
             = point_coords[dim*coord_idx + k];
 
+        id[n_coords] = j;
+
         if (have_tags)
           tag[n_coords] = point_tag[j];
 
@@ -1721,17 +1727,25 @@ _locate_all_local(ple_locator_t               *this_locator,
     }
 
     PLE_REALLOC(coords, n_coords * dim, ple_coord_t);
+    PLE_REALLOC(id, n_coords, ple_lnum_t);
     if (have_tags)
       PLE_REALLOC(tag, n_coords, ple_lnum_t);
 
-    if (n_coords < n_points)
+    if (n_coords < n_points) {
       PLE_MALLOC(_location, n_coords, ple_lnum_t);
-    if (distance == NULL || n_coords < n_points)
+      for (j = 0; j < n_coords; j++)
+        _location[j] = location[id[j]];
+    }
+    if (distance == NULL || n_coords < n_points) {
       PLE_MALLOC(_distance, n_coords, float);
-
-    for (j = 0; j < n_coords; j++) {
-      _location[j] = -1;
-      _distance[j] = -1.0;
+      if (distance == NULL) {
+        for (j = 0; j < n_coords; j++)
+          _distance[j] = -1.0;
+      }
+      else {
+        for (j = 0; j < n_coords; j++)
+          _distance[j] = distance[id[j]];
+      }
     }
 
     mesh_locate_f(mesh,
@@ -1743,20 +1757,31 @@ _locate_all_local(ple_locator_t               *this_locator,
                   _location,
                   _distance);
 
-    PLE_FREE(tag);
     PLE_FREE(coords);
 
     if (n_coords < n_points) {
-      n_coords = 0;
-      for (j = 0; j < n_points; j++) {
-        if (location[j] < 0) {
-          location[j] = _location[n_coords];
-          n_coords++;
-          if (distance != NULL)
-            distance[j] = _distance[n_coords];
+      for (j = 0; j < n_coords; j++) {
+        if (location[j] > -1) {
+          k = id[j];
+          if (distance != NULL) {
+            if (distance[k] <= _distance[j])
+              continue;
+            else
+              distance[k] = _distance[j];
+          }
+          location[k] = _location[j];
         }
       }
     }
+
+    if (_location != location)
+      PLE_FREE(_location);
+
+    if (_distance != distance)
+      PLE_FREE(_distance);
+
+    PLE_FREE(tag);
+    PLE_FREE(id);
 
   }
 
@@ -1769,12 +1794,6 @@ _locate_all_local(ple_locator_t               *this_locator,
      either -1 if a point was not located, or a local index;
      the distance[] array is not needed anymore now that all comparisons have
      been done */
-
-  if (_location != location)
-    PLE_FREE(_location);
-
-  if (_distance != distance)
-    PLE_FREE(_distance);
 
   this_locator->n_interior = 0;
   this_locator->n_exterior = 0;
