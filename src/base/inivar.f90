@@ -685,79 +685,7 @@ endif
 
 write(nfecra,2000)
 
-!     Inconnues de calcul : on affiche les bornes
-f_id = -1
-c_id = 1
-
-do ivar = 1, nvar
-  f_id_prv = f_id
-  f_id = ivarfl(ivar)
-  if (f_id.eq.f_id_prv) then
-    c_id = c_id + 1
-  else
-    c_id = 1
-  endif
-
-  call field_get_dim(f_id, f_dim)
-
-  if (f_dim.gt.1) then
-    call field_get_val_v(f_id, field_v_v)
-  else if (f_dim.eq.1) then
-    call field_get_val_s(f_id, field_s_v)
-  endif
-
-  if (f_dim.gt.1) then
-    valmax = -grand
-    valmin =  grand
-    do iel = 1, ncel
-      valmax = max(valmax, field_v_v(c_id,iel))
-      valmin = min(valmin, field_v_v(c_id,iel))
-    enddo
-  else
-    valmax = -grand
-    valmin =  grand
-    do iel = 1, ncel
-      valmax = max(valmax, field_s_v(iel))
-      valmin = min(valmin, field_s_v(iel))
-    enddo
-  endif
-
-  if (irangp.ge.0) then
-    call parmax (valmax)
-    call parmin (valmin)
-  endif
-  call field_get_label(f_id, chaine)
-  write(nfecra,2010)chaine(1:16),valmin,valmax
-enddo
-write(nfecra,2020)
-
-if (idtvar.ge.0) then
-!     Pas de temps : on affiche les bornes
-!                    si < 0 on s'arrete
-  vdtmax = -grand
-  vdtmin =  grand
-  do iel = 1, ncel
-    vdtmax = max(vdtmax,dt(iel))
-    vdtmin = min(vdtmin,dt(iel))
-  enddo
-  if (irangp.ge.0) then
-    call parmax (vdtmax)
-    call parmin (vdtmin)
-  endif
-  write(nfecra,2010) 'dt', vdtmin, vdtmax
-  write(nfecra,2020)
-
-  if (vdtmin.le.zero) then
-    write(nfecra,3010) vdtmin
-    iok = iok + 1
-  endif
-
-endif
-
-!     Cumul du temps associe aux moments : on affiche les bornes
-!                                          si < 0 on s'arrete
-
-call time_moment_log_iteration
+call log_iteration
 
 !===============================================================================
 ! 6.  ARRET GENERAL SI PB
@@ -767,8 +695,6 @@ if (iok.gt.0) then
   write(nfecra,3090) iok
   call csexit (1)
 endif
-
-write(nfecra,3000)
 
 !----
 ! Formats
@@ -803,22 +729,10 @@ write(nfecra,3000)
 
  2000 format(                                                     &
                                                                 /,&
-' -----------------------------------------------------------', /,&
-                                                                /,&
-                                                                /,&
 ' ** INITIALISATION DES VARIABLES',                             /,&
 '    ----------------------------',                             /,&
-                                                                /,&
-' -----------------------------------------',                   /,&
-'  Variable          Valeur min  Valeur max',                   /,&
-' -----------------------------------------                   '  )
- 2010 format(                                                     &
- 2x,     a16,      e12.4,      e12.4                             )
- 2020 format(                                                     &
-' ---------------------------------',                           /)
+'                                                             ')
 
- 3000 format(/,/,                                                 &
-'-------------------------------------------------------------',/)
  3010 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1139,22 +1053,10 @@ write(nfecra,3000)
 
  2000 format(                                                     &
                                                                 /,&
-' -----------------------------------------------------------', /,&
-                                                                /,&
-                                                                /,&
 ' ** VARIABLES INITIALIZATION',                                 /,&
 '    ------------------------',                                 /,&
-                                                                /,&
-' -----------------------------------------',                   /,&
-'  Variable          Min. value  Max. value',                   /,&
-' -----------------------------------------                   '  )
- 2010 format(                                                     &
- 2x,     a16,      e12.4,      e12.4                             )
- 2020 format(                                                     &
-' ---------------------------------',                           /)
+'                                                             ')
 
- 3000 format(/,/,                                                 &
-'-------------------------------------------------------------',/)
  3010 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

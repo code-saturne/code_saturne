@@ -744,8 +744,8 @@ _log_fields(void)
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
-                    "  ** Computed fields on %s\n"
-                    "     -------------------%.*s\n"),
+                    "  ** Fields values on %s\n"
+                    "     -----------------%.*s\n"),
                   loc_name, (int)loc_name_w, _underline);
 
     cs_log_strpad(tmp_s[0], _("field"), max_name_width, 64);
