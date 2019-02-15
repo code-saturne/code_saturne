@@ -104,7 +104,8 @@ BEGIN_C_DECLS
 
 /*! \struct cs_cdofb_ac_t
  *  \brief Context related to CDO face-based discretization when dealing with
- *         vector-valued unknowns
+ *         the Navier-Stokes equations with an Artificial compressibility
+ *         algorithm
  */
 
 typedef struct {
@@ -606,8 +607,6 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t    *nsp,
                                 cs_boundary_type_t         *fb_type,
                                 void                       *nsc_input)
 {
-  CS_UNUSED(fb_type);
-
   /* Sanity checks */
   assert(nsp != NULL && nsc_input != NULL);
 
@@ -776,7 +775,8 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a Artificial Compressibility approach and an Euler time scheme
+ *         using a Artificial Compressibility approach and an implicit Euler
+ *         time scheme
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
@@ -795,7 +795,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Retrieve high-level structures */
   cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
-  cs_navsto_ac_t *cc = (cs_navsto_ac_t *)sc->coupling_context;
+  cs_navsto_ac_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
@@ -1110,7 +1110,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
   /* Retrieve high-level structures */
   cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
-  cs_navsto_ac_t *cc = (cs_navsto_ac_t *)sc->coupling_context;
+  cs_navsto_ac_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;

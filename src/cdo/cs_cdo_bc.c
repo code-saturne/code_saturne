@@ -180,7 +180,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
       break;
     case CS_CDO_BC_NEUMANN:
       bc->n_nhmg_neu_faces += z->n_elts;
-    break;
+      break;
     case CS_CDO_BC_HMG_NEUMANN:
       bc->n_hmg_neu_faces += z->n_elts;
       break;

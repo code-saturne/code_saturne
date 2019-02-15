@@ -3,7 +3,7 @@
 
 /*============================================================================
  * Build an algebraic CDO face-based system for the Navier-Stokes equations
- * and solved it with an Augmented Lagrangian-Uzawa algorithm
+ * and solved it with an artificial compressibility algorithm
  *============================================================================*/
 
 /*
@@ -149,7 +149,8 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a Artificial Compressibility approach and an Euler time scheme
+ *         using a Artificial Compressibility approach and an implicit Euler
+ *         time scheme
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
