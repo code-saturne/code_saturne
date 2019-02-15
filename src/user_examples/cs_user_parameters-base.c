@@ -166,9 +166,10 @@ cs_user_model(void)
 
   cs_turb_rans_model_t *rans_model = cs_get_glob_turb_rans_model();
   rans_model->irijco = 1;
+
   /*--------------------------------------------------------------------------*/
 
-  /* Example: Chose a thermal model
+  /* Example: Choose a thermal model
    *
    * 0: none
    * 1: temperature

@@ -395,8 +395,7 @@ elseif(itytur.eq.3) then
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
   if (irijco.eq.1) then
-      call field_get_val_v(ivarfl(irij), cvar_rij)
-
+    call field_get_val_v(ivarfl(irij), cvar_rij)
 
     if (uref.ge.0.d0) then
 
@@ -430,12 +429,12 @@ elseif(itytur.eq.3) then
 
     endif
   else
-      call field_get_val_s(ivarfl(ir11), cvar_r11)
-      call field_get_val_s(ivarfl(ir22), cvar_r22)
-      call field_get_val_s(ivarfl(ir33), cvar_r33)
-      call field_get_val_s(ivarfl(ir12), cvar_r12)
-      call field_get_val_s(ivarfl(ir23), cvar_r23)
-      call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
 
     if (uref.ge.0.d0) then
 
