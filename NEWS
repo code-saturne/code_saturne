@@ -4,6 +4,8 @@ Release 5.1.7 (unreleased)
    Bug fixes
     ---------
 
+- Fix bug in wall distance initialization for restarts with k-omega SST model.
+
 - Fix memory leaks in parameters check.
 
 - Fix in GUI for gas combustion model. Use variable name instead of label to get
