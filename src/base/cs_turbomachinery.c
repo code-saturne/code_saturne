@@ -1004,14 +1004,12 @@ _update_mesh(bool     restart_mode,
 
           /* Destroy previous global mesh and related entities */
 
-          cs_mesh_location_finalize();
           cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
 
           cs_mesh_destroy(cs_glob_mesh);
 
           /* Create new global mesh and related entities */
 
-          cs_mesh_location_initialize();
           cs_glob_mesh = cs_mesh_create();
           cs_glob_mesh->verbosity = 0;
           cs_glob_mesh_builder = cs_mesh_builder_create();
