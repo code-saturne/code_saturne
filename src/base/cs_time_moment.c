@@ -1890,16 +1890,27 @@ cs_time_moment_is_active(int  moment_id)
 void
 cs_time_moment_reset(int   moment_id)
 {
-  const cs_time_moment_t *mt = _moment + moment_id;
+  const cs_time_step_t  *ts = cs_glob_time_step;
+
+  cs_time_moment_t *mt = _moment + moment_id;
   cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
 
+  mt->nt_cur = -1;
+  mwa->nt_start = ts->nt_cur;
+  mwa->t_start = -1.;
+
   cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+  cs_lnum_t nd = n_elts * mt->dim;
 
-  cs_field_t *f = cs_field_by_id(mt->f_id);
+  cs_real_t *restrict val = mt->val;
+  if (mt->f_id > -1) {
+    cs_field_t *f = cs_field_by_id(mt->f_id);
+    val = f->val;
+  }
 
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
+  for (cs_lnum_t i = 0; i < nd; i++) {
     /* reset moment values */
-    f->val[i] = 0.;
+    val[i] = 0.;
   }
 
   _reset_weight_accumulator(mwa);
@@ -1912,11 +1923,22 @@ cs_time_moment_reset(int   moment_id)
     mt = _moment + l_id;
     mwa = _moment_wa + mt->wa_id;
 
-    f = cs_field_by_id(mt->f_id);
+    mt->nt_cur = -1;
+    mwa->nt_start = ts->nt_cur;
+    mwa->t_start = -1.;
 
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+    nd = n_elts * mt->dim;
+
+    val = mt->val;
+    if (mt->f_id > -1) {
+      cs_field_t *f = cs_field_by_id(mt->f_id);
+      val = f->val;
+    }
+
+    for (cs_lnum_t i = 0; i < nd; i++) {
       /* reset moment values */
-      f->val[i] = 0.;
+      val[i] = 0.;
     }
 
     _reset_weight_accumulator(mwa);
