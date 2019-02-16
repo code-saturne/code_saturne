@@ -132,6 +132,12 @@ BEGIN_C_DECLS
 cs_var_t    *cs_glob_var = NULL;
 
 /*============================================================================
+ * Static local variables
+ *============================================================================*/
+
+static char _rij_c_names[6][4] = {"r11", "r22", "r33", "r12", "r23", "r13"};
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -859,7 +865,7 @@ _tree_node_get_field(cs_tree_node_t  *tn)
   const char *name = cs_gui_node_get_tag(tn, "name");
   const char *id_name = cs_tree_node_get_tag(tn, "field_id");
 
-  /* Special case for NEPTUNE_CFD field with multiple phases */
+  /* Handle phase id (field_id tag in xml) for NEPTUNE_CFD */
 
   if (id_name != NULL) {
     if (strcmp(id_name, "none") != 0) {
@@ -872,6 +878,16 @@ _tree_node_get_field(cs_tree_node_t  *tn)
                   "name: %s\n"
                   "field_id: %s\n", name, id_name);
       f = cs_field_by_name_try(buffer);
+    }
+  }
+
+  /* Handle segregated Reynolds tensor solver */
+
+  cs_turb_rans_model_t *rans_model = cs_glob_turb_rans_model;
+  if (f == NULL && rans_model != NULL) {
+    if (rans_model->irijco == 0 && strcmp(name, "rij") == 0) {
+      int idim = _get_profile_v_component(tn);
+      f = cs_field_by_name_try(_rij_c_names[idim]);
     }
   }
 
