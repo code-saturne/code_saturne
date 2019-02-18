@@ -1559,11 +1559,11 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
                        const cs_cdo_quantities_t   *cdoq)
 {
   cs_nvec3_t  nv;
-  const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
-  if (bf_id > -1)  /* Border face */
-    cs_nvec3(cdoq->b_face_normal + 3*bf_id, &nv);
-  else             /* Interior face */
+
+  if (f_id < cdoq->n_i_faces)  /* Interior face */
     cs_nvec3(cdoq->i_face_normal + 3*f_id, &nv);
+  else  /* Border face */
+    cs_nvec3(cdoq->b_face_normal + 3*(f_id - cdoq->n_i_faces), &nv);
 
   return nv;
 }
