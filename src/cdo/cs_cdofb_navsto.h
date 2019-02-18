@@ -243,6 +243,24 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the pressure values when the pressure is defined at
+ *         faces
+ *
+ * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts      pointer to a \ref cs_time_step_t structure
+ * \param[in, out]  pr_f    pointer to the pressure values at faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
+                                   const cs_cdo_quantities_t   *quant,
+                                   const cs_time_step_t        *ts,
+                                   cs_real_t                   *pr_f);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the pressure field in order to get a field with a zero-mean
  *         average
  *

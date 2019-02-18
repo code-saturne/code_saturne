@@ -518,6 +518,85 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the pressure values when the pressure is defined at
+ *         faces
+ *
+ * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts      pointer to a \ref cs_time_step_t structure
+ * \param[in, out]  pr_f    pointer to the pressure values at faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
+                                   const cs_cdo_quantities_t   *quant,
+                                   const cs_time_step_t        *ts,
+                                   cs_real_t                   *pr_f)
+{
+  /* Sanity checks */
+  assert(nsp != NULL && pr_f != NULL);
+
+  /* Initial conditions for the pressure */
+  if (nsp->n_pressure_ic_defs == 0)
+    return; /* Nothing to do */
+
+  assert(nsp->pressure_ic_defs != NULL);
+
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_flag_t  dof_flag = CS_FLAG_SCALAR | cs_flag_primal_face;
+
+  for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
+
+    /* Get and then set the definition of the initial condition */
+    cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
+
+    /* Initialize face-based array */
+    switch (def->type) {
+
+      /* Evaluating the integrals: the averages will be taken care of at the
+       * end when ensuring zero-mean valuedness */
+    case CS_XDEF_BY_VALUE:
+      cs_evaluate_potential_by_value(dof_flag, def, pr_f);
+      break;
+
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
+
+        switch (red) {
+        case CS_PARAM_REDUCTION_DERHAM:
+          cs_evaluate_potential_by_analytic(dof_flag, def, t_cur, pr_f);
+          break;
+        case CS_PARAM_REDUCTION_AVERAGE:
+          cs_xdef_set_quadrature(def, nsp->qtype);
+          cs_evaluate_average_on_faces_by_analytic(def, t_cur, pr_f);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" %s: Incompatible reduction for the pressure field\n"),
+                    __func__);
+
+        }  /* Switch on possible reduction types */
+
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Incompatible way to initialize the pressure field.\n"),
+                __func__);
+      break;
+
+    }  /* Switch on possible type of definition */
+
+  }  /* Loop on definitions */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the pressure field in order to get a field with a zero-mean
  *         average
  *
