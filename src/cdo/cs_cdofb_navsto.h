@@ -194,7 +194,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
  * \param[in]     c_id         cell id
  * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
  * \param[in]     c2f          pointer to cell-to-face \ref cs_adjacency_t
- * \param[in]     f_dof        values of the face DoFs
+ * \param[in]     f_vals       values of the face DoFs
  *
  * \return the divergence for the corresponding cell
  */
@@ -204,7 +204,7 @@ cs_real_t
 cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
                                 const cs_cdo_quantities_t    *quant,
                                 const cs_adjacency_t         *c2f,
-                                const cs_real_t              *f_dof);
+                                const cs_real_t              *f_vals);
 
 /*----------------------------------------------------------------------------*/
 /*!

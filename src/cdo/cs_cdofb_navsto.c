@@ -312,7 +312,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
  * \param[in]     c_id         cell id
  * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
  * \param[in]     c2f          pointer to cell-to-face \ref cs_adjacency_t
- * \param[in]     f_dof        values of the face DoFs
+ * \param[in]     f_vals       values of the face DoFs
  *
  * \return the divergence for the corresponding cell
  */
@@ -322,29 +322,24 @@ cs_real_t
 cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
                                 const cs_cdo_quantities_t    *quant,
                                 const cs_adjacency_t         *c2f,
-                                const cs_real_t              *f_dof)
+                                const cs_real_t              *f_vals)
 {
   cs_real_t  div = 0.0;
 
   for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
 
     const cs_lnum_t  f_id = c2f->ids[f];
-    const cs_real_t  *_val = f_dof + 3*f_id;
+    const cs_real_t  *_val = f_vals + 3*f_id;
 
-    if (f_id < quant->n_i_faces) {
-      const cs_real_t *_nuf = quant->i_face_normal + 3*f_id;
-
-      div += c2f->sgn[f]*quant->i_face_surf[f_id]*
-        cs_math_3_dot_product(_val, _nuf) / cs_math_3_norm(_nuf);
-
-    }
+    if (f_id < quant->n_i_faces)
+      div += c2f->sgn[f]*cs_math_3_dot_product(_val,
+                                               quant->i_face_normal + 3*f_id);
     else {
 
       const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
-      const cs_real_t  *_nuf = quant->b_face_normal + 3*bf_id;
 
-      div += c2f->sgn[f]*quant->b_face_surf[bf_id]*
-        cs_math_3_dot_product(_val, _nuf) / cs_math_3_norm(_nuf);
+      div += c2f->sgn[f]* cs_math_3_dot_product(_val,
+                                                quant->b_face_normal + 3*bf_id);
 
     } /* Boundary face */
 
