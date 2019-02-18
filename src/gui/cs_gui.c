@@ -2648,7 +2648,8 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
           tsimp[c_id][2][2] = cell_f_vol[c_id]*dSwdw;
 
         }
-        BFT_FREE(st_vals);
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
       }
     }
   }
@@ -2726,7 +2727,8 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
             tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
                         - tsimp[c_id] * pvar[c_id];
           }
-          BFT_FREE(st_vals);
+          if (st_vals != NULL)
+            BFT_FREE(st_vals);
         }
       }
     }
@@ -2808,7 +2810,8 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
           tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
                       - tsimp[c_id] * pvar[c_id];
         }
-        BFT_FREE(st_vals);
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
       }
     }
   }
@@ -2873,7 +2876,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             for (int d = 0; d < 3; d++)
               c_vel->val[3 * c_id + d] = ini_vals[3 * e_id + d];
           }
-          BFT_FREE(ini_vals);
+          if (ini_vals != NULL)
+            BFT_FREE(ini_vals);
         }
         else {
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
@@ -2901,7 +2905,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
               cs_lnum_t c_id = cell_ids[c_id];
               c->val[c_id] = ini_vals[e_id];
             }
-            BFT_FREE(ini_vals);
+            if (ini_vals != NULL)
+              BFT_FREE(ini_vals);
           }
 
         }
@@ -3046,7 +3051,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
               bft_error(__FILE__, __LINE__, 0,
                   _("Invalid turbulence model: %s.\n"), model);
 
-            BFT_FREE(ini_vals);
+            if (ini_vals != NULL)
+              BFT_FREE(ini_vals);
           }
         }
 
@@ -3070,14 +3076,14 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           assert(c != NULL);
 
           if (formula_sca != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
+            cs_real_t *ini_vals = cs_meg_initialization("thermal", z);
 
             for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
               cs_lnum_t c_id = cell_ids[e_id];
               c->val[c_id]   = ini_vals[e_id];
             }
-
-            BFT_FREE(ini_vals);
+            if (ini_vals != NULL)
+              BFT_FREE(ini_vals);
           } else {
             for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
               cs_lnum_t iel = cell_ids[icel];
@@ -3110,7 +3116,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                 cs_lnum_t c_id = cell_ids[e_id];
                 f->val[c_id] = ini_vals[e_id];
               }
-              BFT_FREE(ini_vals);
+              if (ini_vals != NULL)
+                BFT_FREE(ini_vals);
             }
           }
         }
@@ -3158,7 +3165,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                 cs_lnum_t c_id = cell_ids[e_id];
                 c->val[c_id] = ini_vals[e_id];
               }
-              BFT_FREE(ini_vals);
+              if (ini_vals != NULL)
+                BFT_FREE(ini_vals);
             } else {
               for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                 cs_lnum_t c_id = cell_ids[e_id];
@@ -3223,7 +3231,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                   cs_lnum_t c_id = cell_ids[e_id];
                   c->val[c_id] = ini_vals[e_id];
                 }
-                BFT_FREE(ini_vals);
+                if (ini_vals != NULL)
+                  BFT_FREE(ini_vals);
               }
             }
 

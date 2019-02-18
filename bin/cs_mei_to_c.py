@@ -107,7 +107,7 @@ cs_meg_source_terms(const cs_zone_t *vz,
 
 """,
 'ini':"""cs_real_t *
-cs_meg_initialize_function(const char      *field_name,
+cs_meg_initialization(const char      *field_name,
                            const cs_zone_t *vz)
 {
   cs_real_t *new_vals = NULL;
@@ -118,7 +118,7 @@ cs_meg_initialize_function(const char      *field_name,
 _function_names = {'vol':'cs_meg_volume_function.c',
                    'bnd':'cs_meg_boundary_function.c',
                    'src':'cs_meg_source_terms.c',
-                   'ini':'cs_meg_initialize_function.c'}
+                   'ini':'cs_meg_initialization.c'}
 
 _block_comments = {'vol':'User defined formula for variable %s over zone %s',
                    'bnd':'User defined formula for "%s" over BC=%s',
@@ -377,9 +377,12 @@ class mei_to_c_interpreter:
         usr_code = ''
         if_loop = False
 
+        tab = '  '
+        ntabs = 3
+
         # Parse the Mathematical expression and generate the C block code
         exp_lines = expression.split("\n")
-        nreq = len(required)
+        nreq = len(req)
         for l in exp_lines:
             lidx = exp_lines.index(l)
             if len(l) > 0:
@@ -619,7 +622,7 @@ class mei_to_c_interpreter:
         usr_code += self.parse_gui_expression(expression,
                                               required,
                                               known_symbols,
-                                              'volume')
+                                              'vol')
 
         # Write the block
         usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(vz->name, "%s") == 0) {\n' \
@@ -782,7 +785,7 @@ class mei_to_c_interpreter:
 
         source_type  = func_params['tpe']
 
-        zone, var_name = func_key.split('::')
+        zone, name = func_key.split('::')
         exp_lines_comp = func_params['lines']
 
         # Get user definitions and code
@@ -846,6 +849,9 @@ class mei_to_c_interpreter:
             if 'pi' in line:
                 usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
 
+        for r in required:
+            known_symbols.append(r)
+
         # Parse the user expresion
         usr_code += self.parse_gui_expression(expression,
                                               required,
@@ -854,8 +860,8 @@ class mei_to_c_interpreter:
 
         # Write the block
         block_cond  = tab + 'if (strcmp(vz->name, "%s") == 0 &&\n' % (zone)
-        block_cond += tab + '    strcmp(name, "%s") == 0) {\n' % (name)
-        block_cond += tab + '    strcmp(source_type, "%s") == 0 &&\n' % (source_type)
+        block_cond += tab + '    strcmp(name, "%s") == 0 && \n' % (name)
+        block_cond += tab + '    strcmp(source_type, "%s") == 0 ) {\n' % (source_type)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs + '\n'
@@ -875,7 +881,7 @@ class mei_to_c_interpreter:
     def write_ini_block(self, func_key):
 
         # Check if function exists:
-        if func_key not in self.funcs['src'].keys():
+        if func_key not in self.funcs['ini'].keys():
             return
 
         func_params = self.funcs['ini'][func_key]
@@ -887,7 +893,7 @@ class mei_to_c_interpreter:
         else:
             required = func_params['req']
 
-        zone, var_name = func_key.split('::')
+        zone, name = func_key.split('::')
         exp_lines_comp = func_params['lines']
 
         # Get user definitions and code
@@ -957,6 +963,9 @@ class mei_to_c_interpreter:
             if 'pi' in line:
                 usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
 
+        for r in required:
+            known_symbols.append(r)
+
         # Parse the user expresion
         usr_code += self.parse_gui_expression(expression,
                                               required,
@@ -965,7 +974,7 @@ class mei_to_c_interpreter:
 
         # Write the block
         block_cond  = tab + 'if (strcmp(vz->name, "%s") == 0 &&\n' % (zone)
-        block_cond += tab + '    strcmp(f->name, "%s") == 0 &&\n' % (name)
+        block_cond += tab + '    strcmp(field_name, "%s") == 0 ) {\n' % (name)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs + '\n'
@@ -1175,6 +1184,7 @@ class mei_to_c_interpreter:
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.SourceTermsModel import SourceTermsModel
             from code_saturne.model.GroundwaterModel import GroundwaterModel
+            from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 
             vlm = LocalizationModel('VolumicZone', self.case)
             stm = SourceTermsModel(self.case)
@@ -1184,41 +1194,47 @@ class mei_to_c_interpreter:
                 z_id = zone.getCodeNumber()
                 zone_name = zone.getLabel()
 
-                if zone['momentum_source_term'] is not 'off':
-                    if gwm.getGroundwaterModel() is 'off':
-                        exp, req, sym = stm.getMomentumFormulaComponents(z_id)
-                        self.init_src_block(exp, req, sym,
-                                            "momentum", zone_name,
-                                            "momentum_source_term")
-                    else:
-                        exp, req, sym = getRichardsFormulaComponents(z_id)
-                        self.init_src_block(exp, req, sym,
-                                            "richards", zone_name,
-                                            "momentum_source_term")
+                nature_list = zone.getNatureList()
 
-
-                if zone['scalar_source_term'] is not 'off':
-                    sca_list = DefineUserScalarsModel(self.case).getUserScalarNameList()
-                    if gwm.getGroundwaterModel() is 'off':
-                        for sca in sca_list:
-                            exp, req, sym = stm.getSpeciesFormulaComponents(z_id, sca)
+                if 'momentum_source_term' in nature_list:
+                    if zone.getNature()['momentum_source_term'] == 'on':
+                        if gwm.getGroundwaterModel() == 'off':
+                            exp, req, sym = stm.getMomentumFormulaComponents(z_id)
                             self.init_src_block(exp, req, sym,
-                                                sca, zone_name,
-                                                "scalar_source_term")
-                    else:
-                        for sca in sca_list:
-                            exp, req, sym = \
-                            stm.getGroundwaterSpeciesFormulaComponents(z_id, sca)
+                                                "momentum", zone_name,
+                                                "momentum_source_term")
+                        else:
+                            exp, req, sym = getRichardsFormulaComponents(z_id)
                             self.init_src_block(exp, req, sym,
-                                                sca, zone_name,
-                                                "scalar_source_term")
+                                                "richards", zone_name,
+                                                "momentum_source_term")
 
-                if zone['thermal_source_term'] is not 'off':
-                    th_sca_name = stm.therm.getThermalScalarName()
-                    exp, req, sym = stm.getThermalFormulaComponents(z_id, th_sca_name)
-                    self.init_src_block(exp, req, sym,
-                                        th_sca_name, zone_name,
-                                        "thermal_source_term")
+
+                if 'scalar_source_term' in nature_list:
+                    if zone.getNature()['scalar_source_term'] == 'on':
+                        sca_list = DefineUserScalarsModel(self.case).getUserScalarNameList()
+                        if gwm.getGroundwaterModel() == 'off':
+                            for sca in sca_list:
+                                exp, req, sym = stm.getSpeciesFormulaComponents(z_id, sca)
+                                self.init_src_block(exp, req, sym,
+                                                    sca, zone_name,
+                                                    "scalar_source_term")
+                        else:
+                            for sca in sca_list:
+                                exp, req, sym = \
+                                stm.getGroundwaterSpeciesFormulaComponents(z_id, sca)
+                                self.init_src_block(exp, req, sym,
+                                                    sca, zone_name,
+                                                    "scalar_source_term")
+
+                if 'thermal_source_term' in nature_list:
+                    if zone.getNature()['thermal_source_term'] == 'on':
+                        th_sca_name = stm.therm.getThermalScalarName()
+                        exp, req, sym = stm.getThermalFormulaComponents(z_id,
+                                                                        th_sca_name)
+                        self.init_src_block(exp, req, sym,
+                                            th_sca_name, zone_name,
+                                            "thermal_source_term")
 
     #---------------------------------------------------------------------------
 
@@ -1228,6 +1244,7 @@ class mei_to_c_interpreter:
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.InitializationModel import InitializationModel
             from code_saturne.model.CompressibleModel import CompressibleModel
+            from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
             im = InitializationModel(self.case)
             cpm = CompressibleModel(self.case)
 
@@ -1235,7 +1252,7 @@ class mei_to_c_interpreter:
 
             for zone in vlm.getZones():
                 if zone.getNature()['initialization'] is 'on':
-                    z_id = zone.getCodeNumber()
+                    z_id = str(zone.getCodeNumber())
                     zone_name = zone.getLabel()
 
                     # Velocity
@@ -1262,7 +1279,7 @@ class mei_to_c_interpreter:
                             self.init_ini_block(exp, req, sym,
                                                 'hydraulic_head', zone_name)
 
-                    if cpm.getCompressibleModel() is not 'off':
+                    if cpm.getCompressibleModel() != 'off':
                         # Pressure
                         if im.getPressureStatus(z_id) is not 'off':
                             exp, req, sym = im.getPressureFormulaComponents(z_id)
@@ -1450,7 +1467,7 @@ class mei_to_c_interpreter:
     def save_all_functions(self):
 
         save_status = 0
-        for func_type in self.funcs.key():
+        for func_type in self.funcs.keys():
             state = self.save_function(func_type)
             if state != 0:
                 save_status = state
