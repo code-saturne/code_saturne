@@ -100,6 +100,10 @@ integer          itrale , ntmsav
 integer          nent
 
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
+integer          isvhb, iscal
+integer          nbccou
+integer          kcpsyr, icpsyr
+integer          italim, itrfin, itrfup, ineefl
 
 double precision titer1, titer2
 
@@ -112,11 +116,39 @@ double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
 
+integer, allocatable, dimension(:,:) :: icodcl
+integer, allocatable, dimension(:) :: isostd
+double precision, allocatable, dimension(:,:,:) :: rcodcl
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
 
 interface
+
+  subroutine condli_ini &
+  ( nvar   , nscal  ,                                              &
+    itrale ,                                                       &
+    icodcl , isostd ,                                              &
+    dt     , rcodcl )
+
+    use mesh, only: nfac, nfabor
+
+    implicit none
+
+    integer          nvar, nscal
+    integer          itrale
+
+    integer, dimension(nfabor,nvar) :: icodcl
+    integer, dimension(nfabor+1) :: isostd
+
+    double precision, dimension(nfabor,nvar,3) :: rcodcl
+
+    double precision, pointer, dimension(:)   :: dt
+
+  end subroutine condli_ini
+
+  !=============================================================================
 
   subroutine tridim(itrale, nvar, nscal, dt)
 
@@ -518,6 +550,48 @@ if (iporos.ge.1) then
   call cs_f_mesh_quantities_fluid_vol_reductions
 
 endif
+
+! First pass for the BCs:
+! - initilalize itypfb, reference pressure point...
+!--------------------------------------------------
+! --- Indicateur de stockage d'un scalaire et de son coef
+!     d'echange associe.
+!     Pour le moment, on stocke uniquement dans le cas couplage SYRTHES.
+!     ISVHB donne le numero du scalaire (on suppose qu'il n'y en a qu'un).
+!     Dans le cas ou on a un couplage avec le module thermique 1D en paroi,
+!     on utilise le meme scalaire que celui qui sert a Syrthes (s'il y a
+!     couplage Syrthes), sinon on stocke le scalaire thermique.
+
+call field_get_key_id("syrthes_coupling", kcpsyr)
+
+call nbcsyr (nbccou)
+isvhb = 0
+if (nbccou .ge. 1) then
+  do iscal = 1, nscal
+    call field_get_key_int(ivarfl(isca(iscal)), kcpsyr, icpsyr)
+    if (icpsyr.eq.1) then
+      isvhb = iscal
+    endif
+  enddo
+endif
+
+if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
+  isvhb = iscalt
+endif
+
+! Deprecated, only for compatibility reason
+nvarcl = nvar
+
+allocate(icodcl(nfabor,nvar))
+allocate(rcodcl(nfabor,nvar,3))
+allocate(isostd(nfabor+1))
+
+! First pass for initialization BC types
+call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
+
+deallocate(icodcl)
+deallocate(rcodcl)
+deallocate(isostd)
 
 !==============================================================================
 ! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur

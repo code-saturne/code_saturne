@@ -25,8 +25,8 @@ subroutine stdtcl &
 
  ( nbzfmx , nozfmx ,                                              &
    iqimp  , icalke , qimp   , dh     , xintur ,                   &
-   itypfb , iznfbr , ilzfbr ,                                     &
-   rcodcl , qcalc  )
+   itypfb , iznfbr ,                                              &
+   rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -47,7 +47,6 @@ subroutine stdtcl &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! iznfbr           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !                                                !
-! ilzfbr(nbzfmx    ! te ! <-- ! tableau de travail                             !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !                  !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -60,13 +59,8 @@ subroutine stdtcl &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
-! qcalc(nozfmx)    ! tr ! --- ! tab de travail (debit par zone)                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -96,11 +90,10 @@ integer          nbzfmx
 
 integer          iqimp(nozfmx), icalke(nozfmx)
 integer          itypfb(nfabor)
-integer          iznfbr(nfabor), ilzfbr(nbzfmx)
+integer          iznfbr(nfabor)
 
 double precision qimp(nozfmx), dh(nozfmx), xintur(nozfmx)
 double precision rcodcl(nfabor,nvar,3)
-double precision qcalc(nozfmx)
 
 ! Local variables
 
@@ -110,6 +103,8 @@ integer          icke, ii, iel, iok
 double precision qisqc, viscla, uref2, rhomoy, dhy, xiturb
 double precision, dimension(:), pointer :: brom
 double precision, dimension(:), pointer :: viscl
+integer, allocatable, dimension(:) :: ilzfbr
+double precision, allocatable, dimension(:) :: qcalc
 
 integer          ipass
 data             ipass /0/
@@ -120,6 +115,9 @@ save             ipass
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+allocate(ilzfbr(nbzfmx))
+allocate(qcalc(nozfmx))
 
 
 call field_get_val_s(ibrom, brom)
@@ -433,11 +431,13 @@ do ifac = 1, nfabor
 
 enddo
 
+! Free memory
+deallocate(ilzfbr)
+deallocate(qcalc)
 
 !----
 ! FORMATS
 !----
-
 
 !----
 ! FIN

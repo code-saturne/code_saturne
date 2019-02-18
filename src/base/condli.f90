@@ -79,9 +79,19 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
+!> \param[in]     iterns        iteration number on Navier-Stokes equations
 !> \param[in]     isvhb         indicator to save exchange coeffient
 !>                               at the walls
-!> \param[in]     iterns        iteration number on Navier-Stokes equations
+!> \param[in]     itrale        ALE iteration number
+!> \param[in]     itrale        ALE iteration number
+!> \param[in]     italim        for ALE
+!> \param[in]     itrfin        for ALE
+!> \param[in]     ineefl        for ALE
+!> \param[in]     itrfup        for ALE
+!> \param[in]     flmalf        work array for FSI
+!> \param[in]     flmalb        work array for FSI
+!> \param[in]     cofale        work array for FSI
+!> \param[in]     xprale        work array for FSI
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet
@@ -125,6 +135,8 @@
 subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  ,                                                       &
+   itrale , italim , itrfin , ineefl , itrfup ,                   &
+   flmalf , flmalb , cofale , xprale ,                            &
    icodcl , isostd ,                                              &
    dt     , rcodcl ,                                              &
    visvdr , hbord  , theipb )
@@ -136,6 +148,12 @@ subroutine condli &
 use paramx
 use numvar
 use optcal
+use alaste
+use alstru
+use atincl, only: iautom, iprofm
+use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
+use ihmpre, only: iihmpr
+use ppcpfu, only: inmoxy
 use cstphy
 use cstnum
 use pointe
@@ -145,6 +163,7 @@ use parall
 use ppppar
 use ppthch
 use ppincl
+use cpincl
 use radiat
 use cplsat
 use mesh
@@ -161,16 +180,16 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal , iterns
-integer          isvhb
+integer          nvar   , nscal , iterns, isvhb
+integer          itrale , italim , itrfin , ineefl , itrfup
 
-integer          icodcl(nfabor,nvar)
-integer          isostd(nfabor+1)
-
-double precision dt(ncelet)
-double precision rcodcl(nfabor,nvar,3)
-double precision visvdr(ncelet)
-double precision hbord(nfabor),theipb(nfabor)
+double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+double precision, pointer, dimension(:,:) :: cofale
+integer, pointer, dimension(:,:) :: icodcl
+integer, dimension(nfabor+1) :: isostd
+double precision, pointer, dimension(:) :: dt
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
 ! Local variables
 
@@ -188,7 +207,7 @@ integer          keyvar
 integer          dimrij, f_dim
 
 double precision sigma , cpp   , rkl
-double precision hint  , hext  , pimp  , qimp, cfl
+double precision hint  , hext  , pimp  , dimp, cfl
 double precision pinf  , ratio
 double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf
@@ -204,6 +223,7 @@ double precision, allocatable, dimension(:) :: tb_save
 
 character(len=80) :: fname
 
+double precision, dimension(:,:), pointer :: disale
 double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
@@ -241,8 +261,6 @@ double precision, dimension(:,:), pointer :: tensor_permeability
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
-
-!===============================================================================
 ! Interfaces
 !===============================================================================
 
@@ -259,6 +277,191 @@ interface
   end subroutine b_h_to_t
 
  end interface
+
+!===============================================================================
+! 0. User calls
+!===============================================================================
+
+call precli(nvar, icodcl, rcodcl)
+
+!     - Interface Code_Saturne
+!       ======================
+
+if (iihmpr.eq.1) then
+
+  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
+  !    physiques particulieres, meme sans physique particuliere
+  !    -> sera modifie lors de la restructuration des zones de bord
+
+  call uiclim &
+    ( ippmod(idarcy),                                                &
+      nozppm, ncharm, ncharb, nclpch,                                &
+      iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+      ientfu, ientgb, ientgf, iprofm, iautom,                        &
+      itypfb, izfppp, icodcl,                                        &
+      qimp,   qimpat, qimpcp, dh,     xintur,                        &
+      timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
+
+  if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
+
+    ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
+
+    call stdtcl &
+      ( nbzppm , nozppm ,                                              &
+        iqimp  , icalke , qimp   , dh , xintur,                        &
+        itypfb , izfppp ,                                              &
+        rcodcl )
+
+
+  endif
+
+endif
+
+!     - Sous-programme utilisateur
+!       ==========================
+
+call cs_f_user_boundary_conditions &
+  ( nvar   , nscal  ,                                              &
+  icodcl , itrifb , itypfb , izfppp ,                            &
+  dt     ,                                                       &
+  rcodcl )
+
+call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
+
+!     - Interface Code_Saturne
+!       ======================
+
+if (iihmpr.eq.1) then
+
+  call uiclve(nozppm, itypfb, izfppp)
+
+endif
+
+! -- Methode des vortex en L.E.S. :
+!    (Transfert des vortex dans les tableaux RCODCL)
+
+if (ivrtex.eq.1) then
+  call vor2cl(itypfb, rcodcl)
+endif
+
+! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
+!       On s'occupe ici du couplage via les faces de bord, et de la
+!       transformation de l'information recue en condition limite.
+
+if (nbrcpl.gt.0) then
+
+  call cscfbr &
+    ( nscal  ,                                                       &
+    icodcl , itypfb ,                                              &
+    dt     ,                                                       &
+    rcodcl )
+
+endif
+
+! -- Synthetic Eddy Method en L.E.S. :
+!    (Transfert des structures dans les tableaux rcodcl)
+
+call synthe &
+  ( nvar   , nscal  ,                                              &
+  iu     , iv     , iw     ,                                     &
+  ttcabs , dt     ,                                              &
+  rcodcl )
+
+! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
+
+if (iale.ge.1) then
+
+  call field_get_val_v(fdiale, disale)
+
+  do ii = 1, nnod
+    impale(ii) = 0
+  enddo
+
+  ! - Interface Code_Saturne
+  !   ======================
+
+  if (iihmpr.eq.1) then
+
+    call uialcl &
+      ( ibfixe, igliss, ivimpo, ifresf,    &
+      ialtyb,                            &
+      impale,                            &
+      disale,                            &
+      iuma, ivma, iwma,                  &
+      rcodcl)
+
+  endif
+
+  call usalcl &
+    ( itrale ,                                                       &
+    nvar   , nscal  ,                                              &
+    icodcl , itypfb , ialtyb ,                                     &
+    impale ,                                                       &
+    dt     ,                                                       &
+    rcodcl , xyzno0 , disale )
+
+  !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
+  !       remet le deplacement initial
+  do ii  = 1, nnod
+    if (impale(ii).eq.0) then
+      disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
+      disale(2,ii) = xyznod(2,ii)-xyzno0(2,ii)
+      disale(3,ii) = xyznod(3,ii)-xyzno0(3,ii)
+    endif
+  enddo
+
+  ! En cas de couplage de structures, on calcule un deplacement predit
+  if (nbstru.gt.0.or.nbaste.gt.0) then
+
+    call strpre &
+      ( itrale , italim , ineefl ,                                   &
+      impale ,                                                       &
+      flmalf , flmalb , xprale , cofale )
+
+  endif
+
+endif
+
+!     UNE FOIS CERTAINS CODES DE CONDITIONS LIMITES INITIALISES PAR
+!     L'UTILISATEUR, ON PEUT COMPLETER CES CODES PAR LES COUPLAGES
+!     AUX BORDS (TYPE SYRTHES), SAUF SI ON DOIT Y REPASSER ENSUITE
+!     POUR CENTRALISER CE QUI EST RELATIF AU COUPLAGE AVEC SYRTHES
+!     ON POSITIONNE ICI L'APPEL AU COUPLAGE VOLUMIQUE SYRTHES
+!     UTILE POUR BENIFICER DE LA DERNIERE VITESSE CALCULEE SI ON
+!     BOUCLE SUR U/P.
+!     LE COUPLAGE VOLUMIQUE DOIT ETRE APPELE AVANT LE SURFACIQUE
+!     POUR RESPECTER LE SCHEMA DE COMMUNICATION
+
+if (itrfin.eq.1 .and. itrfup.eq.1) then
+
+  call cpvosy(iscalt, dt)
+
+  call coupbi(nfabor, nscal, icodcl, rcodcl)
+
+  if (nfpt1t.gt.0) then
+    call cou1di(nfabor, iscalt, icodcl, rcodcl)
+  endif
+
+  ! coupling 1D thermal model with condensation modelling
+  ! to take into account the solid temperature evolution over time
+  if (nftcdt.gt.0) then
+    call cs_tagmri(nfabor, iscalt, icodcl, rcodcl)
+  endif
+
+endif
+
+
+!Radiative transfer: add contribution to enrgy BCs.
+if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
+
+  call cs_rad_transfer_bcs(nvar, itypfb, icodcl,             &
+    dt, rcodcl)
+
+endif
+
+! For internal coupling, set itypfb to wall function by default
+! if not set by the user
+call cs_internal_coupling_bcs(itypfb)
 
 !===============================================================================
 ! 1. initializations
@@ -906,7 +1109,7 @@ do ifac = 1, nfabor
       ! neumann boundary conditions
       !----------------------------
 
-      qimp = 0.d0
+      dimp = 0.d0
 
       ! coupled solving of the velocity components
 
@@ -1203,12 +1406,12 @@ do ifac = 1, nfabor
 
   if (icodcl(ifac,ipr).eq.3) then
 
-    qimp = rcodcl(ifac,ipr,3)
+    dimp = rcodcl(ifac,ipr,3)
 
     call set_neumann_scalar &
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
-         qimp              , hint )
+         dimp              , hint )
 
   ! convective boundary conditions
   !-------------------------------
@@ -1242,12 +1445,12 @@ do ifac = 1, nfabor
   elseif (icodcl(ifac,ipr).eq.13) then
 
     pimp = rcodcl(ifac,ipr,1)
-    qimp = rcodcl(ifac,ipr,3)
+    dimp = rcodcl(ifac,ipr,3)
 
     call set_dirichlet_conv_neumann_diff_scalar &
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
-         pimp              , qimp )
+         pimp              , dimp )
 
   endif
 
@@ -1289,12 +1492,12 @@ if (ivofmt.ge.0) then
 
     if (icodcl(ifac,ivolf2).eq.3) then
 
-      qimp = rcodcl(ifac,ivolf2,3)
+      dimp = rcodcl(ifac,ivolf2,3)
 
       call set_neumann_scalar &
     ( coefap(ifac), cofafp(ifac),                        &
       coefbp(ifac), cofbfp(ifac),                        &
-      qimp              , hint )
+      dimp              , hint )
 
       ! convective boundary conditions
       !-------------------------------
@@ -1380,12 +1583,12 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
       if (icodcl(ifac,ivar).eq.3) then
 
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
-             qimp              , hint )
+             dimp              , hint )
 
       ! convective boundary conditions
       !-------------------------------
@@ -1406,12 +1609,12 @@ if (itytur.eq.2.or.iturb.eq.60) then
       elseif (icodcl(ifac,ivar).eq.13) then
 
         pimp = rcodcl(ifac,ivar,1)
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             pimp              , qimp )
+             pimp              , dimp )
 
 
       endif
@@ -1691,12 +1894,12 @@ elseif (itytur.eq.3) then
         !----------------------------
 
         if (icodcl(ifac,ivar).eq.3) then
-          qimp = rcodcl(ifac,ivar,3)
+          dimp = rcodcl(ifac,ivar,3)
 
           call set_neumann_scalar &
              ( coefap(ifac), cofafp(ifac),                        &
                coefbp(ifac), cofbfp(ifac),                        &
-               qimp              , hint )
+               dimp              , hint )
 
           ! Boundary conditions for the momentum equation
           cofadp(ifac) = coefap(ifac)
@@ -1723,12 +1926,12 @@ elseif (itytur.eq.3) then
         elseif (icodcl(ifac,ivar).eq.13) then
 
           pimp = rcodcl(ifac,ivar,1)
-          qimp = rcodcl(ifac,ivar,3)
+          dimp = rcodcl(ifac,ivar,3)
 
           call set_dirichlet_conv_neumann_diff_scalar &
              ( coefap(ifac), cofafp(ifac),                         &
                coefbp(ifac), cofbfp(ifac),                         &
-               pimp              , qimp )
+               pimp              , dimp )
 
           ! Boundary conditions for the momentum equation
           cofadp(ifac) = coefap(ifac)
@@ -1838,12 +2041,12 @@ elseif (itytur.eq.3) then
 
     if (icodcl(ifac,ivar).eq.3) then
 
-      qimp = rcodcl(ifac,ivar,3)
+      dimp = rcodcl(ifac,ivar,3)
 
       call set_neumann_scalar &
          ( coefap(ifac), cofafp(ifac),                        &
            coefbp(ifac), cofbfp(ifac),                        &
-           qimp              , hint )
+           dimp              , hint )
 
       ! Convective Boundary Conditions
       !-------------------------------
@@ -1865,12 +2068,12 @@ elseif (itytur.eq.3) then
       elseif (icodcl(ifac,ivar).eq.13) then
 
         pimp = rcodcl(ifac,ivar,1)
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             pimp              , qimp )
+             pimp              , dimp )
 
     endif
 
@@ -1914,12 +2117,12 @@ elseif (itytur.eq.3) then
 
       if (icodcl(ifac,ivar).eq.3) then
 
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
-             qimp              , hint )
+             dimp              , hint )
 
       ! Convective Boundary Conditions
       !-------------------------------
@@ -1940,12 +2143,12 @@ elseif (itytur.eq.3) then
       elseif (icodcl(ifac,ivar).eq.13) then
 
         pimp = rcodcl(ifac,ivar,1)
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             pimp              , qimp )
+             pimp              , dimp )
 
 
       endif
@@ -2009,12 +2212,12 @@ elseif (itytur.eq.5) then
 
       if (icodcl(ifac,ivar).eq.3) then
 
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             qimp              , hint )
+             dimp              , hint )
 
       ! Convective Boundary Conditions
       !-------------------------------
@@ -2035,12 +2238,12 @@ elseif (itytur.eq.5) then
       elseif (icodcl(ifac,ivar).eq.13) then
 
         pimp = rcodcl(ifac,ivar,1)
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             pimp              , qimp )
+             pimp              , dimp )
 
 
       endif
@@ -2090,12 +2293,12 @@ elseif (itytur.eq.5) then
 
       if (icodcl(ifac,ivar).eq.3) then
 
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             qimp              , hint )
+             dimp              , hint )
 
       ! Convective Boundary Conditions
       !-------------------------------
@@ -2116,12 +2319,12 @@ elseif (itytur.eq.5) then
       elseif (icodcl(ifac,ivar).eq.13) then
 
         pimp = rcodcl(ifac,ivar,1)
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             pimp              , qimp )
+             pimp              , dimp )
 
 
       endif
@@ -2169,12 +2372,12 @@ elseif (itytur.eq.5) then
 
       if (icodcl(ifac,ivar).eq.3) then
 
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             qimp              , hint )
+             dimp              , hint )
 
       ! Convective Boundary Conditions
       !-------------------------------
@@ -2195,12 +2398,12 @@ elseif (itytur.eq.5) then
       elseif (icodcl(ifac,ivar).eq.13) then
 
         pimp = rcodcl(ifac,ivar,1)
-        qimp = rcodcl(ifac,ivar,3)
+        dimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
-             pimp              , qimp )
+             pimp              , dimp )
 
 
       endif
@@ -2252,12 +2455,12 @@ elseif (iturb.eq.70) then
 
     if (icodcl(ifac,ivar).eq.3) then
 
-      qimp = rcodcl(ifac,ivar,3)
+      dimp = rcodcl(ifac,ivar,3)
 
       call set_neumann_scalar &
          ( coefap(ifac), cofafp(ifac),                         &
            coefbp(ifac), cofbfp(ifac),                         &
-           qimp              , hint )
+           dimp              , hint )
 
     ! Convective Boundary Conditions
     !-------------------------------
@@ -2278,12 +2481,12 @@ elseif (iturb.eq.70) then
     elseif (icodcl(ifac,ivar).eq.13) then
 
       pimp = rcodcl(ifac,ivar,1)
-      qimp = rcodcl(ifac,ivar,3)
+      dimp = rcodcl(ifac,ivar,3)
 
       call set_dirichlet_conv_neumann_diff_scalar &
          ( coefap(ifac), cofafp(ifac),                         &
            coefbp(ifac), cofbfp(ifac),                         &
-           pimp              , qimp )
+           pimp              , dimp )
 
 
     endif
@@ -2477,12 +2680,12 @@ if (nscal.ge.1) then
 
         if (icodcl(ifac,ivar).eq.3) then
 
-          qimp = rcodcl(ifac,ivar,3)
+          dimp = rcodcl(ifac,ivar,3)
 
           call set_neumann_scalar &
              ( coefap(ifac), cofafp(ifac),                         &
                coefbp(ifac), cofbfp(ifac),                         &
-               qimp              , hint )
+               dimp              , hint )
 
           ! Store boundary value
           if (b_f_id .ge. 0) then
@@ -2513,12 +2716,12 @@ if (nscal.ge.1) then
         elseif (icodcl(ifac,ivar).eq.12) then
 
           hext = rcodcl(ifac,ivar,2)
-          qimp = rcodcl(ifac,ivar,3)
+          dimp = rcodcl(ifac,ivar,3)
 
           call set_total_flux &
              ( coefap(ifac), cofafp(ifac),                         &
                coefbp(ifac), cofbfp(ifac),                         &
-               hext              , qimp )
+               hext              , dimp )
 
           ! Store boundary value
           if (b_f_id .ge. 0) then
@@ -2531,12 +2734,12 @@ if (nscal.ge.1) then
         elseif (icodcl(ifac,ivar).eq.13) then
 
           pimp = rcodcl(ifac,ivar,1)
-          qimp = rcodcl(ifac,ivar,3)
+          dimp = rcodcl(ifac,ivar,3)
 
           call set_dirichlet_conv_neumann_diff_scalar &
              ( coefap(ifac), cofafp(ifac),                         &
                coefbp(ifac), cofbfp(ifac),                         &
-               pimp              , qimp )
+               pimp              , dimp )
 
           ! Store boundary value
           if (b_f_id .ge. 0) then
@@ -3027,12 +3230,12 @@ if (nscal.ge.1) then
 
         if (icodcl(ifac,ialt).eq.3) then
 
-          qimp = rcodcl(ifac,ialt,3)
+          dimp = rcodcl(ifac,ialt,3)
 
           call set_neumann_scalar &
             ( coefap(ifac), cofafp(ifac),                        &
               coefbp(ifac), cofbfp(ifac),                        &
-              qimp              , hint )
+              dimp              , hint )
 
           ! Radiative Boundary Conditions
           !-------------------------------
@@ -3053,12 +3256,12 @@ if (nscal.ge.1) then
         elseif (icodcl(ifac,ialt).eq.13) then
 
           pimp = rcodcl(ifac,ialt,1)
-          qimp = rcodcl(ifac,ialt,3)
+          dimp = rcodcl(ifac,ialt,3)
 
           call set_dirichlet_conv_neumann_diff_scalar &
             ( coefap(ifac), cofafp(ifac),                         &
               coefbp(ifac), cofbfp(ifac),                         &
-              pimp              , qimp )
+              pimp              , dimp )
 
 
         endif
@@ -3609,12 +3812,12 @@ end subroutine set_dirichlet_vector_aniso
 !> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
 !> \param[out]    cofbf         implicit BC coefficient for diffusive flux
-!> \param[in]     qimp          Flux value to impose
+!> \param[in]     dimp          Flux value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !_______________________________________________________________________________
 
 subroutine set_neumann_scalar &
- ( coefa , cofaf, coefb , cofbf, qimp  , hint)
+ ( coefa , cofaf, coefb , cofbf, dimp  , hint)
 
 !===============================================================================
 ! Module files
@@ -3626,18 +3829,18 @@ implicit none
 
 ! Arguments
 
-double precision coefa, cofaf, coefb, cofbf, qimp, hint
+double precision coefa, cofaf, coefb, cofbf, dimp, hint
 
 ! Local variables
 
 !===============================================================================
 
 ! Gradient BCs
-coefa = -qimp/max(hint, 1.d-300)
+coefa = -dimp/max(hint, 1.d-300)
 coefb = 1.d0
 
 ! Flux BCs
-cofaf = qimp
+cofaf = dimp
 cofbf = 0.d0
 
 return
@@ -4507,11 +4710,11 @@ end subroutine
 !> \param[out]    coefb         implicit BC coefficient for gradients
 !> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     hext          convective flux to be imposed
-!> \param[in]     qimp          Flux value to impose
+!> \param[in]     dimp          Flux value to impose
 !_______________________________________________________________________________
 
 subroutine set_total_flux &
- ( coefa, cofaf, coefb, cofbf, hext, qimp )
+ ( coefa, cofaf, coefb, cofbf, hext, dimp )
 
 !===============================================================================
 ! Module files
@@ -4523,14 +4726,14 @@ implicit none
 
 ! Arguments
 
-double precision coefa, cofaf, coefb, cofbf, qimp, hext
+double precision coefa, cofaf, coefb, cofbf, dimp, hext
 
 ! Gradients BCs
 coefa = 0.d0
 coefb = 1.d0
 
 ! Flux BCs
-cofaf = qimp
+cofaf = dimp
 cofbf = hext
 
 return
@@ -4548,11 +4751,11 @@ end subroutine
 !> \param[out]    coefb         implicit BC coefficient for gradients
 !> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     pimp          Dirichlet value to impose
-!> \param[in]     qimp          Flux value to impose
+!> \param[in]     dimp          Flux value to impose
 !_______________________________________________________________________________
 
 subroutine set_dirichlet_conv_neumann_diff_scalar &
- ( coefa, cofaf, coefb, cofbf, pimp, qimp )
+ ( coefa, cofaf, coefb, cofbf, pimp, dimp )
 
 !===============================================================================
 ! Module files
@@ -4564,14 +4767,14 @@ implicit none
 
 ! Arguments
 
-double precision coefa, cofaf, coefb, cofbf, pimp, qimp
+double precision coefa, cofaf, coefb, cofbf, pimp, dimp
 
 ! Gradients BCs
 coefa = pimp
 coefb = 0.d0
 
 ! Flux BCs
-cofaf = qimp
+cofaf = dimp
 cofbf = 0.d0
 
 return
@@ -4691,5 +4894,249 @@ enddo
 return
 end subroutine
 
+!===============================================================================
+! Function :
+! --------
+
+!> \brief Initialisation of boundary condition arrays.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     itrale        ALE iteration number
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 11 Boundary value related to the next cell
+!>                                 value by an affine function
+!>                               - 13 Dirichlet for the advection operator and
+!>                                 Neumann for the diffusion operator
+!> \param[in,out] isostd        indicator for standard outlet
+!>                               and reference face index
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!_______________________________________________________________________________
+
+subroutine condli_ini &
+ ( nvar   , nscal  ,                                              &
+   itrale ,                                                       &
+   icodcl , isostd ,                                              &
+   dt     , rcodcl )
 
 !===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use alaste
+use alstru
+use atincl, only: iautom, iprofm
+use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
+use ihmpre, only: iihmpr
+use ppcpfu, only: inmoxy
+use cstphy
+use cstnum
+use pointe
+use entsor
+use albase
+use parall
+use ppppar
+use ppthch
+use ppincl
+use cpincl
+use radiat
+use cplsat
+use mesh
+use field
+use field_operator
+use radiat
+use turbomachinery
+use darcy_module
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nvar   , nscal
+integer          itrale
+
+integer          icodcl(nfabor,nvar)
+integer          isostd(nfabor+1)
+
+double precision, pointer, dimension(:) :: dt
+double precision rcodcl(nfabor,nvar,3)
+
+! Local variables
+
+integer          iterns, ii
+
+double precision, dimension(:,:), pointer :: disale
+
+!===============================================================================
+! 0. User calls
+!===============================================================================
+
+call precli(nvar, icodcl, rcodcl)
+
+!     - Interface Code_Saturne
+!       ======================
+
+if (iihmpr.eq.1) then
+
+  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
+  !    physiques particulieres, meme sans physique particuliere
+  !    -> sera modifie lors de la restructuration des zones de bord
+
+  call uiclim &
+    ( ippmod(idarcy),                                                &
+      nozppm, ncharm, ncharb, nclpch,                                &
+      iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+      ientfu, ientgb, ientgf, iprofm, iautom,                        &
+      itypfb, izfppp, icodcl,                                        &
+      qimp,   qimpat, qimpcp, dh,     xintur,                        &
+      timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
+
+endif
+
+!     - Sous-programme utilisateur
+!       ==========================
+
+call cs_f_user_boundary_conditions &
+  ( nvar   , nscal  ,                                              &
+  icodcl , itrifb , itypfb , izfppp ,                            &
+  dt     ,                                                       &
+  rcodcl )
+
+call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
+
+! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
+
+if (iale.ge.1) then
+
+  call field_get_val_v(fdiale, disale)
+
+  do ii = 1, nnod
+    impale(ii) = 0
+  enddo
+
+  ! - Interface Code_Saturne
+  !   ======================
+
+  if (iihmpr.eq.1) then
+
+    call uialcl &
+      ( ibfixe, igliss, ivimpo, ifresf,    &
+      ialtyb,                            &
+      impale,                            &
+      disale,                            &
+      iuma, ivma, iwma,                  &
+      rcodcl)
+
+  endif
+
+  call usalcl &
+    ( itrale ,                                                       &
+    nvar   , nscal  ,                                              &
+    icodcl , itypfb , ialtyb ,                                     &
+    impale ,                                                       &
+    dt     ,                                                       &
+    rcodcl , xyzno0 , disale )
+
+  !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
+  !       remet le deplacement initial
+  do ii  = 1, nnod
+    if (impale(ii).eq.0) then
+      disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
+      disale(2,ii) = xyznod(2,ii)-xyzno0(2,ii)
+      disale(3,ii) = xyznod(3,ii)-xyzno0(3,ii)
+    endif
+  enddo
+
+endif
+
+! For internal coupling, set itypfb to wall function by default
+! if not set by the user
+call cs_internal_coupling_bcs(itypfb)
+
+!===============================================================================
+! 2. treatment of types of bcs given by itypfb
+!===============================================================================
+
+if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
+    .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
+    .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
+  call pptycl &
+ ( nvar   ,                                                       &
+   icodcl , itypfb , izfppp ,                                     &
+   dt     ,                                                       &
+   rcodcl )
+endif
+
+if (iale.ge.1) then
+  call altycl &
+ ( itypfb , ialtyb , icodcl , impale ,                            &
+   dt     ,                                                       &
+   rcodcl , xyzno0 )
+endif
+
+if (iturbo.ne.0) then
+  call mmtycl(itypfb, rcodcl)
+endif
+
+iterns = 1
+
+call typecl &
+ ( nvar   , nscal  , iterns ,                                     &
+   itypfb , itrifb , icodcl , isostd ,                            &
+   rcodcl )
+
+!===============================================================================
+! 3. check the consistency of the bcs
+!===============================================================================
+
+call vericl                                                       &
+ ( nvar   , nscal  ,                                              &
+   itypfb , icodcl ,                                              &
+   rcodcl )
+
+!----
+! End
+!----
+
+return
+end subroutine condli_ini
+
+
