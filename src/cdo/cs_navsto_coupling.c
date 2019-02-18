@@ -824,6 +824,10 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
   }
 
+  nsc->div_st = NULL;
+  nsc->bdy_pressure_incr = NULL;
+  nsc->predicted_velocity = NULL;
+
   return nsc;
 }
 
@@ -843,9 +847,11 @@ cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
                                   void                       *context)
 {
   assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling */
 
   cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
+
+  BFT_FREE(nsc->div_st);
+  BFT_FREE(nsc->bdy_pressure_incr);
 
   BFT_FREE(nsc);
 
@@ -858,13 +864,17 @@ cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
  *         algorithm is used to coupled the system.
  *         No mesh information is available at this stage.
  *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
+ * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      loc_id        id related to a mesh location
+ * \param[in]      has_previous  values at different time steps (true/false)
+ * \param[in, out] context       pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
+                                int                         loc_id,
+                                _Bool                       has_previous,
                                 void                       *context)
 {
   cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
@@ -872,15 +882,28 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   assert(nsp != NULL && nsc != NULL);
 
   /* Prediction step: Approximate the velocity */
-  cs_equation_param_t *p_eqp = cs_equation_get_param(nsc->prediction);
+  cs_equation_param_t *u_eqp = cs_equation_get_param(nsc->prediction);
+
+  cs_navsto_param_transfer(nsp, u_eqp);
+
+  cs_equation_add_time(u_eqp, cs_property_by_name("unity"));
+
+  /* All considered models needs a viscous term */
+  cs_equation_add_diffusion(u_eqp, nsp->lami_viscosity);
+
+  /* Correction step: Approximate the pressure */
+  cs_equation_param_t *p_eqp = cs_equation_get_param(nsc->correction);
 
   cs_navsto_param_transfer(nsp, p_eqp);
 
-  cs_equation_add_time(p_eqp, cs_property_by_name("unity"));
+  cs_equation_add_diffusion(p_eqp, cs_property_by_name("time_step"));
 
-  /* Correction step: Approximate the pressure */
-  cs_navsto_param_transfer(nsp, cs_equation_get_param(nsc->correction));
-
+  /* Add the predicted velocity field */
+  nsc->predicted_velocity = cs_field_create("predicted_velocity",
+                                            CS_FIELD_INTENSIVE,
+                                            loc_id,
+                                            3,
+                                            has_previous);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -903,15 +926,43 @@ cs_navsto_projection_last_setup(const cs_cdo_connect_t     *connect,
                                 void                       *context)
 {
   CS_UNUSED(connect);
-  CS_UNUSED(quant);
 
   cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
 
   assert(nsp != NULL && nsc != NULL);
 
-  /* TODO */
-  CS_UNUSED(nsp);
-  CS_UNUSED(nsc);
+  /* Source term in the correction step stems from the divergence of the
+     predicted velocity */
+  BFT_MALLOC(nsc->div_st, quant->n_cells, cs_real_t);
+  memset(nsc->div_st, 0, quant->n_cells*sizeof(cs_real_t));
+
+  cs_equation_t  *corr_eq = nsc->correction;
+  cs_equation_param_t  *corr_eqp = cs_equation_get_param(corr_eq);
+  cs_equation_add_source_term_by_array(corr_eqp,
+                                       NULL,
+                                       cs_flag_primal_cell,
+                                       nsc->div_st,
+                                       false,     /* xdef is not owner */
+                                       NULL);     /* no index */
+
+  /* Defined BC for the pressure increment in the correction step */
+  BFT_MALLOC(nsc->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
+  memset(nsc->bdy_pressure_incr, 0, quant->n_b_faces*sizeof(cs_real_t));
+
+  for (int i = 0; i < nsp->n_pressure_bc_defs; i++) {
+
+    const cs_xdef_t  *pdef = nsp->pressure_bc_defs[i];
+    const cs_zone_t  *z = cs_boundary_zone_by_id(pdef->z_id);
+
+    cs_equation_add_bc_by_array(corr_eqp,
+                                CS_PARAM_BC_DIRICHLET,
+                                z->name,
+                                cs_flag_primal_face,
+                                nsc->bdy_pressure_incr,
+                                false, /* xdef is not owner */
+                                NULL); /* no index */
+
+  } /* Loop on pressure definitions */
 }
 
 /*----------------------------------------------------------------------------*/

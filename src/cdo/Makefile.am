@@ -61,6 +61,7 @@ cs_cdo_time.h \
 cs_cdofb_ac.h \
 cs_cdofb_monolithic.h \
 cs_cdofb_navsto.h \
+cs_cdofb_predco.h \
 cs_cdofb_priv.h \
 cs_cdofb_scaleq.h \
 cs_cdofb_uzawa.h \
@@ -124,6 +125,7 @@ cs_cdo_time.c \
 cs_cdofb_ac.c \
 cs_cdofb_monolithic.c \
 cs_cdofb_navsto.c \
+cs_cdofb_predco.c \
 cs_cdofb_scaleq.c \
 cs_cdofb_uzawa.c \
 cs_cdofb_vecteq.c \

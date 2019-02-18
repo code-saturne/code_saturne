@@ -47,6 +47,7 @@
 #include "cs_cdofb_ac.h"
 #include "cs_cdofb_monolithic.h"
 #include "cs_cdofb_navsto.h"
+#include "cs_cdofb_predco.h"
 #include "cs_cdofb_uzawa.h"
 #include "cs_hho_stokes.h"
 #include "cs_equation.h"
@@ -438,7 +439,10 @@ cs_navsto_system_init_setup(void)
     cs_navsto_monolithic_init_setup(nsp, ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
-    cs_navsto_projection_init_setup(nsp, ns->coupling_context);
+    cs_navsto_projection_init_setup(nsp,
+                                    location_id,
+                                    has_previous,
+                                    ns->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_UZAWA:
     cs_navsto_uzawa_init_setup(nsp, ns->coupling_context);
@@ -482,6 +486,10 @@ cs_navsto_system_set_sles(void)
 
     case CS_NAVSTO_COUPLING_UZAWA:
       cs_cdofb_uzawa_set_sles(nsp, nscc);
+      break;
+
+    case CS_NAVSTO_COUPLING_PROJECTION:
+      cs_cdofb_predco_set_sles(nsp, nscc);
       break;
 
     default:
@@ -651,8 +659,33 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
-      /* ns->init = cs_cdofb_navsto_init_proj_context; */
-      /* ns->compute = cs_cdofb_navsto_proj_compute; */
+      ns->init_scheme_context = cs_cdofb_predco_init_scheme_context;
+      ns->free_scheme_context = cs_cdofb_predco_free_scheme_context;
+      ns->init_velocity = NULL;
+      ns->init_pressure = cs_cdofb_navsto_init_pressure;
+      ns->compute_steady = NULL;
+
+      switch (nsp->time_scheme) {
+
+      case CS_TIME_SCHEME_STEADY:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: The projection coupling algorithm "
+                  "can be used only in unsteady problems", __func__);
+        break;
+      case CS_TIME_SCHEME_EULER_IMPLICIT:
+        ns->compute = cs_cdofb_predco_compute_implicit;
+        break;
+      case CS_TIME_SCHEME_THETA:
+      case CS_TIME_SCHEME_CRANKNICO:
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid time scheme for the projection coupling"
+                  " algorithm", __func__);
+        break;
+
+      } /* Switch */
+
+      cs_cdofb_predco_init_common(quant, connect, time_step);
       break;
 
     case CS_NAVSTO_COUPLING_UZAWA:
@@ -750,42 +783,59 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
   if (ns->init_pressure != NULL)
     ns->init_pressure(nsp, quant, ts, ns->pressure);
 
-  /* Define the advection field. Since one links the advection field to the
-     face velocity this is only available for Fb schemes and should be done
-     after initializing the context structure */
-  cs_real_t *face_vel = NULL;
-  cs_field_t  *bd_nflux = NULL;
+  if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
 
-  switch (nsp->coupling) {
+    /* Define the advection field. Since one links the advection field to the
+       face velocity this is only available for Fb schemes and should be done
+       after initializing the context structure */
+    cs_real_t *face_vel = NULL;
+    cs_field_t  *bd_nflux = NULL;
 
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-  case CS_NAVSTO_COUPLING_UZAWA:
-    {
-      cs_equation_t  *mom_eq = cs_equation_by_name("momentum");
-      face_vel = cs_equation_get_face_values(mom_eq);
+    switch (nsp->coupling) {
+
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
+    case CS_NAVSTO_COUPLING_UZAWA:
+      {
+        cs_equation_t  *mom_eq = cs_equation_by_name("momentum");
+        face_vel = cs_equation_get_face_values(mom_eq);
+      }
+      break;
+
+    case CS_NAVSTO_COUPLING_PROJECTION:
+      {
+        /* The call to the initialization of the cell pressure should be done
+           before */
+        cs_real_t  *pr_f
+          = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
+
+        cs_cdofb_navsto_init_face_pressure(nsp, quant, ts, pr_f);
+
+        cs_equation_t  *mom_eq = cs_equation_by_name("velocity_prediction");
+        face_vel = cs_equation_get_face_values(mom_eq);
+      }
+      break;
+
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    default:
+      bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+      break;
+
     }
-    break;
 
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-  case CS_NAVSTO_COUPLING_PROJECTION:
-  default:
-    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    break;
+    const cs_flag_t loc_flag
+      = CS_FLAG_FULL_LOC | cs_flag_primal_face | CS_FLAG_VECTOR;
 
-  }
+    cs_advection_field_def_by_array(ns->adv_field, loc_flag, face_vel,
+                                    false, /* advection field is not owner */
+                                    NULL);
 
-  const cs_flag_t loc_flag
-    = CS_FLAG_FULL_LOC | cs_flag_primal_face | CS_FLAG_VECTOR;
+    /* Assign the velocity boundary flux to the boundary flux for the advection
+       field*/
+    if (bd_nflux != NULL)
+      ns->adv_field->bdy_field_id = bd_nflux->id;
 
-  cs_advection_field_def_by_array(ns->adv_field, loc_flag, face_vel,
-                                  false, /* the advection field is not owner */
-                                  NULL);
-
-  /* Assign the velocity boundary flux to the boundary flux for the advection
-     field*/
-  if (bd_nflux != NULL)
-    ns->adv_field->bdy_field_id = bd_nflux->id;
+  } /* Face-based schemes */
 }
 
 /*----------------------------------------------------------------------------*/
