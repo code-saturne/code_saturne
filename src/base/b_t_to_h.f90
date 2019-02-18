@@ -123,11 +123,12 @@ if (ippmod(iphpar).le.1) then
 
 endif
 
-! Mappings for specific physics
-
-call field_get_val_s(ibym(1), bym1)
-call field_get_val_s(ibym(2), bym2)
-call field_get_val_s(ibym(3), bym3)
+! Mappings for gas combustion
+if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
+  call field_get_val_s(ibym(1), bym1)
+  call field_get_val_s(ibym(2), bym2)
+  call field_get_val_s(ibym(3), bym3)
+end if
 
 ! Arrays of pointers containing the fields values for each class
 ! (loop on cells outside loop on classes)
