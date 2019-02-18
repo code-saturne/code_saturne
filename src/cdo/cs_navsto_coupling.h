@@ -234,6 +234,20 @@ cs_navsto_uzawa_last_setup(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
+ *         the momentum equation in case of Uzawa coupling
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_uzawa_get_momentum_eq(void       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an Artificial Compressibility approach
  *
@@ -297,6 +311,20 @@ cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
                         const cs_cdo_quantities_t   *quant,
                         const cs_navsto_param_t     *nsp,
                         void                        *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
+ *         the momentum equation in case of artificial compressibility coupling
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_ac_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -366,6 +394,21 @@ cs_navsto_ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
+ *         the momentum equation in case of artificial compressibility coupling
+ *         with the VPP extension
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_ac_vpp_get_momentum_eq(void       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using a monolithic approach
  *
@@ -428,6 +471,20 @@ cs_navsto_monolithic_last_setup(const cs_cdo_connect_t      *connect,
                                 const cs_cdo_quantities_t   *quant,
                                 const cs_navsto_param_t     *nsp,
                                 void                        *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
+ *         the momentum equation in case of a monolithic coupling
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_monolithic_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -498,6 +555,20 @@ cs_navsto_projection_last_setup(const cs_cdo_connect_t     *connect,
                                 const cs_cdo_quantities_t  *quant,
                                 const cs_navsto_param_t    *nsp,
                                 void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
+ *         the momentum equation in case of a projection coupling
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_projection_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 

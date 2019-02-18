@@ -352,6 +352,52 @@ cs_navsto_system_get_param(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve a pointer to the equation related to the momentum equation
+ *
+ * \return NULL or the pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_system_get_momentum_eq(void)
+{
+  cs_navsto_system_t  *navsto = cs_navsto_system;
+
+  if (navsto == NULL)
+    return NULL;
+
+  cs_navsto_param_t  *nsp = navsto->param;
+  cs_equation_t  *eq = NULL;
+
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    eq = cs_navsto_ac_get_momentum_eq(navsto->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    eq = cs_navsto_ac_vpp_get_momentum_eq(navsto->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    eq = cs_navsto_monolithic_get_momentum_eq(navsto->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    eq = cs_navsto_projection_get_momentum_eq(navsto->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_UZAWA:
+    eq = cs_navsto_uzawa_get_momentum_eq(navsto->coupling_context);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+    break;
+
+  }
+
+  return eq;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the Navier-Stokes system
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.
