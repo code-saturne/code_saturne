@@ -3,6 +3,10 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fixes for GMSH import.
+  * Fix crashes for binary file import
+  * Fix handling of physical groups for GMSH V4 format; names are also handled.
+
 - Fix GUI reader for xmls with turbulence model switched to "off" and remaining
   formula for initialization of turbulence.
 
