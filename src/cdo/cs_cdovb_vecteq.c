@@ -152,8 +152,8 @@ _vbv_create_cell_builder(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t  *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_vc, short int);
-  memset(cb->ids, 0, n_vc*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_vc, int);
+  memset(cb->ids, 0, n_vc*sizeof(int));
 
   int  size = n_ec*(n_ec+1);
   size = CS_MAX(4*n_ec + 3*n_vc, size);
@@ -168,11 +168,7 @@ _vbv_create_cell_builder(const cs_cdo_connect_t   *connect)
      operators */
   cb->hdg = cs_sdm_square_create(n_ec);
   cb->aux = cs_sdm_square_create(n_vc);
-
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_vc; i++)
-    block_sizes[i] = 3;
-  cb->loc = cs_sdm_block_create(n_vc, n_vc, block_sizes, block_sizes);
+  cb->loc = cs_sdm_block33_create(n_vc, n_vc);
 
   return cb;
 }
@@ -275,27 +271,22 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
                       cs_cell_sys_t                  *csys,
                       cs_cell_builder_t              *cb)
 {
-  const int  n_blocks = cm->n_vc;
-  const int  n_dofs = 3*n_blocks;
-
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_blocks; i++) block_sizes[i] = 3;
-
   csys->c_id = cm->c_id;
-  csys->n_dofs = n_dofs;
+  csys->n_dofs = 3*cm->n_vc;
   csys->cell_flag = cell_flag;
 
   /* Cell-wise view of the linear system to build:
      Initialize the local system */
   cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
 
-  cs_sdm_block_init(csys->mat, n_blocks, n_blocks, block_sizes, block_sizes);
+  cs_sdm_block33_init(csys->mat, cm->n_vc, cm->n_vc);
 
-  for (short int v = 0; v < cm->n_vc; v++) {
+  for (int v = 0; v < cm->n_vc; v++) {
     const cs_lnum_t  v_id = cm->v_ids[v];
+    const cs_real_t  *val_p = field_tn + 3*v_id;
     for (int k = 0; k < 3; k++) {
       csys->dof_ids[3*v + k] = 3*v_id + k;
-      csys->val_n[3*v + k] = field_tn[3*v_id + k];
+      csys->val_n[3*v + k] = val_p[k];
     }
   }
 
@@ -328,13 +319,14 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
 
     assert(vtx_bc_flag != NULL);
 
-    for (short int v = 0; v < cm->n_vc; v++) {
+    for (int v = 0; v < cm->n_vc; v++) {
       for (int k = 0; k < 3; k++)
         csys->dof_flag[3*v+k] = vtx_bc_flag[cm->v_ids[v]];
       if (cs_cdo_bc_is_dirichlet(vtx_bc_flag[cm->v_ids[v]])) {
         csys->has_dirichlet = true;
+        const cs_real_t  *bc_val = dir_values + 3*cm->v_ids[v];
         for (int k = 0; k < 3; k++)
-          csys->dir_values[3*v+k] = dir_values[3*cm->v_ids[v]+k];
+          csys->dir_values[3*v+k] = bc_val[k];
       }
     }
 
@@ -344,14 +336,14 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
   if (cs_equation_param_has_internal_enforcement(eqp)) {
 
     assert(forced_ids != NULL);
-    for (short int v = 0; v < cm->n_vc; v++) {
+    for (int v = 0; v < cm->n_vc; v++) {
 
       const cs_lnum_t  id = forced_ids[cm->v_ids[v]];
 
       /* In case of a Dirichlet BC, this BC is applied and the enforcement
          is ignored */
       for (int k = 0; k < 3; k++) {
-        short int  dof_id = 3*v+k;
+        int  dof_id = 3*v+k;
         if (cs_cdo_bc_is_dirichlet(csys->dof_flag[dof_id]))
           csys->intern_forced_ids[dof_id] = -1;
         else {
@@ -451,7 +443,7 @@ _vbv_advection_diffusion_reaction(const cs_equation_param_t     *eqp,
       const double  ptyc = cb->rpty_val * cm->vol_c;
 
       /* Only the diagonal block and its diagonal entries are modified */
-      for (short int bi = 0; bi < cm->n_vc; bi++) {
+      for (int bi = 0; bi < cm->n_vc; bi++) {
 
         const double  vpty = cm->wvc[bi] * ptyc;
 
@@ -625,7 +617,7 @@ _vbv_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
   if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
 
     cs_real_t  _rhs_norm = 0;
-    for (short int v = 0; v < cm->n_vc; v++)
+    for (int v = 0; v < cm->n_vc; v++)
       for (int k = 0; k < 3; k++)
         _rhs_norm += cm->wvc[v] * csys->rhs[3*v+k]*csys->rhs[3*v+k];
 
@@ -635,10 +627,9 @@ _vbv_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
   else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_MAT_DIAG) {
 
     const cs_sdm_t  *m = csys->mat;
-    const cs_sdm_block_t  *bd = m->block_desc;
 
     cs_real_t  _rhs_norm = 0;
-    for (short int v = 0; v < cm->n_vc; v++) {
+    for (int v = 0; v < cm->n_vc; v++) {
 
       const cs_sdm_t  *mVV = cs_sdm_get_block(m, v, v);
       const cs_real_t  d[3] = {mVV->val[0], mVV->val[4], mVV->val[8]};
@@ -808,7 +799,7 @@ cs_cdovb_vecteq_is_initialized(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief    Allocate work buffer and general structures related to CDO
- *           vertex-based schemes
+ *           vector-valued vertex-based schemes
  *           Set shared pointers.
  *
  * \param[in]  quant       additional mesh quantities struct.
@@ -841,8 +832,7 @@ cs_cdovb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
     _vbv_cell_builder[i] = NULL;
   }
 
-  const short int  n_blocks = connect->n_max_vbyc;
-  const short int  n_max_dofs = 3*n_blocks;
+  const int  n_max_dofs = 3*connect->n_max_vbyc;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -851,29 +841,25 @@ cs_cdovb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
     assert(t_id < cs_glob_n_threads);
 
     cs_cell_builder_t  *cb = _vbv_create_cell_builder(connect);
-    short int  *block_sizes = cb->ids;
-    for (int i = 0; i < n_blocks; i++)
-      block_sizes[i] = 3;
+    _vbv_cell_builder[t_id] = cb;
 
+    int  block_size = 3;
     _vbv_cell_system[t_id] = cs_cell_sys_create(n_max_dofs,
                                                 connect->n_max_fbyc,
-                                                n_blocks,
-                                                block_sizes);
-    _vbv_cell_builder[t_id] = cb;
+                                                1,
+                                                &block_size);
   }
 #else
   assert(cs_glob_n_threads == 1);
 
   cs_cell_builder_t  *cb = _vbv_create_cell_builder(connect);
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_blocks; i++)
-    block_sizes[i] = 3;
+  _vbv_cell_builder[0] = cb;
 
+  int  block_size = 3;
   _vbv_cell_system[0] =  cs_cell_sys_create(n_max_dofs,
                                             connect->n_max_fbyc,
-                                            n_blocks,
-                                            block_sizes);
-  _vbv_cell_builder[0] = cb;
+                                            1,
+                                            &block_size);
 #endif /* openMP */
 }
 
@@ -982,9 +968,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
     CS_CDO_LOCAL_FEQ;
 
-  /* Diffusion part */
-  /* -------------- */
-
+  /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -1052,15 +1036,11 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     eqc->enforce_sliding = cs_cdo_diffusion_vvb_cost_sliding;
   }
 
-  /* Advection part */
-  /* -------------- */
-
+  /* Advection */
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
 
-  /* Reaction part */
-  /* ------------- */
-
+  /* Reaction */
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->do_lumping)
@@ -1088,9 +1068,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Reaction */
 
-  /* Time part */
-  /* --------- */
-
+  /* Time */
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->do_lumping)
@@ -1116,11 +1094,9 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Lumping or not lumping */
 
-  } /* Time part */
+  } /* Time */
 
-  /* Source term part */
-  /* ---------------- */
-
+  /* Source term */
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -1140,6 +1116,10 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
   eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
+                                           CS_CDO_CONNECT_VTX_VECT);
 
   /* Array used for extra-operations */
   eqc->cell_values = NULL;
@@ -1416,8 +1396,8 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -1443,6 +1423,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _vbv_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbv_cell_builder[t_id];
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1491,7 +1472,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                         csys->source);
 
         /* Update the RHS */
-        for (short int v = 0; v < csys->n_dofs; v++)
+        for (int v = 0; v < csys->n_dofs; v++)
           csys->rhs[v] += csys->source[v];
 
       } /* End of source term */
@@ -1510,14 +1491,16 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      cs_equation_assemble_block_matrix(csys, rs, 3, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, eqa, mav);               /* Matrix assembly */
 
-      /* n_dofs = 3*cm->n_vc */
-      for (short int i = 0; i < csys->n_dofs; i++) /* Assemble RHS */
-#       pragma omp atomic
-        rhs[csys->dof_ids[i]] += csys->rhs[i];
+#     pragma omp critical
+      {
+        for (int i = 0; i < csys->n_dofs; i++)   /* RHS Assembly */
+          rhs[csys->dof_ids[i]] += csys->rhs[i];
+      }
 
       /* **********************  END OF ASSEMBLY PROCESS  ******************* */
 

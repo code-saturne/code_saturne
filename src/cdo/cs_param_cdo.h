@@ -41,6 +41,12 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Specifications for OpenMP loops */
+#define CS_CDO_OMP_CHUNK_SIZE     128
+#define CS_CDO_OMP_SCHEDULE       schedule(static, CS_CDO_OMP_CHUNK_SIZE)
+#define CS_CDO_OMP_SYNC_SECTIONS  0 /* > 0 --> critical sections
+                                       otherwise atomic sections */
+
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
    matrices */
@@ -50,10 +56,6 @@ BEGIN_C_DECLS
    the bit mask (can be changed if needed by changing the definition of
    the type cs_mask_t) */
 #define CS_CDO_N_MAX_REACTIONS  8 // Max number of reaction terms in an equation
-
-/* Specifications for open mp loops */
-#define CS_CDO_OMP_CHUNK_SIZE  128
-#define CS_CDO_OMP_SCHEDULE  schedule(static, CS_CDO_OMP_CHUNK_SIZE)
 
 #define CS_ALL_FACES   0        /* All faces: interior + border */
 #define CS_BND_FACES   1        /* Boundary faces */
@@ -71,6 +73,17 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/* OpenMP STRATEGY FOR THE ASSEMBLY STEP */
+/* ===================================== */
+
+typedef enum {
+
+  CS_PARAM_ASSEMBLE_OMP_ATOMIC,
+  CS_PARAM_ASSEMBLE_OMP_CRITICAL,
+  CS_PARAM_ASSEMBLE_OMP_N_STRATEGIES
+
+} cs_param_assemble_omp_strategy_t;
 
 /* DISCRETE HODGE OPERATORS */
 /* ======================== */

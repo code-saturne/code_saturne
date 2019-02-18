@@ -386,9 +386,7 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique.
- *          A Dirichlet is set for the three components of the vector.
+ * \brief   Take into account a sliding BCs.
  *          Case of vector-valued CDO-Vb schemes with a CO+ST algorithm.
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.

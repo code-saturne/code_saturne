@@ -336,37 +336,48 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb scheme
  *
- * \param[in]        csys              pointer to a cs_cell_sys_t structure
- * \param[in]        rs                pointer to a cs_range_set_t structure
- * \param[in]        cm                pointer to a cs_cell_mesh_t structure
- * \param[in]        has_sourceterm    has the equation a source term?
- * \param[in, out]   mav               pointer to cs_matrix_assembler_values_t
- * \param[in, out]   rhs               right-end side of the system
- * \param[in, out]   eqc_st            source term from the context view
+ * \param[in]      csys              pointer to a cs_cell_sys_t structure
+ * \param[in]      rs                pointer to a cs_range_set_t structure
+ * \param[in]      cm                pointer to a cs_cell_mesh_t structure
+ * \param[in]      has_sourceterm    has the equation a source term?
+ * \param[in, out] eqc               context structure for a vector-valued Fb
+ * \param[in, out] eqa               pointer to cs_equation_assemble_t
+ * \param[in, out] mav               pointer to cs_matrix_assembler_values_t
+ * \param[in, out] rhs               right-end side of the system
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_cdofb_vecteq_assembly(const cs_cell_sys_t          *csys,
-                         const cs_range_set_t         *rs,
-                         const cs_cell_mesh_t         *cm,
-                         const bool                    has_sourceterm,
-                         cs_matrix_assembler_values_t *mav,
-                         cs_real_t                     rhs[],
-                         cs_real_t                     eqc_st[])
+cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
+                         const cs_range_set_t           *rs,
+                         const cs_cell_mesh_t           *cm,
+                         const bool                      has_sourceterm,
+                         cs_cdofb_vecteq_t              *eqc,
+                         cs_equation_assemble_t         *eqa,
+                         cs_matrix_assembler_values_t   *mav,
+                         cs_real_t                       rhs[])
 {
-  const short int n_f = cm->n_fc;
-  cs_equation_assemble_block_matrix(csys, rs, 3, mav); /* Matrix assembly */
+  assert(eqa != NULL); /* Sanity check */
 
-  for (short int f = 0; f < 3*n_f; f++) /* Assemble RHS */
-#   pragma omp atomic
-    rhs[csys->dof_ids[f]] += csys->rhs[f];
+  const short int n_f_dofs = 3*cm->n_fc;
 
-    /* Reset the value of the source term for the cell DoF
-       Source term is only hold by the cell DoF in face-based schemes */
-  if (has_sourceterm)
+  /* Matrix assembly */
+  eqc->assemble(csys, rs, eqa, mav);
+
+  /* RHS assembly */
+# pragma omp critical
+  {
+    for (short int f = 0; f < n_f_dofs; f++)
+      rhs[csys->dof_ids[f]] += csys->rhs[f];
+  }
+
+  /* Reset the value of the source term for the cell DoF
+     Source term is only hold by the cell DoF in face-based schemes */
+  if (has_sourceterm) {
+    cs_real_t  *st = eqc->source_terms + 3*cm->c_id;
     for (int k = 0; k < 3; k++)
-      eqc_st[3*cm->c_id + k] = csys->source[3*n_f + k];
+      st[k] = csys->source[n_f_dofs + k];
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -46,6 +46,7 @@
 #include "cs_defs.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -242,6 +243,175 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
           shift_eval[3*ki+kj] = constant_val[ki][kj];
 
     }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate a scalar-valued quantity with only a time-dependent
+ *        variation for a list of elements
+ *
+ * \param[in]  n_elts     number of elements to consider
+ * \param[in]  elt_ids    list of element ids
+ * \param[in]  compact    true:no indirection, false:indirection for output
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval  physical time at which one evaluates the term
+ * \param[in]  input      pointer to an input structure
+ * \param[out] eval       result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
+                                          const cs_lnum_t            *elt_ids,
+                                          bool                        compact,
+                                          const cs_mesh_t            *mesh,
+                                          const cs_cdo_connect_t     *connect,
+                                          const cs_cdo_quantities_t  *quant,
+                                          cs_real_t                   time_eval,
+                                          void                       *input,
+                                          cs_real_t                  *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(quant);
+  CS_UNUSED(connect);
+  assert(eval != NULL);
+
+  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+
+  /* Evaluate the quantity */
+  cs_real_t  _eval;
+  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, &_eval);
+
+  if (elt_ids != NULL && !compact) {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      eval[elt_ids[i]] = _eval;
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      eval[i] = _eval;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate a vector-valued quantity with only a time-dependent
+ *        variation for a list of elements
+ *
+ * \param[in]  n_elts     number of elements to consider
+ * \param[in]  elt_ids    list of element ids
+ * \param[in]  compact    true:no indirection, false:indirection for output
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval  physical time at which one evaluates the term
+ * \param[in]  input      pointer to an input structure
+ * \param[out] eval       result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
+                                          const cs_lnum_t            *elt_ids,
+                                          bool                        compact,
+                                          const cs_mesh_t            *mesh,
+                                          const cs_cdo_connect_t     *connect,
+                                          const cs_cdo_quantities_t  *quant,
+                                          cs_real_t                   time_eval,
+                                          void                       *input,
+                                          cs_real_t                  *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(quant);
+  CS_UNUSED(connect);
+  assert(eval != NULL);
+
+  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+
+  /* Evaluate the quantity */
+  cs_real_t  _eval[3];
+  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, _eval);
+
+  if (elt_ids != NULL && !compact) {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 3; k++)
+        eval[3*elt_ids[i] + k] = _eval[k];
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 3; k++)
+        eval[3*i+k] = _eval[k];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate a tensor-valued quantity with only a time-dependent
+ *        variation for a list of elements
+ *
+ * \param[in]  n_elts     number of elements to consider
+ * \param[in]  elt_ids    list of element ids
+ * \param[in]  compact    true:no indirection, false:indirection for output
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_eval  physical time at which one evaluates the term
+ * \param[in]  input      pointer to an input structure
+ * \param[out] eval       result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
+                                          const cs_lnum_t            *elt_ids,
+                                          bool                        compact,
+                                          const cs_mesh_t            *mesh,
+                                          const cs_cdo_connect_t     *connect,
+                                          const cs_cdo_quantities_t  *quant,
+                                          cs_real_t                   time_eval,
+                                          void                       *input,
+                                          cs_real_t                  *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(quant);
+  CS_UNUSED(connect);
+  assert(eval != NULL);
+
+  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+
+  /* Evaluate the quantity */
+  cs_real_t  _eval[9];
+  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, _eval);
+
+  if (elt_ids != NULL && !compact) {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 9; k++)
+        eval[9*elt_ids[i] + k] = _eval[k];
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 9; k++)
+        eval[9*i+k] = _eval[k];
 
   }
 }

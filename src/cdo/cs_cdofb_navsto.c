@@ -534,6 +534,8 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
                                    const cs_time_step_t        *ts,
                                    cs_real_t                   *pr_f)
 {
+  CS_UNUSED(quant);
+
   /* Sanity checks */
   assert(nsp != NULL && pr_f != NULL);
 

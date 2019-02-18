@@ -1134,8 +1134,6 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain)
        tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
     const char *label = cs_tree_node_get_tag(tn_bndy, "label");
-
-    bft_printf("bndy label %s \n", label);
     const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
     if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
       continue;

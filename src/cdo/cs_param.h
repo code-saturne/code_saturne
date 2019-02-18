@@ -73,22 +73,22 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function which defines the time step according to the number of
- *         iteration already done, the current time and any structure given as
- *         a parameter
+ * \brief  Function which defines the evolution of a quantity according to the
+ *         number of iteration already done, the current time and any structure
+ *         given as a parameter
  *
  * \param[in]   time_iter   current number of iterations
  * \param[in]   time        value of the time at the end of the last iteration
  * \param[in]   input       pointer to a structure cast on-the-fly
- *
- * \return the value of the time step
+ * \param[in]   retval      result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
-typedef cs_real_t
-(cs_timestep_func_t) (int       time_iter,
-                      double    time,
-                      void     *input);
+typedef void
+(cs_time_func_t) (int           time_iter,
+                  double        time,
+                  void         *input,
+                  cs_real_t    *retval);
 
 /* ================
  * ENUM definitions

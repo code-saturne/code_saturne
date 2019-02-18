@@ -388,6 +388,17 @@ typedef struct {
 
   cs_param_sles_t              sles_param;
 
+  /*!
+   * @}
+   * @name Settings related to the optimization of the performance
+   * @{
+   *
+   * \var omp_assembly_choice
+   * When OpenMP is active, choice of parallel reduction for the assembly
+   */
+
+  cs_param_assemble_omp_strategy_t     omp_assembly_choice;
+
   /*! @} */
 
 } cs_equation_param_t;
@@ -565,6 +576,11 @@ typedef struct {
  * "vol_tot"
  * "weighted_rhs" (default)
  * "matrix_diag"
+ *
+ * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
+ * Choice of the way to perform the assembly when OpenMP is active
+ * Available choices are:
+ * - "atomic" or "critical"
  *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
  * Choice of the way to perform the assembly when OpenMP is active

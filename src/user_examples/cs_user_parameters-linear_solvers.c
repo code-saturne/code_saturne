@@ -98,6 +98,10 @@
 #include "cs_sles_petsc.h"
 #endif
 
+#if defined(HAVE_PETSC)
+#include "cs_sles_petsc.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/

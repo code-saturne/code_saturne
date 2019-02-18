@@ -73,7 +73,7 @@ BEGIN_C_DECLS
  *
  * \var CS_XDEF_BY_TIME_FUNCTION
  * Definition relying on a function for setting the time step (see
- * \ref cs_timestep_func_t)
+ * \ref cs_time_func_t)
  *
  * \var CS_XDEF_BY_VALUE
  * Simple definition by a constant value
@@ -153,7 +153,7 @@ typedef struct {
    * \var input
    * Pointer to a structure cast on-the-fly according to the type of description
    * May be set to NULL or \ref cs_xdef_array_input_t or
-   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_timestep_input_t
+   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_time_func_input_t
    */
 
   int                    dim;
@@ -225,7 +225,7 @@ typedef struct {
 } cs_xdef_analytic_input_t;
 
 /*!
- * \struct cs_xdef_timestep_input_t
+ * \struct cs_xdef_time_func_input_t
  * \brief Input structure when a time step function is used for the definition
  */
 
@@ -236,12 +236,12 @@ typedef struct {
    * used in the function
    *
    * \var func
-   * \ref cs_timestep_func_t to call
+   * \ref cs_time_func_t to call
    */
   void                *input;
-  cs_timestep_func_t  *func;
+  cs_time_func_t  *func;
 
-} cs_xdef_timestep_input_t;
+} cs_xdef_time_func_input_t;
 
 /*============================================================================
  * Public function prototypes

@@ -302,9 +302,12 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate and define a cs_adjacency_t structure related to vertices.
+ * \brief Allocate and define a cs_adjacency_t structure related to the
+ *        connectivity vertex to vertices through edges.
  *
  * Adjacent vertices are accessed based on the vertex with lowest id.
+ * Another v2v connectivity through cells is possible. Please read the
+ * \file cs_cdo_connect.c source code if interested
  *
  * \param[in]  m  pointer to a cs_mesh_t structure
  *

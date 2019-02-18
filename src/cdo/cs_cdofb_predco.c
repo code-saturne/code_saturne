@@ -1117,11 +1117,12 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_cell_sys_t  *csys = NULL;
+    cs_cell_builder_t  *cb = NULL;
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
-    cs_cell_sys_t  *csys = NULL;
-    cs_cell_builder_t  *cb = NULL;
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     cs_cdofb_vecteq_get(&csys, &cb);
 
@@ -1256,10 +1257,11 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS */
+      /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, mom_rs, cm, has_sourceterm,
-                               mav, rhs, mom_eqc->source_terms);
+                               mom_eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 

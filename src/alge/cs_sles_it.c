@@ -401,7 +401,8 @@ _convergence_test(cs_sles_it_t              *c,
   const cs_sles_it_setup_t  *s = c->setup_data;
 
   const char final_fmt[]
-    = N_("  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e\n");
+    = N_("  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e,"
+         " res_init: %11.4e\n");
 
   /* Update conversion info structure */
 
@@ -427,7 +428,7 @@ _convergence_test(cs_sles_it_t              *c,
   if (residue < convergence->precision * convergence->r_norm) {
     if (verbosity > 1)
       bft_printf(_(final_fmt), n_iter, residue, residue/convergence->r_norm,
-                 convergence->r_norm);
+                 convergence->r_norm, s->initial_residue);
     return CS_SLES_CONVERGED;
   }
 
@@ -441,7 +442,7 @@ _convergence_test(cs_sles_it_t              *c,
         if (convergence->r_norm > 0.)
           bft_printf(_(final_fmt),
                      n_iter, residue, residue/convergence->r_norm,
-                     convergence->r_norm);
+                     convergence->r_norm, s->initial_residue);
         else
           bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
               n_iter, residue);
@@ -3615,8 +3616,9 @@ _gmres(cs_sles_it_t              *c,
       n_iter++;
       l_iter++;
 
-      if (cvg == 1 || l_iter == krylov_size - 1 || scaltest == 1) {
-#       pragma omp parallel for if(n_rows > CS_THR_MIN)
+      if (cvg == CS_SLES_CONVERGED || cvg == CS_SLES_MAX_ITERATION ||
+          l_iter == krylov_size - 1   || scaltest == 1) {
+#       pragma omp parallel for if (n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++)
           vx[jj] = fk[jj];
         break;

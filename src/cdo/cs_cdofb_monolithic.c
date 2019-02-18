@@ -728,7 +728,7 @@ _build_shared_structures(void)
   BFT_FREE(gnum);
 
   /* 3. Build the matrix assembler structure */
-  const cs_adjacency_t  *f2f = cs_equation_get_f2f_index();
+  const cs_adjacency_t  *f2f = cs_shared_connect->f2f;
   const cs_adjacency_t  *f2c = cs_shared_connect->f2c;
 
   /* The second paramter is set to "true" meaning that the diagonal is stored

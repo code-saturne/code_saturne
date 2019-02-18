@@ -245,6 +245,103 @@ _build_e2v_connect(const cs_adjacency_t  *v2v)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build a connectivity vertex -> vertices through cells
+ *
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_adjacency_t *
+_build_v2v_through_cell(const cs_cdo_connect_t     *connect)
+{
+  /* Build a (sorted) v2v connectivity index */
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  cs_adjacency_t  *v2c = cs_adjacency_transpose(n_vertices, c2v);
+  cs_adjacency_t  *v2v = cs_adjacency_compose(n_vertices, v2c, c2v);
+
+  cs_adjacency_sort(v2v);
+
+  /* Update index (v2v has a diagonal entry. We remove it since we have in
+     mind an matrix structure stored using the MSR format (with diagonal terms
+     counted outside the index) */
+  cs_lnum_t  shift = 0;
+  cs_lnum_t  prev_start = v2v->idx[0];
+  cs_lnum_t  prev_end = v2v->idx[1];
+
+  for (cs_lnum_t i = 0; i < n_vertices; i++) {
+
+    for (cs_lnum_t j = prev_start; j < prev_end; j++)
+      if (v2v->ids[j] != i)
+        v2v->ids[shift++] = v2v->ids[j];
+
+    if (i != n_vertices - 1) { /* Update prev_start and prev_end */
+      prev_start = v2v->idx[i+1];
+      prev_end = v2v->idx[i+2];
+    }
+    v2v->idx[i+1] = shift;
+
+  } /* Loop on vertices */
+
+  BFT_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
+
+  /* Free temporary buffers */
+  cs_adjacency_destroy(&v2c);
+
+  return v2v;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a connectivity face -> faces through cells
+ *
+ * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_adjacency_t *
+_build_f2f_through_cell(const cs_cdo_connect_t     *connect)
+{
+  cs_adjacency_t  *f2f = NULL;
+
+  const cs_lnum_t  n_faces = connect->n_faces[0];
+
+  /* Build a face -> face connectivity */
+  f2f = cs_adjacency_compose(n_faces, connect->f2c, connect->c2f);
+  cs_adjacency_sort(f2f);
+
+  /* Update index (f2f has a diagonal entry. We remove it since we have in
+     mind an index structure for a matrix stored using the MSR format */
+  cs_lnum_t  shift = 0;
+  cs_lnum_t  prev_start = f2f->idx[0];
+  cs_lnum_t  prev_end = f2f->idx[1];
+
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+    for (cs_lnum_t j = prev_start; j < prev_end; j++)
+      if (f2f->ids[j] != i)
+        f2f->ids[shift++] = f2f->ids[j];
+
+    if (i != n_faces - 1) { /* Update prev_start and prev_end */
+      prev_start = f2f->idx[i+1];
+      prev_end = f2f->idx[i+2];
+    }
+    f2f->idx[i+1] = shift;
+
+  } /* Loop on faces */
+
+  BFT_REALLOC(f2f->ids, f2f->idx[n_faces], cs_lnum_t);
+
+  return f2f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute max number of entities by cell and the max range between
  *        the min. id and the max.id for edges and vertices
  *
@@ -344,7 +441,7 @@ _compute_max_ent(const cs_mesh_t      *m,
     for (short int f = 0; f < n_fc; f++) {
 
       const cs_lnum_t  f_id = c2f_ids[f];
-      if (f_id < m->n_i_faces) { // Interior face
+      if (f_id < m->n_i_faces) { /* Interior face */
 
         const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx + f_id;
         const cs_lnum_t  *f2v_ids = m->i_face_vtx_lst + f2v_idx[0];
@@ -355,7 +452,7 @@ _compute_max_ent(const cs_mesh_t      *m,
           v_count[f2v_ids[v]] += 1;
 
       }
-      else { // Border face
+      else { /* Border face */
 
         const cs_lnum_t  *f2v_idx =
           m->b_face_vtx_idx + f_id - m->n_i_faces;
@@ -368,18 +465,18 @@ _compute_max_ent(const cs_mesh_t      *m,
 
       }
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
     /* Update n_max_v2fc and reset  v_count */
     for (short int v = 0; v < n_vc; v++) {
 
       const cs_lnum_t  v_id = c2v_ids[v];
       if (v_count[v_id] > n_max_v2fc) n_max_v2fc = v_count[v_id];
-      v_count[v_id] = 0; // reset
+      v_count[v_id] = 0; /* reset */
 
     }
 
-  } // Loop on cells
+  } /* Loop on cells */
 
   BFT_FREE(v_count);
 
@@ -769,14 +866,14 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   connect->f2c = cs_adjacency_transpose(n_faces, connect->c2f);
 
   /* Build the face --> edges connectivity */
-  cs_adjacency_t  *v2v = cs_mesh_adjacency_v2v(mesh);
-  const cs_lnum_t  n_edges = v2v->idx[n_vertices];
-  connect->f2e = _build_f2e_connect(mesh, v2v);
+  cs_adjacency_t  *v2v_e = cs_mesh_adjacency_v2v(mesh);
+  const cs_lnum_t  n_edges = v2v_e->idx[n_vertices];
+  connect->f2e = _build_f2e_connect(mesh, v2v_e);
 
   /* Build the edge --> vertices connectivity */
-  connect->e2v = _build_e2v_connect(v2v);
+  connect->e2v = _build_e2v_connect(v2v_e);
 
-  cs_adjacency_destroy(&v2v);
+  cs_adjacency_destroy(&v2v_e);
 
   connect->n_vertices = n_vertices;
   connect->n_edges = n_edges;
@@ -796,6 +893,18 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(mesh, connect);
+
+  /* Build the adjacency needed to define the matrix structure of the
+     linear systems either for Vertex-based or Face-based schemes */
+  if (vb_scheme_flag > 0 || vcb_scheme_flag > 0)
+    connect->v2v = _build_v2v_through_cell(connect);
+  else
+    connect->v2v = NULL;
+
+  if (fb_scheme_flag > 0 || hho_scheme_flag > 0)
+    connect->f2f = _build_f2f_through_cell(connect);
+  else
+    connect->f2f = NULL;
 
   /* Members to handle assembly process and parallel sync. */
   for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++) {
@@ -906,6 +1015,9 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   cs_adjacency_destroy(&(connect->c2f));
   cs_adjacency_destroy(&(connect->c2e));
   cs_adjacency_destroy(&(connect->c2v));
+
+  cs_adjacency_destroy(&(connect->v2v));
+  cs_adjacency_destroy(&(connect->f2f));
 
   BFT_FREE(connect->cell_type);
   BFT_FREE(connect->cell_flag);

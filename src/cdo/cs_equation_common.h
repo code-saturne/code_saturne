@@ -32,13 +32,11 @@
 
 #include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_cdo_time.h"
-#include "cs_domain.h"
 #include "cs_equation_param.h"
 #include "cs_flag.h"
 #include "cs_matrix.h"
-#include "cs_range_set.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_source_term.h"
@@ -282,42 +280,44 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
+ * \brief  Allocate a pointer to a buffer of size at least the n_cells for
  *         managing temporary usage of memory when dealing with equations
- *         Call specific structure allocation related to a numerical scheme
- *         according the scheme flag
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *         Set also shared pointers from the main domain members
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
- * \param[in]  quant         pointer to additional mesh quantities struct.
- * \param[in]  time_step     pointer to a time step structure
- * \param[in]  cc            pointer to a cs_domain_cdo_context_t struct.
+ * \param[in]  connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant        pointer to additional mesh quantities struct.
+ * \param[in]  time_step    pointer to a time step structure
+ * \param[in]  vb_flag      metadata for Vb schemes
+ * \param[in]  vcb_flag     metadata for V+C schemes
+ * \param[in]  fb_flag      metadata for Fb schemes
+ * \param[in]  hho_flag     metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_common_allocate(const cs_cdo_connect_t          *connect,
-                            const cs_cdo_quantities_t       *quant,
-                            const cs_time_step_t            *time_step,
-                            const cs_domain_cdo_context_t   *cc);
+cs_equation_common_init(const cs_cdo_connect_t       *connect,
+                        const cs_cdo_quantities_t    *quant,
+                        const cs_time_step_t         *time_step,
+                        cs_flag_t                     vb_flag,
+                        cs_flag_t                     vcb_flag,
+                        cs_flag_t                     fb_flag,
+                        cs_flag_t                     hho_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
  *         managing temporary usage of memory when dealing with equations
  *         Call specific structure allocation related to a numerical scheme
- *         according the scheme flag
+ *         according to the scheme flag
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
- *
- * \param[in]  cc    pointer to a structure storing CDO/HHO metadata
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_common_free(const cs_domain_cdo_context_t   *cc);
+cs_equation_common_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -491,61 +491,6 @@ void
 cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
                                    cs_cell_builder_t               *cb,
                                    cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system into the global algebraic system
- *
- * \param[in]      csys         cellwise view of the algebraic system
- * \param[in]      rset         pointer to a cs_range_set_t structure
- * \param[in, out] mav          pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
-                            const cs_range_set_t           *rset,
-                            cs_matrix_assembler_values_t   *mav);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system defined by blocks into the global
- *         algebraic system
- *
- * \param[in]      csys         cellwise view of the algebraic system
- * \param[in]      rset         pointer to a cs_range_set_t structure
- * \param[in]      n_x_dofs     number of DoFs per entity (= size of the block)
- * \param[in, out] mav          pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
-                                  const cs_range_set_t           *rset,
-                                  int                             n_x_dofs,
-                                  cs_matrix_assembler_values_t   *mav);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the connectivity vertex->vertices for the local rank
- *
- * \return  a pointer to a cs_adjacency_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_adjacency_t *
-cs_equation_get_v2v_index(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the connectivity face->faces for the local rank
- *
- * \return  a pointer to a cs_adjacency_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_adjacency_t *
-cs_equation_get_f2f_index(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -752,7 +752,7 @@ cs_user_postprocess_values(const char            *mesh_name,
     if (f != NULL)
       cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
-                        f->dim,                         /* var_name */
+                        f->name,                        /* var_name */
                         1,                              /* var_dim */
                         true,                           /* interlace, */
                         true,                           /* use_parent */
@@ -780,7 +780,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
         cs_post_write_var(mesh_id,
                           CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
-                          f->dim,                         /* var_name */
+                          f->name,                        /* var_name */
                           1,                              /* var_dim */
                           true,                           /* interlace, */
                           true,                           /* use_parent */

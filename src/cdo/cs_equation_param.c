@@ -643,21 +643,6 @@ _set_key(const char            *label,
     eqp->sles_param.eps = atof(keyval);
     break;
 
-  case CS_EQKEY_ITSOL_RESNORM:
-    if (strcmp(keyval, "true") == 0)
-      eqp->sles_param.resid_normalized = true;
-    else
-      eqp->sles_param.resid_normalized = false;
-    break;
-
-  case CS_EQKEY_ITSOL_MAX_ITER:
-    eqp->sles_param.n_max_iter = atoi(keyval);
-    break;
-
-  case CS_EQKEY_ITSOL_EPS:
-    eqp->sles_param.eps = atof(keyval);
-    break;
-
   case CS_EQKEY_ITSOL_RESNORM_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NONE;
@@ -676,9 +661,9 @@ _set_key(const char            *label,
 
   case CS_EQKEY_OMP_ASSEMBLY_STRATEGY:
     if (strcmp(keyval, "critical") == 0)
-      eqp->omp_assembly_choice = CS_PARAM_OMP_ASSEMBLY_CRITICAL;
+      eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
     else if (strcmp(keyval, "atomic") == 0)
-      eqp->sles_param.precond = CS_PARAM_OMP_ASSEMBLY_ATOMIC;
+      eqp->sles_param.precond = CS_PARAM_ASSEMBLE_OMP_ATOMIC;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -975,6 +960,9 @@ cs_equation_create_param(const char            *name,
     .resnorm_type = CS_PARAM_RESNORM_NONE,
 
   };
+
+  /* Settings for the OpenMP strategy */
+  eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
 
   return eqp;
 }
@@ -1400,28 +1388,28 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
              preconditioner */
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
-             CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
-             CS_SLES_PCG,                /* coarse solver */
-             slesp.n_max_iter,           /* n_max_cycles */
-             1,                          /* n_max_iter_descent, */
-             1,                          /* n_max_iter_ascent */
-             100,                        /* n_max_iter_coarse */
-             -1,                         /* poly_degree_descent */
-             -1,                         /* poly_degree_ascent */
-             -1,                         /* poly_degree_coarse */
-             -1.0,                       /* precision_mult_descent */
-             -1.0,                       /* precision_mult_ascent */
-             1.0);                       /* precision_mult_coarse */
+             CS_SLES_PCG,       /* descent smoothe */
+             CS_SLES_PCG,       /* ascent smoothe */
+             CS_SLES_PCG,       /* coarse solver */
+             slesp.n_max_iter,  /* n_max_cycles */
+             4,                 /* n_max_iter_descent, */
+             4,                 /* n_max_iter_ascent */
+             200,               /* n_max_iter_coarse */
+             0,                 /* poly_degree_descent */
+             0,                 /* poly_degree_ascent */
+             0,                 /* poly_degree_coarse */
+             -1.0,              /* precision_mult_descent */
+             -1.0,              /* precision_mult_ascent */
+             1.0);              /* precision_mult_coarse */
 
           /* If this is a K-cycle multigrid. Change the default aggregation
              algorithm */
           if (slesp.amg_type == CS_PARAM_AMG_HOUSE_K)
             cs_multigrid_set_coarsening_options(mg,
                                                 8,   /* aggregation_limit*/
-                                                CS_GRID_COARSENING_SPD_DX,
+                                                CS_GRID_COARSENING_SPD_PW,
                                                 10,  /* n_max_levels */
-                                                100, /* min_g_cells */
+                                                50, /* min_g_cells */
                                                 0.,  /* P0P1 relaxation */
                                                 0);  /* postprocess */
 

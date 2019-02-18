@@ -1291,15 +1291,168 @@ cs_equation_set_sles(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign a set of pointer functions for managing the cs_equation_t
- *         structure during the computation
+ * \brief  Set shared structures among the activated class of discretization
+ *         schemes
+ *
+ * \param[in]  connect          pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant            pointer to additional mesh quantities struct.
+ * \param[in]  time_step        pointer to a time step structure
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_time_step_t        *time_step,
+                                  cs_flag_t                    vb_scheme_flag,
+                                  cs_flag_t                    vcb_scheme_flag,
+                                  cs_flag_t                    fb_scheme_flag,
+                                  cs_flag_t                    hho_scheme_flag)
+{
+  if (vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
+
+    if (vb_scheme_flag  & CS_FLAG_SCHEME_SCALAR ||
+        vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+
+      cs_matrix_structure_t  *ms
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_VTX_SCAL);
+
+      if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+        cs_cdovb_scaleq_init_common(quant, connect, time_step, ms);
+
+      if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+        cs_cdovcb_scaleq_init_common(quant, connect, time_step, ms);
+
+    } /* scalar-valued */
+
+    if (vb_scheme_flag  & CS_FLAG_SCHEME_VECTOR ||
+        vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
+
+      cs_matrix_structure_t  *ms
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_VTX_VECT);
+
+      if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+        cs_cdovb_vecteq_init_common(quant, connect, time_step, ms);
+
+      /* TODO: VCb schemes */
+
+    } /* vector-valued */
+
+  } /* Vertex-based class of discretization schemes */
+
+  if (fb_scheme_flag > 0 || hho_scheme_flag > 0) {
+
+    if (cs_flag_test(fb_scheme_flag,
+                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR)) {
+
+      cs_matrix_structure_t  *ms
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP0);
+
+      cs_cdofb_scaleq_init_common(quant, connect, time_step, ms);
+
+    } /* Scalar-valued CDO-Fb */
+
+    if (cs_flag_test(fb_scheme_flag,
+                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
+
+      cs_matrix_structure_t  *ms
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP1);
+
+      cs_cdofb_vecteq_init_common(quant, connect, time_step, ms);
+
+    } /* Vector-valued CDO-Fb */
+
+    if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+
+      cs_matrix_structure_t  *ms0
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP0);
+      cs_matrix_structure_t  *ms1
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP1);
+      cs_matrix_structure_t  *ms2
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP2);
+
+      cs_hho_scaleq_init_common(hho_scheme_flag,
+                                quant, connect, time_step,
+                                ms0, ms1, ms2);
+
+    } /* Scalar-valued HHO schemes */
+
+    if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
+
+      cs_matrix_structure_t  *ms0
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_VHP0);
+      cs_matrix_structure_t  *ms1
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_VHP1);
+      cs_matrix_structure_t  *ms2
+        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_VHP2);
+
+      cs_hho_vecteq_init_common(hho_scheme_flag,
+                                quant, connect, time_step,
+                                ms0, ms1, ms2);
+
+    } /* Vector-valued HHO schemes */
+
+  } /* Face-based class of discretization schemes */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Release shared structures among the activated class of discretization
+ *         schemes
+ *
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
+                                    cs_flag_t    vcb_scheme_flag,
+                                    cs_flag_t    fb_scheme_flag,
+                                    cs_flag_t    hho_scheme_flag)
+{
+  /* Free common structures specific to a numerical scheme */
+  if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+    cs_cdovb_scaleq_finalize_common();
+
+  if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+    cs_cdovb_vecteq_finalize_common();
+
+  if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+    cs_cdovcb_scaleq_finalize_common();
+
+  if (fb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+    cs_cdofb_scaleq_finalize_common();
+
+  if (fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+    cs_cdofb_vecteq_finalize_common();
+
+  if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+    cs_hho_scaleq_finalize_common();
+
+  if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+    cs_hho_vecteq_finalize_common();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a \ref cs_range_set_t structures for synchronization when
+ *         computing in parallel mode.
  *
  * \param[in]  connect        pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
+cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
+
 {
   if (_n_equations == 0)
     return;
@@ -1483,13 +1636,15 @@ cs_equation_assign_range_set(const cs_cdo_connect_t   *connect)
 /*!
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
+ *         After this call, parameters related to an equation are set once for
+ *         all
  *
  * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 _Bool
-cs_equation_assign_functions(void)
+cs_equation_set_functions(void)
 {
   if (_n_equations == 0)
     return true;

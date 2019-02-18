@@ -395,29 +395,71 @@ cs_equation_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign cs_range_set_t structures for synchronization when computing
- *         in parallel mode
- *         After this call, parameters related to an equation are set once for
- *         all
+ * \brief  Set shared structures among the activated class of discretization
+ *         schemes
+ *
+ * \param[in]  connect          pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant            pointer to additional mesh quantities struct.
+ * \param[in]  time_step        pointer to a time step structure
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_time_step_t        *time_step,
+                                  cs_flag_t                    vb_scheme_flag,
+                                  cs_flag_t                    vcb_scheme_flag,
+                                  cs_flag_t                    fb_scheme_flag,
+                                  cs_flag_t                    hho_scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Release shared structures among the activated class of discretization
+ *         schemes
+ *
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
+                                    cs_flag_t    vcb_scheme_flag,
+                                    cs_flag_t    fb_scheme_flag,
+                                    cs_flag_t    hho_scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a \ref cs_range_set_t structures for synchronization when
+ *         computing in parallel mode.
  *
  * \param[in]  connect        pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assign_range_set(const cs_cdo_connect_t   *connect);
+cs_equation_set_range_set(const cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
+ *         After this call, parameters related to an equation are set once for
+ *         all
  *
  * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 _Bool
-cs_equation_assign_functions(void);
+cs_equation_set_functions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

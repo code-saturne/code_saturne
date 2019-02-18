@@ -2609,7 +2609,7 @@ _graph_m_ptr_insert_m(cs_graph_m_ptr_t  *s,
  *
  * This assumes positive diagonal entries, and negative off-diagonal entries.
  * The matrix is provided in scalar MSR (modified CSR with separate diagonal)
- * form. To use block matrixes with this function, their blocks must be
+ * form. To use block matrices with this function, their blocks must be
  * condensed to equivalent scalars.
  *
  * \param[in]   f_n_rows      number of rows in fine grid
@@ -2910,7 +2910,8 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
   }
 
   if (verbosity > 3)
-    bft_printf("\n     %s:\n", __func__);
+    bft_printf("\n     %s: beta %5.3e; diag_dominance_threshold: %5.3e\n",
+               __func__, beta, dd_threshold);
 
   _pairwise_msr(f_n_rows,
                 beta,
@@ -2945,21 +2946,20 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
                                  int               verbosity,
                                  cs_lnum_t        *f_c_row)
 {
-  const cs_real_t beta = 0.25; /* 0.5 for HHO */
-
-  int ncoarse = 8, npass_max = 10;
-  int _max_aggregation = 1, npass = 0;
-
   const cs_lnum_t f_n_rows = f->n_rows;
 
+  /* Algorithm parameters */
+  const cs_real_t beta = 0.25; /* 0.5 for HHO */
+  const int ncoarse = 8;
+  int npass_max = 10;
+
+  int _max_aggregation = 1, npass = 0;
   cs_lnum_t aggr_count = f_n_rows;
-  cs_lnum_t *c_aggr_count;
-
-  bool *penalize;
-
   cs_lnum_t c_n_rows = 0;
 
-  cs_real_t *maxi;
+  cs_lnum_t *c_aggr_count = NULL;
+  bool *penalize = NULL;
+  cs_real_t *maxi = NULL;
 
   /* Access matrix MSR vectors */
 
@@ -3156,23 +3156,27 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
                               int               verbosity,
                               cs_lnum_t        *f_c_row)
 {
-  const cs_real_t beta = 0.25; /* 0.5 for HHO */
-  cs_real_t xv;
-
-  int ncoarse = 8, npass_max = 10;
-  int _max_aggregation = 1, npass = 0;
-
   const cs_lnum_t f_n_rows = f->n_rows;
-  const cs_real_t p_test = (f->level == 0) ? 1. : -1;
 
+  int npass_max = 10;
+  int _max_aggregation = 1, npass = 0;
   cs_lnum_t aggr_count = f_n_rows;
-  cs_lnum_t *c_aggr_count;
-
-  bool *penalize;
-
   cs_lnum_t c_n_rows = 0;
 
-  cs_real_t *maxi;
+  cs_lnum_t *c_aggr_count = NULL;
+  bool *penalize = NULL;
+  cs_real_t *maxi = NULL;
+
+  /* Algorithm parameters */
+  const cs_real_t beta = 0.25; /* 0.5 for HHO */
+  const int ncoarse = 8;
+  const cs_real_t p_test = (f->level == 0) ? 1. : -1;
+
+  if (verbosity > 3)
+    bft_printf("\n     %s: npass_max: %d; n_coarse: %d;"
+               " beta %5.3e; pena_thd: %5.3e, p_test: %g\n",
+               __func__, npass_max, ncoarse, beta, _penalization_threshold,
+               p_test);
 
   /* Access matrix MSR vectors */
 
@@ -3208,41 +3212,46 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
   BFT_MALLOC(maxi, f_n_rows, cs_real_t);
   BFT_MALLOC(penalize, f_n_rows, bool);
 
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++){
-    c_aggr_count[ii] = 1;
-    penalize[ii] = false;
-  }
-
-  /* Computation of the maximum over line ii and test if the line ii is
-   * penalized. Be careful that the sum has to be the sum of the
-   * absolute value of every extra-diagonal coefficient, but the maximum is only
-   * on the negative coefficient. */
-
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-
-    cs_real_t sum = 0.0;
-
-    cs_lnum_t start_id = row_index[ii];
-    cs_lnum_t end_id = row_index[ii+1];
-    maxi[ii] = 0.0;
-
-    for (cs_lnum_t jj_ind = start_id; jj_ind < end_id; jj_ind++) {
-      xv = x_val[jj_ind];
-      sum += CS_ABS(xv);
-      if (xv < 0)
-        maxi[ii] = CS_MAX(maxi[ii], -xv);
+# pragma omp parallel if (f_n_rows > CS_THR_MIN)
+  {
+#   pragma omp for
+    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++){
+      c_aggr_count[ii] = 1;
+      penalize[ii] = false;
     }
 
-    /* Check if the line seems penalized or not. */
-    if (d_val[ii]*p_test > _penalization_threshold * sum)
-      penalize[ii] = true;
+    /* Computation of the maximum over line ii and test if the line ii is
+     * penalized. Be careful that the sum has to be the sum of the absolute
+     * value of every extra-diagonal coefficient, but the maximum is only on the
+     * negative coefficient. */
 
-  }
+#   pragma omp for
+    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+
+      maxi[ii] = 0.0;
+
+      cs_real_t  sum = 0.0;
+      for (cs_lnum_t jj = row_index[ii]; jj < row_index[ii+1]; jj++) {
+
+        const cs_real_t  xv = x_val[jj];
+        if (xv < 0) {
+          sum -= xv;
+          maxi[ii] = CS_MAX(maxi[ii], -xv);
+        }
+        else {
+          sum += xv;
+        }
+      }
+
+      /* Check if the line seems penalized or not. */
+      if (d_val[ii]*p_test > _penalization_threshold * sum)
+        penalize[ii] = true;
+
+    } /* Loop on f_n_rows */
+
+  }   /* OpenMP block */
 
   /* Passes */
-
-  if (verbosity > 3)
-    bft_printf("\n     %s:\n", __func__);
 
   do {
 
@@ -3259,48 +3268,51 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
       if (penalize[ii])
         continue;
 
-      cs_lnum_t start_id = row_index[ii];
-      cs_lnum_t end_id = row_index[ii+1];
+      const cs_real_t  row_criterion = -beta*maxi[ii];
 
-      for (cs_lnum_t jj_ind = start_id; jj_ind < end_id; jj_ind++) {
+      for (cs_lnum_t jidx = row_index[ii]; jidx < row_index[ii+1]; jidx++) {
 
-        cs_lnum_t jj = col_id[jj_ind];
+        cs_lnum_t jj = col_id[jidx];
 
         /* Exclude rows on parallel or periodic boundary, so as not to */
         /* coarsen the grid across those boundaries (which would change */
         /* the communication pattern and require a more complex algorithm). */
 
-        if (jj < f_n_rows && !penalize[jj]) {
+        if (jj < f_n_rows) {
+          if (!penalize[jj]) {
 
-          /* Test if ii and jj are strongly negatively coupled and at */
-          /* least one of them is not already in an aggregate. */
+            /* Test if ii and jj are strongly negatively coupled and at */
+            /* least one of them is not already in an aggregate. */
 
-          if (   x_val[jj_ind] < -beta*maxi[ii]
-              && (f_c_row[ii] < 0 || f_c_row[jj] < 0)) {
+            if (    x_val[jidx] < row_criterion
+                && (f_c_row[ii] < 0 || f_c_row[jj] < 0)) {
 
-            if (f_c_row[ii] > -1 && f_c_row[jj] < 0 ) {
-              if (c_aggr_count[f_c_row[ii]] < _max_aggregation +1) {
-                f_c_row[jj] = f_c_row[ii];
-                c_aggr_count[f_c_row[ii]] += 1;
+              if (f_c_row[ii] > -1 && f_c_row[jj] < 0 ) {
+                if (c_aggr_count[f_c_row[ii]] < _max_aggregation +1) {
+                  f_c_row[jj] = f_c_row[ii];
+                  c_aggr_count[f_c_row[ii]] += 1;
+                }
+              }
+              else if (f_c_row[ii] < 0 && f_c_row[jj] > -1) {
+                if (c_aggr_count[f_c_row[jj]] < _max_aggregation +1) {
+                  f_c_row[ii] = f_c_row[jj];
+                  c_aggr_count[f_c_row[jj]] += 1;
+                }
+              }
+              else if (f_c_row[ii] < 0 && f_c_row[jj] < 0) {
+                f_c_row[ii] = c_n_rows;
+                f_c_row[jj] = c_n_rows;
+                c_aggr_count[c_n_rows] += 1;
+                c_n_rows++;
               }
             }
-            else if (f_c_row[ii] < 0 && f_c_row[jj] > -1) {
-              if (c_aggr_count[f_c_row[jj]] < _max_aggregation +1) {
-                f_c_row[ii] = f_c_row[jj];
-                c_aggr_count[f_c_row[jj]] += 1;
-              }
-            }
-            else if (f_c_row[ii] < 0 && f_c_row[jj] < 0) {
-              f_c_row[ii] = c_n_rows;
-              f_c_row[jj] = c_n_rows;
-              c_aggr_count[c_n_rows] += 1;
-              c_n_rows++;
-            }
-          }
-        }
-      }
 
-    }
+          } /* Column is not penalized */
+        } /* The current rank is owner of the column */
+
+      } /* Loop on columns */
+
+    } /* Loop on rows */
 
     /* Check the number of coarse rows created */
     aggr_count = 0;
@@ -4016,7 +4028,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
   else if (relax_param > 0) {
 
-    /* P0 restriction of matrixes, "interior" surface: */
+    /* P0 restriction of matrices, "interior" surface: */
     /* xag0(nfacg), surfag(3,nfacgl), xagxg0(2,nfacg) */
 
 #   pragma omp parallel for if(c_n_faces*6 > CS_THR_MIN)
@@ -4277,7 +4289,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   assert(fine_grid->symmetric == false);
 
-  /* P0 restriction of matrixes, "interior" surface: */
+  /* P0 restriction of matrices, "interior" surface: */
   /* xag0(nfacg), surfag(3,nfacgl), xagxg0(2,nfacg) */
 
 # pragma omp parallel for if(c_n_faces*6 > CS_THR_MIN)
@@ -4409,7 +4421,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   }
 
   /* Extradiagonal terms */
-  /* (symmetric matrixes for now, even with non symmetric storage isym = 2) */
+  /* (symmetric matrices for now, even with non symmetric storage isym = 2) */
 
   /* Matrix initialized to c_xa0 (interp=0) */
 

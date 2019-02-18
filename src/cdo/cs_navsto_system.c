@@ -332,8 +332,10 @@ cs_navsto_system_destroy(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Recover the structure storing the parameters for the Navier--Stokes
+ * \brief  Retrieve the structure storing the parameters for the Navier--Stokes
  *         system
+ *
+ * \return NULL or the pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 

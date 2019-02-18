@@ -232,17 +232,18 @@ cs_cdo_local_finalize(void)
  * \param[in]   n_max_dofbyc    max number of entries
  * \param[in]   n_max_fbyc      max number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
- * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
+ * \param[in]   block_sizes     size of each block or NULL.
+ *                              Specific treatment n_blocks = 1.
  *
  * \return a pointer to a new allocated \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int          n_max_dofbyc,
-                   int          n_max_fbyc,
-                   short int    n_blocks,
-                   short int   *block_sizes)
+cs_cell_sys_create(int      n_max_dofbyc,
+                   int      n_max_fbyc,
+                   int      n_blocks,
+                   int     *block_sizes)
 {
   cs_cell_sys_t  *csys = NULL;
 
@@ -307,8 +308,23 @@ cs_cell_sys_create(int          n_max_dofbyc,
     BFT_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
     memset(csys->dof_ids, 0, sizeof(cs_lnum_t)*n_max_dofbyc);
 
-    if (n_blocks == 1)
+    if (block_sizes == NULL)
       csys->mat = cs_sdm_square_create(n_max_dofbyc);
+
+    else if (n_blocks == 1) {
+
+      assert(block_sizes != NULL);
+      if (block_sizes[0] == 3) {
+        int  n_row_blocks = n_max_dofbyc/3;
+        assert(n_max_dofbyc % 3 == 0);
+        csys->mat = cs_sdm_block33_create(n_row_blocks, n_row_blocks);
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid initialization of the cellwise block matrix\n",
+                  __func__);
+
+    }
     else
       csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
                                       block_sizes,
@@ -350,7 +366,7 @@ void
 cs_cell_sys_reset(int              n_fbyc,
                   cs_cell_sys_t   *csys)
 {
-  if (n_fbyc == 0 || csys->n_dofs == 0)
+  if (n_fbyc < 1 || csys->n_dofs < 1)
     return;
 
   const size_t  s = csys->n_dofs * sizeof(double);
@@ -624,7 +640,14 @@ cs_cdo_local_get_cell_mesh(int    mesh_id)
   if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
     return NULL;
 
-  return cs_cdo_local_cell_meshes[mesh_id];
+  cs_cell_mesh_t  *cm = cs_cdo_local_cell_meshes[mesh_id];
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  /* This is to check that the mesh flag is correctly set */
+  cs_cell_mesh_reset(cm);
+#endif
+
+  return cm;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -888,12 +911,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++)
     cm->xc[k] = quant->cell_centers[3*c_id+k];
 
-  const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
-  const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
+  /* Store the number of cell faces (useful to allocated boundary quantities) */
   const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
 
-  cm->n_vc = c2v_idx[1] - c2v_idx[0];
-  cm->n_ec = c2e_idx[1] - c2e_idx[0];
   cm->n_fc = c2f_idx[1] - c2f_idx[0];
 
   if (build_flag == 0)
@@ -902,7 +922,10 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal vertices */
   if (build_flag & cs_cdo_local_flag_v) {
 
+    const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
     const cs_lnum_t  *c2v_ids = connect->c2v->ids + c2v_idx[0];
+
+    cm->n_vc = c2v_idx[1] - c2v_idx[0];
 
     for (short int v = 0; v < cm->n_vc; v++) {
       const cs_lnum_t  v_id = c2v_ids[v];
@@ -926,7 +949,10 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal edges */
   if (build_flag & cs_cdo_local_flag_e) {
 
+    const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
     const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
+
+    cm->n_ec = c2e_idx[1] - c2e_idx[0];
 
     for (short int e = 0; e < cm->n_ec; e++)
       cm->e_ids[e] = c2e_ids[e];
@@ -1209,6 +1235,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     if (build_flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
 
       cs_nvec3_t  nv;
+      const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
 
       for (short int e = 0; e < cm->n_ec; e++) {
 

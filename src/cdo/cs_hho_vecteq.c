@@ -48,6 +48,7 @@
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
+#include "cs_equation_assemble.h"
 #include "cs_equation_common.h"
 #include "cs_hho_builder.h"
 #include "cs_hodge.h"
@@ -118,6 +119,11 @@ struct _cs_hho_vecteq_t {
   /* Handle the definition of the BCs */
   short int                     *bf2def_ids;
 
+  /* Assembly process */
+  /* ================ */
+
+  cs_equation_assembly_t        *assemble;
+
   /* Static condensation members */
   /* =========================== */
 
@@ -180,8 +186,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
   case CS_SPACE_SCHEME_HHO_P0:  /* TODO */
     {
-      BFT_MALLOC(cb->ids, n_fc + 1, short int);
-      memset(cb->ids, 0, (n_fc + 1)*sizeof(short int));
+      BFT_MALLOC(cb->ids, n_fc + 1, int);
+      memset(cb->ids, 0, (n_fc + 1)*sizeof(int));
 
       /* For post-processing errors = 38 */
       size = CS_MAX(38, n_fc*(n_fc+1));
@@ -192,15 +198,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
-      short int  *block_sizes = cb->ids;
-      for (int i = 0; i < n_fc + 1; i++)
-        block_sizes[i] = 3;
-
       /* Local square dense matrices used during the construction of
          operators */
       cb->hdg = cs_sdm_square_create(n_fc);
-      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, block_sizes, block_sizes);
       cb->aux = cs_sdm_square_create(n_fc + 1);
+      cb->loc = cs_sdm_block33_create(n_fc + 1, n_fc + 1);
 
 
     }
@@ -210,8 +212,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     {
       /* Store the block size description */
       size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, short int);
-      memset(cb->ids, 0, size*sizeof(short int));
+      BFT_MALLOC(cb->ids, size, int);
+      memset(cb->ids, 0, size*sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
          the Gauss point weights
@@ -222,7 +224,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
                               --> tmp buffer for facto = n = 9
                               --> 45 + 9 = 54
          or the factorization of the cell_cell block of size 3*4,
-                               we need space for a lower  triangular matrix  --> (3*4)*(3*4+1)/2 = 78
+                               we need space for a lower  triangular matrix
+                              --> (3*4)*(3*4+1)/2 = 78
                                and a diagonal of size 3*4
 
       */
@@ -237,11 +240,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
-      const short int g_size = 9;                   /* (basis (P_(k+1)) - 1) */
+      const int g_size = 9;                   /* (basis (P_(k+1)) - 1) */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 3*3;
       cb->ids[n_fc] = 3*4;
 
-      short int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
+      int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
       cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
@@ -252,8 +255,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     {
       /* Store the block size description */
       size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, short int);
-      memset(cb->ids, 0, size*sizeof(short int));
+      BFT_MALLOC(cb->ids, size, int);
+      memset(cb->ids, 0, size*sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
          the Gauss point weights */
@@ -282,11 +285,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
-      const short int g_size = 19; /* basis (P_(k+1)) - 1 */
+      const int g_size = 19; /* basis (P_(k+1)) - 1 */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 3*6;
       cb->ids[n_fc] = 3*10;
 
-      short int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
+      int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
       cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
@@ -332,7 +335,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
   const int  n_blocks = cm->n_fc + 1;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  short int  *block_sizes = cb->ids;
+  int  *block_sizes = cb->ids;
   for (int i = 0; i < cm->n_fc; i++)
     block_sizes[i] = eqc->n_face_dofs;
   block_sizes[cm->n_fc] = eqc->n_cell_dofs;
@@ -813,27 +816,42 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   case CS_SPACE_SCHEME_HHO_P0:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_0TH;
     eqc->n_face_dofs = 3*CS_N_FACE_DOFS_0TH;
+
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms0;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP0];
+
+    /* Assembly process */
+    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P0,
+                                             CS_CDO_CONNECT_FACE_VHP0);
     break;
 
 
   case CS_SPACE_SCHEME_HHO_P1:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_1ST;
     eqc->n_face_dofs = 3*CS_N_FACE_DOFS_1ST;
+
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms1;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+
+    /* Assembly process */
+    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P1,
+                                             CS_CDO_CONNECT_FACE_VHP1);
     break;
 
 
   case CS_SPACE_SCHEME_HHO_P2:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_2ND;
     eqc->n_face_dofs = 3*CS_N_FACE_DOFS_2ND;
+
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms2;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+
+    /* Assembly process */
+    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P2,
+                                             CS_CDO_CONNECT_FACE_VHP2);
     break;
 
     /* TODO: case CS_SPACE_SCHEME_HHO_PK */
@@ -871,14 +889,14 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cell_dofs);
 
   cs_lnum_t  n_row_blocks = connect->c2f->idx[n_cells];
-  short int  *row_block_sizes = NULL;
+  int  *row_block_sizes = NULL;
 
-  BFT_MALLOC(row_block_sizes, n_row_blocks, short int);
+  BFT_MALLOC(row_block_sizes, n_row_blocks, int);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_row_blocks; i++)
     row_block_sizes[i] = eqc->n_face_dofs;
 
-  short int  col_block_size = eqc->n_cell_dofs;
+  int  col_block_size = eqc->n_cell_dofs;
   eqc->acf_tilda = cs_sdm_block_create(n_row_blocks, 1,
                                        row_block_sizes, &col_block_size);
   cs_sdm_block_init(eqc->acf_tilda,
@@ -1036,10 +1054,6 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
     cs_flag_t  msh_flag = eqb->st_msh_flag;
 
-#if defined(DEBUG) && !defined(NDEBUG)
-    cs_cell_mesh_reset(cm);
-#endif
-
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -1179,8 +1193,8 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
   cs_timer_t  t0 = cs_timer_time();
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
@@ -1197,6 +1211,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     /* Set inside the OMP section so that each thread has its own value
      * Each thread get back its related structures:
      * Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
@@ -1362,12 +1377,9 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
       /* ======== */
 
       /* Matrix assembly */
-      cs_equation_assemble_block_matrix(csys,
-                                        eqc->rs,
-                                        eqc->n_face_dofs,
-                                        mav);
+      eqc->assemble(csys, eqc->rs, eqa, mav);
 
-      /* Assemble RHS */
+      /* RHS assembly */
       for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
 #       pragma omp atomic
         rhs[csys->dof_ids[i]] += csys->rhs[i];

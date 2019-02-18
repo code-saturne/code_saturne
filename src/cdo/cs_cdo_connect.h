@@ -110,6 +110,10 @@ typedef struct {
   int  n_max_v2fc;   /* max. number of faces connected to a vertex in a cell */
   int  n_max_v2ec;   /* max. number of edges connected to a vertex in a cell */
 
+  /* Adjacency related to most of the linear systems */
+  cs_adjacency_t       *v2v;    /* vertex to vertices through cells */
+  cs_adjacency_t       *f2f;    /* face to faces through cells */
+
   /* Structures to handle parallelism/assembler */
   cs_range_set_t       *range_sets[CS_CDO_CONNECT_N_CASES];
   cs_interface_set_t   *interfaces[CS_CDO_CONNECT_N_CASES];
