@@ -88,6 +88,10 @@ Physical modelling:
 
 Bug fixes:
 
+- Fixes for GMSH import.
+  * Fix crashes for binary file import
+  * Fix handling of physical groups for GMSH V4 format; names are also handled.
+
 - Lagrangian module: bug fixes in the deposition model.
 
 - Compressible: fix density time scheme in transported passive scalar/vector
