@@ -789,10 +789,16 @@ endif
 
 ! Translate total pressure P_tot given by the user into solved pressure P
 ! P = P_tot - p0 - rho0 ( g . (z-z0))
+!
+! If icodcl = -1, then the BC Dirichlet value is given in solved pressure P,
+! no need of transformation from P_tot to P
+
 ivar = ipr
 if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
   do ifac = 1, nfabor
-    if (icodcl(ifac,ivar).ne.0) then
+    if (icodcl(ifac,ivar).eq.-1) then
+      icodcl(ifac,ivar) = 1
+    else if (icodcl(ifac,ivar).ne.0) then
       rcodcl(ifac,ivar,1) =  rcodcl(ifac,ivar,1)                   &
                           - ro0*( gx*(cdgfbo(1,ifac) - xyzp0(1))  &
                                 + gy*(cdgfbo(2,ifac) - xyzp0(2))  &
@@ -864,12 +870,6 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,1) = pripb(ifac) - pref
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
-      else
-       rcodcl(ifac,ivar,1) =  rcodcl(ifac,ivar,1)                   &
-                            - ro0*( gx*(cdgfbo(1,ifac) - xyzp0(1))  &
-                                  + gy*(cdgfbo(2,ifac) - xyzp0(2))  &
-                                  + gz*(cdgfbo(3,ifac) - xyzp0(3))) &
-                            - p0
       endif
     enddo
   elseif(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then

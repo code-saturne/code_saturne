@@ -33,14 +33,34 @@
 !> \param[in]   itypfb          boundary face types
 !> \param[in]   izfppp          boundary face zone number for atmospheric module
 !> \param[out]  icodcl          face boundary condition code
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[out]  rcodcl          Boundary conditions value
-!>- rcodcl(1) = valeur du dirichlet
-!>- rcodcl(2) = valeur du coef. d'echange ext. (infinie si pas d'echange)
-!>- rcodcl(3) = valeur de la densite de flux (negatif si gain) w/m2 ou
-!> hauteur de rugosite (m) si icodcl=6  \n
-!>    pour les vitesses (vistl+visct)*gradu \n
-!>    pour la pression             dt*gradp \n
-!>    pour les scalaires cp*(viscls+visct/turb_schmidt)*gradt
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!
 !-------------------------------------------------------------------------------
 subroutine attycl ( itypfb, izfppp, icodcl, rcodcl )
 
@@ -343,8 +363,9 @@ do ifac = 1, nfabor
 
       if (iautom(ifac).ge.1) then
 
-        ! Dirichlet on the pressure
-        icodcl(ifac,ipr) = 1
+        ! Dirichlet on the pressure: expressed in solved pressure directly
+        ! (not in total pressure), that is why -1 is used (transformed as 1 in typecl.f90).
+        icodcl(ifac,ipr) = -1
         rcodcl(ifac,ipr,1) = coefap(ifac)
 
         ! Dirichlet on turbulent variables

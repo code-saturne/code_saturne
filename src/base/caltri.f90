@@ -100,6 +100,11 @@ integer          itrale , ntmsav
 integer          nent
 
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
+integer          isvhb, iscal
+integer          nbccou
+integer          kcpsyr, icpsyr
+integer          iterns
+integer          italim, itrfin, itrfup, ineefl
 
 double precision titer1, titer2
 
@@ -111,6 +116,14 @@ double precision, save :: ttchis
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
+
+integer, allocatable, dimension(:,:) :: icodcl
+integer, allocatable, dimension(:) :: isostd
+double precision, allocatable, dimension(:,:,:) :: rcodcl
+double precision, allocatable, dimension(:) :: visvdr
+double precision, allocatable, dimension(:) :: hbord, theipb
+double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
+double precision, allocatable, dimension(:,:) :: cofale
 
 !===============================================================================
 ! Interfaces
@@ -518,6 +531,70 @@ if (iporos.ge.1) then
   call cs_f_mesh_quantities_fluid_vol_reductions
 
 endif
+
+! First pass for the BCs:
+! - inititalize itypfb, reference pressure point...
+!--------------------------------------------------
+! --- Indicateur de stockage d'un scalaire et de son coef
+!     d'echange associe.
+!     Pour le moment, on stocke uniquement dans le cas couplage SYRTHES.
+!     ISVHB donne le numero du scalaire (on suppose qu'il n'y en a qu'un).
+!     Dans le cas ou on a un couplage avec le module thermique 1D en paroi,
+!     on utilise le meme scalaire que celui qui sert a Syrthes (s'il y a
+!     couplage Syrthes), sinon on stocke le scalaire thermique.
+
+call field_get_key_id("syrthes_coupling", kcpsyr)
+
+call nbcsyr (nbccou)
+isvhb = 0
+if (nbccou .ge. 1) then
+  do iscal = 1, nscal
+    call field_get_key_int(ivarfl(isca(iscal)), kcpsyr, icpsyr)
+    if(icpsyr.eq.1) then
+      isvhb = iscal
+    endif
+  enddo
+endif
+
+if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
+  isvhb = iscalt
+endif
+
+
+allocate(icodcl(nfabor,nvar))
+allocate(rcodcl(nfabor,nvar,3))
+allocate(isostd(nfabor+1))
+if (isvhb.gt.0) then
+  allocate(hbord(nfabor))
+endif
+! Boundary value of the thermal scalar in I'
+if (iscalt.gt.0) then
+  allocate(theipb(nfabor))
+endif
+if (itytur.eq.4 .and. idries.eq.1) then
+  allocate(visvdr(ncelet))
+endif
+
+iterns = 1
+
+iappel = 1
+call condli &
+  (iappel,                                                       &
+  nvar   , nscal  , iterns ,                                     &
+  isvhb  ,                                                       &
+  itrale , italim , itrfin , ineefl , itrfup ,                   &
+  flmalf , flmalb , cofale , xprale ,                            &
+  icodcl , isostd ,                                              &
+  dt     ,                                                       &
+  rcodcl ,                                                       &
+  visvdr , hbord  , theipb )
+
+deallocate(icodcl)
+deallocate(rcodcl)
+deallocate(isostd)
+if (allocated(visvdr)) deallocate(visvdr)
+if (allocated(hbord)) deallocate(hbord)
+if (allocated(theipb)) deallocate(theipb)
 
 !==============================================================================
 ! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
