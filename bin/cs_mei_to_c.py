@@ -431,9 +431,7 @@ class mei_to_c_interpreter:
                         l = l + ' {'
 
                 if 'else' in l:
-                    if l[0] != '}' and
-                       if_loop and
-                       exp_lines[lidx-1][-1] != '}':
+                    if l[0] != '}' and if_loop and exp_lines[lidx-1][-1] != '}':
                         l = '} '+l
 
                     if l[-1] != '{' and exp_lines[lidx+1][0] != '{':
@@ -1189,14 +1187,14 @@ class mei_to_c_interpreter:
                 if zone['momentum_source_term'] is not 'off':
                     if gwm.getGroundwaterModel() is 'off':
                         exp, req, sym = stm.getMomentumFormulaComponents(z_id)
-                        self.init_src_block(exp, req, sym
+                        self.init_src_block(exp, req, sym,
                                             "momentum", zone_name,
                                             "momentum_source_term")
                     else:
-                        exp, req, sym = getRichardsFormulaComponents(z_id):
-                            self.init_src_block(exp, req, sym,
-                                                "richards", zone_name,
-                                                "momentum_source_term")
+                        exp, req, sym = getRichardsFormulaComponents(z_id)
+                        self.init_src_block(exp, req, sym,
+                                            "richards", zone_name,
+                                            "momentum_source_term")
 
 
                 if zone['scalar_source_term'] is not 'off':
@@ -1386,7 +1384,7 @@ class mei_to_c_interpreter:
             # Try and write the function in the src if in RESU folder
             # For debugging purposes
             try:
-                if hard_path not None:
+                if hard_path != None:
                     fpath = os.path.join(hard_path, c_file_name)
                 else:
                     fpath = os.path.join(self.case['case_path'],
