@@ -314,24 +314,24 @@ cs_domain_set_time_param(cs_domain_t       *domain,
  * \brief  Define the value of the time step thanks to a predefined function
  *
  * \param[in, out] domain      pointer to a cs_domain_t structure
- * \param[in]      func        pointer to a cs_timestep_func_t function
+ * \param[in]      func        pointer to a cs_time_func_t function
  * \param[in]      func_input  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_def_time_step_by_function(cs_domain_t          *domain,
-                                    cs_timestep_func_t   *func,
-                                    void                 *func_input)
+cs_domain_def_time_step_by_function(cs_domain_t        *domain,
+                                    cs_time_func_t     *func,
+                                    void               *func_input)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  domain->time_step->is_variable = 1; // not constant time step
+  domain->time_step->is_variable = 1; /* not constant time step */
   domain->time_options.idtvar = 1;    /* uniform in space but can change
                                          from one time step to the other */
 
-  cs_xdef_timestep_input_t  def = {.input = func_input,
-                                   .func = func};
+  cs_xdef_time_func_input_t  def = {.input = func_input,
+                                    .func = func};
 
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_TIME_FUNCTION,
                                                   0,     /* state flag */

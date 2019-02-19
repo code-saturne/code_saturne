@@ -396,9 +396,9 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
     if (ts_def->type == CS_XDEF_BY_TIME_FUNCTION) {
 
       /* Compute current time step */
-      cs_xdef_timestep_input_t  *param =
-        (cs_xdef_timestep_input_t *)ts_def->input;
-      ts->dt[0] = param->func(nt_cur, t_cur, param->input);
+      cs_xdef_time_func_input_t  *param
+        = (cs_xdef_time_func_input_t *)ts_def->input;
+      param->func(nt_cur, t_cur, param->input, &(ts->dt[0]));
 
       /* Update time_options */
       double  dtmin = CS_MIN(domain->time_options.dtmin, ts->dt[0]);

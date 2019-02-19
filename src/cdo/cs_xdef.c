@@ -106,7 +106,7 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
   d->z_id = z_id;
   d->state = state;
   d->meta = meta;
-  d->qtype = CS_QUADRATURE_BARY; // default value
+  d->qtype = CS_QUADRATURE_BARY; /* default value */
 
   switch (type) {
 
@@ -326,10 +326,10 @@ cs_xdef_timestep_create(cs_xdef_type_t             type,
   d->type = type;
   d->support = CS_XDEF_SUPPORT_TIME;
   d->dim = 1;
-  d->z_id = -1; // No associated zone
+  d->z_id = -1;                  /* no associated zone */
   d->state = state;
   d->meta = meta;
-  d->qtype = CS_QUADRATURE_NONE; // default value
+  d->qtype = CS_QUADRATURE_NONE; /* default value */
 
   switch (type) {
 
@@ -347,10 +347,10 @@ cs_xdef_timestep_create(cs_xdef_type_t             type,
 
   case CS_XDEF_BY_TIME_FUNCTION:
     {
-      cs_xdef_timestep_input_t  *a = (cs_xdef_timestep_input_t *)input;
-      cs_xdef_timestep_input_t  *b = NULL;
+      cs_xdef_time_func_input_t  *a = (cs_xdef_time_func_input_t *)input;
+      cs_xdef_time_func_input_t  *b = NULL;
 
-      BFT_MALLOC(b, 1, cs_xdef_timestep_input_t);
+      BFT_MALLOC(b, 1, cs_xdef_time_func_input_t);
       b->func = a->func;
       b->input = a->input;
 
@@ -700,7 +700,7 @@ cs_xdef_log(const cs_xdef_t     *d)
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid case. dim = %d (expected 3, 6 or 9)\n", d->dim);
     }
-    break; // BY_VALUE
+    break; /* BY_VALUE */
 
 
   default:
