@@ -3,6 +3,9 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix GUI reader for xmls with turbulence model switched to "off" and remaining
+  formula for initialization of turbulence.
+
 - Fix bug in wall distance initialization for restarts with k-omega SST model.
 
 - Fix memory leaks in parameters check.
