@@ -46,6 +46,7 @@
 #include "cs_defs.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -612,6 +613,31 @@ cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
   const double _overvol = 1./cm->vol_c;
   for (short int xyz = 0; xyz < 9; xyz++)
     eval[xyz] *= _overvol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate a  quantity by a cellwise process using a definition by
+ *         time function
+ *
+ * \param[in]  cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]  time_eval  physical time at which one evaluates the term
+ * \param[in]  input      pointer to an input structure
+ * \param[out] eval       result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_by_time_func(const cs_cell_mesh_t     *cm,
+                             cs_real_t                 time_eval,
+                             void                     *input,
+                             cs_real_t                *eval)
+{
+  CS_UNUSED(cm);
+  cs_xdef_time_func_input_t  *tfi = (cs_xdef_time_func_input_t *)input;
+
+  /* Evaluate the quantity */
+  tfi->func(cs_glob_time_step->nt_cur, time_eval, tfi->input, eval);
 }
 
 /*----------------------------------------------------------------------------*/

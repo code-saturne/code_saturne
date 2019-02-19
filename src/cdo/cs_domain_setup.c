@@ -307,6 +307,10 @@ cs_domain_set_time_param(cs_domain_t       *domain,
 
   domain->time_step->nt_max = nt_max;
   domain->time_step->t_max = t_max;
+
+  /* Add a property related to the time step (in case of use when building a
+     linear system) */
+  cs_property_add("time_step", CS_PROPERTY_ISO);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -337,6 +341,11 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
                                                   0,     /* state flag */
                                                   0,     /* meta flag */
                                                   &def);
+
+  /* Set the property related to the time step if used for building a system */
+  cs_property_def_by_time_func(cs_property_by_name("time_step"),
+                               NULL, /* all cells are selected */
+                               func, func_input);
 
   /* Default initialization.
      To be changed at first call to cs_domain_time_step_increment() */
@@ -374,6 +383,9 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   domain->time_step->dt_ref = dt;
   domain->time_options.dtmin = dt;
   domain->time_options.dtmax = dt;
+
+  /* Set the property related to the time step if used for building a system */
+  cs_property_def_iso_by_value(cs_property_by_name("time_step"), NULL, dt);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -136,6 +136,19 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
     }
     break;
 
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_input_t  *a = (cs_xdef_time_func_input_t *)input;
+      cs_xdef_time_func_input_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_time_func_input_t);
+      b->func = a->func;
+      b->input = a->input;
+
+      d->input = b;
+    }
+    break;
+
   case CS_XDEF_BY_ARRAY:
     {
       cs_xdef_array_input_t  *a = (cs_xdef_array_input_t *)input;

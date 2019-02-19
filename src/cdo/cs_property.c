@@ -666,6 +666,74 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
+cs_property_def_by_time_func(cs_property_t        *pty,
+                             const char           *zname,
+                             cs_analytic_func_t   *func,
+                             void                 *input)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  int  new_id = _add_new_def(pty);
+  int  z_id = cs_get_vol_zone_id(zname);
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  meta_flag = 0; /* metadata */
+  cs_xdef_time_func_input_t  def_input = {.input = input,
+                                          .func = func};
+
+  /* Default initialization */
+  int  dim = 0;
+  pty->get_eval_at_cell[new_id] = NULL;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_by_time_func;
+
+  switch (pty->type) {
+
+  case CS_PROPERTY_ISO:
+    dim = 1;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_at_cells_by_time_func;
+    break;
+  case CS_PROPERTY_ORTHO:
+    dim = 3;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_vector_at_cells_by_time_func;
+    break;
+  case CS_PROPERTY_ANISO:
+    dim = 9;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_at_cells_by_time_func;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
+              __func__);
+  }
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_TIME_FUNCTION,
+                                        dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        &def_input);
+
+  pty->defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_property_t structure thanks to an analytic function in
+ *         a subdomain attached to the mesh location named ml_name
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       func     pointer to a cs_analytic_func_t function
+ * \param[in]       input    NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
                             const char           *zname,
                             cs_analytic_func_t   *func,
