@@ -2928,6 +2928,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             const char *model = cs_gui_get_thermophysical_model("turbulence");
             if (model == NULL)
               break;
+            if (cs_gui_strcmp(model, "off"))
+              break;
 
             cs_real_t *ini_vals = cs_meg_initialization("turbulence", z);
 
