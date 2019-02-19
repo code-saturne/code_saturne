@@ -3052,6 +3052,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             const char *model = cs_gui_get_thermophysical_model("turbulence");
             if (model == NULL)
               break;
+            if (cs_gui_strcmp(model, "off"))
+              break;
 
             if (cs_gui_strcmp(model, "k-epsilon") ||
                 cs_gui_strcmp(model, "k-epsilon-PL")) {
