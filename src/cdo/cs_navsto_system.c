@@ -1034,9 +1034,60 @@ cs_navsto_system_extra_post(void                      *input,
   CS_UNUSED(time_step);
 
   cs_navsto_system_t  *ns = (cs_navsto_system_t *)input;
+  cs_navsto_param_t  *nsp = ns->param;
 
-  /* TODO */
-  CS_UNUSED(ns);
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+  case CS_NAVSTO_COUPLING_UZAWA:
+    /* Nothing to do up to now */
+    break;
+
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    {
+      cs_navsto_projection_t  *cc
+        = (cs_navsto_projection_t *)ns->coupling_context;
+
+      const cs_field_t  *velp = cc->predicted_velocity;
+
+      /* Post-process the predicted velocity */
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_DEFAULT,
+                        velp->name,
+                        3,
+                        true,             // interlace
+                        true,             // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        velp->val,      // values on cells
+                        NULL,           // values at internal faces
+                        NULL,           // values at border faces
+                        time_step);     // time step management struct.
+
+      /* Post-process the source term of the correction equation on the pressure
+         increment (-div(velp_f) */
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_DEFAULT,
+                        "-DivVelPred",
+                        1,
+                        true,             // interlace
+                        true,             // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        cc->div_st, // values on cells
+                        NULL,       // values at internal faces
+                        NULL,       // values at border faces
+                        time_step); // time step management struct.
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+    break;
+  }
+
+
+
 }
 
 /*----------------------------------------------------------------------------*/
