@@ -5,6 +5,7 @@ Provide a supercharged QTextEdit method to allow for Autocompletion
 from types import MethodType
 
 from QtGui import *
+from QtWidgets import *
 import QtCore
 # ------------------------------------------------------------------------------
 # QTextEdit with autocompletion
@@ -14,7 +15,7 @@ def CompletionTextEdit(target):
 
     def setCompleter(target, completer):
         if target.completer:
-            target.disconnect(target.completer, 0, target, 0)
+            target.completer.activated.disconnect()
         if not completer:
             return
 
@@ -22,8 +23,8 @@ def CompletionTextEdit(target):
         completer.setCompletionMode(QCompleter.PopupCompletion)
         completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         target.completer = completer
-        target.connect(target.completer,
-        QtCore.SIGNAL("activated(const QString&)"), target.insertCompletion)
+        completer.setWidget(target)
+        completer.activated.connect(target.insertCompletion)
 
     def insertCompletion(target, completion):
         tc = target.textCursor()

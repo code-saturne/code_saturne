@@ -313,7 +313,7 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         check = 0
         for func_type in self.mei_to_c.funcs.keys():
             if len(self.mei_to_c.funcs[func_type].keys()) > 0:
-                k = self.mei_to_c.funcs[func_type][0]
+                k = self.mei_to_c.funcs[func_type].keys()[0]
                 self.mei_to_c.update_block_expression(func_type, k, new_exp)
                 check, err_msg, n_erros = self.mei_to_c.check_meg_code_syntax(func_type)
 
