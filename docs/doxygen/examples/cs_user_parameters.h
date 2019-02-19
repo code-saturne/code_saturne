@@ -553,6 +553,9 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_velocity_rotation
 
+  To activate means for all variables:
+  \snippet cs_user_parameters-time_moments.c tmom_all_variables
+
   \section cs_user_parameters_h_cs_user_fans  Fan modelling options
 
   Code_Saturne allows modelling of some circular fans as volume
