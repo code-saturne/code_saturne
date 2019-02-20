@@ -103,7 +103,6 @@ integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 integer          isvhb, iscal
 integer          nbccou
 integer          kcpsyr, icpsyr
-integer          italim, itrfin, itrfup, ineefl
 
 double precision titer1, titer2
 
