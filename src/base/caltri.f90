@@ -560,6 +560,8 @@ if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
   isvhb = iscalt
 endif
 
+! Deprecated, only for compatibility reason
+nvarcl = nvar
 
 allocate(icodcl(nfabor,nvar))
 allocate(rcodcl(nfabor,nvar,3))

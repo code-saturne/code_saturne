@@ -809,8 +809,6 @@ if (nterup.gt.1.or.isno2t.gt.0) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 endif
 
-! Deprecated, only for compatibility reason
-nvarcl = nvar
 ! Allocate temporary arrays for boundary conditions
 if (italim .eq. 1) then
   allocate(icodcl(nfabor,nvar))
