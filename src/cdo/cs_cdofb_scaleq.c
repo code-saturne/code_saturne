@@ -2137,10 +2137,6 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 
-#if defined(DEBUG) && !defined(NDEBUG)
-    cs_cell_mesh_reset(cm);
-#endif
-
     cs_flag_t  msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ;
     cs_flag_t  add_flag = CS_CDO_LOCAL_DEQ;
 

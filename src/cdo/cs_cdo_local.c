@@ -624,7 +624,14 @@ cs_cdo_local_get_cell_mesh(int    mesh_id)
   if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
     return NULL;
 
-  return cs_cdo_local_cell_meshes[mesh_id];
+  cs_cell_mesh_t  *cm = cs_cdo_local_cell_meshes[mesh_id];
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  /* This is to check that the mesh flag is correctly set */
+  cs_cell_mesh_reset(cm);
+#endif
+
+  return cm;
 }
 
 /*----------------------------------------------------------------------------*/

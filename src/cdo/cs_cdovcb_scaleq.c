@@ -2103,10 +2103,6 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 
-#if defined(DEBUG) && !defined(NDEBUG)
-    cs_cell_mesh_reset(cm);
-#endif
-
     /* msh_flag for Neumann and Robin BCs. Add add_flag for the other cases
        when one has to reconstruct a flux */
     cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_FV;
