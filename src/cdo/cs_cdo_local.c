@@ -888,21 +888,16 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++)
     cm->xc[k] = quant->cell_centers[3*c_id+k];
 
-  const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
-  const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
-  const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
-
-  cm->n_vc = c2v_idx[1] - c2v_idx[0];
-  cm->n_ec = c2e_idx[1] - c2e_idx[0];
-  cm->n_fc = c2f_idx[1] - c2f_idx[0];
-
   if (build_flag == 0)
     return;
 
   /* Information related to primal vertices */
   if (build_flag & cs_cdo_local_flag_v) {
 
+    const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
     const cs_lnum_t  *c2v_ids = connect->c2v->ids + c2v_idx[0];
+
+    cm->n_vc = c2v_idx[1] - c2v_idx[0];
 
     for (short int v = 0; v < cm->n_vc; v++) {
       const cs_lnum_t  v_id = c2v_ids[v];
@@ -926,7 +921,10 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal edges */
   if (build_flag & cs_cdo_local_flag_e) {
 
+    const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
     const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
+
+    cm->n_ec = c2e_idx[1] - c2e_idx[0];
 
     for (short int e = 0; e < cm->n_ec; e++)
       cm->e_ids[e] = c2e_ids[e];
@@ -983,8 +981,11 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal faces */
   if (build_flag & cs_cdo_local_flag_f) {
 
+    const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
     const cs_lnum_t  *c2f_lst = connect->c2f->ids + c2f_idx[0];
     const short int  *c2f_sgn = connect->c2f->sgn + c2f_idx[0];
+
+    cm->n_fc = c2f_idx[1] - c2f_idx[0];
 
     for (short int f = 0; f < cm->n_fc; f++) {
       cm->f_ids[f] = c2f_lst[f];
@@ -1209,6 +1210,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     if (build_flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
 
       cs_nvec3_t  nv;
+      const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
 
       for (short int e = 0; e < cm->n_ec; e++) {
 
