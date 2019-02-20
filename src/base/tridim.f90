@@ -176,8 +176,7 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 interface
 
   subroutine condli &
-  ( iappel ,                                                       &
-    nvar   , nscal  , iterns ,                                     &
+  ( nvar   , nscal  , iterns ,                                     &
     isvhb  ,                                                       &
     itrale , italim , itrfin , ineefl , itrfup ,                   &
     flmalf , flmalb , cofale , xprale ,                            &
@@ -189,7 +188,7 @@ interface
 
     implicit none
 
-    integer          iappel, nvar, nscal, iterns, isvhb
+    integer          nvar, nscal, iterns, isvhb
     integer          itrale , italim , itrfin , ineefl , itrfup
 
     integer, dimension(nfabor,nvar) :: icodcl
@@ -204,7 +203,7 @@ interface
     double precision, pointer, dimension(:)   :: dt
 
   end subroutine condli
-  
+
   subroutine navstv &
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
@@ -863,11 +862,9 @@ endif
 iterns = 1
 do while (iterns.le.nterup)
 
-  iappel = 2
   ! Calls user BCs and computes BC coefficients
   call condli &
-    (iappel,                                                       &
-     nvar   , nscal  , iterns ,                                    &
+    (nvar   , nscal  , iterns ,                                    &
      isvhb  ,                                                      &
      itrale , italim , itrfin , ineefl , itrfup ,                  &
      flmalf , flmalb , cofale , xprale ,                           &
@@ -1190,11 +1187,9 @@ enddo
 
 if (ippmod(idarcy).eq.1) then
 
-  iappel = 2
   ! Calls user BCs and computes BC coefficients
   call condli &
-    (iappel,                                                       &
-     nvar   , nscal  , iterns ,                                    &
+    (nvar   , nscal  , iterns ,                                    &
      isvhb  ,                                                      &
      itrale , italim , itrfin , ineefl , itrfup ,                  &
      flmalf , flmalb , cofale , xprale ,                           &

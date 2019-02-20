@@ -77,7 +77,6 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     iappel        call number
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     iterns        iteration number on Navier-Stokes equations
@@ -134,8 +133,7 @@
 !_______________________________________________________________________________
 
 subroutine condli &
- ( iappel ,                                                       &
-   nvar   , nscal  , iterns ,                                     &
+ ( nvar   , nscal  , iterns ,                                     &
    isvhb  ,                                                       &
    itrale , italim , itrfin , ineefl , itrfup ,                   &
    flmalf , flmalb , cofale , xprale ,                            &
@@ -182,7 +180,6 @@ implicit none
 
 ! Arguments
 
-integer          iappel
 integer          nvar   , nscal , iterns
 integer          isvhb
 integer          itrale , italim , itrfin , ineefl , itrfup
@@ -231,8 +228,6 @@ double precision, allocatable, dimension(:) :: tb_save
 
 character(len=80) :: fname
 
-integer, allocatable, dimension(:) :: ilzfbr
-double precision, allocatable, dimension(:) :: qcalc
 double precision, dimension(:,:), pointer :: disale
 double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
@@ -316,18 +311,12 @@ if (iihmpr.eq.1) then
 
     ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
 
-    allocate(ilzfbr(nbzppm))
-    allocate(qcalc(nozppm))
-
     call stdtcl &
       ( nbzppm , nozppm ,                                              &
         iqimp  , icalke , qimp   , dh , xintur,                        &
-        itypfb , izfppp , ilzfbr ,                                     &
-        rcodcl , qcalc  )
+        itypfb , izfppp ,                                              &
+        rcodcl )
 
-    ! Free memory
-    deallocate(ilzfbr)
-    deallocate(qcalc)
 
   endif
 
@@ -427,7 +416,7 @@ if (iale.ge.1) then
   enddo
 
   ! En cas de couplage de structures, on calcule un deplacement predit
-  if (nbstru.gt.0.or.nbaste.gt.0.and.iappel.eq.2) then
+  if (nbstru.gt.0.or.nbaste.gt.0) then
 
     call strpre &
       ( itrale , italim , ineefl ,                                   &
@@ -632,8 +621,6 @@ call vericl                                                       &
  ( nvar   , nscal  ,                                              &
    itypfb , icodcl ,                                              &
    rcodcl )
-
-if (iappel.eq.1) return
 
 !===============================================================================
 ! 4. variables
@@ -4912,5 +4899,249 @@ enddo
 return
 end subroutine
 
+!===============================================================================
+! Function :
+! --------
+
+!> \brief Initialisation of boundary condition arrays.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     itrale        ALE iteration number
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 11 Boundary value related to the next cell
+!>                                 value by an affine function
+!>                               - 13 Dirichlet for the advection operator and
+!>                                 Neumann for the diffusion operator
+!> \param[in,out] isostd        indicator for standard outlet
+!>                               and reference face index
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!_______________________________________________________________________________
+
+subroutine condli_ini &
+ ( nvar   , nscal  ,                                              &
+   itrale ,                                                       &
+   icodcl , isostd ,                                              &
+   dt     , rcodcl )
 
 !===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use alaste
+use alstru
+use atincl, only: iautom, iprofm
+use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
+use ihmpre, only: iihmpr
+use ppcpfu, only: inmoxy
+use cstphy
+use cstnum
+use pointe
+use entsor
+use albase
+use parall
+use ppppar
+use ppthch
+use ppincl
+use cpincl
+use radiat
+use cplsat
+use mesh
+use field
+use field_operator
+use radiat
+use turbomachinery
+use darcy_module
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nvar   , nscal
+integer          itrale
+
+integer          icodcl(nfabor,nvar)
+integer          isostd(nfabor+1)
+
+double precision, pointer, dimension(:) :: dt
+double precision rcodcl(nfabor,nvar,3)
+
+! Local variables
+
+integer          iterns, ii
+
+double precision, dimension(:,:), pointer :: disale
+
+!===============================================================================
+! 0. User calls
+!===============================================================================
+
+call precli(nvar, icodcl, rcodcl)
+
+!     - Interface Code_Saturne
+!       ======================
+
+if (iihmpr.eq.1) then
+
+  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
+  !    physiques particulieres, meme sans physique particuliere
+  !    -> sera modifie lors de la restructuration des zones de bord
+
+  call uiclim &
+    ( ippmod(idarcy),                                                &
+      nozppm, ncharm, ncharb, nclpch,                                &
+      iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+      ientfu, ientgb, ientgf, iprofm, iautom,                        &
+      itypfb, izfppp, icodcl,                                        &
+      qimp,   qimpat, qimpcp, dh,     xintur,                        &
+      timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
+
+endif
+
+!     - Sous-programme utilisateur
+!       ==========================
+
+call cs_f_user_boundary_conditions &
+  ( nvar   , nscal  ,                                              &
+  icodcl , itrifb , itypfb , izfppp ,                            &
+  dt     ,                                                       &
+  rcodcl )
+
+call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
+
+! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
+
+if (iale.ge.1) then
+
+  call field_get_val_v(fdiale, disale)
+
+  do ii = 1, nnod
+    impale(ii) = 0
+  enddo
+
+  ! - Interface Code_Saturne
+  !   ======================
+
+  if (iihmpr.eq.1) then
+
+    call uialcl &
+      ( ibfixe, igliss, ivimpo, ifresf,    &
+      ialtyb,                            &
+      impale,                            &
+      disale,                            &
+      iuma, ivma, iwma,                  &
+      rcodcl)
+
+  endif
+
+  call usalcl &
+    ( itrale ,                                                       &
+    nvar   , nscal  ,                                              &
+    icodcl , itypfb , ialtyb ,                                     &
+    impale ,                                                       &
+    dt     ,                                                       &
+    rcodcl , xyzno0 , disale )
+
+  !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
+  !       remet le deplacement initial
+  do ii  = 1, nnod
+    if (impale(ii).eq.0) then
+      disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
+      disale(2,ii) = xyznod(2,ii)-xyzno0(2,ii)
+      disale(3,ii) = xyznod(3,ii)-xyzno0(3,ii)
+    endif
+  enddo
+
+endif
+
+! For internal coupling, set itypfb to wall function by default
+! if not set by the user
+call cs_internal_coupling_bcs(itypfb)
+
+!===============================================================================
+! 2. treatment of types of bcs given by itypfb
+!===============================================================================
+
+if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
+    .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
+    .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
+  call pptycl &
+ ( nvar   ,                                                       &
+   icodcl , itypfb , izfppp ,                                     &
+   dt     ,                                                       &
+   rcodcl )
+endif
+
+if (iale.ge.1) then
+  call altycl &
+ ( itypfb , ialtyb , icodcl , impale ,                            &
+   dt     ,                                                       &
+   rcodcl , xyzno0 )
+endif
+
+if (iturbo.ne.0) then
+  call mmtycl(itypfb, rcodcl)
+endif
+
+iterns = 1
+
+call typecl &
+ ( nvar   , nscal  , iterns ,                                     &
+   itypfb , itrifb , icodcl , isostd ,                            &
+   rcodcl )
+
+!===============================================================================
+! 3. check the consistency of the bcs
+!===============================================================================
+
+call vericl                                                       &
+ ( nvar   , nscal  ,                                              &
+   itypfb , icodcl ,                                              &
+   rcodcl )
+
+!----
+! End
+!----
+
+return
+end subroutine condli_ini
+
+

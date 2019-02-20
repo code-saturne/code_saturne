@@ -103,7 +103,6 @@ integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 integer          isvhb, iscal
 integer          nbccou
 integer          kcpsyr, icpsyr
-integer          iterns
 integer          italim, itrfin, itrfup, ineefl
 
 double precision titer1, titer2
@@ -120,10 +119,6 @@ double precision, pointer, dimension(:,:) :: disale => null()
 integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
 double precision, allocatable, dimension(:,:,:) :: rcodcl
-double precision, allocatable, dimension(:) :: visvdr
-double precision, allocatable, dimension(:) :: hbord, theipb
-double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
-double precision, allocatable, dimension(:,:) :: cofale
 
 !===============================================================================
 ! Interfaces
@@ -131,36 +126,28 @@ double precision, allocatable, dimension(:,:) :: cofale
 
 interface
 
-  subroutine condli &
-  ( iappel ,                                                       &
-    nvar   , nscal  , iterns ,                                     &
-    isvhb  ,                                                       &
-    itrale , italim , itrfin , ineefl , itrfup ,                   &
-    flmalf , flmalb , cofale , xprale ,                            &
+  subroutine condli_ini &
+  ( nvar   , nscal  ,                                              &
+    itrale ,                                                       &
     icodcl , isostd ,                                              &
-    dt     , rcodcl ,                                              &
-    visvdr , hbord  , theipb )
+    dt     , rcodcl )
 
     use mesh, only: nfac, nfabor
 
     implicit none
 
-    integer          iappel, nvar, nscal, iterns, isvhb
-    integer          itrale , italim , itrfin , ineefl , itrfup
+    integer          nvar, nscal
+    integer          itrale
 
     integer, dimension(nfabor,nvar) :: icodcl
     integer, dimension(nfabor+1) :: isostd
 
-    double precision, dimension(nfac) :: flmalf
-    double precision, dimension(nfabor) :: flmalb, hbord, theipb
-    double precision, dimension(:) :: xprale, visvdr
-    double precision, dimension(:,:) :: cofale
     double precision, dimension(nfabor,nvar,3) :: rcodcl
 
     double precision, pointer, dimension(:)   :: dt
 
-  end subroutine condli
-  
+  end subroutine condli_ini
+
   !=============================================================================
 
   subroutine tridim(itrale, nvar, nscal, dt)
@@ -598,37 +585,18 @@ nvarcl = nvar
 allocate(icodcl(nfabor,nvar))
 allocate(rcodcl(nfabor,nvar,3))
 allocate(isostd(nfabor+1))
-if (isvhb.gt.0) then
-  allocate(hbord(nfabor))
-endif
-! Boundary value of the thermal scalar in I'
-if (iscalt.gt.0) then
-  allocate(theipb(nfabor))
-endif
-if (itytur.eq.4 .and. idries.eq.1) then
-  allocate(visvdr(ncelet))
-endif
 
-iterns = 1
-
-iappel = 1
-call condli &
-  (iappel,                                                       &
-  nvar   , nscal  , iterns ,                                     &
-  isvhb  ,                                                       &
-  itrale , italim , itrfin , ineefl , itrfup ,                   &
-  flmalf , flmalb , cofale , xprale ,                            &
+! First pass for initialization BC types
+call condli_ini &
+  (nvar  , nscal  ,                                              &
+  itrale ,                                                       &
   icodcl , isostd ,                                              &
   dt     ,                                                       &
-  rcodcl ,                                                       &
-  visvdr , hbord  , theipb )
+  rcodcl )
 
 deallocate(icodcl)
 deallocate(rcodcl)
 deallocate(isostd)
-if (allocated(visvdr)) deallocate(visvdr)
-if (allocated(hbord)) deallocate(hbord)
-if (allocated(theipb)) deallocate(theipb)
 
 !==============================================================================
 ! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
