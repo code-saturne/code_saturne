@@ -645,16 +645,13 @@ _update_variables(const cs_real_t              dt_cur,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_adjacency_t  *f2c = connect->f2c;
-
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  *vol_c = quant->cell_vol;
-  const cs_real_t  *const  dp_f = cs_cdofb_scaleq_get_face_values(pre_eqc);
-  const cs_real_t  *const  dp_c = cs_cdofb_scaleq_get_cell_values(pre_eqc);
   const cs_field_t  *velp_fld = cc->predicted_velocity;
   const cs_real_t *const  velp_c = velp_fld->val;
   const cs_real_t *const  velp_f = sc->predicted_velocity_f;
+  const cs_real_t *const  dp_f = cs_cdofb_scaleq_get_face_values(pre_eqc);
+  const cs_real_t *const  dp_c = cs_cdofb_scaleq_get_cell_values(pre_eqc);
 
   /* Variables to update */
   cs_real_t  *pre_f = sc->pressure_f;
@@ -665,35 +662,79 @@ _update_variables(const cs_real_t              dt_cur,
 
   cs_timer_t  t_upd = cs_timer_time();
 
-  cs_real_t  *dpr_contrib = cs_equation_get_tmpbuf();
-  assert(cs_equation_get_tmpbuf_size() >= (size_t)n_faces);
+  cs_field_current_to_previous(sc->velocity);
+  cs_field_current_to_previous(sc->pressure);
+  cs_field_current_to_previous(sc->divergence);
 
-  /* First loop to compute dpr_contrib */
-# pragma omp parallel for if (n_faces > CS_THR_MIN)
-  for (cs_lnum_t f = 0; f < n_faces; f++) {
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+  {
+#if defined(HAVE_OPENMP) /* Retrieve the cell mesh structure w.r.t. the mode */
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(omp_get_thread_num());
+#else
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(0);
+#endif
+    cs_cell_sys_t  *csys = NULL;
+    cs_cell_builder_t  *cb = NULL;
+    cs_cdofb_vecteq_get(&csys, &cb);
 
-    /* Update the face velocity */
-    dpr_contrib[f] = 0;
+    /* Reset the velocity at faces */
+#   pragma omp for
+    for (cs_lnum_t i = 0; i < 3*n_faces; i++) vel_f[i] = 0;
 
-    /* Compatible with interior or border faces (even in parallel where only a
-     * part of f2c is available (this is a difference with i_face_cells
-     * connectivity which is available in cs_mesh_t) */
-    for (cs_lnum_t jf = f2c->idx[f]; jf < f2c->idx[f+1]; jf++) {
-      const cs_lnum_t  c_id = f2c->ids[jf];
-      dpr_contrib[f] += f2c->sgn[jf]*dp_c[c_id]/vol_c[c_id];
-    }
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-  } /* Loop on faces */
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id,
+                         CS_CDO_LOCAL_PF |  CS_CDO_LOCAL_PFQ,
+                         connect, quant, cm);
+
+      /* Update the cell pressure */
+      pr_c[c_id] += dt_cur*dp_c[c_id];
+
+      /* Evaluate the cell gradient for the pressure increment */
+      cs_real_t  grd_dp[3] = {0, 0, 0};
+      for (short int f = 0; f < cm->n_fc; f++) {
+        const cs_real_t  f_coef = cm->f_sgn[f]*cm->face[f].meas;
+        for (int k = 0; k < 3; k++)
+          grd_dp[k] += f_coef*dp_f[cm->f_ids[f]]*cm->face[f].unitv[k];
+      }
+
+      /* Update the cell velocity */
+      for (int k = 0; k < 3; k++)
+        vel_c[3*c_id + k] = velp_c[3*c_id + k] + dt_cur*grd_dp[k];
+
+      /* Partial update of the face velocity:
+       * v_f^(n+1) = vp_f^(n+1) + dt*grd(incr_p)
+       * Now: 0.5*dt_cur*grd_cell(incr_p) for an interior face
+       * or       dt_cur*grd_cell(incr_p)     for a border face  */
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_lnum_t  f_id = cm->f_ids[f];
+
+        cs_real_t  f_coef = dt_cur;
+        if (f_id < quant->n_i_faces)
+          f_coef *= 0.5;
+
+        cs_real_t  *_vel = vel_f + 3*f_id;
+        for (int k = 0; k < 3; k++)
+          _vel[k] += f_coef*grd_dp[k];
+
+      }
+
+    } /* Loop on cells */
+
+  } /* OpenMP block */
 
   /* Parallel sum */
   if (cs_glob_n_ranks > 1) {
     assert(connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL);
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
                          n_faces,
-                         1,
-                         false,
+                         3,
+                         true,
                          CS_REAL_TYPE,
-                         dpr_contrib);
+                         vel_f);
   }
 
   /* Update face-related unknows */
@@ -703,57 +744,32 @@ _update_variables(const cs_real_t              dt_cur,
     /* p^(n+1) = p^n + delta_p */
     pre_f[f] += dp_f[f]*dt_cur;
 
-    /* Update the face velocity */
-    const cs_nvec3_t  _f = cs_quant_set_face_nvec(f, quant);
-    const cs_real_t  pr_contrib = dpr_contrib[f] * _f.meas*dt_cur;
-
     /* v_f^(n+1) = vp_f^(n+1) + dt*grd(incr_p) */
     for (int k = 0; k < 3; k++)
-      vel_f[3*f+k] = velp_f[3*f+k] - pr_contrib*_f.unitv[k];
+      vel_f[3*f+k] += velp_f[3*f+k];
 
   } /* Loop on faces */
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 2
-  cs_dbg_darray_to_listing("PRED_VELOCITY_FACE", n_faces, velp_f, 9);
-  cs_dbg_darray_to_listing("VELOCITY_FACE", n_faces, vel_f, 9);
-#endif
-
-  cs_field_current_to_previous(sc->velocity);
-  cs_field_current_to_previous(sc->pressure);
-  cs_field_current_to_previous(sc->divergence);
 
   const cs_adjacency_t  *c2f = connect->c2f;
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    /* Update the cell pressure */
-    pr_c[c_id] += dt_cur*dp_c[c_id];
-
-    /* Compute the divergence */
+    /* Reset the divergence of the velocity before computing the updated
+       value (vel_f has to be updated first) */
     div[c_id] = 0;
-    cs_real_t  grd_dp[3] = {0, 0, 0};
-    for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
+    for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
 
-      const cs_lnum_t  f_id = c2f->ids[f];
-      const cs_real_t  *_val = vel_f + 3*f_id;
-      const cs_nvec3_t  _f = cs_quant_set_face_nvec(f_id, quant);
-      const cs_real_t  f_coef = c2f->sgn[f]*_f.meas;
+      const cs_lnum_t  f_id = c2f->ids[jf];
+      const cs_real_t  *_vel = vel_f + 3*f_id;
+      const cs_real_t  *nf = cs_quant_get_face_vector_area(f_id, quant);
 
-      div[c_id] += f_coef*cs_math_3_dot_product(_val, _f.unitv);
-      for (int k = 0; k < 3; k++)
-        grd_dp[k] += f_coef*dp_f[f_id]*_f.unitv[k];
+      div[c_id] += c2f->sgn[jf]*cs_math_3_dot_product(_vel, nf);
 
     } /* Loop on cell faces */
 
     const cs_real_t  ovc = 1./quant->cell_vol[c_id];
     div[c_id] *= ovc;
-    /* for (int k = 0; k < 3; k++) */
-    /*   grd_dp[k] *= ovc; */
-
-    /* Update the cell velocity */
-    for (int k = 0; k < 3; k++)
-      vel_c[3*c_id + k] = velp_c[3*c_id + k] + dt_cur*grd_dp[k];
 
   } /* Loop on cells */
 
@@ -761,6 +777,8 @@ _update_variables(const cs_real_t              dt_cur,
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 2
+  cs_dbg_darray_to_listing("PRED_VELOCITY_FACE", n_faces, velp_f, 9);
+  cs_dbg_darray_to_listing("VELOCITY_FACE", n_faces, vel_f, 9);
   cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr_c, 9);
   cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
 #endif
@@ -1310,6 +1328,9 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   /* LAST MAJOR STEP: Update the pressure and the velocity */
 
   _update_variables(dt_cur, sc);
+
+  if (nsp->n_pressure_bc_defs == 0)
+    cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_c);
 
 }
 
