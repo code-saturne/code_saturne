@@ -175,6 +175,36 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 
 interface
 
+  subroutine condli &
+  ( iappel ,                                                       &
+    nvar   , nscal  , iterns ,                                     &
+    isvhb  ,                                                       &
+    itrale , italim , itrfin , ineefl , itrfup ,                   &
+    flmalf , flmalb , cofale , xprale ,                            &
+    icodcl , isostd ,                                              &
+    dt     , rcodcl ,                                              &
+    visvdr , hbord  , theipb )
+
+    use mesh, only: nfac, nfabor
+
+    implicit none
+
+    integer          iappel, nvar, nscal, iterns, isvhb
+    integer          itrale , italim , itrfin , ineefl , itrfup
+
+    integer, dimension(nfabor,nvar) :: icodcl
+    integer, dimension(nfabor+1) :: isostd
+
+    double precision, dimension(nfac) :: flmalf
+    double precision, dimension(nfabor) :: flmalb, hbord, theipb
+    double precision, dimension(:) :: xprale, visvdr
+    double precision, dimension(:,:) :: cofale
+    double precision, dimension(nfabor,nvar,3) :: rcodcl
+
+    double precision, pointer, dimension(:)   :: dt
+
+  end subroutine condli
+  
   subroutine navstv &
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
@@ -182,7 +212,6 @@ interface
     frcxt  ,                                                       &
     trava  )
 
-    use dimens, only: ndimfb
     use mesh, only: nfabor
 
     implicit none
@@ -198,9 +227,6 @@ interface
   end subroutine navstv
 
   subroutine richards(icvrge, dt)
-
-    use dimens, only: ndimfb
-    use mesh, only: nfabor
 
     implicit none
 
@@ -841,14 +867,13 @@ do while (iterns.le.nterup)
   ! Calls user BCs and computes BC coefficients
   call condli &
     (iappel,                                                       &
-    nvar   , nscal  , iterns ,                                     &
-    isvhb  ,                                                       &
-    itrale , italim , itrfin , ineefl , itrfup ,                   &
-    flmalf , flmalb , cofale , xprale ,                            &
-    icodcl , isostd ,                                              &
-    dt     ,                                                       &
-    rcodcl ,                                                       &
-    visvdr , hbord  , theipb )
+     nvar   , nscal  , iterns ,                                    &
+     isvhb  ,                                                      &
+     itrale , italim , itrfin , ineefl , itrfup ,                  &
+     flmalf , flmalb , cofale , xprale ,                           &
+     icodcl , isostd ,                                             &
+     dt     , rcodcl ,                                             &
+     visvdr , hbord  , theipb )
 
   if (nftcdt.gt.0) then
     ! Coefficient exchange of the enthalpy scalar
@@ -946,7 +971,6 @@ do while (iterns.le.nterup)
   !       (Nouvel algorithme. L'ancien est dans condli)
   ! In ALE, this computation is done only for the first step.
   if (italim.eq.1) then
-
 
     ! Pour le moment, on suppose que l'on peut se contenter de faire
     !  cela au premier passage, sauf avec les maillages mobiles. Attention donc
@@ -1170,13 +1194,13 @@ if (ippmod(idarcy).eq.1) then
   ! Calls user BCs and computes BC coefficients
   call condli &
     (iappel,                                                       &
-    nvar   , nscal  , iterns ,                                     &
-    isvhb  ,                                                       &
-    itrale , italim , itrfin , ineefl , itrfup ,                   &
-    flmalf , flmalb , cofale , xprale ,                            &
-    icodcl , isostd ,                                              &
-    dt     , rcodcl ,                                              &
-    visvdr , hbord  , theipb )
+     nvar   , nscal  , iterns ,                                    &
+     isvhb  ,                                                      &
+     itrale , italim , itrfin , ineefl , itrfup ,                  &
+     flmalf , flmalb , cofale , xprale ,                           &
+     icodcl , isostd ,                                             &
+     dt     , rcodcl ,                                             &
+     visvdr , hbord  , theipb )
 
 endif
 

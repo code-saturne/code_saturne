@@ -187,14 +187,16 @@ integer          nvar   , nscal , iterns
 integer          isvhb
 integer          itrale , italim , itrfin , ineefl , itrfup
 
-double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
+double precision flmalf(nfac), flmalb(nfabor)
+double precision, dimension(:) :: xprale
+double precision, dimension(:,:) :: cofale
 
 integer          icodcl(nfabor,nvar)
 integer          isostd(nfabor+1)
 
-double precision dt(ncelet)
+double precision, pointer, dimension(:) :: dt
 double precision rcodcl(nfabor,nvar,3)
-double precision visvdr(ncelet)
+double precision, dimension(:) :: visvdr
 double precision hbord(nfabor),theipb(nfabor)
 
 ! Local variables
@@ -232,7 +234,6 @@ character(len=80) :: fname
 integer, allocatable, dimension(:) :: ilzfbr
 double precision, allocatable, dimension(:) :: qcalc
 double precision, dimension(:,:), pointer :: disale
-double precision, allocatable, dimension(:,:) :: cofale
 double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
@@ -268,8 +269,6 @@ double precision, dimension(:), pointer :: permeability
 double precision, dimension(:,:), pointer :: tensor_permeability
 
 type(var_cal_opt) :: vcopt
-
-!===============================================================================
 
 !===============================================================================
 ! Interfaces

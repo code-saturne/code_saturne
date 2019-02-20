@@ -131,6 +131,38 @@ double precision, allocatable, dimension(:,:) :: cofale
 
 interface
 
+  subroutine condli &
+  ( iappel ,                                                       &
+    nvar   , nscal  , iterns ,                                     &
+    isvhb  ,                                                       &
+    itrale , italim , itrfin , ineefl , itrfup ,                   &
+    flmalf , flmalb , cofale , xprale ,                            &
+    icodcl , isostd ,                                              &
+    dt     , rcodcl ,                                              &
+    visvdr , hbord  , theipb )
+
+    use mesh, only: nfac, nfabor
+
+    implicit none
+
+    integer          iappel, nvar, nscal, iterns, isvhb
+    integer          itrale , italim , itrfin , ineefl , itrfup
+
+    integer, dimension(nfabor,nvar) :: icodcl
+    integer, dimension(nfabor+1) :: isostd
+
+    double precision, dimension(nfac) :: flmalf
+    double precision, dimension(nfabor) :: flmalb, hbord, theipb
+    double precision, dimension(:) :: xprale, visvdr
+    double precision, dimension(:,:) :: cofale
+    double precision, dimension(nfabor,nvar,3) :: rcodcl
+
+    double precision, pointer, dimension(:)   :: dt
+
+  end subroutine condli
+  
+  !=============================================================================
+
   subroutine tridim(itrale, nvar, nscal, dt)
 
     implicit none
@@ -533,7 +565,7 @@ if (iporos.ge.1) then
 endif
 
 ! First pass for the BCs:
-! - inititalize itypfb, reference pressure point...
+! - initilalize itypfb, reference pressure point...
 !--------------------------------------------------
 ! --- Indicateur de stockage d'un scalaire et de son coef
 !     d'echange associe.
@@ -550,7 +582,7 @@ isvhb = 0
 if (nbccou .ge. 1) then
   do iscal = 1, nscal
     call field_get_key_int(ivarfl(isca(iscal)), kcpsyr, icpsyr)
-    if(icpsyr.eq.1) then
+    if (icpsyr.eq.1) then
       isvhb = iscal
     endif
   enddo
