@@ -919,8 +919,10 @@ _tree_node_get_field(cs_tree_node_t  *tn)
  *   tn_vp <-- tree node associated with profile variable
  *----------------------------------------------------------------------------*/
 
-static char *
-_build_profile_v_label_name(cs_tree_node_t  *tn_vp)
+static void 
+_write_profile_v_label_name(cs_tree_node_t  *tn_vp,
+                            FILE *file,
+                            int opf)
 {
   char *label = NULL;
 
@@ -928,29 +930,72 @@ _build_profile_v_label_name(cs_tree_node_t  *tn_vp)
   int idim = _get_profile_v_component(tn_vp);
 
   if (f != NULL) {
+
     const char *f_label = cs_field_get_label(f);
     char buf[16] = "";
-    if (f->dim > 1 && idim > -1) {
+    size_t buf_len = 0;
+    
+    if(f->dim == 3) 
+      buf_len = 3;
+    else if (f->dim > 3)
+      buf_len = 4;
+
+    size_t len = strlen(f_label) + buf_len;
+    BFT_MALLOC(label, len+1, char);
+    
+    if (f->dim > 1) {
+      int s_id = 0;
+      int e_id = f->dim;
+      if (idim > -1) {
+        s_id = idim;
+        e_id = s_id+1;
+      }
       switch(f->dim) {
       case 3:
-        strncpy(buf, cs_glob_field_comp_name_3[idim], 15);
+        for (int ldim = s_id; ldim < e_id; ldim ++) {
+          strncpy(buf, cs_glob_field_comp_name_3[ldim], 15);
+          sprintf(label, "%s%s", f_label, buf);
+          if (opf == 0)
+            fprintf(file, " | %s", label);
+          else
+            fprintf(file, ", %s", label);
+        }
         break;
       case 6:
-        strncpy(buf, cs_glob_field_comp_name_6[idim], 15);
+        for (int ldim = s_id ; ldim < e_id ; ldim ++) {
+          strncpy(buf, cs_glob_field_comp_name_6[ldim], 15);
+          sprintf(label, "%s%s", f_label, buf);
+          if (opf == 0)
+            fprintf(file, " | %s", label);
+          else
+            fprintf(file, ", %s", label);
+        }
         break;
       case 9:
-        strncpy(buf, cs_glob_field_comp_name_9[idim], 15);
+        for (int ldim = s_id ; ldim < e_id ; ldim ++) {
+          strncpy(buf, cs_glob_field_comp_name_9[ldim], 15);
+          sprintf(label, "%s%s", f_label, buf);
+          if (opf == 0)
+            fprintf(file, " | %s", label);
+          else
+            fprintf(file, ", %s", label); 
+        }
         break;
       default:
         snprintf(buf, 15, "[%d]", idim); buf[15] = '\0';
       }
     }
-    size_t len = strlen(f_label) + strlen(buf);
-    BFT_MALLOC(label, len+1, char);
-    sprintf(label, "%s%s", f_label, buf);
+    /*Dimension 1*/
+    else {
+      sprintf(label, "%s%s", f_label, buf);
+      if (opf == 0)
+        fprintf(file, " | %s", label);
+      else
+        fprintf(file, ", %s", label);
+    }
+
   }
 
-  return label;
 }
 
 /*----------------------------------------------------------------------------
@@ -4797,6 +4842,16 @@ cs_gui_profile_output(void)
                   "x, y or z");
 
       int nvar_prop = cs_tree_get_node_count(tn, "var_prop");
+      
+      for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
+             tn_vp != NULL;
+             tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
+
+        const cs_field_t *f = _tree_node_get_field(tn_vp);
+        int idim = _get_profile_v_component(tn_vp);
+        if (f->dim > 1 && idim == -1) nvar_prop = nvar_prop + f->dim - 1;
+      }
+      
       int nvar_prop4 = nvar_prop + 4;
       BFT_MALLOC(array, nvar_prop4, cs_real_t);
 
@@ -4843,12 +4898,7 @@ cs_gui_profile_output(void)
         for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
              tn_vp != NULL;
              tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
-          char *buffer = _build_profile_v_label_name(tn_vp);
-          if (output_format == 0)
-            fprintf(file, " | %s", buffer);
-          else
-            fprintf(file, ", %s", buffer);
-          BFT_FREE(buffer);
+          _write_profile_v_label_name(tn_vp, file, output_format);
         }
 
         fprintf(file, "\n");
@@ -4907,20 +4957,30 @@ cs_gui_profile_output(void)
             zz = zz - z1;
             array[0] = sqrt(xx*xx + yy*yy + zz*zz);
 
-            int vp_id = 0;
+            int vp_id = 4;
             for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
                  tn_vp != NULL;
-                 tn_vp = cs_tree_node_get_next_of_name(tn_vp), vp_id++) {
+                 tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
 
               const cs_field_t *f = _tree_node_get_field(tn_vp);
 
               if (f->dim > 1) {
                 int idim = _get_profile_v_component(tn_vp);
-                array[vp_id + 4] = f->val[f->dim * c_id + idim];
+                if (idim > -1) {
+                  array[vp_id] = f->val[f->dim * c_id + idim];
+                  vp_id++;
+                }
+                else {
+                  for (int ldim = 0; ldim < f->dim ; ldim++) {
+                    array[vp_id] = f->val[f->dim * c_id + ldim];
+                    vp_id++;
+                  }
+                }
               }
-              else
-                array[vp_id + 4] = f->val[c_id];
-
+              else {
+                array[vp_id] = f->val[c_id];
+                vp_id++;
+              }
             }
 
           }
