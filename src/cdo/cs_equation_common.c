@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -77,7 +78,8 @@ BEGIN_C_DECLS
  * Type definitions and macros
  *============================================================================*/
 
-#define CS_EQUATION_COMMON_DBG  0
+#define CS_EQUATION_COMMON_DBG               0 /* Debug level */
+#define CS_EQUATION_COMMON_PROFILE_ASSEMBLY  0 /* > 0 --> Activate profiling */
 
 /*============================================================================
  * Local private variables
@@ -92,14 +94,20 @@ static cs_real_t  *cs_equation_common_work_buffer = NULL;
 static cs_matrix_assembler_t  **cs_equation_common_ma = NULL;
 static cs_matrix_structure_t  **cs_equation_common_ms = NULL;
 
+static cs_gnum_t  *_row_col_gids = NULL;
+static cs_real_t  *_values_to_assembler = NULL;
+
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
 
-/* Monitoring */
-static cs_timer_counter_t  tca; /* assembling process */
-static cs_timer_counter_t  tcc; /* connectivity building */
+/* Monitoring/Profiling of the assembly process for CDO equations */
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0
+static unsigned int  n_assembly_value_calls = 0;
+static cs_timer_counter_t  tcas; /* matrix structure assembly processing */
+static cs_timer_counter_t  tcav; /* matrix values assembly processing */
+#endif
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -248,16 +256,19 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
                             const cs_time_step_t           *time_step,
                             const cs_domain_cdo_context_t  *cc)
 {
-  assert(connect != NULL); /* Sanity check */
+  assert(connect != NULL && quant != NULL); /* Sanity check */
 
   if (cc == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " %s: CDO context is not allocated. Stop execution.",
               __func__);
 
-  /* Monitoring */
-  CS_TIMER_COUNTER_INIT(tca); /* assembling system */
-  CS_TIMER_COUNTER_INIT(tcc); /* connectivity */
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+  cs_timer_t t0, t1;
+
+  CS_TIMER_COUNTER_INIT(tcas); /* matrix structure assembly process */
+  CS_TIMER_COUNTER_INIT(tcav); /* matrix value assembly process */
+#endif
 
   /* Two types of mat. ass. are considered:
    *  - The one related to matrix based on vertices
@@ -286,16 +297,14 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
   /* Allocate and initialize matrix assembler and matrix structures */
   if (cc->vb_scheme_flag > 0 || cc->vcb_scheme_flag > 0) {
 
-    cs_timer_t t0 = cs_timer_time();
-
     if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
         cc->vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
-      /* Monitoring */
-      cs_timer_t t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcc, &t0, &t1);
-
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t0 = cs_timer_time();
+#endif
 
       cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
                                                            1,
@@ -304,9 +313,10 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cs_matrix_structure_t  *ms =
         cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-      /* Monitoring */
-      cs_timer_t t2 = cs_timer_time();
-      cs_timer_counter_add_diff(&tca, &t1, &t2);
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
 
       cs_equation_common_ma[CS_CDO_CONNECT_VTX_SCAL] = ma;
       cs_equation_common_ms[CS_CDO_CONNECT_VTX_SCAL] = ms;
@@ -336,12 +346,21 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t0 = cs_timer_time();
+#endif
+
       cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
                                                            3,
                                                            connect->v2v,
                                                            rs);
       cs_matrix_structure_t  *ms =
         cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
 
       cs_equation_common_ma[CS_CDO_CONNECT_VTX_VECT] = ma;
       cs_equation_common_ms[CS_CDO_CONNECT_VTX_VECT] = ms;
@@ -381,8 +400,17 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t0 = cs_timer_time();
+#endif
+
       ma0 = _build_matrix_assembler(n_faces, 1, connect->f2f, rs);
       ms0 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma0);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
 
       cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP0] = ma0;
       cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP0] = ms0;
@@ -411,11 +439,20 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t0 = cs_timer_time();
+#endif
+
       ma1 = _build_matrix_assembler(n_faces,
                                     CS_N_FACE_DOFS_1ST,
                                     connect->f2f,
                                     rs);
       ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
 
       assert((CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VP0) &&
              (CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VHP0));
@@ -437,11 +474,20 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t0 = cs_timer_time();
+#endif
+
       ma2 = _build_matrix_assembler(n_faces,
                                     CS_N_FACE_DOFS_2ND,
                                     connect->f2f,
                                     rs);
       ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
 
       cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP2] = ma2;
       cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP2] = ms2;
@@ -467,11 +513,20 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
         const cs_range_set_t  *rs =
           connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+        t0 = cs_timer_time();
+#endif
+
         ma1 = _build_matrix_assembler(n_faces,
                                       3*CS_N_FACE_DOFS_1ST,
                                       connect->f2f,
                                       rs);
         ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+        t1 = cs_timer_time();
+        cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
 
         cs_equation_common_ma[CS_CDO_CONNECT_FACE_VHP1] = ma1;
         cs_equation_common_ms[CS_CDO_CONNECT_FACE_VHP1] = ms1;
@@ -484,11 +539,20 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
         const cs_range_set_t  *rs =
           connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+        t0 = cs_timer_time();
+#endif
+
         ma2 = _build_matrix_assembler(n_faces,
                                       3*CS_N_FACE_DOFS_2ND,
                                       connect->f2f,
                                       rs);
         ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+        t1 = cs_timer_time();
+        cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
 
         cs_equation_common_ma[CS_CDO_CONNECT_FACE_VHP2] = ma2;
         cs_equation_common_ms[CS_CDO_CONNECT_FACE_VHP2] = ms2;
@@ -539,7 +603,7 @@ cs_equation_common_free(const cs_domain_cdo_context_t   *cc)
   /* Free cell-wise and face-wise view of a mesh */
   cs_cdo_local_finalize();
 
-  cs_timer_t t0 = cs_timer_time();
+  BFT_FREE(cs_equation_common_work_buffer);
 
   /* Free common structures specific to a numerical scheme */
   if (cc->vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
@@ -563,29 +627,36 @@ cs_equation_common_free(const cs_domain_cdo_context_t   *cc)
   if (cc->hho_scheme_flag & CS_FLAG_SCHEME_VECTOR)
     cs_hho_vecteq_finalize_common();
 
-  BFT_FREE(cs_equation_common_work_buffer);
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+  cs_timer_t  t0 = cs_timer_time();
+#endif
 
-  /* Monitoring */
-  cs_timer_t t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&tcc, &t0, &t1);
-
-  /* matrix assemblers and structures */
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++) {
+  /* Free matrix structures */
+  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
     cs_matrix_structure_destroy(&(cs_equation_common_ms[i]));
-    cs_matrix_assembler_destroy(&(cs_equation_common_ma[i]));
-  }
   BFT_FREE(cs_equation_common_ms);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&tcas, &t0, &t1);
+#endif
+
+  /* Free matrix assemblers */
+  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
+    cs_matrix_assembler_destroy(&(cs_equation_common_ma[i]));
   BFT_FREE(cs_equation_common_ma);
 
-  /* Monitoring */
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
   cs_timer_t t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&tca, &t1, &t2);
+  cs_timer_counter_add_diff(&tcav, &t1, &t2);
 
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10s %10s\n",
-                " ", "Connectivity", "Assembly");
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f seconds\n",
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-32s %12s %12s\n",
+                " ", "Assembly.Struct", "Assembly.Values (Time/n_calls)");
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10.3f %10.3f seconds %u calls\n",
                 "<CDO/CommonEq> Runtime",
-                tcc.wall_nsec*1e-9, tca.wall_nsec*1e-9);
+                tcas.wall_nsec*1e-9, tcav.wall_nsec*1e-9,
+                n_assembly_value_calls);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1007,6 +1078,10 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
   const cs_lnum_t  *dof_ids = csys->dof_ids;
   const cs_sdm_t  *m = csys->mat;
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+  cs_timer_t  t0 = cs_timer_time();
+#endif
+
   cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
   cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
   cs_real_t  values[CS_CDO_ASSEMBLE_BUF_SIZE];
@@ -1018,14 +1093,14 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 
   int  bufsize = 0;
 
-  for (short int i = 0; i < m->n_rows; i++) {
+  for (int i = 0; i < m->n_rows; i++) {
 
     const cs_lnum_t  i_id = dof_ids[i];
     const cs_gnum_t  i_gid = rset->g_id[i_id];
-    const double  *_rowi = m->val + i*m->n_rows;
+    const cs_real_t  *_rowi = m->val + i*m->n_rows;
 
     /* Diagonal term is excluded in this connectivity. Add it "manually" */
-    for (short int j = 0; j < m->n_rows; j++) {
+    for (int j = 0; j < m->n_rows; j++) {
 
       r_gids[bufsize] = i_gid;
       c_gids[bufsize] = rset->g_id[dof_ids[j]];
@@ -1048,6 +1123,11 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
     bufsize = 0;
   }
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&tcav, &t0, &t1);
+  n_assembly_value_calls++;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1076,6 +1156,10 @@ cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
+
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+  cs_timer_t  t0 = cs_timer_time();
+#endif
 
   cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
   cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
@@ -1130,6 +1214,11 @@ cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
     bufsize = 0;
   }
 
+#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&tcav, &t0, &t1);
+  n_assembly_value_calls++;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
