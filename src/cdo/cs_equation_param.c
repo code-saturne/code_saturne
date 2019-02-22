@@ -240,7 +240,6 @@ _petsc_setup_hook(void   *context,
 
       case CS_PARAM_AMG_BOOMER:
 #if PETSC_VERSION_GE(3,7,0)
-        PetscOptionsSetValue(NULL,"-pc_type", "hypre");
         PetscOptionsSetValue(NULL,"-pc_hypre_type","boomeramg");
         PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_coarsen_type","HMIS");
         PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_interp_type","ext+i-cc");
@@ -249,7 +248,6 @@ _petsc_setup_hook(void   *context,
         PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_strong_threshold","0.5");
         PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_no_CF","");
 #else
-        PetscOptionsSetValue("-pc_type", "hypre");
         PetscOptionsSetValue("-pc_hypre_type","boomeramg");
         PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
         PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
@@ -285,7 +283,6 @@ _petsc_setup_hook(void   *context,
   cs_user_sles_petsc_hook((void *)eqp, a, ksp);
 
   /* Update with the new defined options */
-  PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
@@ -654,8 +651,10 @@ _set_key(const char            *label,
     break;
 
   case CS_EQKEY_PRECOND:
-    if (strcmp(keyval, "none") == 0)
+    if (strcmp(keyval, "none") == 0) {
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param.amg_type = CS_PARAM_AMG_NONE;
+    }
     else if (strcmp(keyval, "jacobi") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(keyval, "block_jacobi") == 0)
