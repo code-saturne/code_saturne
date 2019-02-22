@@ -527,28 +527,6 @@ cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the connectivity vertex->vertices for the local rank
- *
- * \return  a pointer to a cs_adjacency_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_adjacency_t *
-cs_equation_get_v2v_index(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the connectivity face->faces for the local rank
- *
- * \return  a pointer to a cs_adjacency_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_adjacency_t *
-cs_equation_get_f2f_index(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Retrieve a pointer to a buffer of size at least the 2*n_cells
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
