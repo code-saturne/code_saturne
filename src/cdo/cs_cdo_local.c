@@ -350,7 +350,7 @@ void
 cs_cell_sys_reset(int              n_fbyc,
                   cs_cell_sys_t   *csys)
 {
-  if (n_fbyc == 0 || csys->n_dofs == 0)
+  if (n_fbyc < 1 || csys->n_dofs < 1)
     return;
 
   const size_t  s = csys->n_dofs * sizeof(double);
@@ -895,6 +895,11 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++)
     cm->xc[k] = quant->cell_centers[3*c_id+k];
 
+  /* Store the number of cell faces (useful to allocated boundary quantities) */
+  const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
+
+  cm->n_fc = c2f_idx[1] - c2f_idx[0];
+
   if (build_flag == 0)
     return;
 
@@ -988,11 +993,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal faces */
   if (build_flag & cs_cdo_local_flag_f) {
 
-    const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
     const cs_lnum_t  *c2f_lst = connect->c2f->ids + c2f_idx[0];
     const short int  *c2f_sgn = connect->c2f->sgn + c2f_idx[0];
-
-    cm->n_fc = c2f_idx[1] - c2f_idx[0];
 
     for (short int f = 0; f < cm->n_fc; f++) {
       cm->f_ids[f] = c2f_lst[f];
