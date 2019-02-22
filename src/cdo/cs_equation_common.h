@@ -285,7 +285,7 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
  * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
  *         managing temporary usage of memory when dealing with equations
  *         Call specific structure allocation related to a numerical scheme
- *         according the scheme flag
+ *         according to the scheme flag
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *         Set also shared pointers from the main domain members
@@ -308,7 +308,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t          *connect,
  * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
  *         managing temporary usage of memory when dealing with equations
  *         Call specific structure allocation related to a numerical scheme
- *         according the scheme flag
+ *         according to the scheme flag
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *
