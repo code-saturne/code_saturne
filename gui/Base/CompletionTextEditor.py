@@ -6,7 +6,7 @@ from types import MethodType
 
 from QtGui import *
 from QtWidgets import *
-import QtCore
+from QtCore import *
 # ------------------------------------------------------------------------------
 # QTextEdit with autocompletion
 def CompletionTextEdit(target):
@@ -21,19 +21,27 @@ def CompletionTextEdit(target):
 
         completer.setWidget(target)
         completer.setCompletionMode(QCompleter.PopupCompletion)
-        completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
         target.completer = completer
         completer.setWidget(target)
         completer.activated.connect(target.insertCompletion)
 
     def insertCompletion(target, completion):
         tc = target.textCursor()
-        extra = (completion.length() -
-            target.completer.completionPrefix().length())
-        tc.movePosition(QTextCursor.Left)
-        tc.movePosition(QTextCursor.EndOfWord)
-        tc.insertText(completion.right(extra))
-        target.setTextCursor(tc)
+        if QT_API == "PYQT4":
+            extra = (completion.length() -
+                target.completer.completionPrefix().length())
+            tc.movePosition(QTextCursor.Left)
+            tc.movePosition(QTextCursor.EndOfWord)
+            tc.insertText(completion.right(extra))
+            target.setTextCursor(tc)
+        elif QT_API == "PYQT5":
+            extra = (len(completion) -
+                len(target.completer.completionPrefix()))
+            tc.movePosition(QTextCursor.Left)
+            tc.movePosition(QTextCursor.EndOfWord)
+            tc.insertText(completion[-extra:])
+            target.setTextCursor(tc)
 
     def textUnderCursor(target):
         tc = target.textCursor()
@@ -48,39 +56,53 @@ def CompletionTextEdit(target):
     def keyPressEvent(target, event):
         if target.completer and target.completer.popup().isVisible():
             if event.key() in (
-            QtCore.Qt.Key_Enter,
-            QtCore.Qt.Key_Return,
-            QtCore.Qt.Key_Escape,
-            QtCore.Qt.Key_Tab,
-            QtCore.Qt.Key_Backtab):
+            Qt.Key_Enter,
+            Qt.Key_Return,
+            Qt.Key_Escape,
+            Qt.Key_Tab,
+            Qt.Key_Backtab):
                 event.ignore()
                 return
 
         ## has ctrl-E been pressed??
-        isShortcut = (event.modifiers() == QtCore.Qt.ControlModifier and
-                      event.key() == QtCore.Qt.Key_E)
+        isShortcut = (event.modifiers() == Qt.ControlModifier and
+                      event.key() == Qt.Key_E)
         if (not target.completer or not isShortcut):
             QTextEdit.keyPressEvent(target, event)
 
         ## ctrl or shift key on it's own??
-        ctrlOrShift = event.modifiers() in (QtCore.Qt.ControlModifier ,
-                    QtCore.Qt.ShiftModifier)
-        if ctrlOrShift and event.text().isEmpty():
-            # ctrl or shift key on it's own
-            return
+        ctrlOrShift = event.modifiers() in (Qt.ControlModifier ,
+                    Qt.ShiftModifier)
+        if QT_API == "PYQT4":
+            if ctrlOrShift and event.text().isEmpty():
+                # ctrl or shift key on it's own
+                return
+        elif QT_API == "PYQT5":
+            if ctrlOrShift and len(event.text()) < 1:
+                # ctrl or shift key on it's own
+                return
 
-        eow = QtCore.QString("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-=") #end of word
 
-        hasModifier = ((event.modifiers() != QtCore.Qt.NoModifier) and
+        hasModifier = ((event.modifiers() != Qt.NoModifier) and
                         not ctrlOrShift)
 
         completionPrefix = target.textUnderCursor()
 
-        if (not isShortcut and (hasModifier or event.text().isEmpty() or
-        completionPrefix.length() < 2 or
-        eow.contains(event.text().right(1)))):
-            target.completer.popup().hide()
-            return
+        # EOW test and compatibily with PyQt4/PyQt5
+        if QT_API == "PYQT4":
+            eow = QString("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-=") #end of word
+            if (not isShortcut and (hasModifier or event.text().isEmpty() or
+            completionPrefix.length() < 2 or
+            eow.contains(event.text().right(1)))):
+                target.completer.popup().hide()
+                return
+        elif QT_API == "PYQT5":
+            eow = "~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-=" #end of word
+            if (not isShortcut and (hasModifier or len(event.text()) < 1 or
+            len(completionPrefix) < 2 or
+            event.text()[-1] in eow)):
+                target.completer.popup().hide()
+                return
 
         if (completionPrefix != target.completer.completionPrefix()):
             target.completer.setCompletionPrefix(completionPrefix)
