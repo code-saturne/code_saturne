@@ -666,10 +666,10 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_time_func(cs_property_t        *pty,
-                             const char           *zname,
-                             cs_analytic_func_t   *func,
-                             void                 *input)
+cs_property_def_by_time_func(cs_property_t      *pty,
+                             const char         *zname,
+                             cs_time_func_t     *func,
+                             void               *input)
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
