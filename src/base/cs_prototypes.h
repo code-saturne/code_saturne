@@ -770,29 +770,31 @@ cs_user_gwf_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate GUI defined mathematical expressions over boundary zones.
+ * \file cs_meg_boundary_function.c
  *
- * \param[in]       field_name  name of the field (const char *)
- * \param[in]       condition   condition type (const char *)
- * \param[in]       z           pointer to cs_volume_zone_t
- * \param[in, out]  new_vals    pointer to cs_real_t to contain the computed values
+ * \brief This function is used to compute user defined values for fields over a
+ * given boundary zone
+ *
+ * \param[in]  field_name   name of the field (const char *)
+ * \param[in]  condition    condition type (const char *)
+ * \param[in]  bz           pointer to cs_zone_t structure related to boundary
  *
  * \return a pointer to an array of cs_real_t values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_boundary_function(const char          *field_name,
-                         const char          *condition,
-                         const cs_zone_t     *z);
+cs_meg_boundary_function(const char       *field_name,
+                         const char       *condition,
+                         const cs_zone_t  *bz);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is used to compute user defined values for fields over a
  *        given volume zone
  *
- * \param[in, out]  f  pointer to cs_field_t
- * \param[in]       z  pointer to cs_zone_t structure related to a volume
+ * \param[in, out]  f   pointer to cs_field_t
+ * \param[in]       vz  pointer to cs_zone_t structure related to a volume
  */
 /*----------------------------------------------------------------------------*/
 
@@ -802,10 +804,11 @@ cs_meg_volume_function(cs_field_t         *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate GUI defined mathematical expressions over volume zones for initialization.
+ * \brief  Evaluate GUI defined mathematical expressions over volume zones for
+ *         initialization.
  *
- * \param[in]   f  char pointer: variable name
- * \param[in]   z  pointer to a cs_volume_zone_t structure
+ * \param[in]   f   char pointer: variable name
+ * \param[in]   vz  pointer to a cs_volume_zone_t structure
  *
 */
 /*----------------------------------------------------------------------------*/
@@ -815,14 +818,12 @@ cs_meg_initialization(const char      *field_name,
                       const cs_zone_t *vz);
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \file cs_meg_source_terms.c
  *
  * \brief This function is used to compute source terms over a volume zone
  *
- * \param[in]       z            pointer to cs_volume_zone_t
+ * \param[in]       vz           pointer to cs_volume_zone_t
  * \param[in]       name         char pointer: variable name
  * \param[in]       source_type  char pointer: source term type
  *
