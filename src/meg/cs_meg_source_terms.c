@@ -76,7 +76,7 @@ cs_meg_source_terms(const cs_zone_t  *vz,
   CS_UNUSED(name);
   CS_UNUSED(source_type);
 
+  return NULL; /* avoid a compilation warning */
 }
 
 END_C_DECLS
-

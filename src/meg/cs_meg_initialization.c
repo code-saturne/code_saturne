@@ -74,10 +74,9 @@ cs_meg_initialization(const char       *field_name,
   CS_UNUSED(field_name);
   CS_UNUSED(vz);
 
-  return NULL;
+  return NULL; /* avoid a compilation warning */
 }
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
