@@ -530,7 +530,7 @@ if test "x$cs_gxx" = "xg++"; then
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fopenmp"
-  cxxflags_default_std="-ansi -funsigned-char"
+  cxxflags_default_std="-funsigned-char"
 
   # Modify default flags on certain systems
 
@@ -599,7 +599,7 @@ elif test "x$cs_gxx" = "xicc"; then
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-qopenmp"
-  cxxflags_default_std="-strict-ansi -funsigned-char"
+  cxxflags_default_std="-funsigned-char"
 
   case "$cs_cxx_vers_major" in
     1[0123456])
@@ -628,7 +628,7 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fopenmp=libomp"
-  cxxflags_default_std="-strict-ansi -funsigned-char"
+  cxxflags_default_std="-funsigned-char"
 
 # Otherwise, are we using pgcc ?
 #-------------------------------
@@ -737,7 +737,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-ansi -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
+    cxxflags_default="-W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
     cxxflags_default_dbg="-g"
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-Ofast"

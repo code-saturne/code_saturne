@@ -3,6 +3,9 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Allow C++ compiler to use default standard version (usually C++11) to avoid
+  issues compiling MEDCoupling support code for Salome 9.2 or above.
+
 - Fixes for GMSH import.
   * Fix crashes for binary file import
   * Fix handling of physical groups for GMSH V4 format; names are also handled.
