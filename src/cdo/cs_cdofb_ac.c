@@ -856,6 +856,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
@@ -1011,7 +1012,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
       /* ************************* ASSEMBLY PROCESS ************************* */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mav, rhs, mom_eqc->source_terms);
+                               mab, mav, rhs, mom_eqc->source_terms);
 
     } /* Main loop on cells */
 
@@ -1178,6 +1179,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
@@ -1359,7 +1361,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
       /* ************************* ASSEMBLY PROCESS ************************* */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mav, rhs, mom_eqc->source_terms);
+                               mab, mav, rhs, mom_eqc->source_terms);
 
     } /* Main loop on cells */
 

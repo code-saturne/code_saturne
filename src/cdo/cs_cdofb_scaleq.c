@@ -1192,6 +1192,7 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -1283,7 +1284,7 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mav); /* Matrix assembly */
+      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
 
       for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
 #       pragma omp atomic
@@ -1400,6 +1401,7 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -1525,7 +1527,7 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mav); /* Matrix assembly */
+      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
 
       for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
 #       pragma omp atomic
@@ -1651,6 +1653,7 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -1816,7 +1819,7 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mav); /* Matrix assembly */
+      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
 
       for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
 #       pragma omp atomic

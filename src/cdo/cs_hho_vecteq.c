@@ -1193,6 +1193,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     /* Set inside the OMP section so that each thread has its own value
      * Each thread get back its related structures:
      * Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
@@ -1358,10 +1359,8 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
       /* ======== */
 
       /* Matrix assembly */
-      cs_equation_assemble_block_matrix(csys,
-                                        eqc->rs,
-                                        eqc->n_face_dofs,
-                                        mav);
+      cs_equation_assemble_block_matrix(csys, eqc->rs, eqc->n_face_dofs,
+                                        mab, mav); /* Matrix assembly */
 
       /* Assemble RHS */
       for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {

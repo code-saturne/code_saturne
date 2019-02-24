@@ -170,6 +170,19 @@ typedef struct {
 
 } cs_equation_balance_t;
 
+/*
+ * Structure used to store the arguments for the assemble function
+ */
+typedef struct {
+
+  int             buffer_size;
+
+  cs_gnum_t      *row_gids;
+  cs_gnum_t      *col_gids;
+  cs_real_t      *values;
+
+} cs_equation_assembly_buf_t;
+
 /*============================================================================
  * Inline public function prototypes
  *============================================================================*/
@@ -496,15 +509,17 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system
  *
- * \param[in]      csys         cellwise view of the algebraic system
- * \param[in]      rset         pointer to a cs_range_set_t structure
- * \param[in, out] mav          pointer to a matrix assembler structure
+ * \param[in]      csys     cellwise view of the algebraic system
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] mab      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
                             const cs_range_set_t           *rset,
+                            cs_equation_assembly_buf_t     *mab,
                             cs_matrix_assembler_values_t   *mav);
 
 /*----------------------------------------------------------------------------*/
@@ -515,6 +530,7 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
  * \param[in]      csys         cellwise view of the algebraic system
  * \param[in]      rset         pointer to a cs_range_set_t structure
  * \param[in]      n_x_dofs     number of DoFs per entity (= size of the block)
+ * \param[in, out] mab          pointer to a matrix assembler buffers
  * \param[in, out] mav          pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
@@ -523,7 +539,22 @@ void
 cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
                                   const cs_range_set_t           *rset,
                                   int                             n_x_dofs,
+                                  cs_equation_assembly_buf_t     *mab,
                                   cs_matrix_assembler_values_t   *mav);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a pointer to a cs_equation_assembly_buf_t structure related
+ *         to a given thread
+ *
+ * \param[in]  t_id    id in the array of pointer
+ *
+ * \return a pointer to a cs_equation_assembly_buf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_assembly_buf_t *
+cs_equation_get_assembly_buffers(int    t_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

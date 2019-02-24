@@ -602,6 +602,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -682,7 +683,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
       /* ************************* ASSEMBLY PROCESS ************************* */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mav, rhs, eqc->source_terms);
+                               mab, mav, rhs, eqc->source_terms);
 
     } /* Main loop on cells */
 
@@ -797,6 +798,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -900,7 +902,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
       /* ************************* ASSEMBLY PROCESS ************************* */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mav, rhs, eqc->source_terms);
+                               mab, mav, rhs, eqc->source_terms);
 
     } /* Main loop on cells */
 
@@ -1024,6 +1026,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assembly_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -1155,7 +1158,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
       /* ************************* ASSEMBLY PROCESS ************************* */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mav, rhs, eqc->source_terms);
+                               mab, mav, rhs, eqc->source_terms);
 
     } /* Main loop on cells */
 

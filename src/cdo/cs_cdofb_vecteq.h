@@ -336,27 +336,31 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb scheme
  *
- * \param[in]        csys              pointer to a cs_cell_sys_t structure
- * \param[in]        rs                pointer to a cs_range_set_t structure
- * \param[in]        cm                pointer to a cs_cell_mesh_t structure
- * \param[in]        has_sourceterm    has the equation a source term?
- * \param[in, out]   mav               pointer to cs_matrix_assembler_values_t
- * \param[in, out]   rhs               right-end side of the system
- * \param[in, out]   eqc_st            source term from the context view
+ * \param[in]      csys              pointer to a cs_cell_sys_t structure
+ * \param[in]      rs                pointer to a cs_range_set_t structure
+ * \param[in]      cm                pointer to a cs_cell_mesh_t structure
+ * \param[in]      has_sourceterm    has the equation a source term?
+ * \param[in, out] mab               pointer to cs_equation_assembly_buf_t
+ * \param[in, out] mav               pointer to cs_matrix_assembler_values_t
+ * \param[in, out] rhs               right-end side of the system
+ * \param[in, out] eqc_st            source term from the context view
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_cdofb_vecteq_assembly(const cs_cell_sys_t          *csys,
-                         const cs_range_set_t         *rs,
-                         const cs_cell_mesh_t         *cm,
-                         const bool                    has_sourceterm,
-                         cs_matrix_assembler_values_t *mav,
-                         cs_real_t                     rhs[],
-                         cs_real_t                     eqc_st[])
+cs_cdofb_vecteq_assembly(const cs_cell_sys_t           *csys,
+                         const cs_range_set_t          *rs,
+                         const cs_cell_mesh_t          *cm,
+                         const bool                     has_sourceterm,
+                         cs_equation_assembly_buf_t    *mab,
+                         cs_matrix_assembler_values_t  *mav,
+                         cs_real_t                      rhs[],
+                         cs_real_t                      eqc_st[])
 {
   const short int n_f = cm->n_fc;
-  cs_equation_assemble_block_matrix(csys, rs, 3, mav); /* Matrix assembly */
+
+  /* Matrix assembly */
+  cs_equation_assemble_block_matrix(csys, rs, 3, mab, mav);
 
   for (short int f = 0; f < 3*n_f; f++) /* Assemble RHS */
 #   pragma omp atomic
