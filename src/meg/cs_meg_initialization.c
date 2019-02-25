@@ -56,11 +56,14 @@ BEGIN_C_DECLS
  * \file cs_meg_volume_initialization.c
  *
  * \brief This function is used for initalization of fields over a
- * given volume zone
+ * given volume zone.
  *
- * \param[in, out]  f  pointer to cs_field_t
- * \param[in]       z  pointer to cs_volume_zone_t
+ * The caller is responsible for freeing the associated array.
  *
+ * \param[in, out]  field_name  associated field name
+ * \param[in]       vz          pointer to associated volume zone
+ *
+ * \return  pointer to allocated initialization values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -68,11 +71,13 @@ cs_real_t *
 cs_meg_initialization(const char       *field_name,
                       const cs_zone_t  *vz)
 {
-
   CS_UNUSED(field_name);
   CS_UNUSED(vz);
 
+  return NULL;
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
