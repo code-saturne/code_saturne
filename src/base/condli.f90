@@ -180,21 +180,16 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal , iterns
-integer          isvhb
+integer          nvar   , nscal , iterns, isvhb
 integer          itrale , italim , itrfin , ineefl , itrfup
 
-double precision flmalf(nfac), flmalb(nfabor)
-double precision, dimension(:) :: xprale
-double precision, dimension(:,:) :: cofale
-
-integer          icodcl(nfabor,nvar)
-integer          isostd(nfabor+1)
-
+double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+double precision, pointer, dimension(:,:) :: cofale
+integer, pointer, dimension(:,:) :: icodcl
+integer, dimension(nfabor+1) :: isostd
 double precision, pointer, dimension(:) :: dt
-double precision rcodcl(nfabor,nvar,3)
-double precision, dimension(:) :: visvdr
-double precision hbord(nfabor),theipb(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
 ! Local variables
 

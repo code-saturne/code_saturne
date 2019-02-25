@@ -115,7 +115,6 @@ integer          isvhb, iz
 integer          ii
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
-integer          nbzfmx, nozfmx
 integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
 
@@ -130,15 +129,15 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
-integer, allocatable, dimension(:,:) :: icodcl
+integer, pointer, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
 
-double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
-double precision, allocatable, dimension(:,:) :: cofale
+double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+double precision, pointer, dimension(:,:) :: cofale
 double precision, pointer, dimension(:,:) :: dttens
-double precision, allocatable, dimension(:,:,:) :: rcodcl
-double precision, allocatable, dimension(:) :: hbord, theipb
-double precision, allocatable, dimension(:) :: visvdr
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, pointer, dimension(:) :: hbord, theipb
+double precision, pointer, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
 double precision, allocatable, dimension(:) :: mass_source
 double precision, dimension(:), pointer :: brom, crom
@@ -191,16 +190,13 @@ interface
     integer          nvar, nscal, iterns, isvhb
     integer          itrale , italim , itrfin , ineefl , itrfup
 
-    integer, dimension(nfabor,nvar) :: icodcl
+    double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+    double precision, pointer, dimension(:,:) :: cofale
+    integer, pointer, dimension(:,:) :: icodcl
     integer, dimension(nfabor+1) :: isostd
-
-    double precision, dimension(nfac) :: flmalf
-    double precision, dimension(nfabor) :: flmalb, hbord, theipb
-    double precision, dimension(:) :: xprale, visvdr
-    double precision, dimension(:,:) :: cofale
-    double precision, dimension(nfabor,nvar,3) :: rcodcl
-
-    double precision, pointer, dimension(:)   :: dt
+    double precision, pointer, dimension(:) :: dt
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
   end subroutine condli
 
@@ -813,6 +809,11 @@ if (iale.ge.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfin = 0
 
+else
+  flmalf => null()
+  flmalb => null()
+  cofale => null()
+  xprale => null()
 endif
 
 300 continue
@@ -833,6 +834,12 @@ endif
 if (nterup.gt.1.or.isno2t.gt.0) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 endif
+
+icodcl => null()
+rcodcl => null()
+hbord => null()
+theipb => null()
+visvdr => null()
 
 ! Allocate temporary arrays for boundary conditions
 if (italim .eq. 1) then
@@ -1029,9 +1036,9 @@ do while (iterns.le.nterup)
 
   if (must_return) then
 
-    if (allocated(hbord)) deallocate(hbord)
-    if (allocated(theipb)) deallocate(theipb)
-    if (allocated(visvdr)) deallocate(visvdr)
+    if (associated(hbord)) deallocate(hbord)
+    if (associated(theipb)) deallocate(theipb)
+    if (associated(visvdr)) deallocate(visvdr)
 
     if (nterup.gt.1) then
       deallocate(trava)
@@ -1200,9 +1207,9 @@ if (ippmod(idarcy).eq.1) then
 endif
 
 ! Free memory
-if (allocated(hbord)) deallocate(hbord)
-if (allocated(theipb)) deallocate(theipb)
-if (allocated(visvdr)) deallocate(visvdr)
+if (associated(hbord)) deallocate(hbord)
+if (associated(theipb)) deallocate(theipb)
+if (associated(visvdr)) deallocate(visvdr)
 
 if (nterup.gt.1) then
   deallocate(trava)
@@ -1230,7 +1237,7 @@ if (iccvfg.eq.0) then
     endif
 
     ! Free memory
-    if (allocated(flmalf)) then
+    if (associated(flmalf)) then
       deallocate(flmalf, flmalb)
       deallocate(cofale)
       deallocate(xprale)

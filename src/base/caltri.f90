@@ -586,12 +586,7 @@ allocate(rcodcl(nfabor,nvar,3))
 allocate(isostd(nfabor+1))
 
 ! First pass for initialization BC types
-call condli_ini &
-  (nvar  , nscal  ,                                              &
-  itrale ,                                                       &
-  icodcl , isostd ,                                              &
-  dt     ,                                                       &
-  rcodcl )
+call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
 
 deallocate(icodcl)
 deallocate(rcodcl)
