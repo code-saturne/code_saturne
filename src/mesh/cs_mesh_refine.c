@@ -4157,7 +4157,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   /* Build ghosts in case they are not present */
 
-  if ((m->n_domains > 0 || m->n_init_perio > 0) && m->halo == NULL) {
+  if ((m->n_domains > 1 || m->n_init_perio > 0) && m->halo == NULL) {
     cs_halo_type_t halo_type = m->halo_type;
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
     cs_mesh_init_halo(m, mb, halo_type);
