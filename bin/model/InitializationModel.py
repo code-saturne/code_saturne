@@ -71,10 +71,10 @@ class InitializationModel(Model):
         self.node_veloce     = self.models.xmlGetNode('velocity_pressure')
         self.node_turb       = self.models.xmlGetNode('turbulence', 'model')
         self.node_therm      = self.models.xmlGetNode('thermal_scalar', 'model')
+        self.node_prop       = self.case.xmlGetNode('physical_properties')
+        self.node_fluid      = self.node_prop.xmlInitNode('fluid_properties')
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.node_comp = self.models.xmlGetNode('compressible_model', 'model')
-            self.node_prop   = self.case.xmlGetNode('physical_properties')
-            self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
 
         self.turb = TurbulenceModel(self.case)
         self.therm = ThermalScalarModel(self.case)

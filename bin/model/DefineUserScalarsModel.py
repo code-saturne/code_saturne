@@ -267,13 +267,11 @@ class DefineUserScalarsModel(Variables, Model):
             return
 
         model = node['model']
+        list_scalar=[]
         if model != 'off':
             node_list = node.xmlGetNodeList('variable')
-            list_scalar=[]
             for node_scalar in node_list:
                 list_scalar.append(node_scalar['name'])
-        else:
-            return
 
         return list_scalar
 
