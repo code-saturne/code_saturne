@@ -258,18 +258,9 @@ static void
 _physical_property(cs_field_t          *c_prop,
                    const cs_zone_t     *z)
 {
-  cs_var_t  *vars = cs_glob_var;
-
   int user_law = 0;
   const char *law = NULL;
-  double time0;
-  mei_tree_t *ev_law = NULL;
-  cs_lnum_t i, iel;
-
   const char *prop_choice = _properties_choice(c_prop->name);
-
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
   if (cs_gui_strcmp(prop_choice, "user_law"))
     user_law = 1;
@@ -2702,7 +2693,8 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
           tsimp[c_id][2][2] = cell_f_vol[c_id]*dSwdw;
 
         }
-        BFT_FREE(st_vals);
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
       }
     }
   }
@@ -2780,7 +2772,8 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
             tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
                         - tsimp[c_id] * pvar[c_id];
           }
-          BFT_FREE(st_vals);
+          if (st_vals != NULL)
+            BFT_FREE(st_vals);
         }
       }
     }
@@ -2862,7 +2855,8 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
           tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
                       - tsimp[c_id] * pvar[c_id];
         }
-        BFT_FREE(st_vals);
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
       }
     }
   }
@@ -2922,12 +2916,14 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
         if (formula_uvw != NULL) {
           cs_real_t *ini_vals = cs_meg_initialization("velocity", z);
-          for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-            cs_lnum_t c_id = cell_ids[e_id];
-            for (int d = 0; d < 3; d++)
-              c_vel->val[3 * c_id + d] = ini_vals[3 * e_id + d];
+          if (ini_vals != NULL) {
+            for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+              cs_lnum_t c_id = cell_ids[e_id];
+              for (int d = 0; d < 3; d++)
+                c_vel->val[3 * c_id + d] = ini_vals[3 * e_id + d];
+            }
+            BFT_FREE(ini_vals);
           }
-          BFT_FREE(ini_vals);
         }
         else {
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
@@ -2950,12 +2946,14 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
           if (formula != NULL) {
             cs_real_t *ini_vals = cs_meg_initialization("hydraulic_head",
-                                                             z);
-            for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-              cs_lnum_t c_id = cell_ids[c_id];
-              c->val[c_id] = ini_vals[e_id];
+                                                        z);
+            if (ini_vals != NULL) {
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[c_id];
+                c->val[c_id] = ini_vals[e_id];
+              }
+              BFT_FREE(ini_vals);
             }
-            BFT_FREE(ini_vals);
           }
 
         }
@@ -2982,127 +2980,133 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
             cs_real_t *ini_vals = cs_meg_initialization("turbulence", z);
 
-            if (cs_gui_strcmp(model, "k-epsilon") ||
-                cs_gui_strcmp(model, "k-epsilon-PL")) {
+            if (ini_vals != NULL) {
 
-              cs_field_t *c_k   = cs_field_by_name("k");
-              cs_field_t *c_eps = cs_field_by_name("epsilon");
+              if (   cs_gui_strcmp(model, "k-epsilon")
+                  || cs_gui_strcmp(model, "k-epsilon-PL")) {
 
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                c_k->val[c_id]   = ini_vals[2 * e_id];
-                c_eps->val[c_id] = ini_vals[2 * e_id + 1];
-              }
-            }
-            else if (   cs_gui_strcmp(model, "Rij-epsilon")
-                     || cs_gui_strcmp(model, "Rij-SSG")) {
+                cs_field_t *c_k   = cs_field_by_name("k");
+                cs_field_t *c_eps = cs_field_by_name("epsilon");
 
-              cs_field_t *c_rij = cs_field_by_name_try("rij");
-              cs_field_t *c_eps = cs_field_by_name("epsilon");
-
-              if (c_rij != NULL) {
                 for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                   cs_lnum_t c_id = cell_ids[e_id];
-                  for (int drij = 0; drij < 6; drij++) {
-                    c_rij->val[6*c_id + drij] = ini_vals[7*e_id + drij];
-                  c_eps->val[c_id] = ini_vals[7 * e_id + 6];
+                  c_k->val[c_id]   = ini_vals[2 * e_id];
+                  c_eps->val[c_id] = ini_vals[2 * e_id + 1];
+                }
+              }
+              else if (   cs_gui_strcmp(model, "Rij-epsilon")
+                       || cs_gui_strcmp(model, "Rij-SSG")) {
+
+                cs_field_t *c_rij = cs_field_by_name_try("rij");
+                cs_field_t *c_eps = cs_field_by_name("epsilon");
+
+                if (c_rij != NULL) {
+                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                    cs_lnum_t c_id = cell_ids[e_id];
+                    for (int drij = 0; drij < 6; drij++) {
+                      c_rij->val[6*c_id + drij] = ini_vals[7*e_id + drij];
+                      c_eps->val[c_id] = ini_vals[7 * e_id + 6];
+                    }
                   }
                 }
-              } else {
-                cs_field_t *c_r11 = cs_field_by_name("r11");
-                cs_field_t *c_r22 = cs_field_by_name("r22");
-                cs_field_t *c_r33 = cs_field_by_name("r33");
-                cs_field_t *c_r12 = cs_field_by_name("r12");
-                cs_field_t *c_r13 = cs_field_by_name("r13");
-                cs_field_t *c_r23 = cs_field_by_name("r23");
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  c_r11->val[c_id] = ini_vals[7 * e_id];
-                  c_r22->val[c_id] = ini_vals[7 * e_id + 1];
-                  c_r33->val[c_id] = ini_vals[7 * e_id + 2];
-                  c_r12->val[c_id] = ini_vals[7 * e_id + 3];
-                  c_r23->val[c_id] = ini_vals[7 * e_id + 4];
-                  c_r13->val[c_id] = ini_vals[7 * e_id + 5];
-                  c_eps->val[c_id] = ini_vals[7 * e_id + 6];
-                }
-              }
-            }
-            else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-              cs_field_t *c_rij = cs_field_by_name_try("rij");
-              cs_field_t *c_eps = cs_field_by_name("epsilon");
-              cs_field_t *c_alp = cs_field_by_name("alpha");
-
-              if (c_rij != NULL) {
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  for (int drij = 0; drij < 6; drij++) {
-                    c_rij->val[6*c_id + drij] = ini_vals[8*e_id + drij];
-                  c_eps->val[c_id] = ini_vals[8 * e_id + 6];
-                  c_alp->val[c_id] = ini_vals[8 * e_id + 7];
+                else {
+                  cs_field_t *c_r11 = cs_field_by_name("r11");
+                  cs_field_t *c_r22 = cs_field_by_name("r22");
+                  cs_field_t *c_r33 = cs_field_by_name("r33");
+                  cs_field_t *c_r12 = cs_field_by_name("r12");
+                  cs_field_t *c_r13 = cs_field_by_name("r13");
+                  cs_field_t *c_r23 = cs_field_by_name("r23");
+                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                    cs_lnum_t c_id = cell_ids[e_id];
+                    c_r11->val[c_id] = ini_vals[7 * e_id];
+                    c_r22->val[c_id] = ini_vals[7 * e_id + 1];
+                    c_r33->val[c_id] = ini_vals[7 * e_id + 2];
+                    c_r12->val[c_id] = ini_vals[7 * e_id + 3];
+                    c_r23->val[c_id] = ini_vals[7 * e_id + 4];
+                    c_r13->val[c_id] = ini_vals[7 * e_id + 5];
+                    c_eps->val[c_id] = ini_vals[7 * e_id + 6];
                   }
                 }
-              } else {
-                cs_field_t *c_r11 = cs_field_by_name("r11");
-                cs_field_t *c_r22 = cs_field_by_name("r22");
-                cs_field_t *c_r33 = cs_field_by_name("r33");
-                cs_field_t *c_r12 = cs_field_by_name("r12");
-                cs_field_t *c_r13 = cs_field_by_name("r13");
-                cs_field_t *c_r23 = cs_field_by_name("r23");
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  c_r11->val[c_id] = ini_vals[8 * e_id];
-                  c_r22->val[c_id] = ini_vals[8 * e_id + 1];
-                  c_r33->val[c_id] = ini_vals[8 * e_id + 2];
-                  c_r12->val[c_id] = ini_vals[8 * e_id + 3];
-                  c_r23->val[c_id] = ini_vals[8 * e_id + 4];
-                  c_r13->val[c_id] = ini_vals[8 * e_id + 5];
-                  c_eps->val[c_id] = ini_vals[8 * e_id + 6];
-                  c_alp->val[c_id] = ini_vals[8 * e_id + 7];
+              }
+              else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
+                cs_field_t *c_rij = cs_field_by_name_try("rij");
+                cs_field_t *c_eps = cs_field_by_name("epsilon");
+                cs_field_t *c_alp = cs_field_by_name("alpha");
+
+                if (c_rij != NULL) {
+                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                    cs_lnum_t c_id = cell_ids[e_id];
+                    for (int drij = 0; drij < 6; drij++) {
+                      c_rij->val[6*c_id + drij] = ini_vals[8*e_id + drij];
+                      c_eps->val[c_id] = ini_vals[8 * e_id + 6];
+                      c_alp->val[c_id] = ini_vals[8 * e_id + 7];
+                    }
+                  }
+                }
+                else {
+                  cs_field_t *c_r11 = cs_field_by_name("r11");
+                  cs_field_t *c_r22 = cs_field_by_name("r22");
+                  cs_field_t *c_r33 = cs_field_by_name("r33");
+                  cs_field_t *c_r12 = cs_field_by_name("r12");
+                  cs_field_t *c_r13 = cs_field_by_name("r13");
+                  cs_field_t *c_r23 = cs_field_by_name("r23");
+                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                    cs_lnum_t c_id = cell_ids[e_id];
+                    c_r11->val[c_id] = ini_vals[8 * e_id];
+                    c_r22->val[c_id] = ini_vals[8 * e_id + 1];
+                    c_r33->val[c_id] = ini_vals[8 * e_id + 2];
+                    c_r12->val[c_id] = ini_vals[8 * e_id + 3];
+                    c_r23->val[c_id] = ini_vals[8 * e_id + 4];
+                    c_r13->val[c_id] = ini_vals[8 * e_id + 5];
+                    c_eps->val[c_id] = ini_vals[8 * e_id + 6];
+                    c_alp->val[c_id] = ini_vals[8 * e_id + 7];
+                  }
                 }
               }
-            }
-            else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
+              else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
 
-              cs_field_t *c_k   = cs_field_by_name("k");
-              cs_field_t *c_eps = cs_field_by_name("epsilon");
-              cs_field_t *c_phi = cs_field_by_name("phi");
-              cs_field_t *c_alp = cs_field_by_name("alpha");
+                cs_field_t *c_k   = cs_field_by_name("k");
+                cs_field_t *c_eps = cs_field_by_name("epsilon");
+                cs_field_t *c_phi = cs_field_by_name("phi");
+                cs_field_t *c_alp = cs_field_by_name("alpha");
 
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
 
-                c_k->val[c_id]   = ini_vals[4 * e_id];
-                c_eps->val[c_id] = ini_vals[4 * e_id + 1];
-                c_phi->val[c_id] = ini_vals[4 * e_id + 2];
-                c_alp->val[c_id] = ini_vals[4 * e_id + 3];
+                  c_k->val[c_id]   = ini_vals[4 * e_id];
+                  c_eps->val[c_id] = ini_vals[4 * e_id + 1];
+                  c_phi->val[c_id] = ini_vals[4 * e_id + 2];
+                  c_alp->val[c_id] = ini_vals[4 * e_id + 3];
+                }
               }
-            }
-            else if (cs_gui_strcmp(model, "k-omega-SST")) {
+              else if (cs_gui_strcmp(model, "k-omega-SST")) {
 
-              cs_field_t *c_k   = cs_field_by_name("k");
-              cs_field_t *c_ome = cs_field_by_name("omega");
+                cs_field_t *c_k   = cs_field_by_name("k");
+                cs_field_t *c_ome = cs_field_by_name("omega");
 
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
 
-                c_k->val[c_id]   = ini_vals[2 * e_id];
-                c_ome->val[c_id] = ini_vals[2 * e_id + 1];
+                  c_k->val[c_id]   = ini_vals[2 * e_id];
+                  c_ome->val[c_id] = ini_vals[2 * e_id + 1];
+                }
               }
-            }
-            else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-              cs_field_t *c_nu = cs_field_by_name("nu_tilda");
+              else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
+                cs_field_t *c_nu = cs_field_by_name("nu_tilda");
 
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                c_nu->val[c_id] = ini_vals[e_id];
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  c_nu->val[c_id] = ini_vals[e_id];
+                }
               }
+
+              else
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Invalid turbulence model: %s.\n"), model);
+
+              BFT_FREE(ini_vals);
+
             }
-
-            else
-              bft_error(__FILE__, __LINE__, 0,
-                  _("Invalid turbulence model: %s.\n"), model);
-
-            BFT_FREE(ini_vals);
           }
         }
 
@@ -3126,15 +3130,16 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           assert(c != NULL);
 
           if (formula_sca != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
-
-            for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-              cs_lnum_t c_id = cell_ids[e_id];
-              c->val[c_id]   = ini_vals[e_id];
+            cs_real_t *ini_vals = cs_meg_initialization("thermal", z);
+            if (ini_vals != NULL) {
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_lnum_t c_id = cell_ids[e_id];
+                c->val[c_id]   = ini_vals[e_id];
+              }
+              BFT_FREE(ini_vals);
             }
-
-            BFT_FREE(ini_vals);
-          } else {
+          }
+          else {
             for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
               cs_lnum_t iel = cell_ids[icel];
               c->val[iel] = 0.0;
@@ -3162,11 +3167,13 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
             if (formula_sca != NULL) {
               cs_real_t *ini_vals = cs_meg_initialization(f->name, z);
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                f->val[c_id] = ini_vals[e_id];
+              if (ini_vals != NULL) {
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  f->val[c_id] = ini_vals[e_id];
+                }
+                BFT_FREE(ini_vals);
               }
-              BFT_FREE(ini_vals);
             }
           }
         }
@@ -3210,12 +3217,15 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
             if (formula_meteo != NULL) {
               cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                c->val[c_id] = ini_vals[e_id];
+              if (ini_vals != NULL) {
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  c->val[c_id] = ini_vals[e_id];
+                }
+                BFT_FREE(ini_vals);
               }
-              BFT_FREE(ini_vals);
-            } else {
+            }
+            else {
               for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                 cs_lnum_t c_id = cell_ids[e_id];
                 c->val[c_id] = 0.0;
@@ -3275,11 +3285,13 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
               if (formula != NULL) {
                 cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
-                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                  cs_lnum_t c_id = cell_ids[e_id];
-                  c->val[c_id] = ini_vals[e_id];
+                if (ini_vals != NULL) {
+                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                    cs_lnum_t c_id = cell_ids[e_id];
+                    c->val[c_id] = ini_vals[e_id];
+                  }
+                  BFT_FREE(ini_vals);
                 }
-                BFT_FREE(ini_vals);
               }
             }
 
