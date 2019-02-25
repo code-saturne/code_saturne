@@ -714,7 +714,7 @@ class mei_to_c_interpreter:
             for nb in self.notebook.keys():
                 if nb in line_comp and nb not in known_symbols:
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                                % (sn, sn)
+                                % (nb, nb)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
