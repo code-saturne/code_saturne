@@ -1954,7 +1954,7 @@ _build_vertices_gnum(cs_mesh_t       *m,
       }
     }
 
-    n_g_add_vtx = m->n_g_vertices - elt_v_idx[n_elts];
+    n_g_add_vtx = elt_v_idx[n_elts] - m->n_g_vertices;
 
   }
   else {
@@ -1984,10 +1984,12 @@ _build_vertices_gnum(cs_mesh_t       *m,
     assert(   elt_v_idx[n_elts] - elt_v_idx[0]
            == fvm_io_num_get_local_count(vtx_io_num));
 
-    cs_lnum_t k = 0;
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      for (cs_lnum_t j = elt_v_idx[i]; j < elt_v_idx[i+1]; j++, k++)
-        m->global_vtx_num[j] = add_vtx_gnum[k] + m->n_g_vertices;
+    if (m->global_vtx_num != NULL) {
+      cs_lnum_t k = 0;
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+	for (cs_lnum_t j = elt_v_idx[i]; j < elt_v_idx[i+1]; j++, k++)
+	  m->global_vtx_num[j] = add_vtx_gnum[k] + m->n_g_vertices;
+      }
     }
 
     vtx_io_num = fvm_io_num_destroy(vtx_io_num);

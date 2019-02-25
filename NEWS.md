@@ -3,6 +3,8 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix crash in mesh refinement in serial mode.
+
 - Allow C++ compiler to use default standard version (usually C++11) to avoid
   issues compiling MEDCoupling support code for Salome 9.2 or above.
 
