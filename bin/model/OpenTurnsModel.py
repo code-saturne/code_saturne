@@ -77,9 +77,6 @@ class OpenTurnsModel(Model):
         if not self.cfg_ot.has_section('host_parameters'):
             self.__set_default_cfg(self.cfg_ot)
 
-        #FIXME:
-        self.resfile_name = "output.dat"
-
         # ------------------------------------
         # Read cfg info:
 
@@ -274,6 +271,34 @@ class OpenTurnsModel(Model):
 
         return d, h, m, s
 
+
+    # ---------------------------------------
+    def setWCKEY(self, v):
+        """
+        Set the WCKEY variable
+        """
+
+        self.wckey = str(v)
+
+
+    def getWCKEY(self):
+        """
+        Return the wckey variable
+        """
+
+        return self.wckey
+
+    # ---------------------------------------
+    def setResultsFile(self, v):
+
+        self.resfile_name = str(v)
+
+
+    def getResultsFile(self):
+
+        return self.resfile_name
+
+
     # ---------------------------------------
     def setInputVars(self, vlist):
         """
@@ -319,7 +344,7 @@ class OpenTurnsModel(Model):
         Set the number of wanter processors
         """
 
-        self.nprocs = nprocs
+        self.nprocs = str(nprocs)
 
 
     def getNprocs(self):
@@ -336,15 +361,17 @@ class OpenTurnsModel(Model):
         """
 
         if nnodes:
-            self.nnodes = nnodes
+            self.nnodes = str(nnodes)
 
         if ntasks:
-            self.ntasks = ntasks
+            self.ntasks = str(ntasks)
 
         if nthreads:
-            self.nthreads = nthreads
+            self.nthreads = str(nthreads)
 
-        self.nprocs = int(self.nnodes) * int(self.ntasks) * int(self.nthreads)
+        self.nprocs = str(int(self.nnodes) *
+                          int(self.ntasks) *
+                          int(self.nthreads) )
 
     def getClusterParams(self):
         """
@@ -396,6 +423,7 @@ class OpenTurnsModel(Model):
             self.cfg_ot.set('study_parameters', 'ref_case', self.ref_case_name)
             self.cfg_ot.set('study_parameters', 'xmlfile',
                             os.path.split(self.case['xmlfile'])[-1])
+            self.cfg_ot.set('study_parameters', 'results_file', self.resfile_name)
 
             self.cfg_ot.set('batch_parameters', 'wall_clock', self.wall_clock)
             self.cfg_ot.set('batch_parameters', 'wckey', self.wckey)
