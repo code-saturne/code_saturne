@@ -115,6 +115,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         # Hosts are stored in the form <batch_rm>_<host_name> hence the split
         # used hereafter to determine the "real" host name
         self.hosts_binpath =  {}
+        self.hosts_binpath['localhost'] = 'default'
 
         self.distant_host_builds = None
         if dist_hosts != None:
@@ -130,6 +131,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
                 dh_not_found = False
                 if self.distant_host_builds[host_name] == None:
+                    self.distant_host_builds[host_name] = ['none found']
                     dh_not_found = True
 
                 host_tag = 'distant : ' + host_name
@@ -154,6 +156,8 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.spinBoxNumberHours.valueChanged[int].connect(self.slotUpdateWCHours)
         self.spinBoxNumberMinutes.valueChanged[int].connect(self.slotUpdateWCMinutes)
         self.spinBoxNumberSeconds.valueChanged[int].connect(self.slotUpdateWCSeconds)
+        self.lineEditWCKEY.textChanged[str].connect(self.slotUpdateWckey)
+        self.lineEditOutputFile.textChanged[str].connect(self.slotUpdateResultsFile)
 
         self.pushButtonLaunchOT.clicked.connect(self.slotLaunchCsOt)
 
@@ -193,7 +197,8 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.spinBoxNumberMinutes.setValue(int(wct[2]))
         self.spinBoxNumberSeconds.setValue(int(wct[3]))
 
-        self.lineEditWCKEY.setText(self.mdl.wckey)
+        self.lineEditWCKEY.setText(self.mdl.getWCKEY())
+        self.lineEditOutputFile.setText(self.mdl.getResultsFile())
 
 
     @pyqtSlot(str)
@@ -316,6 +321,24 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         s = str(int(self.spinBoxNumberSeconds.text()))
 
         self.mdl.setWallClockTime(d, h, m, s)
+
+
+    @pyqtSlot(str)
+    def slotUpdateWckey(self, text):
+        """
+        Update the WCKEY variable
+        """
+
+        self.mdl.setWCKEY(text)
+
+
+    @pyqtSlot(str)
+    def slotUpdateResultsFile(self, text):
+        """
+        Update the outputfile name
+        """
+
+        self.mdl.setResultsFile(text)
 
 
     @pyqtSlot()
@@ -519,7 +542,8 @@ def __getListOfDistantBuilds__(host_name, search_path):
         vr.sort()
         dist_versions = []
         for iv in range(len(vr)):
-            dist_versions.append(str(vr[iv][:-1]))
+            version_name = vr[iv][:-1].decode('utf-8')
+            dist_versions.append(version_name)
 
 
     return dist_versions

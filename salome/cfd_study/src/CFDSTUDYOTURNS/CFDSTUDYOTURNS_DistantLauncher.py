@@ -270,7 +270,9 @@ class CFDSTUDY_DistantLauncher:
         nodes.
         """
 
-        run_args = [self.package_name, 'run', '--stage', '--id ', self.run_id]
+        run_args = [self.package_name, 'run', '--stage',
+                    '--id ', self.run_id,
+                    '-p', self.paramfile]
         f = open('prepare_cs_case.sh', 'wt')
 
         f.write('cd SCRIPTS\n\n')

@@ -276,7 +276,6 @@ class cfd_openturns_study:
         """
 
         from code_saturne.model.XMLengine import Case
-        from code_saturne.model.XMLinitialize import XMLinit
 
         paramfile = self.cfg.get('study_parameters', 'xmlfile')
         fp = os.path.join(self.study_path, self.case_id, 'DATA', paramfile)
