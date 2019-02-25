@@ -778,42 +778,6 @@ _add_zone_id_test_attribute(cs_tree_node_t *tn,
   return cs_tree_node_get_sibling_with_tag(tn, "zone_id", z_id_str);
 }
 
-/*-----------------------------------------------------------------------------
- * Initialize mei tree and check for symbols existence
- *
- * parameters:
- *   formula        <--  mei formula
- *   symbols        <--  array of symbol to check
- *   symbol_size    <--  number of symbol in symbols
- *----------------------------------------------------------------------------*/
-
-static mei_tree_t *
-_init_mei_tree(const char  *formula,
-               const char  *symbols)
-{
-  /* return an empty interpreter */
-  mei_tree_t *tree = mei_tree_new(formula);
-
-  /* add commun variables */
-  mei_tree_insert(tree, "x",    0.0);
-  mei_tree_insert(tree, "y",    0.0);
-  mei_tree_insert(tree, "z",    0.0);
-
-  /* add variable from notebook */
-  cs_gui_add_notebook_variables(tree);
-
-  /* try to build the interpreter */
-  if (mei_tree_builder(tree))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not interpret expression: %s\n"), tree->string);
-  /* check for symbols */
-  if (mei_tree_find_symbol(tree, symbols))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not find the required symbol: %s\n"), symbols);
-
-  return tree;
-}
-
 /*----------------------------------------------------------------------------
  * Return the component of variables or properties or scalar for 1D profile
  *
@@ -883,7 +847,7 @@ _tree_node_get_field(cs_tree_node_t  *tn)
 
   /* Handle segregated Reynolds tensor solver */
 
-  cs_turb_rans_model_t *rans_model = cs_glob_turb_rans_model;
+  const cs_turb_rans_model_t *rans_model = cs_glob_turb_rans_model;
   if (f == NULL && rans_model != NULL) {
     if (rans_model->irijco == 0 && strcmp(name, "rij") == 0) {
       int idim = _get_profile_v_component(tn);
@@ -2602,10 +2566,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
                               cs_real_3_t        *restrict tsexp,
                               cs_real_33_t       *restrict tsimp)
 {
-
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
   double Su, Sv, Sw;
   double dSudu, dSudv, dSudw;
@@ -2615,8 +2576,6 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
 #endif
-
-  cs_field_t *c_rho = CS_F_(rho);
 
   int n_zones = cs_volume_zone_n_zones();
 
@@ -2722,8 +2681,6 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
                               cs_real_t         *restrict tsimp)
 {
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
   const char *formula = NULL;
 
@@ -2800,10 +2757,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
                               cs_real_t         *restrict tsimp)
 {
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
-  double dS;
   const char *formula = NULL;
 
   cs_field_t *f = cs_field_by_id(*f_id);
@@ -2880,10 +2834,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                               int                *iccfth)
 {
   /* Coal combustion: the initialization of the model scalar are not given */
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
-  int ccfth             = 0;
+  int ccfth = 0;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -3114,7 +3066,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         if (cs_gui_thermal_model()) {
 
           const char *formula_sca    = NULL;
-          mei_tree_t *ev_formula_sca   = NULL;
           cs_tree_node_t *tn_sca
             = cs_tree_get_node(cs_glob_tree,
                                "thermophysical_models/thermal_scalar/variable/formula");
@@ -3187,7 +3138,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 
           const char *name       = NULL;
           const char *formula_meteo  = NULL;
-          mei_tree_t *ev_formula_meteo = NULL;
 
           int size = cs_tree_get_sub_node_count_simple(tn_m0, "variable");
 
@@ -3237,7 +3187,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           const char *formula        = NULL;
           const char *buff           = NULL;
-          mei_tree_t *ev_formula       = NULL;
           const char *name[] = {"pressure", "temperature", "total_energy",
                                 "density"};
 
