@@ -218,7 +218,7 @@ class NotebookModel(Model):
         if idx:
             node = self.node_note.xmlInitChildNode("var", id = idx)
         elif var:
-            node = self.node_note.xmlInitChildNode("var", name = name)
+            node = self.node_note.xmlInitChildNode("var", name = var)
         else:
             raise Exception("No id or name were specified for setVariableValue")
 
