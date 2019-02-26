@@ -802,10 +802,8 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 
   if (h_info.is_iso || h_info.is_unity) {
 
-    double  dpty_val;
-    if (h_info.is_unity)
-      dpty_val = 1.0;
-    else if (h_info.is_iso)
+    double  dpty_val = 1.0;  /* is_unity */
+    if (h_info.is_iso)
       dpty_val = cb->dpty_val;
 
     /* Loop on cell edges */
