@@ -515,13 +515,25 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   cs_field_allocate_or_map_all();
 
   /* Allocate common structures for solving equations */
-  cs_equation_common_allocate(domain->connect,
-                              domain->cdo_quantities,
-                              domain->time_step,
-                              domain->cdo_context);
+  cs_equation_allocate_structures(domain->connect,
+                                  domain->cdo_quantities,
+                                  domain->time_step,
+                                  cc->vb_scheme_flag,
+                                  cc->vcb_scheme_flag,
+                                  cc->fb_scheme_flag,
+                                  cc->hho_scheme_flag);
 
   /* Set the range set structure for synchronization in parallel computing */
-  cs_equation_assign_range_set(domain->connect);
+  cs_equation_set_range_set(domain->connect);
+
+  cs_equation_set_shared_structures(domain->connect,
+                                    domain->cdo_quantities,
+                                    domain->time_step,
+                                    cc->vb_scheme_flag,
+                                    cc->vcb_scheme_flag,
+                                    cc->fb_scheme_flag,
+                                    cc->hho_scheme_flag);
+
 
   /* Set the definition of user-defined properties and/or advection
    * fields (no more fields are created at this stage)
@@ -542,7 +554,7 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
    * specifying the cs_equation_t structure
    */
 
-  domain->only_steady = cs_equation_assign_functions();
+  domain->only_steady = cs_equation_set_functions();
   if (domain->only_steady)
     domain->is_last_iter = true;
 

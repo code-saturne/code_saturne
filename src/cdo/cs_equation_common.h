@@ -34,8 +34,6 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_cdo_time.h"
-#include "cs_domain.h"
 #include "cs_equation_param.h"
 #include "cs_flag.h"
 #include "cs_matrix.h"
@@ -325,26 +323,17 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
- *         managing temporary usage of memory when dealing with equations
- *         Call specific structure allocation related to a numerical scheme
- *         according to the scheme flag
- *         The size of the temporary buffer can be bigger according to the
- *         numerical settings
- *         Set also shared pointers from the main domain members
+ * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
+ *         structure
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
- * \param[in]  quant         pointer to additional mesh quantities struct.
- * \param[in]  time_step     pointer to a time step structure
- * \param[in]  cc            pointer to a cs_domain_cdo_context_t struct.
+ * \param[in]  flag_id       id in the array of matrix structures
+ *
+ * \return  a pointer to a cs_matrix_structure_t
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_common_allocate(const cs_cdo_connect_t          *connect,
-                            const cs_cdo_quantities_t       *quant,
-                            const cs_time_step_t            *time_step,
-                            const cs_domain_cdo_context_t   *cc);
+cs_matrix_structure_t *
+cs_equation_get_matrix_structure(int  flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -354,13 +343,42 @@ cs_equation_common_allocate(const cs_cdo_connect_t          *connect,
  *         according to the scheme flag
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
+ *         Set also shared pointers from the main domain members
  *
- * \param[in]  cc    pointer to a structure storing CDO/HHO metadata
+ * \param[in]  connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant        pointer to additional mesh quantities struct.
+ * \param[in]  time_step    pointer to a time step structure
+ * \param[in]  vb_flag      metadata for Vb schemes
+ * \param[in]  vcb_flag     metadata for V+C schemes
+ * \param[in]  fb_flag      metadata for Fb schemes
+ * \param[in]  hho_flag     metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_common_free(const cs_domain_cdo_context_t   *cc);
+cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *quant,
+                                const cs_time_step_t         *time_step,
+                                cs_flag_t                     vb_flag,
+                                cs_flag_t                     vcb_flag,
+                                cs_flag_t                     fb_flag,
+                                cs_flag_t                     hho_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
+ *         managing temporary usage of memory when dealing with equations
+ *         Call specific structure allocation related to a numerical scheme
+ *         according to the scheme flag
+ *         The size of the temporary buffer can be bigger according to the
+ *         numerical settings
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_free_structures(void);
+
+
 
 /*----------------------------------------------------------------------------*/
 /*!
