@@ -191,6 +191,8 @@ static double _checkpoint_wt_interval = -1.; /* wall-clock interval */
 static double _checkpoint_wt_next = -1.;     /* next forced wall-clock value */
 static double _checkpoint_wt_last = 0.;      /* wall-clock time of last
                                                 checkpointing */
+/* Are we restarting from a NCFD file ? */
+static int    _restart_from_ncfd = 0;
 
 /* Restart modification */
 
@@ -3717,6 +3719,49 @@ cs_restart_print_stats(void)
                "  Elapsed time for writing:         %12.3f\n"),
              _restart_n_opens[0], _restart_n_opens[1],
              _restart_wtime[0], _restart_wtime[1]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Checks if restart is done from a NCFD checkpoint file
+ *
+ * \return 0 if no, 1 if yes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_check_if_restart_from_ncfd(cs_restart_t  *r)
+{
+  int inttmp[1000];
+  int ierror
+    = cs_restart_read_section_compat(r,
+                                     "neptune_cfd:checkpoint:main:version",
+                                     "version_fichier_suite_principal",
+                                     CS_MESH_LOCATION_NONE,
+                                     1,
+                                     CS_TYPE_cs_int_t,
+                                     inttmp);
+
+  if (ierror == 0) {
+    bft_printf(_("Remark: restarting based on a NEPTUNE_CFD computation.\n"));
+    _restart_from_ncfd = 1;
+  }
+
+  return _restart_from_ncfd;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns if restart is done from a NCFD checkpoint file
+ *
+ * \return 0 if no, 1 if yes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_is_from_ncfd(void)
+{
+  return _restart_from_ncfd;
 }
 
 /*----------------------------------------------------------------------------*/

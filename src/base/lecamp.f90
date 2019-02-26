@@ -143,8 +143,11 @@ call restart_read_int_t_compat(rp,                                      &
                                itysup, nbval, ivers, ierror)
 
 if (ierror.ne.0) then
-  write(nfecra,9200) ficsui
-  call csexit (1)
+  ierror = cs_restart_check_if_restart_from_ncfd(rp)
+  if (ierror.eq.0) then
+    write(nfecra,9200) ficsui
+    call csexit (1)
+  endif
 endif
 
 !  --->  Tests sur les supports
@@ -181,6 +184,13 @@ itysup = 0
 nbval  = 1
 call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
 ntpabs = ival(1) ! no direct read to avoid pointer issue
+
+! If section doesnt exist, check if it is a restart from neptune:
+if (ierror.ne.0) then
+  rubriq = 'ntcabs'
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+  ntpabs = ival(1) ! no direct read to avoid pointer issue
+endif
 nberro=nberro+ierror
 
 rubriq = 'instant_precedent'
@@ -188,6 +198,14 @@ itysup = 0
 nbval  = 1
 call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
 ttpabs = rval(1) ! no direct read to avoid pointer issue
+
+! If section doesnt exist, check if it is a restart from neptune:
+if (ierror.ne.0) then
+  rubriq = 'ttcabs'
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  ttpabs = rval(1) ! no direct read to avoid pointer issue
+endif
+
 nberro=nberro+ierror
 
 ! --->  Stop si erreur

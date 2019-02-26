@@ -934,6 +934,28 @@ void
 cs_restart_print_stats(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Checks if restart is done from a NCFD checkpoint file
+ *
+ * \return 0 if no, 1 if yes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_check_if_restart_from_ncfd(cs_restart_t *r);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns if restart is done from a NCFD checkpoint file
+ *
+ * \return 0 if no, 1 if yes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_is_from_ncfd(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

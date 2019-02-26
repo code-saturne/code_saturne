@@ -1435,8 +1435,8 @@ class mei_to_c_interpreter:
         code_to_write = ''
         if len(self.funcs[func_type].keys()) > 0:
             code_to_write = _file_header
-            if self.pkg_name != "code_saturne":
-                code_to_write += _file_header2
+#            if self.pkg_name != "code_saturne":
+#                code_to_write += _file_header2
             code_to_write += _file_header3
             code_to_write += _function_header[func_type]
             for key in self.funcs[func_type].keys():

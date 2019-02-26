@@ -57,6 +57,7 @@
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
+#include "cs_physical_constants.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1654,7 +1655,7 @@ cs_restart_read_field_info(cs_restart_t           *r,
 
   /* Read legacy metadata */
 
-  else
+  else if (cs_restart_is_from_ncfd() == 0)
     _read_legacy_field_info(r);
 }
 
@@ -2607,7 +2608,27 @@ cs_restart_read_field_vals(cs_restart_t  *r,
      once (and not once per test), and preferentially use the
      base (non-compatibility) name. */
 
-  snprintf(sec_name, 127, "%s::vals::%d", r_name, t_id);
+  if (cs_restart_is_from_ncfd()) {
+    if (strcmp(r_name, "velocity") == 0)
+      snprintf(sec_name, 127, "%s_1", r_name);
+    else if (strcmp(r_name, "enthalpy") == 0)
+      snprintf(sec_name, 127, "%s_1", r_name);
+    else if (strcmp(r_name, "temperature") == 0)
+      snprintf(sec_name, 127, "%s_1", r_name);
+    else if (strcmp(r_name, "k") == 0)
+      snprintf(sec_name, 127, "%s_1", r_name);
+    else if (strcmp(r_name, "epsilon") == 0)
+      snprintf(sec_name, 127, "%s_1", r_name);
+    else if (strcmp(r_name, "rij") == 0)
+      snprintf(sec_name, 127, "%s_1", r_name);
+    else if (strcmp(r_name, "pressure") == 0)
+      snprintf(sec_name, 127, "%s", r_name);
+    else
+      snprintf(sec_name, 127, "%s::vals::%d", r_name, t_id);
+
+  } else
+    snprintf(sec_name, 127, "%s::vals::%d", r_name, t_id);
+
   sec_name[127] = '\0';
   strncpy(ref_sec_name, sec_name, 128);
 
@@ -2632,34 +2653,71 @@ cs_restart_read_field_vals(cs_restart_t  *r,
 
   /* Read data if found */
 
-  if (retcode == CS_RESTART_SUCCESS)
-    retcode = cs_restart_read_section(r,
-                                      sec_name,
-                                      f->location_id,
-                                      f->dim,
-                                      CS_TYPE_cs_real_t,
-                                      f->vals[t_id]);
+  if ((cs_restart_is_from_ncfd() && strcmp(f->name, "pressure") != 0) ||
+      cs_restart_is_from_ncfd() == 0 ) {
 
-  /* Try reading in compatibility mode if not found */
-
-  else if (   retcode == CS_RESTART_ERR_EXISTS
-           || retcode == CS_RESTART_ERR_N_VALS) {
-
-    retcode = _read_field_vals_legacy(r, r_name, t_id, f);
-
-    /* if data is still not found, try reading in normal mode,
-       so as to have warning/error messages relative to the
-       current naming scheme. */
-
-    if (   retcode == CS_RESTART_ERR_EXISTS
-        || retcode == CS_RESTART_ERR_N_VALS)
+    if (retcode == CS_RESTART_SUCCESS)
       retcode = cs_restart_read_section(r,
-                                        ref_sec_name,
+                                        sec_name,
                                         f->location_id,
                                         f->dim,
                                         CS_TYPE_cs_real_t,
                                         f->vals[t_id]);
 
+    /* Try reading in compatibility mode if not found */
+
+    else if (   retcode == CS_RESTART_ERR_EXISTS
+             || retcode == CS_RESTART_ERR_N_VALS) {
+
+      retcode = _read_field_vals_legacy(r, r_name, t_id, f);
+
+      /* if data is still not found, try reading in normal mode,
+         so as to have warning/error messages relative to the
+         current naming scheme. */
+
+      if (   retcode == CS_RESTART_ERR_EXISTS
+          || retcode == CS_RESTART_ERR_N_VALS)
+        retcode = cs_restart_read_section(r,
+                                          ref_sec_name,
+                                          f->location_id,
+                                          f->dim,
+                                          CS_TYPE_cs_real_t,
+                                          f->vals[t_id]);
+
+    }
+
+  } else {
+    /* Special case for pressure:
+     * In NCFD it is the total pressure which is stored. Hence we need
+     * to compute P = P_tot - Phydro - (P0-Pred0)
+     */
+      retcode = cs_restart_read_section(r,
+                                        sec_name,
+                                        f->location_id,
+                                        f->dim,
+                                        CS_TYPE_cs_real_t,
+                                        f->vals[t_id]);
+
+      snprintf(sec_name, 127, "%s", "hydro_pressure");
+      sec_name[127] = '\0';
+      const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+      cs_real_t *v_tmp;
+      BFT_MALLOC(v_tmp, n_cells, cs_real_t);
+
+      retcode = cs_restart_read_section(r,
+                                        sec_name,
+                                        f->location_id,
+                                        f->dim,
+                                        CS_TYPE_cs_real_t,
+                                        v_tmp);
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        f->vals[t_id][c_id] -= v_tmp[c_id]
+                             + cs_glob_fluid_properties->p0
+                             - cs_glob_fluid_properties->pred0;
+      }
+
+      BFT_FREE(v_tmp);
   }
 
   return retcode;

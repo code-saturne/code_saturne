@@ -1219,6 +1219,27 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function which checks if the restart is from NEPTUNE_CFD
+    function cs_restart_check_if_restart_from_ncfd(r) result(flag) &
+      bind(C, name='cs_restart_check_if_restart_from_ncfd')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(c_int) :: flag
+    end function cs_restart_check_if_restart_from_ncfd
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function which returns if the restart is from NEPTUNE_CFD
+    function cs_restart_is_from_ncfd() result(flag) &
+      bind(C, name='cs_restart_is_from_ncfd')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int) :: flag
+    end function cs_restart_is_from_ncfd
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function writing a section to a checkpoint file.
 
     subroutine cs_restart_write_section(r, sec_name,                        &
