@@ -289,7 +289,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   cs_selector_get_b_face_list("2 or 3 or 4 or 7", &n_faces, face_list);
 
-  for (int i = 0; i < n_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
 
     face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
@@ -310,7 +310,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   */
   cs_selector_get_b_face_list("6", &n_faces, face_list);
 
-  for (int i = 0; i < n_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
 
     face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
@@ -330,7 +330,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   */
   cs_selector_get_b_face_list("8 or 9", &n_faces, face_list);
 
-  for (int i = 0; i < n_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
 
     face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
@@ -350,7 +350,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   */
   cs_selector_get_b_face_list("1", &n_faces, face_list);
 
-  for (int i = 0; i < n_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
 
     face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
@@ -370,7 +370,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   */
   cs_selector_get_b_face_list("5", &n_faces, face_list);
 
-  for (int i = 0; i < n_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
 
     face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
