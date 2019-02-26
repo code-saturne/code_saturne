@@ -167,7 +167,7 @@ class NotebookModel(Model):
                 else:
                     self.addVariable()
                     idx = len(self.getVarList())
-                    self.setVariableValue(idx-1, value)
+                    self.setVariableValue(value, idx=idx-1)
                     self.setVariableName(idx-1, var)
                     self.setVariableOt(idx-1, oturns)
 
@@ -205,17 +205,23 @@ class NotebookModel(Model):
         value = node['value']
         if not value:
             value = self.defaultNotebookValues()['val']
-            self.setVariableValue(idx, value)
+            self.setVariableValue(value, idx=idx)
 
         return value
 
 
     @Variables.undoGlobal
-    def setVariableValue(self, idx, val):
+    def setVariableValue(self, val, idx=None, var = None):
         """
         Return list of case
         """
-        node = self.node_note.xmlInitChildNode("var", id = idx)
+        if idx:
+            node = self.node_note.xmlInitChildNode("var", id = idx)
+        elif var:
+            node = self.node_note.xmlInitChildNode("var", name = name)
+        else:
+            raise Exception("No id or name were specified for setVariableValue")
+
         node['value'] = val
 
 
