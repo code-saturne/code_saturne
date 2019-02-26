@@ -516,6 +516,9 @@ cs_user_parameters(cs_domain_t *domain)
          drift |= CS_DRIFT_SCALAR_TURBOPHORESIS
        - centrifugal force terms:
          drift |= CS_DRIFT_SCALAR_CENTRIFUGALFORCE
+
+      To kill boundary fluxes:
+         drift |= CS_DRIFT_SCALAR_ZERO_BNDY_FLUX
    */
 
   /*! [param_var_drift] */
@@ -537,6 +540,9 @@ cs_user_parameters(cs_domain_t *domain)
 
     if (false)
       drift |= CS_DRIFT_SCALAR_CENTRIFUGALFORCE;
+
+    if (false)
+      drift |= CS_DRIFT_SCALAR_ZERO_BNDY_FLUX;
 
     /* Set the key word "drift_scalar_model" into the field structure */
     cs_field_set_key_int(sca1, key_drift, drift);

@@ -541,17 +541,27 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
   ! And for those whom mass flux is imposed elsewhere
   if (icla.ge.0.and.(.not.btest(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX))) then
 
-    ! Zero additional flux at the boundary
-    do ifac = 1, nfabor
-
-      do isou = 1, 3
-        coefa1(isou, ifac) = 0.d0
-        do jsou = 1, 3
-          coefb1(isou, jsou, ifac) = 0.d0
+    ! Homogeneous Neumann at the boundary
+    if (btest(iscdri, DRIFT_SCALAR_ZERO_BNDY_FLUX)) then
+      do ifac = 1, nfabor
+        do isou = 1, 3
+          coefa1(isou, ifac) = 0.d0
+          do jsou = 1, 3
+            coefb1(isou, jsou, ifac) = 0.d0
+          enddo
         enddo
       enddo
-
-    enddo
+    else
+      do ifac = 1, nfabor
+        do isou = 1, 3
+          coefa1(isou, ifac) = 0.d0
+          do jsou = 1, 3
+            coefb1(isou, jsou, ifac) = 0.d0
+          enddo
+          coefb1(isou, isou, ifac) = 1.d0
+        enddo
+      enddo
+    endif
 
     init   = 0
     inc    = 1
