@@ -3774,14 +3774,13 @@ _csr_assembler_values_add(void             *matrix_p,
 
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
 
-  const cs_lnum_t n_rows = matrix->n_rows;
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   if (stride == 1) {
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n_rows*stride <= CS_THR_MIN) {
+    if (n*stride <= CS_THR_MIN) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
@@ -3793,7 +3792,7 @@ _csr_assembler_values_add(void             *matrix_p,
     }
 
     else {
-#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
@@ -3809,7 +3808,7 @@ _csr_assembler_values_add(void             *matrix_p,
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n_rows*stride <= CS_THR_MIN) {
+    if (n*stride <= CS_THR_MIN) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
@@ -3823,7 +3822,7 @@ _csr_assembler_values_add(void             *matrix_p,
     }
 
     else {
-#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
@@ -3935,14 +3934,13 @@ _msr_assembler_values_add(void             *matrix_p,
 
   cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
 
-  const cs_lnum_t n_rows = matrix->n_rows;
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   if (stride == 1) {
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n_rows*stride <= CS_THR_MIN) {
+    if (n*stride <= CS_THR_MIN) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
@@ -3959,7 +3957,7 @@ _msr_assembler_values_add(void             *matrix_p,
     }
 
     else {
-#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
@@ -3980,7 +3978,7 @@ _msr_assembler_values_add(void             *matrix_p,
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n_rows*stride <= CS_THR_MIN) {
+    if (n*stride <= CS_THR_MIN) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
@@ -3998,7 +3996,7 @@ _msr_assembler_values_add(void             *matrix_p,
     }
 
     else {
-#     pragma omp parallel for  if(n_rows*stride > CS_THR_MIN)
+#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
