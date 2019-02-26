@@ -48,8 +48,6 @@
 
 #include "fvm_selector.h"
 
-#include "mei_evaluate.h"
-
 #include "cs_ale.h"
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
@@ -162,13 +160,14 @@ typedef struct {
   double        *rough;    /* roughness size */
   double        *norm;     /* norm of velocity vector */
   cs_real_3_t   *dir;      /* directions inlet velocity */
-  mei_tree_t    **velocity;  /* formula for norm or mass flow rate of velocity */
-  mei_tree_t    **direction; /* formula for direction of velocity */
-  cs_meteo_t     *meteo;     /* inlet or outlet info for atmospheric flow */
-  mei_tree_t    ***scalar;   /* formula for scalar (neumann, dirichlet or
-                                exchange coefficient) */
-  mei_tree_t    **headLoss;  /* formula for head loss (free inlet/outlet) */
-  mei_tree_t    **groundwat; /* formula for hydraulic head (groundwater) */
+  bool          *velocity_e;  /* formula for norm or mass flow rate of velocity */
+  bool          *direction_e; /* formula for direction of velocity */
+  bool        **scalar_e;     /* formula for scalar (neumann, dirichlet or
+                                 exchange coefficient) */
+  bool         *head_loss_e;  /* formula for head loss (free inlet/outlet) */
+  bool         *groundwat_e;  /* formula for hydraulic head (groundwater) */
+
+  cs_meteo_t    *meteo;     /* inlet or outlet info for atmospheric flow */
 
   ple_locator_t **locator;   /* locator for mapped inlet */
 
@@ -392,53 +391,6 @@ _inlet_turbulence(cs_tree_node_t  *tn_bc,
 }
 
 /*-----------------------------------------------------------------------------
- * Initialize mei tree and check for symbols existence
- *
- * parameters:
- *   formula        <--  mei formula
- *   symbols        <--  array of symbol to check
- *   symbol_size    <--  number of symbol in symbols
- *----------------------------------------------------------------------------*/
-
-static mei_tree_t *
-_boundary_scalar_init_mei_tree(const char   *formula,
-                               const char   *symbols[],
-                               int           symbol_size)
-{
-  int i = 0;
-  double ttcabs = cs_glob_time_step->t_cur;
-  int    ntcabs = cs_glob_time_step->nt_cur;
-  double dtref  = cs_glob_time_step->dt_ref;
-
-  /* return an empty interpreter */
-  mei_tree_t *tree = mei_tree_new(formula);
-
-  /* add commun variables */
-  mei_tree_insert(tree, "x", 0.0);
-  mei_tree_insert(tree, "y", 0.0);
-  mei_tree_insert(tree, "z", 0.0);
-  mei_tree_insert(tree, "t", ttcabs);
-  mei_tree_insert(tree, "dt", dtref);
-  mei_tree_insert(tree, "iter", ntcabs);
-
-  /* add variable from notebook */
-  cs_gui_add_notebook_variables(tree);
-
-  /* try to build the interpreter */
-  if (mei_tree_builder(tree))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not interpret expression: %s\n"), tree->string);
-
-  /* check for symbols */
-  for (i = 0; i < symbol_size; ++i)
-    if (mei_tree_find_symbol(tree, symbols[i]))
-      bft_error(__FILE__, __LINE__, 0,
-          _("Error: can not find the required symbol: %s\n"), symbols[i]);
-
-  return tree;
-}
-
-/*-----------------------------------------------------------------------------
  * get scalar's values
  *
  * parameters:
@@ -494,10 +446,8 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
         const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
         if (s != NULL) {
-          const char *sym[] = {f->name};
           boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
-          boundaries->scalar[f_id][izone * dim + i]
-            = _boundary_scalar_init_mei_tree(s, sym, 1);
+          boundaries->scalar_e[f_id][izone * dim + i] = true;
         }
 
       }
@@ -505,20 +455,16 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
         const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
         if (s != NULL) {
-          const char *sym[] = {"flux"};
           boundaries->type_code[f_id][izone] = NEUMANN_FORMULA;
-          boundaries->scalar[f_id][izone * dim + i]
-            = _boundary_scalar_init_mei_tree(s, sym, 1);
+          boundaries->scalar_e[f_id][izone * dim + i] = true;
         }
       }
       else if (! strcmp(choice, "exchange_coefficient_formula")) {
 
         const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
         if (s != NULL) {
-          const char *sym[] = {f->name, "hc"};
           boundaries->type_code[f_id][izone] = EXCHANGE_COEFF_FORMULA;
-          boundaries->scalar[f_id][izone * dim + i]
-            = _boundary_scalar_init_mei_tree(s, sym, 2);
+          boundaries->scalar_e[f_id][izone * dim + i] = true;
         }
       }
       else if (! strcmp(choice, "exchange_coefficient")) {
@@ -762,68 +708,6 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
 }
 
 /*-----------------------------------------------------------------------------
- * Initialize mei tree and check for symbols existence
- *
- * parameters:
- *   formula        <--  mei formula
- *   symbols        <--  array of symbol to check
- *   symbol_size    <--  number of symbol in symbols
- *----------------------------------------------------------------------------*/
-
-static mei_tree_t *
-_boundary_init_mei_tree(const char *formula,
-                        const char *symbols[],
-                        const int   symbol_size)
-{
-  int i = 0;
-
-  /* return an empty interpreter */
-  mei_tree_t *tree = mei_tree_new(formula);
-
-  /* add commun variables */
-  mei_tree_insert(tree, "dt",   0.0);
-  mei_tree_insert(tree, "t",    0.0);
-  mei_tree_insert(tree, "iter", 0.0);
-  mei_tree_insert(tree, "x",    0.0);
-  mei_tree_insert(tree, "y",    0.0);
-  mei_tree_insert(tree, "z",    0.0);
-
-  /* add variable from notebook */
-  cs_gui_add_notebook_variables(tree);
-
-  /* try to build the interpreter */
-  if (mei_tree_builder(tree))
-    bft_error(__FILE__, __LINE__, 0,
-        _("Error: can not interpret expression: %s\n"), tree->string);
-
-  /* check for symbols */
-  for (i = 0; i < symbol_size; ++i)
-    if (mei_tree_find_symbol(tree, symbols[i]))
-      bft_error(__FILE__, __LINE__, 0,
-          _("Error: can not find the required symbol: %s\n"),
-          symbols[i]);
-
-  return tree;
-}
-
-/*-----------------------------------------------------------------------------
- * Set coordinates in MEI tree.
- *
- * parameters:
- *   mei_tree  <->  mei formula
- *   coords    <--  associated coordinates
- *----------------------------------------------------------------------------*/
-
-static inline void
-_set_mei_coords(mei_tree_t       *mei_tree,
-                const cs_real_t   coords[3])
-{
-  mei_tree_insert(mei_tree, "x", coords[0]);
-  mei_tree_insert(mei_tree, "y", coords[1]);
-  mei_tree_insert(mei_tree, "z", coords[2]);
-}
-
-/*-----------------------------------------------------------------------------
  * Get pressure value for darcy (inlet/outlet/groundwater).
  *
  * parameters:
@@ -850,11 +734,9 @@ _boundary_darcy(cs_tree_node_t  *tn_bc,
       tn = cs_tree_node_get_child(tn_bc, choice);
       tn = cs_tree_node_get_sibling_with_tag(tn, "name", "hydraulicHead");
     }
-    const char *sym[] = {"H"};
     const char *formula = cs_tree_node_get_child_value_str(tn, "formula");
     if (formula != NULL)
-      boundaries->groundwat[izone]
-        = _boundary_init_mei_tree(formula, sym, 1);
+      boundaries->groundwat_e[izone] = true;
     else {
       bft_printf("Warning : groundwater flow boundary conditions\n"
                  "          without formula for hydraulic head.\n");
@@ -956,10 +838,10 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
   BFT_MALLOC(boundaries->dir,       n_zones,    cs_real_3_t);
   BFT_MALLOC(boundaries->locator,   n_zones,    ple_locator_t *);
 
-  BFT_MALLOC(boundaries->velocity,  n_zones,    mei_tree_t *);
-  BFT_MALLOC(boundaries->direction, n_zones,    mei_tree_t *);
-  BFT_MALLOC(boundaries->headLoss,  n_zones,    mei_tree_t *);
-  BFT_MALLOC(boundaries->scalar,    n_fields,   mei_tree_t **);
+  BFT_MALLOC(boundaries->velocity_e,  n_zones,  bool);
+  BFT_MALLOC(boundaries->direction_e, n_zones,  bool);
+  BFT_MALLOC(boundaries->scalar_e,    n_fields,   bool *);
+  BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
   BFT_MALLOC(boundaries->preout,    n_zones,    double);
 
   if (cs_gui_strcmp(vars->model, "solid_fuels")) {
@@ -998,7 +880,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     BFT_MALLOC(boundaries->entin,   n_zones, double);
   }
   else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-    BFT_MALLOC(boundaries->groundwat, n_zones, mei_tree_t *);
+    BFT_MALLOC(boundaries->groundwat_e, n_zones, bool);
   }
   else {
     boundaries->ientat = NULL;
@@ -1026,7 +908,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     if (f->type & CS_FIELD_VARIABLE) {
       BFT_MALLOC(boundaries->type_code[f->id], n_zones, int);
       BFT_MALLOC(boundaries->values[f->id], n_zones * f->dim, cs_val_t);
-      BFT_MALLOC(boundaries->scalar[f->id], n_zones * f->dim, mei_tree_t *);
+      BFT_MALLOC(boundaries->scalar_e[f->id], n_zones * f->dim, bool);
     }
   }
 
@@ -1039,9 +921,9 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     boundaries->dh[izone]        = 0;
     boundaries->xintur[izone]    = 0;
     boundaries->rough[izone]     = -999;
-    boundaries->velocity[izone]  = NULL;
-    boundaries->direction[izone] = NULL;
-    boundaries->headLoss[izone]  = NULL;
+    boundaries->velocity_e[izone]  = false;
+    boundaries->direction_e[izone] = false;
+    boundaries->head_loss_e[izone] = false;
     boundaries->preout[izone]    = 0;
     boundaries->locator[izone]   = NULL;
 
@@ -1078,7 +960,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     }
 
     else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-      boundaries->groundwat[izone] = NULL;
+      boundaries->groundwat_e[izone] = false;
     }
 
     else if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
@@ -1099,7 +981,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
           boundaries->values[i][izone * f->dim + ii].val1 = 1.e30;
           boundaries->values[i][izone * f->dim + ii].val2 = 1.e30;
           boundaries->values[i][izone * f->dim + ii].val3 = 0.;
-          boundaries->scalar[i][izone * f->dim + ii] = NULL;
+          boundaries->scalar_e[i][izone * f->dim + ii] = false;
         }
       }
     }
@@ -1195,8 +1077,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         const char *choice_v = cs_gui_node_get_tag(tn_vp, "choice");
         const char *choice_d = cs_gui_node_get_tag(tn_vp, "direction");
 
-        const char *i_formula = NULL;
-
         /* Inlet: velocity */
 
         if (cs_gui_strcmp(choice_v, "norm")) {
@@ -1214,26 +1094,17 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
           boundaries->iqimp[izone] = 2;
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          const char *sym[] = {"u_norm"};
-          i_formula = cs_tree_node_get_child_value_str(tn_vp, choice_v);
-          if (i_formula != NULL)
-            boundaries->velocity[izone]
-              = _boundary_init_mei_tree(i_formula, sym, 1);
+          if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+            boundaries->velocity_e[izone] = true;
         }
         else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-          const char *sym[] = {"q_m"};
-          i_formula = cs_tree_node_get_child_value_str(tn_vp, choice_v);
-          if (i_formula != NULL)
-            boundaries->velocity[izone]
-              = _boundary_init_mei_tree(i_formula, sym, 1);
+          if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+            boundaries->velocity_e[izone] = true;
           boundaries->iqimp[izone] = 1;
         }
         else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-          const char *sym[] = {"q_v"};
-          i_formula = cs_tree_node_get_child_value_str(tn_vp, choice_v);
-          if (i_formula != NULL)
-            boundaries->velocity[izone]
-              = _boundary_init_mei_tree(i_formula, sym, 1);
+          if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+            boundaries->velocity_e[izone] = true;
           boundaries->iqimp[izone] = 2;
         }
 
@@ -1245,12 +1116,9 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
           cs_gui_node_get_child_real(tn_vp, "direction_z", dir+2);
         }
         else if (cs_gui_strcmp(choice_d, "formula")) {
-          const char *sym[] = {"dir_x", "dir_y", "dir_z"};
-          i_formula
-            = cs_tree_node_get_child_value_str(tn_vp, "direction_formula");
-          if (i_formula != NULL)
-            boundaries->direction[izone]
-              = _boundary_init_mei_tree(i_formula, sym, 3);
+          if (   cs_tree_node_get_child_value_str(tn_vp, "direction_formula")
+              != NULL)
+            boundaries->direction_e[izone] = true;
         }
       }
 
@@ -1329,12 +1197,10 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     }
 
     else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
-      const char *sym[] = {"K"};
       cs_tree_node_t *tn_hlf = cs_tree_get_node(tn, "headLoss/formula");
       const char *hl_formula = cs_tree_node_get_value_str(tn_hlf);
       if (hl_formula != NULL)
-        boundaries->headLoss[izone]
-          = _boundary_init_mei_tree(hl_formula, sym, 1);
+        boundaries->head_loss_e[izone] = true;
       else {
         bft_printf("Warning : free inlet outlet boundary conditions\n"
                    "          without external head loss definition\n");
@@ -1553,7 +1419,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                                int        *nvar,
                                double     *rcodcl)
 {
-  double t0;
   double norm = 0.;
 
   cs_var_t  *vars = cs_glob_var;
@@ -1869,15 +1734,16 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
       }
       else {
-        if (boundaries->velocity[izone] != NULL) {
+        if (boundaries->velocity_e[izone]) {
           if (cs_gui_strcmp(choice_v, "flow1_formula")) {
             qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
-                                                        "flow1_formula",
-                                                        bz);
-          } else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
+                                                         "flow1_formula",
+                                                         bz);
+          }
+          else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
             qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
-                                                        "flow2_formula",
-                                                        bz);
+                                                         "flow2_formula",
+                                                         bz);
           }
         }
         else {
@@ -1952,7 +1818,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           }
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          t0 = cs_timer_wtime();
           cs_real_t *new_vals = cs_meg_boundary_function("velocity",
                                                          "norm_formula",
                                                          bz);
@@ -2012,8 +1877,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           }
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          t0 = cs_timer_wtime();
-
           cs_real_t *new_vals = cs_meg_boundary_function("velocity",
                                                          "norm_formula",
                                                          bz);
@@ -2042,8 +1905,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
       }
       else if (cs_gui_strcmp(choice_d, "formula")) {
-        t0 = cs_timer_wtime();
-
         cs_real_t *xvals = cs_meg_boundary_function("direction",
                                                     "formula",
                                                     bz);
@@ -2136,8 +1997,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
       /* turbulent inlet, with formula */
       if (icalke[zone_nbr-1] == 0) {
-
-        t0 = cs_timer_wtime();
 
         tn_bc = _get_zone_bc_node(tn_bc, izone);
 
@@ -2310,16 +2169,16 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       if (   cs_gui_strcmp(choice_v, "norm_formula")
           || cs_gui_strcmp(choice_v, "flow1_formula")
           || cs_gui_strcmp(choice_v, "flow2_formula"))
-        bft_printf("-----velocity: %s => %s \n",
-            choice_v, boundaries->velocity[izone]->string);
+        bft_printf("-----velocity: %s => %d \n",
+            choice_v, (boundaries->velocity_e[izone] ? : 1: 0));
       if (   cs_gui_strcmp(choice_d, "coordinates")
           || cs_gui_strcmp(choice_d, "translation"))
         bft_printf("-----direction: %s => %12.5e %12.5e %12.5e \n",
                    choice_v, boundaries->dir[izone][0],
                    boundaries->dir[izone][1], boundaries->dir[izone][2]);
       else if (cs_gui_strcmp(choice_d, "formula"))
-        bft_printf("-----direction: %s => %s \n", choice_d,
-            boundaries->direction[izone]->string);
+        bft_printf("-----direction: %s => %d \n", choice_d,
+                   (boundaries->direction[izone] ? 1 : 0));
 
       if (cs_gui_strcmp(vars->model, "solid_fuels")) {
         bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
@@ -2472,8 +2331,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         itypfb[ifbr] = CS_FREE_INLET;
       }
 
-      if (boundaries->headLoss[izone] != NULL) {
-        t0 = cs_timer_wtime();
+      if (boundaries->head_loss_e[izone]) {
         cs_real_t *new_vals = cs_meg_boundary_function("head_loss",
                                                        "formula",
                                                        bz);
@@ -2819,25 +2677,13 @@ cs_gui_boundary_conditions_free_memory(void)
   if (boundaries != NULL) {
 
     n_zones = boundaries->n_zones;
-    for (izone=0 ; izone < n_zones ; izone++) {
-      mei_tree_destroy(boundaries->velocity[izone]);
-      mei_tree_destroy(boundaries->direction[izone]);
-      mei_tree_destroy(boundaries->headLoss[izone]);
-      for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-        const cs_field_t  *f = cs_field_by_id(f_id);
-
-        if (f->type & CS_FIELD_VARIABLE)
-          for (int i = 0; i < f->dim; i++)
-            mei_tree_destroy(boundaries->scalar[f->id][izone * f->dim + i]);
-      }
-    }
 
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
       const cs_field_t  *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
         BFT_FREE(boundaries->type_code[f->id]);
         BFT_FREE(boundaries->values[f->id]);
-        BFT_FREE(boundaries->scalar[f->id]);
+        BFT_FREE(boundaries->scalar_e[f->id]);
       }
     }
 
@@ -2873,10 +2719,7 @@ cs_gui_boundary_conditions_free_memory(void)
       BFT_FREE(boundaries->entin);
     }
     if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-      for (izone = 0; izone < n_zones; izone++)
-        if (boundaries->groundwat[izone] != NULL)
-          mei_tree_destroy(boundaries->groundwat[izone]);
-      BFT_FREE(boundaries->groundwat);
+      BFT_FREE(boundaries->groundwat_e);
     }
     if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
       BFT_FREE(boundaries->meteo);
@@ -2901,10 +2744,10 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->rough);
     BFT_FREE(boundaries->norm);
     BFT_FREE(boundaries->dir);
-    BFT_FREE(boundaries->velocity);
-    BFT_FREE(boundaries->direction);
-    BFT_FREE(boundaries->headLoss);
-    BFT_FREE(boundaries->scalar);
+    BFT_FREE(boundaries->velocity_e);
+    BFT_FREE(boundaries->direction_e);
+    BFT_FREE(boundaries->scalar_e);
+    BFT_FREE(boundaries->head_loss_e);
     BFT_FREE(boundaries->preout);
     BFT_FREE(boundaries->locator);
 
