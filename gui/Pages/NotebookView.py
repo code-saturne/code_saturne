@@ -258,7 +258,7 @@ class DescrDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        rx = "[\-_A-Za-z0-9 ]{1," + str(LABEL_LENGTH_MAX) + "}"
+        rx = "[\-_A-Za-z0-9 ,.;]{1," + str(LABEL_LENGTH_MAX) + "}"
         self.regExp = QRegExp(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
