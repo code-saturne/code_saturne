@@ -897,9 +897,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
     CS_CDO_LOCAL_FEQ;
 
-  /* Diffusion part */
-  /* -------------- */
-
+  /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -967,15 +965,11 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     eqc->enforce_sliding = cs_cdo_diffusion_vvb_cost_sliding;
   }
 
-  /* Advection part */
-  /* -------------- */
-
+  /* Advection */
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
 
-  /* Reaction part */
-  /* ------------- */
-
+  /* Reaction */
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->do_lumping)
@@ -1003,9 +997,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Reaction */
 
-  /* Time part */
-  /* --------- */
-
+  /* Time */
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->do_lumping)
@@ -1031,11 +1023,9 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Lumping or not lumping */
 
-  } /* Time part */
+  } /* Time */
 
-  /* Source term part */
-  /* ---------------- */
-
+  /* Source term */
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -1055,6 +1045,9 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
   eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_block_matrix;
 
   /* Array used for extra-operations */
   eqc->cell_values = NULL;
@@ -1358,6 +1351,9 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = _vbv_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbv_cell_builder[t_id];
 
+    /* Vector-valued = 3 DoFs by vertex */
+    mab->n_x_dofs = 3;
+
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
     csys->face_shift = connect->n_faces[CS_INT_FACES];
@@ -1423,11 +1419,9 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_block_matrix(csys, rs, 3,
-                                        mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, mab, mav);           /* Matrix assembly */
 
-      /* n_dofs = 3*cm->n_vc */
-      for (short int i = 0; i < csys->n_dofs; i++) /* Assemble RHS */
+      for (short int i = 0; i < csys->n_dofs; i++) /* RHS Assembly */
 #       pragma omp atomic
         rhs[csys->dof_ids[i]] += csys->rhs[i];
 

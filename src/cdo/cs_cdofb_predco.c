@@ -1124,6 +1124,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
 
+    mab->n_x_dofs = 3;  /* vector-valued equation */
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Store the shift to access border faces (first interior faces and
@@ -1257,10 +1258,11 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS */
+      /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, mom_rs, cm, has_sourceterm,
-                               mab, mav, rhs, mom_eqc->source_terms);
+                               mom_eqc, mab, mav, rhs);
 
     } /* Main loop on cells */
 

@@ -32,6 +32,7 @@
 
 #include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_time.h"
 #include "cs_domain.h"
@@ -170,18 +171,47 @@ typedef struct {
 
 } cs_equation_balance_t;
 
-/*
- * Structure used to store the arguments for the assemble function
+/*!
+ *  \struct cs_equation_assembly_buf_t
+ *  \brief Structure used to store the arguments for the assemble function
+ *  If n_x_dofs > 1, one moves to a block version of the assembly
  */
+
 typedef struct {
 
-  int             buffer_size;
+  int          n_x_dofs;     /*!< Number of degrees of freedom by entity */
+  cs_gnum_t   *dof_gids;     /*!< Global numbering for the degrees of freedom
+                               (size: n_dofs*n_x_dofs) */
 
-  cs_gnum_t      *row_gids;
-  cs_gnum_t      *col_gids;
-  cs_real_t      *values;
+  int          buffer_size;  /*!< Max. allocated size for the assembly
+                               buffers */
+  cs_gnum_t   *row_gids;     /*!< List of global row numbers */
+  cs_gnum_t   *col_gids;     /*!< List of global column numbers */
+  cs_real_t   *values;       /*!< List of values for each couple (row, col) */
 
 } cs_equation_assembly_buf_t;
+
+/*----------------------------------------------------------------------------
+ * Function pointer types
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise system into the global algebraic system
+ *         Block or no block versions are handled
+ *
+ * \param[in]      csys     cellwise view of the algebraic system
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] mab      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_assemble_t)(const cs_cell_sys_t            *csys,
+                         const cs_range_set_t           *rset,
+                         cs_equation_assembly_buf_t     *mab,
+                         cs_matrix_assembler_values_t   *mav);
 
 /*============================================================================
  * Inline public function prototypes
@@ -529,7 +559,6 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
  *
  * \param[in]      csys         cellwise view of the algebraic system
  * \param[in]      rset         pointer to a cs_range_set_t structure
- * \param[in]      n_x_dofs     number of DoFs per entity (= size of the block)
  * \param[in, out] mab          pointer to a matrix assembler buffers
  * \param[in, out] mav          pointer to a matrix assembler structure
  */
@@ -538,7 +567,6 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 void
 cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
                                   const cs_range_set_t           *rset,
-                                  int                             n_x_dofs,
                                   cs_equation_assembly_buf_t     *mab,
                                   cs_matrix_assembler_values_t   *mav);
 

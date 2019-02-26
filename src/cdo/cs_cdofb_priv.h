@@ -33,6 +33,7 @@
 #include "cs_hodge.h"
 #include "cs_cdo_advection.h"
 #include "cs_equation_bc.h"
+#include "cs_equation_common.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -59,6 +60,9 @@ struct  _cs_cdofb_t {
   /* Solution of the algebraic system DoF unknowns (x) + BCs */
   cs_real_t   *face_values;     /* At the last iteration */
   cs_real_t   *face_values_pre; /* At the previous iteration */
+
+  /* Assembly process */
+  cs_equation_assemble_t   *assemble;
 
   /* Members related to the static condensation */
   cs_real_t   *rc_tilda;   /* Acc^-1 * RHS_cell */

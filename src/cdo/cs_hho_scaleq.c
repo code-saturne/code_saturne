@@ -112,6 +112,9 @@ struct _cs_hho_scaleq_t {
   cs_real_t                      *cell_values;  /* DoF recomputed after the
                                                    static condensation */
 
+  /* Assembly process */
+  cs_equation_assemble_t         *assemble;
+
   /* Storage of the source term (if one wants to apply a specific time
      discretization) */
   cs_real_t                      *source_terms;
@@ -892,7 +895,7 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Loop on BC definitions */
 
-  /* DIFFUSION */
+  /* Diffusion */
   eqc->enforce_dirichlet = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
@@ -915,6 +918,9 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
     }
 
   } /* Has diffusion term to handle */
+
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_block_matrix;
 
   return eqc;
 }
@@ -1115,6 +1121,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
 
+    mab->n_x_dofs = eqc->n_face_dofs;
+
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
     csys->face_shift = connect->n_faces[CS_INT_FACES];
@@ -1255,10 +1263,9 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       /* ======== */
 
       /* Matrix assembly */
-      cs_equation_assemble_block_matrix(csys, eqc->rs, eqc->n_face_dofs,
-                                        mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, eqc->rs, mab, mav);
 
-      /* Assemble RHS */
+      /* RHS assembly */
       for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
 #       pragma omp atomic
         rhs[csys->dof_ids[i]] += csys->rhs[i];

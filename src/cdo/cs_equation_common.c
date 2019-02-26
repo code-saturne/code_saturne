@@ -292,6 +292,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
   /* Allocate shared buffer and initialize shared structures */
   size_t  cwb_size = n_cells; /* initial cell-wise buffer size */
   int  loc_assembler_size = 0;
+  int  assembler_dof_size = 0;
 
   const int  _vb_system_max_size = connect->n_max_vbyc*connect->n_max_vbyc;
   const int  _fb_system_max_size = connect->n_max_fbyc*connect->n_max_fbyc;
@@ -327,6 +328,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
         cwb_size = CS_MAX(cwb_size, (size_t)n_vertices);
         loc_assembler_size = CS_MAX(loc_assembler_size, _vb_system_max_size);
+        assembler_dof_size = CS_MAX(assembler_dof_size, connect->n_max_vbyc);
 
         /* Initialize additional structures */
         cs_cdovb_scaleq_init_common(quant, connect, time_step, ms);
@@ -337,6 +339,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
         cwb_size = CS_MAX(cwb_size, (size_t)(n_vertices + n_cells));
         loc_assembler_size = CS_MAX(loc_assembler_size, _vb_system_max_size);
+        assembler_dof_size = CS_MAX(assembler_dof_size, connect->n_max_vbyc);
 
         /* Initialize additional structures */
         cs_cdovcb_scaleq_init_common(quant, connect, time_step, ms);
@@ -374,6 +377,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
         loc_assembler_size = CS_MAX(loc_assembler_size, 9*_vb_system_max_size);
+        assembler_dof_size = CS_MAX(assembler_dof_size, 3*connect->n_max_vbyc);
 
         /* Initialize additional structures */
         cs_cdovb_vecteq_init_common(quant, connect, time_step, ms);
@@ -384,6 +388,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
         cwb_size = CS_MAX(cwb_size, (size_t)3*(n_vertices + n_cells));
         loc_assembler_size = CS_MAX(loc_assembler_size, 9*_vb_system_max_size);
+        assembler_dof_size = CS_MAX(assembler_dof_size, 3*connect->n_max_vbyc);
 
         /* Initialize additional structures */
         /* cs_cdovcb_vecteq_init_common(quant, connect, time_step, ms); */
@@ -426,6 +431,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
         assert(n_faces > n_cells);
         cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
         loc_assembler_size = CS_MAX(loc_assembler_size, _fb_system_max_size);
+        assembler_dof_size = CS_MAX(assembler_dof_size, connect->n_max_fbyc);
 
         /* Initialize additional structures */
         cs_cdofb_scaleq_init_common(quant, connect, time_step, ms0);
@@ -469,6 +475,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 
       cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
       loc_assembler_size = CS_MAX(loc_assembler_size, 9*_fb_system_max_size);
+      assembler_dof_size = CS_MAX(assembler_dof_size, 3*connect->n_max_fbyc);
 
       /* Initialize additional structures */
       if (cs_flag_test(cc->fb_scheme_flag,
@@ -503,6 +510,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
       cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_2ND * n_faces);
       /* 36 = 6 * 6 */
       loc_assembler_size = CS_MAX(loc_assembler_size, 36*_fb_system_max_size);
+      assembler_dof_size = CS_MAX(assembler_dof_size, 6*connect->n_max_fbyc);
 
     }
 
@@ -544,6 +552,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
         cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_FACE_DOFS_1ST*n_faces);
         /* 81 = 9 * 9 (where 9 = 3*3) */
         loc_assembler_size = CS_MAX(loc_assembler_size, 81*_fb_system_max_size);
+        assembler_dof_size = CS_MAX(assembler_dof_size, 9*connect->n_max_fbyc);
 
       }
       else if  (cc->hho_scheme_flag & CS_FLAG_SCHEME_POLY2)       {
@@ -573,6 +582,7 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
         /* 324 = 18 * 18 (where 18 = 3*6) */
         loc_assembler_size = CS_MAX(loc_assembler_size,
                                     324*_fb_system_max_size);
+        assembler_dof_size = CS_MAX(assembler_dof_size, 18*connect->n_max_fbyc);
 
       }
 
@@ -604,11 +614,15 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
 #pragma omp parallel
   {
+    /* Each thread allocate its part. This yields a better memory affinity */
     int  t_id = omp_get_thread_num();
 
     BFT_MALLOC(cs_assembly_buffers[t_id], 1, cs_equation_assembly_buf_t);
 
     cs_equation_assembly_buf_t  *assb = cs_assembly_buffers[t_id];
+
+    assb->n_x_dofs = 1;           /* Default setting */
+    BFT_MALLOC(assb->dof_gids, assembler_dof_size, cs_gnum_t);
 
     assb->buffer_size = loc_assembler_size;
     BFT_MALLOC(assb->row_gids, loc_assembler_size, cs_gnum_t);
@@ -619,6 +633,9 @@ cs_equation_common_allocate(const cs_cdo_connect_t         *connect,
   BFT_MALLOC(cs_assembly_buffers[0], 1, cs_equation_assembly_buf_t);
 
   cs_equation_assembly_buf_t  *assb = cs_assembly_buffers[0];
+
+  assb->n_x_dofs = 1;           /* Default setting */
+  BFT_MALLOC(assb->dof_gids, assembler_dof_size, cs_gnum_t);
 
   assb->buffer_size = loc_assembler_size;
   BFT_MALLOC(assb->row_gids, loc_assembler_size, cs_gnum_t);
@@ -1164,23 +1181,25 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 #endif
 #endif
 
+  /* Define the dof_gids */
+  for (int i = 0; i < m->n_rows; i++)
+    mab->dof_gids[i] = rset->g_id[dof_ids[i]];
+
   /* Assemble the matrix related to the advection/diffusion/reaction terms
      If advection is activated, the resulting system is not symmetric
      Otherwise, the system is symmetric with extra-diagonal terms. */
-  /* TODO: Add a symmetric version for optimization */
 
   int  bufsize = 0;
-
   for (int i = 0; i < m->n_rows; i++) {
 
-    const cs_gnum_t  i_gid = rset->g_id[dof_ids[i]];
+    const cs_gnum_t  i_gid = mab->dof_gids[i];
     const cs_real_t  *const val_rowi = mval + i*m->n_rows;
 
     /* Diagonal term is excluded in this connectivity. Add it "manually" */
     for (int j = 0; j < m->n_rows; j++) {
 
       mab->row_gids[bufsize] = i_gid;
-      mab->col_gids[bufsize] = rset->g_id[dof_ids[j]];
+      mab->col_gids[bufsize] = mab->dof_gids[j];
       mab->values[bufsize] = val_rowi[j];
       bufsize += 1;
 
@@ -1189,10 +1208,9 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
   } /* Loop on rows */
 
   assert(mab->buffer_size >= bufsize);
-  if (bufsize > 0) {
+  if (bufsize > 0)
     cs_matrix_assembler_values_add_g(mav, bufsize,
                                      mab->row_gids, mab->col_gids, mab->values);
-  }
 
 #if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
 #if defined(HAVE_OPENMP)
@@ -1220,7 +1238,6 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
  *
  * \param[in]      csys         cellwise view of the algebraic system
  * \param[in]      rset         pointer to a cs_range_set_t structure
- * \param[in]      n_x_dofs     number of DoFs per entity (= size of the block)
  * \param[in, out] mab          pointer to a matrix assembler buffers
  * \param[in, out] mav          pointer to a matrix assembler structure
  */
@@ -1229,13 +1246,12 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 void
 cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
                                   const cs_range_set_t           *rset,
-                                  int                             n_x_dofs,
                                   cs_equation_assembly_buf_t     *mab,
                                   cs_matrix_assembler_values_t   *mav)
 {
   const cs_lnum_t  *dof_ids = csys->dof_ids;
+  const int  n_x_dofs = mab->n_x_dofs;
   const cs_sdm_t  *m = csys->mat;
-  const cs_real_t  *mval = csys->mat->val;
   const cs_sdm_block_t  *bd = m->block_desc;
 
   /* Sanity checks */

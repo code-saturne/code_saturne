@@ -956,7 +956,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* ADVECTION */
+  /* Advection */
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
 
@@ -1044,7 +1044,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* REACTION */
+  /* Reaction */
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->do_lumping)
@@ -1072,7 +1072,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Reaction */
 
-  /* TIME */
+  /* Time */
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->do_lumping)
@@ -1100,7 +1100,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Time part */
 
-  /* SOURCE TERM */
+  /* Source term */
   eqc->source_terms = NULL;
 
   if (cs_equation_param_has_sourceterm(eqp)) {
@@ -1123,6 +1123,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
   eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_matrix;
 
   /* Array used for extra-operations */
   eqc->cell_values = NULL;
@@ -1401,9 +1404,9 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, mab, mav);       /* Matrix assembly */
 
-      for (short int v = 0; v < cm->n_vc; v++) /* Assemble RHS */
+      for (short int v = 0; v < cm->n_vc; v++) /* RHS assembly*/
 #       pragma omp atomic
         rhs[cm->v_ids[v]] += csys->rhs[v];
 
@@ -1638,9 +1641,9 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, mab, mav);       /* Matrix assembly */
 
-      for (short int v = 0; v < cm->n_vc; v++) /* Assemble RHS */
+      for (short int v = 0; v < cm->n_vc; v++) /* RHS assembly */
 #       pragma omp atomic
         rhs[cm->v_ids[v]] += csys->rhs[v];
 
@@ -1944,14 +1947,14 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, mab, mav);         /* Matrix assembly */
 
-      for (short int v = 0; v < cm->n_vc; v++) /* Assemble RHS */
+      for (short int v = 0; v < cm->n_vc; v++)   /* RHS assembly */
 #       pragma omp atomic
         rhs[cm->v_ids[v]] += csys->rhs[v];
 
       if (eqc->source_terms != NULL) {
-        for (short int v = 0; v < cm->n_vc; v++) /* Assemble source terms */
+        for (short int v = 0; v < cm->n_vc; v++) /* Source term assembly */
 #         pragma omp atomic
           eqc->source_terms[cm->v_ids[v]] += csys->source[v];
       }

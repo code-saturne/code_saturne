@@ -818,9 +818,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cells);
   memset(eqc->acf_tilda, 0, sizeof(cs_real_t)*connect->c2f->idx[n_cells]);
 
-  /* Diffusion part */
-  /* -------------- */
-
+  /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -841,7 +839,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
-  } /* Diffusion part */
+  } /* Diffusion */
 
   /* Dirichlet boundary condition enforcement */
   eqc->enforce_dirichlet = NULL;
@@ -872,7 +870,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Advection part */
+  /* Advection */
   eqc->adv_func = NULL;
   eqc->adv_func_bc = NULL;
 
@@ -942,7 +940,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Reaction part */
+  /* Reaction */
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_COST) {
@@ -950,9 +948,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
 
-  } /* Reaction */
+  }
 
-  /* Time part */
+  /* Time */
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
@@ -969,7 +967,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Source term part */
+  /* Source term */
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -987,6 +985,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
   eqc->get_mass_matrix = cs_hodge_fb_get_mass;
+
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_matrix;
 
   return eqc;
 }
@@ -1284,7 +1285,7 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, mab, mav);       /* Matrix assembly */
 
       for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
 #       pragma omp atomic
@@ -1527,9 +1528,9 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, mab, mav);       /* Matrix assembly */
 
-      for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
+      for (short int f = 0; f < cm->n_fc; f++) /* RHS assembly */
 #       pragma omp atomic
         rhs[cm->f_ids[f]] += csys->rhs[f];
 
@@ -1819,9 +1820,9 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      cs_equation_assemble_matrix(csys, rs, mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, rs, mab, mav);       /* Matrix assembly */
 
-      for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
+      for (short int f = 0; f < cm->n_fc; f++) /* RHS assembly */
 #       pragma omp atomic
         rhs[cm->f_ids[f]] += csys->rhs[f];
 

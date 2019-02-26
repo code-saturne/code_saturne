@@ -608,6 +608,8 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
 
+    mab->n_x_dofs = 3;  /* vector-valued equation */
+
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
     csys->face_shift = connect->n_faces[CS_INT_FACES];
@@ -680,10 +682,11 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS */
+      /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mab, mav, rhs, eqc->source_terms);
+                               eqc, mab, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -804,6 +807,8 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
 
+    mab->n_x_dofs = 3;  /* vector-valued equation */
+
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
     csys->face_shift = connect->n_faces[CS_INT_FACES];
@@ -899,10 +904,11 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS */
+      /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mab, mav, rhs, eqc->source_terms);
+                               eqc, mab, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1032,6 +1038,8 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
 
+    mab->n_x_dofs = 3;  /* vector-valued equation */
+
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
     csys->face_shift = connect->n_faces[CS_INT_FACES];
@@ -1155,10 +1163,11 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS */
+      /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mab, mav, rhs, eqc->source_terms);
+                               eqc, mab, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1428,9 +1437,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   BFT_MALLOC(eqc->acf_tilda, 3*connect->c2f->idx[n_cells], cs_real_t);
   memset(eqc->acf_tilda, 0, 3*connect->c2f->idx[n_cells]*sizeof(cs_real_t));
 
-  /* Diffusion part */
-  /* -------------- */
-
+  /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -1451,7 +1458,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
-  } /* Diffusion part */
+  } /* Diffusion */
 
   eqc->enforce_dirichlet = NULL;
   switch (eqp->default_enforcement) {
@@ -1487,11 +1494,11 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
   }
 
-  /* Advection part */
+  /* Advection */
   eqc->adv_func = NULL;
   eqc->adv_func_bc = NULL;
 
-  /* Time part */
+  /* Time */
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
@@ -1508,7 +1515,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Source term part */
+  /* Source term */
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -1517,6 +1524,9 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     for (cs_lnum_t i = 0; i < 3*n_cells; i++) eqc->source_terms[i] = 0;
 
   } /* There is at least one source term */
+
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_block_matrix;
 
   return eqc;
 }

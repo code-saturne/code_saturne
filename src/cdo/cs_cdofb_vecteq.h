@@ -340,10 +340,10 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
  * \param[in]      rs                pointer to a cs_range_set_t structure
  * \param[in]      cm                pointer to a cs_cell_mesh_t structure
  * \param[in]      has_sourceterm    has the equation a source term?
+ * \param[in, out] eqc               context structure for a vector-valued Fb
  * \param[in, out] mab               pointer to cs_equation_assembly_buf_t
  * \param[in, out] mav               pointer to cs_matrix_assembler_values_t
  * \param[in, out] rhs               right-end side of the system
- * \param[in, out] eqc_st            source term from the context view
  */
 /*----------------------------------------------------------------------------*/
 
@@ -352,25 +352,27 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t           *csys,
                          const cs_range_set_t          *rs,
                          const cs_cell_mesh_t          *cm,
                          const bool                     has_sourceterm,
+                         cs_cdofb_vecteq_t             *eqc,
                          cs_equation_assembly_buf_t    *mab,
                          cs_matrix_assembler_values_t  *mav,
-                         cs_real_t                      rhs[],
-                         cs_real_t                      eqc_st[])
+                         cs_real_t                      rhs[])
 {
+  assert(mab != NULL && mab->n_x_dofs == 3); /* Sanity check */
+
   const short int n_f = cm->n_fc;
+  eqc->assemble(csys, rs, mab, mav); /* Matrix assembly */
 
-  /* Matrix assembly */
-  cs_equation_assemble_block_matrix(csys, rs, 3, mab, mav);
-
-  for (short int f = 0; f < 3*n_f; f++) /* Assemble RHS */
+  for (short int f = 0; f < 3*n_f; f++) /* RHS assembly */
 #   pragma omp atomic
     rhs[csys->dof_ids[f]] += csys->rhs[f];
 
-    /* Reset the value of the source term for the cell DoF
-       Source term is only hold by the cell DoF in face-based schemes */
-  if (has_sourceterm)
+  /* Reset the value of the source term for the cell DoF
+     Source term is only hold by the cell DoF in face-based schemes */
+  if (has_sourceterm) {
+    cs_real_t  *st = eqc->source_terms + 3*cm->c_id;
     for (int k = 0; k < 3; k++)
-      eqc_st[3*cm->c_id + k] = csys->source[3*n_f + k];
+      st[k] = csys->source[3*n_f + k];
+  }
 }
 
 /*----------------------------------------------------------------------------*/

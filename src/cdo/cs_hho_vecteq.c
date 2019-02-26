@@ -111,6 +111,9 @@ struct _cs_hho_vecteq_t {
   cs_real_t                     *cell_values;  /* DoF recomputed after the
                                                   static condensation */
 
+  /* Assembly process */
+  cs_equation_assemble_t        *assemble;
+
   /* Storage of the source term (if one wants to apply a specific time
      discretization) */
   cs_real_t                     *source_terms;
@@ -907,6 +910,9 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Loop on BC definitions */
 
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_block_matrix;
+
   return eqc;
 }
 
@@ -1199,6 +1205,8 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
 
+    mab->n_x_dofs = eqc->n_face_dofs;
+
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, t_eval_pty, cb);
 
@@ -1359,10 +1367,9 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
       /* ======== */
 
       /* Matrix assembly */
-      cs_equation_assemble_block_matrix(csys, eqc->rs, eqc->n_face_dofs,
-                                        mab, mav); /* Matrix assembly */
+      eqc->assemble(csys, eqc->rs, mab, mav);
 
-      /* Assemble RHS */
+      /* RHS assembly */
       for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
 #       pragma omp atomic
         rhs[csys->dof_ids[i]] += csys->rhs[i];
