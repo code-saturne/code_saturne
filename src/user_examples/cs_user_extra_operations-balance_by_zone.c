@@ -174,8 +174,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /* More advanced usage for pressure drop */
 
+  //!< [example_6]
   {
-    /*< [example_6] */
     const char criteria[] = "zone_group";
 
     cs_lnum_t   n_selected_cells = 0;
@@ -202,8 +202,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
                "outlet mass flow (rho.u): %g\n",
                balance[rhou_in_idx],
                balance[rhou_out_idx]);
-    /*< [example_6] */
   }
+  //!< [example_6]
 }
 
 /*----------------------------------------------------------------------------*/
