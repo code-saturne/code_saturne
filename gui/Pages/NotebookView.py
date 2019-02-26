@@ -431,7 +431,7 @@ class VariableStandardItemModel(QAbstractItemModel):
         elif index.column() == 1:
             value = str(from_qvariant(value, float))
             item.item.value = value
-            self.mdl.setVariableValue(item.item.index, item.item.value)
+            self.mdl.setVariableValue(item.item.value, idx=item.item.index)
 
         elif index.column() == 2:
             value = from_qvariant(value, to_text_string)

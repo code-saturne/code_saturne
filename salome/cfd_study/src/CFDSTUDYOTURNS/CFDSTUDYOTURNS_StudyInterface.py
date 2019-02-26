@@ -306,17 +306,10 @@ class cfd_openturns_study:
         # Update xml file
         from code_saturne.model.NotebookModel import NotebookModel
         nb = NotebookModel(self.case)
-        nb_ids = nb.getVarList()
-        nb_names = nb.getVarNameList()
         for key in self.vars_dico.keys():
-            try:
-                ix = nb_names.index(key)
-            except:
-                ix = -1
-
-            if ix != -1:
-                idx = nb_ids[ix]
-                nb.setVariableValue(idx=idx, val=str(self.vars_dico[key]))
+            if key in nb.getVarNameList():
+                nb.setVariableValue(val=str(self.vars_dico[key]),
+                                    var=key)
 
         self.case.xmlSaveDocument()
     # ---------------------------------------
