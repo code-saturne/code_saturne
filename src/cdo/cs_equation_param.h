@@ -388,6 +388,17 @@ typedef struct {
 
   cs_param_sles_t              sles_param;
 
+  /*!
+   * @}
+   * @name Settings related to the optimization of the performance
+   * @{
+   *
+   * \var omp_assembly_choice
+   * When OpenMP is active, choice of parallel reduction for the assembly
+   */
+
+  cs_param_omp_assembly_strategy_t     omp_assembly_choice;
+
   /*! @} */
 
 } cs_equation_param_t;
@@ -558,6 +569,11 @@ typedef struct {
  * for solving the linear system. Available choices are:
  * - "true" or "false"
  *
+ * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
+ * Choice of the way to perform the assembly when OpenMP is active
+ * Available choices are:
+ * - "atomic" or "critical"
+ *
  * \var CS_EQKEY_PRECOND
  * Specify the preconditionner associated to an iterative solver. Available
  * choices are:
@@ -628,6 +644,7 @@ typedef enum {
   CS_EQKEY_ITSOL_EPS,
   CS_EQKEY_ITSOL_MAX_ITER,
   CS_EQKEY_ITSOL_RESNORM,
+  CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_SLES_VERBOSITY,
   CS_EQKEY_SOLVER_FAMILY,

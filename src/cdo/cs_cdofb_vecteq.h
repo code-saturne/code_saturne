@@ -360,7 +360,7 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t           *csys,
   assert(mab != NULL && mab->n_x_dofs == 3); /* Sanity check */
 
   const short int n_f = cm->n_fc;
-  eqc->assemble(csys, rs, mab, mav); /* Matrix assembly */
+  eqc->assemble(csys, rs, mab, mav);    /* Matrix assembly */
 
   for (short int f = 0; f < 3*n_f; f++) /* RHS assembly */
 #   pragma omp atomic

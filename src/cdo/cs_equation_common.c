@@ -225,6 +225,65 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a \ref cs_matrix_assembler_values_t structure
+ *
+ * \param[in, out] matrix          pointer to matrix structure
+ * \param[in]      omp_choice      choice of the OpenMP strategy
+ * \param[in]      stride          stride to apply to each entity
+ *
+ * \return  a pointer to a cs_matrix_assembler_values_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_assembler_values_t *
+cs_equation_get_mav(cs_matrix_t                        *matrix,
+                    cs_param_omp_assembly_strategy_t    omp_choice,
+                    int                                 stride)
+{
+  cs_matrix_assembler_values_t  *mav = NULL;
+
+  switch (stride) {
+
+  case 1:
+    if (cs_glob_n_threads < 2)  /* Single thread */
+      mav
+        = cs_matrix_assembler_values_initx(matrix, NULL, NULL,
+                                           true,  /* MSR */
+                                   cs_matrix_msr_assembler_values_init,
+                                   cs_matrix_msr_assembler_values_add_1_single,
+                                           NULL,
+                                           NULL, NULL); /* Optional pointers */
+    else if (omp_choice == CS_PARAM_OMP_ASSEMBLY_ATOMIC)
+      mav
+        = cs_matrix_assembler_values_initx(matrix, NULL, NULL,
+                                           true,  /* MSR */
+                                   cs_matrix_msr_assembler_values_init,
+                                   cs_matrix_msr_assembler_values_add_1_atomic,
+                                           NULL,
+                                           NULL, NULL); /* Optional pointers */
+    else if (omp_choice == CS_PARAM_OMP_ASSEMBLY_CRITICAL)
+      mav
+        = cs_matrix_assembler_values_initx(matrix, NULL, NULL,
+                                           true,  /* MSR */
+                                   cs_matrix_msr_assembler_values_init,
+                                   cs_matrix_msr_assembler_values_add_1_critic,
+                                           NULL,
+                                           NULL, NULL); /* Optional pointers */
+    else
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid OpenMP choice", __func__);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Case not handled.", __func__);
+    break;
+
+  }
+
+  return mav;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
  *         structure
  *

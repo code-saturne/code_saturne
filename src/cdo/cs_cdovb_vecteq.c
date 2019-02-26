@@ -1323,8 +1323,8 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */

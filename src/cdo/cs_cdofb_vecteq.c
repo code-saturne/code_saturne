@@ -587,8 +587,8 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
@@ -786,8 +786,8 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
@@ -1017,8 +1017,8 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs, dir_values, \

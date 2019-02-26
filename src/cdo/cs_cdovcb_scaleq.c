@@ -1232,8 +1232,8 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < n_vertices; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -1444,8 +1444,8 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < n_vertices; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -1712,8 +1712,8 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < n_vertices; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
 
   /* Detect the first call (in this case, we compute the initial source term)*/
   bool  compute_initial_source = false;

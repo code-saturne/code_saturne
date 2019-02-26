@@ -323,6 +323,23 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a \ref cs_matrix_assembler_values_t structure
+ *
+ * \param[in, out] matrix          pointer to matrix structure
+ * \param[in]      omp_choice      choice of the OpenMP strategy
+ * \param[in]      stride          stride to apply to each entity
+ *
+ * \return  a pointer to a cs_matrix_assembler_values_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_assembler_values_t *
+cs_equation_get_mav(cs_matrix_t                        *matrix,
+                    cs_param_omp_assembly_strategy_t    omp_choice,
+                    int                                 stride);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
  *         structure
  *

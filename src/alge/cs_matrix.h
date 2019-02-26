@@ -591,6 +591,50 @@ cs_matrix_assembler_values_init(cs_matrix_t      *matrix,
                                 const cs_lnum_t  *diag_block_size,
                                 const cs_lnum_t  *extra_diag_block_size);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and initialize a matrix assembler values structure with
+ *        additional parameters to set function pointers
+ *
+ * The associated matrix's structure must have been created using
+ * \ref cs_matrix_structure_create_from_assembler.
+ *
+ * Block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * \param[in, out] matrix          pointer to matrix structure
+ * \param[in]      d_block_size    block sizes for diagonal, or NULL
+ * \param[in]      ed_block_size   block sizes for extra diagonal, or NULL
+ * \param[in]      sep_diag        true if diagonal terms are stored separately
+ * \param[in]      db_size         optional diagonal block sizes
+ * \param[in]      eb_size         optional extra-diagonal block sizes
+ * \param[in]      init            pointer to matrix coefficients
+ *                                 initialization function
+ * \param[in]      add             pointer to matrix coefficients addition from
+ *                                 local ids function
+ * \param[in]      add_g           pointer to matrix coefficients addition from
+ *                                 global ids function
+ * \param[in]      begin           pointer to matrix coefficients assembly
+ *                                 start function (optional)
+ * \param[in]      end             pointer to matrix coefficients assembly
+ *                                 end function (optional)
+ *
+ * \return  pointer to initialized matrix assembler values structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_assembler_values_t *
+cs_matrix_assembler_values_initx(cs_matrix_t                         *matrix,
+                                 const cs_lnum_t                     *db_size,
+                                 const cs_lnum_t                     *eb_size,
+                                 bool                                 sep_diag,
+                                 cs_matrix_assembler_values_init_t   *init,
+                                 cs_matrix_assembler_values_add_t    *add,
+                                 cs_matrix_assembler_values_add_g_t  *add_g,
+                                 cs_matrix_assembler_values_begin_t  *begin,
+                                 cs_matrix_assembler_values_end_t    *end);
+
 /*----------------------------------------------------------------------------
  * Release shared matrix coefficients.
  *
@@ -870,6 +914,226 @@ void
 cs_matrix_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
                                    const cs_matrix_t   *matrix,
                                    cs_real_t           *x);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function for initialization of CSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       db size   optional diagonal block sizes
+ * \param[in]       eb size   optional extra-diagonal block sizes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_csr_assembler_values_init(void              *matrix_p,
+                                    const cs_lnum_t    db_size[4],
+                                    const cs_lnum_t    eb_size[4]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to CSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes shoudl be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       row_id    associated local row ids
+ * \param[in]       col_idx   associated local column indexes
+ * \param[in]       val       pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_csr_assembler_values_add(void             *matrix_p,
+                                   cs_lnum_t         n,
+                                   cs_lnum_t         stride,
+                                   const cs_lnum_t   row_id[],
+                                   const cs_lnum_t   col_idx[],
+                                   const cs_real_t   vals[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function for initialization of MSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       db size   optional diagonal block sizes
+ * \param[in]       eb size   optional extra-diagonal block sizes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_msr_assembler_values_init(void              *matrix_p,
+                                    const cs_lnum_t    db_size[4],
+                                    const cs_lnum_t    eb_size[4]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to MSR matrix coefficients using
+ *        local row ids and column indexes.
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes shoudl be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       row_id    associated local row ids
+ * \param[in]       col_idx   associated local column indexes
+ * \param[in]       val       pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_msr_assembler_values_add(void             *matrix_p,
+                                   cs_lnum_t         n,
+                                   cs_lnum_t         stride,
+                                   const cs_lnum_t   row_id[],
+                                   const cs_lnum_t   col_idx[],
+                                   const cs_real_t   vals[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to MSR matrix coefficients using
+ *        local row ids and column indexes.
+ *        Specific case: No openMP and stride = 1
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes shoudl be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       row_id    associated local row ids
+ * \param[in]       col_idx   associated local column indexes
+ * \param[in]       val       pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_msr_assembler_values_add_1_single(void             *matrix_p,
+                                            cs_lnum_t         n,
+                                            cs_lnum_t         stride,
+                                            const cs_lnum_t   row_id[],
+                                            const cs_lnum_t   col_idx[],
+                                            const cs_real_t   vals[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to MSR matrix coefficients using
+ *        local row ids and column indexes.
+ *        Specific case: OpenMp with atomic and stride = 1
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes shoudl be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       row_id    associated local row ids
+ * \param[in]       col_idx   associated local column indexes
+ * \param[in]       val       pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_msr_assembler_values_add_1_atomic(void             *matrix_p,
+                                            cs_lnum_t         n,
+                                            cs_lnum_t         stride,
+                                            const cs_lnum_t   row_id[],
+                                            const cs_lnum_t   col_idx[],
+                                            const cs_real_t   vals[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to MSR matrix coefficients using
+ *        local row ids and column indexes.
+ *        Specific case: OpenMp with critical and stride = 1
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes shoudl be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       row_id    associated local row ids
+ * \param[in]       col_idx   associated local column indexes
+ * \param[in]       val       pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_msr_assembler_values_add_1_critic(void             *matrix_p,
+                                            cs_lnum_t         n,
+                                            cs_lnum_t         stride,
+                                            const cs_lnum_t   row_id[],
+                                            const cs_lnum_t   col_idx[],
+                                            const cs_real_t   vals[]);
 
 /*----------------------------------------------------------------------------
  * Build list of variants for tuning or testing.

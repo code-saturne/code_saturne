@@ -650,6 +650,18 @@ _set_key(const char            *label,
       eqp->sles_param.resid_normalized = false;
     break;
 
+  case CS_EQKEY_OMP_ASSEMBLY_STRATEGY:
+    if (strcmp(keyval, "critical") == 0)
+      eqp->omp_assembly_choice = CS_PARAM_OMP_ASSEMBLY_CRITICAL;
+    else if (strcmp(keyval, "atomic") == 0)
+      eqp->sles_param.precond = CS_PARAM_OMP_ASSEMBLY_ATOMIC;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_OMP_ASSEMBLY_STRATEGY");
+    }
+    break;
+
   case CS_EQKEY_PRECOND:
     if (strcmp(keyval, "none") == 0) {
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
@@ -940,6 +952,9 @@ cs_equation_create_param(const char            *name,
                                 */
   };
 
+  /* Settings for the OpenMP strategy */
+  eqp->omp_assembly_choice = CS_PARAM_OMP_ASSEMBLY_CRITICAL;
+
   return eqp;
 }
 
@@ -1048,6 +1063,9 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   dst->sles_param.n_max_iter = ref->sles_param.n_max_iter;
   dst->sles_param.eps = ref->sles_param.eps;
   dst->sles_param.resid_normalized = ref->sles_param.resid_normalized;
+
+  /* Settings for performance */
+  dst->omp_assembly_choice = ref->omp_assembly_choice;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1771,6 +1789,14 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
                 eqname, cs_base_strtf(slesp.resid_normalized));
 
+  if (cs_glob_n_threads > 1) {
+    if (eqp->omp_assembly_choice == CS_PARAM_OMP_ASSEMBLY_CRITICAL)
+      cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> OpenMP.Assembly.Choice  %s\n",
+                    eqname, "critical");
+    else if (eqp->omp_assembly_choice == CS_PARAM_OMP_ASSEMBLY_ATOMIC)
+      cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> OpenMP.Assembly.Choice  %s\n",
+                    eqname, "atomic");
+  }
 }
 
 /*----------------------------------------------------------------------------*/
