@@ -749,7 +749,7 @@ cs_equation_free_structures(void)
                 " ", "Assembly.Struct", "Assembly.Values (Time/n_calls)");
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10.3f %10.3f seconds %u calls\n",
                 "<CDO/CommonEq> Runtime",
-                tcas.wall_nsec*1e-9, tcav.wall_nsec*1e-9/cs_glob_n_threads,
+                tcas.wall_nsec*1e-9, tcav.wall_nsec*1e-9,
                 n_assembly_value_calls);
 #endif
 }
@@ -1179,10 +1179,9 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 #if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
   cs_timer_t  t0;
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-#pragma omp parallel
+#pragma omp master
   {
-    int  t_id = omp_get_thread_num();
-    if (t_id == 0) t0 = cs_timer_time();
+    t0 = cs_timer_time();
   }
 #else
   t0 = cs_timer_time();
@@ -1224,12 +1223,12 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 #if defined(HAVE_OPENMP)
 #pragma omp parallel reduction(+:n_assembly_value_calls)
   {
-    int  t_id = omp_get_thread_num();
-    if (t_id == 0) {
-      cs_timer_t   t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcav, &t0, &t1);
-    }
     n_assembly_value_calls++;
+  }
+#pragma omp master
+  {
+    cs_timer_t   t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&tcav, &t0, &t1);
   }
 #else
   cs_timer_t  t1 = cs_timer_time();
@@ -1270,9 +1269,9 @@ cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
 #if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
   cs_timer_t  t0;
 #if defined(HAVE_OPENMP)
-#pragma omp parallel
+#pragma omp master
   {
-    if (omp_get_thread_num() == 0) t0 = cs_timer_time();
+    t0 = cs_timer_time();
   }
 #else
   t0 = cs_timer_time();
@@ -1326,11 +1325,12 @@ cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
 #if defined(HAVE_OPENMP)
 #pragma omp parallel reduction(+:n_assembly_value_calls)
   {
-    if (omp_get_thread_num() == 0) {
-      cs_timer_t  t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcav, &t0, &t1);
-    }
     n_assembly_value_calls++;
+  }
+#pragma omp master
+  {
+    cs_timer_t  t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&tcav, &t0, &t1);
   }
 #else
   cs_timer_t  t1 = cs_timer_time();
