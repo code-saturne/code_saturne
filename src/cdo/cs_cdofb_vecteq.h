@@ -341,7 +341,7 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
  * \param[in]      cm                pointer to a cs_cell_mesh_t structure
  * \param[in]      has_sourceterm    has the equation a source term?
  * \param[in, out] eqc               context structure for a vector-valued Fb
- * \param[in, out] mab               pointer to cs_equation_assembly_buf_t
+ * \param[in, out] mab               pointer to cs_matrix_assembler_buf_t
  * \param[in, out] mav               pointer to cs_matrix_assembler_values_t
  * \param[in, out] rhs               right-end side of the system
  */
@@ -353,7 +353,7 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t           *csys,
                          const cs_cell_mesh_t          *cm,
                          const bool                     has_sourceterm,
                          cs_cdofb_vecteq_t             *eqc,
-                         cs_equation_assembly_buf_t    *mab,
+                         cs_matrix_assembler_buf_t    *mab,
                          cs_matrix_assembler_values_t  *mav,
                          cs_real_t                      rhs[])
 {

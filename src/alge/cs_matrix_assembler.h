@@ -65,6 +65,30 @@ typedef struct _cs_matrix_assembler_t  cs_matrix_assembler_t;
 
 typedef struct _cs_matrix_assembler_values_t  cs_matrix_assembler_values_t;
 
+/*!
+ *  \struct cs_matrix_assembler_buf_t
+ *  \brief Structure used to store the arguments for the assemble function
+ *  If n_x_dofs > 1, one moves to a block version of the assembly
+ */
+
+typedef struct {
+
+  int          n_x_dofs;     /*!< Number of degrees of freedom by entity */
+  cs_gnum_t   *dof_gids;     /*!< Global numbering for the degrees of freedom
+                               (size: n_dofs*n_x_dofs) */
+
+  int          buffer_size;  /*!< Max. allocated size for the assembly
+                               buffers */
+
+  cs_lnum_t   *row_id;       /*!< List of local row ids  */
+  cs_lnum_t   *col_idx;      /*!< List of column index for each row id  */
+
+  cs_gnum_t   *row_gids;     /*!< List of global row numbers */
+  cs_gnum_t   *col_gids;     /*!< List of global column numbers */
+  cs_real_t   *values;       /*!< List of values for each couple (row, col) */
+
+} cs_matrix_assembler_buf_t;
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function pointer for initialization of matrix coefficients using
@@ -640,6 +664,26 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  const cs_gnum_t                g_row_id[],
                                  const cs_gnum_t                g_col_id[],
                                  const cs_real_t                val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add values to a matrix assembler values structure using global
+ *        row and column ids.
+ *
+ * See \ref cs_matrix_assembler_values_add_g since this function performs the
+ * same operations but in the specific case of CDO system. So one assumes
+ * predefined choices in order to get a more optimized version of this function
+ *
+ * \param[in]       n         number of entries
+ * \param[in, out]  mav       pointer to matrix assembler values structure
+ * \param[in, out]  mab       pointer to matrix assembler buffer structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_assembler_values_add_g_cdo(cs_lnum_t                      n,
+                                     cs_matrix_assembler_values_t  *mav,
+                                     cs_matrix_assembler_buf_t     *mab);
 
 /*----------------------------------------------------------------------------*/
 /*!

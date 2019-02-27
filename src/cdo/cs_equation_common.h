@@ -169,26 +169,6 @@ typedef struct {
 
 } cs_equation_balance_t;
 
-/*!
- *  \struct cs_equation_assembly_buf_t
- *  \brief Structure used to store the arguments for the assemble function
- *  If n_x_dofs > 1, one moves to a block version of the assembly
- */
-
-typedef struct {
-
-  int          n_x_dofs;     /*!< Number of degrees of freedom by entity */
-  cs_gnum_t   *dof_gids;     /*!< Global numbering for the degrees of freedom
-                               (size: n_dofs*n_x_dofs) */
-
-  int          buffer_size;  /*!< Max. allocated size for the assembly
-                               buffers */
-  cs_gnum_t   *row_gids;     /*!< List of global row numbers */
-  cs_gnum_t   *col_gids;     /*!< List of global column numbers */
-  cs_real_t   *values;       /*!< List of values for each couple (row, col) */
-
-} cs_equation_assembly_buf_t;
-
 /*----------------------------------------------------------------------------
  * Function pointer types
  *----------------------------------------------------------------------------*/
@@ -208,7 +188,7 @@ typedef struct {
 typedef void
 (cs_equation_assemble_t)(const cs_cell_sys_t            *csys,
                          const cs_range_set_t           *rset,
-                         cs_equation_assembly_buf_t     *mab,
+                         cs_matrix_assembler_buf_t      *mab,
                          cs_matrix_assembler_values_t   *mav);
 
 /*============================================================================
@@ -584,7 +564,7 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 void
 cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
                             const cs_range_set_t           *rset,
-                            cs_equation_assembly_buf_t     *mab,
+                            cs_matrix_assembler_buf_t      *mab,
                             cs_matrix_assembler_values_t   *mav);
 
 /*----------------------------------------------------------------------------*/
@@ -602,21 +582,21 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 void
 cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
                                   const cs_range_set_t           *rset,
-                                  cs_equation_assembly_buf_t     *mab,
+                                  cs_matrix_assembler_buf_t      *mab,
                                   cs_matrix_assembler_values_t   *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get a pointer to a cs_equation_assembly_buf_t structure related
+ * \brief  Get a pointer to a cs_matrix_assembler_buf_t structure related
  *         to a given thread
  *
  * \param[in]  t_id    id in the array of pointer
  *
- * \return a pointer to a cs_equation_assembly_buf_t structure
+ * \return a pointer to a cs_matrix_assembler_buf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_assembly_buf_t *
+cs_matrix_assembler_buf_t *
 cs_equation_get_assembly_buffers(int    t_id);
 
 /*----------------------------------------------------------------------------*/

@@ -85,7 +85,7 @@ static cs_real_t  *cs_equation_common_work_buffer = NULL;
    of space discretizations */
 static cs_matrix_assembler_t  **cs_equation_common_ma = NULL;
 static cs_matrix_structure_t  **cs_equation_common_ms = NULL;
-static cs_equation_assembly_buf_t  **cs_assembly_buffers = NULL;
+static cs_matrix_assembler_buf_t  **cs_assembly_buffers = NULL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_shared_quant;
@@ -641,9 +641,9 @@ cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
   BFT_MALLOC(cs_equation_common_work_buffer, cwb_size, double);
 
   /* Common buffers for assembly usage */
-  BFT_MALLOC(cs_assembly_buffers, cs_glob_n_threads,
-             cs_equation_assembly_buf_t *);
-  for (int i = 0; i < cs_glob_n_threads; i++)
+  const int  n_threads = cs_glob_n_threads;
+  BFT_MALLOC(cs_assembly_buffers, n_threads, cs_matrix_assembler_buf_t *);
+  for (int i = 0; i < n_threads; i++)
     cs_assembly_buffers[i] = NULL;
 
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -652,27 +652,31 @@ cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
     /* Each thread allocate its part. This yields a better memory affinity */
     int  t_id = omp_get_thread_num();
 
-    BFT_MALLOC(cs_assembly_buffers[t_id], 1, cs_equation_assembly_buf_t);
+    BFT_MALLOC(cs_assembly_buffers[t_id], 1, cs_matrix_assembler_buf_t);
 
-    cs_equation_assembly_buf_t  *assb = cs_assembly_buffers[t_id];
+    cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[t_id];
 
     assb->n_x_dofs = 1;           /* Default setting */
     BFT_MALLOC(assb->dof_gids, assembler_dof_size, cs_gnum_t);
 
     assb->buffer_size = loc_assembler_size;
+    BFT_MALLOC(assb->row_id, loc_assembler_size, cs_lnum_t);
+    BFT_MALLOC(assb->col_idx, loc_assembler_size, cs_lnum_t);
     BFT_MALLOC(assb->row_gids, loc_assembler_size, cs_gnum_t);
     BFT_MALLOC(assb->col_gids, loc_assembler_size, cs_gnum_t);
     BFT_MALLOC(assb->values, loc_assembler_size, cs_real_t);
   }
 #else
-  BFT_MALLOC(cs_assembly_buffers[0], 1, cs_equation_assembly_buf_t);
+  BFT_MALLOC(cs_assembly_buffers[0], 1, cs_matrix_assembler_buf_t);
 
-  cs_equation_assembly_buf_t  *assb = cs_assembly_buffers[0];
+  cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[0];
 
   assb->n_x_dofs = 1;           /* Default setting */
   BFT_MALLOC(assb->dof_gids, assembler_dof_size, cs_gnum_t);
 
   assb->buffer_size = loc_assembler_size;
+  BFT_MALLOC(assb->row_id, loc_assembler_size, cs_lnum_t);
+  BFT_MALLOC(assb->col_idx, loc_assembler_size, cs_lnum_t);
   BFT_MALLOC(assb->row_gids, loc_assembler_size, cs_gnum_t);
   BFT_MALLOC(assb->col_gids, loc_assembler_size, cs_gnum_t);
   BFT_MALLOC(assb->values, loc_assembler_size, cs_real_t);
@@ -704,16 +708,20 @@ cs_equation_free_structures(void)
 #pragma omp parallel
   {
     int  t_id = omp_get_thread_num();
-    cs_equation_assembly_buf_t  *assb = cs_assembly_buffers[t_id];
+    cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[t_id];
 
+    BFT_FREE(assb->row_id);
+    BFT_FREE(assb->col_idx);
     BFT_FREE(assb->row_gids);
     BFT_FREE(assb->col_gids);
     BFT_FREE(assb->values);
     BFT_FREE(assb);
   }
 #else
-  cs_equation_assembly_buf_t  *assb = cs_assembly_buffers[0];
+  cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[0];
 
+  BFT_FREE(assb->row_id);
+  BFT_FREE(assb->col_idx);
   BFT_FREE(assb->row_gids);
   BFT_FREE(assb->col_gids);
   BFT_FREE(assb->values);
@@ -1169,7 +1177,7 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 void
 cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
                             const cs_range_set_t           *rset,
-                            cs_equation_assembly_buf_t     *mab,
+                            cs_matrix_assembler_buf_t     *mab,
                             cs_matrix_assembler_values_t   *mav)
 {
   const cs_lnum_t  *const dof_ids = csys->dof_ids;
@@ -1216,8 +1224,7 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 
   assert(mab->buffer_size >= bufsize);
   if (bufsize > 0)
-    cs_matrix_assembler_values_add_g(mav, bufsize,
-                                     mab->row_gids, mab->col_gids, mab->values);
+    cs_matrix_assembler_values_add_g_cdo(bufsize, mav, mab);
 
 #if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
 #if defined(HAVE_OPENMP)
@@ -1253,7 +1260,7 @@ cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
 void
 cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
                                   const cs_range_set_t           *rset,
-                                  cs_equation_assembly_buf_t     *mab,
+                                  cs_matrix_assembler_buf_t     *mab,
                                   cs_matrix_assembler_values_t   *mav)
 {
   const cs_lnum_t  *dof_ids = csys->dof_ids;
@@ -1316,10 +1323,8 @@ cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
   } /* Loop on row blocks */
 
   assert(mab->buffer_size >= bufsize);
-  if (bufsize > 0) {
-    cs_matrix_assembler_values_add_g(mav, bufsize,
-                                     mab->row_gids, mab->col_gids, mab->values);
-  }
+  if (bufsize > 0)
+    cs_matrix_assembler_values_add_g_cdo(bufsize, mav, mab);
 
 #if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
 #if defined(HAVE_OPENMP)
@@ -1342,16 +1347,16 @@ cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get a pointer to a cs_equation_assembly_buf_t structure related
+ * \brief  Get a pointer to a cs_matrix_assembler_buf_t structure related
  *         to a given thread
  *
  * \param[in]  t_id    id in the array of pointer
  *
- * \return a pointer to a cs_equation_assembly_buf_t structure
+ * \return a pointer to a cs_matrix_assembler_buf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_assembly_buf_t *
+cs_matrix_assembler_buf_t *
 cs_equation_get_assembly_buffers(int    t_id)
 {
   if (t_id < 0 || t_id >= cs_glob_n_threads)

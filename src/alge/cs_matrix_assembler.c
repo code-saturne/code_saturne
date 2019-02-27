@@ -441,7 +441,7 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
 
   cs_lnum_t start_id = 0;
   cs_lnum_t end_id = l_id_array_size - 1;
-  cs_lnum_t mid_id = (end_id -start_id) / 2;
+  cs_lnum_t mid_id = (end_id >> 1);
   while (start_id < end_id) {
     if (l_id_array[mid_id] < l_id)
       start_id = mid_id + 1;
@@ -449,7 +449,7 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
       end_id = mid_id - 1;
     else
       break;
-    mid_id = start_id + ((end_id -start_id) / 2);
+    mid_id = start_id + ((end_id - start_id) >> 1);
   }
   if (l_id_array[mid_id] != l_id)
     mid_id = -1;
@@ -3715,6 +3715,157 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add values to a matrix assembler values structure using global
+ *        row and column ids.
+ *
+ * See \ref cs_matrix_assembler_values_add_g since this function performs the
+ * same operations but in the specific case of CDO system. So one assumes
+ * predefined choices in order to get a more optimized version of this function
+ *
+ * \param[in]       n         number of entries
+ * \param[in, out]  mav       pointer to matrix assembler values structure
+ * \param[in, out]  mab       pointer to matrix assembler buffer structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_assembler_values_add_g_cdo(cs_lnum_t                      n,
+                                     cs_matrix_assembler_values_t  *mav,
+                                     cs_matrix_assembler_buf_t     *mab)
+{
+  if (n < 1)
+    return;
+
+  const cs_matrix_assembler_t  *ma = mav->ma;
+  const cs_gnum_t  *g_row_id = mab->row_gids;
+  const cs_gnum_t  *g_col_id = mab->col_gids;
+  const cs_real_t  *val = mab->values;
+
+  /* 1) Build row_id[] and col_idx[] arrays */
+
+#if defined(HAVE_MPI)
+
+  for (cs_lnum_t i = 0; i < n; i++) {
+
+    const cs_gnum_t g_r_id = g_row_id[i];
+
+    /* Case where coefficient is handled by other rank */
+
+    if (g_r_id < ma->l_range[0] || g_r_id >= ma->l_range[1]) {
+
+      const cs_lnum_t  e_r_id = _g_id_binary_find(ma->coeff_send_n_rows,
+                                                  g_r_id,
+                                                  ma->coeff_send_row_g_id);
+      const cs_lnum_t r_start = ma->coeff_send_index[e_r_id];
+      const cs_lnum_t n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
+      const cs_lnum_t e_id = r_start +_g_id_binary_find(n_e_rows,
+                                                        g_col_id[i],
+                                             ma->coeff_send_col_g_id + r_start);
+
+      mab->row_id[i] = -1;      /* skip in the step add_values() */
+      mab->col_idx[i] = 0;
+
+      /* Now add values to send coefficients */
+#     pragma omp atomic
+      mav->coeff_send[e_id] += val[i];
+
+    }
+
+    /* Standard case */
+
+    else {
+
+      const cs_gnum_t g_c_id = g_col_id[i];
+
+      if (ma->d_r_idx != NULL) { /* local-id-based function, need to adapt */
+
+        const cs_lnum_t l_r_id = g_r_id - ma->l_range[0];
+        const cs_lnum_t n_l_cols
+          = (  ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id]
+             - ma->d_r_idx[l_r_id+1] + ma->d_r_idx[l_r_id]);
+
+        mab->row_id[i] = l_r_id;
+
+        /* Local part */
+
+        if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) {
+
+          cs_lnum_t l_c_id = g_c_id - ma->l_range[0];
+
+          mab->col_idx[i] = _l_id_binary_search(n_l_cols,
+                                                l_c_id,
+                                                ma->c_id + ma->r_idx[l_r_id]);
+
+          assert(mab->col_idx[i] > -1 || (ma->separate_diag && l_c_id==l_r_id));
+
+        }
+
+        /* Distant part */
+
+        else {
+
+          cs_lnum_t n_cols = ma->d_r_idx[l_r_id+1] - ma->d_r_idx[l_r_id];
+          cs_lnum_t d_c_idx = _g_id_binary_find(n_cols,
+                                                g_c_id,
+                                           ma->d_g_c_id + ma->d_r_idx[l_r_id]);
+
+          /* column ids start and end of local row, so add n_l_cols */
+          mab->col_idx[i] = d_c_idx + n_l_cols;
+
+        }
+
+      } /* d_r_idx != NULL */
+
+      else { /* local-only case or matrix part */
+
+        assert(ma->d_r_idx == NULL);
+        assert(g_r_id < ma->l_range[1]);
+        assert(g_c_id < ma->l_range[1]);
+
+        cs_lnum_t l_r_id = g_r_id - ma->l_range[0];
+        cs_lnum_t l_c_id = g_c_id - ma->l_range[0];
+        cs_lnum_t n_cols = ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id];
+
+        assert(l_c_id >= 0);
+
+        mab->row_id[i] = l_r_id;
+        mab->col_idx[i] = _l_id_binary_search(n_cols,
+                                              l_c_id,
+                                              ma->c_id + ma->r_idx[l_r_id]);
+
+        assert(mab->col_idx[i] > -1 || (ma->separate_diag && l_c_id == l_r_id));
+
+      }
+
+    } /* row_id on this rank */
+
+  } /* Loop on couples */
+
+#else
+
+  for (cs_lnum_t i = 0; i < n; i++) {
+
+    const cs_lnum_t  l_r_id = g_row_id[i] - ma->l_range[0];
+    const cs_lnum_t  l_c_id = g_col_id[i] - ma->l_range[0];
+
+    mab->row_id[i] = l_r_id;
+    mab->col_idx[i] = _l_id_binary_search(ma->r_idx[l_r_id+1]-ma->r_idx[l_r_id],
+                                          l_c_id,
+                                          ma->c_id + ma->r_idx[l_r_id]);
+
+    assert(mab->col_idx[i] > -1 || (ma->separate_diag && l_c_id == l_r_id));
+
+  } /* Loop on couples */
+
+#endif /* HAVE_MPI */
+
+  /* 2) Add local contributions */
+  mav->add_values(mav->matrix, n, 1, mab->row_id, mab->col_idx, val);
+
 }
 
 /*----------------------------------------------------------------------------*/
