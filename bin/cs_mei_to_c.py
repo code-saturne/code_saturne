@@ -62,7 +62,7 @@ _file_header = \
 """
 
 _file_header2 = \
-"""#include "nc_phases.h"
+"""#include "nc_phase.h"
 
 """
 
