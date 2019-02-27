@@ -858,40 +858,6 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the area of the triangle of base given by q (related to a
- *         segment) with apex located at xa
- *
- * \param[in]  qa   pointer to a cs_quant_t structure related to a segment
- * \param[in]  xb   coordinates of the apex to consider
- *
- * \return the value the area of the triangle
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_compute_area_from_quant(const cs_quant_t   qa,
-                           const cs_real_t   *xb)
-{
-  double  xab[3], xab_un[3], cp[3];
-  xab[0] = xb[0] - qa.center[0];
-  xab[1] = xb[1] - qa.center[1];
-  xab[2] = xb[2] - qa.center[2];
-
-  const double  xab_len = cs_math_3_norm(xab);
-  const double  inv_len = 1/xab_len;
-
-  xab_un[0] = inv_len * xab[0];
-  xab_un[1] = inv_len * xab[1];
-  xab_un[2] = inv_len * xab[2];
-
-  cs_math_3_cross_product(xab_un, qa.unitv, cp);
-
-  /* tab = ||(qb.center -xa) x qb||/2 */
-  return 0.5 * xab_len * qa.meas * cs_math_3_norm(cp);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the type of algorithm to use for computing the cell center
  *
  * \param[in]  algo     type of algorithm

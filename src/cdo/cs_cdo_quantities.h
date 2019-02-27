@@ -189,9 +189,19 @@ typedef struct { /* Specific mesh quantities */
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_compute_area_from_quant(const cs_quant_t   qa,
-                           const cs_real_t   *xb);
+static inline double
+cs_compute_area_from_quant(const cs_quant_t    qa,
+                           const cs_real_t    *xb)
+{
+  const double  xab[3] = {xb[0] - qa.center[0],
+                          xb[1] - qa.center[1],
+                          xb[2] - qa.center[2]};
+  const double  cp[3] = {qa.unitv[1]*xab[2] - qa.unitv[2]*xab[1],
+                         qa.unitv[2]*xab[0] - qa.unitv[0]*xab[2],
+                         qa.unitv[0]*xab[1] - qa.unitv[1]*xab[0]};
+
+  return 0.5 * qa.meas * cs_math_3_norm(cp);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
