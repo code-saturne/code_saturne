@@ -226,13 +226,16 @@ _build_e2v_connect(const cs_adjacency_t  *v2v)
 
   /* Fill arrays */
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < v2v->n_elts; i++) {
-    for (cs_lnum_t j = v2v->idx[i]; j < v2v->idx[i+1]; j++) {
+  for (cs_lnum_t v1_id = 0; v1_id < v2v->n_elts; v1_id++) {
+    for (cs_lnum_t j = v2v->idx[v1_id]; j < v2v->idx[v1_id+1]; j++) {
 
-      e2v->ids[2*j] = i;             /* v1_id */
+      e2v->ids[2*j] = v1_id;         /* v1_id */
       e2v->ids[2*j+1] = v2v->ids[j]; /* v2_id */
       e2v->sgn[2*j] = -1;            /* orientation v1 -> v2 */
       e2v->sgn[2*j+1] = 1;
+
+      /* Assumption made when building a discrete Hodge operator */
+      assert(e2v->ids[2*j+1] > e2v->ids[2*j]);
 
     }
   } /* Loop on vertices */
