@@ -110,6 +110,7 @@ double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 
 double precision, dimension(:,:), pointer :: disale
+double precision, allocatable, dimension(:,:) :: b_fluid_vel
 
 !===============================================================================
 
@@ -147,7 +148,26 @@ enddo
 
 ! When using CDO solver, no need of checks.
 if (iale.eq.2) then
-  return
+
+  allocate(b_fluid_vel(3, nfabor))
+
+  do ifac = 1, nfabor
+    b_fluid_vel(1, ifac) = 0.d0
+    b_fluid_vel(2, ifac) = 0.d0
+    b_fluid_vel(3, ifac) = 0.d0
+  enddo
+
+  call cs_ale_update_bcs(ialtyb, b_fluid_vel)
+
+  ! Copy back to deprecated rcodcl
+  do ifac = 1, nfabor
+    rcodcl(ifac, iuma, 1) = b_fluid_vel(1, ifac)
+    rcodcl(ifac, ivma, 1) = b_fluid_vel(2, ifac)
+    rcodcl(ifac, iwma, 1) = b_fluid_vel(3, ifac)
+  enddo
+
+  goto 100
+
 endif
 
 !  (valeur 0 autorisee)
@@ -361,6 +381,8 @@ endif
 ! 5. Fluid velocity BCs for walls and symmetries (due to mesh movment)
 !===============================================================================
 
+100  continue
+
 ! Pour les symetries on rajoute toujours la vitesse de maillage, car on
 !   ne conserve que la vitesse normale
 ! Pour les parois, on prend la vitesse de maillage si l'utilisateur n'a
@@ -373,7 +395,7 @@ do ifac = 1, nfabor
 
   if (ialtyb(ifac).eq.ivimpo) then
 
-    !Warning: only the normal component is kept in clsyvt
+    ! Warning: only the normal component is kept in clsyvt
     if (itypfb(ifac).eq.isymet) then
       rcodcl(ifac,iu,1) = rcodcl(ifac,iuma,1)
       rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)

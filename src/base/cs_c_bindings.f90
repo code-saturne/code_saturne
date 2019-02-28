@@ -2434,6 +2434,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function updating BCs in ALE framework.
+
+    subroutine cs_ale_update_bcs(ialtyb, b_fluid_vel)   &
+      bind(C, name='cs_ale_update_bcs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), dimension(*), intent(in) :: ialtyb
+      real(kind=c_double), dimension(*), intent(in) :: b_fluid_vel
+    end subroutine cs_ale_update_bcs
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function solving mesh velocity in ALE framework.
 
     subroutine cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)   &
