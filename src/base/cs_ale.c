@@ -457,6 +457,8 @@ _update_bcs(const cs_domain_t  *domain,
           cs_real_3_t normal;
           /* Normal direction is given by the gravity */
           cs_math_3_normalise(b_face_normal[face_id], normal);
+          const cs_real_t dsurf = 1. / mq->b_face_surf[face_id];
+
           b_fluid_vel[face_id][0] = 0.;
           b_fluid_vel[face_id][1] = 0.;
           b_fluid_vel[face_id][2] = 0.;
@@ -491,7 +493,7 @@ _update_bcs(const cs_domain_t  *domain,
 
             /* Portion of the surface associated to the vertex
              * projected in the normal direction */
-            cs_real_t portion_surf = -0.25 * (
+            cs_real_t portion_surf = 0.25 * dsurf  * (
                 cs_math_3_triple_product(v0v1, v1_cog, normal)
                 + cs_math_3_triple_product(v1v2, v1_cog, normal));
 
