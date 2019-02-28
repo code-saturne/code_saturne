@@ -168,6 +168,11 @@ endif
 iihmpu = iihmpr
 call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
 
+! Activate CDO for ALE
+if (iale.eq.2) then
+  call cs_ale_activate
+endif
+
 ! Other model parameters, including user-defined scalars
 !-------------------------------------------------------
 
@@ -362,11 +367,6 @@ endif
 call cs_user_internal_coupling
 
 call cs_internal_coupling_setup
-
-! Activate CDO for ALE
-if (iale.eq.2) then
-  call cs_ale_activate
-endif
 
 !----
 ! Formats
