@@ -1911,7 +1911,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
             self.lineEditFrequency.setEnabled(True)
-            n = from_qvariant(self.lineEditFrequency.text(), int)
+            # Robustness to avoid crash when text is empty:
+            if self.lineEditFrequency.text() != '':
+                n = from_qvariant(self.lineEditFrequency.text(), int)
+            else:
+                n = 1
             if self.lineEditFrequency.validator().state == QValidator.Acceptable:
                 log.debug("slotPostproFrequency = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
