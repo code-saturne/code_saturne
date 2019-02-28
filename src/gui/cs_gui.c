@@ -875,7 +875,7 @@ _tree_node_get_field(cs_tree_node_t  *tn)
  *   tn_vp <-- tree node associated with profile variable
  *----------------------------------------------------------------------------*/
 
-static void 
+static void
 _write_profile_v_label_name(cs_tree_node_t  *tn_vp,
                             FILE *file,
                             int opf)
@@ -890,15 +890,15 @@ _write_profile_v_label_name(cs_tree_node_t  *tn_vp,
     const char *f_label = cs_field_get_label(f);
     char buf[16] = "";
     size_t buf_len = 0;
-    
-    if(f->dim == 3) 
+
+    if(f->dim == 3)
       buf_len = 3;
     else if (f->dim > 3)
       buf_len = 4;
 
     size_t len = strlen(f_label) + buf_len;
     BFT_MALLOC(label, len+1, char);
-    
+
     if (f->dim > 1) {
       int s_id = 0;
       int e_id = f->dim;
@@ -934,7 +934,7 @@ _write_profile_v_label_name(cs_tree_node_t  *tn_vp,
           if (opf == 0)
             fprintf(file, " | %s", label);
           else
-            fprintf(file, ", %s", label); 
+            fprintf(file, ", %s", label);
         }
         break;
       default:
@@ -4536,7 +4536,7 @@ cs_gui_profile_output(void)
                   "x, y or z");
 
       int nvar_prop = cs_tree_get_node_count(tn, "var_prop");
-      
+
       for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
              tn_vp != NULL;
              tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
@@ -4545,7 +4545,7 @@ cs_gui_profile_output(void)
         int idim = _get_profile_v_component(tn_vp);
         if (f->dim > 1 && idim == -1) nvar_prop = nvar_prop + f->dim - 1;
       }
-      
+
       int nvar_prop4 = nvar_prop + 4;
       BFT_MALLOC(array, nvar_prop4, cs_real_t);
 
