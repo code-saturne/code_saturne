@@ -342,60 +342,63 @@ _compute_cost_quant_iso(const int               n_ent,
  *          Hodge for COST algo.
  *          Initialize the local discrete Hodge op. with the consistency part
  *
- * \param[in]      n_ent      number of local entities
- * \param[in]      invcvol    1/|c|
- * \param[in]      ptymat     values of the tensor related to the material pty
- * \param[in]      pq         pointer to the first set of quantities
- * \param[in]      dq         pointer to the second set of quantities
- * \param[in, out] alpha      geometrical quantity
- * \param[in, out] kappa      geometrical quantity
- * \param[in, out] hloc       pointer to a cs_sdm_t struct.
+ * \param[in]      n_ent    number of local entities
+ * \param[in]      ovc      1/|c| where |c| is the cell volume
+ * \param[in]      pty      values of the tensor related to the material pty
+ * \param[in]      pq       pointer to the first set of quantities
+ * \param[in]      dq       pointer to the second set of quantities
+ * \param[in, out] alpha    geometrical quantity
+ * \param[in, out] kappa    geometrical quantity
+ * \param[in, out] hloc     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_cost_quant(const int               n_ent,
-                    const double            invcvol,
-                    const cs_real_33_t      ptymat,
+                    const double            ovc,
+                    const cs_real_33_t      pty,
                     const cs_real_3_t      *pq,
                     const cs_real_3_t      *dq,
                     double                 *alpha,
                     double                 *kappa,
-                    cs_sdm_t            *hloc)
+                    cs_sdm_t               *hloc)
 {
-  /* Compute several useful quantities
-     alpha_ij = delta_ij - pq_j.Consist_i where Consist_i = 1/|c| dq_i
-     qmq_ii = dq_i.mat.dq_i
-     kappa_i = qmq_ii / |subvol_i|
-  */
-
-  cs_real_3_t  mdq_i;
+  /* Compute several useful quantities:
+       alpha_ij = delta_ij - 1/|c|*pq_j.dq_i
+       qmq_ii = dq_i.mat.dq_i
+       kappa_i = qmq_ii / |subvol_i| */
 
   for (int i = 0; i < n_ent; i++) {
 
-    const double  dsvol_i = _dp3(dq[i], pq[i]);
+    const  double  mdq_i[3]
+      = { pty[0][0] * dq[i][0] + pty[0][1] * dq[i][1] + pty[0][2] * dq[i][2],
+          pty[1][0] * dq[i][0] + pty[1][1] * dq[i][1] + pty[1][2] * dq[i][2],
+          pty[2][0] * dq[i][0] + pty[2][1] * dq[i][1] + pty[2][2] * dq[i][2] };
+
+    double  *h_i = hloc->val + i*n_ent;
+
+    h_i[i] = _dp3(dq[i], mdq_i); /* Add the consistent part */
 
     double  *alpha_i = alpha + i*n_ent;
-    double  *mi = hloc->val + i*n_ent;
 
-    alpha_i[i] = 1 - invcvol * dsvol_i;
-    cs_math_33_3_product(ptymat, dq[i], mdq_i);
-
-    const double  qmq_ii = _dp3(dq[i], mdq_i);
-
-    mi[i] = invcvol * qmq_ii;
-    kappa[i] = 3. * qmq_ii / dsvol_i;
+    alpha_i[i] = _dp3(dq[i], pq[i]);
+    kappa[i] = 3. * h_i[i] / alpha_i[i];
+    alpha_i[i] = 1 - ovc*alpha_i[i];
+    h_i[i] *= ovc;
 
     for (int j = i+1; j < n_ent; j++) {
 
       /* Initialize the lower left part of hloc with the consistency part */
-      mi[j] = invcvol * _dp3(dq[j], mdq_i);
+      h_i[j] = ovc * _dp3(dq[j], mdq_i);
 
       /* Compute the alpha matrix (not symmetric) */
-      alpha_i[j] = -invcvol * _dp3(pq[j], dq[i]);
-      alpha[j*n_ent + i] = -invcvol * _dp3(pq[i], dq[j]);
+      alpha_i[j] = -ovc * _dp3(pq[j], dq[i]);
 
-    } /* Loop on entities (J) */
+    }
+
+    const  double  opq_i[3] = { -ovc*pq[i][0], -ovc*pq[i][1], -ovc*pq[i][2] };
+    for (int j = i+1; j < n_ent; j++)
+      alpha[j*n_ent + i] = _dp3(opq_i, dq[j]);
 
   } /* Loop on entities (I) */
 
@@ -675,16 +678,18 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
 
     const int  shift_i = ei*cm->n_ec;
     const double  *alpha_i = alpha + shift_i;
-    const short int  i1ei = cm->e2v_sgn[ei], i2ei = -i1ei;
+    const short int  i1ei = cm->e2v_sgn[ei];
     const short int  i1 = cm->e2v_ids[2*ei];
     const short int  i2 = cm->e2v_ids[2*ei+1];
     const double  *hi = hloc->val + shift_i;
 
+    assert(i1 < i2);
+
     double  *si1 = sloc->val + i1*sloc->n_rows;
     double  *si2 = sloc->val + i2*sloc->n_rows;
 
-    /* Add contribution from the stabilization part for
-       each sub-volume related to a primal entity */
+    /* Add contribution from the stabilization part for each sub-volume
+       related to a primal entity */
     double  stab_part = 0;
     for (int ek = 0; ek < cm->n_ec; ek++) /* Loop over sub-volumes */
       stab_part += kappa[ek] * alpha_i[ek] * alpha_i[ek];
@@ -693,64 +698,101 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
     const double  dval = hi[ei] + beta2 * stab_part;
 
     si1[i1] += dval;
+    si1[i2] -= dval;
     si2[i2] += dval;
-    if (i1 < i2)
-      si1[i2] -= dval;
-    else
-      si2[i1] -= dval;
 
     /* Compute extra-diag entries */
     for (int ej = ei + 1; ej < cm->n_ec; ej++) { /* Loop on cell entities J */
 
       const int  shift_j = ej*cm->n_ec;
       const double  *alpha_j = alpha + shift_j;
-      const short int  j1ej = cm->e2v_sgn[ej], j2ej = -j1ej;
+      const short int  j1ej = cm->e2v_sgn[ej];
       const short int  j1 = cm->e2v_ids[2*ej];
       const short int  j2 = cm->e2v_ids[2*ej+1];
+
+      assert(j1 < j2);
 
       double  *sj1 = sloc->val + j1*sloc->n_rows;
       double  *sj2 = sloc->val + j2*sloc->n_rows;
 
-      /* Add contribution from the stabilization part for
-         each sub-volume related to a primal entity */
+      /* Add contribution from the stabilization part for each sub-volume
+         related to a primal entity */
       stab_part = 0;
       for (int ek = 0; ek < cm->n_ec; ek++) /* Loop over sub-volumes */
         stab_part += kappa[ek] * alpha_i[ek] * alpha_j[ek];
 
       /* Extra-diagonal value */
-      const double xval = hi[ej] + beta2 * stab_part;
+      const double xval = (hi[ej] + beta2 * stab_part) * i1ei * j1ej;
 
-      /* Vertex i1 */
-      const double  val1 = xval * i1ei;
-      if (i1 == j1)
-        si1[j1] += 2*val1 * j1ej;
-      else if (i1 < j1)
-        si1[j1] += val1 * j1ej;
-      else
-        sj1[i1] += val1 * j1ej;
+      if (i2 < j1) {            /* i1 < i2 < j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= xval;
+        si2[j2] += xval;
+      }
+      else if (i2 == j1) {      /* i1 < i2 = j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= 2*xval;
+        si2[j2] += xval;
+      }
+      else if (i2 < j2) {
 
-      if (i1 == j2)
-        si1[j2] += 2*val1 * j2ej;
-      else if (i1 < j2)
-        si1[j2] += val1 * j2ej;
-      else
-        sj2[i1] += val1 * j2ej;
+        assert(i2 > j1);
+        if (i1 < j1)            /* i1 < j1 < i2 < j2 */
+          si1[j1] += xval;
+        else if (i1 == j1)      /* i1 = j1 < i2 < j2 */
+          si1[j1] += 2*xval;
+        else                    /* j1 < i1 < i2 < j2 */
+          sj1[i1] += xval;
 
-      /* Vertex i2 */
-      const double  val2 = xval * i2ei;
-      if (i2 == j1)
-        si2[j1] += 2*val2 * j1ej;
-      else if (i2 < j1)
-        si2[j1] += val2 * j1ej;
-      else
-        sj1[i2] += val2 * j1ej;
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += xval;
 
-      if (i2 == j2)
-        si2[j2] += 2*val2 * j2ej;
-      else if (i2 < j2)
-        si2[j2] += val2 * j2ej;
-      else
-        sj2[i2] += val2 * j2ej;
+      }
+      else if (i2 == j2) {
+
+        if (i1 < j1)            /* i1 < j1 < i2 = j2 */
+          si1[j1] += xval;
+        else if (i1 == j1)      /* i1 = j1 < i2 = j2 */
+          si1[j1] += 2*xval;
+        else                    /* j1 < i1 < i2 = j2 */
+          sj1[i1] += xval;
+
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += 2*xval;
+
+      }
+      else {                    /* i2 > j2 */
+
+        if (i1 < j1) {          /* i1 < j1 < j2 < i2 */
+          si1[j1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j1) {    /* i1 = j1 < j2 < i2 */
+          si1[j1] += 2*xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 < j2) {     /* j1 < i1 < j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j2) {    /* j1 < i1 = j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= 2*xval;
+        }
+        else {                  /* j1 < j2 < i1 < i2 */
+          sj1[i1] += xval;
+          sj2[i1] -= xval;
+        }
+
+        assert(i2 > j2);
+        sj1[i2] -= xval;
+        sj2[i2] += xval;
+
+      } /* End of tests */
 
     } /* End of loop on J entities */
 
