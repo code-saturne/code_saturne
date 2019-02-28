@@ -52,6 +52,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
+#include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_file.h"
@@ -2038,34 +2039,39 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
 
   /* 1) variables from velocity_pressure and turbulence */
   /* 1-a) for pressure or hydraulic head */
-  cs_field_t *c_pres = NULL;
+  cs_field_t *f = NULL;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
-    c_pres = cs_field_by_name("hydraulic_head");
+    f = cs_field_by_name("hydraulic_head");
   }
   else {
-    c_pres = cs_field_by_name("pressure");
+    f = cs_field_by_name("pressure");
   }
-  cs_field_get_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
-  int j = cs_field_get_key_int(c_pres, var_key_id) -1;
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-  cs_tree_node_t *tn_v = _find_node_variable(c_pres->name);
+  cs_tree_node_t *tn_v = _find_node_variable(f->name);
 
   cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
   cs_gui_node_get_child_int(tn_v, "rhs_reconstruction", &var_cal_opt.nswrsm);
   cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.iwarni);
 
+  /* For CDO equation */
+  cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);
+  if (eqp != NULL) {
+    eqp->sles_param.eps = var_cal_opt.epsilo;
+  }
+
   /* Set Field calculation options in the field structure */
-  cs_field_set_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
+  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   /* 1-b) for the other variables */
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t  *f = cs_field_by_id(f_id);
+    f = cs_field_by_id(f_id);
     if (   f->type & CS_FIELD_VARIABLE
         && !cs_gui_strcmp(f->name, "pressure")
         && !cs_gui_strcmp(f->name, "hydraulic_head")) {
 
-      j = cs_field_get_key_int(f, var_key_id) -1;
+      int j = cs_field_get_key_int(f, var_key_id) -1;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
       const char *ref_name = f->name;
@@ -2082,6 +2088,12 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
 
       cs_gui_node_get_child_real(tn_v, "blending_factor", &var_cal_opt.blencv);
       cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
+
+      /* For CDO equation */
+      eqp = cs_equation_param_by_name(f->name);
+      if (eqp != NULL) {
+        eqp->sles_param.eps = var_cal_opt.epsilo;
+      }
 
       // only for nscaus and model scalar
       cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar[j]);
