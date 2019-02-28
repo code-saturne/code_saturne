@@ -360,19 +360,22 @@ _update_bc_list(const cs_mesh_t   *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This subroutine performs the solving of a Poisson equation
- *        on the mesh velocity for ALE module. It also updates the mesh
- *        displacement so that it can be used to update mass fluxes (due to
- *        mesh displacement).
+ * \brief This function updates all ALE BCs for CDO except free surface.
+ *        These BCs are required for the fluid BCs and therefore needs to be
+ *        updated before.
  *
  * \param[in]     domain        domain quantities
+ * \param[out]    b_fluid_vel   boundary fluid velocity
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_bcs(const cs_domain_t  *domain)
+_update_bcs(const cs_domain_t  *domain,
+            int                 ale_bc_type[],
+            cs_real_3_t         b_fluid_vel[])
 {
-  const cs_mesh_t  *mesh = domain->mesh;
+  const cs_mesh_t  *m = domain->mesh;
+  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   /* Only a part of the boundaries has to be updated */
   int  select_id = 0;
@@ -400,6 +403,17 @@ _update_bcs(const cs_domain_t  *domain)
           _val[1] = vel[1];
           _val[2] = vel[2];
 
+
+        }
+
+        /* Loop over boundary faces for the fluid velocity */
+        for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+          const cs_lnum_t face_id = z->elt_ids[elt_id];
+
+          ale_bc_type[face_id] = CS_ALE_IMPOSED_VEL;
+          b_fluid_vel[face_id][0] = vel[0];
+          b_fluid_vel[face_id][1] = vel[1];
+          b_fluid_vel[face_id][2] = vel[1];
         }
 
         select_id++;
@@ -410,8 +424,11 @@ _update_bcs(const cs_domain_t  *domain)
       {
         const cs_real_3_t *restrict  disale
           = (const cs_real_3_t *restrict)cs_field_by_name("disale")->val;
-        const cs_real_t *restrict  vtx_coord
-          = (const cs_real_t *restrict)mesh->vtx_coord;
+        const cs_real_3_t *restrict vtx_coord
+          = (const cs_real_3_t *restrict)m->vtx_coord;
+        const cs_real_3_t *restrict  b_face_cog
+          = (const cs_real_3_t *restrict)mq->b_face_cog;
+        const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
         const cs_real_t  invdt = 1./domain->time_step->dt_ref; /* JB: dt[0] ? */
 
         assert(select_id < _cdo_bc->n_selections);
@@ -421,7 +438,7 @@ _update_bcs(const cs_domain_t  *domain)
 
           const cs_lnum_t  v_id = _cdo_bc->vtx_select[select_id][i];
           const cs_real_t  *_dpl = (cs_real_t *)disale + 3*v_id;
-          const cs_real_t  *restrict  _xyz = vtx_coord + 3*v_id;
+          const cs_real_t  *restrict  _xyz = (cs_real_t *)vtx_coord + 3*v_id;
           const cs_real_t  *restrict  _xyz0 = (cs_real_t *)_vtx_coord0 + 3*v_id;
 
           cs_real_t  *_val = _cdo_bc->vtx_values + 3*v_id;
@@ -431,9 +448,93 @@ _update_bcs(const cs_domain_t  *domain)
 
         } /* Loop on selected vertices */
 
+        /* Loop over boundary faces for the fluid velocity */
+        for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+          const cs_lnum_t face_id = z->elt_ids[elt_id];
+
+          ale_bc_type[face_id] = CS_ALE_IMPOSED_VEL;
+
+          cs_real_3_t normal;
+          /* Normal direction is given by the gravity */
+          cs_math_3_normalise(b_face_normal[face_id], normal);
+          b_fluid_vel[face_id][0] = 0.;
+          b_fluid_vel[face_id][1] = 0.;
+          b_fluid_vel[face_id][2] = 0.;
+
+          const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+          const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
+
+          /* Compute the portion of surface associated to v_id_1 */
+          for (cs_lnum_t k = s; k < e; k++) {
+
+            const cs_lnum_t k_1 = (k+1 < e) ? k+1 : k+1-(e-s);
+            const cs_lnum_t k_2 = (k+2 < e) ? k+2 : k+2-(e-s);
+            const cs_lnum_t v_id0 = m->b_face_vtx_lst[k];
+            const cs_lnum_t v_id1 = m->b_face_vtx_lst[k_1];
+            const cs_lnum_t v_id2 = m->b_face_vtx_lst[k_2];
+
+            cs_real_3_t v0v1 = {
+              vtx_coord[v_id1][0] - vtx_coord[v_id0][0],
+              vtx_coord[v_id1][1] - vtx_coord[v_id0][1],
+              vtx_coord[v_id1][2] - vtx_coord[v_id0][2],
+            };
+            cs_real_3_t v1v2 = {
+              vtx_coord[v_id2][0] - vtx_coord[v_id1][0],
+              vtx_coord[v_id2][1] - vtx_coord[v_id1][1],
+              vtx_coord[v_id2][2] - vtx_coord[v_id1][2],
+            };
+            cs_real_3_t v1_cog = {
+              b_face_cog[face_id][0] - vtx_coord[v_id1][0],
+              b_face_cog[face_id][1] - vtx_coord[v_id1][1],
+              b_face_cog[face_id][2] - vtx_coord[v_id1][2],
+            };
+
+            /* Portion of the surface associated to the vertex
+             * projected in the normal direction */
+            cs_real_t portion_surf = -0.25 * (
+                cs_math_3_triple_product(v0v1, v1_cog, normal)
+                + cs_math_3_triple_product(v1v2, v1_cog, normal));
+
+            cs_real_t *_val = _cdo_bc->vtx_values + 3*v_id1;
+
+            b_fluid_vel[face_id][0] += portion_surf * _val[0];
+            b_fluid_vel[face_id][1] += portion_surf * _val[1];
+            b_fluid_vel[face_id][2] += portion_surf * _val[1];
+          }
+
+        }
+
         select_id++;
       }
       break;
+
+    default:
+      break; /* Nothing to do */
+    }
+
+  } /* Loop on ALE boundaries */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function updates free surface ALE BCs for CDO.
+ *        These BCs are required after the fluid is solved.
+ *
+ * \param[in]     domain        domain quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_bcs_free_surface(const cs_domain_t  *domain)
+{
+  /* Only a part of the boundaries has to be updated */
+  int  select_id = 0;
+  for (int b_id = 0; b_id < domain->ale_boundaries->n_boundaries; b_id++) {
+
+    const int z_id = domain->ale_boundaries->zone_ids[b_id];
+    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
+
+    switch(domain->ale_boundaries->types[b_id]) {
 
     case CS_BOUNDARY_ALE_FREE_SURFACE:
       assert(select_id < _cdo_bc->n_selections);
@@ -470,7 +571,7 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   cs_equation_t *eq = cs_equation_by_name("mesh_velocity");
 
   /* Update the values of boundary mesh vertices */
-  _update_bcs(domain);
+  _update_bcs_free_surface(domain);
 
   if (cs_equation_uses_new_mechanism(eq))
     cs_equation_solve_steady_state(m, eq);
@@ -1061,6 +1162,26 @@ cs_ale_update_mesh(const int           itrale,
     } /* Field located at cells */
 
   } /* itrale == 0 */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update ALE BCs for required for the fluid
+ *
+ * \param[out]      ale_bc_type   type of ALE bcs
+ * \param[out]      b_fluid_vel   Fluid velocity at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_update_bcs(int         *ale_bc_type,
+                  cs_real_3_t *b_fluid_vel)
+{
+  assert(cs_glob_ale == CS_ALE_CDO);
+
+  /* First update ALE BCs expect free surface that will be updated after */
+  _update_bcs(cs_glob_domain, ale_bc_type, b_fluid_vel);
 
 }
 

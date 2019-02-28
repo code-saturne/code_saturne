@@ -134,6 +134,19 @@ cs_ale_update_mesh(const int           itrale,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update ALE BCs for required for the fluid
+ *
+ * \param[out]      ale_bc_type   type of ALE bcs
+ * \param[out]      b_fluid_vel   Fluid velocity at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_update_bcs(int         *ale_bc_type,
+                  cs_real_3_t *b_fluid_vel);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Solve a Poisson equation on the mesh velocity in ALE framework.
  *
  * It also updates the mesh displacement
