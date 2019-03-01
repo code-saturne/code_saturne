@@ -2089,11 +2089,10 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
       cs_gui_node_get_child_real(tn_v, "blending_factor", &var_cal_opt.blencv);
       cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
 
-      /* For CDO equation */
+      /* For CDO equation, if non-automatic value ie != -1 */
       eqp = cs_equation_param_by_name(f->name);
-      if (eqp != NULL) {
+      if (eqp != NULL && var_cal_opt.epsilo != -1)
         eqp->sles_param.eps = var_cal_opt.epsilo;
-      }
 
       // only for nscaus and model scalar
       cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar[j]);
