@@ -554,6 +554,42 @@ _set_key(const char            *label,
     }
     break;
 
+  case CS_EQKEY_ITSOL_MAX_ITER:
+    eqp->sles_param.n_max_iter = atoi(keyval);
+    break;
+
+  case CS_EQKEY_ITSOL_EPS:
+    eqp->sles_param.eps = atof(keyval);
+    break;
+
+  case CS_EQKEY_ITSOL_RESNORM_TYPE:
+    if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0)
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NONE;
+    else if (strcmp(keyval, "vol_tot") == 0)
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_VOLTOT;
+    else if (strcmp(keyval, "weighted_rhs") == 0)
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_WEIGHTED_RHS;
+    else if (strcmp(keyval, "matrix_diag") == 0)
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_MAT_DIAG;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_ITSOL_RESNORM_TYPE");
+    }
+    break;
+
+  case CS_EQKEY_OMP_ASSEMBLY_STRATEGY:
+    if (strcmp(keyval, "critical") == 0)
+      eqp->omp_assembly_choice = CS_PARAM_OMP_ASSEMBLY_CRITICAL;
+    else if (strcmp(keyval, "atomic") == 0)
+      eqp->sles_param.precond = CS_PARAM_OMP_ASSEMBLY_ATOMIC;
+    else {
+      const char *_val = keyval;
+      bft_error(__FILE__, __LINE__, 0,
+                emsg, __func__, label, _val, "CS_EQKEY_OMP_ASSEMBLY_STRATEGY");
+    }
+    break;
+
   case CS_EQKEY_PRECOND:
     if (strcmp(keyval, "none") == 0) {
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
@@ -927,9 +963,9 @@ cs_equation_create_param(const char            *name,
     .solver = CS_PARAM_ITSOL_GMRES,         /* iterative solver */
     .amg_type = CS_PARAM_AMG_NONE,          /* no predefined AMG type */
     .n_max_iter = 10000,                    /* max. number of iterations */
-    .eps = 1e-8,               /* stopping criterion on the accuracy */
-    .resid_normalized = false  /* normalization of the residual (true or false)
-                                */
+    .eps = 1e-8,                   /* stopping criterion on the accuracy */
+    .resnorm_type = CS_PARAM_RESNORM_NONE,
+
   };
 
   return eqp;
@@ -1039,7 +1075,10 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   dst->sles_param.amg_type = ref->sles_param.amg_type;
   dst->sles_param.n_max_iter = ref->sles_param.n_max_iter;
   dst->sles_param.eps = ref->sles_param.eps;
-  dst->sles_param.resid_normalized = ref->sles_param.resid_normalized;
+  dst->sles_param.resnorm_type = ref->sles_param.resnorm_type;
+
+  /* Settings for performance */
+  dst->omp_assembly_choice = ref->omp_assembly_choice;
 }
 
 /*----------------------------------------------------------------------------*/

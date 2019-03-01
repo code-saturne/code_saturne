@@ -476,6 +476,33 @@ typedef struct {
  * - "amg" --> an algebraic multigrid iterative solver. Good choice for a
  * symmetric positive definite system.
  *
+ * \var CS_EQKEY_ITSOL_EPS
+ * Tolerance factor for stopping the iterative processus for solving the
+ * linear system related to an equation
+ * - Example: "1e-10"
+ *
+ * \var CS_EQKEY_ITSOL_MAX_ITER
+ * Maximum number of iterations for solving the linear system
+ * - Example: "2000"
+ *
+ * \var CS_EQKEY_ITSOL_RESNORM_TYPE
+ * Normalized or not the residual before testing if one continues iterating
+ * for solving the linear system. This normalization is performed before
+ * applying the boundary conditions to avoid handling the penalization of
+ * Dirichlet boundary conditions. If the RHS norm is equal to zero, then
+ * the "vol_tot" option is used for rescaling the residual.
+ *
+ * Available choices are:
+ * "false" or "none"
+ * "vol_tot"
+ * "weighted_rhs" (default)
+ * "matrix_diag"
+ *
+ * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
+ * Choice of the way to perform the assembly when OpenMP is active
+ * Available choices are:
+ * - "atomic" or "critical"
+ *
  * \var CS_EQKEY_PRECOND
  * Specify the preconditionner associated to an iterative solver. Available
  * choices are:
@@ -490,20 +517,6 @@ typedef struct {
  * - "amg" --> algebraic multigrid
  * - "amg_block" --> algebraic multigrid by block (useful for vector-valued
  *                   equations)
- *
- * \var CS_EQKEY_ITSOL_EPS
- * Tolerance factor for stopping the iterative processus for solving the
- * linear system related to an equation
- * - Example: "1e-10"
- *
- * \var CS_EQKEY_ITSOL_MAX_ITER
- * Maximum number of iterations for solving the linear system
- * - Example: "2000"
- *
- * \var CS_EQKEY_ITSOL_RESNORM
- * Normalized or not the residual before testing if one continues iterating
- * for solving the linear system. Available choices are:
- * - "true" or "false"
  *
  * \var CS_EQKEY_SLES_VERBOSITY
  * Level of details written by the code for the resolution of the linear system
@@ -610,7 +623,8 @@ typedef enum {
   CS_EQKEY_ITSOL,
   CS_EQKEY_ITSOL_EPS,
   CS_EQKEY_ITSOL_MAX_ITER,
-  CS_EQKEY_ITSOL_RESNORM,
+  CS_EQKEY_ITSOL_RESNORM_TYPE,
+  CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_SLES_VERBOSITY,
   CS_EQKEY_SOLVER_FAMILY,
