@@ -52,6 +52,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
+#include "cs_equation.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
