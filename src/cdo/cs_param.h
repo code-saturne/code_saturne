@@ -436,6 +436,24 @@ typedef enum {
 } cs_param_itsol_type_t;
 
 /*!
+ * \enum cs_param_resnorm_type_t
+ * Way to renormalize (or not) the residual arising during the resolution of
+ * linear systems
+ */
+
+typedef enum {
+
+  CS_PARAM_RESNORM_NONE,           /*!< No renormalization  */
+  CS_PARAM_RESNORM_VOLTOT,         /*!< Renormalization based on the volume of
+                                        the computational domain */
+  CS_PARAM_RESNORM_WEIGHTED_RHS,   /*!< Renormalization based on a weighted
+                                        L2-norm of the right-hand side */
+  CS_PARAM_RESNORM_MAT_DIAG,
+  CS_PARAM_N_RESNORM_TYPES
+
+} cs_param_resnorm_type_t;
+
+/*!
  * \struct cs_param_sles_t
  * \brief Structure storing all metadata related to the resolution of a linear
  *        system with an iterative solver.
@@ -451,12 +469,13 @@ typedef struct {
   cs_param_itsol_type_t    solver;       /*!< type of solver */
   cs_param_amg_type_t      amg_type;     /*!< type of AMG algorithm if needed */
 
-  /*! \var resid_normalized
+  /*! \var resnorm_type
    *  normalized or not the norm of the residual used for the stopping criterion
+   *  See \ref CS_EQKEY_ITSOL_RESNORM_TYPE for more details.
    */
-  bool         resid_normalized;
-  int          n_max_iter;        /*!< max. number of iterations */
-  double       eps;               /*!< stopping criterion on accuracy */
+  cs_param_resnorm_type_t  resnorm_type;
+  int                      n_max_iter;   /*!< max. number of iterations */
+  double                   eps;          /*!< stopping criterion on accuracy */
 
 } cs_param_sles_t;
 

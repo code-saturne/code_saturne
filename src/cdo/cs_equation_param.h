@@ -564,10 +564,18 @@ typedef struct {
  * Maximum number of iterations for solving the linear system
  * - Example: "2000"
  *
- * \var CS_EQKEY_ITSOL_RESNORM
+ * \var CS_EQKEY_ITSOL_RESNORM_TYPE
  * Normalized or not the residual before testing if one continues iterating
- * for solving the linear system. Available choices are:
- * - "true" or "false"
+ * for solving the linear system. This normalization is performed before
+ * applying the boundary conditions to avoid handling the penalization of
+ * Dirichlet boundary conditions. If the RHS norm is equal to zero, then
+ * the "vol_tot" option is used for rescaling the residual.
+ *
+ * Available choices are:
+ * "false" or "none"
+ * "vol_tot"
+ * "weighted_rhs" (default)
+ * "matrix_diag"
  *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
  * Choice of the way to perform the assembly when OpenMP is active
@@ -643,7 +651,7 @@ typedef enum {
   CS_EQKEY_ITSOL,
   CS_EQKEY_ITSOL_EPS,
   CS_EQKEY_ITSOL_MAX_ITER,
-  CS_EQKEY_ITSOL_RESNORM,
+  CS_EQKEY_ITSOL_RESNORM_TYPE,
   CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_SLES_VERBOSITY,

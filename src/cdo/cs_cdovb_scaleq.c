@@ -58,6 +58,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
 #include "cs_param.h"
 #include "cs_post.h"
 #include "cs_quadrature.h"
@@ -578,13 +579,90 @@ _vbs_enforce_values(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Cellwise computation of the renormalization coefficient for the
+ *         the residual norm of the linear system
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cellwise view of the mesh/quantities
+ * \param[in]      csys      pointer to a cellwise view of the system
+ * \param[in, out] rhs_norm  quantity used for the RHS normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_vbs_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
+                                   const cs_cell_mesh_t         *cm,
+                                   const cs_cell_sys_t          *csys,
+                                   cs_real_t                    *rhs_norm)
+{
+  if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+
+    cs_real_t  _rhs_norm = 0;
+    for (short int v = 0; v < cm->n_vc; v++)
+      _rhs_norm += cm->wvc[v] * csys->rhs[v]*csys->rhs[v];
+
+    *rhs_norm += cm->vol_c * _rhs_norm;
+
+  }
+  else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_MAT_DIAG) {
+
+    cs_real_t  _rhs_norm = 0;
+    for (short int v = 0; v < cm->n_vc; v++) {
+      const double  d_val = csys->mat->val[v*(cm->n_vc+1)];
+      _rhs_norm += cm->wvc[v] * d_val *d_val;
+    }
+
+    *rhs_norm += cm->vol_c * _rhs_norm;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last stage to compute of the renormalization coefficient for the
+ *         the residual norm of the linear system
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] rhs_norm  quantity used for the RHS normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_vbs_sync_sles_normalization(const cs_equation_param_t    *eqp,
+                             cs_real_t                    *rhs_norm)
+{
+  cs_parall_sum(1, CS_DOUBLE, rhs_norm);
+
+  switch (eqp->sles_param.resnorm_type) {
+
+  case CS_PARAM_RESNORM_WEIGHTED_RHS:
+  case CS_PARAM_RESNORM_MAT_DIAG:
+    *rhs_norm = sqrt(1/cs_shared_quant->vol_tot*(*rhs_norm));
+    if (*rhs_norm < 10*FLT_MIN)
+      *rhs_norm = cs_shared_quant->vol_tot/cs_shared_quant->n_g_cells;
+    break;
+
+  case CS_PARAM_RESNORM_VOLTOT:
+    *rhs_norm = cs_shared_quant->vol_tot/cs_shared_quant->n_g_cells;
+    break;
+
+  default:
+    *rhs_norm = 1.0;
+    break;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve a linear system arising from a scalar-valued CDO-Vb scheme
  *
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in, out] x        solution of the linear system (in: initial guess)
- * \param[in, out] b        right-hand side (scatter/gather if needed)
+ * \param[in, out] sles      pointer to a cs_sles_t structure
+ * \param[in]      matrix    pointer to a cs_matrix_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      rhs_norm  quantity used for the RHS normalization
+ * \param[in, out] x         solution of the linear system (in: initial guess)
+ * \param[in, out] b         right-hand side (scatter/gather if needed)
  *
  * \return the number of iterations of the linear solver
  */
@@ -594,6 +672,7 @@ static int
 _vbs_solve_system(cs_sles_t                    *sles,
                   const cs_matrix_t            *matrix,
                   const cs_equation_param_t    *eqp,
+                  const cs_real_t               rhs_norm,
                   cs_real_t                    *x,
                   cs_real_t                    *b)
 {
@@ -625,14 +704,13 @@ _vbs_solve_system(cs_sles_t                    *sles,
                                               xsol, b);
 
   /* Solve the linear solver */
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_sles_t  sles_param = eqp->sles_param;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
                                                     sles_param.eps,
-                                                    r_norm,
+                                                    rhs_norm,
                                                     &n_iters,
                                                     &residual,
                                                     b,
@@ -1304,6 +1382,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
+  cs_real_t  rhs_norm = 0.0;
 
   BFT_MALLOC(rhs, n_vertices, cs_real_t);
 # pragma omp parallel for if  (n_vertices > CS_THR_MIN)
@@ -1319,7 +1398,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values,   \
-         forced_ids, fld, rs, _vbs_cell_system, _vbs_cell_builder)
+         forced_ids, fld, rs, _vbs_cell_system, _vbs_cell_builder, rhs_norm)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1349,7 +1428,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
@@ -1391,6 +1470,9 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
       } /* End of term source */
 
+      /* Compute a norm of the RHS for the normalization of the SLES */
+      _vbs_compute_cw_sles_normalization(eqp, cm, csys, &rhs_norm);
+
       /* Apply boundary conditions (those which are weakly enforced) */
       _vbs_apply_weak_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
 
@@ -1424,6 +1506,9 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   cs_matrix_assembler_values_finalize(&mav);
 
+  /* Last step in the computation of the renormalization coefficient */
+  _vbs_sync_sles_normalization(eqp, &rhs_norm);
+
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
@@ -1433,7 +1518,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Now solve the system */
   _vbs_solve_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix, eqp,
+                    matrix, eqp, rhs_norm,
                     fld->val, rhs);
 
   /* Free remaining buffers */
@@ -1491,6 +1576,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
+  cs_real_t  rhs_norm = 0.;
 
   BFT_MALLOC(rhs, n_vertices, cs_real_t);
 # pragma omp parallel for if  (n_vertices > CS_THR_MIN)
@@ -1506,7 +1592,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values,   \
-         forced_ids, fld, rs, _vbs_cell_system, _vbs_cell_builder)
+         forced_ids, fld, rs, _vbs_cell_system, _vbs_cell_builder, rhs_norm)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1536,7 +1622,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
@@ -1631,6 +1717,9 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
         cs_cell_sys_dump("\n>> Cell system after time", csys);
 #endif
 
+      /* Compute a norm of the RHS for the normalization of the SLES */
+      _vbs_compute_cw_sles_normalization(eqp, cm, csys, &rhs_norm);
+
       /* Enforce values if needed (internal or Dirichlet) */
       _vbs_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
@@ -1660,6 +1749,9 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   BFT_FREE(forced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
+  /* Last step in the computation of the renormalization coefficient */
+  _vbs_sync_sles_normalization(eqp, &rhs_norm);
+
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
@@ -1669,7 +1761,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Now solve the system */
   _vbs_solve_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix, eqp,
+                    matrix, eqp, rhs_norm,
                     fld->val, rhs);
 
   /* Free remaining buffers */
@@ -1717,6 +1809,8 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
+
+  cs_real_t  rhs_norm = 0.;
 
   /* Build an array storing the Dirichlet values at vertices
      and another one with a tags to detect vertices related to a
@@ -1777,7 +1871,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
          dir_values, fld, forced_ids, rs, compute_initial_source,       \
-         _vbs_cell_system, _vbs_cell_builder)
+         _vbs_cell_system, _vbs_cell_builder, rhs_norm)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1809,7 +1903,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
@@ -1939,6 +2033,9 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
         cs_cell_sys_dump("\n>> Cell system after adding time", csys);
 #endif
 
+      /* Compute a norm of the RHS for the normalization of the SLES */
+      _vbs_compute_cw_sles_normalization(eqp, cm, csys, &rhs_norm);
+
       /* Enforce values if needed (internal or Dirichlet) */
       _vbs_enforce_values(eqp, eqc, cm, fm, csys, cb);
 
@@ -1974,6 +2071,9 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   BFT_FREE(forced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
+  /* Last step in the computation of the renormalization coefficient */
+  _vbs_sync_sles_normalization(eqp, &rhs_norm);
+
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
@@ -1983,7 +2083,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Now solve the system */
   _vbs_solve_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix, eqp,
+                    matrix, eqp, rhs_norm,
                     fld->val, rhs);
 
   /* Free remaining buffers */

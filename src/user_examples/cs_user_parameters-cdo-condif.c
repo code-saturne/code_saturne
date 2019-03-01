@@ -411,7 +411,7 @@ cs_user_parameters(cs_domain_t   *domain)
 #endif
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-12");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM, "false");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "false");
 
   }
   /*! [param_cdo_numerics] */
