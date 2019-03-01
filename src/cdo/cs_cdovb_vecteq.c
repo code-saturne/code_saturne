@@ -135,8 +135,8 @@ static const cs_matrix_structure_t  *cs_shared_ms;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the local builder structure used for building the system
- *          cellwise
+ * \brief  Initialize the local builder structure used for building the system
+ *         cellwise
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  *
@@ -693,6 +693,7 @@ _vbv_sync_sles_normalization(const cs_equation_param_t    *eqp,
  *
  * \param[in, out] sles      pointer to a cs_sles_t structure
  * \param[in]      matrix    pointer to a cs_matrix_t structure
+ * \param[in]      field_id id related to the variable field of this equation
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      rhs_norm  quantity used for the RHS normalization
  * \param[in, out] x         solution of the linear system (in: initial guess)
@@ -705,6 +706,7 @@ _vbv_sync_sles_normalization(const cs_equation_param_t    *eqp,
 static int
 _vbv_solve_system(cs_sles_t                    *sles,
                   const cs_matrix_t            *matrix,
+                  const int                     field_id,
                   const cs_equation_param_t    *eqp,
                   const cs_real_t               rhs_norm,
                   cs_real_t                    *x,
@@ -714,8 +716,13 @@ _vbv_solve_system(cs_sles_t                    *sles,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
 
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
+  /* solving info */
+  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_solving_info_t sinfo;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
   cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
   cs_real_t  *xsol = NULL;
 
@@ -738,15 +745,16 @@ _vbv_solve_system(cs_sles_t                    *sles,
                                               xsol, b);
 
   /* Solve the linear solver */
+  sinfo.rhs_norm = rhs_norm;
   const cs_param_sles_t  sles_param = eqp->sles_param;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
                                                     sles_param.eps,
-                                                    rhs_norm,
-                                                    &n_iters,
-                                                    &residual,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
                                                     b,
                                                     xsol,
                                                     0,      /* aux. size */
@@ -756,7 +764,7 @@ _vbv_solve_system(cs_sles_t                    *sles,
   if (sles_param.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
                   " residual % -8.4e nnz %lu\n",
-                  eqp->name, code, n_iters, residual, nnz);
+                  eqp->name, code, sinfo.n_it, sinfo.res_norm, nnz);
 
   if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
@@ -780,7 +788,9 @@ _vbv_solve_system(cs_sles_t                    *sles,
   if (n_cols > n_scatter_elts)
     BFT_FREE(xsol);
 
-  return n_iters;
+  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  return (sinfo.n_it);
 }
 
 /*============================================================================
@@ -1541,7 +1551,10 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Now solve the system (sles freed inside) */
   _vbv_solve_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix, eqp, rhs_norm,
+                    matrix,
+                    field_id,
+                    eqp,
+                    rhs_norm,
                     fld->val, rhs);
 
   /* Free remaining buffers */

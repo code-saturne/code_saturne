@@ -1051,7 +1051,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_real_t *vel_f = mom_eqc->face_values;
   cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
 
-  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id, mom_eqp, vel_f, rhs);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_AC_DBG,
@@ -1401,7 +1401,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   /* Now solve the system */
   cs_real_t *vel_f = mom_eqc->face_values;
   cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp,
+  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id, mom_eqp,
                                vel_f, rhs);
 
   /* Update pressure, velocity and divergence fields */

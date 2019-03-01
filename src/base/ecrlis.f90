@@ -157,8 +157,6 @@ do f_id = 0, nfld - 1
     ic = 4
 
     call field_get_location(f_id, f_loc)
-    if (f_loc .ne. 1) cycle
-
     call field_get_dim (f_id, f_dim)
     call field_get_label(f_id, flabel)
     call field_get_name(f_id, fname)
@@ -183,109 +181,114 @@ do f_id = 0, nfld - 1
     ! Compute the time drift
     !-----------------------
 
-    ! Scalar time drift (except pressure)
-    if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
-      call field_get_val_s(f_id, field_s_v)
-      call field_get_val_prev_s(f_id, field_s_vp)
-
-      do icel = 1, ncel
-        w1(icel) = (field_s_v(icel)-field_s_vp(icel))/sqrt(dt(icel))
-      enddo
-
-      dervar(1) = cs_gres(ncel,cell_f_vol,w1,w1)
-
-    ! Pressure time drift (computed in resopv.f90)
-    else if (f_dim.eq.1) then
+    ! Cell based variables
+    if (f_loc.eq.1) then
+      ! Pressure time drift (computed in resopv.f90)
       dervar(1) = sinfo%dervar
 
-    ! Vector or tensor time drift (total time drift)
-    else
-      call field_get_val_v(f_id, field_v_v)
-      call field_get_val_prev_v(f_id, field_v_vp)
-
-      ! Loop over the components
-      do c_id = 1, f_dim
+      ! Scalar time drift for cell based variables (except pressure)
+      if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
+        call field_get_val_s(f_id, field_s_v)
+        call field_get_val_prev_s(f_id, field_s_vp)
 
         do icel = 1, ncel
-          w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/sqrt(dt(icel))
+          w1(icel) = (field_s_v(icel)-field_s_vp(icel))/sqrt(dt(icel))
         enddo
 
-        dervar(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
+        dervar(1) = cs_gres(ncel,cell_f_vol,w1,w1)
 
-      enddo
+      ! Vector or tensor time drift (total time drift)
+      else if (f_dim.ne.1) then
+        dervar(1) = sinfo%dervar
 
-      ! Saving the first component value
-      dervars = dervar(1)
+        call field_get_val_v(f_id, field_v_v)
+        call field_get_val_prev_v(f_id, field_v_vp)
 
-      do c_id = 2, f_dim
-        dervar(1) = dervar(1) + dervar(c_id)
-      enddo
+        ! Loop over the components
+        do c_id = 1, f_dim
 
-    endif
+          do icel = 1, ncel
+            w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/sqrt(dt(icel))
+          enddo
 
-    write(chain,3000) dervar(1)
-    chainc(ic:ic+12) = chain(1:12)
-    ic=ic+12
+          dervar(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
 
-    ! L2 time normalized residual
-    !----------------------------
-    if (f_dim.eq.1) then
-      call field_get_val_s(f_id, field_s_v)
-      call field_get_val_prev_s(f_id, field_s_vp)
-      do icel = 1, ncel
-        w1(icel) = (field_s_v(icel)-field_s_vp(icel))/dt(icel)
-        w2(icel) = field_s_v(icel)
-      enddo
+        enddo
 
-      ! L2 error, square root
-      ! (abs because in ALE the volume might become negative)
+        ! Saving the first component value
+        dervars = dervar(1)
 
-      varres(1) = sqrt(abs(cs_gres(ncel,cell_f_vol,w1,w1)))
-      varnrm(1) = sqrt(abs(cs_gres(ncel,cell_f_vol,w2,w2)))
+        do c_id = 2, f_dim
+          dervar(1) = dervar(1) + dervar(c_id)
+        enddo
 
-      if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
-      sinfo%l2residual = varres(1)
+      endif
 
-    ! Vector or tensor time drift (total L2 time residual)
-    else
-      call field_get_val_v(f_id, field_v_v)
-      call field_get_val_prev_v(f_id, field_v_vp)
+      write(chain,3000) dervar(1)
+      chainc(ic:ic+12) = chain(1:12)
+      ic=ic+12
 
-      ! Loop over the components
-      do c_id = 1, f_dim
-
+      ! L2 time normalized residual
+      !----------------------------
+      if (f_dim.eq.1) then
+        call field_get_val_s(f_id, field_s_v)
+        call field_get_val_prev_s(f_id, field_s_vp)
         do icel = 1, ncel
-          w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/dt(icel)
-          w2(icel) = field_v_v(c_id, icel)
+          w1(icel) = (field_s_v(icel)-field_s_vp(icel))/dt(icel)
+          w2(icel) = field_s_v(icel)
         enddo
 
-        ! L2 error, NO square root
+        ! L2 error, square root
+        ! (abs because in ALE the volume might become negative)
 
-        varres(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
-        varnrm(c_id) = cs_gres(ncel,cell_f_vol,w2,w2)
+        varres(1) = sqrt(abs(cs_gres(ncel,cell_f_vol,w1,w1)))
+        varnrm(1) = sqrt(abs(cs_gres(ncel,cell_f_vol,w2,w2)))
 
-        if (c_id.gt.1) then
-          varres(1) = varres(1) + varres(c_id)
-          varnrm(1) = varnrm(1) + varnrm(c_id)
-        endif
+        if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
+        sinfo%l2residual = varres(1)
 
-      enddo
+      ! Vector or tensor time drift (total L2 time residual)
+      else
+        call field_get_val_v(f_id, field_v_v)
+        call field_get_val_prev_v(f_id, field_v_vp)
 
-      if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
-      ! (abs because in ALE the volume might become negative)
-      sinfo%l2residual = sqrt(abs(varres(1)))
+        ! Loop over the components
+        do c_id = 1, f_dim
 
-    endif
+          do icel = 1, ncel
+            w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/dt(icel)
+            w2(icel) = field_v_v(c_id, icel)
+          enddo
 
-    write(chain,3000) sinfo%l2residual
-    chainc(ic:ic+12) = chain(1:12)
-    ic=ic+12
+          ! L2 error, NO square root
+
+          varres(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
+          varnrm(c_id) = cs_gres(ncel,cell_f_vol,w2,w2)
+
+          if (c_id.gt.1) then
+            varres(1) = varres(1) + varres(c_id)
+            varnrm(1) = varnrm(1) + varnrm(c_id)
+          endif
+
+        enddo
+
+        if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
+        ! (abs because in ALE the volume might become negative)
+        sinfo%l2residual = sqrt(abs(varres(1)))
+
+      endif
+
+      write(chain,3000) sinfo%l2residual
+      chainc(ic:ic+12) = chain(1:12)
+      ic=ic+12
+
+    endif ! End cell based variable
 
     ! Finalize the log of the line
     if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
 
     ! Vector or tensor time drift (by component)
-    if (f_dim.gt.1) then
+    if (f_dim.gt.1.and.f_loc.eq.1) then
       call field_get_val_v(f_id, field_v_v)
       call field_get_val_prev_v(f_id, field_v_vp)
 

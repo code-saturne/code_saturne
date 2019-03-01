@@ -264,7 +264,7 @@ _setup_vcb(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the local structure for the current cell
+ * \brief  Initialize the local structure for the current cell
  *
  * \param[in]      cell_flag    flag related to the current cell
  * \param[in]      cm           pointer to a cellwise view of the mesh
@@ -575,6 +575,7 @@ _vcb_enforce_values(const cs_equation_param_t     *eqp,
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in]      field_id id related to the variable field of this equation
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in, out] x        solution of the linear system (in: initial guess)
  * \param[in, out] b        right-hand side (scatter/gather if needed)
@@ -586,15 +587,21 @@ _vcb_enforce_values(const cs_equation_param_t     *eqp,
 static int
 _solve_vcb_system(cs_sles_t                    *sles,
                   const cs_matrix_t            *matrix,
+                  const int                     field_id,
                   const cs_equation_param_t    *eqp,
                   cs_real_t                    *x,
                   cs_real_t                    *b)
 {
   const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
 
+  /* solving info */
+  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_solving_info_t sinfo;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
   cs_range_set_t *rset = cs_shared_connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
   cs_real_t  *xsol = NULL;
 
   const cs_lnum_t  n_scatter_elts = n_vertices;
@@ -609,23 +616,23 @@ _solve_vcb_system(cs_sles_t                    *sles,
     xsol = x;
 
   /* Prepare solving (handle parallelism) */
-  cs_gnum_t  nnz = cs_equation_prepare_system(1,          /* stride */
+  cs_gnum_t  nnz = cs_equation_prepare_system(1,            /* stride */
                                               n_scatter_elts,
                                               matrix,
                                               rset,
                                               xsol, b);
 
   /* Solve the linear solver */
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+  sinfo.rhs_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_sles_t  sles_param = eqp->sles_param;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
                                                     sles_param.eps,
-                                                    r_norm,
-                                                    &n_iters,
-                                                    &residual,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
                                                     b,
                                                     xsol,
                                                     0,      /* aux. size */
@@ -635,7 +642,7 @@ _solve_vcb_system(cs_sles_t                    *sles,
   if (sles_param.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
                   " residual % -8.4e nnz %lu\n",
-                  eqp->name, code, n_iters, residual, nnz);
+                  eqp->name, code, sinfo.n_it, sinfo.res_norm, nnz);
 
   if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
@@ -659,7 +666,9 @@ _solve_vcb_system(cs_sles_t                    *sles,
   if (n_cols > n_scatter_elts)
     BFT_FREE(xsol);
 
-  return n_iters;
+  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  return (sinfo.n_it);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1369,8 +1378,11 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Solve the linear system */
   _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix, eqp,
-                    fld->val, rhs);
+                    matrix,
+                    field_id,
+                    eqp,
+                    fld->val,
+                    rhs);
 
   /* Update field */
   t0 = cs_timer_time();
@@ -1634,7 +1646,9 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Solve the linear system */
   _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix, eqp,
+                    matrix,
+                    field_id,
+                    eqp,
                     fld->val, rhs);
 
   /* Update field */
@@ -1978,7 +1992,9 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Solve the linear system */
   _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix, eqp,
+                    matrix,
+                    field_id,
+                    eqp,
                     fld->val, rhs);
 
   /* Update field */

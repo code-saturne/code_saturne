@@ -1145,7 +1145,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
    */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
 
-  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id,
+                                            mom_eqp, vel_f, rhs);
 
   /* Update field */
   t_upd = cs_timer_time();
@@ -1210,7 +1211,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
       memset(delta_vel_f, 0, 3*n_faces*rsize);
 
       solv_iter += (loc_solv_iter =
-        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, delta_vel_f, rhs));
+        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id,
+                                     mom_eqp, delta_vel_f, rhs));
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
@@ -1618,7 +1620,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
    */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
 
-  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id,
+                                            mom_eqp, vel_f, rhs);
 
   /* Update field */
   t_upd = cs_timer_time();
@@ -1683,7 +1686,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
       memset(delta_vel_f, 0, 3*n_faces*rsize);
 
       solv_iter += (loc_solv_iter =
-        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, delta_vel_f, rhs));
+        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id,
+                                     mom_eqp, delta_vel_f, rhs));
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
@@ -2130,7 +2134,8 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
    */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
 
-  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id,
+                                            mom_eqp, vel_f, rhs);
 
   /* Update field */
   t_upd = cs_timer_time();
@@ -2195,7 +2200,8 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
       memset(delta_vel_f, 0, 3*n_faces*rsize);
 
       solv_iter += (loc_solv_iter =
-        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, delta_vel_f, rhs));
+        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eq->field_id,
+                                     mom_eqp, delta_vel_f, rhs));
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
