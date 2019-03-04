@@ -478,8 +478,8 @@ cs_run(void)
   bft_printf_flush();
 
   /* Finalize user extra operations */
-
-  cs_user_extra_operations_finalize(cs_glob_domain);
+  if (opts.verif == false)
+    cs_user_extra_operations_finalize(cs_glob_domain);
 
   /* Final stage for CDO/HHO schemes */
 
