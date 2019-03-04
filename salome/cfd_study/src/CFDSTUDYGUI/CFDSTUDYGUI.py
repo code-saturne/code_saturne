@@ -178,7 +178,6 @@ def createPreferences():
     Manages the preferences QDialog of the module.
     """
     log.debug("createPreferences")
-    sgPyQt = CFDSTUDYGUI_DataModel.sgPyQt
     genTab = sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_GEN_GROUP"))
     EditorField = str(ObjectTR.tr("EDITOR"))
     editorGroup = sgPyQt.addPreference(EditorField,genTab)
