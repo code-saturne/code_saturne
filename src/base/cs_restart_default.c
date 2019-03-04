@@ -2649,6 +2649,17 @@ cs_restart_read_field_vals(cs_restart_t  *r,
                                        f->location_id,
                                        f->dim,
                                        CS_TYPE_cs_real_t);
+
+  } else if ((retcode == CS_RESTART_ERR_EXISTS || retcode == CS_RESTART_ERR_N_VALS)
+             && cs_restart_is_from_ncfd() ) {
+    /* If restart from NCFD, ensure that we can read scalar fields! */
+    snprintf(sec_name, 127, "%s", r_name);
+    sec_name[127] = '\0';
+    retcode = cs_restart_check_section(r,
+                                       sec_name,
+                                       f->location_id,
+                                       f->dim,
+                                       CS_TYPE_cs_real_t);
   }
 
   /* Read data if found */
