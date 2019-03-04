@@ -215,9 +215,9 @@ class NotebookModel(Model):
         """
         Return list of case
         """
-        if idx:
+        if idx != None:
             node = self.node_note.xmlInitChildNode("var", id = idx)
-        elif var:
+        elif var != None:
             node = self.node_note.xmlInitChildNode("var", name = var)
         else:
             raise Exception("No id or name were specified for setVariableValue")
