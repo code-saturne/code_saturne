@@ -284,7 +284,7 @@ if (iihmpr.eq.1) then
      call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
      !     Options numériques globales
-     relaxp = -999.d0
+     relaxp = -1.d0
      extrap = 0.d0
      call csnum2 (relaxp, extrap, imrgra)
      vcopt%extrag = extrap
