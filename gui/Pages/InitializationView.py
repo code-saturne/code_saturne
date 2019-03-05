@@ -344,7 +344,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exp, req, sym = self.init.getSpeciesFormulaComponents(self.zone, self.scalar)
 
-        exa = """#example: \n""" + str(name)+""" = 0;\n"""
+        exa = """#example: \n""" + str(self.scalar)+""" = 0;\n"""
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
