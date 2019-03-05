@@ -500,7 +500,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 log.debug("setdockWindowBrowserActivated -> mw = %s" % (mw,))
                 ob = sgPyQt.getObjectBrowser()
                 # Clear the current selection in the SALOME object browser, which does not match with the shown dock window
-                ob.clearSelection()
+                if ob != None:
+                    ob.clearSelection()
         else:
             self._CurrentWindow = None
 
@@ -530,7 +531,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 log.debug("setdockWindowActivated -> mw = %s" % (mw,))
                 ob = sgPyQt.getObjectBrowser()
                 # effacer la selection en cours
-                ob.clearSelection()
+                if ob != None:
+                    ob.clearSelection()
         else:
             self._CurrentWindow = None
 
