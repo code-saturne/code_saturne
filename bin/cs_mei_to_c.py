@@ -961,7 +961,7 @@ class mei_to_c_interpreter:
 
         if need_coords:
             usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;' \
+                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
                      + '\n\n' \
                      + usr_defs
 
