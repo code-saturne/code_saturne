@@ -196,7 +196,7 @@ class mei_to_c_interpreter:
 
         for line in exp.split('\n'):
             line_comp = []
-            for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,|^',line):
+            for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,|^|<|>',line):
                 if elt != '':
                     line_comp.append((elt.lstrip()).rstrip())
 
@@ -375,6 +375,7 @@ class mei_to_c_interpreter:
                              need_for_loop = False):
 
         usr_code = ''
+        usr_defs = ''
         if_loop = False
 
         tab = '  '
@@ -468,7 +469,7 @@ class mei_to_c_interpreter:
         # Change comments symbol from # to //
         usr_code = usr_code.replace('#', '//')
 
-        return usr_code
+        return usr_code, usr_defs
 
     #---------------------------------------------------------------------------
 
@@ -619,10 +620,13 @@ class mei_to_c_interpreter:
         if_loop = False
 
         # Parse the user expresion
-        usr_code += self.parse_gui_expression(expression,
+        parsed_exp = self.parse_gui_expression(expression,
                                               required,
                                               known_symbols,
                                               'vol')
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
 
         # Write the block
         usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(vz->name, "%s") == 0) {\n' \
@@ -739,11 +743,15 @@ class mei_to_c_interpreter:
             ntabs += 1
 
         # Parse the user expresion
-        usr_code += self.parse_gui_expression(expression,
-                                              required,
-                                              known_symbols,
-                                              'bnd',
-                                              need_for_loop)
+        parsed_exp = self.parse_gui_expression(expression,
+                                               required,
+                                               known_symbols,
+                                               'bnd',
+                                               need_for_loop)
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
 
         # Write the block
         block_cond  = tab + 'if (strcmp(field_name, "%s") == 0 &&\n' % (field_name)
@@ -853,10 +861,14 @@ class mei_to_c_interpreter:
             known_symbols.append(r)
 
         # Parse the user expresion
-        usr_code += self.parse_gui_expression(expression,
-                                              required,
-                                              known_symbols,
-                                              'src')
+        parsed_exp = self.parse_gui_expression(expression,
+                                               required,
+                                               known_symbols,
+                                               'src')
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
 
         # Write the block
         block_cond  = tab + 'if (strcmp(vz->name, "%s") == 0 &&\n' % (zone)
@@ -967,10 +979,14 @@ class mei_to_c_interpreter:
             known_symbols.append(r)
 
         # Parse the user expresion
-        usr_code += self.parse_gui_expression(expression,
-                                              required,
-                                              known_symbols,
-                                              'ini')
+        parsed_exp = self.parse_gui_expression(expression,
+                                               required,
+                                               known_symbols,
+                                               'ini')
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
 
         # Write the block
         block_cond  = tab + 'if (strcmp(vz->name, "%s") == 0 &&\n' % (zone)
