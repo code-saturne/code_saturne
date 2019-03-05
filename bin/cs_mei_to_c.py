@@ -108,7 +108,7 @@ cs_meg_source_terms(const cs_zone_t *vz,
 """,
 'ini':"""cs_real_t *
 cs_meg_initialization(const char      *field_name,
-                           const cs_zone_t *vz)
+                      const cs_zone_t *vz)
 {
   cs_real_t *new_vals = NULL;
 
@@ -961,7 +961,7 @@ class mei_to_c_interpreter:
 
         if need_coords:
             usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;' \
+                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
                      + '\n\n' \
                      + usr_defs
 
