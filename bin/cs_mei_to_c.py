@@ -124,6 +124,7 @@ _block_comments = {'vol':'User defined formula for variable %s over zone %s',
                    'bnd':'User defined formula for "%s" over BC=%s',
                    'src':'User defined source term for %s over zone %s',
                    'ini':'User defined initialization for variable %s over zone %s'}
+
 #-------------------------------------------------------------------------------
 
 _cs_math_internal_name = {'abs':'cs_math_fabs',
@@ -198,7 +199,7 @@ class mei_to_c_interpreter:
             line_comp = []
             for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,|^|<|>',line):
                 if elt != '':
-                    line_comp.append((elt.lstrip()).rstrip())
+                    line_comp.append(elt.strip())
 
             expression_lines.append(line_comp)
 
@@ -389,20 +390,20 @@ class mei_to_c_interpreter:
             if len(l) > 0:
                 lf = l.split('=')
                 if len(lf) > 1 and l[0] != "#":
-                    if lf[0].rstrip() not in known_symbols:
-                        known_symbols.append(lf[0].rstrip())
+                    if lf[0].strip() not in known_symbols:
+                        known_symbols.append(lf[0].strip())
                         # Test whether we are inside an if loop or not!
                         if if_loop:
                             usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
                         else:
                             l = 'const cs_real_t '+l
 
-                    elif lf[0].rstrip() in req:
+                    elif lf[0].strip() in req:
                         if func_type == 'vol':
                             new_v = 'f->val[c_id]'
 
                         elif func_type == 'bnd':
-                            ir = req.index(lf[0].rstrip())
+                            ir = req.index(lf[0].strip())
                             if need_for_loop:
                                 new_v = 'new_vals[%d * bz->n_elts + e_id]' % (ir)
                             else:
@@ -410,14 +411,14 @@ class mei_to_c_interpreter:
 
                         elif func_type == 'src':
                             if nreq > 1:
-                                ir = req.index(lf[0].rstrip())
+                                ir = req.index(lf[0].strip())
                                 new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
                             else:
                                 new_v = 'new_vals[e_id]'
 
                         elif func_type == 'ini':
                             if nreq > 1:
-                                ir = req.index(lf[0].rstrip())
+                                ir = req.index(lf[0].strip())
                                 new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
                             else:
                                 new_v = 'new_vals[e_id]'
@@ -1304,24 +1305,24 @@ class mei_to_c_interpreter:
                         # Density
                         if im.getDensityStatus(z_id) is not 'off':
                             exp, req, sym = im.getDensityFormulaComponents(z_id)
-                            self.init_ini_block(exp,req,sym,'density', zone_name)
+                            self.init_ini_block(exp, req, sym, 'density', zone_name)
 
                         # Temperature
                         if im.getTemperatureStatus(z_id) is not 'off':
                             exp, req, sym = im.getTemperatureFormulaComponents(z_id)
-                            self.init_ini_block(exp,req,sym,'temperature', zone_name)
+                            self.init_ini_block(exp, req ,sym, 'temperature', zone_name)
 
                         # Energy
                         if im.getEnergyStatus(z_id) is not 'off':
                             exp, req, sym = im.getEnergyFormulaComponents(z_id)
-                            self.init_ini_block(exp,req,sym,'energy', zone_name)
+                            self.init_ini_block(exp, req, sym, 'energy', zone_name)
 
                     # Species
                     usm = DefineUserScalarsModel(self.case)
                     for scalar in usm.getUserScalarNameList():
                         if im.getSpeciesFormula(z_id, scalar):
                             exp, req, sym = im.getSpeciesFormulaComponents(z_id, scalar)
-                            self.init_ini_block(exp,req,sym, scalar, zone_name)
+                            self.init_ini_block(exp, req, sym, scalar, zone_name)
 
                     # Meteo
                     node_atmo = im.models.xmlGetNode('atmospheric_flows')
@@ -1362,8 +1363,8 @@ class mei_to_c_interpreter:
             errors = open('comp.err', 'r').readlines()
             for i in range(len(errors)):
                 if 'error:' in errors[i]:
-                    msg = errors[i].split('error:')[-1].rstrip().lstrip()+'\n'
-                    msg += errors[i+1].rstrip().lstrip() + '\n'
+                    msg = errors[i].split('error:')[-1].strip()+'\n'
+                    msg += errors[i+1].strip() + '\n'
 
                     n_errors += 1
         else:
@@ -1441,11 +1442,9 @@ class mei_to_c_interpreter:
 
     def save_function(self, func_type, hard_path = None):
 
-
         # Delete previous existing file
         file2write = _function_names[func_type]
         self.delete_file(file2write)
-
 
         # Generate the functions code if needed
         code_to_write = ''
@@ -1458,7 +1457,7 @@ class mei_to_c_interpreter:
             for key in self.funcs[func_type].keys():
                 zone_name, var_name = key.split('::')
                 m1 = _block_comments[func_type] % (var_name, zone_name)
-                m2 = '/* ' + '-'*len(m1) + ' */\n'
+                m2 = '/*-' + '-'*len(m1) + '-*/\n'
                 m1 = '/* ' + m1 + ' */\n'
 
                 code_to_write += '  ' + m2
