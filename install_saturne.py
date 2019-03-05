@@ -597,9 +597,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.10.4",
-                    archive="hdf5-1.10.4.tar.gz",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.4/src/%s")
+                    version="1.10.5",
+                    archive="hdf5-1.10.5.tar.gz",
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-build-mode=production"
