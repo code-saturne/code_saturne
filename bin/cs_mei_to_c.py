@@ -382,18 +382,27 @@ class mei_to_c_interpreter:
         tab = '  '
         ntabs = 3
 
+        if_open = 0
+
+        # ------------------------------------
         # Parse the Mathematical expression and generate the C block code
         exp_lines = expression.split("\n")
         nreq = len(req)
         for l in exp_lines:
             lidx = exp_lines.index(l)
+
+            # ------------------------------------
+            # Check that the line is not empty
             if len(l) > 0:
+                l = l.lstrip()
                 lf = l.split('=')
+                # ------------------------------------
+                # Check that the line is not a comment one
                 if len(lf) > 1 and l[0] != "#":
                     if lf[0].strip() not in known_symbols:
                         known_symbols.append(lf[0].strip())
                         # Test whether we are inside an if loop or not!
-                        if if_loop:
+                        if if_open:
                             usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
                         else:
                             l = 'const cs_real_t '+l
@@ -425,45 +434,53 @@ class mei_to_c_interpreter:
 
                         l = new_v + ' = ' + lf[1]
 
+                # ------------------------------------
                 # Check for power functions
                 if '^' in l:
                     l = self.search_and_replace_power(l)
 
-                # If loop
+                # ------------------------------------
+                # If loop :
+                # 1 : Line starting with if
                 if l[:2] == 'if':
-                    if_loop = True
                     if l[-1] != '{' and exp_lines[lidx+1][0] != '{':
                         l = l + ' {'
+                    usr_code += '\n'
+                    usr_code += (ntabs+if_open)*tab + l
+                    if_open += 1
 
-                if 'else' in l:
-                    if l[0] != '}' and if_loop and exp_lines[lidx-1][-1] != '}':
+                # 2 : Line with an else
+                elif 'else' in l:
+                    if l[0] != '}' and if_open and exp_lines[lidx-1][-1] != '}':
                         l = '} '+l
 
                     if l[-1] != '{' and exp_lines[lidx+1][0] != '{':
                         l = l + ' {'
-                    if_loop = True
 
-                if l[0] == '}':
-                    if_loop = False
-                    ntabs -= 1
+                    if_open -= 1
+                    usr_code += '\n'
+                    usr_code += (ntabs+if_open)*tab + l
+                    if_open += 1
 
-                usr_code += '\n'
-                if l[-1] == '}':
-                    usr_code += ntabs*tab + l[:-1]
-                    ntabs -= 1
-                    usr_code += '\n' + ntabs*tab + '}'
-                    if_loop = False
+                # 3 : Other lines
                 else:
-                    usr_code += ntabs*tab + l
+                    if l[0] == '}':
+                        if_open -= 1
 
-                if l[-1] == '{':
-                    ntabs += 1
+                    usr_code += '\n'
+                    if l[-1] == '}' and len(l) > 1:
+                            usr_code += (ntabs+if_open)*tab + l[:-1]
+                            usr_code += '\n' + (ntabs+if_open)*tab + '}'
+                    else:
+                        usr_code += (ntabs+if_open)*tab + l
 
             else:
                 usr_code += '\n'
 
-        if if_loop and usr_code[-1] != '}':
-            usr_code += '\n' + (ntabs-1)*tab + '}\n'
+        if if_open:
+            for i in range(if_open):
+                if_open -= 1
+                usr_code += '\n' + (ntabs+if_open)*tab + '}\n'
         else:
             usr_code += '\n'
 
@@ -844,7 +861,7 @@ class mei_to_c_interpreter:
 
         if need_coords:
             usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;' \
+                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
                      + '\n\n' \
                      + usr_defs
 
