@@ -715,9 +715,9 @@ cs_sdm_square_matvec(const cs_sdm_t    *mat,
 
   /* Increment mv */
   for (short int i = 0; i < n; i++) {
-    cs_real_t *m_i = mat->val + i*n;
+    const cs_real_t *m_i = mat->val + i*n;
     for (short int j = 1; j < n; j++)
-      mv[i] +=  m_i[j] * vec[j];
+      mv[i] += m_i[j] * vec[j];
   }
 
 }

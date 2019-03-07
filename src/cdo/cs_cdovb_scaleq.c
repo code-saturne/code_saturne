@@ -143,11 +143,11 @@ _vbs_create_cell_builder(const cs_cdo_connect_t   *connect)
 {
   const int  n_vc = connect->n_max_vbyc;
   const int  n_ec = connect->n_max_ebyc;
-
+  assert(n_ec > n_vc);
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_vc, short int);
-  memset(cb->ids, 0, n_vc*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_ec, short int);
+  memset(cb->ids, 0, n_ec*sizeof(short int));
 
   int  size = n_ec*(n_ec+1);
   size = CS_MAX(4*n_ec + 3*n_vc, size);
@@ -162,7 +162,7 @@ _vbs_create_cell_builder(const cs_cdo_connect_t   *connect)
      operators */
   cb->hdg = cs_sdm_square_create(n_ec);
   cb->loc = cs_sdm_square_create(n_vc);
-  cb->aux = cs_sdm_square_create(n_vc);
+  cb->aux = cs_sdm_square_create(n_ec);
 
   return cb;
 }
@@ -849,7 +849,10 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
-      eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
+      if (eqp->diffusion_hodge.is_iso)
+        eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
+      else
+        eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_aniso_stiffness;
 
       eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
