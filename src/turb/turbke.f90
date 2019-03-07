@@ -316,6 +316,15 @@ d1s2 = 1.d0/2.d0
 !TODO FIXME: Are the BC uncompatible?
 if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
 
+  call field_get_val_s(ivarfl(ial), cvar_al)
+  do iel = 1, ncel
+    ! y+ is bounded by 400, because in the Reichard profile,
+    ! it corresponds to saturation (u>uref)
+    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))),0.d0)
+  enddo
+
+  call field_current_to_previous(ivarfl(ial))
+
   allocate(grad(3,ncelet))
 
   ! Compute the gradient of Alpha
@@ -328,7 +337,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
                              grad)
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
-  call field_get_val_s(ivarfl(ial), cvar_al)
   call field_get_val_v(ivarfl(iu), vel)
 
   utaurf = 0.05d0*uref
@@ -338,12 +346,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
     ! Compute the velocity magnitude
     xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
     xunorm = sqrt(xunorm)
-
-    ! y+ is bounded by 400, because in the Reichard profile,
-    ! it corresponds to saturation (u>uref)
-    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))),0.d0)
-
-    call field_current_to_previous(ivarfl(ial))
 
     ! Compute the magnitude of the alpha gradient
     xnoral = ( grad(1,iel)*grad(1,iel)          &
