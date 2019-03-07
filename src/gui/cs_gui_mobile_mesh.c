@@ -707,6 +707,7 @@ void CS_PROCF (uialvm, UIALVM) ()
   } else { /* isotropic viscosity */
     vcopt.idften = CS_ISOTROPIC_DIFFUSION;
   }
+  cs_field_set_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
