@@ -104,7 +104,10 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 if (iappel.eq.1) then
 
   ! --- Store the previous mass flux (n-1->n) in *_mass_flux_prev
-  if (istmpf.eq.2) then
+  ! Note: if there is no previous values, nothing is done
+  ! for explicit schemes (istmpf=0) a specific treatment is done
+  ! because previous value is used as a work array...
+  if (istmpf.ne.0) then
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
     call field_current_to_previous(iflmas)
@@ -374,6 +377,7 @@ elseif (iappel.eq.4) then
 !     Si istmpf = 0 : explicite (thetfl = 0)
 !       On sauvegarde F_(n+1) dans i_mass_flux_prev, mais on continue
 !       les calculs avec F_(n) mis dans i_mass_flux
+! TODO it would be simpler to use the theta scheme of istmpf=2 with theta=0!
 
 !     On retablira au dernier appel de schtmp pour istmpf = 0
 

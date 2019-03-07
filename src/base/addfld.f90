@@ -563,7 +563,7 @@ else if (icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0.or.idilat.gt.1) then
   call field_set_n_previous(ibrom, 1)
 endif
 
-!Time extrapolation
+! Time extrapolation
 !-------------------
 
 ! Density

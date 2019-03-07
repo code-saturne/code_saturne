@@ -133,7 +133,7 @@ save             ipass
 integer, pointer, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
 
-double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+double precision, pointer, dimension(:) :: xprale
 double precision, pointer, dimension(:,:) :: cofale
 double precision, pointer, dimension(:,:) :: dttens
 double precision, pointer, dimension(:,:,:) :: rcodcl
@@ -179,7 +179,7 @@ interface
   ( nvar   , nscal  , iterns ,                                     &
     isvhb  ,                                                       &
     itrale , italim , itrfin , ineefl , itrfup ,                   &
-    flmalf , flmalb , cofale , xprale ,                            &
+    cofale , xprale ,                                              &
     icodcl , isostd ,                                              &
     dt     , rcodcl ,                                              &
     visvdr , hbord  , theipb )
@@ -191,7 +191,7 @@ interface
     integer          nvar, nscal, iterns, isvhb
     integer          itrale , italim , itrfin , ineefl , itrfup
 
-    double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+    double precision, pointer, dimension(:) :: xprale
     double precision, pointer, dimension(:,:) :: cofale
     integer, pointer, dimension(:,:) :: icodcl
     integer, dimension(nfabor+1) :: isostd
@@ -801,7 +801,7 @@ if (ivrtex.eq.1) then
 endif
 
 ! --- Methode ALE : debut de boucle d'implicitation du deplacement des
-!       structures. ITRFIN=0 indique qu'on a besoin de refaire une iteration
+!       structures. itrfin=0 indique qu'on a besoin de refaire une iteration
 !       pour Syrthes, T1D ou rayonnement.
 italim = 1
 itrfin = 1
@@ -809,15 +809,13 @@ ineefl = 0
 if (iale.ge.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !     On reserve certains tableaux pour permettre le retour a l'etat
 !       initial en fin d'iteration ALE
-!       - flux de masse
+!       - mass flux: save at the first call of schtmp
 !       - conditions aux limites de gradient de P et U (car on a un appel
 !         a GDRCEL pour les non orthogonalites pour calculer les CL reelles)
 !         -> n'est peut-etre pas reellement necessaire
 !       - la pression initiale (car RTPA est aussi ecrase dans le cas
 !         ou NTERUP>1) -> on pourrait optimiser en ne reservant que si
 !         necessaire ...
-  allocate(flmalf(nfac))
-  allocate(flmalb(nfabor))
   allocate(cofale(nfabor,11))
   allocate(xprale(ncelet))
   ineefl = 1
@@ -825,8 +823,6 @@ if (iale.ge.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfin = 0
 
 else
-  flmalf => null()
-  flmalb => null()
   cofale => null()
   xprale => null()
 endif
@@ -889,7 +885,7 @@ do while (iterns.le.nterup)
     (nvar   , nscal  , iterns ,                                    &
      isvhb  ,                                                      &
      itrale , italim , itrfin , ineefl , itrfup ,                  &
-     flmalf , flmalb , cofale , xprale ,                           &
+     cofale , xprale ,                                             &
      icodcl , isostd ,                                             &
      dt     , rcodcl ,                                             &
      visvdr , hbord  , theipb )
@@ -1222,7 +1218,7 @@ if (ippmod(idarcy).eq.1) then
     (nvar   , nscal  , iterns ,                                    &
      isvhb  ,                                                      &
      itrale , italim , itrfin , ineefl , itrfup ,                  &
-     flmalf , flmalb , cofale , xprale ,                           &
+     cofale , xprale ,                                             &
      icodcl , isostd ,                                             &
      dt     , rcodcl ,                                             &
      visvdr , hbord  , theipb )
@@ -1247,11 +1243,7 @@ if (iccvfg.eq.0) then
 
   if (nbstru.gt.0.or.nbaste.gt.0) then
 
-    call strdep &
-  ( itrale , italim , itrfin ,                                     &
-    nvar   ,                                                       &
-    dt     ,                                                       &
-    flmalf , flmalb , cofale , xprale )
+    call strdep(itrale, italim, itrfin, nvar, dt, cofale, xprale)
 
     !     On boucle eventuellement sur de deplacement des structures
     if (itrfin.ne.-1) then
@@ -1260,8 +1252,7 @@ if (iccvfg.eq.0) then
     endif
 
     ! Free memory
-    if (associated(flmalf)) then
-      deallocate(flmalf, flmalb)
+    if (associated(cofale)) then
       deallocate(cofale)
       deallocate(xprale)
     endif

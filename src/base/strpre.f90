@@ -25,7 +25,7 @@ subroutine strpre &
 
  ( itrale , italim , ineefl ,                                     &
    impale ,                                                       &
-   flmalf , flmalb , xprale , cofale )
+   xprale , cofale )
 
 !===============================================================================
 ! FONCTION :
@@ -43,8 +43,6 @@ subroutine strpre &
 ! ineefl           ! e  ! <-- ! indicateur de sauvegarde des flux              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !
-! flmalb(nfabor    ! tr ! --> ! sauvegarde du flux de masse faces brd          !
 ! cofale           ! tr ! --> ! sauvegarde des cl de p et u                    !
 !    (nfabor,8)    !    !     !                                                !
 ! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
@@ -85,7 +83,7 @@ integer          itrale , italim , ineefl
 
 integer          impale(nnod)
 
-double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
+double precision xprale(ncelet)
 double precision cofale(nfabor,11)
 
 ! Local variables
@@ -233,11 +231,7 @@ if (italim.eq.1) then
     enddo
   enddo
   if (ineefl.eq.1) then
-    do ifac = 1, nfac
-      flmalf(ifac) = imasfl(ifac)
-    enddo
     do ifac = 1, nfabor
-      flmalb(ifac) = bmasfl(ifac)
       cofale(ifac,1)  = coefap(ifac)
       cofale(ifac,2)  = coefau(1, ifac)
       cofale(ifac,3)  = coefau(2, ifac)

@@ -618,6 +618,19 @@ if (idfm.eq.1.or.iggafm.eq.1.or. itytur.eq.3 .and. idirsm.eq.1 &
 endif
 
 !===============================================================================
+! Change some field settings
+!===============================================================================
+
+! If ALE, for fluid dtructure interaction, mass fluxes may be needed at the
+! previous iteration
+if (iale.ge.1) then
+  call field_get_key_int(ivarfl(ipr), kimasf, f_id)
+  call field_set_n_previous(f_id, 1)
+  call field_get_key_int(ivarfl(ipr), kbmasf, f_id)
+  call field_set_n_previous(f_id, 1)
+endif
+
+!===============================================================================
 ! Set some field keys
 !===============================================================================
 

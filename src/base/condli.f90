@@ -88,8 +88,6 @@
 !> \param[in]     itrfin        for ALE
 !> \param[in]     ineefl        for ALE
 !> \param[in]     itrfup        for ALE
-!> \param[in]     flmalf        work array for FSI
-!> \param[in]     flmalb        work array for FSI
 !> \param[in]     cofale        work array for FSI
 !> \param[in]     xprale        work array for FSI
 !> \param[in,out] icodcl        face boundary condition code:
@@ -136,7 +134,7 @@ subroutine condli &
  ( nvar   , nscal  , iterns ,                                     &
    isvhb  ,                                                       &
    itrale , italim , itrfin , ineefl , itrfup ,                   &
-   flmalf , flmalb , cofale , xprale ,                            &
+   cofale , xprale ,                                              &
    icodcl , isostd ,                                              &
    dt     , rcodcl ,                                              &
    visvdr , hbord  , theipb )
@@ -183,7 +181,7 @@ implicit none
 integer          nvar   , nscal , iterns, isvhb
 integer          itrale , italim , itrfin , ineefl , itrfup
 
-double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+double precision, pointer, dimension(:) :: xprale
 double precision, pointer, dimension(:,:) :: cofale
 integer, pointer, dimension(:,:) :: icodcl
 integer, dimension(nfabor+1) :: isostd
@@ -452,12 +450,7 @@ if (iale.ge.1) then
 
   ! En cas de couplage de structures, on calcule un deplacement predit
   if (nbstru.gt.0.or.nbaste.gt.0) then
-
-    call strpre &
-      ( itrale , italim , ineefl ,                                   &
-      impale ,                                                       &
-      flmalf , flmalb , xprale , cofale )
-
+    call strpre(itrale, italim, ineefl, impale, xprale, cofale)
   endif
 
 endif
@@ -493,10 +486,7 @@ endif
 
 !Radiative transfer: add contribution to enrgy BCs.
 if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
-
-  call cs_rad_transfer_bcs(nvar, itypfb, icodcl,             &
-    dt, rcodcl)
-
+  call cs_rad_transfer_bcs(nvar, itypfb, icodcl, dt, rcodcl)
 endif
 
 ! For internal coupling, set itypfb to wall function by default
