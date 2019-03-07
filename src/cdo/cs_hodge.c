@@ -151,7 +151,7 @@ _check_stiffness(const cs_sdm_t       *sloc)
 inline static void
 _check_vector_hodge(const cs_real_3_t       *vec,
                     const cs_real_3_t       *res,
-                    const cs_sdm_t       *hdg,
+                    const cs_sdm_t          *hdg,
                     const cs_param_hodge_t   h_info,
                     cs_cell_builder_t       *cb)
 
@@ -202,6 +202,35 @@ _check_vector_hodge(const cs_real_3_t       *vec,
 
   cs_log_printf(CS_LOG_DEFAULT, "%s: err = % -5.3e\n", __func__, print_val);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Perform a part of a matrix-vector product
+ *
+ * \param[in]      n_ent   size of the matrix
+ * \param[in]      i       starting index
+ * \param[in]      dq_pq   matrix values
+ * \param[in]      vec     vector
+ * \param[in, out] mvec    resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_partial_matvec(const int         i,
+                const cs_sdm_t   *dq_pq,
+                const double     *restrict vec,
+                double           *mvec)
+
+{
+  const int n_ent = dq_pq->n_rows;
+
+  for (int irow = i; irow < n_ent; irow++) {
+    const double  *restrict m_i = dq_pq->val + irow*n_ent;
+    double s = 0;
+    for (int j = 0; j < n_ent; j++) s += m_i[j]*vec[j];
+    mvec[irow] = s;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -406,6 +435,183 @@ _compute_cost_quant(const int               n_ent,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the discrete Hodge operator (the upper left part).
+ *          Co+St algo. in case of anisotropic material property.
+ *
+ * \param[in]      n_ent    number of local entities
+ * \param[in]      dbeta2   space dim * squared value of the stabilization coef.
+ * \param[in]      vol_c    cell volume
+ * \param[in]      pty      values of the tensor related to the material pty
+ * \param[in]      pq       pointer to the first set of quantities
+ * \param[in]      dq       pointer to the second set of quantities
+ * \param[in, out] cb       temporary buffers
+ * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_iso_hodge_ul(const int               n_ent,
+                      const double            dbeta2,
+                      const double            ovc,
+                      const cs_real_3_t      *pq,
+                      const cs_real_3_t      *dq,
+                      cs_cell_builder_t      *cb,
+                      cs_sdm_t               *hloc)
+{
+  const double  pty = cb->dpty_val;
+  const double  ptyc = pty*ovc;
+
+  double  *kappa = cb->values;                /* size = n_ent */
+  double  *kappa_pq_dqi = cb->values + n_ent; /* size = n_ent */
+  double  *stab = cb->values + 2*n_ent;       /* size = n_ent */
+  double  *dq_pq = cb->aux->val;              /* size = n_ent*n_ent */
+
+  cs_sdm_square_init(n_ent, cb->aux);
+
+  const double  dbetac = dbeta2*ovc;
+  const double  dbetac2 = dbetac*ovc;
+  const double  beta_coef = ovc * (1 - 2*dbeta2);
+
+  /* Initialize the upper left part of the discrete Hodge op and store useful
+     quantities */
+  for (int i = 0; i < n_ent; i++) {
+
+    const double  dqi[3] = {dq[i][0], dq[i][1], dq[i][2]};
+
+    double  *dqi_pq = dq_pq + i*n_ent;
+    for (int j = 0; j < n_ent; j++)
+      dqi_pq[j] = _dp3(dqi, pq[j]);
+
+    const double  dqi_m_dqi = pty * _dp3(dqi, dqi);
+    kappa[i] = dqi_m_dqi/dqi_pq[i];
+
+    double  *hi = hloc->val + i*n_ent;
+
+    hi[i] = dqi_m_dqi*beta_coef + dbeta2*kappa[i];
+    for (int j = i+1; j < n_ent; j++)
+      hi[j] = ptyc * _dp3(dq[j], dqi);
+
+  }
+
+  /* Build the upper left part of the discrete Hodge operator. */
+  for (int i = 0; i < n_ent; i++) {
+
+    const double  *dqi_pq = dq_pq + n_ent*i;
+
+    for (int k = 0; k < n_ent;k++)
+      kappa_pq_dqi[k] = kappa[k] * dqi_pq[k];
+
+    _partial_matvec(i, cb->aux, kappa_pq_dqi, stab);
+
+    double  *hi = hloc->val + i*n_ent;
+
+    hi[i] += dbetac2 * stab[i];
+
+    /* Compute the extra-diagonal terms */
+    const double  kai = kappa[i];
+    for (int j = i+1; j < n_ent; j++) {
+      double  contrib = ovc * stab[j];
+      contrib -= kai*dq_pq[j*n_ent+i] + kappa[j]*dqi_pq[j];
+      contrib *= dbetac;
+      hi[j] += contrib;
+    }
+
+  } /* Loop on rows (entities i) */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the discrete Hodge operator (the upper left part).
+ *          Co+St algo. in case of anisotropic material property.
+ *
+ * \param[in]      n_ent    number of local entities
+ * \param[in]      dbeta2   space dim * squared value of the stabilization coef.
+ * \param[in]      vol_c    cell volume
+ * \param[in]      pty      values of the tensor related to the material pty
+ * \param[in]      pq       pointer to the first set of quantities
+ * \param[in]      dq       pointer to the second set of quantities
+ * \param[in, out] cb       temporary buffers
+ * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_aniso_hodge_ul(const int               n_ent,
+                        const double            dbeta2,
+                        const double            ovc,
+                        const cs_real_3_t      *pq,
+                        const cs_real_3_t      *dq,
+                        cs_cell_builder_t      *cb,
+                        cs_sdm_t               *hloc)
+{
+  const cs_real_3_t  *pty = (const cs_real_3_t *)cb->dpty_mat;
+
+  double  *kappa = cb->values;                /* size = n_ent */
+  double  *kappa_pq_dqi = cb->values + n_ent; /* size = n_ent */
+  double  *stab = cb->values + 2*n_ent;       /* size = n_ent */
+  double  *dq_pq = cb->aux->val;              /* size = n_ent*n_ent */
+
+  cs_sdm_square_init(n_ent, cb->aux);
+
+  const double  dbetac = dbeta2*ovc;
+  const double  dbetac2 = dbetac*ovc;
+  const double  beta_coef = ovc * (1 - 2*dbeta2);
+
+  /* Initialize the upper left part of the discrete Hodge op and store useful
+     quantities */
+  for (int i = 0; i < n_ent; i++) {
+
+    const double  dqi[3] = {dq[i][0], dq[i][1], dq[i][2]};
+
+    double  *dqi_pq = dq_pq + i*n_ent;
+    for (int j = 0; j < n_ent; j++)
+      dqi_pq[j] = _dp3(dqi, pq[j]);
+
+    const double  mdqi[3]
+      = { pty[0][0] * dqi[0] + pty[0][1] * dqi[1] + pty[0][2] * dqi[2],
+          pty[1][0] * dqi[0] + pty[1][1] * dqi[1] + pty[1][2] * dqi[2],
+          pty[2][0] * dqi[0] + pty[2][1] * dqi[1] + pty[2][2] * dqi[2] };
+
+    const double  dqi_m_dqi = _dp3(dqi, mdqi);
+
+    kappa[i] = dqi_m_dqi/dqi_pq[i];
+
+    double  *hi = hloc->val + i*n_ent;
+
+    hi[i] = dqi_m_dqi*beta_coef + dbeta2*kappa[i];
+    for (int j = i+1; j < n_ent; j++)
+      hi[j] = ovc * _dp3(dq[j], mdqi);
+
+  }
+
+  /* Build the upper left part of the discrete Hodge operator. */
+  for (int i = 0; i < n_ent; i++) {
+
+    const double  *dqi_pq = dq_pq + n_ent*i;
+
+    for (int k = 0; k < n_ent; k++)
+      kappa_pq_dqi[k] = kappa[k] * dqi_pq[k];
+
+    _partial_matvec(i, cb->aux, kappa_pq_dqi, stab);
+
+    double  *hi = hloc->val + i*n_ent;
+
+    hi[i] += dbetac2 * stab[i];
+
+    /* Compute the extra-diagonal terms */
+    const double  kai = kappa[i];
+    for (int j = i+1; j < n_ent; j++) {
+      double  contrib = ovc*stab[j];
+      contrib -= kai*dq_pq[j*n_ent+i] + kappa[j]*dqi_pq[j];
+      contrib *= dbetac;
+      hi[j] += contrib;
+    }
+
+  } /* Loop on rows (entities i) */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local discrete Hodge operator using the generic COST algo.
  *          and a cellwise view of the mesh. Specific for EpFd Hodge operator.
  *          COST means COnsistency + STabilization
@@ -593,6 +799,356 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 #endif
 
   bft_error(__FILE__, __LINE__, 0, "Under construction");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local stiffness matrix using the generic COST algo.
+ *          Case of CDO vertex-based schemes and isotropic property
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    h_info,
+                                   const cs_cell_mesh_t     *cm,
+                                   cs_cell_builder_t        *cb)
+{
+  /* Sanity checks */
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
+                      CS_CDO_LOCAL_EV));
+
+  cs_real_3_t  *pq = cb->vectors;
+  cs_real_3_t  *dq = cb->vectors + cm->n_ec;
+
+  /* Initialize the local stiffness matrix */
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_vc, sloc);
+
+  /* Initialize the hodge matrix */
+  cs_sdm_t  *hloc = cb->hdg;
+  cs_sdm_square_init(cm->n_ec, hloc);
+
+  /* Set numbering and geometrical quantities Hodge builder */
+  for (int ii = 0; ii < cm->n_ec; ii++) {
+
+    cs_nvec3_t  dfq = cm->dface[ii];
+    cs_quant_t  peq = cm->edge[ii];
+
+    for (int k = 0; k < 3; k++) {
+      dq[ii][k] = dfq.meas * dfq.unitv[k];
+      pq[ii][k] = peq.meas * peq.unitv[k];
+    }
+
+  } /* Loop on cell edges */
+
+  /* Compute the upper left part of the local Hodge matrix
+   *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
+   *  or DUAL->PRIMAL space */
+  _compute_iso_hodge_ul(cm->n_ec, 3*h_info.coef*h_info.coef, 1./cm->vol_c,
+                        (const cs_real_t (*)[3])pq,
+                        (const cs_real_t (*)[3])dq,
+                        cb, hloc);
+
+  for (int ei = 0; ei < cm->n_ec; ei++) { /* Loop on cell edges I */
+
+    const short int  *v_sgn = cm->e2v_sgn + ei;
+    const short int  *v_ids = cm->e2v_ids + 2*ei;
+    const short int  i1 = v_ids[0], i2 = v_ids[1];
+    assert(i1 < i2);
+
+    double  *si1 = sloc->val + i1*sloc->n_rows;
+    double  *si2 = sloc->val + i2*sloc->n_rows;
+
+    /* Diagonal value: consistency part has already been computed */
+    const double  *hii = hloc->val + ei*(1 + cm->n_ec);
+    const double  dval = hii[0];
+
+    si1[i1] += dval;
+    si1[i2] -= dval;
+    si2[i2] += dval;
+
+    /* Compute extra-diag entries */
+    for (int _j = 1; _j < cm->n_ec-ei; _j++) { /* Loop on cell entities J */
+
+      const short int  j1 = v_ids[2*_j], j2 = v_ids[2*_j+1];
+      assert(j1 < j2);
+
+      double  *sj1 = sloc->val + j1*sloc->n_rows;
+      double  *sj2 = sloc->val + j2*sloc->n_rows;
+
+      /* Add contribution from the stabilization part for each sub-volume
+         related to a primal entity */
+      const double xval = hii[_j] * v_sgn[0]*v_sgn[_j];
+
+      if (i2 < j1) {            /* i1 < i2 < j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= xval;
+        si2[j2] += xval;
+      }
+      else if (i2 == j1) {      /* i1 < i2 = j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= 2*xval;
+        si2[j2] += xval;
+      }
+      else if (i2 < j2) {
+
+        assert(i2 > j1);
+        if (i1 < j1)            /* i1 < j1 < i2 < j2 */
+          si1[j1] += xval;
+        else if (i1 == j1)      /* i1 = j1 < i2 < j2 */
+          si1[j1] += 2*xval;
+        else                    /* j1 < i1 < i2 < j2 */
+          sj1[i1] += xval;
+
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += xval;
+
+      }
+      else if (i2 == j2) {
+
+        if (i1 < j1)            /* i1 < j1 < i2 = j2 */
+          si1[j1] += xval;
+        else                    /* j1 < i1 < i2 = j2 */
+          sj1[i1] += xval;
+
+        /* Remark: the case i1 == j1 is not possible since ei != ej */
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += 2*xval;
+
+      }
+      else {                    /* i2 > j2 */
+
+        if (i1 < j1) {          /* i1 < j1 < j2 < i2 */
+          si1[j1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j1) {    /* i1 = j1 < j2 < i2 */
+          si1[j1] += 2*xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 < j2) {     /* j1 < i1 < j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j2) {    /* j1 < i1 = j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= 2*xval;
+        }
+        else {                  /* j1 < j2 < i1 < i2 */
+          sj1[i1] += xval;
+          sj2[i1] -= xval;
+        }
+
+        assert(i2 > j2);
+        sj1[i2] -= xval;
+        sj2[i2] += xval;
+
+      } /* End of tests */
+
+    } /* End of loop on J entities */
+
+  } /* End of loop on I entities */
+
+  /* Stiffness matrix is symmetric by construction */
+  for (int ei = 0; ei < sloc->n_rows; ei++) {
+    double *si = sloc->val + ei*sloc->n_rows;
+    for (int ej = 0; ej < ei; ej++)
+      si[ej] = sloc->val[ej*sloc->n_rows + ei];
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
+    _check_stiffness(sloc);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local stiffness matrix using the generic COST algo.
+ *          Case of CDO vertex-based schemes
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    h_info,
+                                     const cs_cell_mesh_t     *cm,
+                                     cs_cell_builder_t        *cb)
+{
+  /* Sanity checks */
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
+                      CS_CDO_LOCAL_EV));
+
+  cs_real_3_t  *pq = cb->vectors;
+  cs_real_3_t  *dq = cb->vectors + cm->n_ec;
+
+  /* Initialize the local stiffness matrix */
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_vc, sloc);
+
+  /* Initialize the hodge matrix */
+  cs_sdm_t  *hloc = cb->hdg;
+  cs_sdm_square_init(cm->n_ec, hloc);
+
+  /* Set numbering and geometrical quantities Hodge builder */
+  for (int ii = 0; ii < cm->n_ec; ii++) {
+
+    cs_nvec3_t  dfq = cm->dface[ii];
+    cs_quant_t  peq = cm->edge[ii];
+
+    for (int k = 0; k < 3; k++) {
+      dq[ii][k] = dfq.meas * dfq.unitv[k];
+      pq[ii][k] = peq.meas * peq.unitv[k];
+    }
+
+  } /* Loop on cell edges */
+
+  /* Compute the upper left part of the local Hodge matrix
+   *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
+   *  or DUAL->PRIMAL space */
+  _compute_aniso_hodge_ul(cm->n_ec, 3*h_info.coef*h_info.coef, 1./cm->vol_c,
+                          (const cs_real_t (*)[3])pq,
+                          (const cs_real_t (*)[3])dq,
+                          cb, hloc);
+
+  for (int ei = 0; ei < cm->n_ec; ei++) { /* Loop on cell edges I */
+
+    const short int  *v_sgn = cm->e2v_sgn + ei;
+    const short int  *v_ids = cm->e2v_ids + 2*ei;
+    const short int  i1 = v_ids[0], i2 = v_ids[1];
+    assert(i1 < i2);
+
+    double  *si1 = sloc->val + i1*sloc->n_rows;
+    double  *si2 = sloc->val + i2*sloc->n_rows;
+
+    /* Diagonal value: consistency part has already been computed */
+    const double  *hii = hloc->val + ei*(1 + cm->n_ec);
+    const double  dval = hii[0];
+
+    si1[i1] += dval;
+    si1[i2] -= dval;
+    si2[i2] += dval;
+
+    /* Compute extra-diag entries */
+    for (int _j = 1; _j < cm->n_ec-ei; _j++) { /* Loop on cell entities J */
+
+      const short int  j1 = v_ids[2*_j], j2 = v_ids[2*_j+1];
+      assert(j1 < j2);
+
+      double  *sj1 = sloc->val + j1*sloc->n_rows;
+      double  *sj2 = sloc->val + j2*sloc->n_rows;
+
+      /* Add contribution from the stabilization part for each sub-volume
+         related to a primal entity */
+      const double xval = hii[_j] * v_sgn[0]*v_sgn[_j];
+
+      if (i2 < j1) {            /* i1 < i2 < j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= xval;
+        si2[j2] += xval;
+      }
+      else if (i2 == j1) {      /* i1 < i2 = j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= 2*xval;
+        si2[j2] += xval;
+      }
+      else if (i2 < j2) {
+
+        assert(i2 > j1);
+        if (i1 < j1)            /* i1 < j1 < i2 < j2 */
+          si1[j1] += xval;
+        else if (i1 == j1)      /* i1 = j1 < i2 < j2 */
+          si1[j1] += 2*xval;
+        else                    /* j1 < i1 < i2 < j2 */
+          sj1[i1] += xval;
+
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += xval;
+
+      }
+      else if (i2 == j2) {
+
+        if (i1 < j1)            /* i1 < j1 < i2 = j2 */
+          si1[j1] += xval;
+        else                    /* j1 < i1 < i2 = j2 */
+          sj1[i1] += xval;
+
+        /* Remark: the case i1 == j1 is not possible since ei != ej */
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += 2*xval;
+
+      }
+      else {                    /* i2 > j2 */
+
+        if (i1 < j1) {          /* i1 < j1 < j2 < i2 */
+          si1[j1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j1) {    /* i1 = j1 < j2 < i2 */
+          si1[j1] += 2*xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 < j2) {     /* j1 < i1 < j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j2) {    /* j1 < i1 = j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= 2*xval;
+        }
+        else {                  /* j1 < j2 < i1 < i2 */
+          sj1[i1] += xval;
+          sj2[i1] -= xval;
+        }
+
+        assert(i2 > j2);
+        sj1[i2] -= xval;
+        sj2[i2] += xval;
+
+      } /* End of tests */
+
+    } /* End of loop on J entities */
+
+  } /* End of loop on I entities */
+
+  /* Stiffness matrix is symmetric by construction */
+  for (int ei = 0; ei < sloc->n_rows; ei++) {
+    double *si = sloc->val + ei*sloc->n_rows;
+    for (int ej = 0; ej < ei; ej++)
+      si[ej] = sloc->val[ej*sloc->n_rows + ei];
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
+    _check_stiffness(sloc);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
