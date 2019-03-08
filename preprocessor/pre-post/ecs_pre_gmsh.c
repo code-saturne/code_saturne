@@ -365,7 +365,7 @@ ecs_loc_pre_gmsh__lit_vers_format(ecs_file_t     *fic_maillage,
            "  Size given for real numbers: %d\n\n"),
          fversion, taille_coo);
 
-  *version = (int) fversion;
+  *version = (int) (fversion*10 + 1e-3);
 
   if (*type == 1) {
 
@@ -615,6 +615,7 @@ _read_entities(int             n_phys_names_max,
                const char    **phys_name,
                ecs_file_t     *mesh_file,
                int            *line_num,
+               int             version_fmt_gmsh,
                int             type_fmt_gmsh,
                int             fam_shift[ECS_N_ENTMAIL],
                ecs_famille_t  *vect_famille_tete[ECS_N_ENTMAIL])
@@ -623,6 +624,8 @@ _read_entities(int             n_phys_names_max,
   int    retval;
 
   unsigned long  _n_elts[4] = {0, 0, 0, 0};
+
+  int  n_vtx_b_coo = (version_fmt_gmsh < 41) ? 6 : 3;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -645,7 +648,7 @@ _read_entities(int             n_phys_names_max,
     if (retval != 4)
       ecs_error(__FILE__, __LINE__, 0,
                 _("Error decoding line %ld of file\n\"%s\" :\n"
-                  "The information on entitiess form "
+                  "The information on entities form "
                   "\"numPoints numCurves numSurfaces numVolumes\"."),
                 (long)(*line_num), ecs_file_get_name(mesh_file));
 
@@ -666,6 +669,8 @@ _read_entities(int             n_phys_names_max,
 
     int  ifam_max = 0;
     ecs_int_t  ifam_ent = -1;
+
+    const int n_coo = (l == 0) ? n_vtx_b_coo : 6;
 
     if (l == 2)
       ifam_ent = ECS_ENTMAIL_FAC;
@@ -698,7 +703,7 @@ _read_entities(int             n_phys_names_max,
         if (ifam_ent > -1 && tag > ifam_max)
           ifam_max = tag;
 
-        for (int m = 0; m < 6; m++) { /* bounding box (unused here) */
+        for (int m = 0; m < n_coo; m++) { /* coords or bounding box (unused here) */
           ssch = strtok(NULL, " ");
           if (ssch == NULL) {
             err = 1;
@@ -778,7 +783,7 @@ _read_entities(int             n_phys_names_max,
 
         /* bounding box (unused here) */
         double bbox[6];
-        ecs_file_read(bbox, sizeof(double), 6, mesh_file);
+        ecs_file_read(bbox, sizeof(double), l, mesh_file);
 
         unsigned long n_phys = 0;
         ecs_file_read(&n_phys, sizeof(unsigned long), 1, mesh_file);
@@ -854,10 +859,6 @@ _read_entities(int             n_phys_names_max,
               _("The end of the entities specification of file\n"
                 "\"%s\" is not present at the expected place.)"),
               ecs_file_get_name(mesh_file));
-
-  /* Return values */
-
-  return vect_famille_tete;
 }
 
 /*----------------------------------------------------------------------------
@@ -866,6 +867,7 @@ _read_entities(int             n_phys_names_max,
 
 static void
 ecs_loc_pre_gmsh__lit_nodes_v4(ecs_maillage_t   *maillage,
+                               int               version_fmt_gmsh,
                                ecs_file_t       *fic_maillage,
                                int               type_fmt_gmsh,
                                int              *num_ligne,
@@ -933,33 +935,90 @@ ecs_loc_pre_gmsh__lit_nodes_v4(ecs_maillage_t   *maillage,
            (long)(*num_ligne), ecs_file_get_name(fic_maillage),
            eb);
 
-      for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
+      if (version_fmt_gmsh < 41) {
 
-        ecs_file_gets(chaine,
-                      ECS_LOC_LNG_MAX_CHAINE_GMSH,
-                      fic_maillage,
-                      num_ligne);
+        for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
 
-        int label;
-        retour = sscanf(chaine,"%d %lg %lg %lg",
-                        &label, coord, coord+1, coord+2);
+          ecs_file_gets(chaine,
+                        ECS_LOC_LNG_MAX_CHAINE_GMSH,
+                        fic_maillage,
+                        num_ligne);
 
-        if (retour != 4)
-          ecs_error(__FILE__, __LINE__, 0,
-                    _("Error decoding line %ld of file\n\"%s\" :\n"
-                      "The description of point <%ld> was expected in the form "
-                      "\"label x y z\"."),
-                    (long)(*num_ligne), ecs_file_get_name(fic_maillage),
-                    (long)(ind_nod+1));
+          int label;
+          retour = sscanf(chaine,"%d %lg %lg %lg",
+                          &label, coord, coord+1, coord+2);
 
-        /* Étiquette du noeud lu */
+          if (retour != 4)
+            ecs_error(__FILE__, __LINE__, 0,
+                      _("Error decoding line %ld of file\n\"%s\" :\n"
+                        "The description of point <%ld> was expected in the form "
+                        "\"label x y z\"."),
+                      (long)(*num_ligne), ecs_file_get_name(fic_maillage),
+                      (long)(ind_nod+1));
 
-        (*som_val_label)[ind_nod] = (ecs_int_t)label;
+          /* Étiquette du noeud lu */
 
-        /* Coordonnées du noeud lu */
+          (*som_val_label)[ind_nod] = (ecs_int_t)label;
 
-        for (icoo = 0; icoo < 3; icoo++)
-          som_val_coord[ind_nod * 3 + icoo] = (ecs_coord_t)(coord[icoo]);
+          /* Coordonnées du noeud lu */
+
+          for (icoo = 0; icoo < 3; icoo++)
+            som_val_coord[ind_nod * 3 + icoo] = (ecs_coord_t)(coord[icoo]);
+
+        }
+
+      }
+      else {
+
+        for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
+
+          ecs_file_gets(chaine,
+                        ECS_LOC_LNG_MAX_CHAINE_GMSH,
+                        fic_maillage,
+                        num_ligne);
+
+          unsigned long label;
+          retour = sscanf(chaine, "%lu", &label);
+
+          if (retour != 1)
+            ecs_error(__FILE__, __LINE__, 0,
+                      _("Error decoding line %ld of file\n\"%s\" :\n"
+                        "The point <%ld> label was expected in the form "
+                        "\"label\"."),
+                      (long)(*num_ligne), ecs_file_get_name(fic_maillage),
+                      (long)(ind_nod+1));
+
+          /* Étiquette du noeud lu */
+
+          (*som_val_label)[ind_nod] = (ecs_int_t)label;
+
+        }
+
+        ind_nod -= n_ent_nodes;
+
+        for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
+
+          ecs_file_gets(chaine,
+                        ECS_LOC_LNG_MAX_CHAINE_GMSH,
+                        fic_maillage,
+                        num_ligne);
+
+          retour = sscanf(chaine, "%lg %lg %lg", coord, coord+1, coord+2);
+
+          if (retour != 3)
+            ecs_error(__FILE__, __LINE__, 0,
+                      _("Error decoding line %ld of file\n\"%s\" :\n"
+                        "The point <%ld> coordinates were expected in the form "
+                        "\"x y z\"."),
+                      (long)(*num_ligne), ecs_file_get_name(fic_maillage),
+                      (long)(ind_nod+1));
+
+          /* Coordonnées du noeud lu */
+
+          for (icoo = 0; icoo < 3; icoo++)
+            som_val_coord[ind_nod * 3 + icoo] = (ecs_coord_t)(coord[icoo]);
+
+        }
 
       }
 
@@ -989,17 +1048,37 @@ ecs_loc_pre_gmsh__lit_nodes_v4(ecs_maillage_t   *maillage,
       ecs_file_read(buf_i, sizeof(int), 3, fic_maillage);
       ecs_file_read(&n_ent_nodes, sizeof(unsigned long), 1, fic_maillage);
 
-      for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
+      if (version_fmt_gmsh < 41) {
 
-        int label;
-        double xyz[3];
+        for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
 
-        ecs_file_read(&label, sizeof(int), 1, fic_maillage);
-        ecs_file_read(&xyz, sizeof(double), 3, fic_maillage);
+          int label;
+          double xyz[3];
 
-        (*som_val_label)[ind_nod] = label;
-        for (icoo = 0; icoo < 3; icoo++)
-          som_val_coord[ind_nod * 3 + icoo] = xyz[icoo];
+          ecs_file_read(&label, sizeof(int), 1, fic_maillage);
+          ecs_file_read(&xyz, sizeof(double), 3, fic_maillage);
+
+          (*som_val_label)[ind_nod] = label;
+          for (icoo = 0; icoo < 3; icoo++)
+            som_val_coord[ind_nod * 3 + icoo] = xyz[icoo];
+
+        }
+
+      }
+      else {
+
+        for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
+          size_t label;
+          ecs_file_read(&label, sizeof(size_t), 1, fic_maillage);
+          (*som_val_label)[ind_nod] = label;
+        }
+
+        for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
+          double xyz[3];
+          ecs_file_read(&xyz, sizeof(double), 3, fic_maillage);
+          for (icoo = 0; icoo < 3; icoo++)
+            som_val_coord[ind_nod * 3 + icoo] = xyz[icoo];
+        }
 
       }
 
@@ -1089,6 +1168,8 @@ ecs_loc_pre_gmsh__lit_elements(ecs_maillage_t  *maillage,
   ecs_int_t cpt_point = 0;
 
   bool       ligne_decodee = true;
+
+  int _version_fmt = version_fmt_gmsh / 10;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1205,7 +1286,7 @@ ecs_loc_pre_gmsh__lit_elements(ecs_maillage_t  *maillage,
 
       coul_elt = 0;
 
-      if (version_fmt_gmsh == 2) {
+      if (_version_fmt == 2) {
 
         ssch   = strtok(NULL, " ");
         if (ssch == NULL)
@@ -1979,7 +2060,7 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
 
   /* Par défaut, la version est 1.0 en ASCII */
 
-  version_fmt_gmsh = 1;
+  version_fmt_gmsh = 10;
   type_fmt_gmsh = 0;
 
   /* Ouverture du fichier Gmsh en lecture */
@@ -2027,6 +2108,7 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
                      (const char**)phys_name,
                      fic_maillage,
                      &num_ligne,
+                     version_fmt_gmsh,
                      type_fmt_gmsh,
                      fam_shift,
                      vect_famille);
@@ -2051,8 +2133,9 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
     else if (   (strncmp(chaine, "$Nodes", strlen("$Nodes")) == 0)
              || (strncmp(chaine, "$NOD", strlen("$NOD")) == 0)) {
 
-      if (version_fmt_gmsh == 4)
+      if (version_fmt_gmsh/10 == 4)
         ecs_loc_pre_gmsh__lit_nodes_v4(maillage,
+                                       version_fmt_gmsh,
                                        fic_maillage,
                                        type_fmt_gmsh,
                                        &num_ligne,
@@ -2073,7 +2156,7 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
     else if (   (strncmp(chaine, "$Elements", strlen("$Elements")) == 0)
              || (strncmp(chaine, "$ELM", strlen("$ELM")) == 0)) {
 
-      if (version_fmt_gmsh == 4)
+      if (version_fmt_gmsh/10 == 4)
         ecs_loc_pre_gmsh__lit_elements_v4(maillage,
                                           fic_maillage,
                                           type_fmt_gmsh,
@@ -2128,7 +2211,7 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
   /* Transformation des familles en attributs "groupe" */
   /*---------------------------------------------------*/
 
-  if (version_fmt_gmsh == 4)
+  if (version_fmt_gmsh/10 == 4)
     ecs_maillage__cree_attributs(maillage);
 
   for (int i = 0; i < n_phys_names; i++)
