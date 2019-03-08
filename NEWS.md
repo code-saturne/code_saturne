@@ -42,6 +42,10 @@ Bug fixes:
 
 - Fix in TVD convective schemes in parallel mode.
 
+Architectural changes:
+
+- Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
+
 Release 5.3.2 - January 29, 2019
 --------------------------------
 
