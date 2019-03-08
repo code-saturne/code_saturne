@@ -111,6 +111,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
+
 - Handle mathematical expression in GUI by generating corresponding C code
   then inserted in a cs_meg_..._function.c file compiled with other run
   sources. This drastically improves performance when using MEI.
