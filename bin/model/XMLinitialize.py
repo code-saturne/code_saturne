@@ -570,6 +570,7 @@ class XMLinit(Variables):
                         nf.xmlSetTextNode(content)
 
         # update velocity node
+        self.__XMLVelocityPressureNode = XMLThermoPhysicalNode.xmlInitNode('velocity_pressure')
         nodeV = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity_U")
         if nodeV:
             nodeV['name'] = 'velocity'
