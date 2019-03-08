@@ -98,6 +98,14 @@ cs_paramedmem_interpkernel_create(const char  *name,
                                   int         *grp2_global_ranks,
                                   int          grp2_size);
 
+
+/*----------------------------------------------------------------------------
+ * Get a ParaMEDMEM coupling instance by its id
+ *
+ *----------------------------------------------------------------------------*/
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_by_id(int pc_id);
+
 /*----------------------------------------------------------------------------
  * Define new ParaMEDMEM coupling.
  *
