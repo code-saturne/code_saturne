@@ -92,6 +92,10 @@ if test "x$with_catalyst" != "xno" ; then
   #-----------------------------
 
   cs_prv_dir=`pwd`
+  rm -rf "$cs_prv_dir"/catalyst_test
+  rm -rf "$cs_prv_dir"/CMakeFiles
+  rm -rf "$cs_prv_dir"/CMakeCache.txt
+
   cs_abs_srcdir=`cd $srcdir && pwd`
 
   mkdir catalyst_test && cd catalyst_test
@@ -122,11 +126,6 @@ if test "x$with_catalyst" != "xno" ; then
 
   fi
 
-  cd "$cs_prv_dir"
-  rm -rf "$cs_prv_dir"/catalyst_test
-  rm -rf "$cs_prv_dir"/CMakeFiles
-  rm -rf "$cs_prv_dir"/CMakeCache.txt
-
   # Report Catalyst support
   #------------------------
 
@@ -142,6 +141,11 @@ if test "x$with_catalyst" != "xno" ; then
       AC_MSG_WARN([no Catalyst co-processing support])
     fi
   fi
+
+  cd "$cs_prv_dir"
+  rm -rf "$cs_prv_dir"/catalyst_test
+  rm -rf "$cs_prv_dir"/CMakeFiles
+  rm -rf "$cs_prv_dir"/CMakeCache.txt
 
   if test "x$cs_have_catalyst" = "xno"; then
     CATALYST_LIBS=""
