@@ -86,8 +86,11 @@
 using namespace MEDCoupling;
 
 /*=============================================================================
- * Local Macro Definitions
+ * Private global variables
  *============================================================================*/
+
+static int                          _n_paramed_couplers = 0;
+static cs_paramedmem_coupling_t   **_paramed_couplers = NULL;
 
 /*=============================================================================
  * Local Structure Definitions
@@ -159,6 +162,9 @@ struct _cs_paramedmem_coupling_t {
 
   InterpKernelDEC           *send_dec;       /* Send data exchange channel */
   InterpKernelDEC           *recv_dec;       /* Receive data exchange channel */
+
+  int                       send_synced;
+  int                       recv_synced;
 };
 
 /*----------------------------------------------------------------------------
@@ -331,13 +337,23 @@ cs_paramedmem_create(const char       *name,
  *   pointer to new coupling object
  *----------------------------------------------------------------------------*/
 
-cs_paramedmem_coupling_t *
-cs_paramedmem_interpkernel_create(const char  *name,
-                                  int         *grp1_global_ranks,
-                                  int          grp1_size,
-                                  int         *grp2_global_ranks,
-                                  int          grp2_size)
+static void
+_add_paramedmem_interpkernel(const char  *name,
+                             int         *grp1_global_ranks,
+                             int          grp1_size,
+                             int         *grp2_global_ranks,
+                             int          grp2_size)
 {
+
+  if (_paramed_couplers == NULL)
+    BFT_MALLOC(_paramed_couplers,
+               1,
+               cs_paramedmem_coupling_t *);
+  else
+    BFT_REALLOC(_paramed_couplers,
+                _n_paramed_couplers + 1,
+                cs_paramedmem_coupling_t *);
+
   cs_paramedmem_coupling_t *c = NULL;
 
   /* Add corresponding coupling to temporary ICoCo couplings array */
@@ -352,6 +368,9 @@ cs_paramedmem_interpkernel_create(const char  *name,
 
   c->n_fields = 0;
   c->fields = NULL;
+
+  c->send_synced = 0;
+  c->recv_synced = 0;
 
   bool is_in_grp1 = false;
   int my_rank;
@@ -385,6 +404,37 @@ cs_paramedmem_interpkernel_create(const char  *name,
                                                         grp1_global_ranks,
                                                         grp1_size);
   }
+
+  _paramed_couplers[_n_paramed_couplers] = c;
+
+  _n_paramed_couplers++;
+
+}
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_by_id(int  pc_id)
+{
+
+  cs_paramedmem_coupling_t * c = _paramed_couplers[pc_id];
+
+  return c;
+
+}
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_interpkernel_create(const char  *name,
+                                  int         *grp1_global_ranks,
+                                  int          grp1_size,
+                                  int         *grp2_global_ranks,
+                                  int          grp2_size)
+{
+  _add_paramedmem_interpkernel(name,
+                              grp1_global_ranks,
+                              grp1_size,
+                              grp2_global_ranks,
+                              grp2_size);
+
+  cs_paramedmem_coupling_t *c = _paramed_couplers[_n_paramed_couplers-1];
 
   return c;
 }
@@ -828,8 +878,11 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *coupling,
   /*-----------------------*/
 
   if (! on_parent) {
-    for (cs_lnum_t i = 0; i < dim*mesh->n_elts; i++)
-      field_values[i] = val_ptr[i];
+    for (cs_lnum_t i = 0; i < mesh->n_elts; i++)
+      for (int j = 0; j < dim; j++) {
+        cs_lnum_t c_id = mesh->new_to_old[i];
+        field_values[dim*c_id+j] = val_ptr[i*dim + j];
+      }
   }
   else {
     for (cs_lnum_t i = 0; i < mesh->n_elts; i++) {
@@ -855,9 +908,13 @@ cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *coupling,
                        int                        dec_to_sync)
 {
   if (dec_to_sync == 1) {
-    coupling->send_dec->synchronize();
-  } else {
+    if (coupling->send_synced == 0) {
+      coupling->send_dec->synchronize();
+      coupling->send_synced = 1;
+    }
+  } else if (coupling->recv_synced == 0) {
     coupling->recv_dec->synchronize();
+    coupling->recv_synced = 1;
   }
 }
 
