@@ -197,6 +197,7 @@ fvm_to_vtk_display_histogram_png(cs_real_t                   var_min,
 
 /*----------------------------------------------------------------------------*/
 
+END_C_DECLS
+
 #endif /* HAVE_CATALYST */
 
-END_C_DECLS
