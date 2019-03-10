@@ -938,9 +938,11 @@ do while (iterns.le.nterup)
   !  constant ou variable
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call coupbo(itherm, cvcst, hbord, theipb)
+    if (isvhb.gt.0) then
+      call coupbo(itherm, cvcst, hbord, theipb)
+    endif
 
-    if (nfpt1t.gt.0) then
+    if (iscalt.gt.0 .and. nfpt1t.gt.0) then
       call cou1do(cvcst, hbord, theipb)
 
       if (iirayo.ge.1) call cou1di(nfabor, iscalt, icodcl, rcodcl)

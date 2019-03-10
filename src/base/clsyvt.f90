@@ -89,7 +89,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -105,10 +104,11 @@ implicit none
 
 integer          nscal
 
-integer          icodcl(nfabor,nvar)
+integer, pointer, dimension(:,:) :: icodcl
 
-double precision rcodcl(nfabor,nvar,3)
-double precision velipb(nfabor,ndim), rijipb(nfabor,6)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:,:) :: velipb
+double precision, pointer, dimension(:,:) :: rijipb
 
 ! Local variables
 
