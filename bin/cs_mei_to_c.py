@@ -146,7 +146,6 @@ _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
                     'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
 
 
-
 #===============================================================================
 # Main class
 #===============================================================================
@@ -207,6 +206,190 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def find_c_comment_close(self, l, c_id, quotes):
+        """
+        Return index in given string of closing C-style comment,
+        or -1 if not found after given c_id column.
+        Escape characters or strings are handled.
+        """
+
+        w = len(l)
+
+        while c_id < w:
+
+            # Quoting (highest priority);
+            # left inside expressions, but separators in quoted
+            # regions are not considered as separators.
+
+            if l[c_id] == "\\": # use 'e' to represent escape character
+                if quotes[0] == "e":
+                    quotes.pop(0)
+                else:
+                    quotes.insert(0, "e")
+            elif l[c_id] == "'":
+                if quotes[0] == "'":
+                    quotes.pop(0)
+                else:
+                    quotes.insert(0, "'")
+            elif l[c_id] == '"':
+                if quotes[0] == '"':
+                    quotes.pop(0)
+                else:
+                    quotes.insert(0, "'")
+
+            elif quotes[0] == ' ': # found
+                if l[c_id] == '*':
+                    if c_id+1 < w:
+                        if l[c_id+1] == '/':
+                            return c_id
+
+            c_id += 1
+
+        return -1
+
+    #---------------------------------------------------------------------------
+
+    def separate_statements(self, lines):
+        """
+        Separate statements based on expected statement separators.
+        This stage is not a parser, but simply splits lines into statements,
+        separating comments (allowing for Python, C, and C++ style comments),
+        and checking for quoting or escape characters.
+        Returns a list of tuples containing the statements, and matching
+        start line and column indexes in the original expression.
+        """
+
+        whitespace = (' ', '\t', '\n', '\l')
+        separators = ('{', '}', ';')
+        statements = []
+
+        in_multiline_comment = False
+        quotes = [' ']
+
+        # Loop on lines
+
+        l_id = 0
+        for l in lines:
+
+            w = len(l)
+
+            # Loop on columns
+
+            s_id = 0
+            c_id = 0
+            while c_id < w:
+
+                # Quoting (highest priority);
+                # left inside statements, but separators in quoted
+                # regions are not considered as separators.
+
+                if l[c_id] == "\\": # use 'e' to represent escape character
+                    if quotes[0] == "e":
+                        quotes.pop(0)
+                    else:
+                        quotes.insert(0, "e")
+                elif l[c_id] == "'":
+                    if quotes[0] == "'":
+                        quotes.pop(0)
+                    else:
+                        quotes.insert(0, "'")
+                elif l[c_id] == '"':
+                    if quotes[0] == '"':
+                        quotes.pop(0)
+                    else:
+                        quotes.insert(0, "'")
+
+                if quotes[0] != ' ':
+                    if quotes[0] == 'e' and l[c_id] in whitespace:
+                        # escape character may be a line continuation character
+                        # in this case; handle it like a separator
+                        statements.append(('\\', l_id, c_id))
+                        c_id += 1
+                        s_id = c_id
+                    continue
+
+                # In multiline C-style comment
+                # (transform to '#' for easier testing)
+
+                elif in_multiline_comment:
+                    j = self.find_c_comment_close(l, c_id, quotes)
+                    if j >= 0: # on same line
+                        j += 2
+                        in_multiline_comment = False
+                    else:
+                        j = w
+                    statements.append(('# ' + l[c_id:j].strip(), l_id, c_id))
+                    c_id = j
+                    s_id = c_id
+
+                # Whitespace (handle here rather than using strip()
+                # type functions to keep track of expression start columns
+
+                elif l[c_id] in whitespace:
+                    if s_id == c_id:
+                        s_id += 1
+                    c_id += 1
+                    continue
+
+                # Comments (allow C/C++ style, transform all to '#'
+                # for easier testing)
+
+                elif l[c_id] == '#':
+                    e = l[s_id:c_id].strip()
+                    if len(e):
+                        statements.append((e, l_id, s_id))
+                    statements.append((l[c_id:].strip(), l_id, c_id))
+                    c_id = w
+                    s_id = c_id
+
+                elif l[c_id:c_id+2] in ('//', '/*'):
+                    e = l[s_id:c_id].strip()
+                    if len(e):
+                        statements.append((e, l_id, s_id))
+                    if l[c_id:c_id+2] == '//':
+                        statements.append(('# ' + l[c_id+2:].strip(),
+                                           l_id, c_id))
+                        c_id = w
+                        s_id = c_id
+                    else:
+                        j = self.find_c_comment_close(l, c_id+2, quotes)
+                        if j >= 0: # on same line
+                            statements.append(('# ' + l[c_id+2:j].strip(),
+                                               l_id, c_id))
+                            j += 2
+                        else:
+                            j = w
+                            statements.append(('# ' + l[c_id+2:j].strip(),
+                                               l_id, c_id))
+                            in_multiline_comment = True
+                        c_id = j
+                        s_id = c_id
+
+                else:
+
+                    if l[c_id] in separators:
+                        e = l[s_id:c_id].strip()
+                        if len(e):
+                            statements.append((e, l_id, s_id))
+                        statements.append((l[c_id:c_id+1], l_id, c_id))
+                        c_id += 1
+                        s_id = c_id
+                    else:
+                        c_id += 1
+
+            # End of loop on line:
+
+            if s_id < c_id:
+                e = l[s_id:c_id].strip()
+                if len(e):
+                    statements.append((e, l_id, s_id))
+
+            l_id += 1
+
+        return statements
+
+    #---------------------------------------------------------------------------
+
     def parse_parentheses(self, line):
 
         istart = []
@@ -228,7 +411,7 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def search_and_replace_power(self,line):
+    def search_and_replace_power(self, line):
 
         symbs = ['+', '-', '*', '/', ' ', ';', '{', '}']
         ps = [i for i, l in enumerate(line) if l == '^']
@@ -368,6 +551,27 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def split_for_assignment(self,
+                             l):
+        """
+        Check for assignemnt (separating along = but not >=, <=)
+        """
+        lf = []
+        c_idx = 0
+        s_idx = 0
+        e_idx = len(l)
+        for c_idx in range(e_idx):
+            if l[c_idx] == '=':
+                if c_idx > 0 and l[c_idx-1] not in ('>', '<'):
+                    lf.append(l[s_idx:c_idx])
+                    s_idx = c_idx+1
+        if s_idx < e_idx:
+            lf.append(l[s_idx:e_idx])
+
+        return lf
+
+    #---------------------------------------------------------------------------
+
     def parse_gui_expression(self,
                              expression,
                              req,
@@ -387,25 +591,43 @@ class mei_to_c_interpreter:
         # ------------------------------------
         # Parse the Mathematical expression and generate the C block code
         exp_lines = expression.split("\n")
+        statements = self.separate_statements(exp_lines)
+        s_idx = 0
+        s_end = len(statements)
         nreq = len(req)
-        for l in exp_lines:
-            lidx = exp_lines.index(l)
+        for lidx in range(len(exp_lines)):
+
+            # Rebuild line from statements, ignoring comments
+            # statements should be used to improve parsing in the future
+            l = ""
+            while s_idx < s_end:
+                s_l_idx = statements[s_idx][1]
+                if s_l_idx > lidx:
+                    break
+                elif s_l_idx == lidx:
+                    s = statements[s_idx][0]
+                    if s[0] != '#':
+                        l += s + ' '
+                s_idx += 1
+            l = l.rstrip()
 
             # ------------------------------------
             # Check that the line is not empty
             if len(l) > 0:
-                l = l.lstrip()
-                lf = l.split('=')
+
+                # Check for assignemnt (separating along = but not >=, <=)
+                lf = self.split_for_assignment(l)
+
                 # ------------------------------------
-                # Check that the line is not a comment one
-                if len(lf) > 1 and l[0] != "#":
+                # If the line contains an assignment
+                if len(lf) > 1:
                     if lf[0].strip() not in known_symbols:
                         known_symbols.append(lf[0].strip())
                         # Test whether we are inside an if loop or not!
                         if if_open:
                             usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
                         else:
-                            l = 'const cs_real_t '+l
+                            l = 'const cs_real_t '+ l
 
                     elif lf[0].strip() in req:
                         if func_type == 'vol':
@@ -639,9 +861,9 @@ class mei_to_c_interpreter:
 
         # Parse the user expresion
         parsed_exp = self.parse_gui_expression(expression,
-                                              required,
-                                              known_symbols,
-                                              'vol')
+                                               required,
+                                               known_symbols,
+                                               'vol')
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
             usr_defs += parsed_exp[1]
