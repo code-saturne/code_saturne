@@ -122,7 +122,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -147,12 +146,12 @@ implicit none
 
 integer          nscal, isvhb
 
-integer          icodcl(nfabor,nvar)
+integer, pointer, dimension(:,:) :: icodcl
 
-double precision rcodcl(nfabor,nvar,3)
-double precision velipb(nfabor,ndim), rijipb(nfabor,6)
-double precision visvdr(ncelet)
-double precision hbord(nfabor),theipb(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:,:) :: velipb
+double precision, pointer, dimension(:,:) :: rijipb
+double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
 ! Local variables
 
@@ -241,6 +240,26 @@ type(var_cal_opt) :: vcopt
 type(var_cal_opt) :: vcopt_rij, vcopt_ep
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
+                           byplus, buk, buet, bcfnns, hbord, theipb,  &
+                           tetmax , tetmin , tplumx , tplumn)
+
+    implicit none
+    integer          iscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:) :: byplus, buk, buet, bcfnns
+    double precision, pointer, dimension(:) :: hbord, theipb
+    double precision tetmax, tetmin, tplumx, tplumn
+
+  end subroutine clptrg_scalar
+
+ end interface
 
 !===============================================================================
 ! 1. Initializations
@@ -1453,13 +1472,10 @@ do iscal = 1, nscal
 
   if (iscavr(iscal).le.0) then
 
-    call clptrg_scalar &
-    !=================
- ( iscal  , isvhb  , icodcl ,                                     &
-   rcodcl ,                                                       &
-   byplus , buk    , ustar  , bcfnns ,                            &
-   hbord  , theipb ,                                              &
-   tetmax , tetmin , tplumx , tplumn )
+    call clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
+                       byplus, buk, ustar, bcfnns,                &
+                       hbord, theipb,                             &
+                       tetmax, tetmin, tplumx, tplumn)
 
   endif
 
@@ -1676,7 +1692,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -1699,13 +1714,10 @@ implicit none
 ! Arguments
 
 integer          iscal, isvhb
-
-integer          icodcl(nfabor,nvar)
-
-double precision rcodcl(nfabor,nvar,3)
-double precision byplus(nfabor)
-double precision hbord(nfabor), theipb(nfabor)
-double precision buk(nfabor), buet(nfabor), bcfnns(nfabor)
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:) :: byplus, buk, buet, bcfnns
+double precision, pointer, dimension(:) :: hbord, theipb
 double precision tetmax, tetmin, tplumx, tplumn
 
 ! Local variables

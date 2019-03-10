@@ -123,7 +123,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -147,12 +146,12 @@ implicit none
 
 integer          nscal, isvhb
 
-integer          icodcl(nfabor,nvar)
+integer, pointer, dimension(:,:) :: icodcl
 
-double precision rcodcl(nfabor,nvar,3)
-double precision velipb(nfabor,ndim), rijipb(nfabor,6)
-double precision visvdr(ncelet)
-double precision hbord(nfabor),theipb(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:,:) :: velipb
+double precision, pointer, dimension(:,:) :: rijipb
+double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
 ! Local variables
 
@@ -236,6 +235,37 @@ save             ntlast , iaff
 type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine clptur_scalar(iscal, isvhb, icodcl, rcodcl,        &
+                           byplus, bdplus, buk, hbord, theipb,  &
+                           tetmax , tetmin , tplumx , tplumn)
+
+    implicit none
+    integer          iscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:) :: byplus, bdplus, buk
+    double precision, pointer, dimension(:) :: hbord, theipb
+    double precision tetmax, tetmin, tplumx, tplumn
+
+  end subroutine clptur_scalar
+
+  subroutine clptur_vector(iscal, isvhb, icodcl, rcodcl,        &
+                           byplus, bdplus, buk)
+
+    implicit none
+    integer          iscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:) :: byplus, bdplus, buk
+
+  end subroutine clptur_vector
+
+ end interface
 
 !===============================================================================
 ! 1. Initializations
@@ -1709,22 +1739,16 @@ do iscal = 1, nscal
 
     if (f_dim.eq.1) then
 
-      call clptur_scalar &
-   ( iscal  , isvhb  , icodcl ,                                     &
-     rcodcl ,                                                       &
-     byplus , bdplus , buk    ,                                     &
-     hbord  , theipb ,                                              &
-     tetmax , tetmin , tplumx , tplumn )
-
+      call clptur_scalar(iscal, isvhb, icodcl, rcodcl,              &
+                         byplus, bdplus, buk,                       &
+                         hbord, theipb,                             &
+                         tetmax, tetmin, tplumx, tplumn)
 
     ! Vector field
     else
 
-      call clptur_vector &
-   ( iscal  , isvhb  , icodcl ,                                     &
-     rcodcl ,                                                       &
-     byplus , bdplus , buk    ,                                     &
-     hbord  )
+      call clptur_vector(iscal, isvhb, icodcl, rcodcl,              &
+                         byplus, bdplus, buk)
 
     endif
 
@@ -2132,7 +2156,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -2155,12 +2178,11 @@ implicit none
 ! Arguments
 
 integer          iscal, isvhb
+integer, pointer, dimension(:,:) :: icodcl
 
-integer          icodcl(nfabor,nvar)
-
-double precision rcodcl(nfabor,nvar,3)
-double precision byplus(nfabor), bdplus(nfabor)
-double precision hbord(nfabor), theipb(nfabor), buk(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:) :: byplus, bdplus, buk
+double precision, pointer, dimension(:) :: hbord, theipb
 double precision tetmax, tetmin, tplumx, tplumn
 
 ! Local variables
@@ -2838,8 +2860,7 @@ end subroutine
 subroutine clptur_vector &
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
-   byplus , bdplus , buk    ,                                     &
-   hbord  )
+   byplus , bdplus , buk )
 
 !===============================================================================
 ! Module files
@@ -2850,7 +2871,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -2874,12 +2894,10 @@ implicit none
 ! Arguments
 
 integer          iscal, isvhb
+integer, pointer, dimension(:,:) :: icodcl
 
-integer          icodcl(nfabor,nvar)
-
-double precision rcodcl(nfabor,nvar,3)
-double precision byplus(nfabor), bdplus(nfabor), buk(nfabor)
-double precision hbord(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:) :: byplus, bdplus, buk
 
 ! Local variables
 

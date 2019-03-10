@@ -224,7 +224,8 @@ double precision, allocatable, dimension(:) :: tb_save
 character(len=80) :: fname
 
 double precision, dimension(:,:), pointer :: disale
-double precision, allocatable, dimension(:,:) :: velipb, rijipb
+double precision, allocatable, dimension(:,:) :: velipb
+double precision, pointer, dimension(:,:) :: rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:,:) :: gradts
@@ -276,11 +277,50 @@ interface
 
   end subroutine b_h_to_t
 
+  subroutine clptur(nscal, isvhb, icodcl, rcodcl, velipb, rijipb, &
+                    visvdr, hbord, theipb)
+
+    implicit none
+    integer :: nscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:,:) :: velipb
+    double precision, pointer, dimension(:,:) :: rijipb
+    double precision, pointer, dimension(:) :: visvdr, hbord, theipb
+
+  end subroutine clptur
+
+  subroutine clptrg(nscal, isvhb, icodcl, rcodcl, velipb, rijipb, &
+                    visvdr, hbord, theipb)
+
+    implicit none
+    integer :: nscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:,:) :: velipb
+    double precision, pointer, dimension(:,:) :: rijipb
+    double precision, pointer, dimension(:) :: visvdr, hbord, theipb
+
+  end subroutine clptrg
+
+  subroutine clsyvt(nscal, icodcl, rcodcl, velipb, rijipb)
+
+    implicit none
+    integer :: nscal
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:,:) :: velipb
+    double precision, pointer, dimension(:,:) :: rijipb
+
+  end subroutine clsyvt
+
  end interface
 
 !===============================================================================
 ! 0. User calls
 !===============================================================================
+
+rijipb => null()
 
 call precli(nvar, icodcl, rcodcl)
 
@@ -3401,7 +3441,7 @@ endif
 
 ! Free memory
 deallocate(velipb)
-if (allocated(rijipb)) deallocate(rijipb)
+if (associated(rijipb)) deallocate(rijipb)
 
 !===============================================================================
 ! 16. Update of boundary temperature when saved and not a variable.
