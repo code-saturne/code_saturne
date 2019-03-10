@@ -1571,8 +1571,6 @@ $appli/salome kill `cat $port_log`
 
         if len(self.error) > 0:
             self.update_scripts_tmp('preparing', 'failed', self.error)
-            err_str = ' Error in ' + self.error + ' stage.\n\n'
-            sys.stderr.write(err_str)
             return 1
 
         # Setup data
