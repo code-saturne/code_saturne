@@ -197,7 +197,7 @@ _set_scheme_flags(cs_domain_t    *domain)
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                _(" Undefined type of schme to solve for eq. %s."
+                _(" Undefined type of scheme to solve for eq. %s."
                   " Please check your settings."), cs_equation_get_name(eq));
     }
 

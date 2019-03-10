@@ -216,7 +216,7 @@ _get_sg_weight(double  criterion)
 /*!
  * \brief   Retrieve the function related to the kind of upwind weighting
  *
- * \param[in]  scheme    schme used for discretizing the advection term
+ * \param[in]  scheme    scheme used for discretizing the advection term
  *
  * \return  a function pointer
  */
