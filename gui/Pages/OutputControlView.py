@@ -1403,6 +1403,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.checkBoxOutputStart.clicked.connect(self.slotWriterOutputStart)
         self.checkBoxOutputEnd.clicked.connect(self.slotWriterOutputEnd)
         self.checkBoxSeparateMeshes.clicked.connect(self.slotWriterSeparateMeshes)
+        self.checkBoxAllowParallelIO.clicked.connect(self.slotWriterParallelIO)
         self.checkBoxAllVariables.clicked.connect(self.slotAllVariables)
         self.checkBoxAllLagrangianVariables.clicked.connect(self.slotAllLagrangianVariables)
         self.pushButtonFrequency.clicked.connect(self.slotWriterFrequencyFormula)
@@ -2054,6 +2055,28 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.setWriterOptions(writer_id, l)
 
 
+    @pyqtSlot()
+    def slotWriterParallelIO(self):
+        """
+        Writer separate meshes option
+        """
+        row, writer_id, options = self.__WriterOptionsPrelude()
+
+        if not writer_id:  # should not occur
+            return
+
+        if self.checkBoxAllowParallelIO.isChecked():
+            if 'serial_io' in options:
+                options.remove('serial_io')
+        else:
+            if 'serial_io' not in options:
+                options.append('serial_io')
+
+        l = ', '.join(options)
+        log.debug("slotWriterParallelIO")
+        self.mdl.setWriterOptions(writer_id, l)
+
+
     @pyqtSlot(str)
     def slotWriterOptions(self):
         """
@@ -2110,6 +2133,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # update widgets from the options list
 
+        parallel_io = True
         for opt in opts:
             if format == 'ensight' and opt in ['binary', 'big_endian', 'text']:
                 self.modelFormatE.setItem(str_model=opt)
@@ -2121,6 +2145,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.modelPolyhedra.setItem(str_model=opt)
             elif opt == 'separate_meshes':
                 self.checkBoxSeparateMeshes.setChecked(True)
+            elif opt == 'serial_io':
+                parallel_io = False
 
         # default
 
@@ -2144,9 +2170,15 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             else:
                 self.modelPolyhedra.enableItem(str_model='divide_polyhedra')
             self.modelPolyhedra.enableItem(str_model='discard_polyhedra')
+            if format == "med":
+                self.checkBoxAllowParallelIO.show()
+                self.checkBoxAllowParallelIO.setChecked(parallel_io)
+            else:
+                self.checkBoxAllowParallelIO.hide()
             self.comboBoxPolyhedra.show()
             self.labelPolyhedra.show()
         else:
+            self.checkBoxAllowParallelIO.hide()
             self.comboBoxPolygon.hide()
             self.labelPolygon.hide()
             self.comboBoxPolyhedra.hide()

@@ -23,6 +23,8 @@ Changes expected between the current version and 6.0.0 final:
 
 User changes:
 
+- GUI: allow disabling paralel IO for MED output writer.
+
 - GUI: significant reorganization
   * Folders replaced by active pages (with new icons reflecting this)
   * Preprocessor/calculation modes replaced by run type in mesh page
