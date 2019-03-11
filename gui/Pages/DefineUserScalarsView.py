@@ -413,7 +413,7 @@ class StandardItemModelVariance(QStandardItemModel):
         QStandardItemModel.__init__(self)
 
         self.headers = [self.tr("Variance"),
-                        self.tr("Species_Name")]
+                        self.tr("Associated variable")]
 
         self.setColumnCount(len(self.headers))
 
