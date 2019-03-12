@@ -88,45 +88,66 @@ fi
 
 if test "x$with_catalyst" != "xno" ; then
 
-  # Check for a Catalyst library
+  # Check for a Catalyst library (using different CMakeLists variants depending on version)
   #-----------------------------
 
-  cs_prv_dir=`pwd`
-  rm -rf "$cs_prv_dir"/catalyst_test
-  rm -rf "$cs_prv_dir"/CMakeFiles
-  rm -rf "$cs_prv_dir"/CMakeCache.txt
+  for detection_variant in catalyst catalyst-5.6; do
 
-  cs_abs_srcdir=`cd $srcdir && pwd`
+    if test $cs_have_catalyst != yes ; then
 
-  mkdir catalyst_test && cd catalyst_test
-  "$CMAKE" -DCMAKE_PREFIX_PATH="$with_catalyst" "$cs_abs_srcdir/build-aux/catalyst" >&5
+      if test $detection_variant = catalyst ; then
+        cs_catalyst_vers_check="above 5.6"
+      else
+        cs_catalyst_vers_check="5.6 or older"
+      fi
 
-  if test $? = 0 ; then
+      AC_MSG_CHECKING([ParaView/Catalyst version $cs_catalyst_vers_check])
+      unset cs_catalyst_vers_check
 
-    CATALYST_CPPFLAGS=`grep CXX_DEFINES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
-    CATALYST_INCLUDES=`grep CXX_INCLUDES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
-    CATALYST_CPPFLAGS="${CATALYST_CPPFLAGS} ${CATALYST_INCLUDES}"
-    CATALYST_CXXFLAGS=`grep CXX_FLAGS CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
-    cs_link_opts=`sed -e 's/^.*CoProcessingTest//' CMakeFiles/CoProcessingTest.dir/link.txt`
-    for a in $cs_link_opts; do
-      case "{$a}" in
-      -l*) CATALYST_LIBS="${CATALYST_LIBS} ${a}"
-           ;;
-      *)   if test -f "$a" ; then
-             CATALYST_LIBS="${CATALYST_LIBS} -Wl,${a}"
-           else
-             CATALYST_LDFLAGS="${CATALYST_LDFLAGS} ${a}"
-           fi
-           ;;
-      esac
-    done
-    unset cs_link_opts
+      cs_prv_dir=`pwd`
+      rm -rf "$cs_prv_dir"/catalyst_test
+      rm -rf "$cs_prv_dir"/CMakeFiles
+      rm -rf "$cs_prv_dir"/CMakeCache.txt
 
-    cs_have_catalyst=yes;
+      cs_abs_srcdir=`cd $srcdir && pwd`
 
-  fi
+      mkdir catalyst_test && cd catalyst_test
+      "$CMAKE" -DCMAKE_PREFIX_PATH="$with_catalyst" "$cs_abs_srcdir/build-aux/$detection_variant" >&5
 
-  cd "$cs_prv_dir"
+      if test $? = 0 ; then
+
+        CATALYST_CPPFLAGS=`grep CXX_DEFINES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
+        CATALYST_INCLUDES=`grep CXX_INCLUDES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
+        CATALYST_CPPFLAGS="${CATALYST_CPPFLAGS} ${CATALYST_INCLUDES}"
+        CATALYST_CXXFLAGS=`grep CXX_FLAGS CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
+        cs_link_opts=`sed -e 's/^.*CoProcessingTest//' CMakeFiles/CoProcessingTest.dir/link.txt`
+        for a in $cs_link_opts; do
+          case "{$a}" in
+          -l*) CATALYST_LIBS="${CATALYST_LIBS} ${a}"
+               ;;
+          *)   if test -f "$a" ; then
+                 CATALYST_LIBS="${CATALYST_LIBS} -Wl,${a}"
+               else
+                 CATALYST_LDFLAGS="${CATALYST_LDFLAGS} ${a}"
+               fi
+               ;;
+          esac
+        done
+        unset cs_link_opts
+
+      fi
+
+      cd "$cs_prv_dir"
+
+      if test "x$CATALYST_LIBS" != "x" ; then
+        cs_have_catalyst=yes;
+      fi
+
+      AC_MSG_RESULT($cs_have_catalyst)
+
+    fi
+
+  done
 
   # Report Catalyst support
   #------------------------
