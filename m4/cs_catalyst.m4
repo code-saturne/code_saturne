@@ -126,6 +126,8 @@ if test "x$with_catalyst" != "xno" ; then
 
   fi
 
+  cd "$cs_prv_dir"
+
   # Report Catalyst support
   #------------------------
 
@@ -140,9 +142,10 @@ if test "x$with_catalyst" != "xno" ; then
     else
       AC_MSG_WARN([no Catalyst co-processing support])
     fi
+  else
+    AC_MSG_WARN([no Catalyst test as expected])
   fi
 
-  cd "$cs_prv_dir"
   rm -rf "$cs_prv_dir"/catalyst_test
   rm -rf "$cs_prv_dir"/CMakeFiles
   rm -rf "$cs_prv_dir"/CMakeCache.txt
