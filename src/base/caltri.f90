@@ -100,9 +100,6 @@ integer          itrale , ntmsav
 integer          nent
 
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
-integer          isvhb, iscal
-integer          nbccou
-integer          kcpsyr, icpsyr
 
 double precision titer1, titer2
 
@@ -561,30 +558,6 @@ endif
 ! First pass for the BCs:
 ! - initilalize itypfb, reference pressure point...
 !--------------------------------------------------
-! --- Indicateur de stockage d'un scalaire et de son coef
-!     d'echange associe.
-!     Pour le moment, on stocke uniquement dans le cas couplage SYRTHES.
-!     ISVHB donne le numero du scalaire (on suppose qu'il n'y en a qu'un).
-!     Dans le cas ou on a un couplage avec le module thermique 1D en paroi,
-!     on utilise le meme scalaire que celui qui sert a Syrthes (s'il y a
-!     couplage Syrthes), sinon on stocke le scalaire thermique.
-
-call field_get_key_id("syrthes_coupling", kcpsyr)
-
-call nbcsyr (nbccou)
-isvhb = 0
-if (nbccou .ge. 1) then
-  do iscal = 1, nscal
-    call field_get_key_int(ivarfl(isca(iscal)), kcpsyr, icpsyr)
-    if (icpsyr.eq.1) then
-      isvhb = iscal
-    endif
-  enddo
-endif
-
-if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
-  isvhb = iscalt
-endif
 
 ! Deprecated, only for compatibility reason
 nvarcl = nvar
