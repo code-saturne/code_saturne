@@ -550,6 +550,14 @@ if (iporos.ge.1) then
 
 endif
 
+!===============================================================================
+! Initialization for the atmospheric soil model
+!===============================================================================
+
+if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
+  call atmsol()
+endif
+
 ! First pass for the BCs:
 ! - initilalize itypfb, reference pressure point...
 !--------------------------------------------------
@@ -728,14 +736,6 @@ call defsyn(nent)
 
 if (isuisy.eq.1) then
   call lecsyn('les_inflow'//c_null_char)
-endif
-
-!===============================================================================
-! Initialization for the atmospheric soil model
-!===============================================================================
-
-if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
-  call atmsol()
 endif
 
 !===============================================================================
