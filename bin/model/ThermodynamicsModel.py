@@ -535,6 +535,24 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         elif tag == 'temperature':
             return self.getFormulaTemperatureComponents(fieldId)
 
+        elif tag == 'surface_tension':
+            return self.getFormulaStComponents()
+
+        elif tag == 'd_Tsat_d_P':
+            return self.getFormuladTsatdpComponents()
+
+        elif tag == 'LatentHeat':
+            return self.getFormulaHlatComponents()
+
+        elif tag == 'SaturationTemperature':
+            return self.getFormulaTsatComponents()
+
+        elif 'd_Hsat_d_P_' in tag:
+            return self.getFormuladHsatdpComponents(tag)
+
+        elif 'SaturationEnthalpy' in tag:
+            return getFormulaHsatComponents(tag)
+
         else:
             msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
             raise Exception(msg)
@@ -756,6 +774,87 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
         return exp, req, self.list_scalars, symbols
+
+
+    def getFormuladTsatdpComponents(self):
+
+        exp = self.getFormula('none', 'd_Tsat_d_P')
+        label = self.m_out.getVariableLabel('none', 'd_Tsat_d_P')
+        req = [(label, 'Partial derivative of Saturation temperature with respect to pressure')]
+
+        sym = []
+        for s in self.list_scalars:
+            sym.append(s)
+
+        for s in self.m_spe.getScalarNameList():
+            sym.append((s, self.tr("Additional species")))
+
+        return exp, req, self.list_scalars, sym
+
+
+    def getFormulaHlatComponents(self):
+
+        exp = self.getFormula('none', 'LatentHeat')
+        label = self.m_out.getVariableLabel('none', 'LatentHeat')
+        req = [(label, 'latent heat')]
+
+        sym = []
+        for s in self.list_scalars:
+            sym.append(s)
+
+        for s in self.m_spe.getScalarNameList():
+            sym.append((s, self.tr('Additional species')))
+
+        return exp, req, self.list_scalars, sym
+
+
+    def getFormulaTsatComponents(self):
+
+        exp = self.getFormula('none', 'SaturationTemperature')
+        label = self.m_out.getVariableLabel('none', 'SaturationTemperature')
+        req = [(label, 'SaturationTemperature')]
+
+        sym = []
+        for s in self.list_scalars:
+            sym.append(s)
+
+        for s in self.m_spe.getScalarNameList():
+            sym.append((s, self.tr('additional species')))
+
+        return exp, req, self.list_scalars, sym
+
+    def getFormuladHsatdpComponents(self, tag):
+
+        exp = self.getFormula('none', tag)
+
+        label = self.m_out.getVariableLabel('none', tag)
+        req  = [(label, 'Partial derivative of enthalpy of saturation with respect to pressure')]
+
+        sym = []
+        for s in self.list_scalars:
+            sym.append(s)
+
+        for s in self.m_spe.getScalarNameList():
+            sym.append((s, self.tr('Additional species')))
+
+        return exp, req, self.list_scalars, sym
+
+
+    def getFormulaHsatComponents(self, tag):
+
+        label = self.m_out.getVariableLabel('none', tag)
+        exp = self.getFormula('none', tag)
+
+        req = [(label, 'enthalpy of saturation')]
+
+        sym = []
+        for s in self.list_scalars:
+            sym.append(s)
+
+        for s in self.m_spe.getScalarNameList():
+            sym.append((s, self.tr('additional species')))
+
+        return exp, req, self.list_scalars, sym
 
 
     def tr(self, text):

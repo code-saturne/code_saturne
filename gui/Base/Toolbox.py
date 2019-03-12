@@ -120,8 +120,12 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         thisPage = Page.PorosityView(root, case)
 
     elif page_name == tr("Source terms"):
-        import code_saturne.Pages.SourceTermsView as Page
-        thisPage = Page.SourceTermsView(root, case, stbar)
+        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+            import code_saturne.Pages.MainFieldsSourceTermsView as Page
+            thisPage = Page.MainFieldsSourceTermsView(root, case, stbar)
+        else:
+            import code_saturne.Pages.SourceTermsView as Page
+            thisPage = Page.SourceTermsView(root, case, stbar)
 
     elif page_name == tr("Groundwater laws"):
         import code_saturne.Pages.GroundwaterLawView as Page

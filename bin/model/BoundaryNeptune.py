@@ -450,6 +450,60 @@ class InletBoundary(Boundary):
 
 
     @Variables.noUndo
+    def getTurbFormulaComponents(self, fieldId, turbModel):
+
+        exp = self.getTurbFormula(fieldId)
+        sym = [('x','face center coordinate'),
+               ('y','face center coordinate'),
+               ('z','face center coordinate'),
+               ('t','time'),
+               ('dt','time step'),
+               ('iter','number of time step')]
+
+        if turbModel in ('k-epsilon', 'k-epsilon_linear_production'):
+            req = [('k', "turbulent energy"),
+                   ('eps', "turbulent dissipation")]
+
+        elif turbModel in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
+            req = [('R11', "Reynolds stress R11"),
+                   ('R22', "Reynolds stress R22"),
+                   ('R33', "Reynolds stress R33"),
+                   ('R12', "Reynolds stress R12"),
+                   ('R23', "Reynolds stress R13"),
+                   ('R13', "Reynolds stress R23"),
+                   ('eps', "turbulent dissipation")]
+
+        elif turbModel in ('tchen', 'q2-q12'):
+            req = [('q2', "turbulent kinetic energy"),
+                   ('q12', "covariance")]
+
+        elif turbModel in ('r2-q12'):
+            req = [('R11', "Reynolds stress R11"),
+                   ('R22', "Reynolds stress R22"),
+                   ('R33', "Reynolds stress R33"),
+                   ('R12', "Reynolds stress R12"),
+                   ('R23', "Reynolds stress R13"),
+                   ('R13', "Reynolds stress R23"),
+                   ('q12', "covariance")]
+
+        elif turbModel in ('r2-r12-tchen'):
+            req = [('R11', "Reynolds stress R11"),
+                   ('R22', "Reynolds stress R22"),
+                   ('R33', "Reynolds stress R33"),
+                   ('R12', "Reynolds stress R12"),
+                   ('R23', "Reynolds stress R13"),
+                   ('R13', "Reynolds stress R23"),
+                   ('R12-11', "Reynolds stress R11"),
+                   ('R12-22', "Reynolds stress R22"),
+                   ('R12-33', "Reynolds stress R33"),
+                   ('R12-12', "Reynolds stress R12"),
+                   ('R12-13', "Reynolds stress R13"),
+                   ('R12-23', "Reynolds stress R23")]
+
+
+        return exp, req, sym
+
+    @Variables.noUndo
     def getDefaultTurbFormula(self, turb_model):
         """
         Get defaut turbulence formula

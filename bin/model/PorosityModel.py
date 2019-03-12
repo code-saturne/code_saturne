@@ -44,6 +44,7 @@ from code_saturne.model.Common import *
 from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLmodel import ModelTest
 from code_saturne.model.LocalizationModel import LocalizationModel, VolumicLocalizationModel, Zone
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # Porosity model class
@@ -64,6 +65,8 @@ class PorosityModel(Variables, Model):
         self.node_volzone = self.node_domain.xmlGetNode('volumic_conditions')
         self.node_porosit = self.node_models.xmlInitNode('porosities')
 
+
+        self.notebook = NotebookModel(self.case)
         self.choicevalue = ('choice')
 
         self.getNameAndLocalizationZone()
@@ -183,6 +186,31 @@ porosity[YZ]=0.;"""
 
         return formula
 
+
+    @Variables.noUndo
+    def getPorosityFormulaComponents(self, zoneid):
+
+        exp = self.getPorosityFormula(zoneid)
+
+        if self.getPorosityModel(zoneid) == 'isotropic':
+            req = [('porosity', 'Porosity')]
+        else:
+            req = [('porosity', 'Porosity'),
+                   ('porosity[XX]', 'Porosity'),
+                   ('porosity[YY]', 'Porosity'),
+                   ('porosity[ZZ]', 'Porosity'),
+                   ('porosity[XY]', 'Porosity'),
+                   ('porosity[XZ]', 'Porosity'),
+                   ('porosity[YZ]', 'Porosity')]
+
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, [], sym
 
 #-------------------------------------------------------------------------------
 # End
