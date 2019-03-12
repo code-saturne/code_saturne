@@ -1268,18 +1268,12 @@ temperature = enthalpy / 1000;
             name = "SaturationEnthalpyGas"
 
         label = self.m_out.getVariableLabel('none', name)
-        exp = self.mdl.getFormula('none', name)
+
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', name)
+
         if not exp:
             exp = label + " = 0.;"
-        req = [(label, 'enthalpy of saturation')]
         exa = label + " = 0.;"
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        for s in self.m_spe.getScalarNameList():
-            symbols.append((s, self.tr("Additional species")))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1306,19 +1300,13 @@ temperature = enthalpy / 1000;
         else:
             name = "d_Hsat_d_P_Gas"
 
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', name)
+
         label = self.m_out.getVariableLabel('none', name)
-        exp = self.mdl.getFormula('none', name)
         if not exp:
             exp = label + " = 0.;"
-        req = [(label, 'Partial derivative of enthalpy of saturation with respect to pressure')]
         exa = label + " = 0.;"
 
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        for s in self.m_spe.getScalarNameList():
-            symbols.append((s, self.tr("Additional species")))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1339,19 +1327,14 @@ temperature = enthalpy / 1000;
         """
         User formula for temperature of saturation (water-steam flow)
         """
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none',
+                                                               'SaturationTemperature')
+
         label = self.m_out.getVariableLabel('none', 'SaturationTemperature')
-        exp = self.mdl.getFormula('none', 'SaturationTemperature')
         if not exp:
             exp = label + " = 273.15;"
-        req = [(label, 'temperature of saturation')]
         exa = label + " = 273.15;"
 
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        for s in self.m_spe.getScalarNameList():
-            symbols.append((s, self.tr("Additional species")))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1372,19 +1355,11 @@ temperature = enthalpy / 1000;
         """
         User formula for d(Tsat) / dp (water-steam flow)
         """
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none', 'd_Tsat_d_P')
         label = self.m_out.getVariableLabel('none', 'd_Tsat_d_P')
-        exp = self.mdl.getFormula('none', 'd_Tsat_d_P')
         if not exp:
             exp = label + " = 0.;"
-        req = [(label , 'Partial derivative of temperature of saturation with respect to pressure')]
         exa = label + " = 0.;"
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        for s in self.m_spe.getScalarNameList():
-            symbols.append((s, self.tr("Additional species")))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1405,19 +1380,12 @@ temperature = enthalpy / 1000;
         """
         User formula for latent heat (water-steam flow)
         """
+        exp, req, sca, symbols = self.mdl.getFormulaComponents('none',
+                                                               'LatentHeat')
         label = self.m_out.getVariableLabel('none', 'LatentHeat')
-        exp = self.mdl.getFormula('none', 'LatentHeat')
         if not exp:
             exp = label + " = 0.;"
-        req = [(label, 'latent heat')]
         exa = label + " = 0.;"
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        for s in self.m_spe.getScalarNameList():
-            symbols.append((s, self.tr("Additional species")))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

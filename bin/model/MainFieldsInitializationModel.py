@@ -29,6 +29,8 @@ from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import *
 from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
+from code_saturne.model.SpeciesModel import SpeciesModel
+from code_saturne.model.NonCondensableModel import NonCondensableModel
 
 
 class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
@@ -95,6 +97,17 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')
 
+    @Variables.noUndo
+    def getPressureFormulaComponents(self, zone):
+
+        exp = self.getFormulaPressure(zone)
+        req = [('pressure', str('pressure')]
+        sym = [('x', "X cell's gravity center"),
+               ('y', "Y cell's gravity center"),
+               ('z', "Z cell's gravity center")]
+
+        return exp, req, sym
+
 
     @Variables.undoLocal
     def setFormula(self, zone, fieldId, var_name, str):
@@ -120,6 +133,37 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')
+
+
+    @Variables.noUndo
+    def getFormulaComponents(self, zone, fieldId, var_name):
+        exp = self.getFormula(zone, fieldId, var_name)
+
+        if var_name == 'velocity':
+            req = [('u', 'Velocity along X'),
+                   ('v', 'Velocity along Y'),
+                   ('w', 'Velocity along Z')]
+
+            sym = [('x', "X cell's gravity center"),
+                   ('y', "Y cell's gravity center"),
+                   ('z', "Z cell's gravity center")]
+
+        elif var_name == 'volume_fraction':
+            req = [('vol_f', 'volume fraction')]
+
+            sym = [('x', "X cell's gravity center"),
+                   ('y', "Y cell's gravity center"),
+                   ('z', "Z cell's gravity center")]
+
+        elif var_name == 'enthalpy':
+            th_sca_label = self.getEnergyModel(zone, fieldId)
+            req = [(th_sca_label, str(th_sca_label))]
+
+            sym = [('x', "X cell's gravity center"),
+                   ('y', "Y cell's gravity center"),
+                   ('z', "Z cell's gravity center")]
+
+        return exp, req, sym
 
 
     @Variables.undoLocal
@@ -148,6 +192,19 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         return n.xmlGetString('formula')
 
 
+    @Variables.noUndo
+    def getNonCondensableFormulaComponents(self, zone, fieldId, var_name):
+
+        exp   = self.getFormulaNonCondensable(zone, fieldId, var_name)
+        label = NonCondensableModel(self.case).getNonCondLabel(var_name)
+        req   = [(label, str(label))]
+
+        sym = [('x', "X cell's gravity center"),
+               ('y', "Y cell's gravity center"),
+               ('z', "Z cell's gravity center")]
+
+        return exp, req, sym
+
     @Variables.undoLocal
     def setFormulaScalar(self, zone, fieldId, var_name, str):
         """
@@ -172,6 +229,20 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         node = self.XMLScalar.xmlGetNode('variable', field_id=fieldId, name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')
+
+
+    @Variables.noUndo
+    def getScalarFormulaComponents(self, zone, fieldId, var_name):
+
+        exp = self.getFormulaScalar(zone, fieldId, var_name)
+        scalar_label = SpeciesModel(self.case).getScalarLabelByName(var_name)
+        req = [(scalar_label, str(scalar_label))]
+
+        sym = [('x', "X cell's gravity center"),
+               ('y', "Y cell's gravity center"),
+               ('z', "Z cell's gravity center")]
+
+        return exp, req, sym
 
 
     @Variables.undoLocal

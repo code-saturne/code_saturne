@@ -220,31 +220,14 @@ class PorosityView(QWidget, Ui_PorosityForm):
         """
         label, name, local = self.modelPorosity.getItem(self.entriesNumber)
 
-        exp = self.mdl.getPorosityFormula(name)
-
         choice = self.mdl.getPorosityModel(name)
+
+        exp, req, sca, sym = self.mdl.getPorosityFormulaComponents(name)
 
         if exp == None:
             exp = self.getDefaultPorosityFormula(choice)
 
-        if choice == "isotropic":
-            req = [('porosity', 'Porosity')]
-        else:
-            req = [('porosity', 'Porosity'),
-                   ('porosity[XX]', 'Porosity'),
-                   ('porosity[YY]', 'Porosity'),
-                   ('porosity[ZZ]', 'Porosity'),
-                   ('porosity[XY]', 'Porosity'),
-                   ('porosity[XZ]', 'Porosity'),
-                   ('porosity[YZ]', 'Porosity')]
         exa = """#example: \n""" + self.mdl.getDefaultPorosityFormula(choice)
-
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

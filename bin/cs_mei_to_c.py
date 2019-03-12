@@ -125,6 +125,11 @@ _block_comments = {'vol':'User defined formula for variable %s over zone %s',
                    'src':'User defined source term for %s over zone %s',
                    'ini':'User defined initialization for variable %s over zone %s'}
 
+_func_short_to_long = {'vol':'volume zone',
+                       'bnd':'boundary',
+                       'src':'source term',
+                       'ini':'initialization'}
+
 #-------------------------------------------------------------------------------
 
 _cs_math_internal_name = {'abs':'cs_math_fabs',
@@ -144,6 +149,441 @@ _pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
 
 _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
                     'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
+
+
+#===============================================================================
+# Utility functions
+#===============================================================================
+
+#---------------------------------------------------------------------------
+
+def break_expression(exp):
+
+    expression_lines = []
+
+    for line in exp.split('\n'):
+        line_comp = []
+        for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,|\^|<|>',line):
+            if elt != '':
+                line_comp.append(elt.strip())
+
+        expression_lines.append(line_comp)
+
+    return expression_lines
+
+#---------------------------------------------------------------------------
+
+def find_c_comment_close(l, c_id, quotes):
+    """
+    Return index in given string of closing C-style comment,
+    or -1 if not found after given c_id column.
+    Escape characters or strings are handled.
+    """
+
+    w = len(l)
+
+    while c_id < w:
+
+        # Quoting (highest priority);
+        # left inside expressions, but separators in quoted
+        # regions are not considered as separators.
+
+        if l[c_id] == "\\": # use 'e' to represent escape character
+            if quotes[0] == "e":
+                quotes.pop(0)
+            else:
+                quotes.insert(0, "e")
+        elif l[c_id] == "'":
+            if quotes[0] == "'":
+                quotes.pop(0)
+            else:
+                quotes.insert(0, "'")
+        elif l[c_id] == '"':
+            if quotes[0] == '"':
+                quotes.pop(0)
+            else:
+                quotes.insert(0, "'")
+
+        elif quotes[0] == ' ': # found
+            if l[c_id] == '*':
+                if c_id+1 < w:
+                    if l[c_id+1] == '/':
+                        return c_id
+
+        c_id += 1
+
+    return -1
+
+#---------------------------------------------------------------------------
+
+def separate_statements(lines):
+    """
+    Separate statements based on expected statement separators.
+    This stage is not a parser, but simply splits lines into statements,
+    separating comments (allowing for Python, C, and C++ style comments),
+    and checking for quoting or escape characters.
+    Returns a list of tuples containing the statements, and matching
+    start line and column indexes in the original expression.
+    """
+
+    whitespace = (' ', '\t', '\n', '\l')
+    separators = ('{', '}', ';')
+    statements = []
+
+    in_multiline_comment = False
+    quotes = [' ']
+
+    # Loop on lines
+
+    l_id = 0
+    for l in lines:
+
+        w = len(l)
+
+        # Loop on columns
+
+        s_id = 0
+        c_id = 0
+        while c_id < w:
+
+            # Quoting (highest priority);
+            # left inside statements, but separators in quoted
+            # regions are not considered as separators.
+
+            if l[c_id] == "\\": # use 'e' to represent escape character
+                if quotes[0] == "e":
+                    quotes.pop(0)
+                else:
+                    quotes.insert(0, "e")
+            elif l[c_id] == "'":
+                if quotes[0] == "'":
+                    quotes.pop(0)
+                else:
+                    quotes.insert(0, "'")
+            elif l[c_id] == '"':
+                if quotes[0] == '"':
+                    quotes.pop(0)
+                else:
+                    quotes.insert(0, "'")
+
+            if quotes[0] != ' ':
+                if quotes[0] == 'e' and l[c_id] in whitespace:
+                    # escape character may be a line continuation character
+                    # in this case; handle it like a separator
+                    statements.append(('\\', l_id, c_id))
+                    c_id += 1
+                    s_id = c_id
+                continue
+
+            # In multiline C-style comment
+            # (transform to '#' for easier testing)
+
+            elif in_multiline_comment:
+                j = find_c_comment_close(l, c_id, quotes)
+                if j >= 0: # on same line
+                    j += 2
+                    in_multiline_comment = False
+                else:
+                    j = w
+                statements.append(('# ' + l[c_id:j].strip(), l_id, c_id))
+                c_id = j
+                s_id = c_id
+
+            # Whitespace (handle here rather than using strip()
+            # type functions to keep track of expression start columns
+
+            elif l[c_id] in whitespace:
+                if s_id == c_id:
+                    s_id += 1
+                c_id += 1
+                continue
+
+            # Comments (allow C/C++ style, transform all to '#'
+            # for easier testing)
+
+            elif l[c_id] == '#':
+                e = l[s_id:c_id].strip()
+                if len(e):
+                    statements.append((e, l_id, s_id))
+                statements.append((l[c_id:].strip(), l_id, c_id))
+                c_id = w
+                s_id = c_id
+
+            elif l[c_id:c_id+2] in ('//', '/*'):
+                e = l[s_id:c_id].strip()
+                if len(e):
+                    statements.append((e, l_id, s_id))
+                if l[c_id:c_id+2] == '//':
+                    statements.append(('# ' + l[c_id+2:].strip(),
+                                       l_id, c_id))
+                    c_id = w
+                    s_id = c_id
+                else:
+                    j = find_c_comment_close(l, c_id+2, quotes)
+                    if j >= 0: # on same line
+                        statements.append(('# ' + l[c_id+2:j].strip(),
+                                           l_id, c_id))
+                        j += 2
+                    else:
+                        j = w
+                        statements.append(('# ' + l[c_id+2:j].strip(),
+                                           l_id, c_id))
+                        in_multiline_comment = True
+                    c_id = j
+                    s_id = c_id
+
+            else:
+
+                if l[c_id] in separators:
+                    e = l[s_id:c_id].strip()
+                    if len(e):
+                        statements.append((e, l_id, s_id))
+                    statements.append((l[c_id:c_id+1], l_id, c_id))
+                    c_id += 1
+                    s_id = c_id
+                else:
+                    c_id += 1
+
+        # End of loop on line:
+
+        if s_id < c_id:
+            e = l[s_id:c_id].strip()
+            if len(e):
+                statements.append((e, l_id, s_id))
+
+        l_id += 1
+
+    return statements
+
+#---------------------------------------------------------------------------
+
+def parse_parentheses(line):
+
+    istart = []
+    d = {}
+
+    for i, c in enumerate(line):
+        if c == '(':
+            istart.append(i)
+        if c == ')':
+            try:
+                d[istart.pop()] = i
+            except IndexError:
+                print('There are too many closing parentheses')
+
+    if istart:
+        print('A closing parenthese is missing!')
+
+    return d
+
+#---------------------------------------------------------------------------
+
+def search_and_replace_power(line):
+
+    symbs = ['+', '-', '*', '/', ' ', ';', '{', '}']
+    ps = [i for i, l in enumerate(line) if l == '^']
+
+    if ps == []:
+        return line
+    else:
+        for pos in ps:
+            b1 = pos - 1
+            b2 = pos
+
+            p1 = pos+1
+            p2 = pos+1
+
+            if line[b1] != ')':
+                while b1 > 0 and line[b1-1] not in symbs:
+                    b1 -= 1
+            else:
+                dp = parse_parentheses(line)
+                for key in dp.keys():
+                    if dp[key] == b2-1:
+                        b1 = key
+                        break
+
+            if line[p2] != '(':
+                while p2 < len(line)-2 and line[p2] not in symbs:
+                    p2 += 1
+            else:
+                dp = parse_parentheses(line)
+                p2 = dp[p1] + 1
+
+    if b1 == b2:
+        b2 +=1
+    if p1 == p2:
+        p2 +=1
+
+    m1 = '%s^%s' % (line[b1:b2], line[p1:p2])
+    m2 = 'pow(%s, %s)' % (line[b1:b2], line[p1:p2])
+
+    new_line = line.replace(m1,m2)
+
+    return new_line
+
+#---------------------------------------------------------------------------
+
+def split_for_assignment(self,
+                         l):
+    """
+    Check for assignemnt (separating along = but not >=, <=)
+    """
+    lf = []
+    c_idx = 0
+    s_idx = 0
+    e_idx = len(l)
+    for c_idx in range(e_idx):
+        if l[c_idx] == '=':
+            if c_idx > 0 and l[c_idx-1] not in ('>', '<'):
+                lf.append(l[s_idx:c_idx])
+                s_idx = c_idx+1
+    if s_idx < e_idx:
+        lf.append(l[s_idx:e_idx])
+
+    return lf
+
+#---------------------------------------------------------------------------
+
+def parse_gui_expression(expression,
+                         req,
+                         known_symbols,
+                         func_type,
+                         need_for_loop = False):
+
+    usr_code = ''
+    usr_defs = ''
+    if_loop = False
+
+    tab = '  '
+    ntabs = 3
+
+    if_open = 0
+
+    # ------------------------------------
+    # Parse the Mathematical expression and generate the C block code
+    exp_lines = expression.split("\n")
+    statements = separate_statements(exp_lines)
+    s_idx = 0
+    s_end = len(statements)
+    nreq = len(req)
+    for lidx in range(len(exp_lines)):
+
+        # Rebuild line from statements, ignoring comments
+        # statements should be used to improve parsing in the future
+        l = ""
+        while s_idx < s_end:
+            s_l_idx = statements[s_idx][1]
+            if s_l_idx > lidx:
+                break
+            elif s_l_idx == lidx:
+                s = statements[s_idx][0]
+                if s[0] != '#':
+                    l += s + ' '
+            s_idx += 1
+        l = l.rstrip()
+
+        # ------------------------------------
+        # Check that the line is not empty
+        if len(l) > 0:
+
+            # Check for assignemnt (separating along = but not >=, <=)
+            lf = split_for_assignment(l)
+
+            # ------------------------------------
+            # If the line contains an assignment
+            if len(lf) > 1:
+                if lf[0].strip() not in known_symbols:
+                    known_symbols.append(lf[0].strip())
+                    # Test whether we are inside an if loop or not!
+                    if if_open:
+                        usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
+                    else:
+                        l = 'const cs_real_t '+l
+
+                elif lf[0].strip() in req:
+                    if func_type == 'vol':
+                        new_v = 'f->val[c_id]'
+
+                    elif func_type == 'bnd':
+                        ir = req.index(lf[0].strip())
+                        if need_for_loop:
+                            new_v = 'new_vals[%d * bz->n_elts + e_id]' % (ir)
+                        else:
+                            new_v = 'new_vals[%d]' % (ir)
+
+                    elif func_type == 'src':
+                        if nreq > 1:
+                            ir = req.index(lf[0].strip())
+                            new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
+                        else:
+                            new_v = 'new_vals[e_id]'
+
+                    elif func_type == 'ini':
+                        if nreq > 1:
+                            ir = req.index(lf[0].strip())
+                            new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
+                        else:
+                            new_v = 'new_vals[e_id]'
+
+                    l = new_v + ' = ' + lf[1]
+
+            # ------------------------------------
+            # Check for power functions
+            if '^' in l:
+                l = search_and_replace_power(l)
+
+            # ------------------------------------
+            # If loop :
+            # 1 : Line starting with if
+            if l[:2] == 'if':
+                if l[-1] != '{' and exp_lines[lidx+1][0] != '{':
+                    l = l + ' {'
+                usr_code += '\n'
+                usr_code += (ntabs+if_open)*tab + l
+                if_open += 1
+
+            # 2 : Line with an else
+            elif 'else' in l:
+                if l[0] != '}' and if_open and exp_lines[lidx-1][-1] != '}':
+                    l = '} '+l
+
+                if l[-1] != '{' and exp_lines[lidx+1][0] != '{':
+                    l = l + ' {'
+
+                if_open -= 1
+                usr_code += '\n'
+                usr_code += (ntabs+if_open)*tab + l
+                if_open += 1
+
+            # 3 : Other lines
+            else:
+                if l[0] == '}':
+                    if_open -= 1
+
+                usr_code += '\n'
+                if l[-1] == '}' and len(l) > 1:
+                        usr_code += (ntabs+if_open)*tab + l[:-1]
+                        usr_code += '\n' + (ntabs+if_open)*tab + '}'
+                else:
+                    usr_code += (ntabs+if_open)*tab + l
+
+        else:
+            usr_code += '\n'
+
+    if if_open:
+        for i in range(if_open):
+            if_open -= 1
+            usr_code += '\n' + (ntabs+if_open)*tab + '}\n'
+    else:
+        usr_code += '\n'
+
+    # Change comments symbol from # to //
+    usr_code = usr_code.replace('#', '//')
+
+    return usr_code, usr_defs
+
+#---------------------------------------------------------------------------
 
 
 #===============================================================================
@@ -190,526 +630,40 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def break_expression(self, exp):
-
-        expression_lines = []
-
-        for line in exp.split('\n'):
-            line_comp = []
-            for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,|^|<|>',line):
-                if elt != '':
-                    line_comp.append(elt.strip())
-
-            expression_lines.append(line_comp)
-
-        return expression_lines
-
-    #---------------------------------------------------------------------------
-
-    def find_c_comment_close(self, l, c_id, quotes):
-        """
-        Return index in given string of closing C-style comment,
-        or -1 if not found after given c_id column.
-        Escape characters or strings are handled.
-        """
-
-        w = len(l)
-
-        while c_id < w:
-
-            # Quoting (highest priority);
-            # left inside expressions, but separators in quoted
-            # regions are not considered as separators.
-
-            if l[c_id] == "\\": # use 'e' to represent escape character
-                if quotes[0] == "e":
-                    quotes.pop(0)
-                else:
-                    quotes.insert(0, "e")
-            elif l[c_id] == "'":
-                if quotes[0] == "'":
-                    quotes.pop(0)
-                else:
-                    quotes.insert(0, "'")
-            elif l[c_id] == '"':
-                if quotes[0] == '"':
-                    quotes.pop(0)
-                else:
-                    quotes.insert(0, "'")
-
-            elif quotes[0] == ' ': # found
-                if l[c_id] == '*':
-                    if c_id+1 < w:
-                        if l[c_id+1] == '/':
-                            return c_id
-
-            c_id += 1
-
-        return -1
-
-    #---------------------------------------------------------------------------
-
-    def separate_statements(self, lines):
-        """
-        Separate statements based on expected statement separators.
-        This stage is not a parser, but simply splits lines into statements,
-        separating comments (allowing for Python, C, and C++ style comments),
-        and checking for quoting or escape characters.
-        Returns a list of tuples containing the statements, and matching
-        start line and column indexes in the original expression.
-        """
-
-        whitespace = (' ', '\t', '\n', '\l')
-        separators = ('{', '}', ';')
-        statements = []
-
-        in_multiline_comment = False
-        quotes = [' ']
-
-        # Loop on lines
-
-        l_id = 0
-        for l in lines:
-
-            w = len(l)
-
-            # Loop on columns
-
-            s_id = 0
-            c_id = 0
-            while c_id < w:
-
-                # Quoting (highest priority);
-                # left inside statements, but separators in quoted
-                # regions are not considered as separators.
-
-                if l[c_id] == "\\": # use 'e' to represent escape character
-                    if quotes[0] == "e":
-                        quotes.pop(0)
-                    else:
-                        quotes.insert(0, "e")
-                elif l[c_id] == "'":
-                    if quotes[0] == "'":
-                        quotes.pop(0)
-                    else:
-                        quotes.insert(0, "'")
-                elif l[c_id] == '"':
-                    if quotes[0] == '"':
-                        quotes.pop(0)
-                    else:
-                        quotes.insert(0, "'")
-
-                if quotes[0] != ' ':
-                    if quotes[0] == 'e' and l[c_id] in whitespace:
-                        # escape character may be a line continuation character
-                        # in this case; handle it like a separator
-                        statements.append(('\\', l_id, c_id))
-                        c_id += 1
-                        s_id = c_id
-                    continue
-
-                # In multiline C-style comment
-                # (transform to '#' for easier testing)
-
-                elif in_multiline_comment:
-                    j = self.find_c_comment_close(l, c_id, quotes)
-                    if j >= 0: # on same line
-                        j += 2
-                        in_multiline_comment = False
-                    else:
-                        j = w
-                    statements.append(('# ' + l[c_id:j].strip(), l_id, c_id))
-                    c_id = j
-                    s_id = c_id
-
-                # Whitespace (handle here rather than using strip()
-                # type functions to keep track of expression start columns
-
-                elif l[c_id] in whitespace:
-                    if s_id == c_id:
-                        s_id += 1
-                    c_id += 1
-                    continue
-
-                # Comments (allow C/C++ style, transform all to '#'
-                # for easier testing)
-
-                elif l[c_id] == '#':
-                    e = l[s_id:c_id].strip()
-                    if len(e):
-                        statements.append((e, l_id, s_id))
-                    statements.append((l[c_id:].strip(), l_id, c_id))
-                    c_id = w
-                    s_id = c_id
-
-                elif l[c_id:c_id+2] in ('//', '/*'):
-                    e = l[s_id:c_id].strip()
-                    if len(e):
-                        statements.append((e, l_id, s_id))
-                    if l[c_id:c_id+2] == '//':
-                        statements.append(('# ' + l[c_id+2:].strip(),
-                                           l_id, c_id))
-                        c_id = w
-                        s_id = c_id
-                    else:
-                        j = self.find_c_comment_close(l, c_id+2, quotes)
-                        if j >= 0: # on same line
-                            statements.append(('# ' + l[c_id+2:j].strip(),
-                                               l_id, c_id))
-                            j += 2
-                        else:
-                            j = w
-                            statements.append(('# ' + l[c_id+2:j].strip(),
-                                               l_id, c_id))
-                            in_multiline_comment = True
-                        c_id = j
-                        s_id = c_id
-
-                else:
-
-                    if l[c_id] in separators:
-                        e = l[s_id:c_id].strip()
-                        if len(e):
-                            statements.append((e, l_id, s_id))
-                        statements.append((l[c_id:c_id+1], l_id, c_id))
-                        c_id += 1
-                        s_id = c_id
-                    else:
-                        c_id += 1
-
-            # End of loop on line:
-
-            if s_id < c_id:
-                e = l[s_id:c_id].strip()
-                if len(e):
-                    statements.append((e, l_id, s_id))
-
-            l_id += 1
-
-        return statements
-
-    #---------------------------------------------------------------------------
-
-    def parse_parentheses(self, line):
-
-        istart = []
-        d = {}
-
-        for i, c in enumerate(line):
-            if c == '(':
-                istart.append(i)
-            if c == ')':
-                try:
-                    d[istart.pop()] = i
-                except IndexError:
-                    print('There are too many closing parentheses')
-
-        if istart:
-            print('A closing parenthese is missing!')
-
-        return d
-
-    #---------------------------------------------------------------------------
-
-    def search_and_replace_power(self, line):
-
-        symbs = ['+', '-', '*', '/', ' ', ';', '{', '}']
-        ps = [i for i, l in enumerate(line) if l == '^']
-
-        if ps == []:
-            return line
-        else:
-            for pos in ps:
-                b1 = pos - 1
-                b2 = pos
-
-                p1 = pos+1
-                p2 = pos+1
-
-                if line[b1] != ')':
-                    while b1 > 0 and line[b1-1] not in symbs:
-                        b1 -= 1
-                else:
-                    dp = self.parse_parentheses(line)
-                    for key in dp.keys():
-                        if dp[key] == b2-1:
-                            b1 = key
-                            break
-
-                if line[p2] != '(':
-                    while p2 < len(line)-2 and line[p2] not in symbs:
-                        p2 += 1
-                else:
-                    dp = self.parse_parentheses(line)
-                    p2 = dp[p1] + 1
-
-        if b1 == b2:
-            b2 +=1
-        if p1 == p2:
-            p2 +=1
-
-        m1 = '%s^%s' % (line[b1:b2], line[p1:p2])
-        m2 = 'pow(%s, %s)' % (line[b1:b2], line[p1:p2])
-
-        new_line = line.replace(m1,m2)
-
-        return new_line
-    #---------------------------------------------------------------------------
-
     def update_block_expression(self, func_type, key, new_exp):
 
         self.funcs[func_type][key]['exp']   = new_exp
-        self.funcs[func_type][key]['lines'] = self.break_expression(new_exp)
+        self.funcs[func_type][key]['lines'] = break_expression(new_exp)
 
     #---------------------------------------------------------------------------
 
-    def init_cell_block(self,
-                        expression,
-                        required,
-                        symbols,
-                        scalars,
-                        name,
-                        zone_name='all_cells'):
+    def init_block(self,
+                   ftype,
+                   zone_name,
+                   name,
+                   expression,
+                   required,
+                   symbols,
+                   known_fields,
+                   condition = None,
+                   source_type = None):
 
-        func_key = '::'.join([zone_name, name])
-        if func_key in self.funcs['vol'].keys():
-            msg = "Formula for variable %s in zone %s was already defined:\n %s" \
-                    % (name, zone_name, self.funcs['vol'][func_key]['exp'])
+        # Creating a unique function name based on the zone and variable name
+        fkey = '::'.join([zone_name, name])
+        if fkey in self.funcs[ftype].keys():
+            msg = 'Formula for "%s" in %s %s was already defined:\n %s' \
+                    % (name, _func_short_to_long[ftype], zone_name,
+                       self.funcs[ftype][fkey]['exp'])
             raise Exception(msg)
 
-        self.funcs['vol'][func_key] = {'exp':expression,
-                                       'sym':symbols,
-                                       'sca':scalars,
-                                       'req':required}
+        self.funcs[ftype][fkey] = {'exp':expression,
+                                   'req':required,
+                                   'sym':symbols,
+                                   'knf':known_fields,
+                                   'cnd':condition,
+                                   'tpe':source_type}
 
-        self.funcs['vol'][func_key]['lines'] = self.break_expression(expression)
-
-    #---------------------------------------------------------------------------
-
-    def init_bnd_block(self,
-                       expression,
-                       required,
-                       name,
-                       bnd_name,
-                       condition):
-
-        func_key = '::'.join([bnd_name, name])
-        if func_key in self.funcs['bnd'].keys():
-            msg = "Formula for variable %s in boundary %s was already defined:\n %s" \
-                    % (name, bnd_name, self.funcs['bnd'][func_key]['exp'])
-            raise Exception(msg)
-
-        self.funcs['bnd'][func_key] = {'exp':expression,
-                                       'req':required,
-                                       'cnd':condition}
-
-        self.funcs['bnd'][func_key]['lines'] = self.break_expression(expression)
-
-    #---------------------------------------------------------------------------
-
-    def init_src_block(self,
-                       expression,
-                       required,
-                       symbols,
-                       name,
-                       zone_name,
-                       source_type):
-
-        func_key = '::'.join([zone_name, name])
-        if func_key in self.funcs['src'].keys():
-            msg = "Formula for variable %s source term in zone %s was already defined:\n %s" \
-                    % (name, zone_name, self.funcs['src'][func_key]['exp'])
-            raise Exception(msg)
-
-        self.funcs['src'][func_key] = {'exp':expression,
-                                       'req':required,
-                                       'sym':symbols,
-                                       'tpe':source_type}
-
-        self.funcs['src'][func_key]['lines'] = self.break_expression(expression)
-
-    #---------------------------------------------------------------------------
-
-    def init_ini_block(self,
-                       expression,
-                       required,
-                       symbols,
-                       name,
-                       zone_name):
-
-        func_key = '::'.join([zone_name, name])
-        if func_key in self.funcs['ini'].keys():
-            msg = "Formula for variable %s initialization in zone %s was already defined:\n %s" \
-                    % (name, zone_name, self.funcs['ini'][func_key]['exp'])
-            raise Exception(msg)
-
-        self.funcs['ini'][func_key] = {'exp':expression,
-                                       'req':required,
-                                       'sym':symbols}
-
-        self.funcs['ini'][func_key]['lines'] = self.break_expression(expression)
-
-    #---------------------------------------------------------------------------
-
-    def split_for_assignment(self,
-                             l):
-        """
-        Check for assignemnt (separating along = but not >=, <=)
-        """
-        lf = []
-        c_idx = 0
-        s_idx = 0
-        e_idx = len(l)
-        for c_idx in range(e_idx):
-            if l[c_idx] == '=':
-                if c_idx > 0 and l[c_idx-1] not in ('>', '<'):
-                    lf.append(l[s_idx:c_idx])
-                    s_idx = c_idx+1
-        if s_idx < e_idx:
-            lf.append(l[s_idx:e_idx])
-
-        return lf
-
-    #---------------------------------------------------------------------------
-
-    def parse_gui_expression(self,
-                             expression,
-                             req,
-                             known_symbols,
-                             func_type,
-                             need_for_loop = False):
-
-        usr_code = ''
-        usr_defs = ''
-        if_loop = False
-
-        tab = '  '
-        ntabs = 3
-
-        if_open = 0
-
-        # ------------------------------------
-        # Parse the Mathematical expression and generate the C block code
-        exp_lines = expression.split("\n")
-        statements = self.separate_statements(exp_lines)
-        s_idx = 0
-        s_end = len(statements)
-        nreq = len(req)
-        for lidx in range(len(exp_lines)):
-
-            # Rebuild line from statements, ignoring comments
-            # statements should be used to improve parsing in the future
-            l = ""
-            while s_idx < s_end:
-                s_l_idx = statements[s_idx][1]
-                if s_l_idx > lidx:
-                    break
-                elif s_l_idx == lidx:
-                    s = statements[s_idx][0]
-                    if s[0] != '#':
-                        l += s + ' '
-                s_idx += 1
-            l = l.rstrip()
-
-            # ------------------------------------
-            # Check that the line is not empty
-            if len(l) > 0:
-
-                # Check for assignemnt (separating along = but not >=, <=)
-                lf = self.split_for_assignment(l)
-
-                # ------------------------------------
-                # If the line contains an assignment
-                if len(lf) > 1:
-                    if lf[0].strip() not in known_symbols:
-                        known_symbols.append(lf[0].strip())
-                        # Test whether we are inside an if loop or not!
-                        if if_open:
-                            usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
-                        else:
-                            l = 'const cs_real_t '+ l
-
-                    elif lf[0].strip() in req:
-                        if func_type == 'vol':
-                            new_v = 'f->val[c_id]'
-
-                        elif func_type == 'bnd':
-                            ir = req.index(lf[0].strip())
-                            if need_for_loop:
-                                new_v = 'new_vals[%d * bz->n_elts + e_id]' % (ir)
-                            else:
-                                new_v = 'new_vals[%d]' % (ir)
-
-                        elif func_type == 'src':
-                            if nreq > 1:
-                                ir = req.index(lf[0].strip())
-                                new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
-                            else:
-                                new_v = 'new_vals[e_id]'
-
-                        elif func_type == 'ini':
-                            if nreq > 1:
-                                ir = req.index(lf[0].strip())
-                                new_v = 'new_vals[%d * e_id + %d]' % (nreq, ir)
-                            else:
-                                new_v = 'new_vals[e_id]'
-
-                        l = new_v + ' = ' + lf[1]
-
-                # ------------------------------------
-                # Check for power functions
-                if '^' in l:
-                    l = self.search_and_replace_power(l)
-
-                # ------------------------------------
-                # If loop :
-                # 1 : Line starting with if
-                if l[:2] == 'if':
-                    if l[-1] != '{' and exp_lines[lidx+1][0] != '{':
-                        l = l + ' {'
-                    usr_code += '\n'
-                    usr_code += (ntabs+if_open)*tab + l
-                    if_open += 1
-
-                # 2 : Line with an else
-                elif 'else' in l:
-                    if l[0] != '}' and if_open and exp_lines[lidx-1][-1] != '}':
-                        l = '} '+l
-
-                    if l[-1] != '{' and exp_lines[lidx+1][0] != '{':
-                        l = l + ' {'
-
-                    if_open -= 1
-                    usr_code += '\n'
-                    usr_code += (ntabs+if_open)*tab + l
-                    if_open += 1
-
-                # 3 : Other lines
-                else:
-                    if l[0] == '}':
-                        if_open -= 1
-
-                    usr_code += '\n'
-                    if l[-1] == '}' and len(l) > 1:
-                            usr_code += (ntabs+if_open)*tab + l[:-1]
-                            usr_code += '\n' + (ntabs+if_open)*tab + '}'
-                    else:
-                        usr_code += (ntabs+if_open)*tab + l
-
-            else:
-                usr_code += '\n'
-
-        if if_open:
-            for i in range(if_open):
-                if_open -= 1
-                usr_code += '\n' + (ntabs+if_open)*tab + '}\n'
-        else:
-            usr_code += '\n'
-
-        # Change comments symbol from # to //
-        usr_code = usr_code.replace('#', '//')
-
-        return usr_code, usr_defs
+        self.funcs[ftype][fkey]['lines'] = break_expression(expression)
 
     #---------------------------------------------------------------------------
 
@@ -721,9 +675,10 @@ class mei_to_c_interpreter:
 
         func_params = self.funcs['vol'][func_key]
 
-        expression = func_params['exp']
-        symbols    = func_params['sym']
-        scalars    = func_params['sca']
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+
         if type(func_params['req'][0]) == tuple:
             required = [r[0] for r in func_params['req']]
         else:
@@ -746,8 +701,6 @@ class mei_to_c_interpreter:
         known_symbols = []
         coords = ['x', 'y', 'z']
         need_coords = False
-
-        internal_fields = []
 
         # Add to definitions useful arrays or scalars
         for line_comp in exp_lines_comp:
@@ -793,13 +746,11 @@ class mei_to_c_interpreter:
                         usr_defs += ntabs*tab + ms
                         known_symbols.append(sn)
 
-                    elif s not in scalars:
+                    elif s not in known_fields:
                         if len(s[1].split('=')) > 1:
                             sval = s[1].split('=')[-1]
                             usr_defs += ntabs*tab + 'const cs_real_t '+sn+' = '+str(sval)+';\n'
                             known_symbols.append(sn)
-                        else:
-                            internal_fields.append((sn, s[1].lower()))
 
         if need_coords:
             usr_defs = ntabs*tab \
@@ -807,11 +758,9 @@ class mei_to_c_interpreter:
                      + '\n\n' \
                      + usr_defs
 
-        use_internal_fields = False
-        for f in internal_fields:
+        for f in known_fields:
             for line in exp_lines_comp:
                 if f[0] in line:
-                    use_internal_fields = True
                     l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
                             % (f[0], f[1])
                     usr_defs += ntabs*tab + l
@@ -820,26 +769,6 @@ class mei_to_c_interpreter:
                             % (f[0], f[0])
 
                     break
-
-        if use_internal_fields:
-            usr_code += '\n'
-
-        use_scalars = False
-        for s in scalars:
-            sn = s[0]
-            for line in exp_lines_comp:
-                if sn in line:
-                    use_scalars = True
-                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
-                    % (sn,sn)
-                    usr_defs += ntabs*tab + l
-                    known_symbols.append(sn)
-                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n' \
-                    % (sn, sn)
-                    break
-
-        if use_scalars:
-            usr_code += '\n'
 
         # Internal names of mathematical functions
         for key in _cs_math_internal_name.keys():
@@ -860,10 +789,10 @@ class mei_to_c_interpreter:
         if_loop = False
 
         # Parse the user expresion
-        parsed_exp = self.parse_gui_expression(expression,
-                                               required,
-                                               known_symbols,
-                                               'vol')
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'vol')
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
             usr_defs += parsed_exp[1]
@@ -892,9 +821,11 @@ class mei_to_c_interpreter:
 
         func_params = self.funcs['bnd'][func_key]
 
-        expression = func_params['exp']
-        required   = func_params['req']
-        cname      = func_params['cnd']
+        expression   = func_params['exp']
+        required     = func_params['req']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+        cname        = func_params['cnd']
 
         exp_lines_comp = func_params['lines']
 
@@ -904,11 +835,6 @@ class mei_to_c_interpreter:
         need_for_loop = True
         if cname == 'flow1_formula' or cname == 'flow2_formula':
             need_for_loop = False
-
-        if need_for_loop:
-            symbols = ['x', 'y', 'z', 't', 'dt', 'iter']
-        else:
-            symbols = ['t', 'dt', 'iter']
 
         # Get user definitions and code
         usr_defs = ''
@@ -969,6 +895,18 @@ class mei_to_c_interpreter:
                      + '\n\n' \
                      + usr_defs
 
+        # Fields
+        for f in known_fields:
+            for line in exp_lines_comp:
+                if f[0] in line:
+                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
+                            % (f[0], f[1])
+                    usr_defs += ntabs*tab + l
+                    known_symbols.append(f[0])
+                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
+                            % (f[0], f[0])
+                    break
+
         # Internal names of mathematical functions
         for key in _cs_math_internal_name.keys():
             if key in expression:
@@ -983,11 +921,11 @@ class mei_to_c_interpreter:
             ntabs += 1
 
         # Parse the user expresion
-        parsed_exp = self.parse_gui_expression(expression,
-                                               required,
-                                               known_symbols,
-                                               'bnd',
-                                               need_for_loop)
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'bnd',
+                                          need_for_loop)
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
@@ -1024,8 +962,10 @@ class mei_to_c_interpreter:
 
         func_params = self.funcs['src'][func_key]
 
-        expression = func_params['exp']
-        symbols    = func_params['sym']
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = dict( zip([k[0] for k in func_params['knf']],
+                                 [k[1] for k in func_params['knf']]))
         if type(func_params['req'][0]) == tuple:
             required = [r[0] for r in func_params['req']]
         else:
@@ -1080,6 +1020,13 @@ class mei_to_c_interpreter:
                                 % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
+                    elif sn in known_fields.keys():
+                        l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n'
+                        l = l % (sn, known_fields[sn])
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+                        usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
+                                % (sn, sn)
 
         if need_coords:
             usr_defs = ntabs*tab \
@@ -1101,10 +1048,10 @@ class mei_to_c_interpreter:
             known_symbols.append(r)
 
         # Parse the user expresion
-        parsed_exp = self.parse_gui_expression(expression,
-                                               required,
-                                               known_symbols,
-                                               'src')
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'src')
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
@@ -1138,8 +1085,9 @@ class mei_to_c_interpreter:
 
         func_params = self.funcs['ini'][func_key]
 
-        expression = func_params['exp']
-        symbols    = func_params['sym']
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
         if type(func_params['req'][0]) == tuple:
             required = [r[0] for r in func_params['req']]
         else:
@@ -1205,6 +1153,19 @@ class mei_to_c_interpreter:
                      + '\n\n' \
                      + usr_defs
 
+        # known fields
+        for f in known_fields:
+            for line in exp_lines_comp:
+                if f[0] in line:
+                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
+                            % (f[0], f[1])
+                    usr_defs += ntabs*tab + l
+                    known_symbols.append(f[0])
+                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
+                            % (f[0], f[0])
+
+                    break
+
         # Internal names of mathematical functions
         for key in _cs_math_internal_name.keys():
             if key in expression:
@@ -1219,10 +1180,10 @@ class mei_to_c_interpreter:
             known_symbols.append(r)
 
         # Parse the user expresion
-        parsed_exp = self.parse_gui_expression(expression,
-                                               required,
-                                               known_symbols,
-                                               'ini')
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'ini')
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
@@ -1264,6 +1225,7 @@ class mei_to_c_interpreter:
 
     def generate_volume_code(self):
 
+        from code_saturne.model.LocalizationModel import LocalizationModel
         if self.pkg_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
                 import FluidCharacteristicsModel
@@ -1272,7 +1234,8 @@ class mei_to_c_interpreter:
             for (fk,sym) in fcm.lst:
                 if fcm.getPropertyMode(fk) == 'user_law':
                     exp, req, sca, sym = fcm.getFormulaComponents(fk)
-                    self.init_cell_block(exp, req, sym, sca, fk)
+                    self.init_block('vol', 'all_cells', fk,
+                                    exp, req, sym, sca)
 
             slist = fcm.m_sca.getUserScalarNameList()
             for s in fcm.m_sca.getScalarsVarianceList():
@@ -1284,7 +1247,8 @@ class mei_to_c_interpreter:
                         dname = fcm.m_sca.getScalarDiffusivityName(s)
                         exp, req, sca, sym, = \
                         fcm.getFormulaComponents('scalar_diffusivity', s)
-                        self.init_cell_block(exp, req, sym, sca, dname)
+                        self.init_block('vol', 'all_cells', dname,
+                                        exp, req, sym, sca)
 
         else:
             from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
@@ -1298,26 +1262,68 @@ class mei_to_c_interpreter:
 
             compressible_fields = ['d_rho_d_P', 'd_rho_d_h']
 
+            gas_liq_fields = ['SaturationTemperature',
+                              'SaturationEnthalpyLiquid', 'SaturationEnthalpyGas',
+                              'LatentHeat', 'd_Tsat_d_P',
+                              'd_Hsat_d_P_Liquid', 'd_Hsat_d_P_Gas']
+
+            # surface tenstion
+            if tm.getPropertyMode('none', 'surface_tension') == 'user_law':
+                name = 'SurfaceTension'
+                exp, req, sca, sym = tm.getFormulaComponents('none',
+                                                             'surface_tension')
+                self.init_block('vol', 'all_cells', name,
+                                exp, req, sym, sca)
+
             for fieldId in tm.getFieldIdList():
                 if tm.getMaterials(fieldId) == 'user_material':
                     for fk in authorized_fields:
                         if tm.getPropertyMode(fieldId, fk) == 'user_law':
                             name = fk + '_' + str(fieldId)
                             exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
-                            self.init_cell_block(exp, req, sym, sca, name)
+                            self.init_block('vol', 'all_cells', name,
+                                            exp, req, sym, sca)
 
                     if mfm.getCompressibleStatus(fieldId) == 'on':
                         for fk in compressible_fields:
                             name = fk + '_' + str(fieldId)
                             exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
-                            self.init_cell_block(exp, req, sym, sca, name)
+                            self.init_block('vol', 'all_cells', name,
+                                            exp, req, sym, sca)
 
-                    # Temperature as a function of enthalpie
+                    # Temperature as a function of enthalpy
                     if mfm.getEnergyResolution(fieldId) == 'on':
                         name = 'temperature_' + str(fieldId)
                         exp, req, sca, sym = tm.getFormulaComponents(fieldId,
                                                                     'temperature')
-                        self.init_cell_block(exp, req, sym, sca, name)
+                        self.init_block('vol', 'all_cells', name,
+                                        exp, req, sym, sca)
+
+            # User properties for Water/Steam kind flows
+            if mfm.getPredefinedFlow() != 'None' and \
+               mfm.getPredefinedFlow() != "particles_flow":
+
+                   for fk in gas_liq_fields:
+                       exp, req, sca, sym = tm.getFormulaComponents('none', fk)
+                       self.init_block('vol', 'all_cells', fk,
+                                       exp, req, sym, sca)
+
+            # Porosity
+            vlm = LocalizationModel('VolumicZone', self.case)
+            from code_saturne.model.PorosityModel import PorosityModel
+            prm = PorosityModel(self.case)
+            for zone in vlm.getZones():
+                z_id = zone.getCodeNumber()
+                zone_name = zone.getLabel()
+                nature_list = zone.getNatureList()
+                if 'porosity' in nature_list:
+                    if zone.getNature()['porosity'] == 'on':
+                        exp, req, known_fields, sym = \
+                        prm.getPorosityFormulaComponents(zone_name)
+
+                        self.init_block('vol', zone_name, 'porosity',
+                                        exp, req, sym, known_fields)
+
 
     #---------------------------------------------------------------------------
 
@@ -1343,28 +1349,37 @@ class mei_to_c_interpreter:
                     if '_formula' in c:
                         if c == 'norm_formula':
                             req = ['u_norm']
+                            sym = ['x', 'y', 'z', 't', 'dt', 'iter']
                         elif c == 'flow1_formula':
                             req = ['q_m']
+                            sym = ['t', 'dt', 'iter']
                         elif c == 'flow2_formula':
                             req = ['q_v']
+                            sym = ['t', 'dt', 'iter']
 
                         name = 'velocity'
 
                         exp = boundary.getVelocity()
-                        self.init_bnd_block(exp, req, name, zone._label, c)
+                        self.init_block('bnd', zone._label, name,
+                                        exp, req, sym, known_fields=[],
+                                        condition=c)
 
                     d = boundary.getDirectionChoice()
                     if d == 'formula':
                         req  = ['dir_x', 'dir_y', 'dir_z']
                         exp  = boundary.getDirection('direction_formula')
+                        sym = ['t', 'dt', 'iter']
                         name = 'direction'
 
-                        self.init_bnd_block(exp, req, name, zone._label, d)
+                        self.init_block('bnd', zone._label, name,
+                                        exp, req, sym,
+                                        [], condition=d)
 
                     # Turbulence
                     tc = boundary.getTurbulenceChoice()
                     if tc == 'formula':
                         turb_model = tm.getTurbulenceModel()
+                        sym = ['t', 'dt', 'iter']
                         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
                             name = 'turbulence_ke'
                             req  = ['k', 'epsilon']
@@ -1393,23 +1408,31 @@ class mei_to_c_interpreter:
                             req  = ['nu_tilda']
 
                         exp = boundary.getTurbFormula()
-                        self.init_bnd_block(exp, req, name, zone._label, tc)
+                        self.init_block('bnd', zone._label, name,
+                                        exp, req, sym,
+                                        [], condition=tc)
 
                 # Specific free_inlet_outlet head loss
                 if zone._nature == 'free_inlet_outlet':
                     name = "head_loss"
                     req  = ['K']
-                    exp = boundary.getHeadLossesFormula()
-                    self.init_bnd_block(exp, req, name, zone._label, 'formula')
+                    sym  = ['t', 'dt', 'iter']
+                    exp  = boundary.getHeadLossesFormula()
+                    self.init_block('bnd', zone._label, name,
+                                    exp, req, sym,
+                                    [], condition='formula')
 
                 # Hydraulic head for groundwater flow
                 if zone._nature == 'groundwater':
                     c = boundary.getHydraulicHeadChoice()
+                    sym  = ['t', 'dt', 'iter']
                     if c == 'dirichlet_formula':
                         name = 'hydraulic_head'
                         req  = ['H']
                         exp  = boundary.getHydraulicHeadFormula()
-                        self.init_bnd_block(exp, req, name, zone._label, c)
+                        self.init_block('bnd', zone._label, name,
+                                        exp, req, sym,
+                                        [], condition=c)
 
                 # Scalars
                 scalar_list = boundary.sca_model.getScalarNameList()
@@ -1422,6 +1445,7 @@ class mei_to_c_interpreter:
                 if zone._nature not in ['free_inlet_outlet', 'free_surface']:
                   for sca in scalar_list:
                       c = boundary.getScalarChoice(sca)
+                      sym  = ['t', 'dt', 'iter']
                       if '_formula' in c:
                           exp = boundary.getScalarFormula(sca, c)
                           if c == 'dirichlet_formula':
@@ -1430,7 +1454,90 @@ class mei_to_c_interpreter:
                               req = ['flux']
                           else:
                               req = [sca, 'hc']
-                          self.init_bnd_block(exp, req, sca, zone._label, c)
+                          self.init_block('bnd', zone._label, sca,
+                                          exp, req, sym, [],
+                                          condition=c)
+
+        else:
+            from code_saturne.model.LocalizationModel import LocalizationModel
+            from code_saturne.model.BoundaryNeptune import Boundary
+            from code_saturne.model.MainFieldsModel import MainFieldsModel
+            from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
+
+            blm = LocalizationModel("BoundaryZone", self.case)
+            mfm = MainFieldsModel(self.case)
+            tm  = TurbulenceModel(self.case)
+
+            for zone in blm.getZones():
+                if "inlet" in zone.getNature():
+                    for fId in mfm.getFeildIdList():
+                        boundary = Boundary(zone.getNature(),
+                                            zone.getLabel(),
+                                            self.case,
+                                            fId)
+
+                        # Velocity
+                        c = boundary.getVelocityChoice(fId)
+                        if '_formula' in c:
+                            if c == 'norm_formula':
+                                req = ['u_norm']
+                                sym = ['x', 'y', 'z', 't', 'dt', 'iter']
+                            elif c == 'flow1_formula':
+                                req = ['u_norm']
+                                sym = ['t', 'dt', 'iter']
+
+                            exp = boundary.getVelocity(fId)
+
+                            self.init_block('bnd',
+                                            zone.getLabel(),
+                                            'veloctiy_'+str(fId),
+                                            exp,
+                                            req,
+                                            sym,
+                                            [],
+                                            condition=c)
+
+                        # Velocity direction
+                        d = boundary.getDirectionChoice(fId)
+                        if d == 'formula':
+                            exp = boundary.getDirection(fId, 'direction_formula')
+                            req = ['dir_x', 'dir_y', 'dir_z']
+                            sym = ['t', 'dt', 'iter']
+
+                            self.init_block('bnd',
+                                            zone.getLabel(),
+                                            'direction_'+str(fId),
+                                            exp,
+                                            req,
+                                            sym,
+                                            [],
+                                            condition = d)
+
+                        # Turbulence
+                        tc = boundary.getTurbulenceChoice(fId)
+                        if tc == 'formula':
+                            turb_model = tm.getTurbulenceModel(fId)
+                            exp, req, sym = boundary.getTurbFormulaComponents(fId,
+                                                                              turb_model)
+                            if turb_model in('k-epsilon', 'k-epsilon_linear_production'):
+                                name = 'turbulence_ke_%s' % (fId)
+                            elif turb_model in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
+                                name = 'turbulence_rije_%s' % (fId)
+                            elif turb_model in ('tchen', 'q2-q12'):
+                                name = 'turbulence_tchen_%s' % (fId)
+                            elif turb_model in ('r2-q12'):
+                                name = 'turbulence_r2q12_%s' % (fId)
+                            elif turb_model in ('r2-r12-tchen'):
+                                name = 'turbulence_r2r12_%s' % (fId)
+
+                            self.init_block('bnd',
+                                            zone.getLabel(),
+                                            name,
+                                            exp,
+                                            req,
+                                            sym,
+                                            [],
+                                            condition=tc)
 
     #---------------------------------------------------------------------------
 
@@ -1456,14 +1563,14 @@ class mei_to_c_interpreter:
                     if zone.getNature()['momentum_source_term'] == 'on':
                         if gwm.getGroundwaterModel() == 'off':
                             exp, req, sym = stm.getMomentumFormulaComponents(z_id)
-                            self.init_src_block(exp, req, sym,
-                                                "momentum", zone_name,
-                                                "momentum_source_term")
+                            self.init_block('src', zone_name, "momentum",
+                                            exp, req, sym, [],
+                                            source_type="momentum_source_term")
                         else:
                             exp, req, sym = getRichardsFormulaComponents(z_id)
-                            self.init_src_block(exp, req, sym,
-                                                "richards", zone_name,
-                                                "momentum_source_term")
+                            self.init_block('src', zone_name, 'richards',
+                                            exp, req, sym, [],
+                                            source_type="momentum_source_term")
 
 
                 if 'scalar_source_term' in nature_list:
@@ -1472,25 +1579,49 @@ class mei_to_c_interpreter:
                         if gwm.getGroundwaterModel() == 'off':
                             for sca in sca_list:
                                 exp, req, sym = stm.getSpeciesFormulaComponents(z_id, sca)
-                                self.init_src_block(exp, req, sym,
-                                                    sca, zone_name,
-                                                    "scalar_source_term")
+                                self.init_block('src', zone_name, sca,
+                                                exp, req, sym, [],
+                                                source_type="scalar_source_term")
                         else:
                             for sca in sca_list:
                                 exp, req, sym = \
                                 stm.getGroundwaterSpeciesFormulaComponents(z_id, sca)
-                                self.init_src_block(exp, req, sym,
-                                                    sca, zone_name,
-                                                    "scalar_source_term")
+                                self.init_block('src', zone_name, sca,
+                                                exp, req, sym, [],
+                                                source_type="scalar_source_term")
 
                 if 'thermal_source_term' in nature_list:
                     if zone.getNature()['thermal_source_term'] == 'on':
                         th_sca_name = stm.therm.getThermalScalarName()
                         exp, req, sym = stm.getThermalFormulaComponents(z_id,
                                                                         th_sca_name)
-                        self.init_src_block(exp, req, sym,
-                                            th_sca_name, zone_name,
-                                            "thermal_source_term")
+                        self.init_block('src', zone_name, th_sca_name,
+                                        exp, req, sym, [],
+                                        source_type="thermal_source_term")
+        else:
+            from code_saturne.model.LocalizationModel import LocalizationModel
+            from code_saturne.model.MainFieldsSourceTermsModel import MainFieldsSourceTermsModel
+
+            vlm = LocalizationModel('VolumicZone', self.case)
+            stm = MainFieldsSourceTermsModel(self.case)
+
+            for zone in vlm.getZones():
+                z_id = zone.getCodeNumber()
+                zone_name = zone.getLabel()
+
+                nature_list = zone.getNatureList()
+                if 'thermal_source_term' in nature_list:
+                    if zone.getNature()['thermal_source_term'] == 'on':
+                        for fId in stm.mfm.getFieldIdList():
+                            exp, req, sym = stm.getThermalFormulaComponents(z_id,
+                                                                            fId,
+                                                                            'enthalpy')
+                            known_fields = stm.getKnownFields(fId)
+                            self.init_block('src', zone_name,
+                                            'enthalpy_'+str(fId),
+                                            exp, req, sym, known_fields,
+                                            source_type='thermal_source_term')
+
 
     #---------------------------------------------------------------------------
 
@@ -1513,55 +1644,63 @@ class mei_to_c_interpreter:
 
                     # Velocity
                     exp, req, sym = im.getVelocityFormulaComponents(z_id)
-                    self.init_ini_block(exp, req, sym, 'velocity', zone_name)
+                    self.init_block('ini', zone_name, 'velocity',
+                                    exp, req, sym, [])
 
                     # Turbulence
                     tin = im.node_turb.xmlGetNode('initialization', zone_id=z_id)
                     if tin['choice'] is 'formula':
                         tmodel = im.node_turb['model']
                         exp, req, sym = im.getTurbFormulaComponents(z_id, tmodel)
-                        self.init_ini_block(exp, req, sym, 'turbulence', zone_name)
+                        self.init_block('ini', zone_name, 'turbulence',
+                                        exp, req, sym, [])
 
                     # Thermal
                     node_t = im.node_scalartherm.xmlGetNode('variable')
                     if node_t:
                         exp, req, sym = im.getThermalFormulaComponents(z_id)
-                        self.init_ini_block(exp, req, sym, 'thermal', zone_name)
+                        self.init_block('ini', zone_name, 'thermal',
+                                        exp, req, sym, [])
 
                     # HydraulicHead
                     if im.node_veloce.xmlGetNode('variable', name = 'hydraulic_head'):
                         if im.getHydraulicHeadFormula(z_id):
                             exp, req, sym = im.getHydraulicHeadFormulaComponents(z_id)
-                            self.init_ini_block(exp, req, sym,
-                                                'hydraulic_head', zone_name)
+                            self.init_block('ini', zone_name, 'hydraulic_head',
+                                            exp, req, sym, [])
 
                     if cpm.getCompressibleModel() != 'off':
                         # Pressure
                         if im.getPressureStatus(z_id) is not 'off':
                             exp, req, sym = im.getPressureFormulaComponents(z_id)
-                            self.init_ini_block(exp, req, sym, 'pressure', zone_name)
+                            self.init_block('ini', zone_name, 'pressure',
+                                            exp, req, sym, [])
 
                         # Density
                         if im.getDensityStatus(z_id) is not 'off':
                             exp, req, sym = im.getDensityFormulaComponents(z_id)
-                            self.init_ini_block(exp, req, sym, 'density', zone_name)
+                            self.init_block('ini', zone_name, 'density',
+                                            exp, req, sym, [])
 
                         # Temperature
                         if im.getTemperatureStatus(z_id) is not 'off':
                             exp, req, sym = im.getTemperatureFormulaComponents(z_id)
-                            self.init_ini_block(exp, req ,sym, 'temperature', zone_name)
+                            self.init_block('ini', zone_name, 'temperature',
+                                            exp, req ,sym, [])
 
                         # Energy
                         if im.getEnergyStatus(z_id) is not 'off':
                             exp, req, sym = im.getEnergyFormulaComponents(z_id)
-                            self.init_ini_block(exp, req, sym, 'energy', zone_name)
+                            self.init_block('ini', zone_name, 'energy',
+                                            exp, req, sym, [])
 
                     # Species
                     usm = DefineUserScalarsModel(self.case)
                     for scalar in usm.getUserScalarNameList():
                         if im.getSpeciesFormula(z_id, scalar):
                             exp, req, sym = im.getSpeciesFormulaComponents(z_id, scalar)
-                            self.init_ini_block(exp, req, sym, scalar, zone_name)
+                            self.init_block('ini', zone_name, scalar,
+                                            exp, req, sym, [])
 
                     # Meteo
                     node_atmo = im.models.xmlGetNode('atmospheric_flows')
@@ -1570,7 +1709,77 @@ class mei_to_c_interpreter:
                             node = node_atmo.xmlGetNode('variable', name=mscalar)
                             if node.xmlGetString('formula', zone_id=z_id):
                                 exp,req,sym = im.getMeteoFormulaComponents(z_id,mscalar)
-                                self.init_ini_block(exp,req,sym,mscalar,zone_name)
+                                self.init_block('ini', zone_name, mscalar,
+                                                exp, req, sym, [])
+
+        else:
+            from code_saturne.model.LocalizationModel import LocalizationModel
+            from code_saturne.model.MainFieldsModel import MainFieldsModel
+            from code_saturne.model.MainFieldsInitializationModel import MainFieldsInitializationModel
+            from code_saturne.model.NonCondensableModel import NonCondensableModel
+            from code_saturne.model.SpeciesModel import SpeciesModel
+
+            vlm = LocalizationModel('VolumicZone', self.case)
+            mfm = MainFieldsModel(self.case)
+            mfi = MainFieldsInitializationModel(self.case)
+            ncm = NonCondensableModel(self.case)
+            spm = SpeciesModel(self.case)
+
+            for zone in vlm.getZones():
+                if zone.getNature()['initialization'] is 'on':
+                    z_id = str(zone.getCodeNumber())
+                    zone_name = zone.getLabel()
+
+                    # Pressure
+                    exp, req, sym = mfi.getPressureFormulaComponents(z_id)
+                    self.init_block('ini', zone_name,
+                                    'pressure',
+                                    exp, req, sym, [])
+
+                    for fId in mfm.getFieldIdList():
+
+                        # Velocity
+                        exp, req, sym = mfi.getFormulaComponents(z_id,
+                                                                 fId,
+                                                                 'velocity')
+                        self.init_block('ini', zone_name, 'velocity_'+str(fId),
+                                        exp, req, sym, [])
+
+                        # Volume fraction
+                        exp, req, sym = mfi.getFormulaComponents(z_id,
+                                                                 fId,
+                                                                 'volume_fraction')
+                        self.init_block('ini', zone_name,
+                                        'volume_fraction_'+str(fId),
+                                        exp, req, sym, [])
+
+                        # Enthalpy
+                        exp, req, sym = mfi.getFormulaComponents(z_id,
+                                                                 fId,
+                                                                 'enthalpy')
+                        self.init_block('ini', zone_name,
+                                        'enthalpy_'+str(fId),
+                                        exp, req, sym, [])
+
+                        # Non condensables
+                        for nc in ncm.getNonCondensableByFieldId(fId):
+                            exp, req, sym = \
+                                mfi.getNonCondensableFormulaComponents(z_id,
+                                                                       fId,
+                                                                       nc)
+                            self.init_block('ini', zone_name,
+                                            ncm.getNonCondLabel(nc),
+                                            exp, req, sym, [])
+
+                        # Species
+                        for s in spm.getScalarByFieldId(fId):
+                            exp, req, sym = \
+                                mfi.getScalarFormulaComponents(z_id,
+                                                               fId,
+                                                               s)
+                            self.init_block('ini', zone_name,
+                                            spm.getScalarLabelByName(s),
+                                            exp, req, sym, [])
 
 
     #---------------------------------------------------------------------------

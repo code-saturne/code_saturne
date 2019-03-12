@@ -318,6 +318,7 @@ bin/model/LagrangianStatisticsModel.py \
 bin/model/LocalizationModelNeptune.py \
 bin/model/LocalizationModel.py \
 bin/model/MainFieldsInitializationModel.py \
+bin/model/MainFieldsSourceTermsModel.py \
 bin/model/MainFieldsModel.py \
 bin/model/MobileMeshModel.py \
 bin/model/NonCondensableModel.py \

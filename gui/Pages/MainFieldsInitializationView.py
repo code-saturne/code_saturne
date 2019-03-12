@@ -335,16 +335,11 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for velocity
         """
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'velocity')
+        exp, req, sym = self.mdl.getFormulaComponents(self.zone,
+                                                      self.currentid,
+                                                      'velocity')
         if not exp:
             exp = "u = 0.;\nv = 0.;\nw = 0.;"
-        req = [('u', 'Velocity along X'),
-               ('v', 'Velocity along Y'),
-               ('w', 'Velocity along Z')]
-
-        sym = [('x', "X cell's gravity center"),
-               ('y', "Y cell's gravity center"),
-               ('z', "Z cell's gravity center")]
 
         exa = "u = 3.0;\nv = 1.0;\nw = 0.0;\n"
 
@@ -367,17 +362,14 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for fraction
         """
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'volume_fraction')
+        exp, req, sym = self.mdl.getFormulaComponents(self.zone,
+                                                      self.currentid,
+                                                      'volume_fraction')
         if not exp:
             if self.currentid == "1":
                 exp = "vol_f = 1.;\n"
             else:
                 exp = "vol_f = 0.;\n"
-        req = [('vol_f', 'volume fraction')]
-
-        sym = [('x', "X cell's gravity center"),
-               ('y', "Y cell's gravity center"),
-               ('z', "Z cell's gravity center")]
 
         exa = "vol_f = 1.0;\n"
 
@@ -400,7 +392,10 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for energy
         """
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
+        exp, req, sym = self.mdl.getFormulaComponents(self.zone,
+                                                      self.currentid,
+                                                      'enthalpy')
+
         th_sca_label = self.mdl.getEnergyModel(self.zone, self.currentid)
         if not exp:
             if str(th_sca_label) == 'enthalpy':
@@ -415,11 +410,6 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         elif ('temperature' in exp and str(th_sca_label) == 'enthalpy'):
             exp = th_sca_label + """ = 50000.0;\n"""
 
-        req = [(th_sca_label, str(th_sca_label))]
-
-        sym = [('x', "X cell's gravity center"),
-               ('y', "Y cell's gravity center"),
-               ('z', "Z cell's gravity center")]
 
         exa = """#example: """
 
@@ -442,14 +432,10 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for pressure
         """
-        exp = self.mdl.getFormulaPressure(self.zone)
+        exp, req, sym = self.mdl.getPressureFormulaComponents(self.zone)
+
         if not exp:
             exp = """pressure = 101325.;\n"""
-        req = [("pressure", str("pressure"))]
-
-        sym = [('x', "X cell's gravity center"),
-               ('y', "Y cell's gravity center"),
-               ('z', "Z cell's gravity center")]
 
         exa = """#example :
 rho0 = 1.8;
@@ -476,14 +462,11 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         """
         Formula for non condensable
         """
-        exp = self.mdl.getFormulaNonCondensable(self.zone, self.currentid, self.currentNonCond)
+        exp, req, sym = self.mdl.getNonCondensableFormulaComponents(self.zone,
+                                                                    self.currentId,
+                                                                    self.currentNonCond)
         if not exp:
             exp = self.currentNonCondLabel + """ = 0;\n"""
-        req = [(self.currentNonCondLabel, str(self.currentNonCondLabel))]
-
-        sym = [('x', "X cell's gravity center"),
-               ('y', "Y cell's gravity center"),
-               ('z', "Z cell's gravity center")]
 
         exa = """#example: """
 
@@ -506,14 +489,11 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         """
         Formula for species
         """
-        exp = self.mdl.getFormulaScalar(self.zone, self.currentid, self.currentScalar)
+        exp, req, sym = self.mdl.getScalarFormulaComponents(self.zone,
+                                                            self.currentid,
+                                                            self.currentScalar)
         if not exp:
             exp = self.currentScalarLabel + """ = 0;\n"""
-        req = [(self.currentScalarLabel, str(self.currentScalarLabel))]
-
-        sym = [('x', "X cell's gravity center"),
-               ('y', "Y cell's gravity center"),
-               ('z', "Z cell's gravity center")]
 
         exa = """#example: """
 

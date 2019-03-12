@@ -84,6 +84,7 @@ LagrangianView.py \
 LocalizationView.py \
 MainFieldsView.py \
 MainFieldsInitializationView.py \
+MainFieldsSourceTermsView.py \
 MobileMeshView.py \
 NonCondensableView.py \
 NotebookView.py \
@@ -213,6 +214,7 @@ InterfacialEnthalpy.ui \
 NucleateBoiling.ui \
 DropletCondensationEvaporation.ui \
 MainFieldsInitialization.ui \
+MainFieldsSourceTerms.ui \
 CathareCouplingForm.ui \
 BoundaryConditionsNeptune.ui \
 UsersControl.ui \

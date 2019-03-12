@@ -219,8 +219,11 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         turb_model =  TurbulenceModel(self.__case).getTurbulenceModel(self.__currentField)
 
+        exp, req, sym =
+            self.__boundary.getTurbFormulaComponents(self.__currentField,
+                                                     turb_model)
+
         if turb_model in ('k-epsilon', 'k-epsilon_linear_production'):
-            exp = self.__boundary.getTurbFormula(self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
@@ -248,14 +251,7 @@ cmu = 0.09;
 kappa = 0.42;
 k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);"""
-            req = [('k', "turbulent energy"),
-            ('eps', "turbulent dissipation")]
-            sym = [('x','face center coordinate'),
-                   ('y','face center coordinate'),
-                   ('z','face center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step')]
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -270,7 +266,6 @@ eps = ustar2^1.5/(kappa*dh*0.1);"""
                 self.pushButtonTurb.setStyleSheet("background-color: green")
 
         elif turb_model in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
-            exp = self.__boundary.getTurbFormula(self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#exemple :
@@ -306,19 +301,6 @@ R12 = 0;
 R13 = 0;
 R23 = 0;
 """
-            req = [('R11', "Reynolds stress R11"),
-            ('R22', "Reynolds stress R22"),
-            ('R33', "Reynolds stress R33"),
-            ('R12', "Reynolds stress R12"),
-            ('R13', "Reynolds stress R13"),
-            ('R23', "Reynolds stress R23"),
-            ('eps', "turbulent dissipation")]
-            sym = [('x','face center coordinate'),
-                   ('y','face center coordinate'),
-                   ('z','face center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step')]
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -333,20 +315,11 @@ R23 = 0;
                 self.pushButtonTurb.setStyleSheet("background-color: green")
 
         elif turb_model in ('tchen', 'q2-q12'):
-            exp = self.__boundary.getTurbFormula(self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
 q2 = 5.e-05;
 q12 = 0.0001;"""
-            req = [('q2', "turbulent kinetic energy"),
-            ('q12', "covariance")]
-            sym = [('x','face center coordinate'),
-                   ('y','face center coordinate'),
-                   ('z','face center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step')]
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -361,7 +334,6 @@ q12 = 0.0001;"""
                 self.pushButtonTurb.setStyleSheet("background-color: green")
 
         elif turb_model in ('r2-q12'):
-            exp = self.__boundary.getTurbFormula(self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
@@ -372,19 +344,6 @@ R12 = 5e-05;
 R13 = 5e-05;
 R23 = 5e-05;
 q12 = 0.0001;"""
-            req = [('R11', "Reynolds stress R11"),
-            ('R22', "Reynolds stress R22"),
-            ('R33', "Reynolds stress R33"),
-            ('R12', "Reynolds stress R12"),
-            ('R13', "Reynolds stress R13"),
-            ('R23', "Reynolds stress R23"),
-            ('q12', "covariance")]
-            sym = [('x','face center coordinate'),
-                   ('y','face center coordinate'),
-                   ('z','face center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step')]
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -399,7 +358,6 @@ q12 = 0.0001;"""
                 self.pushButtonTurb.setStyleSheet("background-color: green")
 
         elif turb_model in ('r2-r12-tchen'):
-            exp = self.__boundary.getTurbFormula(self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
@@ -415,24 +373,6 @@ R12-33 = 5e-05;
 R12-12 = 5e-05;
 R12-13 = 5e-05;
 R12-23 = 5e-05;"""
-            req = [('R11', "Reynolds stress R11"),
-            ('R22', "Reynolds stress R22"),
-            ('R33', "Reynolds stress R33"),
-            ('R12', "Reynolds stress R12"),
-            ('R13', "Reynolds stress R13"),
-            ('R23', "Reynolds stress R23"),
-            ('R12-11', "Reynolds stress R11"),
-            ('R12-22', "Reynolds stress R22"),
-            ('R12-33', "Reynolds stress R33"),
-            ('R12-12', "Reynolds stress R12"),
-            ('R12-13', "Reynolds stress R13"),
-            ('R12-23', "Reynolds stress R23")]
-            sym = [('x','face center coordinate'),
-                   ('y','face center coordinate'),
-                   ('z','face center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step')]
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
