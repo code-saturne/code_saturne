@@ -169,8 +169,12 @@ class Boundary(object) :
                              "fixed_velocity",
                              "fixed_displacement"]
 
-        self._defaultValues = {}
-        self._defaultValues['ale_choice'] = self.__ALEChoices[0]
+        # Check that defaultValues exist before erasing it!
+        try:
+            self._defaultValues['ale_choice'] = self.__ALEChoices[0]
+        except:
+            self._defaultValues = {}
+            self._defaultValues['ale_choice'] = self.__ALEChoices[0]
 
         formula_velocity = 'ale_formula_' + "fixed_velocity"
         formula_displacement = 'ale_formula_' + "fixed_displacement"
