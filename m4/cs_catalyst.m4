@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2018 EDF S.A.
+dnl Copyright (C) 1998-2019 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -53,7 +53,7 @@ AC_ARG_ENABLE(catalyst-as-plugin,
   [ cs_have_plugin_catalyst=yes ]
 )
 
-if test x$cs_have_dlloader = xno ; then
+if test x$cs_have_dlloader = xno -o x$enable_shared = xno ; then
   cs_have_plugin_catalyst=no
 fi
 
@@ -88,44 +88,66 @@ fi
 
 if test "x$with_catalyst" != "xno" ; then
 
-  # Check for a Catalyst library
+  # Check for a Catalyst library (using different CMakeLists variants depending on version)
   #-----------------------------
 
-  cs_prv_dir=`pwd`
-  cs_abs_srcdir=`cd $srcdir && pwd`
+  for detection_variant in catalyst catalyst-5.6; do
 
-  mkdir catalyst_test && cd catalyst_test
-  "$CMAKE" -DCMAKE_PREFIX_PATH="$with_catalyst" "$cs_abs_srcdir/build-aux/catalyst" >&5
+    if test $cs_have_catalyst != yes ; then
 
-  if test $? = 0 ; then
+      if test $detection_variant = catalyst ; then
+        cs_catalyst_vers_check="above 5.6"
+      else
+        cs_catalyst_vers_check="5.6 or older"
+      fi
 
-    CATALYST_CPPFLAGS=`grep CXX_DEFINES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
-    CATALYST_INCLUDES=`grep CXX_INCLUDES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
-    CATALYST_CPPFLAGS="${CATALYST_CPPFLAGS} ${CATALYST_INCLUDES}"
-    CATALYST_CXXFLAGS=`grep CXX_FLAGS CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
-    cs_link_opts=`sed -e 's/^.*CoProcessingTest//' CMakeFiles/CoProcessingTest.dir/link.txt`
-    for a in $cs_link_opts; do
-      case "{$a}" in
-      -l*) CATALYST_LIBS="${CATALYST_LIBS} ${a}"
-           ;;
-      *)   if test -f "$a" ; then
-             CATALYST_LIBS="${CATALYST_LIBS} -Wl,${a}"
-           else
-             CATALYST_LDFLAGS="${CATALYST_LDFLAGS} ${a}"
-           fi
-           ;;
-      esac
-    done
-    unset cs_link_opts
+      AC_MSG_CHECKING([ParaView/Catalyst version $cs_catalyst_vers_check])
+      unset cs_catalyst_vers_check
 
-    cs_have_catalyst=yes;
+      cs_prv_dir=`pwd`
+      rm -rf "$cs_prv_dir"/catalyst_test
+      rm -rf "$cs_prv_dir"/CMakeFiles
+      rm -rf "$cs_prv_dir"/CMakeCache.txt
 
-  fi
+      cs_abs_srcdir=`cd $srcdir && pwd`
 
-  cd "$cs_prv_dir"
-  rm -rf "$cs_prv_dir"/catalyst_test
-  rm -rf "$cs_prv_dir"/CMakeFiles
-  rm -rf "$cs_prv_dir"/CMakeCache.txt
+      mkdir catalyst_test && cd catalyst_test
+      "$CMAKE" -DCMAKE_PREFIX_PATH="$with_catalyst" "$cs_abs_srcdir/build-aux/$detection_variant" >&5
+
+      if test $? = 0 ; then
+
+        CATALYST_CPPFLAGS=`grep CXX_DEFINES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
+        CATALYST_INCLUDES=`grep CXX_INCLUDES CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
+        CATALYST_CPPFLAGS="${CATALYST_CPPFLAGS} ${CATALYST_INCLUDES}"
+        CATALYST_CXXFLAGS=`grep CXX_FLAGS CMakeFiles/CoProcessingTest.dir/flags.make | sed -e 's/^@<:@^=@:>@*=@<:@\ @:>@*//'`
+        cs_link_opts=`sed -e 's/^.*CoProcessingTest//' CMakeFiles/CoProcessingTest.dir/link.txt`
+        for a in $cs_link_opts; do
+          case "{$a}" in
+          -l*) CATALYST_LIBS="${CATALYST_LIBS} ${a}"
+               ;;
+          *)   if test -f "$a" ; then
+                 CATALYST_LIBS="${CATALYST_LIBS} -Wl,${a}"
+               else
+                 CATALYST_LDFLAGS="${CATALYST_LDFLAGS} ${a}"
+               fi
+               ;;
+          esac
+        done
+        unset cs_link_opts
+
+      fi
+
+      cd "$cs_prv_dir"
+
+      if test "x$CATALYST_LIBS" != "x" ; then
+        cs_have_catalyst=yes;
+      fi
+
+      AC_MSG_RESULT($cs_have_catalyst)
+
+    fi
+
+  done
 
   # Report Catalyst support
   #------------------------
@@ -141,7 +163,13 @@ if test "x$with_catalyst" != "xno" ; then
     else
       AC_MSG_WARN([no Catalyst co-processing support])
     fi
+  else
+    AC_MSG_WARN([no Catalyst test as expected])
   fi
+
+  rm -rf "$cs_prv_dir"/catalyst_test
+  rm -rf "$cs_prv_dir"/CMakeFiles
+  rm -rf "$cs_prv_dir"/CMakeCache.txt
 
   if test "x$cs_have_catalyst" = "xno"; then
     CATALYST_LIBS=""

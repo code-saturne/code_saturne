@@ -42,6 +42,7 @@ SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
 
 AUX_DIST = \
 build-aux/catalyst \
+build-aux/catalyst-5.6 \
 build-aux/cs_config_test.py \
 build-aux/cs_version.py \
 build-aux/petsc-petscvariables.makefile \

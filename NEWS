@@ -62,6 +62,11 @@ Bug fixes
 
 - GUI: fix crash on startup on some recent systems.
 
+Architectural changes
+---------------------
+
+- Allow detection of Catalyst for ParaView versions above 5.6.
+
 Release 5.0.9 (Sep 26 2018)
 ===========================
 
