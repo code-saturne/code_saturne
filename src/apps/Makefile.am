@@ -105,7 +105,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/gui \
--I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(CPPFLAGS_BLAS)

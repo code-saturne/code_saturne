@@ -34,8 +34,6 @@
 #include "cs_base.h"
 #include "cs_volume_zone.h"
 
-#include "mei_evaluate.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -442,7 +440,7 @@ cs_gui_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_add_notebook_variables(mei_tree_t  *ev_law);
+cs_gui_add_notebook_variables(void  *ev_law);
 
 /*----------------------------------------------------------------------------*/
 /*!
