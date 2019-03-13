@@ -3995,8 +3995,10 @@ cs_gui_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_add_notebook_variables(mei_tree_t  *ev_law)
+cs_gui_add_notebook_variables(void  *ev_law)
 {
+  mei_tree_t  *_ev_law = ev_law;
+
   const char path0[] = "physical_properties/notebook/var";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
@@ -4011,7 +4013,7 @@ cs_gui_add_notebook_variables(mei_tree_t  *ev_law)
 
     if (name != NULL && c_value != NULL) {
       cs_real_t val = atof(c_value);
-      mei_tree_insert(ev_law, name, val);
+      mei_tree_insert(_ev_law, name, val);
     }
   }
 }
