@@ -69,7 +69,7 @@ from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRun
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant
+from code_saturne.Base.QtPage import from_qvariant
 from code_saturne.Base.CommandMgrDialogView import CommandMgrDialogView
 from code_saturne.model.BatchRunningModel import BatchRunningModel
 from code_saturne.model.ScriptRunningModel import ScriptRunningModel
@@ -414,7 +414,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 if not build_type_label:
                     build_type_label = "[default]"
                 self.comboBoxBuildType.addItem(self.tr(build_type_label),
-                                               to_qvariant(build_type_label))
+                                               build_type_label)
             self.comboBoxBuildType.setCurrentIndex(compute_build_id)
 
         self.class_list = None
@@ -1008,10 +1008,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 self.class_list = self.jmdl.batch.get_class_list()
                 if len(self.class_list) > 0:
                     for c in self.class_list:
-                        self.comboBoxClass.addItem(self.tr(c), to_qvariant(c))
+                        self.comboBoxClass.addItem(self.tr(c), c)
                 else:
                     c = self.job_class
-                    self.comboBoxClass.addItem(self.tr(c), to_qvariant(c))
+                    self.comboBoxClass.addItem(self.tr(c), c)
 
             # All passes
             try:

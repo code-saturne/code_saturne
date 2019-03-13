@@ -52,7 +52,7 @@ from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant
+from code_saturne.Base.QtPage import from_qvariant
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 
@@ -83,16 +83,16 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
             if index.column() == 0:
-                return to_qvariant(self.lst[index.row()][1])
+                return self.lst[index.row()][1]
             elif index.column() == 1:
                 key = self.lst[index.row()][3]
-                return to_qvariant(self.dataScalars[key])
+                return self.dataScalars[key]
             elif index.column() == 2:
-                return to_qvariant(self.lst[index.row()][2])
-        return to_qvariant()
+                return self.lst[index.row()][2]
+        return None
 
 
     def setData(self, index, value, role):

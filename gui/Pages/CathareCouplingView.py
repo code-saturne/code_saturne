@@ -54,7 +54,7 @@ import code_saturne.Base.QtPage as QtPage
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.CathareCouplingForm import Ui_CathareCouplingForm
 from code_saturne.model.CathareCouplingModel import CathareCouplingModel
 from code_saturne.model.LocalizationModelNeptune import LocalizationModel
@@ -91,7 +91,7 @@ class CathareEltDelegate(QItemDelegate):
         value = editor.text()
 
         if str(value) != "" :
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for Axis Projection in Conjugate Heat Transfer table
@@ -131,7 +131,7 @@ class NcfdBcDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for location
@@ -159,7 +159,7 @@ class SelectionCriteriaDelegate(QItemDelegate):
         value = editor.text()
 
         if str(value) != "" :
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -193,14 +193,14 @@ class StandardItemModelCathare(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataCathare[index.row()][index.column()])
+            return self.dataCathare[index.row()][index.column()]
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def flags(self, index):
@@ -211,8 +211,8 @@ class StandardItemModelCathare(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

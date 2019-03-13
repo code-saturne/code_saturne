@@ -111,66 +111,38 @@ def to_text_string(obj, encoding=None):
 
 #==============================================================================
 # QVariant conversion utilities
+#
+# Note: to_qvariant was removed recently; from_qvariant may be removed in
+#       many_places and the "to_text_string" variants could be replaced
+#       by "to_str"; where the value is already known to be of the correct
+#       type, or None handled in the associated code,
+#       this could even be ignored
 #==============================================================================
-PYQT_API_1 = False
+
 import collections
 
 if os.environ.get('QT_API', 'pyqt') == 'pyqt':
-    import sip
-    if QT_API == "PYQT4":
-        try:
-            PYQT_API_1 = sip.getapi('QVariant') == 1
-        except AttributeError:
-            PYQT_API_1 = True
-
-    def to_qvariant(pyobj=None):
-        """Convert Python object to QVariant
-        This is a transitional function from PyQt API #1 (QVariant exist)
-        to PyQt API #2 and Pyside (QVariant does not exist)"""
-        if PYQT_API_1:
-            from code_saturne.Base.QtCore import QVariant
-            return QVariant(pyobj)
-        else:
-            return pyobj
 
     def from_qvariant(qobj=None, convfunc=None):
         """Convert QVariant object to Python object
         This is a transitional function from PyQt API #1 (QVariant exists)
         to PyQt API #2 and Pyside (QVariant does not exist)"""
-        if PYQT_API_1:
-            assert isinstance(convfunc, collections.Callable)
+        if (qobj != None):
             if convfunc in TEXT_TYPES or convfunc is to_text_string:
-                return convfunc(qobj.toString())
-            elif convfunc is bool:
-                return qobj.toBool()
+                return str(qobj)
             elif convfunc is int:
-                return qobj.toInt()[0]
+                return int(qobj)
             elif convfunc is float:
-                return qobj.toDouble()[0]
-            else:
-                return convfunc(qobj)
-        else:
-            if (qobj != None):
-                if convfunc in TEXT_TYPES or convfunc is to_text_string:
-                    return str(qobj)
-                elif convfunc is int:
-                    return int(qobj)
-                elif convfunc is float:
-                    try:
-                        return float(qobj)
-                    except Exception:
-                        return locale.atof(qobj)
-                else:
-                    return qobj
+                try:
+                    return float(qobj)
+                except Exception:
+                    return locale.atof(qobj)
             else:
                 return qobj
+        else:
+            return qobj
 
 else:
-    def to_qvariant(obj=None):
-        """Convert Python object to QVariant
-        This is a transitional function from PyQt API#1 (QVariant exist)
-        to PyQt API#2 and Pyside (QVariant does not exist)"""
-        return obj
 
     def from_qvariant(qobj=None, pytype=None):
         """Convert QVariant object to Python object
@@ -182,6 +154,12 @@ def qbytearray_to_str(qba):
     """Convert QByteArray object to str in a way compatible with Python 2/3"""
     return str(bytes(qba.toHex().data()).decode())
 
+
+def to_str(s):
+    """Convert argument to string, using an empty string for None"""
+    if s is None:
+        return ''
+    return str(s)
 
 #==============================================================================
 # Wrappers around QFileDialog static methods
@@ -668,10 +646,7 @@ class IntValidator(QIntValidator):
 
         self.state = state
 
-        if PYQT_API_1:
-            return (state, pos)
-        else:
-            return (state, stri, pos)
+        return (state, stri, pos)
 
 
     def tr(self, text):
@@ -798,10 +773,7 @@ class DoubleValidator(QDoubleValidator):
 
         self.state = state
 
-        if PYQT_API_1:
-            return (state, pos)
-        else:
-            return (state, stri, pos)
+        return (state, stri, pos)
 
 
     def tr(self, text):
@@ -850,10 +822,7 @@ class RegExpValidator(QRegExpValidator):
 
         self.state = state
 
-        if PYQT_API_1:
-            return (state, pos)
-        else:
-            return (state, stri, pos)
+        return (state, stri, pos)
 
 
     def tr(self, text):

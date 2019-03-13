@@ -47,7 +47,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant
+from code_saturne.Base.QtPage import from_qvariant
 from code_saturne.Pages.ProfilesForm import Ui_ProfilesForm
 from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
@@ -77,12 +77,12 @@ class StandardItemModelProfile(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataProfile[index.row()][index.column()])
+            return self.dataProfile[index.row()][index.column()]
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def flags(self, index):
@@ -95,12 +95,12 @@ class StandardItemModelProfile(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Filename"))
+                return self.tr("Filename")
             elif section == 1:
-                return to_qvariant(self.tr("Variables"))
+                return self.tr("Variables")
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def setData(self, index, value, role):

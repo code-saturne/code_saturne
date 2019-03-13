@@ -55,7 +55,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from NumericalParamEquationNeptune import Ui_NumericalParamEquation
 from code_saturne.model.NumericalParamEquationModelNeptune import NumericalParamEquatModel
 from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalParametersModel
@@ -110,7 +110,7 @@ class SchemeDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(self.dicoM2V[value]), Qt.DisplayRole)
+                model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -167,7 +167,7 @@ class SolverDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(self.dicoM2V[value]), Qt.DisplayRole)
+                model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -204,7 +204,7 @@ class PrecisionDelegate(QItemDelegate):
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                    model.setData(idx, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -237,7 +237,7 @@ class IterationDelegate(QItemDelegate):
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                    model.setData(idx, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -265,30 +265,30 @@ class StandardItemModelScheme(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         elif role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
-                return to_qvariant(data)
+                return data
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.CheckStateRole:
             data = self._data[index.row()][index.column()]
             if index.column() == 2:
                 if data == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -309,8 +309,8 @@ class StandardItemModelScheme(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -389,22 +389,22 @@ class StandardItemModelSolver(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         elif role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
-                return to_qvariant(str(data))
+                return str(data)
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -419,8 +419,8 @@ class StandardItemModelSolver(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

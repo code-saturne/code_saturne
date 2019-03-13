@@ -1,6 +1,14 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Architectural changes:
+
+- GUI: force SIP API version to 2 for PqQt4. This allows removing
+  the "to_qvariant" wrapper function and makes code more readable;
+  the GUI will fail if called from external code using PyQt4 which
+  has loaded the default API, so compatibility with Salome
+  versions 7 or older is dropped.
+
 Release 6.0.0 (unreleased)
 --------------------------
 

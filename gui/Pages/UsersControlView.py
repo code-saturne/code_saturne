@@ -52,7 +52,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.QtPage import ComboModel, RegExpValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from UsersControl import Ui_UsersControl
 from code_saturne.model.UsersControlModel import UsersControlModel
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
@@ -119,7 +119,7 @@ class NameDelegate(QItemDelegate):
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, to_qvariant(new_pname), Qt.DisplayRole)
+            model.setData(index, new_pname, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -162,7 +162,7 @@ class LocationDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -209,7 +209,7 @@ class UserDimensionDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
     def tr(self, text):
         return text
@@ -241,19 +241,19 @@ class StandardItemModelUsersControl(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         elif role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
-                return to_qvariant(data)
+                return data
             else:
-                return to_qvariant()
+                return None
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -264,8 +264,8 @@ class StandardItemModelUsersControl(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

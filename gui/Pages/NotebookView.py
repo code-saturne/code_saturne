@@ -46,7 +46,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
-from code_saturne.Base.QtPage import from_qvariant, to_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Base.QtPage import DoubleValidator, RegExpValidator
 from code_saturne.Pages.NotebookForm import Ui_NotebookForm
 from code_saturne.model.NotebookModel import NotebookModel
@@ -112,19 +112,19 @@ class TreeItem(object):
     def data(self, column, role):
         if self.item == None:
             if column == 0:
-                return to_qvariant(self.header)
+                return self.header
             else:
-                return to_qvariant()
+                return None
         else:
             if column == 0 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.name)
+                return self.item.name
             elif column == 1 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.value)
+                return self.item.value
             elif column == 2 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.oturns)
+                return self.item.oturns
             elif column == 3 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.descr)
-        return to_qvariant()
+                return self.item.descr
+        return None
 
 
     def parent(self):
@@ -171,7 +171,7 @@ class LabelDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.Acceptable:
             p_value = str(editor.text())
-            model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ class ValueDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 #
@@ -240,7 +240,7 @@ class OTVariableDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, to_qvariant(value))
+        model.setData(index, value)
 
 
 #-------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ class DescrDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.Acceptable:
             p_value = str(editor.text())
-            model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -311,30 +311,30 @@ class VariableStandardItemModel(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("variable name"))
+                return self.tr("variable name")
             elif index.column() == 1:
-                return to_qvariant(self.tr("value"))
+                return self.tr("value")
             elif index.column() == 2:
-                return to_qvariant(self.tr("OpenTurns Variable"))
+                return self.tr("OpenTurns Variable")
             elif index.column() == 3:
-                return to_qvariant(self.tr("Description"))
+                return self.tr("Description")
 
         # Display
         if role == Qt.DisplayRole:
             return item.data(index.column(), role)
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -352,14 +352,14 @@ class VariableStandardItemModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("variable name"))
+                return self.tr("variable name")
             elif section == 1:
-                return to_qvariant(self.tr("value"))
+                return self.tr("value")
             elif section == 2:
-                return to_qvariant(self.tr("OpenTurns Variable"))
+                return self.tr("OpenTurns Variable")
             elif section == 3:
-                return to_qvariant(self.tr("Description"))
-        return to_qvariant()
+                return self.tr("Description")
+        return None
 
 
     def index(self, row, column, parent = QModelIndex()):

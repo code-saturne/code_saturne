@@ -48,7 +48,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Base.BrowserForm import Ui_BrowserForm
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.Toolbox import displaySelectedPage
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 
 import resource_base_rc
 
@@ -125,7 +125,7 @@ class TreeModel(QAbstractItemModel):
         QAbstractItemModel.__init__(self, parent)
 
         rootData = []
-        rootData.append(to_qvariant("Pages"))
+        rootData.append("Pages")
 
         self.rootItem = TreeItem(rootData, "folder")
         self.populateModel(data.split("\n"), self.rootItem)
@@ -154,7 +154,7 @@ class TreeModel(QAbstractItemModel):
         @return: C{QVariant}
         """
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
         column = index.column()
@@ -162,7 +162,7 @@ class TreeModel(QAbstractItemModel):
         if role == Qt.DisplayRole:
             # return text for columns
             if column == 0:
-                return to_qvariant(item.itemData[column])
+                return item.itemData[column]
 
         elif role == Qt.DecorationRole:
             # return icon for first column
@@ -228,9 +228,9 @@ class TreeModel(QAbstractItemModel):
                     elif item.itemType == "file-new":
                         icon = style.standardIcon(QStyle.SP_ToolBarHorizontalExtensionButton)
 
-                return to_qvariant(icon)
+                return icon
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -255,7 +255,7 @@ class TreeModel(QAbstractItemModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.rootItem.data(section)
 
-        return to_qvariant()
+        return None
 
 
     def index(self, row, column, parent):
@@ -358,7 +358,7 @@ class TreeModel(QAbstractItemModel):
         """
         """
         info = []
-        search_item = from_qvariant(to_qvariant(data), to_text_string)
+        search_item = from_qvariant(data, to_text_string)
 
         start = self.index(0, 0, QModelIndex())
         indexList = self.match(start, role, search_item, -1, Qt.MatchExactly)
@@ -442,7 +442,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setupUi(self)
 
         tree = self._browser()
-        self.model = TreeModel(from_qvariant(to_qvariant(tree), to_text_string))
+        self.model = TreeModel(from_qvariant(tree, to_text_string))
 
         self.treeView.setModel(self.model)
         self.treeView.header().hide()

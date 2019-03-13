@@ -53,7 +53,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, IntValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.SolutionDomainForm import Ui_SolutionDomainForm
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 
@@ -144,7 +144,7 @@ class MeshFormatDelegate(QItemDelegate):
         for i in range(len(self.lst)):
             if value == self.lst[i][1] + self.lst[i][2]:
                 key = self.lst[i][0]
-        model.setData(index, to_qvariant(key))
+        model.setData(index, key)
         if self.updateLayout != None:
             self.updateLayout()
 
@@ -205,7 +205,7 @@ class MeshNumberDelegate(QItemDelegate):
 
     def setModelData(self, lineEdit, model, index):
         value = str(lineEdit.text()).strip()
-        model.setData(index, to_qvariant(value))
+        model.setData(index, value)
 
 
 #-------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ class GroupDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, to_qvariant(value))
+        model.setData(index, value)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for selection
@@ -267,7 +267,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ class FloatDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -325,7 +325,7 @@ class IntDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), int)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -378,7 +378,7 @@ class StandardItemModelMeshes(QStandardItemModel):
                 if column != 1:
                     self.setData(index, value)
                 else:
-                    self.setData(index, to_qvariant(self.dataMeshes[row][1]))
+                    self.setData(index, self.dataMeshes[row][1])
 
 
     def populateModel(self):
@@ -413,42 +413,42 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[col])
+            return self.tooltip[col]
 
         elif role == Qt.DisplayRole:
             d = self.dataMeshes[index.row()][col]
             if d:
                 if col == 1:
-                    return to_qvariant(self.formatDict[d])
+                    return self.formatDict[d]
                 elif col == 3:
-                    return to_qvariant()
+                    return None
                 else:
-                    return to_qvariant(d)
+                    return d
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
             if col == 6:
-                return to_qvariant(Qt.AlignLeft)
+                return Qt.AlignLeft
             else:
-                return to_qvariant(Qt.AlignCenter)
+                return Qt.AlignCenter
 
         elif role == Qt.CheckStateRole:
             if col == 3:
                 d = self.dataMeshes[index.row()][3]
                 if d == True:
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
             else:
-                return to_qvariant()
+                return None
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -471,8 +471,8 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role=None):

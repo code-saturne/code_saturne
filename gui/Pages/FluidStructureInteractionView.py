@@ -55,7 +55,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.QtPage                          import DoubleValidator, IntValidator
-from code_saturne.Base.QtPage                          import to_qvariant, from_qvariant
+from code_saturne.Base.QtPage                          import from_qvariant
 from code_saturne.Pages.FluidStructureInteractionForm  import Ui_FluidStructureInteractionForm
 from code_saturne.model.FluidStructureInteractionModel import FluidStructureInteractionModel
 from code_saturne.model.LocalizationModel              import LocalizationModel
@@ -225,9 +225,9 @@ class StandardItemModel(QStandardItemModel):
         if index.isValid() and role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
-            return to_qvariant(self.__data[row][col])
+            return self.__data[row][col]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -242,8 +242,8 @@ class StandardItemModel(QStandardItemModel):
         Return the header column data.
         """
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

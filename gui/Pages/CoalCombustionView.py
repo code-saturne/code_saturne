@@ -51,7 +51,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 
 from code_saturne.Pages.CoalCombustionForm import Ui_CoalCombustionForm
 from code_saturne.model.Boundary import Boundary
@@ -119,7 +119,7 @@ class LabelFuelDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, to_qvariant(str(new_plabel)), Qt.DisplayRole)
+            model.setData(index, str(new_plabel), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Combo box delegate for the fuel type
@@ -156,7 +156,7 @@ class TypeFuelDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def paint(self, painter, option, index):
@@ -210,7 +210,7 @@ class DiameterDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Delegate for refusal
@@ -239,7 +239,7 @@ class RefusalDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Delegate for oxidant composition
@@ -267,7 +267,7 @@ class OxidantDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel for Coals
@@ -307,7 +307,7 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
             row = index.row()
@@ -315,16 +315,16 @@ class StandardItemModelCoals(QStandardItemModel):
             dico = self.dataCoals[row]
 
             if index.column() == 0:
-                return to_qvariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return to_qvariant(self.dicoM2V[dico['type']])
+                return self.dicoM2V[dico['type']]
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -336,8 +336,8 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -429,10 +429,10 @@ class StandardItemModelClasses(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataClasses[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataClasses[index.row()][index.column()]
+        return None
 
 
     def flags(self, index):
@@ -446,8 +446,8 @@ class StandardItemModelClasses(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -523,10 +523,10 @@ class StandardItemModelOxidant(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataClasses[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataClasses[index.row()][index.column()]
+        return None
 
 
     def flags(self, index):
@@ -540,8 +540,8 @@ class StandardItemModelOxidant(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -622,10 +622,10 @@ class StandardItemModelRefusal(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataClasses[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataClasses[index.row()][index.column()]
+        return None
 
 
     def flags(self, index):
@@ -639,8 +639,8 @@ class StandardItemModelRefusal(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

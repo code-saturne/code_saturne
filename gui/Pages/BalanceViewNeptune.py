@@ -46,7 +46,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, IntValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.BalanceForm import Ui_BalanceForm
 from code_saturne.model.BalanceModelNeptune import BalanceModelNeptune
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
@@ -84,7 +84,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = editor.text()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ class LineEditDelegateIndex(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), int)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -144,18 +144,18 @@ class StandardItemModelPressureDrop(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
 
         if role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
             if index.column() in (0, 1):
-                return to_qvariant(self._data[row][col])
+                return self._data[row][col]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -169,8 +169,8 @@ class StandardItemModelPressureDrop(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -244,19 +244,19 @@ class StandardItemModelScalarBalance(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
 
         if role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
 
             if index.column() in (0, 1, 2):
-                return to_qvariant(self._data[row][col])
+                return self._data[row][col]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -270,8 +270,8 @@ class StandardItemModelScalarBalance(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

@@ -55,7 +55,7 @@ import os, re
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
-from code_saturne.Base.QtPage import RegExpValidator, to_qvariant
+from code_saturne.Base.QtPage import RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.OutputControlForm import Ui_OutputControlForm
 from code_saturne.model.OutputControlModel import OutputControlModel
@@ -125,7 +125,7 @@ class LabelWriterDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, to_qvariant(new_plabel), Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ class LabelMeshDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, to_qvariant(new_plabel), Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ class FormatWriterDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value))
+                model.setData(idx, value)
 
 
 #-------------------------------------------------------------------------------
@@ -286,7 +286,7 @@ class TypeMeshDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value))
+                model.setData(idx, value)
 
 
     def paint(self, painter, option, index):
@@ -348,7 +348,7 @@ class LocationSelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -385,7 +385,7 @@ class DensitySelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -425,7 +425,7 @@ class AssociatedWriterDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -476,7 +476,7 @@ class StandardItemModelMesh(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
 
@@ -485,23 +485,23 @@ class StandardItemModelMesh(QStandardItemModel):
             dico = self.dataMesh[row]
 
             if index.column() == 0:
-                return to_qvariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return to_qvariant(dico['id'])
+                return dico['id']
             elif index.column() == 2:
-                return to_qvariant(self.dicoM2V[dico['type']])
+                return self.dicoM2V[dico['type']]
             elif index.column() == 3:
-                return to_qvariant(dico['location'])
+                return dico['location']
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
             if index.column() != 3:
-                return to_qvariant(Qt.AlignCenter)
+                return Qt.AlignCenter
             else:
-                return to_qvariant(Qt.AlignLeft | Qt.AlignVCenter)
+                return Qt.AlignLeft | Qt.AlignVCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -521,14 +521,14 @@ class StandardItemModelMesh(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return to_qvariant(self.tr("Id"))
+                return self.tr("Id")
             elif section == 2:
-                return to_qvariant(self.tr("Type"))
+                return self.tr("Type")
             elif section == 3:
-                return to_qvariant(self.tr("Selection Criteria"))
-        return to_qvariant()
+                return self.tr("Selection Criteria")
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -628,7 +628,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
 
@@ -637,25 +637,25 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
             dico = self.dataMesh[row]
 
             if index.column() == 0:
-                return to_qvariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return to_qvariant(dico['id'])
+                return dico['id']
             elif index.column() == 2:
-                return to_qvariant(self.dicoM2V[dico['type']])
+                return self.dicoM2V[dico['type']]
             elif index.column() == 3:
-                return to_qvariant(dico['density'])
+                return dico['density']
             elif index.column() == 4:
-                return to_qvariant(dico['location'])
+                return dico['location']
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
             if index.column() != 4:
-                return to_qvariant(Qt.AlignCenter)
+                return Qt.AlignCenter
             else:
-                return to_qvariant(Qt.AlignLeft | Qt.AlignVCenter)
+                return Qt.AlignLeft | Qt.AlignVCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -675,16 +675,16 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return to_qvariant(self.tr("Id"))
+                return self.tr("Id")
             elif section == 2:
-                return to_qvariant(self.tr("Type"))
+                return self.tr("Type")
             elif section == 3:
-                return to_qvariant(self.tr("Density"))
+                return self.tr("Density")
             elif section == 4:
-                return to_qvariant(self.tr("Selection Criteria"))
-        return to_qvariant()
+                return self.tr("Selection Criteria")
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -798,7 +798,7 @@ class StandardItemModelWriter(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
 
@@ -807,20 +807,20 @@ class StandardItemModelWriter(QStandardItemModel):
             dico = self.dataWriter[row]
 
             if index.column() == 0:
-                return to_qvariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return to_qvariant(dico['id'])
+                return dico['id']
             elif index.column() == 2:
-                return to_qvariant(self.dicoM2V[dico['format']])
+                return self.dicoM2V[dico['format']]
             elif index.column() == 3:
-                return to_qvariant(dico['directory'])
+                return dico['directory']
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -836,14 +836,14 @@ class StandardItemModelWriter(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return to_qvariant(self.tr("Id"))
+                return self.tr("Id")
             elif section == 2:
-                return to_qvariant(self.tr("Format"))
+                return self.tr("Format")
             elif section == 3:
-                return to_qvariant(self.tr("Directory"))
-        return to_qvariant()
+                return self.tr("Directory")
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -934,15 +934,15 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         col = index.column()
 
         if role == Qt.DisplayRole:
-            return to_qvariant(self._data[row])
+            return self._data[row]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -953,8 +953,8 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -1039,7 +1039,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
 
@@ -1047,20 +1047,20 @@ class StandardItemModelMonitoring(QStandardItemModel):
             dico = self.dataMonitoring[row]
 
             if index.column() == 0:
-                return to_qvariant(dico['n'])
+                return dico['n']
             elif index.column() == 1:
-                return to_qvariant(dico['X'])
+                return dico['X']
             elif index.column() == 2:
-                return to_qvariant(dico['Y'])
+                return dico['Y']
             elif index.column() == 3:
-                return to_qvariant(dico['Z'])
+                return dico['Z']
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -1075,14 +1075,14 @@ class StandardItemModelMonitoring(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("n"))
+                return self.tr("n")
             elif section == 1:
-                return to_qvariant(self.tr("X"))
+                return self.tr("X")
             elif section == 2:
-                return to_qvariant(self.tr("Y"))
+                return self.tr("Y")
             elif section == 3:
-                return to_qvariant(self.tr("Z"))
-        return to_qvariant()
+                return self.tr("Z")
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -1200,7 +1200,7 @@ class MonitoringPointDelegate(QItemDelegate):
             item = editor.text()
             selectionModel = self.table.selectionModel()
             for index in selectionModel.selectedRows(index.column()):
-                model.setData(index, to_qvariant(item), Qt.DisplayRole)
+                model.setData(index, item, Qt.DisplayRole)
                 dico = model.dataMonitoring[index.row()]
                 x = float(dico['X'])
                 y = float(dico['Y'])

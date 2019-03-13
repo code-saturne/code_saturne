@@ -65,7 +65,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import to_text_string
 from Thermodynamics import Ui_Thermodynamics
 from code_saturne.model.ThermodynamicsModel import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
@@ -136,7 +136,7 @@ class MaterialsDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(self.modelCombo.dicoM2V[value]), Qt.DisplayRole)
+                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -197,7 +197,7 @@ class MethodDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(self.modelCombo.dicoM2V[value]), Qt.DisplayRole)
+                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -235,20 +235,20 @@ class StandardItemModelProperty(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         elif role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if index.column() in (0, 1, 2, 3):
                 if data:
-                    return to_qvariant(data)
+                    return data
                 else:
-                    return to_qvariant()
+                    return None
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -265,8 +265,8 @@ class StandardItemModelProperty(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

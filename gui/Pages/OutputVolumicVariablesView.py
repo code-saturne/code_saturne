@@ -46,9 +46,8 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
-from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import RegExpValidator, from_qvariant, to_text_string
 from code_saturne.Base.QtPage import ComboModel
-from code_saturne.Base.QtPage import PYQT_API_1
 from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
@@ -111,7 +110,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     p_value = self.p_value
 
-            model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -164,23 +163,23 @@ class TreeItem(object):
     def data(self, column, role):
         if self.item == None:
             if column == 0:
-                return to_qvariant(self.header)
+                return self.header
             else:
-                return to_qvariant()
+                return None
         else:
             if column == 0 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.label)
+                return self.item.label
             elif column == 1 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.name)
+                return self.item.name
             elif column >= 2 and role == Qt.CheckStateRole:
                 value = self.item.status[column - 2]
                 if value == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 elif value == 'onoff':
-                    return to_qvariant(Qt.PartiallyChecked)
+                    return Qt.PartiallyChecked
                 else:
-                    return to_qvariant(Qt.Unchecked)
-        return to_qvariant()
+                    return Qt.Unchecked
+        return None
 
     def parent(self):
         return self.parentItem
@@ -240,24 +239,24 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("Variable/Scalar name"))
+                return self.tr("Variable/Scalar name")
             elif index.column() == 2:
-                return to_qvariant(self.tr("Print in listing"))
+                return self.tr("Print in listing")
             elif index.column() == 3:
-                return to_qvariant(self.tr("Post-processing"))
+                return self.tr("Post-processing")
             elif index.column() == 4:
-                return to_qvariant(self.tr("Monitoring"))
+                return self.tr("Monitoring")
 
         # Display
         if role == Qt.DisplayRole:
@@ -265,9 +264,9 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         elif role == Qt.CheckStateRole:
             return item.data(index.column(), role)
         #if role == Qt.TextAlignmentRole and index.column() > 1:
-        #    return to_qvariant(Qt.AlignHCenter)
+        #    return Qt.AlignHCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -297,16 +296,16 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Output label"))
+                return self.tr("Output label")
             elif section == 1:
-                return to_qvariant(self.tr("Internal name"))
+                return self.tr("Internal name")
             elif section == 2:
-                return to_qvariant(self.tr("Print in\nlisting"))
+                return self.tr("Print in\nlisting")
             elif section == 3:
-                return to_qvariant(self.tr("Post-\nprocessing"))
+                return self.tr("Post-\nprocessing")
             elif section == 4:
-                return to_qvariant(self.tr("Monitoring"))
-        return to_qvariant()
+                return self.tr("Monitoring")
+        return None
 
 
     def index(self, row, column, parent = QModelIndex()):

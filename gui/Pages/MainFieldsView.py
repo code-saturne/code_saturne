@@ -55,7 +55,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.QtPage import ComboModel, RegExpValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
 from MainFields import Ui_MainFields
@@ -137,7 +137,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, to_qvariant(new_plabel), Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Combo box delegate for the nature of field
@@ -183,7 +183,7 @@ class NatureDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -236,7 +236,7 @@ class EnthalpyDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -287,7 +287,7 @@ class CriterionDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -339,7 +339,7 @@ class CarrierDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -374,31 +374,31 @@ class StandardItemModelMainFields(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         elif role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if index.column() in (0, 1, 2, 3, 5):
                 if data:
-                    return to_qvariant(data)
+                    return data
                 else:
-                    return to_qvariant()
+                    return None
 
         elif role == Qt.CheckStateRole:
             data = self._data[index.row()][index.column()]
             if index.column() == 4:
                 if data == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -429,8 +429,8 @@ class StandardItemModelMainFields(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

@@ -53,7 +53,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.ConjugateHeatTransferForm import Ui_ConjugateHeatTransferForm
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
@@ -92,7 +92,7 @@ class SyrthesVerbosityDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), int)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for Axis Projection in Conjugate Heat Transfer table
@@ -126,7 +126,7 @@ class ProjectionAxisDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for location
@@ -154,7 +154,7 @@ class SelectionCriteriaDelegate(QItemDelegate):
         value = editor.text()
 
         if str(value) != "" :
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -184,14 +184,14 @@ class StandardItemModelSyrthes(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataSyrthes[index.row()][index.column()])
+            return self.dataSyrthes[index.row()][index.column()]
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def flags(self, index):
@@ -202,8 +202,8 @@ class StandardItemModelSyrthes(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

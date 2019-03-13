@@ -49,7 +49,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.GroundwaterLawForm import Ui_GroundwaterLawForm
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
@@ -82,10 +82,10 @@ class StandardItemModelGroundwaterLaw(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataDarcyLawZones[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataDarcyLawZones[index.row()][index.column()]
+        return None
 
     def flags(self, index):
         if not index.isValid():
@@ -95,8 +95,8 @@ class StandardItemModelGroundwaterLaw(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

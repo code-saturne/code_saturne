@@ -52,8 +52,8 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.QtPage import ComboModel, RegExpValidator, PYQT_API_1
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import ComboModel, RegExpValidator
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from OutputFields import Ui_OutputFields
 from code_saturne.model.OutputFieldsModel import *
@@ -116,10 +116,7 @@ class ProbesValidator(QRegExpValidator):
 
         self.state = state
 
-        if PYQT_API_1:
-            return (state, pos)
-        else:
-            return (state, stri, pos)
+        return (state, stri, pos)
 
 #-------------------------------------------------------------------------------
 #
@@ -153,7 +150,7 @@ class ProbesDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                    model.setData(idx, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -210,7 +207,7 @@ class NameDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, to_qvariant(new_plabel), Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -242,30 +239,30 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         elif role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
-                return to_qvariant(data)
+                return data
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.CheckStateRole:
             data = self._data[index.row()][index.column()]
             if index.column() == 1 or index.column() == 2 :
                 if data == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -280,8 +277,8 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

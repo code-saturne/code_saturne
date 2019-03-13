@@ -75,7 +75,7 @@ except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from code_saturne.Base.QtPage import getexistingdirectory
-from code_saturne.Base.QtPage import DoubleValidator, from_qvariant, to_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, from_qvariant
 
 import numpy
 import matplotlib
@@ -155,23 +155,23 @@ class TreeItem(object):
     def data(self, column, role):
         if self.item == None:
             if column == 0:
-                return to_qvariant(self.header)
+                self.header
             else:
-                return to_qvariant()
+                return None
         else:
             if column == 0 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.name)
+                return self.item.name
             elif column == 1 and role == Qt.CheckStateRole:
                 value = self.item.status
                 if value == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 elif value == 'onoff':
-                    return to_qvariant(Qt.PartiallyChecked)
+                    return Qt.PartiallyChecked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
             elif column == 2 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.subplot_id)
-        return to_qvariant()
+                return self.item.subplot_id
+        return None
 
 
     def parent(self):
@@ -215,22 +215,22 @@ class CaseStandardItemModel(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("File name"))
+                return self.tr("File name")
             elif index.column() == 1:
-                return to_qvariant(self.tr("Status"))
+                return self.tr("Status")
             elif index.column() == 2:
-                return to_qvariant(self.tr("Subplot"))
+                return self.tr("Subplot")
 
         # Display
         if role == Qt.DisplayRole:
@@ -238,7 +238,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         elif role == Qt.CheckStateRole:
             return item.data(index.column(), role)
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -267,12 +267,12 @@ class CaseStandardItemModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("File name"))
+                return self.tr("File name")
             elif section == 1:
-                return to_qvariant(self.tr("Status"))
+                return self.tr("Status")
             elif section == 2:
-                return to_qvariant(self.tr("Subplot"))
-        return to_qvariant()
+                return self.tr("Subplot")
+        return None
 
 
     def index(self, row, column, parent = QModelIndex()):

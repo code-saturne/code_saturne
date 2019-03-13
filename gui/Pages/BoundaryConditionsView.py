@@ -49,7 +49,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Pages.BoundaryConditionsForm import Ui_BoundaryConditionsForm
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, to_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 from code_saturne.model.MobileMeshModel import MobileMeshModel
@@ -80,10 +80,10 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataBoundary[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataBoundary[index.row()][index.column()]
+        return None
 
 
     def flags(self, index):
@@ -95,8 +95,8 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

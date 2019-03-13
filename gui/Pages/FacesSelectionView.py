@@ -49,7 +49,7 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.QtPage import RegExpValidator, DoubleValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.model.Common import GuiParam
 from code_saturne.Pages.FacesSelectionForm import Ui_FacesSelectionForm
 
@@ -87,7 +87,7 @@ class LineEditDelegateVerbosity(QItemDelegate):
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for selection
@@ -115,7 +115,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for Fraction and Plane
@@ -143,7 +143,7 @@ class FractionPlaneDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -203,27 +203,27 @@ class StandardItemModelFaces(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[col])
+            return self.tooltip[col]
 
         if role == Qt.DisplayRole:
             if col == 0:
-                return to_qvariant(self.dataFaces[row]['fraction'])
+                return self.dataFaces[row]['fraction']
             elif col == 1:
-                return to_qvariant(self.dataFaces[row]['plane'])
+                return self.dataFaces[row]['plane']
             elif col == 2:
-                return to_qvariant(self.dataFaces[row]['verbosity'])
+                return self.dataFaces[row]['verbosity']
             elif col == 3:
-                return to_qvariant(self.dataFaces[row]['visualization'])
+                return self.dataFaces[row]['visualization']
             elif col == 4:
-                return to_qvariant(self.dataFaces[row]['selector'])
+                return self.dataFaces[row]['selector']
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -234,8 +234,8 @@ class StandardItemModelFaces(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

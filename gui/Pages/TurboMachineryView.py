@@ -46,7 +46,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, RegExpValidator, DoubleValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import to_text_string
 from code_saturne.Pages.TurboMachineryForm import Ui_TurboMachineryForm
 from code_saturne.model.TurboMachineryModel import TurboMachineryModel
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
@@ -85,7 +85,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = editor.text()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ class VelocityDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -145,20 +145,20 @@ class StandardItemModelRotor(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
 
         if role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if index.column() in (0, 1):
                 if data:
-                    return to_qvariant(data)
+                    return data
                 else:
-                    return to_qvariant()
+                    return None
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -169,8 +169,8 @@ class StandardItemModelRotor(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

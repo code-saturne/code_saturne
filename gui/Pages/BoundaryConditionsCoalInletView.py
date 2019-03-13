@@ -50,7 +50,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 
 from code_saturne.Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
 import code_saturne.model.CoalCombustionModel as CoalCombustion
@@ -91,7 +91,7 @@ class ValueDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coals in a QTableView
@@ -114,10 +114,10 @@ class StandardItemModelCoal(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataCoal[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataCoal[index.row()][index.column()]
+        return None
 
 
     def flags(self, index):
@@ -131,8 +131,8 @@ class StandardItemModelCoal(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -193,16 +193,16 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
             classe = index.row()
             coal   = index.column()
             if classe < self.coalClassesNumber[coal]:
                 try:
-                    return to_qvariant(self.ratio[coal][classe])
+                    return self.ratio[coal][classe]
                 except:
                     log.debug("ERROR no data for self.ratio[%i][%i] "%(coal, classe))
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -216,10 +216,10 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant("Coal" + " " + str(section+1))
+            return "Coal" + " " + str(section+1)
         if orientation == Qt.Vertical and role == Qt.DisplayRole:
-            return to_qvariant("Class" + " " + str(section+1))
-        return to_qvariant()
+            return "Class" + " " + str(section+1)
+        return None
 
 
     def setData(self, index, value, role):

@@ -41,13 +41,15 @@ if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-# to use PyQt API 2
-#if sys.version_info[0] == 2:
-#    import sip
-#    sip.setapi('QString', 2)
-#    sip.setapi('QVariant', 2)
-#    sip.setapi('QTime', 2)
-#    sip.setapi('QUrl', 2)
+# Force PyQt API 2 for PyQt4
+
+try:
+    import sip
+    for api in ('QDate', 'QDateTime', 'QString', 'QTextStream',
+                'QTime', 'QUrl', 'QVariant'):
+        sip.setapi(api, 2)
+except Exception:
+    print("Warning: error forcing SIP to force v2 API.")
 
 try:
     from code_saturne.Base.QtCore    import *
@@ -64,8 +66,8 @@ if list(map(int, QT_VERSION_STR.split( "."))) < [4, 3, 0]:
                      "(found %s)." % QT_VERSION_STR)
 
 
-if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 3, 0]:
-    raise SystemExit("Graphical user interface requires PyQt 4.3 or later "\
+if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 5, 0]:
+    raise SystemExit("Graphical user interface requires PyQt 4.5 or later "\
                      "(found %s)." % PYQT_VERSION_STR)
 
 #-------------------------------------------------------------------------------

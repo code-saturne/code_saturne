@@ -48,7 +48,7 @@ import os
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
-from code_saturne.Base.QtPage import RegExpValidator, to_qvariant
+from code_saturne.Base.QtPage import RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.studymanager_gui.ManagePlotForm import Ui_ManagePlotForm
 from code_saturne.studymanager_gui.ManagePlotterForm import Ui_ManagePlotterForm
@@ -253,7 +253,7 @@ class FloatDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value))
+                    model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for integer
@@ -284,7 +284,7 @@ class IntDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value))
+                    model.setData(idx, value)
 
 
 #-------------------------------------------------------------------------------
@@ -321,7 +321,7 @@ class FormatFigureDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value))
+                model.setData(idx, value)
 
 
 #-------------------------------------------------------------------------------
@@ -354,7 +354,7 @@ class LabelDelegate(QItemDelegate):
             return
 
         p_value = str(editor.text())
-        model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+        model.setData(index, p_value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -418,7 +418,7 @@ class StandardItemModelSubplot(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         column = index.column()
@@ -426,23 +426,23 @@ class StandardItemModelSubplot(QStandardItemModel):
         key = self.keys[column]
 
         if dico[key] == None:
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole and column != 4:
-            return to_qvariant(dico[key])
+            return dico[key]
 
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
         elif role == Qt.CheckStateRole and column == 4:
             st = dico[key]
             if st == 'on':
-                return to_qvariant(Qt.Checked)
+                return Qt.Checked
             else:
-                return to_qvariant(Qt.Unchecked)
+                return Qt.Unchecked
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -458,8 +458,8 @@ class StandardItemModelSubplot(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -565,7 +565,7 @@ class StandardItemModelFigure(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         column = index.column()
@@ -573,15 +573,15 @@ class StandardItemModelFigure(QStandardItemModel):
         key = self.keys[column]
 
         if dico[key] == None:
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
-            return to_qvariant(dico[key])
+            return dico[key]
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -595,8 +595,8 @@ class StandardItemModelFigure(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -686,17 +686,17 @@ class TreeItem(object):
     def data(self, column, role):
         if self.item == None:
             if column == 0:
-                return to_qvariant(self.header)
+                return self.header
             else:
-                return to_qvariant()
+                return None
         else:
             if column == 0 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.tpe)
+                return self.item.tpe
             elif column == 1 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.name)
+                return self.item.name
             elif column == 2 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.idlist)
-        return to_qvariant()
+                return self.item.idlist
+        return None
 
 
     def parent(self):
@@ -741,28 +741,28 @@ class StandardItemModelMeasurement(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("type"))
+                return self.tr("type")
             elif index.column() == 1:
-                return to_qvariant(self.tr("identification"))
+                return self.tr("identification")
             elif index.column() == 2:
-                return to_qvariant(self.tr("subplot id list"))
+                return self.tr("subplot id list")
 
         # Display
         if role == Qt.DisplayRole:
             return item.data(index.column(), role)
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -775,12 +775,12 @@ class StandardItemModelMeasurement(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("type"))
+                return self.tr("type")
             elif section == 1:
-                return to_qvariant(self.tr("identification"))
+                return self.tr("identification")
             elif section == 2:
-                return to_qvariant(self.tr("subplot id list"))
-        return to_qvariant()
+                return self.tr("subplot id list")
+        return None
 
 
     def index(self, row, column, parent = QModelIndex()):
@@ -880,28 +880,28 @@ class StandardItemModelCase(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("type"))
+                return self.tr("type")
             elif index.column() == 1:
-                return to_qvariant(self.tr("identification"))
+                return self.tr("identification")
             elif index.column() == 2:
-                return to_qvariant(self.tr("subplot id list"))
+                return self.tr("subplot id list")
 
         # Display
         if role == Qt.DisplayRole:
             return item.data(index.column(), role)
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -914,12 +914,12 @@ class StandardItemModelCase(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("type"))
+                return self.tr("type")
             elif section == 1:
-                return to_qvariant(self.tr("identification"))
+                return self.tr("identification")
             elif section == 2:
-                return to_qvariant(self.tr("subplot id list"))
-        return to_qvariant()
+                return self.tr("subplot id list")
+        return None
 
 
     def index(self, row, column, parent = QModelIndex()):
