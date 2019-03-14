@@ -55,9 +55,16 @@ module ppcpfu
   ! prise en compte H2  , H2S , SO2 , HCN , NH3
   integer, save ::         ihy , ih2s , iso2  , ihcn , inh3
 
-  ! Equation sur YCO2
+  ! kinetic model for CO <=> CO2
+  ! 0  unused (maximal conversion in turbulent model)
+  ! 1  transport of CO2 mass fraction
+  ! 2  transport of CO mass fraction
 
-  integer, save ::         ieqco2 , iyco2
+  integer, save ::         ieqco2
+
+  ! scalar id of CO2 mass fraction
+
+  integer, save ::         iyco2
 
   ! Combustion heterogene avec le  CO2
 

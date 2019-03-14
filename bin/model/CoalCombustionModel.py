@@ -133,7 +133,7 @@ class CoalCombustionModel(Variables, Model):
         default['H2O_Kinetics']                          = 'off'
         default['improved_NOx_model']                    = 'off'
         default['reburning']                             = 'unused'
-        default['kinetic_model']                         = 'unused'
+        default['kinetic_model']                         = 'co2_ym_transport'
 
         return default
 
