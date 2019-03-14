@@ -361,7 +361,7 @@ call cs_mesh_quantities_set_porous_model(iporos)
 ! --- Varpos
 ! If CDO mode only, skip this stage
 if (icdo.lt.2) then
-   call varpos
+  call varpos
 endif
 ! --- Internal coupling
 call cs_user_internal_coupling

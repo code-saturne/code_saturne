@@ -237,7 +237,10 @@ ieqnox = 1
 imdnox = 0
 irb = 0
 
-ieqco2 = 0
+! Kinetic model
+! solve transport equation of CO2 mass fraction by default
+! (for coal or fuel combustion)
+ieqco2 = 1
 
 ! ---> Coefficient de relation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
