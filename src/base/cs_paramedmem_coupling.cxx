@@ -92,6 +92,13 @@ using namespace MEDCoupling;
 static int                          _n_paramed_couplers = 0;
 static cs_paramedmem_coupling_t   **_paramed_couplers = NULL;
 
+const int cs_medcpl_cell_field = 0;
+const int cs_medcpl_vertex_field = 1;
+
+const int cs_medcpl_no_time = 0;
+const int cs_medcpl_one_time = 1;
+const int cs_medcpl_linear_time = 2;
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
