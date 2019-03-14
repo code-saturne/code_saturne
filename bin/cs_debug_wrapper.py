@@ -564,7 +564,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
         else:
             cmd_string += ' -i=mi'   # emacs 24 and newer
         for c in cmd:
-            cmd_string += ' ' + enquote_arg(str(c))
+            if cmd != gdb:
+                cmd_string += ' ' + enquote_arg(str(c))
         cmd_string += r'\")"'
         cmd = [debugger, '--eval', cmd_string]
 
