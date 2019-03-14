@@ -43,12 +43,12 @@
 
 /*----------------------------------------------------------------------------*/
 
-static int cs_medcpl_cell_field = 0;
-static int cs_medcpl_vertex_field = 1;
+extern const int cs_medcpl_cell_field;
+extern const int cs_medcpl_vertex_field;
 
-static int cs_medcpl_no_time = 0;
-static int cs_medcpl_one_time = 1;
-static int cs_medcpl_linear_time = 2;
+extern const int cs_medcpl_no_time;
+extern const int cs_medcpl_one_time;
+extern const int cs_medcpl_linear_time;
 
 /*----------------------------------------------------------------------------*/
 
