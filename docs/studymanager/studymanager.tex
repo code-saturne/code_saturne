@@ -168,6 +168,7 @@ completed
 \item \texttt{-g, --debug}: activate debugging mode
 \item \texttt{--with-tags=WITH\_TAGS}: only process runs with all specified tags (separated by commas)
 \item \texttt{--without-tags=WITHOUT\_TAGS}: exclude any run with one of specified tags (separated by commas)
+\item \texttt{--create-xml}: create xml from study (current directory has to be a study)
 \end{list}
 
 \underline{Examples:}
@@ -185,7 +186,7 @@ $ code_saturne studymanager -f sample.xml -r
 
 \item as above, and compares all new checkpoint files with those from the \textbf{repository} if defined in \texttt{sample.xml}
 {\noindentgroup\begin{lstlisting}
-$ code\_saturne smgr -f sample.xml -r -c
+$ code_saturne smgr -f sample.xml -r -c
 \end{lstlisting}}
 
 \item as above, and plots results if defined in \texttt{sample.xml}
@@ -196,11 +197,6 @@ $ code_saturne smgr -f sample.xml -rcp
 \item as above, and send the two reports
 {\noindentgroup\begin{lstlisting}
 $ code_saturne smgr -f sample.xml -r -c -p -m "dt@moulinsart.be dd@moulinsart.be"
-\end{lstlisting}}
-
-\item compares and plots results in the \textbf{destination} already computed
-{\noindentgroup\begin{lstlisting}
-$ code_saturne smgr -f sample.xml -c -p
 \end{lstlisting}}
 
 \item compares and plots results in the \textbf{destination} already computed
@@ -250,7 +246,7 @@ The last line of the file of parameters must be:
 \end{verbatim}
 \normalsize
 
-\subsection{Case creation and compilation fo the user files}
+\subsection{Case creation and compilation of the user files}
 
 When \textsc{studymanager} is launched, the file of parameters is parsed in order to
 known which studies and cases from the \textbf{repository} should be duplicated
@@ -823,8 +819,6 @@ the legend, it is possible to draw the legend outside the axis;
 \item \texttt{xlim}: set range for the x axis;
 \item \texttt{ylim}: set range for the y axis.
 \end{list}
-
-The attributes \texttt{fig} and \texttt{ycol} are mandatory.
 
 For more advanced options see section \ref{sec:raw}.
 
