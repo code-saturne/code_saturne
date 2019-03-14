@@ -424,8 +424,7 @@ def search_and_replace_power(line):
 
 #---------------------------------------------------------------------------
 
-def split_for_assignment(self,
-                         l):
+def split_for_assignment(l):
     """
     Check for assignemnt (separating along = but not >=, <=)
     """
