@@ -700,7 +700,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   cs_sdm_square_init(cm->n_fc + 1, sloc);
 
   /* Compute the local discrete Hodge operator */
-  cs_hodge_edfp_cost_get(h_info, cm, cb);
+  cs_hodge_edfp_cost_get_opt(h_info, cm, cb);
 
   cs_sdm_t  *hloc = cb->hdg;
   double  *sval_crow = sloc->val + cm->n_fc*sloc->n_rows;
@@ -824,9 +824,6 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    h_info,
                       CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
                       CS_CDO_LOCAL_EV));
 
-  cs_real_3_t  *pq = cb->vectors;
-  cs_real_3_t  *dq = cb->vectors + cm->n_ec;
-
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_vc, sloc);
@@ -834,6 +831,9 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    h_info,
   /* Initialize the hodge matrix */
   cs_sdm_t  *hloc = cb->hdg;
   cs_sdm_square_init(cm->n_ec, hloc);
+
+  cs_real_3_t  *pq = cb->vectors;
+  cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
   /* Set numbering and geometrical quantities Hodge builder */
   for (int ii = 0; ii < cm->n_ec; ii++) {
@@ -2489,6 +2489,84 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
 
   _compute_hodge_cost(cm->n_fc, h_info.coef*h_info.coef, alpha, kappa,
                       hdg->val);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+    _check_vector_hodge((const cs_real_t (*)[3])dq,
+                        (const cs_real_t (*)[3])pq,
+                        hdg, h_info, cb);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell using the COST algo.
+ *          Hodge op. from dual edges to primal faces.
+ *          This function is related to face-based schemes
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_edfp_cost_get_opt(const cs_param_hodge_t    h_info,
+                           const cs_cell_mesh_t     *cm,
+                           cs_cell_builder_t        *cb)
+{
+  /* Sanity check */
+  assert(cb != NULL && cb->hdg != NULL);
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+
+  const int  n_fc = cm->n_fc;
+  cs_real_3_t  *pq = cb->vectors;
+  cs_real_3_t  *dq = cb->vectors + n_fc;
+
+  for (short int f = 0; f < n_fc; f++) {
+
+    const cs_nvec3_t  deq = cm->dedge[f];
+    const cs_quant_t  pfq = cm->face[f];
+
+    for (int k = 0; k < 3; k++) {
+      dq[f][k] = deq.meas * deq.unitv[k];
+      pq[f][k] = pfq.meas * pfq.unitv[k];
+    }
+
+  } /* Loop on cell faces */
+
+  /* Initialize the local matrix related to this discrete Hodge operator */
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(n_fc, hdg);
+
+  /* Compute additional geometrical quantities:
+     Initialize the local Hodge matrix with the consistency part which is
+     constant over a cell.
+     Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
+     and discrete Hodge operator from DUAL->PRIMAL space */
+
+  if (h_info.is_iso || h_info.is_unity)
+    _compute_iso_hodge_ul(n_fc, 3*h_info.coef*h_info.coef, 1./cm->vol_c,
+                          (const cs_real_t (*)[3])dq,
+                          (const cs_real_t (*)[3])pq,
+                          cb, hdg);
+  else
+    _compute_aniso_hodge_ul(n_fc, 3*h_info.coef*h_info.coef, 1./cm->vol_c,
+                            (const cs_real_t (*)[3])dq,
+                            (const cs_real_t (*)[3])pq,
+                            cb, hdg);
+
+  /* Hodge operator is symmetric */
+  for (int i = 0; i < n_fc; i++) {
+    const double  *hii = hdg->val + i*n_fc;
+    for (int j = i+1; j < n_fc; j++)
+      hdg->val[j*n_fc+i] = hii[j];
+  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
