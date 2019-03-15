@@ -710,6 +710,8 @@ cs_equation_free_structures(void)
     int  t_id = omp_get_thread_num();
     cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[t_id];
 
+    BFT_FREE(assb->dof_gids);
+
     BFT_FREE(assb->row_id);
     BFT_FREE(assb->col_idx);
     BFT_FREE(assb->row_gids);
@@ -719,6 +721,8 @@ cs_equation_free_structures(void)
   }
 #else
   cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[0];
+
+  BFT_FREE(assb->dof_gids);
 
   BFT_FREE(assb->row_id);
   BFT_FREE(assb->col_idx);
