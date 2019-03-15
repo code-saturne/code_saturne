@@ -1390,19 +1390,19 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
             (mg,
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
-             CS_SLES_P_SYM_GAUSS_SEIDEL, /* coarse solver */
+             CS_SLES_PCG,                /* coarse solver */
              slesp.n_max_iter,           /* n_max_cycles */
-             2,                          /* n_max_iter_descent, */
+             1,                          /* n_max_iter_descent, */
              1,                          /* n_max_iter_ascent */
-             1,                          /* n_max_iter_coarse */
+             100,                        /* n_max_iter_coarse */
              -1,                         /* poly_degree_descent */
              -1,                         /* poly_degree_ascent */
              -1,                         /* poly_degree_coarse */
              -1.0,                       /* precision_mult_descent */
              -1.0,                       /* precision_mult_ascent */
-             -1.0);                      /* precision_mult_coarse */
+             1.0);                       /* precision_mult_coarse */
 
-          /* If this is a K-cycle multigrid. Change the defaukt aggregation
+          /* If this is a K-cycle multigrid. Change the default aggregation
              algorithm */
           if (slesp.amg_type == CS_PARAM_AMG_HOUSE_K)
             cs_multigrid_set_coarsening_options(mg,
