@@ -441,7 +441,7 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
 
   cs_lnum_t start_id = 0;
   cs_lnum_t end_id = l_id_array_size - 1;
-  cs_lnum_t mid_id = (end_id >> 1);
+  cs_lnum_t mid_id = end_id/2;
   while (start_id < end_id) {
     if (l_id_array[mid_id] < l_id)
       start_id = mid_id + 1;
@@ -449,7 +449,7 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
       end_id = mid_id - 1;
     else
       break;
-    mid_id = start_id + ((end_id - start_id) >> 1);
+    mid_id = start_id + (end_id - start_id)/2;
   }
   if (l_id_array[mid_id] != l_id)
     mid_id = -1;
