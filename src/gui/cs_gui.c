@@ -2960,7 +2960,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                                                         z);
             if (ini_vals != NULL) {
               for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[c_id];
+                cs_lnum_t c_id = cell_ids[e_id];
                 c->val[c_id] = ini_vals[e_id];
               }
               BFT_FREE(ini_vals);
