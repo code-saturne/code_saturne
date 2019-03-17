@@ -101,7 +101,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
     def getPressureFormulaComponents(self, zone):
 
         exp = self.getFormulaPressure(zone)
-        req = [('pressure', str('pressure')]
+        req = [('pressure', 'pressure')]
         sym = [('x', "X cell's gravity center"),
                ('y', "Y cell's gravity center"),
                ('z', "Z cell's gravity center")]
