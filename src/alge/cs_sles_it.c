@@ -1264,7 +1264,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
     /* Convergence test for end of previous iteration */
 
-    if (n_iter > 1)
+    if (n_iter > 0)
       cvg = _convergence_test(c, n_iter, residue, convergence);
 
     if (cvg != CS_SLES_ITERATING)
