@@ -519,6 +519,17 @@ class cs_compile(object):
         if pkg.config.rpath != "":
             cmd += self.so_dirs_path(cmd)
 
+        # Clean paths in link flags
+        cmd_new = []
+        for c in cmd:
+            if c[:2] == '-L':
+                c = '-L' + os.path.normpath(c[2:])
+                if cmd_new.count(c) < 1:
+                    cmd_new.append(c)
+            else:
+                cmd_new.append(c)
+        cmd = cmd_new
+
         # Call linker
 
         if retval == 0:
