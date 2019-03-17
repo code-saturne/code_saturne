@@ -397,7 +397,7 @@ typedef struct {
    * When OpenMP is active, choice of parallel reduction for the assembly
    */
 
-  cs_param_omp_assembly_strategy_t     omp_assembly_choice;
+  cs_param_assemble_omp_strategy_t     omp_assembly_choice;
 
   /*! @} */
 

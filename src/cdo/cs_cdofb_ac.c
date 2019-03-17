@@ -856,14 +856,13 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
-    mab->n_x_dofs = 3;  /* vector-valued equation */
     cs_cdofb_vecteq_get(&csys, &cb);
 
     const cs_real_t  inv_dtcur = 1./dt_cur;
@@ -1014,7 +1013,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
       /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mom_eqc, mab, mav, rhs);
+                               mom_eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1181,14 +1180,13 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
+    cs_cell_sys_t  *csys = NULL;
+    cs_cell_builder_t  *cb = NULL;
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
-    cs_cell_sys_t  *csys = NULL;
-    cs_cell_builder_t  *cb = NULL;
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
-    mab->n_x_dofs = 3;  /* vector-valued equation */
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Store the shift to access border faces (first interior faces and
@@ -1365,7 +1363,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
       /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mom_eqc, mab, mav, rhs);
+                               mom_eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 

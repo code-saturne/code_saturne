@@ -48,10 +48,6 @@
 #include "cs_parall.h"
 #include "cs_xdef_eval.h"
 
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -66,12 +62,13 @@ BEGIN_C_DECLS
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Type definitions and macros
  *============================================================================*/
 
 #define CS_EQUATION_COMMON_DBG               0 /* Debug level */
-#define CS_EQUATION_COMMON_PROFILE_ASSEMBLY  0 /* > 0 --> Activate profiling */
 
 /*============================================================================
  * Local private variables
@@ -81,141 +78,14 @@ BEGIN_C_DECLS
 static size_t  cs_equation_common_work_buffer_size = 0;
 static cs_real_t  *cs_equation_common_work_buffer = NULL;
 
-/* Store the matrix structure and its assembler structures for each family
-   of space discretizations */
-static cs_matrix_assembler_t  **cs_equation_common_ma = NULL;
-static cs_matrix_structure_t  **cs_equation_common_ms = NULL;
-static cs_matrix_assembler_buf_t  **cs_assembly_buffers = NULL;
-
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
 
-/* Monitoring/Profiling of the assembly process for CDO equations */
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0
-static unsigned int  n_assembly_value_calls = 0;
-static cs_timer_counter_t  tcas; /* matrix structure assembly processing */
-static cs_timer_counter_t  tcav; /* matrix values assembly processing */
-#endif
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and define a cs_matrix_assembler_t structure
- *
- * \param[in]  n_elts     number of elements
- * \param[in]  n_dofbyx   number of DoFs by element
- * \param[in]  x2x        pointer to a cs_adjacency_t structure
- * \param[in]  rs         pointer to a range set or NULL if sequential
- *
- * \return a pointer to a new allocated cs_matrix_assembler_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_matrix_assembler_t *
-_build_matrix_assembler(cs_lnum_t                n_elts,
-                        int                      n_dofbyx,
-                        const cs_adjacency_t    *x2x,
-                        const cs_range_set_t    *rs)
-{
-  cs_gnum_t  *grows = NULL, *gcols = NULL;
-
-  /* The second paramter is set to "true" meaning that the diagonal is stored
-     separately --> MSR storage */
-  cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range, true);
-
-  /* First loop to count max size of the buffer */
-  cs_lnum_t  max_size = 0;
-  for (cs_lnum_t id = 0; id < n_elts; id++)
-    max_size = CS_MAX(max_size, x2x->idx[id+1] - x2x->idx[id]);
-
-  /* We increment max_size to take into account the diagonal entry */
-  int  buf_size = n_dofbyx * n_dofbyx * (max_size + 1);
-  BFT_MALLOC(grows, buf_size, cs_gnum_t);
-  BFT_MALLOC(gcols, buf_size, cs_gnum_t);
-
-  if (n_dofbyx == 1)  { /* Simplified version */
-
-    for (cs_lnum_t row_id = 0; row_id < n_elts; row_id++) {
-
-      const cs_gnum_t  grow_id = rs->g_id[row_id];
-      const cs_lnum_t  start = x2x->idx[row_id];
-      const cs_lnum_t  end = x2x->idx[row_id+1];
-
-      /* Diagonal term is excluded in this connectivity. Add it "manually" */
-      grows[0] = grow_id, gcols[0] = grow_id;
-
-      /* Extra diagonal couples */
-      for (cs_lnum_t j = start, i = 1; j < end; j++, i++) {
-        grows[i] = grow_id;
-        gcols[i] = rs->g_id[x2x->ids[j]];
-      }
-
-      cs_matrix_assembler_add_g_ids(ma, end - start + 1, grows, gcols);
-
-    } /* Loop on entities */
-
-  }
-  else {
-
-    for (cs_lnum_t row_id = 0; row_id < n_elts; row_id++) {
-
-      const cs_lnum_t  start = x2x->idx[row_id];
-      const cs_lnum_t  end = x2x->idx[row_id+1];
-      const int  n_entries = (end - start + 1) * n_dofbyx * n_dofbyx;
-      const cs_gnum_t  *grow_ids = rs->g_id + row_id*n_dofbyx;
-
-      int shift = 0;
-
-      /* Diagonal term is excluded in this connectivity. Add it "manually" */
-      for (int dof_i = 0; dof_i < n_dofbyx; dof_i++) {
-        const cs_gnum_t  grow_id = grow_ids[dof_i];
-        for (int dof_j = 0; dof_j < n_dofbyx; dof_j++) {
-          grows[shift] = grow_id;
-          gcols[shift] = grow_ids[dof_j];
-          shift++;
-        }
-      }
-
-      /* Extra diagonal couples */
-      for (cs_lnum_t j = start; j < end; j++) {
-
-        const cs_lnum_t  col_id = x2x->ids[j];
-        const cs_gnum_t  *gcol_ids = rs->g_id + col_id*n_dofbyx;
-
-        for (int dof_i = 0; dof_i < n_dofbyx; dof_i++) {
-          const cs_gnum_t  grow_id = grow_ids[dof_i];
-          for (int dof_j = 0; dof_j < n_dofbyx; dof_j++) {
-            grows[shift] = grow_id;
-            gcols[shift] = gcol_ids[dof_j];
-            shift++;
-          }
-        }
-
-      } /* Loop on number of DoFs by entity */
-
-      assert(shift == n_entries);
-      cs_matrix_assembler_add_g_ids(ma, n_entries, grows, gcols);
-
-    } /* Loop on entities */
-
-  }
-
-  /* Now compute structure */
-  cs_matrix_assembler_compute(ma);
-
-  /* Free temporary buffers */
-  BFT_FREE(grows);
-  BFT_FREE(gcols);
-
-  return ma;
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -225,92 +95,8 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a \ref cs_matrix_assembler_values_t structure
- *
- * \param[in, out] matrix          pointer to matrix structure
- * \param[in]      omp_choice      choice of the OpenMP strategy
- * \param[in]      stride          stride to apply to each entity
- *
- * \return  a pointer to a cs_matrix_assembler_values_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_assembler_values_t *
-cs_equation_get_mav(cs_matrix_t                        *matrix,
-                    cs_param_omp_assembly_strategy_t    omp_choice,
-                    int                                 stride)
-{
-  cs_matrix_assembler_values_t  *mav = NULL;
-
-  switch (stride) {
-
-  case 1:
-    if (cs_glob_n_threads < 2)  /* Single thread */
-      mav
-        = cs_matrix_assembler_values_initx(matrix, NULL, NULL,
-                                           true,  /* MSR */
-                                   cs_matrix_msr_assembler_values_init,
-                                   cs_matrix_msr_assembler_values_add_1_single,
-                                           NULL,
-                                           NULL, NULL); /* Optional pointers */
-    else if (omp_choice == CS_PARAM_OMP_ASSEMBLY_ATOMIC)
-      mav
-        = cs_matrix_assembler_values_initx(matrix, NULL, NULL,
-                                           true,  /* MSR */
-                                   cs_matrix_msr_assembler_values_init,
-                                   cs_matrix_msr_assembler_values_add_1_atomic,
-                                           NULL,
-                                           NULL, NULL); /* Optional pointers */
-    else if (omp_choice == CS_PARAM_OMP_ASSEMBLY_CRITICAL)
-      mav
-        = cs_matrix_assembler_values_initx(matrix, NULL, NULL,
-                                           true,  /* MSR */
-                                   cs_matrix_msr_assembler_values_init,
-                                   cs_matrix_msr_assembler_values_add_1_critic,
-                                           NULL,
-                                           NULL, NULL); /* Optional pointers */
-    else
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid OpenMP choice", __func__);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Case not handled.", __func__);
-    break;
-
-  }
-
-  return mav;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
- *         structure
- *
- * \param[in]  flag_id       id in the array of matrix structures
- *
- * \return  a pointer to a cs_matrix_structure_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_structure_t *
-cs_equation_get_matrix_structure(int  flag)
-{
-  if (cs_equation_common_ms == NULL || flag < 0)
-    return NULL;
-
-  if (flag < CS_CDO_CONNECT_N_CASES)
-    return cs_equation_common_ms[flag];
-  else
-    return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
+ * \brief  Allocate a pointer to a buffer of size at least the n_cells for
  *         managing temporary usage of memory when dealing with equations
- *         Call specific structure allocation related to a numerical scheme
- *         according to the scheme flag
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *         Set also shared pointers from the main domain members
@@ -326,36 +112,15 @@ cs_equation_get_matrix_structure(int  flag)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
-                                const cs_cdo_quantities_t    *quant,
-                                const cs_time_step_t         *time_step,
-                                cs_flag_t                     vb_flag,
-                                cs_flag_t                     vcb_flag,
-                                cs_flag_t                     fb_flag,
-                                cs_flag_t                     hho_flag)
+cs_equation_common_init(const cs_cdo_connect_t       *connect,
+                        const cs_cdo_quantities_t    *quant,
+                        const cs_time_step_t         *time_step,
+                        cs_flag_t                     vb_flag,
+                        cs_flag_t                     vcb_flag,
+                        cs_flag_t                     fb_flag,
+                        cs_flag_t                     hho_flag)
 {
   assert(connect != NULL && quant != NULL); /* Sanity check */
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-  cs_timer_t t0, t1;
-
-  CS_TIMER_COUNTER_INIT(tcas); /* matrix structure assembly process */
-  CS_TIMER_COUNTER_INIT(tcav); /* matrix value assembly process */
-#endif
-
-  /* Two types of mat. ass. are considered:
-   *  - The one related to matrix based on vertices
-   *  - The one related to matrix based on faces
-   */
-  BFT_MALLOC(cs_equation_common_ma,
-             CS_CDO_CONNECT_N_CASES, cs_matrix_assembler_t *);
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
-    cs_equation_common_ma[i] = NULL;
-
-  BFT_MALLOC(cs_equation_common_ms,
-             CS_CDO_CONNECT_N_CASES, cs_matrix_structure_t *);
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
-    cs_equation_common_ms[i] = NULL;
 
   /* Allocate cell-wise and face-wise view of a mesh */
   cs_cdo_local_initialize(connect);
@@ -366,96 +131,28 @@ cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
 
   /* Allocate shared buffer and initialize shared structures */
   size_t  cwb_size = n_cells; /* initial cell-wise buffer size */
-  int  loc_assembler_size = 0;
-  int  assembler_dof_size = 0;
-
-  const int  _vb_system_max_size = connect->n_max_vbyc*connect->n_max_vbyc;
-  const int  _fb_system_max_size = connect->n_max_fbyc*connect->n_max_fbyc;
 
   /* Allocate and initialize matrix assembler and matrix structures */
   if (vb_flag > 0 || vcb_flag > 0) {
 
     if (vb_flag & CS_FLAG_SCHEME_SCALAR || vcb_flag & CS_FLAG_SCHEME_SCALAR) {
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t0 = cs_timer_time();
-#endif
-
-      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
-                                                           1,
-                                                           connect->v2v,
-                                                           rs);
-      cs_matrix_structure_t  *ms =
-        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
-      cs_equation_common_ma[CS_CDO_CONNECT_VTX_SCAL] = ma;
-      cs_equation_common_ms[CS_CDO_CONNECT_VTX_SCAL] = ms;
-
-      if (vb_flag & CS_FLAG_SCHEME_SCALAR) {
-
+      if (vb_flag & CS_FLAG_SCHEME_SCALAR)
         cwb_size = CS_MAX(cwb_size, (size_t)n_vertices);
-        loc_assembler_size = CS_MAX(loc_assembler_size, _vb_system_max_size);
-        assembler_dof_size = CS_MAX(assembler_dof_size, connect->n_max_vbyc);
 
-      }
-
-      if (vcb_flag & CS_FLAG_SCHEME_SCALAR) {
-
+      if (vcb_flag & CS_FLAG_SCHEME_SCALAR)
         cwb_size = CS_MAX(cwb_size, (size_t)(n_vertices + n_cells));
-        loc_assembler_size = CS_MAX(loc_assembler_size, _vb_system_max_size);
-        assembler_dof_size = CS_MAX(assembler_dof_size, connect->n_max_vbyc);
-
-      }
 
     } /* scalar-valued equations */
 
     if (vb_flag & CS_FLAG_SCHEME_VECTOR || vcb_flag & CS_FLAG_SCHEME_VECTOR) {
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t0 = cs_timer_time();
-#endif
-
-      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices,
-                                                           3,
-                                                           connect->v2v,
-                                                           rs);
-      cs_matrix_structure_t  *ms =
-        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
-      cs_equation_common_ma[CS_CDO_CONNECT_VTX_VECT] = ma;
-      cs_equation_common_ms[CS_CDO_CONNECT_VTX_VECT] = ms;
-
       cwb_size *= 3; /* 3*n_cells by default */
-      if (vb_flag & CS_FLAG_SCHEME_VECTOR) {
-
+      if (vb_flag & CS_FLAG_SCHEME_VECTOR)
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
-        loc_assembler_size = CS_MAX(loc_assembler_size, 9*_vb_system_max_size);
-        assembler_dof_size = CS_MAX(assembler_dof_size, 3*connect->n_max_vbyc);
 
-
-      }
-
-      if (vcb_flag & CS_FLAG_SCHEME_VECTOR) {
-
+      if (vcb_flag & CS_FLAG_SCHEME_VECTOR)
         cwb_size = CS_MAX(cwb_size, (size_t)3*(n_vertices + n_cells));
-        loc_assembler_size = CS_MAX(loc_assembler_size, 9*_vb_system_max_size);
-        assembler_dof_size = CS_MAX(assembler_dof_size, 3*connect->n_max_vbyc);
-
-      }
 
     } /* vector-valued equations */
 
@@ -463,37 +160,12 @@ cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
 
   if (fb_flag > 0 || hho_flag > 0) {
 
-    cs_matrix_structure_t  *ms0 = NULL, *ms1 = NULL, *ms2 = NULL;
-    cs_matrix_assembler_t  *ma0 = NULL, *ma1 = NULL, *ma2 = NULL;
-
     if (cs_flag_test(fb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR) ||
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR)) {
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t0 = cs_timer_time();
-#endif
-
-      ma0 = _build_matrix_assembler(n_faces, 1, connect->f2f, rs);
-      ms0 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma0);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
-      cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP0] = ma0;
-      cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP0] = ms0;
-
-      if (fb_flag & CS_FLAG_SCHEME_SCALAR) {
-
-        assert(n_faces > n_cells);
+      assert(n_faces > n_cells);
+      if (fb_flag & CS_FLAG_SCHEME_SCALAR)
         cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
-        loc_assembler_size = CS_MAX(loc_assembler_size, _fb_system_max_size);
-        assembler_dof_size = CS_MAX(assembler_dof_size, connect->n_max_fbyc);
-
-      }
 
       if (hho_flag & CS_FLAG_SCHEME_SCALAR)
         cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
@@ -504,128 +176,26 @@ cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR) ||
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t0 = cs_timer_time();
-#endif
-
-      ma1 = _build_matrix_assembler(n_faces,
-                                    CS_N_FACE_DOFS_1ST,
-                                    connect->f2f,
-                                    rs);
-      ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
       assert((CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VP0) &&
              (CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VHP0));
 
-      cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP1] = ma1;
-      cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP1] = ms1;
-
       cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
-      loc_assembler_size = CS_MAX(loc_assembler_size, 9*_fb_system_max_size);
-      assembler_dof_size = CS_MAX(assembler_dof_size, 3*connect->n_max_fbyc);
 
     } /* Vector CDO-Fb or HHO-P1 or vector HHO-P0 */
 
     if (cs_flag_test(hho_flag,
-                     CS_FLAG_SCHEME_POLY2 | CS_FLAG_SCHEME_SCALAR)) {
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t0 = cs_timer_time();
-#endif
-
-      ma2 = _build_matrix_assembler(n_faces,
-                                    CS_N_FACE_DOFS_2ND,
-                                    connect->f2f,
-                                    rs);
-      ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
-      cs_equation_common_ma[CS_CDO_CONNECT_FACE_SP2] = ma2;
-      cs_equation_common_ms[CS_CDO_CONNECT_FACE_SP2] = ms2;
-
+                     CS_FLAG_SCHEME_POLY2 | CS_FLAG_SCHEME_SCALAR))
       cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_2ND * n_faces);
-      /* 36 = 6 * 6 */
-      loc_assembler_size = CS_MAX(loc_assembler_size, 36*_fb_system_max_size);
-      assembler_dof_size = CS_MAX(assembler_dof_size, 6*connect->n_max_fbyc);
-
-    }
 
     /* For vector equations and HHO */
     if (cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1) ||
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2)) {
 
-      if  (hho_flag & CS_FLAG_SCHEME_POLY1) {
-
-        const cs_range_set_t  *rs
-          = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-        t0 = cs_timer_time();
-#endif
-
-        ma1 = _build_matrix_assembler(n_faces,
-                                      3*CS_N_FACE_DOFS_1ST,
-                                      connect->f2f,
-                                      rs);
-        ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-        t1 = cs_timer_time();
-        cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
-        cs_equation_common_ma[CS_CDO_CONNECT_FACE_VHP1] = ma1;
-        cs_equation_common_ms[CS_CDO_CONNECT_FACE_VHP1] = ms1;
-
+      if  (hho_flag & CS_FLAG_SCHEME_POLY1)
         cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_FACE_DOFS_1ST*n_faces);
-        /* 81 = 9 * 9 (where 9 = 3*3) */
-        loc_assembler_size = CS_MAX(loc_assembler_size, 81*_fb_system_max_size);
-        assembler_dof_size = CS_MAX(assembler_dof_size, 9*connect->n_max_fbyc);
 
-      }
-      else if  (hho_flag & CS_FLAG_SCHEME_POLY2) {
-
-        const cs_range_set_t  *rs
-          = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-        t0 = cs_timer_time();
-#endif
-
-        ma2 = _build_matrix_assembler(n_faces,
-                                      3*CS_N_FACE_DOFS_2ND,
-                                      connect->f2f,
-                                      rs);
-        ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-        t1 = cs_timer_time();
-        cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
-        cs_equation_common_ma[CS_CDO_CONNECT_FACE_VHP2] = ma2;
-        cs_equation_common_ms[CS_CDO_CONNECT_FACE_VHP2] = ms2;
-
+      else if  (hho_flag & CS_FLAG_SCHEME_POLY2)
         cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_FACE_DOFS_2ND*n_faces);
-        /* 324 = 18 * 18 (where 18 = 3*6) */
-        loc_assembler_size = CS_MAX(loc_assembler_size,
-                                    324*_fb_system_max_size);
-        assembler_dof_size = CS_MAX(assembler_dof_size, 18*connect->n_max_fbyc);
-
-      }
 
     }
 
@@ -639,131 +209,22 @@ cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
   /* Common buffer for temporary usage */
   cs_equation_common_work_buffer_size = cwb_size;
   BFT_MALLOC(cs_equation_common_work_buffer, cwb_size, double);
-
-  /* Common buffers for assembly usage */
-  const int  n_threads = cs_glob_n_threads;
-  BFT_MALLOC(cs_assembly_buffers, n_threads, cs_matrix_assembler_buf_t *);
-  for (int i = 0; i < n_threads; i++)
-    cs_assembly_buffers[i] = NULL;
-
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-#pragma omp parallel
-  {
-    /* Each thread allocate its part. This yields a better memory affinity */
-    int  t_id = omp_get_thread_num();
-
-    BFT_MALLOC(cs_assembly_buffers[t_id], 1, cs_matrix_assembler_buf_t);
-
-    cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[t_id];
-
-    assb->n_x_dofs = 1;           /* Default setting */
-    BFT_MALLOC(assb->dof_gids, assembler_dof_size, cs_gnum_t);
-
-    assb->buffer_size = loc_assembler_size;
-    BFT_MALLOC(assb->row_id, loc_assembler_size, cs_lnum_t);
-    BFT_MALLOC(assb->col_idx, loc_assembler_size, cs_lnum_t);
-    BFT_MALLOC(assb->row_gids, loc_assembler_size, cs_gnum_t);
-    BFT_MALLOC(assb->col_gids, loc_assembler_size, cs_gnum_t);
-    BFT_MALLOC(assb->values, loc_assembler_size, cs_real_t);
-  }
-#else
-  BFT_MALLOC(cs_assembly_buffers[0], 1, cs_matrix_assembler_buf_t);
-
-  cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[0];
-
-  assb->n_x_dofs = 1;           /* Default setting */
-  BFT_MALLOC(assb->dof_gids, assembler_dof_size, cs_gnum_t);
-
-  assb->buffer_size = loc_assembler_size;
-  BFT_MALLOC(assb->row_id, loc_assembler_size, cs_lnum_t);
-  BFT_MALLOC(assb->col_idx, loc_assembler_size, cs_lnum_t);
-  BFT_MALLOC(assb->row_gids, loc_assembler_size, cs_gnum_t);
-  BFT_MALLOC(assb->col_gids, loc_assembler_size, cs_gnum_t);
-  BFT_MALLOC(assb->values, loc_assembler_size, cs_real_t);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
- *         managing temporary usage of memory when dealing with equations
- *         Call specific structure allocation related to a numerical scheme
- *         according to the scheme flag
- *         The size of the temporary buffer can be bigger according to the
- *         numerical settings
+ * \brief  Free buffers shared among the equations solved with CDO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_free_structures(void)
+cs_equation_common_finalize(void)
 {
   /* Free cell-wise and face-wise view of a mesh */
   cs_cdo_local_finalize();
 
   /* Free common buffer */
   BFT_FREE(cs_equation_common_work_buffer);
-
-  /* Free common assembly buffers */
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-#pragma omp parallel
-  {
-    int  t_id = omp_get_thread_num();
-    cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[t_id];
-
-    BFT_FREE(assb->dof_gids);
-
-    BFT_FREE(assb->row_id);
-    BFT_FREE(assb->col_idx);
-    BFT_FREE(assb->row_gids);
-    BFT_FREE(assb->col_gids);
-    BFT_FREE(assb->values);
-    BFT_FREE(assb);
-  }
-#else
-  cs_matrix_assembler_buf_t  *assb = cs_assembly_buffers[0];
-
-  BFT_FREE(assb->dof_gids);
-
-  BFT_FREE(assb->row_id);
-  BFT_FREE(assb->col_idx);
-  BFT_FREE(assb->row_gids);
-  BFT_FREE(assb->col_gids);
-  BFT_FREE(assb->values);
-  BFT_FREE(assb);
-#endif
-
-  BFT_FREE(cs_assembly_buffers);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-  cs_timer_t  t0 = cs_timer_time();
-#endif
-
-  /* Free matrix structures */
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
-    cs_matrix_structure_destroy(&(cs_equation_common_ms[i]));
-  BFT_FREE(cs_equation_common_ms);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&tcas, &t0, &t1);
-#endif
-
-  /* Free matrix assemblers */
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
-    cs_matrix_assembler_destroy(&(cs_equation_common_ma[i]));
-  BFT_FREE(cs_equation_common_ma);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-  cs_timer_t t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&tcav, &t1, &t2);
-
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-32s %12s %12s\n",
-                " ", "Assembly.Struct", "Assembly.Values (Time/n_calls)");
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10.3f %10.3f seconds %u calls\n",
-                "<CDO/CommonEq> Runtime",
-                tcas.wall_nsec*1e-9, tcav.wall_nsec*1e-9,
-                n_assembly_value_calls);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1165,208 +626,6 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 
   } /* Loop on degrees of freedom */
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system into the global algebraic system
- *
- * \param[in]      csys     cellwise view of the algebraic system
- * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] mab      pointer to a matrix assembler buffers
- * \param[in, out] mav      pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
-                            const cs_range_set_t           *rset,
-                            cs_matrix_assembler_buf_t     *mab,
-                            cs_matrix_assembler_values_t   *mav)
-{
-  const cs_lnum_t  *const dof_ids = csys->dof_ids;
-  const cs_sdm_t  *const m = csys->mat;
-  const cs_real_t  *const mval = m->val;
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-  cs_timer_t  t0;
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-#pragma omp master
-  {
-    t0 = cs_timer_time();
-  }
-#else
-  t0 = cs_timer_time();
-#endif
-#endif
-
-  /* Define the dof_gids */
-  for (int i = 0; i < m->n_rows; i++)
-    mab->dof_gids[i] = rset->g_id[dof_ids[i]];
-
-  /* Assemble the matrix related to the advection/diffusion/reaction terms
-     If advection is activated, the resulting system is not symmetric
-     Otherwise, the system is symmetric with extra-diagonal terms. */
-
-  int  bufsize = 0;
-  for (int i = 0; i < m->n_rows; i++) {
-
-    const cs_gnum_t  i_gid = mab->dof_gids[i];
-    const cs_real_t  *const val_rowi = mval + i*m->n_rows;
-
-    /* Diagonal term is excluded in this connectivity. Add it "manually" */
-    for (int j = 0; j < m->n_rows; j++) {
-
-      mab->row_gids[bufsize] = i_gid;
-      mab->col_gids[bufsize] = mab->dof_gids[j];
-      mab->values[bufsize] = val_rowi[j];
-      bufsize += 1;
-
-    } /* Loop on columns */
-
-  } /* Loop on rows */
-
-  assert(mab->buffer_size >= bufsize);
-  if (bufsize > 0)
-    cs_matrix_assembler_values_add_g_cdo(bufsize, mav, mab);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-#if defined(HAVE_OPENMP)
-#pragma omp parallel reduction(+:n_assembly_value_calls)
-  {
-    n_assembly_value_calls++;
-  }
-#pragma omp master
-  {
-    cs_timer_t   t1 = cs_timer_time();
-    cs_timer_counter_add_diff(&tcav, &t0, &t1);
-  }
-#else
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&tcav, &t0, &t1);
-  n_assembly_value_calls++;
-#endif
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system defined by blocks into the global
- *         algebraic system
- *
- * \param[in]      csys         cellwise view of the algebraic system
- * \param[in]      rset         pointer to a cs_range_set_t structure
- * \param[in, out] mab          pointer to a matrix assembler buffers
- * \param[in, out] mav          pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
-                                  const cs_range_set_t           *rset,
-                                  cs_matrix_assembler_buf_t     *mab,
-                                  cs_matrix_assembler_values_t   *mav)
-{
-  const cs_lnum_t  *dof_ids = csys->dof_ids;
-  const int  n_x_dofs = mab->n_x_dofs;
-  const cs_sdm_t  *m = csys->mat;
-  const cs_sdm_block_t  *bd = m->block_desc;
-
-  /* Sanity checks */
-  assert(m->flag & CS_SDM_BY_BLOCK);
-  assert(m->block_desc != NULL);
-  assert(bd->n_row_blocks == bd->n_col_blocks);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-  cs_timer_t  t0;
-#if defined(HAVE_OPENMP)
-#pragma omp master
-  {
-    t0 = cs_timer_time();
-  }
-#else
-  t0 = cs_timer_time();
-#endif
-#endif
-
-  /* Assemble the matrix related to the advection/diffusion/reaction terms
-     If advection is activated, the resulting system is not symmetric
-     Otherwise, the system is symmetric with extra-diagonal terms. */
-  /* TODO: Add a symmetric version for optimization */
-
-  int  bufsize = 0;
-  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
-
-    /* dof_ids is an interlaced array (get access to the next n_x_dofs values */
-    const cs_gnum_t  *const bi_gids = rset->g_id + dof_ids[n_x_dofs*bi];
-
-    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-
-      const cs_gnum_t  *const bj_gids = rset->g_id + dof_ids[n_x_dofs*bj];
-
-      /* mIJ is a small square matrix of size n_x_dofs */
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
-
-      for (short int ii = 0; ii < n_x_dofs; ii++) {
-
-        const cs_gnum_t  i_gid = bi_gids[ii];
-        const cs_real_t  *const val_rowi = mIJ->val + ii*n_x_dofs;
-
-        for (short int jj = 0; jj < n_x_dofs; jj++) {
-
-          /* Add an entry */
-          mab->row_gids[bufsize] = i_gid;
-          mab->col_gids[bufsize] = bj_gids[jj];
-          mab->values[bufsize] = val_rowi[jj];
-          bufsize += 1;
-
-        } /* jj */
-      } /* ii */
-
-    } /* Loop on column blocks */
-  } /* Loop on row blocks */
-
-  assert(mab->buffer_size >= bufsize);
-  if (bufsize > 0)
-    cs_matrix_assembler_values_add_g_cdo(bufsize, mav, mab);
-
-#if CS_EQUATION_COMMON_PROFILE_ASSEMBLY > 0 /* Profiling */
-#if defined(HAVE_OPENMP)
-#pragma omp parallel reduction(+:n_assembly_value_calls)
-  {
-    n_assembly_value_calls++;
-  }
-#pragma omp master
-  {
-    cs_timer_t  t1 = cs_timer_time();
-    cs_timer_counter_add_diff(&tcav, &t0, &t1);
-  }
-#else
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&tcav, &t0, &t1);
-  n_assembly_value_calls++;
-#endif
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_matrix_assembler_buf_t structure related
- *         to a given thread
- *
- * \param[in]  t_id    id in the array of pointer
- *
- * \return a pointer to a cs_matrix_assembler_buf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_assembler_buf_t *
-cs_equation_get_assembly_buffers(int    t_id)
-{
-  if (t_id < 0 || t_id >= cs_glob_n_threads)
-    return NULL;
-
-  return cs_assembly_buffers[t_id];
 }
 
 /*----------------------------------------------------------------------------*/

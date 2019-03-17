@@ -50,7 +50,6 @@ BEGIN_C_DECLS
 
 #define CS_MATRIX_DISTANT_ROW_USE_COL_IDX     (1 << 0)
 #define CS_MATRIX_DISTANT_ROW_USE_COL_G_ID    (1 << 1)
-
 #define CS_MATRIX_EXTERNAL_HALO               (1 << 2)
 
 /*============================================================================
@@ -64,30 +63,6 @@ typedef struct _cs_matrix_assembler_t  cs_matrix_assembler_t;
 /*! Structure used to set matrix coefficients */
 
 typedef struct _cs_matrix_assembler_values_t  cs_matrix_assembler_values_t;
-
-/*!
- *  \struct cs_matrix_assembler_buf_t
- *  \brief Structure used to store the arguments for the assemble function
- *  If n_x_dofs > 1, one moves to a block version of the assembly
- */
-
-typedef struct {
-
-  int          n_x_dofs;     /*!< Number of degrees of freedom by entity */
-  cs_gnum_t   *dof_gids;     /*!< Global numbering for the degrees of freedom
-                               (size: n_dofs*n_x_dofs) */
-
-  int          buffer_size;  /*!< Max. allocated size for the assembly
-                               buffers */
-
-  cs_lnum_t   *row_id;       /*!< List of local row ids  */
-  cs_lnum_t   *col_idx;      /*!< List of column index for each row id  */
-
-  cs_gnum_t   *row_gids;     /*!< List of global row numbers */
-  cs_gnum_t   *col_gids;     /*!< List of global column numbers */
-  cs_real_t   *values;       /*!< List of values for each couple (row, col) */
-
-} cs_matrix_assembler_buf_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -144,6 +119,46 @@ typedef void
                                     const cs_lnum_t   row_id[],
                                     const cs_lnum_t   col_idx[],
                                     const cs_real_t   vals[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for addition to matrix coefficients using
+ *        local row ids and column indexes in case of CDO schemes.
+ *        Contrary to other add_values() function. Here values are structured
+ *        in a CSR-like way. By this way one avoids to allocate specific
+ *        arrays for this step.
+ *
+ * Values whose associated row index is negative should be ignored;
+ * Values whose column index is -1 are assumed to be assigned to a
+ * separately stored diagonal. Other indexes should be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \remark  Note that we pass column indexes (not ids) here; as the
+ *          caller is already assumed to have identified the index
+ *          matching a given column id.
+ *
+ * \param[in, out] matrix_p   untyped pointer to matrix description structure
+ * \param[in]      row_id     local row id to deal with
+ * \param[in]      stride     associated data block size
+ * \param[in]      n_cols     number of columns for the row to deal with
+ * \param[in]      diag_val   pointer to the diagonal value(s)
+ * \param[in]      col_idx    associated local column indexes
+ * \param[in]      vals       pointer to values (size: n*stride*row_size)
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_matrix_assembler_values_cdo_add_t) (void               *matrix,
+                                        cs_lnum_t           row_id,
+                                        cs_lnum_t           stride,
+                                        cs_lnum_t           n_cols,
+                                        const cs_real_t     diag_val[],
+                                        const cs_lnum_t     col_idx[],
+                                        const cs_real_t     vals[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -664,26 +679,6 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  const cs_gnum_t                g_row_id[],
                                  const cs_gnum_t                g_col_id[],
                                  const cs_real_t                val[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add values to a matrix assembler values structure using global
- *        row and column ids.
- *
- * See \ref cs_matrix_assembler_values_add_g since this function performs the
- * same operations but in the specific case of CDO system. So one assumes
- * predefined choices in order to get a more optimized version of this function
- *
- * \param[in]       n         number of entries
- * \param[in, out]  mav       pointer to matrix assembler values structure
- * \param[in, out]  mab       pointer to matrix assembler buffer structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_matrix_assembler_values_add_g_cdo(cs_lnum_t                      n,
-                                     cs_matrix_assembler_values_t  *mav,
-                                     cs_matrix_assembler_buf_t     *mab);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -75,10 +75,11 @@ cs_domain.h \
 cs_domain_op.h \
 cs_domain_setup.h \
 cs_equation.h \
-cs_equation_priv.h \
+cs_equation_assemble.h \
 cs_equation_bc.h \
 cs_equation_common.h \
 cs_equation_param.h \
+cs_equation_priv.h \
 cs_evaluate.h \
 cs_flag.h \
 cs_gwf.h \
@@ -137,6 +138,7 @@ cs_domain.c \
 cs_domain_op.c \
 cs_domain_setup.c \
 cs_equation.c \
+cs_equation_assemble.c \
 cs_equation_bc.c \
 cs_equation_common.c \
 cs_equation_param.c \

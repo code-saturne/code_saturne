@@ -42,8 +42,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Specifications for OpenMP loops */
-#define CS_CDO_OMP_CHUNK_SIZE  128
-#define CS_CDO_OMP_SCHEDULE  schedule(static, CS_CDO_OMP_CHUNK_SIZE)
+#define CS_CDO_OMP_CHUNK_SIZE     128
+#define CS_CDO_OMP_SCHEDULE       schedule(static, CS_CDO_OMP_CHUNK_SIZE)
+#define CS_CDO_OMP_SYNC_SECTIONS  0 /* > 0 --> critical sections
+                                       otherwise atomic sections */
 
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
@@ -77,11 +79,11 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_PARAM_OMP_ASSEMBLY_ATOMIC,
-  CS_PARAM_OMP_ASSEMBLY_CRITICAL,
-  CS_PARAM_OMP_ASSEMBLY_N_STRATEGIES
+  CS_PARAM_ASSEMBLE_OMP_ATOMIC,
+  CS_PARAM_ASSEMBLE_OMP_CRITICAL,
+  CS_PARAM_ASSEMBLE_OMP_N_STRATEGIES
 
-} cs_param_omp_assembly_strategy_t;
+} cs_param_assemble_omp_strategy_t;
 
 /* DISCRETE HODGE OPERATORS */
 /* ======================== */

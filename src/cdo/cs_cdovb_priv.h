@@ -32,8 +32,8 @@
 #include "cs_defs.h"
 #include "cs_hodge.h"
 #include "cs_cdo_advection.h"
+#include "cs_equation_assemble.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -77,7 +77,7 @@ struct _cs_cdovb_t {
   cs_real_t   *cell_values;     /* NULL if not requested */
 
   /* Assembly process */
-  cs_equation_assemble_t   *assemble;
+  cs_equation_assembly_t   *assemble;
 
   /* Boundary conditions */
   cs_flag_t                *vtx_bc_flag;

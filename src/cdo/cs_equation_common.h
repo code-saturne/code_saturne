@@ -37,7 +37,6 @@
 #include "cs_equation_param.h"
 #include "cs_flag.h"
 #include "cs_matrix.h"
-#include "cs_range_set.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_source_term.h"
@@ -169,28 +168,6 @@ typedef struct {
 
 } cs_equation_balance_t;
 
-/*----------------------------------------------------------------------------
- * Function pointer types
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system into the global algebraic system
- *         Block or no block versions are handled
- *
- * \param[in]      csys     cellwise view of the algebraic system
- * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] mab      pointer to a matrix assembler buffers
- * \param[in, out] mav      pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_assemble_t)(const cs_cell_sys_t            *csys,
-                         const cs_range_set_t           *rset,
-                         cs_matrix_assembler_buf_t      *mab,
-                         cs_matrix_assembler_values_t   *mav);
-
 /*============================================================================
  * Inline public function prototypes
  *============================================================================*/
@@ -303,41 +280,8 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a \ref cs_matrix_assembler_values_t structure
- *
- * \param[in, out] matrix          pointer to matrix structure
- * \param[in]      omp_choice      choice of the OpenMP strategy
- * \param[in]      stride          stride to apply to each entity
- *
- * \return  a pointer to a cs_matrix_assembler_values_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_assembler_values_t *
-cs_equation_get_mav(cs_matrix_t                        *matrix,
-                    cs_param_omp_assembly_strategy_t    omp_choice,
-                    int                                 stride);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
- *         structure
- *
- * \param[in]  flag_id       id in the array of matrix structures
- *
- * \return  a pointer to a cs_matrix_structure_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_structure_t *
-cs_equation_get_matrix_structure(int  flag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
+ * \brief  Allocate a pointer to a buffer of size at least the n_cells for
  *         managing temporary usage of memory when dealing with equations
- *         Call specific structure allocation related to a numerical scheme
- *         according to the scheme flag
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings
  *         Set also shared pointers from the main domain members
@@ -353,13 +297,13 @@ cs_equation_get_matrix_structure(int  flag);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
-                                const cs_cdo_quantities_t    *quant,
-                                const cs_time_step_t         *time_step,
-                                cs_flag_t                     vb_flag,
-                                cs_flag_t                     vcb_flag,
-                                cs_flag_t                     fb_flag,
-                                cs_flag_t                     hho_flag);
+cs_equation_common_init(const cs_cdo_connect_t       *connect,
+                        const cs_cdo_quantities_t    *quant,
+                        const cs_time_step_t         *time_step,
+                        cs_flag_t                     vb_flag,
+                        cs_flag_t                     vcb_flag,
+                        cs_flag_t                     fb_flag,
+                        cs_flag_t                     hho_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -373,9 +317,7 @@ cs_equation_allocate_structures(const cs_cdo_connect_t       *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_free_structures(void);
-
-
+cs_equation_common_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -549,55 +491,6 @@ void
 cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
                                    cs_cell_builder_t               *cb,
                                    cs_cell_sys_t                   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system into the global algebraic system
- *
- * \param[in]      csys     cellwise view of the algebraic system
- * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] mab      pointer to a matrix assembler buffers
- * \param[in, out] mav      pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_matrix(const cs_cell_sys_t            *csys,
-                            const cs_range_set_t           *rset,
-                            cs_matrix_assembler_buf_t      *mab,
-                            cs_matrix_assembler_values_t   *mav);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system defined by blocks into the global
- *         algebraic system
- *
- * \param[in]      csys         cellwise view of the algebraic system
- * \param[in]      rset         pointer to a cs_range_set_t structure
- * \param[in, out] mab          pointer to a matrix assembler buffers
- * \param[in, out] mav          pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_block_matrix(const cs_cell_sys_t            *csys,
-                                  const cs_range_set_t           *rset,
-                                  cs_matrix_assembler_buf_t      *mab,
-                                  cs_matrix_assembler_values_t   *mav);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_matrix_assembler_buf_t structure related
- *         to a given thread
- *
- * \param[in]  t_id    id in the array of pointer
- *
- * \return a pointer to a cs_matrix_assembler_buf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_assembler_buf_t *
-cs_equation_get_assembly_buffers(int    t_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

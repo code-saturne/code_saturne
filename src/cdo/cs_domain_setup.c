@@ -43,6 +43,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_evaluate.h"
 #include "cs_equation.h"
+#include "cs_equation_assemble.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_gwf.h"
@@ -515,13 +516,20 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   cs_field_allocate_or_map_all();
 
   /* Allocate common structures for solving equations */
-  cs_equation_allocate_structures(domain->connect,
-                                  domain->cdo_quantities,
-                                  domain->time_step,
-                                  cc->vb_scheme_flag,
-                                  cc->vcb_scheme_flag,
-                                  cc->fb_scheme_flag,
-                                  cc->hho_scheme_flag);
+  cs_equation_common_init(domain->connect,
+                          domain->cdo_quantities,
+                          domain->time_step,
+                          cc->vb_scheme_flag,
+                          cc->vcb_scheme_flag,
+                          cc->fb_scheme_flag,
+                          cc->hho_scheme_flag);
+
+  /* Allocate matrix-related structures for the assembly stage */
+  cs_equation_assemble_init(domain->connect,
+                            cc->vb_scheme_flag,
+                            cc->vcb_scheme_flag,
+                            cc->fb_scheme_flag,
+                            cc->hho_scheme_flag);
 
   /* Set the range set structure for synchronization in parallel computing */
   cs_equation_set_range_set(domain->connect);

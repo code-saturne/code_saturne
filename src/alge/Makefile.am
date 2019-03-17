@@ -73,6 +73,7 @@ cs_matrix_building.h \
 cs_matrix_default.h \
 cs_matrix_priv.h \
 cs_matrix_assembler.h \
+cs_matrix_assembler_priv.h \
 cs_matrix_tuning.h \
 cs_matrix_util.h \
 cs_multigrid.h \

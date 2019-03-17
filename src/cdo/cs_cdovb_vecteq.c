@@ -1141,7 +1141,8 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
 
   /* Assembly process */
-  eqc->assemble = cs_equation_assemble_block_matrix;
+  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
+                                           CS_CDO_CONNECT_VTX_VECT);
 
   /* Array used for extra-operations */
   eqc->cell_values = NULL;
@@ -1419,7 +1420,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -1441,14 +1442,11 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _vbv_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbv_cell_builder[t_id];
-
-    /* Vector-valued = 3 DoFs by vertex */
-    mab->n_x_dofs = 3;
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1516,13 +1514,16 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      eqc->assemble(csys, rs, mab, mav);           /* Matrix assembly */
+      eqc->assemble(csys, rs, eqa, mav);               /* Matrix assembly */
 
-      for (short int i = 0; i < csys->n_dofs; i++) /* RHS Assembly */
-#       pragma omp atomic
-        rhs[csys->dof_ids[i]] += csys->rhs[i];
+#     pragma omp critical
+      {
+        for (short int i = 0; i < csys->n_dofs; i++)   /* RHS Assembly */
+          rhs[csys->dof_ids[i]] += csys->rhs[i];
+      }
 
       /* **********************  END OF ASSEMBLY PROCESS  ******************* */
 

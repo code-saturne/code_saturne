@@ -50,6 +50,7 @@
 #include "cs_domain_op.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
+#include "cs_equation_assemble.h"
 #include "cs_gwf.h"
 #include "cs_log.h"
 #include "cs_parall.h"
@@ -515,7 +516,9 @@ cs_cdo_finalize(cs_domain_t    *domain)
                                       domain->cdo_context->fb_scheme_flag,
                                       domain->cdo_context->hho_scheme_flag);
 
-  cs_equation_free_structures();
+  cs_equation_assemble_finalize();
+
+  cs_equation_common_finalize();
 
   /* Set flag to OFF */
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);

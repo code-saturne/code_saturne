@@ -579,6 +579,46 @@ _vbs_enforce_values(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Perform the assembly step
+ *
+ * \param[in]      eqc    context for this kind of discretization
+ * \param[in]      cm     pointer to a cellwise view of the mesh
+ * \param[in]      csys   pointer to a cellwise view of the system
+ * \param[in]      rs     pointer to a cs_range_set_t structure
+ * \param[in, out] eqa    pointer to a cs_equation_assemble_t structure
+ * \param[in, out] mav    pointer to a cs_matrix_assembler_values_t structure
+ * \param[in, out] rhs    right-hand side array
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_assemble(const cs_cdovb_scaleq_t           *eqc,
+          const cs_cell_mesh_t              *cm,
+          const cs_cell_sys_t               *csys,
+          const cs_range_set_t              *rs,
+          cs_equation_assemble_t            *eqa,
+          cs_matrix_assembler_values_t      *mav,
+          cs_real_t                         *rhs)
+{
+  /* Matrix assembly */
+  eqc->assemble(csys, rs, eqa, mav);
+
+  /* RHS assembly */
+# pragma omp critical
+  {
+    for (short int v = 0; v < cm->n_vc; v++)
+      rhs[cm->v_ids[v]] += csys->rhs[v];
+  }
+
+  if (eqc->source_terms != NULL) {
+    for (short int v = 0; v < cm->n_vc; v++) /* Source term assembly */
+#     pragma omp atomic
+      eqc->source_terms[cm->v_ids[v]] += csys->source[v];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Cellwise computation of the renormalization coefficient for the
  *         the residual norm of the linear system
  *
@@ -1195,14 +1235,17 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->source_terms = NULL;
 
   if (cs_equation_param_has_sourceterm(eqp)) {
+    if (cs_equation_param_has_time(eqp)) {
+      if (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
+          eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO) {
 
-    /* When the deprecated mode will be removed. This array needs to be
-       allocated only if a theta scheme is used */
-    BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
-#   pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
-      eqc->source_terms[i] = 0;
+        BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
+#       pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+          eqc->source_terms[i] = 0;
 
+      }
+    }
   } /* There is at least one source term */
 
   /* Pre-defined a cs_hodge_builder_t structure */
@@ -1216,7 +1259,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
 
   /* Assembly process */
-  eqc->assemble = cs_equation_assemble_matrix;
+  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
+                                           CS_CDO_CONNECT_VTX_SCAL);
 
   /* Array used for extra-operations */
   eqc->cell_values = NULL;
@@ -1403,7 +1447,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -1424,11 +1468,11 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _vbs_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1497,15 +1541,10 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      eqc->assemble(csys, rs, mab, mav);       /* Matrix assembly */
-
-      for (short int v = 0; v < cm->n_vc; v++) /* RHS assembly*/
-#       pragma omp atomic
-        rhs[cm->v_ids[v]] += csys->rhs[v];
-
-      /* **********************  END OF ASSEMBLY PROCESS  ******************* */
+      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1601,7 +1640,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -1622,7 +1661,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _vbs_cell_system[t_id];
@@ -1745,15 +1784,10 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      eqc->assemble(csys, rs, mab, mav);       /* Matrix assembly */
-
-      for (short int v = 0; v < cm->n_vc; v++) /* RHS assembly */
-#       pragma omp atomic
-        rhs[cm->v_ids[v]] += csys->rhs[v];
-
-      /* **********************  END OF ASSEMBLY PROCESS  ******************* */
+      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1882,7 +1916,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -1906,11 +1940,11 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _vbs_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -2064,21 +2098,10 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      eqc->assemble(csys, rs, mab, mav);         /* Matrix assembly */
-
-      for (short int v = 0; v < cm->n_vc; v++)   /* RHS assembly */
-#       pragma omp atomic
-        rhs[cm->v_ids[v]] += csys->rhs[v];
-
-      if (eqc->source_terms != NULL) {
-        for (short int v = 0; v < cm->n_vc; v++) /* Source term assembly */
-#         pragma omp atomic
-          eqc->source_terms[cm->v_ids[v]] += csys->source[v];
-      }
-
-      /* **********************  END OF ASSEMBLY PROCESS  ******************* */
+      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
 

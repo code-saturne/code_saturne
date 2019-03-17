@@ -661,9 +661,9 @@ _set_key(const char            *label,
 
   case CS_EQKEY_OMP_ASSEMBLY_STRATEGY:
     if (strcmp(keyval, "critical") == 0)
-      eqp->omp_assembly_choice = CS_PARAM_OMP_ASSEMBLY_CRITICAL;
+      eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
     else if (strcmp(keyval, "atomic") == 0)
-      eqp->sles_param.precond = CS_PARAM_OMP_ASSEMBLY_ATOMIC;
+      eqp->sles_param.precond = CS_PARAM_ASSEMBLE_OMP_ATOMIC;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -962,7 +962,7 @@ cs_equation_create_param(const char            *name,
   };
 
   /* Settings for the OpenMP strategy */
-  eqp->omp_assembly_choice = CS_PARAM_OMP_ASSEMBLY_CRITICAL;
+  eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
 
   return eqp;
 }
@@ -1818,10 +1818,10 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   }
 
   if (cs_glob_n_threads > 1) {
-    if (eqp->omp_assembly_choice == CS_PARAM_OMP_ASSEMBLY_CRITICAL)
+    if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_CRITICAL)
       cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> OpenMP.Assembly.Choice  %s\n",
                     eqname, "critical");
-    else if (eqp->omp_assembly_choice == CS_PARAM_OMP_ASSEMBLY_ATOMIC)
+    else if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_ATOMIC)
       cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> OpenMP.Assembly.Choice  %s\n",
                     eqname, "atomic");
   }

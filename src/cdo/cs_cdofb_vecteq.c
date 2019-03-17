@@ -597,7 +597,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
@@ -611,13 +611,11 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-
-    mab->n_x_dofs = 3;  /* vector-valued equation */
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -695,7 +693,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
       /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               eqc, mab, mav, rhs);
+                               eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -796,7 +794,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
@@ -810,13 +808,11 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-
-    mab->n_x_dofs = 3;  /* vector-valued equation */
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -917,7 +913,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
       /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               eqc, mab, mav, rhs);
+                               eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1027,7 +1023,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs, dir_values, \
@@ -1041,13 +1037,11 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-
-    mab->n_x_dofs = 3;  /* vector-valued equation */
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1176,7 +1170,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
       /* ================ */
 
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               eqc, mab, mav, rhs);
+                               eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1535,7 +1529,8 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   } /* There is at least one source term */
 
   /* Assembly process */
-  eqc->assemble = cs_equation_assemble_block_matrix;
+  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
+                                           CS_CDO_CONNECT_FACE_VP0);
 
   return eqc;
 }

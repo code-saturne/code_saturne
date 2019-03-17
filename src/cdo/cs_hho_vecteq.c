@@ -48,6 +48,7 @@
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
+#include "cs_equation_assemble.h"
 #include "cs_equation_common.h"
 #include "cs_hho_builder.h"
 #include "cs_hodge.h"
@@ -111,15 +112,17 @@ struct _cs_hho_vecteq_t {
   cs_real_t                     *cell_values;  /* DoF recomputed after the
                                                   static condensation */
 
-  /* Assembly process */
-  cs_equation_assemble_t        *assemble;
-
   /* Storage of the source term (if one wants to apply a specific time
      discretization) */
   cs_real_t                     *source_terms;
 
   /* Handle the definition of the BCs */
   short int                     *bf2def_ids;
+
+  /* Assembly process */
+  /* ================ */
+
+  cs_equation_assembly_t        *assemble;
 
   /* Static condensation members */
   /* =========================== */
@@ -816,27 +819,42 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   case CS_SPACE_SCHEME_HHO_P0:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_0TH;
     eqc->n_face_dofs = 3*CS_N_FACE_DOFS_0TH;
+
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms0;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP0];
+
+    /* Assembly process */
+    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P0,
+                                             CS_CDO_CONNECT_FACE_VHP0);
     break;
 
 
   case CS_SPACE_SCHEME_HHO_P1:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_1ST;
     eqc->n_face_dofs = 3*CS_N_FACE_DOFS_1ST;
+
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms1;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+
+    /* Assembly process */
+    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P1,
+                                             CS_CDO_CONNECT_FACE_VHP1);
     break;
 
 
   case CS_SPACE_SCHEME_HHO_P2:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_2ND;
     eqc->n_face_dofs = 3*CS_N_FACE_DOFS_2ND;
+
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms2;
     eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+
+    /* Assembly process */
+    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P2,
+                                             CS_CDO_CONNECT_FACE_VHP2);
     break;
 
     /* TODO: case CS_SPACE_SCHEME_HHO_PK */
@@ -909,9 +927,6 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
     }
 
   } /* Loop on BC definitions */
-
-  /* Assembly process */
-  eqc->assemble = cs_equation_assemble_block_matrix;
 
   return eqc;
 }
@@ -1182,7 +1197,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav
-    = cs_equation_get_mav(matrix, eqp->omp_assembly_choice, 1);
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
@@ -1199,13 +1214,11 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     /* Set inside the OMP section so that each thread has its own value
      * Each thread get back its related structures:
      * Get the cell-wise view of the mesh and the algebraic system */
-    cs_matrix_assembler_buf_t  *mab = cs_equation_get_assembly_buffers(t_id);
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
-
-    mab->n_x_dofs = eqc->n_face_dofs;
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, t_eval_pty, cb);
@@ -1367,7 +1380,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
       /* ======== */
 
       /* Matrix assembly */
-      eqc->assemble(csys, eqc->rs, mab, mav);
+      eqc->assemble(csys, eqc->rs, eqa, mav);
 
       /* RHS assembly */
       for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
