@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-03-10 22:47+0100\n"
+"POT-Creation-Date: 2019-03-18 16:21+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3346,22 +3346,6 @@ msgstr ""
 "================================\n"
 
 #, c-format
-msgid ""
-"\n"
-"Multigrid rank merge parameters:\n"
-"  merge rank stride:                 %d\n"
-"  mean  coarse rows merge threshold: %d\n"
-"  total coarse rows merge threshold: %llu\n"
-"  minimum active ranks:              %d\n"
-msgstr ""
-"\n"
-"Paramètres multigrille de regroupement de rangs:\n"
-"  nombre de rangs par regroupement:           %d\n"
-"  nombre moyen limite de cellules grossières: %d\n"
-"  nombre total limite de cellules grossières: %llu\n"
-"  nombre minimum de rangs actifs:             %d\n"
-
-#, c-format
 msgid "    minimum count =         %10d\n"
 msgstr "    nombre minimal =        %10d\n"
 
@@ -3661,6 +3645,12 @@ msgstr ""
 msgid "K-cycle"
 msgstr ""
 
+msgid "K-cycle, HPC variant"
+msgstr ""
+
+msgid "K-cycle, HPC coarse level"
+msgstr "K-cycle, niveau grossier HPC :"
+
 msgid "  Solver type:                       multigrid\n"
 msgstr "  Type de solveur :                  multigrille\n"
 
@@ -3684,6 +3674,20 @@ msgstr ""
 "  Nombre maximum de cycles :         %d\n"
 
 #, c-format
+msgid ""
+"\n"
+"  Rank merge parameters:\n"
+"    merge rank stride:               %d\n"
+"    mean  coarse cells threshold:    %d\n"
+"    total coarse cells threshold:    %llu\n"
+msgstr ""
+"\n"
+"  Paramètres de regroupement de rangs:\n"
+"    nombre de rangs par regroupement:           %d\n"
+"    nombre moyen limite de cellules grossières: %d\n"
+"    nombre total limite de cellules grossières: %llu\n"
+
+#, c-format
 msgid "  Cycle type:                        %s\n"
 msgstr "  Type de cycle :                    %s\n"
 
@@ -3700,6 +3704,9 @@ msgstr "    Preconditionnement :             "
 
 msgid "Jacobi\n"
 msgstr "Jacobi\n"
+
+msgid "None\n"
+msgstr ""
 
 #, c-format
 msgid "polynomial, degree %d\n"
@@ -3778,8 +3785,8 @@ msgstr "minimum"
 msgid "maximum"
 msgstr "maximum"
 
-msgid "Number of coarse levels:"
-msgstr "Nombre de niveaux grossiers :"
+msgid "Number of levels:"
+msgstr "Nombre de niveaux :"
 
 msgid "Number of cycles:"
 msgstr "Nombre de cycles :"
@@ -3832,6 +3839,68 @@ msgstr "Itérations lisseur de montée :"
 msgid "  Grid level %d:\n"
 msgstr "  Grille niveau %d :\n"
 
+msgid "coarse level descent smoother"
+msgstr "lisseur descendant de niveau grossier :"
+
+msgid "coarse level ascent smoother"
+msgstr "lisseur montant de niveau grossier :"
+
+msgid "bottom level solver"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"  Nested %s:\n"
+msgstr ""
+
+msgid "Multigrid"
+msgstr "Multigrille"
+
+#, c-format
+msgid ""
+"\n"
+"   building level %2u grid\n"
+msgstr ""
+"\n"
+"   construction de la grille de niveau %2u\n"
+
+#, c-format
+msgid ""
+"                                  total       min        max\n"
+"     number of rows:      %12llu %10d %10d\n"
+"     number of entries:                %10d %10d\n"
+msgstr ""
+"                                  total       min        max\n"
+"     nombre de lignes :   %12llu %10d %10d\n"
+"     nombre de faces :                 %10d %10d\n"
+
+#, c-format
+msgid ""
+"     number of rows:      %10d\n"
+"     number of entries:   %10d\n"
+msgstr ""
+"     nombre de lignes :   %10d\n"
+"     nombre d'entrées :   %10d\n"
+
+#, c-format
+msgid ""
+"   number of grid levels:           %u\n"
+"   number of rows in coarsest grid: %llu\n"
+"\n"
+msgstr ""
+"   nombre de niveaux de grille :                       %u\n"
+"   nombre de lignes dans la grille la plus grossière : %llu\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Construction of grid hierarchy for \"%s\"\n"
+msgstr ""
+"\n"
+" Construction de la hiérarchie de grilles pour \"%s\"\n"
+
 msgid ""
 "  ---------------------------------------------------\n"
 "    n.     | Cumulative iterations | Norm. residual\n"
@@ -3865,53 +3934,6 @@ msgstr ""
 " @@ Attention : multigrille algébrique pour [%s]\n"
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
-
-msgid "Multigrid"
-msgstr "Multigrille"
-
-#, c-format
-msgid ""
-"\n"
-" Construction of grid hierarchy for \"%s\"\n"
-msgstr ""
-"\n"
-" Construction de la hiérarchie de grilles pour \"%s\"\n"
-
-#, c-format
-msgid ""
-"\n"
-"   building level %2d grid\n"
-msgstr ""
-"\n"
-"   construction de la grille de niveau %2d\n"
-
-#, c-format
-msgid ""
-"                                  total       min        max\n"
-"     number of rows:      %12llu %10d %10d\n"
-"     number of entries:                %10d %10d\n"
-msgstr ""
-"                                  total       min        max\n"
-"     nombre de lignes :   %12llu %10d %10d\n"
-"     nombre de faces :                 %10d %10d\n"
-
-#, c-format
-msgid ""
-"     number of rows:      %10d\n"
-"     number of entries:   %10d\n"
-msgstr ""
-"     nombre de lignes :   %10d\n"
-"     nombre d'entrées :   %10d\n"
-
-#, c-format
-msgid ""
-"   number of coarse grids:          %d\n"
-"   number of rows in coarsest grid: %llu\n"
-"\n"
-msgstr ""
-"   nombre de maillages grossiers :                        %d\n"
-"   nombre de lignes dans le maillage le plus grossier : %llu\n"
-"\n"
 
 #, c-format
 msgid "Multigrid [%s]:\n"
@@ -15856,3 +15878,9 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid "%s\n"
+#~ msgstr "%s\n"
+
+#~ msgid "  %s:\n"
+#~ msgstr "  %s\n"

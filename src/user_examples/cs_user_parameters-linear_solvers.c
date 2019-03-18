@@ -412,15 +412,20 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_mgp_1] */
 
-
   /* Set parallel grid merging options for all multigrid solvers */
   /*-------------------------------------------------------------*/
 
   /*! [sles_mg_parall] */
-  cs_grid_set_merge_options(4,   /* # of ranks merged at a time */
-                            300, /* mean # of cells under which we merge */
-                            500, /* global # of cells under which we merge */
-                            1);  /* # of ranks under which we do not merge */
+  {
+    cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id,
+                                             NULL,
+                                             CS_MULTIGRID_V_CYCLE);
+
+    cs_multigrid_set_merge_options(mg,
+                                   4,    /* # of ranks merged at a time */
+                                   300,  /* mean # of cells under which we merge */
+                                   500); /* global # of cells under which we merge */
+  }
   /*! [sles_mg_parall] */
 
   /* Example: conjugate gradient preconditioned by multigrid for pressure */
@@ -458,7 +463,6 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_mgp_2] */
 
-
   /* Set a non-default linear solver for DOM radiation. */
   /*----------------------------------------------------*/
 
@@ -483,7 +487,6 @@ cs_user_linear_solvers(void)
 
   /* Example: activate convergence plot for pressure */
   /*-------------------------------------------------*/
-
 
   /*! [sles_plot_1] */
   {

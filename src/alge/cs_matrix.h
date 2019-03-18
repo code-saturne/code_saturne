@@ -205,8 +205,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
                                const cs_numbering_t   *numbering);
 
 /*----------------------------------------------------------------------------
- * Create an MSR matrix structure sharing an existing connectivity definition
- * as well as an optional edge-based definition.
+ * Create an MSR matrix structure sharing an existing connectivity definition.
  *
  * Note that as the structure created maps to the given existing
  * cell global number, face -> cell connectivity arrays, and cell halo
@@ -226,7 +225,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  *                        info, or NULL
  *
  * returns:
- *   a pointer to a created CDO matrix structure
+ *   a pointer to a created matrix structure
  *----------------------------------------------------------------------------*/
 
 cs_matrix_structure_t *
@@ -334,6 +333,23 @@ cs_matrix_create_from_assembler(cs_matrix_type_t        type,
 
 cs_matrix_t *
 cs_matrix_create_by_copy(cs_matrix_t   *src);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix based on the local restriction of a base matrix.
+ *
+ * Coefficients are copied. Some coefficients may be shared with the
+ * parent matrix, so the base matrix must not be destroyed before the
+ * restriction matrix.
+ *
+ * \param[in]  src  reference matrix structure
+ *
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_by_local_restrict(const cs_matrix_t  *src);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.

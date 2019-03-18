@@ -1960,6 +1960,65 @@ _create_struct_csr_from_shared(bool              have_diag,
 }
 
 /*----------------------------------------------------------------------------
+ * Create a CSR matrix structure from the restriction to local rank of
+ * another CSR matrix structure.
+ *
+ * parameters:
+ *   src <-- base matrix structure
+ *
+ * returns:
+ *    a pointer to a created CSR matrix structure
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_struct_csr_t *
+_create_struct_csr_from_restrict_local(const cs_matrix_struct_csr_t  *src)
+{
+  cs_matrix_struct_csr_t  *ms = NULL;
+
+  /* Allocate and map */
+
+  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
+
+  const cs_lnum_t n_rows = src->n_rows;
+
+  ms->n_rows = n_rows;
+  ms->n_cols_ext = n_rows;
+
+  ms->direct_assembly = src->direct_assembly;
+  ms->have_diag = src->have_diag;
+
+  BFT_MALLOC(ms->_row_index, ms->n_rows+1, cs_lnum_t);
+  BFT_MALLOC(ms->_col_id, src->row_index[ms->n_rows], cs_lnum_t);
+
+  ms->_row_index[0] = 0;
+
+  cs_lnum_t k = 0;
+
+  const cs_lnum_t *col_id_s = src->col_id;
+  cs_lnum_t *col_id_d = ms->_col_id;
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    const cs_lnum_t s_id = src->row_index[i];
+    const cs_lnum_t e_id = src->row_index[i+1];
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t c_id = col_id_s[j];
+      if (c_id < n_rows) {
+        col_id_d[k] = c_id;
+        k += 1;
+      }
+    }
+    ms->_row_index[i+1] = k;
+  }
+
+  BFT_REALLOC(ms->_col_id, ms->_row_index[n_rows], cs_lnum_t);
+
+  ms->row_index = ms->_row_index;
+  ms->col_id = ms->_col_id;
+
+  return ms;
+}
+
+/*----------------------------------------------------------------------------
  * Destroy CSR matrix coefficients.
  *
  * parameters:
@@ -5344,7 +5403,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create an MSR matrix structure sharing an existing connectivity
- * definition as well as an optional edge-based definition.
+ * definition.
  *
  * Note that as the structure created maps to the given existing
  * cell global number, face -> cell connectivity arrays, and cell halo
@@ -5363,7 +5422,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  * \param[in]  numbering        vectorization or thread-related numbering
  *                              info, or NULL
  *
- * \returns  a pointer to a created CDO matrix structure
+ * \returns  a pointer to a created matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5632,6 +5691,80 @@ cs_matrix_create_by_copy(cs_matrix_t   *src)
   }
 
   cs_matrix_release_coefficients(m);
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix based on the local restriction of a base matrix.
+ *
+ * Coefficients are copied. Some coefficients may be shared with the
+ * parent matrix, so the base matrix must not be destroyed before the
+ * restriction matrix.
+ *
+ * \param[in]  src  reference matrix structure
+ *
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_by_local_restrict(const cs_matrix_t  *src)
+{
+  cs_matrix_t *m = NULL;
+
+  const cs_lnum_t n_rows = src->n_rows;
+  const cs_lnum_t *eb_size = src->eb_size;
+
+  BFT_MALLOC(m, 1, cs_matrix_t);
+  memcpy(m, src, sizeof(cs_matrix_t));
+
+  m->structure = NULL;
+  m->_structure = NULL;
+
+  m->halo = NULL;
+  m->numbering = NULL;
+  m->assembler = NULL;
+  m->xa = NULL;
+  m->coeffs = NULL;
+
+  /* Define coefficients */
+
+  switch(m->type) {
+  case CS_MATRIX_MSR:
+    {
+      m->_structure = _create_struct_csr_from_restrict_local(src->structure);
+      m->structure = m->_structure;
+      m->coeffs = _create_coeff_msr();
+      cs_matrix_coeff_msr_t  *mc = m->coeffs;
+      cs_matrix_coeff_msr_t  *mc_src = src->coeffs;
+      const cs_matrix_struct_csr_t *ms = m->structure;
+      const cs_matrix_struct_csr_t *ms_src = src->structure;
+      mc->d_val = mc_src->d_val;
+      BFT_MALLOC(mc->_x_val, src->eb_size[3]*ms->row_index[n_rows], cs_real_t);
+      mc->x_val = mc->_x_val;
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        const cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+        const cs_real_t  *s_row =   mc_src->x_val
+                                  + ms_src->row_index[ii]*eb_size[3];
+        cs_real_t  *m_row = mc->_x_val + ms->row_index[ii]*eb_size[3];
+        memcpy(m_row, s_row, sizeof(cs_real_t)*eb_size[3]*n_cols);
+      }
+      mc->max_db_size = m->db_size[3];
+      mc->max_eb_size = m->eb_size[3];
+    }
+    break;
+  case CS_MATRIX_NATIVE:
+  case CS_MATRIX_CSR:
+  case CS_MATRIX_CSR_SYM:
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Handling of matrixes in %s format\n"
+                "is not operational yet."),
+              _(cs_matrix_type_name[m->type]));
+    break;
+  }
 
   return m;
 }

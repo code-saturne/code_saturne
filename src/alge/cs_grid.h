@@ -118,6 +118,25 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            const cs_matrix_t     *a_diff);
 
 /*----------------------------------------------------------------------------
+ * Create base grid by mapping from parent (possibly shared) matrix.
+ *
+ * Note that as arrays given as arguments are shared by the created grid
+ * (which can only access them, not modify them), the grid should be
+ * destroyed before those arrays.
+ *
+ * parameters:
+ *   a       <-- associated matrix
+ *   n_ranks <-- number of active ranks (<= 1 to restrict to local values)
+ *
+ * returns:
+ *   base grid structure
+ *----------------------------------------------------------------------------*/
+
+cs_grid_t *
+cs_grid_create_from_parent(const cs_matrix_t  *a,
+                           int                 n_ranks);
+
+/*----------------------------------------------------------------------------
  * Destroy a grid structure.
  *
  * parameters:
@@ -250,17 +269,37 @@ cs_grid_get_matrix(const cs_grid_t  *g);
 MPI_Comm
 cs_grid_get_comm(const cs_grid_t  *g);
 
+/*----------------------------------------------------------------------------
+ * Get the MPI subcommunicator for a given merge stride.
+ *
+ * parameters:
+ *   parent       <-- parent MPI communicator
+ *   merge_stride <-- associated merge stride
+ *
+ * returns:
+ *   MPI communicator
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_grid_get_comm_merge(MPI_Comm  parent,
+                       int       merge_stride);
+
 #endif
 
 /*----------------------------------------------------------------------------
  * Create coarse grid from fine grid.
  *
  * parameters:
- *   f                    <-- Fine grid structure
- *   verbosity            <-- Verbosity level
- *   coarsening_type      <-- Coarsening criteria type
- *   aggregation_limit    <-- Maximum allowed fine rows per coarse row
- *   relaxation_parameter <-- P0/P1 relaxation factor
+ *   f                          <-- Fine grid structure
+ *   coarsening_type            <-- Coarsening criteria type
+ *   aggregation_limit          <-- Maximum allowed fine rows per coarse rows
+ *   verbosity                  <-- Verbosity level
+ *   merge_stride               <-- Associated merge stride
+ *   merge_rows_mean_threshold  <-- mean number of rows under which
+ *                                  merging should be applied
+ *   merge_rows_glob_threshold  <-- global number of rows under which
+ *                                  merging should be applied
+ *   relaxation_parameter       <-- P0/P1 relaxation factor
  *
  * returns:
  *   coarse grid structure
@@ -268,10 +307,30 @@ cs_grid_get_comm(const cs_grid_t  *g);
 
 cs_grid_t *
 cs_grid_coarsen(const cs_grid_t  *f,
-                int               verbosity,
                 int               coarsening_type,
                 int               aggregation_limit,
+                int               verbosity,
+                int               merge_stride,
+                int               merge_rows_mean_threshold,
+                cs_gnum_t         merge_rows_glob_threshold,
                 double            relaxation_parameter);
+
+/*----------------------------------------------------------------------------
+ * Create coarse grid with only one row per rank from fine grid.
+ *
+ * parameters:
+ *   f            <-- Fine grid structure
+ *   merge_stride <-- Associated merge stride
+ *   verbosity    <-- Verbosity level
+ *
+ * returns:
+ *   coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+cs_grid_t *
+cs_grid_coarsen_to_single(const cs_grid_t  *f,
+                          int               merge_stride,
+                          int               verbosity);
 
 /*----------------------------------------------------------------------------
  * Compute coarse row variable values from fine row values
@@ -388,16 +447,6 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
                          cs_real_t         diag_dom[]);
 
 /*----------------------------------------------------------------------------
- * Return the merge_stride if merging is active.
- *
- * returns:
- *   grid merge stride if merging is active, 1 otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_grid_get_merge_stride(void);
-
-/*----------------------------------------------------------------------------
  * Finalize global info related to multigrid solvers
  *----------------------------------------------------------------------------*/
 
@@ -417,46 +466,6 @@ cs_grid_dump(const cs_grid_t  *g);
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Query the global multigrid parameters for parallel grid merging.
- *
- * parameters:
- *   rank_stride         --> number of ranks over which merging
- *                           takes place, or NULL
- *   rows_mean_threshold --> mean number of rows under which merging
- *                           should be applied, or NULL
- *   rows_glob_threshold --> global number of rows under which merging
- *                           should be applied, or NULL
- *   min_ranks           --> number of active ranks under which
- *                           no merging takes place, or NULL
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_get_merge_options(int         *rank_stride,
-                          int         *rows_mean_threshold,
-                          cs_gnum_t   *rows_glob_threshold,
-                          int         *min_ranks);
-
-/*----------------------------------------------------------------------------
- * Set global multigrid parameters for parallel grid merging.
- *
- * parameters:
- *   rank_stride         <-- number of ranks over which merging
- *                           takes place
- *   rows_mean_threshold <-- mean number of rows under which merging
- *                           should be applied
- *   rows_glob_threshold <-- global number of rows under which merging
- *                           should be applied
- *   min_ranks           <-- number of active ranks under which
- *                           no merging takes place
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_set_merge_options(int         rank_stride,
-                          int         rows_mean_threshold,
-                          cs_gnum_t   rows_glob_threshold,
-                          int         min_ranks);
 
 /*----------------------------------------------------------------------------
  * Set matrix tuning behavior for multigrid coarse meshes.
@@ -489,13 +498,6 @@ void
 cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
                            int                         level,
                            const cs_matrix_variant_t  *mv);
-
-/*----------------------------------------------------------------------------
- * Log the current settings for multigrid parallel merging.
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_log_merge_options(void);
 
 /*----------------------------------------------------------------------------*/
 

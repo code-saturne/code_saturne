@@ -580,7 +580,8 @@ class NumericalParamEquationModel(Model):
     @Variables.undoLocal
     def setPreconditioningChoice(self, name, value):
         """ Put choice of preconditioning for variable labelled name """
-        self.isInList(value, ('multigrid', 'multigrid_k_cycle',
+        self.isInList(value, ('multigrid',
+                              'multigrid_k_cycle', 'multigrid_k_cycle_hpc',
                               'none', 'jacobi',
                               'polynomial', 'automatic'))
         node = self._getSolverNameNode(name)

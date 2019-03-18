@@ -2056,7 +2056,7 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
 
       /* For CDO equation, if non-automatic value ie != -1 */
       eqp = cs_equation_param_by_name(f->name);
-      if (eqp != NULL && var_cal_opt.epsilo != -1)
+      if (eqp != NULL && cs_gui_is_equal_real(var_cal_opt.epsilo, -1) == 0)
         eqp->sles_param.eps = var_cal_opt.epsilo;
 
       // only for nscaus and model scalar
@@ -4192,6 +4192,11 @@ cs_gui_linear_solvers(void)
         else if (cs_gui_strcmp(precond_choice, "multigrid_k_cycle")) {
           pc_multigrid = true;
           mg_type = CS_MULTIGRID_K_CYCLE;
+          poly_degree = -1;
+        }
+        else if (cs_gui_strcmp(precond_choice, "multigrid_k_cycle_hpc")) {
+          pc_multigrid = true;
+          mg_type = CS_MULTIGRID_K_CYCLE_HPC;
           poly_degree = -1;
         }
         else if (cs_gui_strcmp(precond_choice, "multigrid")) {

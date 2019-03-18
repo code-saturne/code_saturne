@@ -56,9 +56,10 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_MULTIGRID_V_CYCLE,        /*!< Use a V-cycle */
-  CS_MULTIGRID_K_CYCLE,        /*!< Use a K-cycle */
-  CS_MULTIGRID_N_TYPES         /*!< Number of multigrid types */
+  CS_MULTIGRID_V_CYCLE,          /*!< Use a V-cycle */
+  CS_MULTIGRID_K_CYCLE,          /*!< Use a K-cycle */
+  CS_MULTIGRID_K_CYCLE_HPC,      /*!< Use a K-cycle tuned for HPC systems */
+  CS_MULTIGRID_N_TYPES           /*!< Number of multigrid types */
 
 } cs_multigrid_type_t;
 
@@ -91,16 +92,6 @@ cs_multigrid_initialize(void);
 
 void
 cs_multigrid_finalize(void);
-
-/*----------------------------------------------------------------------------
- * Indicate if multigrid solver API is used for at least one system.
- *
- * returns:
- *   true if at least one system uses a multigrid solver, false otherwise
- *----------------------------------------------------------------------------*/
-
-bool
-cs_multigrid_needed(void);
 
 /*----------------------------------------------------------------------------
  * Define and associate a multigrid sparse linear system solver
@@ -336,7 +327,7 @@ cs_multigrid_solve(void                *context,
  * Free iterative sparse linear equation solver setup context.
  *
  * Note that this function should free resolution-related data, such as
- * buffers and preconditioning but doesd not free the whole context,
+ * buffers and preconditioning but does not free the whole context,
  * as info used for logging (especially performance data) is maintained.
 
  * parameters:
@@ -414,6 +405,46 @@ void
 cs_multigrid_set_plot_options(cs_multigrid_t  *mg,
                               const char      *base_name,
                               bool             use_iteration);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query the global multigrid parameters for parallel grid merging.
+ *
+ * \param[in]   mg                   pointer to multigrid info and context
+ * \param[out]  rank_stride          number of ranks over which merging
+ *                                   takes place, or NULL
+ * \param[out]  rows_mean_threshold  mean number of cells under which merging
+ *                                   should be applied, or NULL
+ * \param[out]  rows_glob_threshold  global number of cells under which
+ *                                   merging should be applied, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_get_merge_options(const cs_multigrid_t  *mg,
+                               int                   *rank_stride,
+                               int                   *rows_mean_threshold,
+                               cs_gnum_t             *rows_glob_threshold);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set global multigrid parameters for parallel grid merging behavior.
+ *
+ * \param[in, out]  mg                   pointer to multigrid info and context
+ * \param[in]       rank_stride          number of ranks over which merging
+ *                                       takes place
+ * \param[in]       rows_mean_threshold  mean number of cells under which
+ *                                       merging should be applied
+ * \param[in]       rows_glob_threshold  global number of cells under which
+ *                                       merging should be applied
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_merge_options(cs_multigrid_t  *mg,
+                               int              rank_stride,
+                               int              rows_mean_threshold,
+                               cs_gnum_t        rows_glob_threshold);
 
 /*----------------------------------------------------------------------------*/
 

@@ -256,11 +256,6 @@ cs_real_t _dd_threshold_pw = 5;
 
 #if defined(HAVE_MPI)
 
-static cs_gnum_t   _grid_merge_mean_threshold = 300;
-static cs_gnum_t   _grid_merge_glob_threshold = 500;
-static int         _grid_merge_min_ranks = 1;
-static int         _grid_merge_stride = 1;
-
 static int        _n_grid_comms = 0;
 static int       *_grid_ranks = NULL;
 static MPI_Comm  *_grid_comm = NULL;
@@ -395,6 +390,8 @@ _create_grid(void)
   g->parent = NULL;
   g->conv_diff = false;
 
+  g->relaxation = 0;
+
   g->face_cell = NULL;
   g->_face_cell = NULL;
 
@@ -430,7 +427,9 @@ _create_grid(void)
 
   g->xa0ij = NULL;
 
+  g->matrix_struct = NULL;
   g->matrix = NULL;
+  g->_matrix = NULL;
 
 #if defined(HAVE_MPI)
 
@@ -540,8 +539,12 @@ _aggregation_stats_log(const cs_grid_t  *f,
 
 #if defined(HAVE_MPI)
   MPI_Comm comm = cs_glob_mpi_comm;
-  if (_grid_ranks != NULL)
-    comm = _grid_comm[f->comm_id];
+  if (_grid_ranks != NULL) {
+    if (f->comm_id >= 0)
+      comm = _grid_comm[f->comm_id];
+    else
+      comm = MPI_COMM_NULL;
+  }
 #endif
 
   for (cs_lnum_t i = 0; i < c_n_rows; i++) {
@@ -1276,69 +1279,64 @@ _coarsen(const cs_grid_t   *f,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Create a set of reduced communicators
+ * Return a reduced communicator matching a number of ranks.
+ *
+ * This updates the number of reduced communicators if necessary.
  *
  * parameters:
- *   grid_merge_stride <-- size multiple between communicators
+ *   n_ranks <-- number of ranks of reduced communicator
  *----------------------------------------------------------------------------*/
 
-static void
-_init_reduced_communicators(int  grid_merge_stride)
+static int
+_get_reduced_comm_id(int  n_ranks)
 {
-  int comm_id;
-  int n_ranks;
-  int ranges[1][3];
-  MPI_Group old_group, new_group;
-
-  _grid_merge_stride = grid_merge_stride;
-
-  /* Determine number of communicators */
-
-  _n_grid_comms = 1;
-  n_ranks = cs_glob_n_ranks;
-  while (n_ranks > 1) {
-    _n_grid_comms += 1;
-    if (n_ranks % _grid_merge_stride == 0)
-      n_ranks = n_ranks / _grid_merge_stride;
-    else
-      n_ranks = (n_ranks / _grid_merge_stride) + 1;
+  int comm_id = 0;
+  if (_n_grid_comms > 0) {
+    while (   _grid_ranks[comm_id] != n_ranks
+           && comm_id < _n_grid_comms)
+      comm_id++;
   }
 
-  BFT_MALLOC(_grid_comm, _n_grid_comms, MPI_Comm);
-  BFT_MALLOC(_grid_ranks, _n_grid_comms, cs_lnum_t);
+  /* Add communicator if required */
 
-  n_ranks = cs_glob_n_ranks;
-  _grid_ranks[0] = cs_glob_n_ranks;
-  _grid_comm[0] = cs_glob_mpi_comm;
+  if (comm_id >= _n_grid_comms) {
 
-  MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+    _n_grid_comms += 1;
+    BFT_REALLOC(_grid_comm, _n_grid_comms, MPI_Comm);
+    BFT_REALLOC(_grid_ranks, _n_grid_comms, cs_lnum_t);
 
-  MPI_Comm_size(cs_glob_mpi_comm, &n_ranks);
-  MPI_Comm_group(cs_glob_mpi_comm, &old_group);
-
-  ranges[0][0] = 0;
-  ranges[0][1] = n_ranks - 1;
-  ranges[0][2] = 1;
-
-  for (comm_id = 1; comm_id < _n_grid_comms; comm_id++) {
-
-    if (n_ranks % _grid_merge_stride == 0)
-      n_ranks = n_ranks / _grid_merge_stride;
-    else
-      n_ranks = (n_ranks / _grid_merge_stride) + 1;
     _grid_ranks[comm_id] = n_ranks;
 
-    ranges[0][2] *= _grid_merge_stride;
+    if (n_ranks == cs_glob_n_ranks)
+      _grid_comm[comm_id] = cs_glob_mpi_comm;
 
-    MPI_Group_range_incl(old_group, 1, ranges, &new_group);
-    MPI_Comm_create(cs_glob_mpi_comm, new_group, &(_grid_comm[comm_id]));
-    MPI_Group_free(&new_group);
+    else {
+
+      int ranges[1][3];
+      MPI_Group old_group, new_group;
+
+      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+
+      MPI_Comm_size(cs_glob_mpi_comm, &n_ranks);
+      MPI_Comm_group(cs_glob_mpi_comm, &old_group);
+
+      ranges[0][0] = 0;
+      ranges[0][1] = n_ranks - 1;
+      ranges[0][2] = cs_glob_n_ranks / n_ranks;
+
+      MPI_Group_range_incl(old_group, 1, ranges, &new_group);
+      MPI_Comm_create(cs_glob_mpi_comm, new_group, &(_grid_comm[comm_id]));
+      MPI_Group_free(&new_group);
+
+      MPI_Group_free(&old_group);
+
+      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+
+    }
 
   }
 
-  MPI_Group_free(&old_group);
-
-  MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+  return comm_id;
 }
 
 /*----------------------------------------------------------------------------
@@ -2269,12 +2267,14 @@ _append_face_data(cs_grid_t   *g,
  * - Periodic faces are not handled yet
  *
  * parameters:
- *   g         <-- Pointer to grid structure
- *   verbosity <-- verbosity level
+ *   g            <-- Pointer to grid structure
+ *   merge_stride <-- Associated merge stride
+ *   verbosity    <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 static void
 _merge_grids(cs_grid_t  *g,
+             int         merge_stride,
              int         verbosity)
 {
   int i, rank_id, t_id;
@@ -2289,16 +2289,14 @@ _merge_grids(cs_grid_t  *g,
 
   static const int tag = 'm'+'e'+'r'+'g'+'e';
 
-  if (_grid_merge_stride > 1) {
-     if (_n_grid_comms == 0)
-       _init_reduced_communicators(_grid_merge_stride);
-  }
+  if (merge_stride < 2)
+    return;
 
   /* Determine rank in merged group */
 
-  g->merge_sub_size = _grid_merge_stride;
+  g->merge_sub_size = merge_stride;
   g->merge_stride = g->next_merge_stride;
-  g->next_merge_stride *= _grid_merge_stride;
+  g->next_merge_stride *= merge_stride;
 
   if (base_rank % g->merge_stride != 0) {
     g->merge_sub_size = 0;
@@ -2308,24 +2306,21 @@ _merge_grids(cs_grid_t  *g,
   else {
     int merge_rank = base_rank / g->merge_stride;
     int merge_size = (cs_glob_n_ranks/g->merge_stride);
-    int merge_sub_root = (merge_rank / _grid_merge_stride) * _grid_merge_stride;
+    int merge_sub_root = (merge_rank / merge_stride) * merge_stride;
     if (cs_glob_n_ranks % g->merge_stride > 0)
       merge_size += 1;
     g->merge_sub_root = merge_sub_root * g->merge_stride;
-    g->merge_sub_rank = merge_rank % _grid_merge_stride;
+    g->merge_sub_rank = merge_rank % merge_stride;
     if (merge_sub_root + g->merge_sub_size > merge_size)
       g->merge_sub_size = merge_size - merge_sub_root;
   }
 
   if (g->next_merge_stride > 1) {
-    if (g->n_ranks % _grid_merge_stride)
-      g->n_ranks = (g->n_ranks/_grid_merge_stride) + 1;
+    if (g->n_ranks % merge_stride)
+      g->n_ranks = (g->n_ranks/merge_stride) + 1;
     else
-      g->n_ranks = (g->n_ranks/_grid_merge_stride);
-    g->comm_id = 0;
-    while (   _grid_ranks[g->comm_id] != g->n_ranks
-           && g->comm_id < _n_grid_comms)
-      g->comm_id++;
+      g->n_ranks = (g->n_ranks/merge_stride);
+    g->comm_id = _get_reduced_comm_id(g->n_ranks);
   }
 
   if (verbosity > 2) {
@@ -3863,16 +3858,16 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
  *   c           <-> coarse grid structure
  *   c_row_index <-- MSR row index (0 to n-1)
  *   c_col_id    <-- MSR column id (0 to n-1)
- *   c_x_val     <-- extradiagonal values
  *   c_d_val     <-- diagonal values
+ *   c_x_val     <-- extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _build_coarse_matrix_msr(cs_grid_t *c,
                          cs_lnum_t *c_row_index,
                          cs_lnum_t *c_col_id,
-                         cs_real_t *c_x_val,
-                         cs_real_t *c_d_val)
+                         cs_real_t *c_d_val,
+                         cs_real_t *c_x_val)
 {
   cs_matrix_structure_t  *ms
     = cs_matrix_structure_create_msr(CS_MATRIX_MSR,
@@ -4799,7 +4794,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   }
 
   _build_coarse_matrix_msr(coarse_grid, c_row_index, c_col_id,
-                           c_x_val, c_d_val);
+                           c_d_val, c_x_val);
 }
 
 /*----------------------------------------------------------------------------
@@ -4997,6 +4992,94 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 }
 
 /*----------------------------------------------------------------------------
+ * Create base grid by mapping from parent (possibly shared) matrix.
+ *
+ * Note that as arrays given as arguments are shared by the created grid
+ * (which can only access them, not modify them), the grid should be
+ * destroyed before those arrays.
+ *
+ * parameters:
+ *   a       <-- associated matrix
+ *   n_ranks <-- number of active ranks (<= 1 to restrict to local values)
+ *
+ * returns:
+ *   base grid structure
+ *----------------------------------------------------------------------------*/
+
+cs_grid_t *
+cs_grid_create_from_parent(const cs_matrix_t  *a,
+                           int                 n_ranks)
+{
+  cs_grid_t *g = NULL;
+
+  /* Create empty structure and map base data */
+
+  g = _create_grid();
+
+  bool local = true;
+  const cs_halo_t *h = cs_matrix_get_halo(a);
+  if (h != NULL) {
+    local = false;
+    if (h->n_c_domains == 1) {
+      if (h->c_domain_rank[0] == cs_glob_rank_id)
+        local = true;
+    }
+  }
+
+  if (n_ranks > 1 || local) {
+    g->matrix = a;
+#if defined(HAVE_MPI)
+    if (_grid_ranks != NULL) {
+      g->comm_id = _get_reduced_comm_id(n_ranks);
+      g->n_ranks = _grid_ranks[g->comm_id];
+    }
+    else {
+      g->comm_id = 0;
+      g->n_ranks = cs_glob_n_ranks;
+    }
+#endif
+  }
+  else {
+    g->_matrix = cs_matrix_create_by_local_restrict(a);
+    g->matrix = g->_matrix;
+    g->comm_id = -1;
+    g->n_ranks = 1;
+  }
+
+  g->level = 0;
+  g->symmetric = cs_matrix_is_symmetric(g->matrix);
+
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(g->matrix);
+  const cs_lnum_t *eb_size = cs_matrix_get_extra_diag_block_size(g->matrix);
+
+  for (cs_lnum_t ii = 0; ii < 4; ii++)
+    g->db_size[ii] = db_size[ii];
+
+  for (cs_lnum_t ii = 0; ii < 4; ii++)
+    g->eb_size[ii] = eb_size[ii];
+
+  g->n_rows = cs_matrix_get_n_rows(g->matrix);
+  g->n_cols_ext = cs_matrix_get_n_columns(g->matrix);
+  g->halo = cs_matrix_get_halo(g->matrix);
+
+  g->n_g_rows = g->n_rows;
+
+#if defined(HAVE_MPI)
+  if (g->halo != NULL && g->comm_id >= 0) {
+    MPI_Comm comm;
+    if (_grid_comm != NULL)
+      comm = _grid_comm[g->comm_id];
+    else
+      comm = cs_glob_mpi_comm;
+    cs_gnum_t _g_n_rows = g->n_rows;
+    MPI_Allreduce(&_g_n_rows, &(g->n_rows), 1, CS_MPI_GNUM, MPI_SUM, comm);
+  }
+#endif
+
+  return g;
+}
+
+/*----------------------------------------------------------------------------
  * Destroy a grid structure.
  *
  * parameters:
@@ -5009,7 +5092,6 @@ cs_grid_destroy(cs_grid_t **grid)
   if (grid != NULL && *grid != NULL) {
 
     cs_grid_t *g = *grid;
-
     cs_grid_free_quantities(g);
 
     BFT_FREE(g->_face_cell);
@@ -5274,28 +5356,68 @@ cs_grid_get_comm(const cs_grid_t  *g)
   return comm;
 }
 
+/*----------------------------------------------------------------------------
+ * Get the MPI subcommunicator for a given merge stride.
+ *
+ * parameters:
+ *   parent       <-- parent MPI communicator
+ *   merge_stride <-- associated merge stride
+ *
+ * returns:
+ *   MPI communicator
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_grid_get_comm_merge(MPI_Comm  parent,
+                       int       merge_stride)
+{
+  MPI_Comm comm = MPI_COMM_NULL;
+
+  if (parent != MPI_COMM_NULL) {
+    int size;
+    MPI_Comm_size(parent, &size);
+    int merge_size = size / merge_stride;
+    if (size % merge_stride)
+      merge_size += 1;
+    if (merge_size > 1) {
+      int comm_id = _get_reduced_comm_id(merge_size);
+      comm = _grid_comm[comm_id];
+    }
+  }
+
+  return comm;
+}
+
 #endif
 
 /*----------------------------------------------------------------------------
  * Create coarse grid from fine grid.
  *
  * parameters:
- *   f                    <-- Fine grid structure
- *   verbosity            <-- Verbosity level
- *   coarsening_type      <-- Coarsening criteria type
- *   aggregation_limit    <-- Maximum allowed fine cells per coarse cell
- *   relaxation_parameter <-- P0/P1 relaxation factor
+ *   f                          <-- Fine grid structure
+ *   coarsening_type            <-- Coarsening criteria type
+ *   aggregation_limit          <-- Maximum allowed fine rows per coarse rows
+ *   verbosity                  <-- Verbosity level
+ *   merge_stride               <-- Associated merge stride
+ *   merge_rows_mean_threshold  <-- mean number of rows under which
+ *                                  merging should be applied
+ *   merge_rows_glob_threshold  <-- global number of rows under which
+ *                                  merging should be applied
+ *   relaxation_parameter       <-- P0/P1 relaxation factor
  *
  * returns:
  *   coarse grid structure
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_coarsen(const cs_grid_t   *f,
-                int                verbosity,
-                int                coarsening_type,
-                int                aggregation_limit,
-                double             relaxation_parameter)
+cs_grid_coarsen(const cs_grid_t  *f,
+                int               coarsening_type,
+                int               aggregation_limit,
+                int               verbosity,
+                int               merge_stride,
+                int               merge_rows_mean_threshold,
+                cs_gnum_t         merge_rows_glob_threshold,
+                double            relaxation_parameter)
 {
   int recurse = 0;
 
@@ -5491,14 +5613,12 @@ cs_grid_coarsen(const cs_grid_t   *f,
     /* Merge grids if we are below the threshold */
 
 #if defined(HAVE_MPI)
-    if (   c->n_ranks > _grid_merge_min_ranks
-        && _grid_merge_stride > 1
-        && recurse == 0) {
+    if (merge_stride > 1 && c->n_ranks > 1 && recurse == 0) {
       cs_gnum_t  _n_ranks = c->n_ranks;
-      cs_gnum_t  _n_mean_g_cells = c->n_g_rows / _n_ranks;
-      if (   _n_mean_g_cells < _grid_merge_mean_threshold
-          || c->n_g_rows < _grid_merge_glob_threshold)
-        _merge_grids(c, verbosity);
+      cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
+      if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
+          || c->n_g_rows < merge_rows_glob_threshold)
+        _merge_grids(c, merge_stride, verbosity);
     }
 #endif
 
@@ -5595,9 +5715,12 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
     /* Build coarser grid from coarse grid */
     cs_grid_t *cc = cs_grid_coarsen(c,
-                                    verbosity,
                                     coarsening_type,
                                     aggregation_limit / recurse,
+                                    verbosity,
+                                    merge_stride,
+                                    merge_rows_mean_threshold,
+                                    merge_rows_glob_threshold,
                                     relaxation_parameter);
 
     /* Project coarsening */
@@ -5629,6 +5752,120 @@ cs_grid_coarsen(const cs_grid_t   *f,
     cs_grid_destroy(&c);
     c = cc;
   }
+
+  /* Optional verification */
+
+  if (verbosity > 3) {
+    if (f->level == 0)
+      _verify_matrix(f);
+    _verify_matrix(c);
+  }
+
+  /* Return new (coarse) grid */
+
+  return c;
+}
+
+/*----------------------------------------------------------------------------
+ * Create coarse grid with only one row per rank from fine grid.
+ *
+ * parameters:
+ *   f            <-- Fine grid structure
+ *   merge_stride <-- Associated merge stride
+ *   verbosity    <-- Verbosity level
+ *
+ * returns:
+ *   coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+cs_grid_t *
+cs_grid_coarsen_to_single(const cs_grid_t  *f,
+                          int               merge_stride,
+                          int               verbosity)
+{
+  cs_lnum_t isym = 2;
+
+  /* By default, always use MSR structure, as it often seems to provide the
+     best performance, and is required for the hybrid Gauss-Seidel-Jacobi
+     smoothers. In multithreaded case, we also prefer to use a matrix
+     structure allowing threading without a specific renumbering, as
+     structures are rebuilt often (so only CSR and MSR can be considered) */
+
+  cs_matrix_type_t fine_matrix_type = cs_matrix_get_type(f->matrix);
+  cs_matrix_type_t coarse_matrix_type = CS_MATRIX_MSR;
+
+  cs_grid_t *c = NULL;
+
+  const cs_lnum_t *db_size = f->db_size;
+
+  assert(f != NULL);
+
+  /* Initialization */
+
+  c = _coarse_init(f);
+
+  if (f->symmetric == true)
+    isym = 1;
+
+  c->relaxation = 0;
+
+  /* All to a single row */
+
+  for (cs_lnum_t i = 0; i < f->n_rows; i++)
+    c->coarse_row[i] = 0;
+
+  _coarsen(f, c);
+
+  if (verbosity > 3)
+    _aggregation_stats_log(f, c, verbosity);
+
+  BFT_MALLOC(c->_da, c->n_cols_ext * c->db_size[3], cs_real_t);
+  c->da = c->_da;
+
+  BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
+  c->xa = c->_xa;
+
+  if (fine_matrix_type == CS_MATRIX_MSR)
+    _compute_coarse_quantities_msr(f, c);
+
+  else if (f->face_cell != NULL) {
+    _compute_coarse_quantities_native(f, c, verbosity);
+
+    /* Synchronize matrix's geometric quantities */
+
+    if (c->halo != NULL)
+      cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_size[3]);
+
+    /* Merge grids if we are below the threshold */
+
+#if defined(HAVE_MPI)
+    if (c->n_ranks > 0 && merge_stride > 1)
+      _merge_grids(c, merge_stride, verbosity);
+#endif
+
+    c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
+                                                  true,
+                                                  c->n_rows,
+                                                  c->n_cols_ext,
+                                                  c->n_faces,
+                                                  c->face_cell,
+                                                  c->halo,
+                                                  NULL);
+
+    c->_matrix = cs_matrix_create(c->matrix_struct);
+
+    cs_matrix_set_coefficients(c->_matrix,
+                               c->symmetric,
+                               c->db_size,
+                               c->eb_size,
+                               c->n_faces,
+                               c->face_cell,
+                               c->da,
+                               c->xa);
+
+  }
+
+  c->matrix = c->_matrix;
 
   /* Optional verification */
 
@@ -6177,26 +6414,6 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
 }
 
 /*----------------------------------------------------------------------------
- * Return the merge_stride if merging is active.
- *
- * returns:
- *   grid merge stride if merging is active, 1 otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_grid_get_merge_stride(void)
-{
-  int retval = 1;
-
-#if defined(HAVE_MPI)
-  if (_grid_merge_min_ranks < cs_glob_n_ranks && _grid_merge_stride > 1)
-    retval = _grid_merge_stride;
-#endif
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
  * Finalize global info related to multigrid solvers
  *----------------------------------------------------------------------------*/
 
@@ -6317,79 +6534,6 @@ cs_grid_dump(const cs_grid_t  *g)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Query the global multigrid parameters for parallel grid merging.
- *
- * \param[out]  rank_stride           number of ranks over which merging
- *                                    takes place, or NULL
- * \param[out]  cells_mean_threshold  mean number of cells under which merging
- *                                    should be applied, or NULL
- * \param[out]  cells_glob_threshold  global number of cells under which merging
- *                                    should be applied, or NULL
- * \param[out]  min_ranks             number of active ranks under which
- *                                    no merging takes place, or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_grid_get_merge_options(int         *rank_stride,
-                          int         *cells_mean_threshold,
-                          cs_gnum_t   *cells_glob_threshold,
-                          int         *min_ranks)
-{
-#if defined(HAVE_MPI)
-  if (rank_stride != NULL)
-    *rank_stride = _grid_merge_stride;
-  if (cells_mean_threshold != NULL)
-    *cells_mean_threshold = _grid_merge_mean_threshold;
-  if (cells_glob_threshold != NULL)
-    *cells_glob_threshold = _grid_merge_glob_threshold;
-  if (min_ranks != NULL)
-    *min_ranks = _grid_merge_min_ranks;
-#else
-  if (rank_stride != NULL)
-    *rank_stride = 0;
-  if (cells_mean_threshold != NULL)
-    *cells_mean_threshold = 0;
-  if (cells_glob_threshold != NULL)
-    *cells_glob_threshold = 0;
-  if (min_ranks != NULL)
-    *min_ranks = 1;
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set global multigrid parameters for parallel grid merging behavior.
- *
- * \param[in]  rank_stride           number of ranks over which merging
- *                                   takes place
- * \param[in]  cells_mean_threshold  mean number of cells under which merging
- *                                   should be applied
- * \param[in]  cells_glob_threshold  global number of cells under which merging
- *                                   should be applied
- * \param[in]  min_ranks             number of active ranks under which
- *                                   no merging takes place
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_grid_set_merge_options(int         rank_stride,
-                          int         cells_mean_threshold,
-                          cs_gnum_t   cells_glob_threshold,
-                          int         min_ranks)
-{
-#if defined(HAVE_MPI)
-  _grid_merge_stride = rank_stride;
-  if (_grid_merge_stride > cs_glob_n_ranks)
-    _grid_merge_stride = cs_glob_n_ranks;
-  _grid_merge_mean_threshold = cells_mean_threshold;
-  _grid_merge_glob_threshold = cells_glob_threshold;
-  _grid_merge_min_ranks = min_ranks;
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Set matrix tuning behavior for multigrid coarse meshes.
  *
  * The finest mesh (level 0) is handled by the default tuning options,
@@ -6475,31 +6619,6 @@ cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
     _grid_tune_variant[k] = cs_matrix_variant_create(m_type, NULL);
     cs_matrix_variant_merge(_grid_tune_variant[k], mv, fill_type);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Log the current settings for multigrid parallel merging.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_grid_log_merge_options(void)
-{
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    cs_log_printf(CS_LOG_SETUP,
-                  _("\n"
-                    "Multigrid rank merge parameters:\n"
-                    "  merge rank stride:                 %d\n"
-                    "  mean  coarse rows merge threshold: %d\n"
-                    "  total coarse rows merge threshold: %llu\n"
-                    "  minimum active ranks:              %d\n"),
-                  _grid_merge_stride,
-                  (int)_grid_merge_mean_threshold,
-                  (unsigned long long)_grid_merge_glob_threshold,
-                  _grid_merge_min_ranks);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

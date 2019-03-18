@@ -186,11 +186,12 @@ class PreconditioningChoiceDelegate(QItemDelegate):
         editor.addItem("None")
         editor.addItem("Multigrid, V-cycle")
         editor.addItem("Multigrid, K-cycle")
+        editor.addItem("Multigrid, K-cycle, HPC")
         editor.addItem("Jacobi")
         editor.addItem("Polynomial")
 
         solver = index.model().dataSolver[index.row()]['iresol']
-        if solver in ('multigrid', 'multigrid_k_cycle'):
+        if solver in ('multigrid', 'multigrid_k_cycle', 'multigrid_k_cycle_hpc'):
             editor.model().item(1).setEnabled(False)
         editor.installEventFilter(self)
         return editor
@@ -519,6 +520,7 @@ class StandardItemModelSolver(QStandardItemModel):
     def populateModel(self):
         self.dicoV2M= {"Multigrid, V-cycle"     : 'multigrid',
                        "Multigrid, K-cycle"     : 'multigrid_k_cycle',
+                       "Multigrid, K-cycle, HPC" : 'multigrid_k_cycle_hpc',
                        "Conjugate gradient"     : 'conjugate_gradient',
                        "Flexible conjugate gradient" : 'flexible_conjugate_gradient',
                        "Inexact conjugate gradient"  : 'inexact_conjugate_gradient',
@@ -534,6 +536,7 @@ class StandardItemModelSolver(QStandardItemModel):
                        "Polynomial"             : "polynomial"}
         self.dicoM2V= {"multigrid"              : 'Multigrid, V-cycle',
                        "multigrid_k_cycle"      : 'Multigrid, K-cycle',
+                       "multigrid_k_cycle_hpc"  : 'Multigrid, K-cycle, HPC',
                        "conjugate_gradient"     : 'Conjugate gradient',
                        "inexact_conjugate_gradient"  : 'Inexact conjugate gradient',
                        "flexible_conjugate_gradient" : 'Flexible conjugate gradient',
