@@ -1797,10 +1797,6 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                 eqname, slesp.eps);
 
   switch (slesp.resnorm_type) {
-  case CS_PARAM_RESNORM_NONE:
-    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
-                  eqname, "None");
-    break;
   case CS_PARAM_RESNORM_MAT_DIAG:
     cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
                   eqname, "Matrix diagonal (\"matrix_diag\")");
@@ -1812,6 +1808,12 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   case CS_PARAM_RESNORM_VOLTOT:
     cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
                   eqname, "Volumic (\"vol_tot\")");
+    break;
+
+  case CS_PARAM_RESNORM_NONE:
+  default:
+    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
+                  eqname, "None");
     break;
   }
 

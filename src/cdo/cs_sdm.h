@@ -449,9 +449,9 @@ cs_sdm_block_create_copy(const cs_sdm_t   *mref);
 /*----------------------------------------------------------------------------*/
 
 static inline cs_sdm_t *
-cs_sdm_get_block(const cs_sdm_t    *m,
-                 int                row_block_id,
-                 int                col_block_id)
+cs_sdm_get_block(const cs_sdm_t    *const m,
+                 int                      row_block_id,
+                 int                      col_block_id)
 {
   /* Sanity checks */
   assert(m != NULL);
@@ -459,9 +459,8 @@ cs_sdm_get_block(const cs_sdm_t    *m,
   assert(col_block_id < m->block_desc->n_col_blocks);
   assert(row_block_id < m->block_desc->n_row_blocks);
 
-  const cs_sdm_block_t  *bd = m->block_desc;
-
-  return  bd->blocks + row_block_id*bd->n_col_blocks + col_block_id;
+  return  m->block_desc->blocks
+    + row_block_id*m->block_desc->n_col_blocks + col_block_id;
 }
 
 /*----------------------------------------------------------------------------*/

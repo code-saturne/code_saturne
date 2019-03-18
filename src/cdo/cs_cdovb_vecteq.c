@@ -635,7 +635,6 @@ _vbv_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
   else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_MAT_DIAG) {
 
     const cs_sdm_t  *m = csys->mat;
-    const cs_sdm_block_t  *bd = m->block_desc;
 
     cs_real_t  _rhs_norm = 0;
     for (short int v = 0; v < cm->n_vc; v++) {
