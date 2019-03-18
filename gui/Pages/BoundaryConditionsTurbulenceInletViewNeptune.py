@@ -219,7 +219,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         turb_model =  TurbulenceModel(self.__case).getTurbulenceModel(self.__currentField)
 
-        exp, req, sym =
+        exp, req, sym = \
             self.__boundary.getTurbFormulaComponents(self.__currentField,
                                                      turb_model)
 
