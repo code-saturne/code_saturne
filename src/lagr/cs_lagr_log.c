@@ -58,6 +58,7 @@
 #include "cs_field.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_particle.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_stat.h"
@@ -556,6 +557,10 @@ cs_lagr_log_iteration(void)
     return;
 
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
+    return;
+
+  /* Return silently if called before Lagrangian start */
+  if (cs_glob_lagr_particle_set == NULL)
     return;
 
   const cs_real_t  *b_stats = bound_stat;
