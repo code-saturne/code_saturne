@@ -3492,7 +3492,7 @@ _map_or_copy_xa_coeffs_msr(cs_matrix_t      *matrix,
 
     /* Ensure allocation */
     if (mc->_x_val == NULL || mc->max_eb_size < eb_size[3]) {
-      BFT_REALLOC(mc->_d_val,
+      BFT_REALLOC(mc->_x_val,
                   eb_size[3]*ms->row_index[ms->n_rows],
                   cs_real_t);
       mc->max_eb_size = eb_size[3];
