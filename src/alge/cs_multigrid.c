@@ -186,7 +186,7 @@ typedef struct _cs_multigrid_level_info_t {
                                                cells + ghosts, and entries
                                                across ranks (last, min, max,
                                                total) */
-  double               unbalance[3][4];     /* Unbalance for cells, cells
+  double               imbalance[3][4];     /* Imbalance for cells, cells
                                                + ghosts, and entries
                                                (last, min, max, total) */
 
@@ -433,8 +433,8 @@ _multigrid_level_info_init(cs_multigrid_level_info_t *info)
   memset(info, 0, sizeof(cs_multigrid_level_info_t));
 
   for (i = 0; i < 3; i++) {
-    info->unbalance[i][0] = HUGE_VALF;
-    info->unbalance[i][1] = 0.;
+    info->imbalance[i][0] = HUGE_VALF;
+    info->imbalance[i][1] = 0.;
   }
 
   for (i = 0; i < 7; i++)
@@ -680,22 +680,22 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                     tmp_s[2],
                     lv_info->n_elts[2][3] / n_lv_builds,
                     lv_info->n_elts[2][1], lv_info->n_elts[2][2]);
-      cs_log_strpad(tmp_s[0], _("Rows unbalance:"), 34, 64);
-      cs_log_strpad(tmp_s[1], _("Columns + ghosts unbalance:"), 34, 64);
-      cs_log_strpad(tmp_s[2], _("entries unbalance"), 34, 64);
+      cs_log_strpad(tmp_s[0], _("Rows imbalance:"), 34, 64);
+      cs_log_strpad(tmp_s[1], _("Columns + ghosts imbalance:"), 34, 64);
+      cs_log_strpad(tmp_s[2], _("entries imbalance"), 34, 64);
       cs_log_printf(CS_LOG_PERFORMANCE,
                     "    %-34s %12.3f %12.3f %12.3f\n"
                     "    %-34s %12.3f %12.3f %12.3f\n"
                     "    %-34s %12.3f %12.3f %12.3f\n",
                     tmp_s[0],
-                    lv_info->unbalance[0][3] / n_lv_builds,
-                    lv_info->unbalance[0][1], lv_info->unbalance[0][2],
+                    lv_info->imbalance[0][3] / n_lv_builds,
+                    lv_info->imbalance[0][1], lv_info->imbalance[0][2],
                     tmp_s[1],
-                    lv_info->unbalance[1][3] / n_lv_builds,
-                    lv_info->unbalance[1][1], lv_info->unbalance[1][2],
+                    lv_info->imbalance[1][3] / n_lv_builds,
+                    lv_info->imbalance[1][1], lv_info->imbalance[1][2],
                     tmp_s[2],
-                    lv_info->unbalance[2][3] / n_lv_builds,
-                    lv_info->unbalance[2][1], lv_info->unbalance[2][2]);
+                    lv_info->imbalance[2][3] / n_lv_builds,
+                    lv_info->imbalance[2][1], lv_info->imbalance[2][2]);
     }
 
 #endif
@@ -966,13 +966,13 @@ _multigrid_add_level(cs_multigrid_t  *mg,
       MPI_Allreduce(loc_sizes, max_sizes, 3, CS_MPI_GNUM, MPI_MAX,
                     mg->caller_comm);
       for (ii = 0; ii < 3; ii++) {
-        lv_info->unbalance[ii][0] = (  max_sizes[ii]
+        lv_info->imbalance[ii][0] = (  max_sizes[ii]
                                      / (tot_sizes[ii]*1.0/n_ranks)) - 1.0;
-        if (lv_info->unbalance[ii][1] > lv_info->unbalance[ii][0])
-          lv_info->unbalance[ii][1] = lv_info->unbalance[ii][0];
-        else if (lv_info->unbalance[ii][2] < lv_info->unbalance[ii][0])
-          lv_info->unbalance[ii][2] = lv_info->unbalance[ii][0];
-        lv_info->unbalance[ii][3] += lv_info->unbalance[ii][0];
+        if (lv_info->imbalance[ii][1] > lv_info->imbalance[ii][0])
+          lv_info->imbalance[ii][1] = lv_info->imbalance[ii][0];
+        else if (lv_info->imbalance[ii][2] < lv_info->imbalance[ii][0])
+          lv_info->imbalance[ii][2] = lv_info->imbalance[ii][0];
+        lv_info->imbalance[ii][3] += lv_info->imbalance[ii][0];
       }
     }
 
@@ -984,7 +984,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
       for (ii = 0; ii < 3; ii++) {
         lv_info->n_elts[ii][1] = lv_info->n_elts[ii][0];
 #if defined(HAVE_MPI)
-        lv_info->unbalance[ii][1] = lv_info->unbalance[ii][0];
+        lv_info->imbalance[ii][1] = lv_info->imbalance[ii][0];
 #endif
       }
     }
@@ -2115,7 +2115,7 @@ _setup_hierarchy(void             *context,
       for (j = 0; j < 3; j++) {
         cs_gnum_t tmp_max = n_g_ranks * _n_elts_m[i*3+j];
         mg_inf->n_elts[j][0] = (_n_elts_s[i*3+j] + n_g_ranks/2) / n_g_ranks;
-        mg_inf->unbalance[j][0] = (float)(tmp_max*1.0/_n_elts_s[i*3+j]);
+        mg_inf->imbalance[j][0] = (float)(tmp_max*1.0/_n_elts_s[i*3+j]);
       }
     }
 
