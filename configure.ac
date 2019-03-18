@@ -872,11 +872,15 @@ sys.stdout.write(path)]"
     AC_PATH_PROGS([LRELEASE], [lrelease-qt4 lrelease])
   fi
 
-  # lrelease not currently used, so not an issue if missing
+  # lrelease only used for CFDSTUDY, so not an issue in most cases if missing
 
   if test "x$PYUIC4" = "x" -o "x$PYRCC4" = "x" ; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
     cs_have_gui=no
+  fi
+
+  if test "x$LRELEASE" = "x" -a "$cs_have_salome_gui" =  "yes" ; then
+    AC_MSG_ERROR([cannot find lrelease, required for CFDSTUDY (Salome) GUI])
   fi
 
 fi
