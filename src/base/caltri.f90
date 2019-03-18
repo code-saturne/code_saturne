@@ -651,7 +651,16 @@ if (isuite.eq.1) then
     call laglec()
   endif
 
-  call cs_restart_map_free
+  ! TODO
+  ! cs_restart_map_free may not be called yet, because
+  ! cs_lagr_solve_initialize and the first call of cs_lagr_solve_time_step
+  ! may also need restart data for particles and statistics respectively.
+  ! This should be solved by moving the corresponding stages at least to
+  ! cs_lagr_solve_initialize sor as to free mapping data before the time loop.
+
+  if (iilagr.lt.1) then
+    call cs_restart_map_free
+  endif
 
   call timer_stats_stop(restart_stats_id)
 
@@ -1115,6 +1124,12 @@ if (idtvar.eq.1) then
 endif
 
 ! LIBERATION DES TABLEAUX INTERMEDIAIRES (PDC+TSM)
+
+if (isuite.eq.1.and.iilagr.gt.0) then
+  call timer_stats_start(restart_stats_id)
+  call cs_restart_map_free
+  call timer_stats_stop(restart_stats_id)
+endif
 
 !===============================================================================
 ! Finalize probes
