@@ -1648,11 +1648,12 @@ class mei_to_c_interpreter:
 
                     # Turbulence
                     tin = im.node_turb.xmlGetNode('initialization', zone_id=z_id)
-                    if tin['choice'] is 'formula':
-                        tmodel = im.node_turb['model']
-                        exp, req, sym = im.getTurbFormulaComponents(z_id, tmodel)
-                        self.init_block('ini', zone_name, 'turbulence',
-                                        exp, req, sym, [])
+                    if tin:
+                        if tin['choice'] is 'formula':
+                            tmodel = im.node_turb['model']
+                            exp, req, sym = im.getTurbFormulaComponents(z_id, tmodel)
+                            self.init_block('ini', zone_name, 'turbulence',
+                                            exp, req, sym, [])
 
                     # Thermal
                     node_t = im.node_scalartherm.xmlGetNode('variable')
