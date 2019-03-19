@@ -2380,7 +2380,7 @@ _compute_face_vectors(int                dim,
  *   JJ' = JF - (JF.Nij)Nij
  *
  * parameters:
- *   dim            <--  dimension
+ *   n_cells        <--  number of cells
  *   n_i_faces      <--  number of interior faces
  *   i_face_cells   <--  interior "faces -> cells" connectivity
  *   i_face_norm    <--  surface normal of interior faces
@@ -2394,7 +2394,8 @@ _compute_face_vectors(int                dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
+_compute_face_sup_vectors(const cs_lnum_t    n_cells,
+                          const cs_lnum_t    n_i_faces,
                           const cs_lnum_2_t  i_face_cells[],
                           const cs_real_t    i_face_normal[][3],
                           const cs_real_t    i_face_cog[][3],
@@ -2404,7 +2405,6 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
                           cs_real_t          diipf[][3],
                           cs_real_t          djjpf[][3])
 {
-
   cs_gnum_t w_count = 0;
 
   /* Interior faces */
@@ -2487,7 +2487,7 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
         corrj = 0.9 * cell_vol[cell_id2] / (surfn * jjp);
       }
 
-      if (is_clipped)
+      if (is_clipped && cell_id1 < n_cells)
         w_count++;
 
       djjpf[face_id][0] *= corrj;
@@ -3231,7 +3231,8 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   /* Compute additional vectors relative to faces to handle non-orthogonalities */
 
   _compute_face_sup_vectors
-    (mesh->n_i_faces,
+    (mesh->n_cells,
+     mesh->n_i_faces,
      (const cs_lnum_2_t *)(mesh->i_face_cells),
      (const cs_real_3_t *)(mesh_quantities->i_face_normal),
      (const cs_real_3_t *)(mesh_quantities->i_face_cog),
@@ -3403,7 +3404,8 @@ cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
     BFT_MALLOC(mesh_quantities->djjpf, n_i_faces*dim, cs_real_t);
 
   _compute_face_sup_vectors
-    (mesh->n_i_faces,
+    (mesh->n_cells,
+     mesh->n_i_faces,
      (const cs_lnum_2_t *)(mesh->i_face_cells),
      (const cs_real_3_t *)(mesh_quantities->i_face_normal),
      (const cs_real_3_t *)(mesh_quantities->i_face_cog),
