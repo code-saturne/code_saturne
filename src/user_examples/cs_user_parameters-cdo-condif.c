@@ -44,27 +44,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_advection_field.h"
-#include "cs_base.h"
-#include "cs_domain_setup.h"
-#include "cs_equation.h"
-#include "cs_equation_param.h"
-#include "cs_field.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_multigrid.h"
-#include "cs_halo.h"
-#include "cs_param.h"
-#include "cs_property.h"
-#include "cs_sles.h"
-#include "cs_time_step.h"
-#include "cs_walldistance.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -78,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-base.c
+ * \file cs_user_parameters-cdo-condif.c
  *
  * \brief User functions for input of calculation parameters.
  *

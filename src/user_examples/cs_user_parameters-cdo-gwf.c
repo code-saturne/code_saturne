@@ -50,24 +50,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_advection_field.h"
-#include "cs_base.h"
-#include "cs_domain_setup.h"
-#include "cs_field.h"
-#include "cs_gwf.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_param.h"
-#include "cs_physical_model.h"
-#include "cs_property.h"
-#include "cs_prototypes.h"
-#include "cs_time_step.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

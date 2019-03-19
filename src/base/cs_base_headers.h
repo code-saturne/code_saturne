@@ -86,6 +86,7 @@
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "cs_thermal_model.h"
 #include "cs_tree.h"
 #include "cs_turbomachinery.h"
 #include "cs_volume_zone.h"
