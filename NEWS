@@ -5,6 +5,9 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Fix for time moment which start is defined by a time value equal or close to
+  a time step value.
+
 - Fix bug in wall distance initialization for restarts with k-omega SST model.
 
 - Fix memory leaks in parameters check.
