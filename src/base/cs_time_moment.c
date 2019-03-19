@@ -1901,7 +1901,7 @@ cs_time_moment_update_all(void)
     else if (mwa->nt_start < 0 && mwa->t_start <= ts->t_cur)
       mwa->nt_start = ts->nt_cur;
 
-    if (mwa->nt_start <= ts->nt_cur)
+    if (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur)
       active_moments = true;
 
   }
