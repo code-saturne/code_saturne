@@ -499,7 +499,8 @@ class InletBoundary(Boundary):
                    ('R12-12', "Reynolds stress R12"),
                    ('R12-13', "Reynolds stress R13"),
                    ('R12-23', "Reynolds stress R23")]
-
+        else:
+            req = []
 
         return exp, req, sym
 

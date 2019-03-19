@@ -1472,7 +1472,7 @@ class mei_to_c_interpreter:
 
             for zone in blm.getZones():
                 if "inlet" in zone.getNature():
-                    for fId in mfm.getFeildIdList():
+                    for fId in mfm.getFieldIdList():
                         boundary = Boundary(zone.getNature(),
                                             zone.getLabel(),
                                             self.case,
@@ -1517,8 +1517,8 @@ class mei_to_c_interpreter:
 
                         # Turbulence
                         tc = boundary.getTurbulenceChoice(fId)
-                        if tc == 'formula':
-                            turb_model = tm.getTurbulenceModel(fId)
+                        turb_model = tm.getTurbulenceModel(fId)
+                        if tc == 'formula' and turb_model != 'none':
                             exp, req, sym = boundary.getTurbFormulaComponents(fId,
                                                                               turb_model)
                             if turb_model in('k-epsilon', 'k-epsilon_linear_production'):
