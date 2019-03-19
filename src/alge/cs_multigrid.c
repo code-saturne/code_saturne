@@ -824,7 +824,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
   if (mgd->n_levels == mgd->n_levels_alloc) {
 
     /* Max previous */
-    unsigned int n_lv_max_prev = CS_MAX(mg->info.n_levels[2] + 1,
+    unsigned int n_lv_max_prev = CS_MAX(mg->info.n_levels[2],
                                         mgd->n_levels);
 
     if (mgd->n_levels_alloc == 0) {
