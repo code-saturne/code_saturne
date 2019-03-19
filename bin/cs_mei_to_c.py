@@ -758,14 +758,17 @@ class mei_to_c_interpreter:
                      + usr_defs
 
         for f in known_fields:
+            (fl, fn) = f
             for line in exp_lines_comp:
-                if f[0] in line:
+                if fl in line:
+                    if fn == 'Additional scalar':
+                        fn = fl
                     l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
-                            % (f[0], f[1])
+                            % (fl, fn)
                     usr_defs += ntabs*tab + l
-                    known_symbols.append(f[0])
+                    known_symbols.append(fl)
                     usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
-                            % (f[0], f[0])
+                            % (fl, fl)
 
                     break
 
@@ -1378,7 +1381,7 @@ class mei_to_c_interpreter:
                     tc = boundary.getTurbulenceChoice()
                     if tc == 'formula':
                         turb_model = tm.getTurbulenceModel()
-                        sym = ['t', 'dt', 'iter']
+                        sym = ['x', 'y', 'z', 't', 'dt', 'iter']
                         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
                             name = 'turbulence_ke'
                             req  = ['k', 'epsilon']
@@ -1444,7 +1447,7 @@ class mei_to_c_interpreter:
                 if zone._nature not in ['free_inlet_outlet', 'free_surface']:
                   for sca in scalar_list:
                       c = boundary.getScalarChoice(sca)
-                      sym  = ['t', 'dt', 'iter']
+                      sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
                       if '_formula' in c:
                           exp = boundary.getScalarFormula(sca, c)
                           if c == 'dirichlet_formula':
