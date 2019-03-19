@@ -72,6 +72,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_pprt_headers.h \
 cs_combustion_model.h \
 cs_physical_model.h
 

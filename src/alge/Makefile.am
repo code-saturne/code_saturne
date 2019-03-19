@@ -57,6 +57,7 @@ $(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_alge_headers.h \
 cs_balance.h \
 cs_benchmark.h \
 cs_blas.h \
