@@ -1705,9 +1705,14 @@ cs_base_update_status(const char  *format,
         vfprintf(_status_file, format, arg_ptr);
         long c_size = ftell(_status_file);
 
-        if (p_size > c_size) {
-          char c = ' ';
-          fwrite(&c, 1, (p_size - c_size),_status_file);
+        while (p_size > c_size) {
+          size_t l = 0;
+          char buf[64];
+          while (l < 64 && p_size > c_size) {
+            buf[l++] = ' ';
+            p_size--;
+          }
+          fwrite(buf, 1, l, _status_file);
         }
       }
 
