@@ -115,8 +115,12 @@ BEGIN_C_DECLS
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
- * and other fields have been defined, so speciic settings related to those
+ * and other fields have been defined, so specific settings related to those
  * fields may be set here.
+ *
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */

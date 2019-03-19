@@ -255,10 +255,10 @@ cs_user_model(void)
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
- * At this step, mesh quantities and connectivities are built.
  *
- * For CDO schemes, this function concludes the setup of properties,
- * equations, source terms...
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -422,7 +422,6 @@ cs_user_parameters(cs_domain_t *domain)
 
     int key_lim_id = cs_field_key_id("limiter_choice");
     cs_field_set_key_int(sca1, key_lim_id, CS_NVD_SUPERBEE);
-
 
     /* Get the Key for the Sup and Inf for the convective scheme */
     int kccmin = cs_field_key_id("min_scalar");

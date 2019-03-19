@@ -134,6 +134,10 @@ cs_user_model(void)
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
  *
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
+ *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
