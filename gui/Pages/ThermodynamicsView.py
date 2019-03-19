@@ -65,7 +65,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
-from code_saturne.Base.QtPage import to_text_string, from_qvariant
+from code_saturne.Base.QtPage import to_text_string
 from Thermodynamics import Ui_Thermodynamics
 from code_saturne.model.ThermodynamicsModel import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
@@ -281,7 +281,7 @@ class StandardItemModelProperty(QStandardItemModel):
         # Materials
         if col == 1:
             oldMaterial = self._data[row][col]
-            new_mat = from_qvariant(value, to_text_string)
+            new_mat = value
             self._data[row][col] = new_mat
             self.mdl.setMaterials(FieldId, self.dicoV2M[new_mat])
             # refresh method to default value
@@ -290,7 +290,7 @@ class StandardItemModelProperty(QStandardItemModel):
 
         # Method
         elif col == 2:
-            new_met = from_qvariant(value, to_text_string)
+            new_met = value
             self._data[row][col] = new_met
             self.mdl.setMethod(FieldId, self.dicoV2M[new_met])
 
@@ -960,7 +960,7 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
         if self.lineEditDensity.validator().state == QValidator.Acceptable:
-            rho = from_qvariant(text, float)
+            rho = float(text)
             self.mdl.setInitialValueDensity(fieldId, rho)
 
 
@@ -971,7 +971,7 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
         if self.lineEditViscosity.validator().state == QValidator.Acceptable:
-            mu = from_qvariant(text, float)
+            mu = float(text)
             self.mdl.setInitialValueViscosity(fieldId,mu)
 
 
@@ -982,7 +982,7 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
         if self.lineEditSpecificHeat.validator().state == QValidator.Acceptable:
-            cp = from_qvariant(text, float)
+            cp = float(text)
             self.mdl.setInitialValueHeat(fieldId,cp)
 
 
@@ -993,7 +993,7 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
         if self.lineEditThermalConductivity.validator().state == QValidator.Acceptable:
-            al = from_qvariant(text, float)
+            al = float(text)
             self.mdl.setInitialValueCond(fieldId,al)
 
 
@@ -1004,7 +1004,7 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
         if self.lineEditSurfaceTension.validator().state == QValidator.Acceptable:
-            st = from_qvariant(text, float)
+            st = float(text)
             self.mdl.setInitialValueTens(st)
 
 
@@ -1015,7 +1015,7 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
         if self.lineEditEmissivity.validator().state == QValidator.Acceptable:
-            em = from_qvariant(text, float)
+            em = float(text)
             self.mdl.setInitialValueEmissivity(fieldId,em)
 
 
@@ -1026,7 +1026,7 @@ temperature = enthalpy / 1000;
         """
         fieldId = self.currentFluid
         if self.lineEditElastCoef.validator().state == QValidator.Acceptable:
-            ec = from_qvariant(text, float)
+            ec = float(text)
             self.mdl.setInitialValueElastCoef(fieldId,ec)
 
 
