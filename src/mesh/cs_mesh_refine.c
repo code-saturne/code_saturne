@@ -189,6 +189,32 @@ typedef void
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Print information on a mesh structure.
+ *
+ * parameters:
+ *   m     <--  pointer to mesh structure.
+ *   name  <--  associated name.
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_mesh_counts(const cs_mesh_t  *m,
+                   const char       *name)
+{
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
+  cs_log_printf(CS_LOG_DEFAULT,
+                _(" %s\n"
+                  "     Number of cells:          %llu\n"
+                  "     Number of interior faces: %llu\n"
+                  "     Number of boundary faces: %llu\n"
+                  "     Number of vertices:       %llu\n"),
+             name,
+             (unsigned long long)(m->n_g_cells),
+             (unsigned long long)(m->n_g_i_faces),
+             (unsigned long long)(m->n_g_b_faces - m->n_g_free_faces),
+             (unsigned long long)(m->n_g_vertices));
+}
+
+/*----------------------------------------------------------------------------
  * Check if a polygon is convex or at least star-shaped.
  *
  * parameters:
@@ -4147,6 +4173,21 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                       bool        conforming,
                       const int   cell_flag[])
 {
+  /* Timers:
+     0: total
+     1: update mesh structure (ghosts, ...)
+     2: build edge and face indexing
+     3: build cell->faces connectivity and identify refined cell types
+     4: build new vertices
+     5: compute sub-face indexing
+     6: update face connectivity
+     7: subdivide cells
+  */
+
+  cs_timer_counter_t  timers[8];
+  for (int i = 0; i < 8; i++)
+    CS_TIMER_COUNTER_INIT(timers[i]);
+
   cs_lnum_t n_v_ini = m->n_vertices;
   cs_lnum_t n_f_ini = m->n_b_faces + m->n_i_faces;
   cs_lnum_t n_c_ini = m->n_cells;
@@ -4155,7 +4196,12 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   bool check_convex = true;
 
+  cs_timer_t t0 = cs_timer_time();
+
   /* Build ghosts in case they are not present */
+
+  int mv_save = m->verbosity;
+  m->verbosity = -1;
 
   if ((m->n_domains > 1 || m->n_init_perio > 0) && m->halo == NULL) {
     cs_halo_type_t halo_type = m->halo_type;
@@ -4167,6 +4213,17 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   /* Free data that will be rebuilt */
 
   cs_mesh_free_rebuildable(m, true);
+
+  m->verbosity = mv_save;
+
+  if (m->verbosity > 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+    cs_log_separator(CS_LOG_DEFAULT);
+    _print_mesh_counts(cs_glob_mesh, _("Mesh before refinement"));
+  }
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[1]), &t0, &t1);
 
   /* Compute some mesh quantities */
 
@@ -4180,6 +4237,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   cs_mesh_refine_type_t *c_r_flag, *f_r_flag;
 
   BFT_MALLOC(c_r_flag, m->n_cells_with_ghosts, cs_mesh_refine_type_t);
+
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     c_r_flag[i] = CS_MAX(0, cell_flag[i]);
   for (cs_lnum_t i = m->n_cells; i < m->n_cells_with_ghosts; i++)
@@ -4206,6 +4264,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
         refined_cell_id[n_refined_cells++] = -1;
     }
   }
+
+  t1 = cs_timer_time();
 
   /* Build additional edge and face indexing and flagging arrays
      ----------------------------------------------------------- */
@@ -4244,6 +4304,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                                     e_v_idx, f_v_idx, g_edges_num,
                                     n_add_vtx);
 
+  cs_timer_t t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[2]), &t1, &t2);
+  t1 = t2;
+
   /* Build cell->faces connectivity and identify refined cell types
      ------------------------------------------------------------- */
 
@@ -4275,6 +4339,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   _new_cell_vertex_ids(m, c_r_flag, c_v_idx, n_add_vtx);
 
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[3]), &t1, &t2);
+  t1 = t2;
+
   /* Now build new vertices
      ---------------------- */
 
@@ -4282,6 +4350,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                         + n_add_vtx[0] + n_add_vtx[1] + n_add_vtx[2];
 
   cs_lnum_t n_g_vtx_new =  m->n_g_vertices;
+
 
   BFT_REALLOC(m->vtx_coord, n_vtx_new*3, cs_real_t);
   if (m->global_vtx_num != NULL)
@@ -4326,6 +4395,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   m->n_vertices = n_vtx_new;
   m->n_g_vertices = n_g_vtx_new;
+
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[4]), &t1, &t2);
+  t1 = t2;
 
   /* Compute number of sub-faces and associated connectivity size;
      will be transformed to index later so named as index,
@@ -4383,6 +4456,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   _counts_to_index(n_c_ini, c_o2n_idx);
 
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[5]), &t1, &t2);
+  t1 = t2;
+
   /* Update faces
      ------------ */
 
@@ -4423,6 +4500,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   _o2n_idx_update_b_face_arrays(m, b_face_o2n_idx);
   _o2n_idx_update_i_face_arrays(m, i_face_o2n_idx, c_i_face_idx);
 
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[6]), &t1, &t2);
+  t1 = t2;
+
   /* Now subdivide cells */
 
   _o2n_idx_update_cell_arrays(m, c_o2n_idx);
@@ -4438,6 +4519,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                    c_v_idx,
                    c_i_face_idx,
                    c_r_flag);
+
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[7]), &t1, &t2);
+  t1 = t2;
 
   /* Cleanup*/
 
@@ -4465,7 +4550,11 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   /* Rebuild ghosts */
 
-  if (m->n_domains > 0 || m->n_init_perio > 0 || m->halo_type == CS_HALO_EXTENDED) {
+  mv_save = m->verbosity;
+  m->verbosity = -1;
+
+  if (   m->n_domains > 1 || m->n_init_perio > 0
+      || m->halo_type == CS_HALO_EXTENDED) {
     cs_halo_type_t halo_type = m->halo_type;
     assert(m == cs_glob_mesh);
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
@@ -4473,6 +4562,44 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   }
 
   cs_mesh_update_auxiliary(cs_glob_mesh);
+
+  m->verbosity = mv_save;
+
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[1]), &t1, &t2);
+  t1 = t2;
+
+  cs_timer_counter_add_diff(&(timers[0]), &t0, &t2);
+
+  if (m->verbosity > 0) {
+
+    _print_mesh_counts(cs_glob_mesh, _("Mesh after refinement"));
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+    cs_log_separator(CS_LOG_DEFAULT);
+
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("\nMesh refinement:\n\n"
+         "  Pre and post update of mesh structure:        %.3g\n"
+         "  Edge and face indexing:                       %.3g\n"
+         "  Cell-faces indexing and type identification:  %.3g\n"
+         "  Build new vertices:                           %.3g\n"
+         "  Build sub-face face indexing:                 %.3g\n"
+         "  Update face connectivity:                     %.3g\n"
+         "  Subdivide cells                               %.3g\n\n"
+         "  Total:                                        %.3g\n"),
+       (double)(timers[1].wall_nsec*1.e-9),
+       (double)(timers[2].wall_nsec*1.e-9),
+       (double)(timers[3].wall_nsec*1.e-9),
+       (double)(timers[4].wall_nsec*1.e-9),
+       (double)(timers[5].wall_nsec*1.e-9),
+       (double)(timers[6].wall_nsec*1.e-9),
+       (double)(timers[7].wall_nsec*1.e-9),
+       (double)(timers[0].wall_nsec*1.e-9));
+    cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+    cs_log_separator(CS_LOG_PERFORMANCE);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
