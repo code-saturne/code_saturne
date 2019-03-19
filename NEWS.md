@@ -3,6 +3,9 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix for time moment which start is defined by a time value equal or close to
+  a time step value.
+
 - Fix crash in mesh refinement in serial mode.
 
 - Allow C++ compiler to use default standard version (usually C++11) to avoid
