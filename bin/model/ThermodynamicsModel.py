@@ -551,7 +551,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             return self.getFormuladHsatdpComponents(tag)
 
         elif 'SaturationEnthalpy' in tag:
-            return getFormulaHsatComponents(tag)
+            return self.getFormulaHsatComponents(tag)
 
         else:
             msg = 'Formula is not available for field %s_%s in MEG' % (tag,str(fieldId))
