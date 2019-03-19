@@ -1076,7 +1076,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             exa = FluidCharacteristicsView.density
 
         mci = mei_to_c_interpreter(self.case, False)
-        mci.init_cell_block(exp, req, symbols_rho, sca, 'density')
+        mci.init_block('vol', 'all_cells', 'density',
+                       exp, req, symbols_rho, sca)
         dialog = QMegEditorView(self,
                                 mei_to_c   = mci,
                                 expression = exp,
@@ -1113,7 +1114,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             exa = FluidCharacteristicsView.molecular_viscosity
 
         mci = mei_to_c_interpreter(self.case, False)
-        mci.init_cell_block(exp, req, symbols_mu, sca, 'molecular_viscosity')
+        mci.init_block('vol', 'all_cells', 'molecular_viscosity',
+                       exp, req, symbols_mu, sca)
         dialog = QMegEditorView(self,
                                 mei_to_c   = mci,
                                 expression = exp,
@@ -1138,7 +1140,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         exa = FluidCharacteristicsView.specific_heat
 
         mci = mei_to_c_interpreter(self.case, False)
-        mci.init_cell_block(exp, req, symbols_cp, sca, 'specific_heat')
+        mci.init_block('vol', 'all_cells', 'specific_heat',
+                       exp, req, symbols_cp, sca)
         dialog = QMegEditorView(self,
                                 mei_to_c   = mci,
                                 expression = exp,
@@ -1163,7 +1166,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         exa = FluidCharacteristicsView.volume_viscosity
 
         mci = mei_to_c_interpreter(self.case, False)
-        mci.init_cell_block(exp, req, symbols_viscv0, sca, 'volume_viscosity')
+        mci.init_block('vol', 'all_cells', 'volume_viscosity',
+                       exp, req, symbols_viscv0, sca)
         dialog = QMegEditorView(self,
                                 mei_to_c   = mci,
                                 expression = exp,
@@ -1197,7 +1201,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             exa = FluidCharacteristicsView.thermal_conductivity
 
         mci = mei_to_c_interpreter(self.case, False)
-        mci.init_cell_block(exp, req, symbols_al, sca, 'thermal_conductivity')
+        mci.init_block('vol', 'all_cells', 'thermal_conductivity',
+                       exp, req, symbols_al, sca)
         dialog = QMegEditorView(self,
                                 mei_to_c   = mci,
                                 expression = exp,
@@ -1223,7 +1228,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         dname = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
         mci = mei_to_c_interpreter(self.case, False)
-        mci.init_cell_block(exp, req, sym, sca, dname)
+        mci.init_block('vol', 'all_cells', dname,
+                       exp, req, sym, sca)
 
         dialog = QMegEditorView(self,
                                 mei_to_c   = mci,

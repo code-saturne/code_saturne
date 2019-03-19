@@ -263,11 +263,14 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
             mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_bnd_block(expression = exp,
-                               required = ['k', 'epsilon'],
-                               name = 'turbulence_ke',
-                               bnd_name = self.__boundary._label,
-                               condition = 'formula')
+            mci.init_block('bnd',
+                           self.__boundary._label,
+                           name = 'turbulence_ke',
+                           expression = exp,
+                           required = ['k', 'epsilon'],
+                           symbols = [],
+                           known_fields = [],
+                           condition = 'formula')
             dialog = QMegEditorView(self,
                                     mei_to_c   = mci,
                                     expression = exp,
@@ -340,13 +343,16 @@ r23 = 0;
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
             mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_bnd_block(expression = exp,
-                               required = ['r11', 'r22', 'r33',
-                                           'r12', 'r23', 'r13',
-                                           'epsilon'],
-                               name = 'turbulence_rije',
-                               bnd_name = self.__boundary._label,
-                               condition = 'formula')
+            mci.init_block('bnd',
+                           self.__boundary._label,
+                           'turbulence_rije',
+                           expression = exp,
+                           required = ['r11', 'r22', 'r33',
+                                       'r12', 'r23', 'r13',
+                                       'epsilon'],
+                           symbols = [],
+                           known_fields = [],
+                           condition = 'formula')
             dialog = QMegEditorView(self,
                                     mei_to_c   = mci,
                                     expression = exp,
@@ -422,13 +428,16 @@ alpha =  1.;
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
             mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_bnd_block(expression = exp,
-                               required = ['r11', 'r22', 'r33',
-                                           'r12', 'r23', 'r13',
-                                           'epsilon', 'alpha'],
-                               name = 'turbulence_rije',
-                               bnd_name = self.__boundary._label,
-                               condition = 'formula')
+            mci.init_block('bnd',
+                           self.__boundary._label,
+                           name = 'turbulence_rij_ebrsm',
+                           expression = exp,
+                           required = ['r11', 'r22', 'r33',
+                                       'r12', 'r23', 'r13',
+                                       'epsilon', 'alpha'],
+                           symbols = [],
+                           known_fields = [],
+                           condition = 'formula')
             dialog = QMegEditorView(self,
                                     mei_to_c   = mci,
                                     expression = exp,
@@ -494,11 +503,14 @@ alpha = 0;"""
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
             mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_bnd_block(expression = exp,
-                               required = ['k', 'epsilon', 'phi', 'alpha'],
-                               name = 'turbulence_rije',
-                               bnd_name = self.__boundary._label,
-                               condition = 'formula')
+            mci.init_block('bnd',
+                           self.__boundary._label,
+                           name = 'turbulence_v2f',
+                           expression = exp,
+                           required = ['k', 'epsilon', 'phi', 'alpha'],
+                           symbols = [],
+                           known_fields = [],
+                           condition = 'formula')
             dialog = QMegEditorView(self,
                                     mei_to_c   = mci,
                                     expression = exp,
@@ -560,11 +572,14 @@ omega = eps/(cmu * k);"""
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
             mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_bnd_block(expression = exp,
-                               required = ['k', 'omega'],
-                               name = 'turbulence_ke',
-                               bnd_name = self.__boundary._label,
-                               condition = 'formula')
+            mci.init_block('bnd',
+                           self.__boundary._label,
+                           name = 'turbulence_kw',
+                           expression = exp,
+                           required = ['k', 'omega'],
+                           symbols = [],
+                           known_fields = [],
+                           condition = 'formula')
             dialog = QMegEditorView(self,
                                     mei_to_c   = mci,
                                     expression = exp,
@@ -625,10 +640,13 @@ nu_tilda = eps/(cmu * k);"""
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
             mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_bnd_block(expression = exp,
+            mci.init_bnd_block('bnd',
+                               self.__boundary._label,
+                               name = 'turbulence_spalart',
+                               expression = exp,
                                required = ['nu_tilda'],
-                               name = 'turbulence_ke',
-                               bnd_name = self.__boundary._label,
+                               symbols = [],
+                               known_fields = [],
                                condition = 'formula')
             dialog = QMegEditorView(self,
                                     mei_to_c   = mci,
