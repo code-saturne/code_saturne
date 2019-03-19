@@ -1988,9 +1988,11 @@ cs_time_moment_update_all(void)
 
     cs_time_moment_wa_t *mwa = _moment_wa + i;
 
+    /* start time step equal to current iteration */
     if (mwa->t_start < 0. && mwa->nt_start <= ts->nt_cur)
       mwa->t_start = _t_prev_iter;
-    else if (mwa->nt_start < 0 && mwa->t_start <= ts->t_cur)
+    /* start time value in interval [t_prev-0.01*dt^(n-1), t_cur-0.01*dt^n[ */
+    else if (mwa->nt_start < 0 && mwa->t_start < ts->t_cur - 0.01*dt_val[0])
       mwa->nt_start = ts->nt_cur;
 
     if (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur)
@@ -2091,7 +2093,7 @@ cs_time_moment_update_all(void)
               for (cs_lnum_t l = 0; l < 3; l++) {
                 cs_lnum_t jl = je*6 + l, jml = je*3 + l;
                 delta[l]   = x[jml] - m[jml];
-                r[l] = delta[l] * (w[k] / (fmax(wa_sum_n, 1e-100)));
+                r[l] = delta[l] * (w[k] / wa_sum_n);
                 m_n[l] = m[jml] + r[l];
                 delta_n[l] = x[jml] - m_n[l];
                 val[jl] =   (val[jl]*wa_sum[k] + (w[k]*delta[l]*delta_n[l]))
@@ -2122,7 +2124,7 @@ cs_time_moment_update_all(void)
               const cs_lnum_t k = (j*wa_stride) / mt->dim;
               double wa_sum_n = w[k] + wa_sum[k];
               double delta = x[j] - m[j];
-              double r = delta * (w[k] / (fmax(wa_sum_n, 1e-100)));
+              double r = delta * (w[k] / wa_sum_n);
               double m_n = m[j] + r;
               val[j] = (val[j]*wa_sum[k] + (w[k]*delta*(x[j]-m_n))) / wa_sum_n;
               m[j] += r;
