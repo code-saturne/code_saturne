@@ -134,6 +134,35 @@ class CathareCouplingModel(Variables, Model):
         return value
 
     # ----------------------------------
+    def setCathareInstanceName(self, name):
+
+        self.__node_nepcat.xmlSetData('cathare_instance_name', name)
+
+
+    def getCathareInstanceName(self):
+
+        name = self.__node_nepcat.xmlGetDouble('cathare_instance_name')
+        if name == None:
+            name = 'CATHARE'
+
+        return name
+
+    # ----------------------------------
+    def setNeptuneInstanceName(self, name):
+
+        self.__node_nepcat.xmlSetData('neptune_instance_name', name)
+
+
+    def getNeptuneInstanceName(self):
+
+        name = self.__node_nepcat.xmlGetDouble('neptune_instance_name')
+        if name == None:
+            name = 'NEPTUNE'
+
+        return name
+
+
+    # ----------------------------------
     def setCplTime(self, value):
 
         self.__node_nepcat.xmlSetData('coupling_run_time', value)

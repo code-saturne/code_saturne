@@ -80,14 +80,14 @@
         </item>
        </layout>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="labelCathareFile">
         <property name="text">
          <string>Cathare data file</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="3" column="1">
        <layout class="QHBoxLayout" name="layoutCathareFile">
         <item>
          <widget class="QLineEdit" name="lineEditCathareFile"/>
@@ -101,35 +101,77 @@
         </item>
        </layout>
       </item>
-      <item row="2" column="0">
+      <item row="4" column="0">
        <widget class="QLabel" name="labelCplName">
         <property name="text">
          <string>Coupling name</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="4" column="1">
        <widget class="QLineEdit" name="lineEditCplName"/>
       </item>
-      <item row="3" column="0">
+      <item row="5" column="0">
        <widget class="QLabel" name="labelCathareTime">
         <property name="text">
          <string>Cathare initialize time</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="5" column="1">
        <widget class="QLineEdit" name="lineEditCathareInitTime"/>
       </item>
-      <item row="4" column="0">
+      <item row="6" column="0">
        <widget class="QLabel" name="labelCplTime">
         <property name="text">
          <string>Coupling time to simulate</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="6" column="1">
        <widget class="QLineEdit" name="lineEditCplTime"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>NEPTUNE_CFD INSTANCE</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>CATHARE2 INSTANCE</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QLineEdit" name="lineEditNeptuneInstance"/>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButtonNeptuneInstance">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QLineEdit" name="lineEditCathareInstance"/>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButtonCathareInstance">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
