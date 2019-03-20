@@ -1882,6 +1882,7 @@ cs_time_moment_is_active(int  moment_id)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Reset a time moment.
+ *        Current iteration is set as starting time step for current moment.
  *
  * \param[in]   moment_id  id of associated moment
  */
@@ -1895,6 +1896,7 @@ cs_time_moment_reset(int   moment_id)
   cs_time_moment_t *mt = _moment + moment_id;
   cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
 
+  /* set current iteration as starting time step for current moment */
   mt->nt_cur = -1;
   mwa->nt_start = ts->nt_cur;
   mwa->t_start = -1.;
