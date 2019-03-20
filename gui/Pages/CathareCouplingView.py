@@ -38,6 +38,7 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import logging
+import os
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -338,10 +339,16 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         self.radioButtonAllPhases.clicked.connect(self.slotAllPhases)
 
         self.lineEditCathareFile.textChanged[str].connect(self.slotCathareFile)
+        self.toolButtonCathareFile.pressed.connect(self.searchCathareJDD)
         self.lineEditCplName.textChanged[str].connect(self.slotCplName)
 
         self.lineEditCplTime.textChanged[str].connect(self.slotCplTime)
         self.lineEditCathareInitTime.textChanged[str].connect(self.slotCathareTime)
+
+        self.lineEditCathareInstance.textChanged[str].connect(self.slotCathareInstanceName)
+        self.toolButtonCathareInstance.pressed.connect(self.searchCathareDir)
+        self.lineEditNeptuneInstance.textChanged[str].connect(self.slotNeptuneInstanceName)
+        self.toolButtonNeptuneInstance.pressed.connect(self.searchNeptuneDir)
 
         # Insert list of Cathare couplings for view
         for c in self.__model.getCathareCouplingList():
@@ -381,6 +388,9 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
 
             self.lineEditCplTime.setText(str(self.__model.getCplTime()))
             self.lineEditCathareInitTime.setText(str(self.__model.getCathareTime()))
+
+            self.lineEditCathareInstance.setText(str(self.__model.getCathareInstanceName()))
+            self.lineEditNeptuneInstance.setText(str(self.__model.getNeptuneInstanceName()))
 
         # ------------------------------------------
         self.case.undoStartGlobal()
@@ -496,6 +506,110 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         self.__model.setCathareTime(value)
 
 
+    @pyqtSlot()
+    def slotCathareInstanceName(self):
+
+        value = str(self.lineEditCathareInstance.text())
+        self.__model.setCathareInstanceName(value)
+
+    @pyqtSlot()
+    def slotNeptuneInstanceName(self):
+
+        value = str(self.lineEditNeptuneInstance.text())
+        self.__model.setNeptuneInstanceName(value)
+
+    def searchCathareDir(self):
+        """
+        Open a File Dialog in order to search the case directory.
+        """
+        title    = self.tr("Select NEPTUNE_CFD instance for coupling")
+        default  = os.path.split(self.case['case_path'])[0]
+
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        else:
+            options  = QFileDialog.DontUseNativeDialog
+
+        l_mesh_dirs = []
+
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+
+        if hasattr(dialog, 'setOptions'):
+            dialog.setOptions(options)
+        dialog.setSidebarUrls(l_mesh_dirs)
+        dialog.setFileMode(QFileDialog.Directory)
+
+        if dialog.exec_() == 1:
+
+            s = dialog.selectedFiles()
+            instance_name = os.path.split(str(s[0]))[-1]
+
+            self.lineEditCathareInstance.setText(instance_name)
+            self.__model.setCathareInstanceName(instance_name)
+
+    def searchNeptuneDir(self):
+        """
+        Open a File Dialog in order to search the case directory.
+        """
+        title    = self.tr("Select CATHARE2 instance for coupling")
+        default  = os.path.split(self.case['case_path'])[0]
+
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        else:
+            options  = QFileDialog.DontUseNativeDialog
+
+        l_mesh_dirs = []
+
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+
+        if hasattr(dialog, 'setOptions'):
+            dialog.setOptions(options)
+        dialog.setSidebarUrls(l_mesh_dirs)
+        dialog.setFileMode(QFileDialog.Directory)
+
+        if dialog.exec_() == 1:
+
+            s = dialog.selectedFiles()
+            instance_name = os.path.split(str(s[0]))[-1]
+
+            self.lineEditNeptuneInstance.setText(instance_name)
+            self.__model.setNeptuneInstanceName(instance_name)
+
+    def searchCathareJDD(self):
+        """
+        Open a File Dialog in order to search the case directory.
+        """
+        title    = self.tr("Select CATHARE2 data file for coupling")
+        default  = os.path.split(self.case['case_path'])[0]
+
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        else:
+            options  = QFileDialog.DontUseNativeDialog
+
+        l_mesh_dirs = []
+
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+
+        if hasattr(dialog, 'setOptions'):
+            dialog.setOptions(options)
+        dialog.setSidebarUrls(l_mesh_dirs)
+        dialog.setNameFilter(self.tr("*.dat"))
+
+        if dialog.exec_() == 1:
+
+            s = dialog.selectedFiles()
+            file_name = os.path.split(str(s[0]))[-1]
+
+            self.lineEditCathareFile.setText(file_name)
+            self.__model.setCathareFile(file_name)
 
     def tr(self, text):
         """
