@@ -390,7 +390,7 @@ class Study:
             fout = open(os.path.join(repbase, self.cat_case_name, 'DATA', 'cathare_jdd_to_lib.sh'), 'wt')
             for line in fin:
                 fout.write(line.replace('#path_to_v25_3=',
-                                        'path_to_v25_3='+cathare_path))
+                                        'export v25_3='+cathare_path))
             fin.close()
             fout.close()
 
