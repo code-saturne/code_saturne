@@ -249,7 +249,7 @@ class GasCombustionModel(Variables, Model):
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
         elif model == 'ebu':
             lst.append("fresh_gas_fraction")
-            if option == "mixture_st" or option =="enthalpy_misture_st":
+            if option == "mixture_st" or option =="enthalpy_mixture_st":
                 lst.append("mixture_fraction")
             elif option == "enthalpy_st" or option =="enthalpy_mixture_st":
                 ThermalScalarModel(self.case).setThermalModel('enthalpy')
