@@ -1392,12 +1392,12 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
              CS_SLES_PCG,       /* ascent smoothe */
              CS_SLES_PCG,       /* coarse solver */
              slesp.n_max_iter,  /* n_max_cycles */
-             2,                 /* n_max_iter_descent, */
-             2,                 /* n_max_iter_ascent */
-             100,               /* n_max_iter_coarse */
-             -1,                /* poly_degree_descent */
-             -1,                /* poly_degree_ascent */
-             -1,                /* poly_degree_coarse */
+             4,                 /* n_max_iter_descent, */
+             4,                 /* n_max_iter_ascent */
+             200,               /* n_max_iter_coarse */
+             0,                 /* poly_degree_descent */
+             0,                 /* poly_degree_ascent */
+             0,                 /* poly_degree_coarse */
              -1.0,              /* precision_mult_descent */
              -1.0,              /* precision_mult_ascent */
              1.0);              /* precision_mult_coarse */
@@ -1407,9 +1407,9 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
           if (slesp.amg_type == CS_PARAM_AMG_HOUSE_K)
             cs_multigrid_set_coarsening_options(mg,
                                                 8,   /* aggregation_limit*/
-                                                CS_GRID_COARSENING_SPD_MX,
+                                                CS_GRID_COARSENING_SPD_PW,
                                                 10,  /* n_max_levels */
-                                                100, /* min_g_cells */
+                                                50, /* min_g_cells */
                                                 0.,  /* P0P1 relaxation */
                                                 0);  /* postprocess */
 
