@@ -466,6 +466,7 @@ def parse_gui_expression(expression,
     s_idx = 0
     s_end = len(statements)
     nreq = len(req)
+
     for lidx in range(len(exp_lines)):
 
         # Rebuild line from statements, ignoring comments
@@ -757,12 +758,15 @@ class mei_to_c_interpreter:
                      + '\n\n' \
                      + usr_defs
 
+        # List of fields where we need to use the label instead of the name:
+        label_not_name = ['Additional scalar', 'Thermal scalar']
         for f in known_fields:
             (fl, fn) = f
             for line in exp_lines_comp:
                 if fl in line:
-                    if fn == 'Additional scalar':
-                        fn = fl
+                    for lnn in label_not_name:
+                        if lnn in fn:
+                            fn = fl
                     l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
                             % (fl, fn)
                     usr_defs += ntabs*tab + l
