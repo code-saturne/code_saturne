@@ -2059,7 +2059,7 @@ endif
 '@'                                                            ,/,&
 '@    Au moins une face de bord declaree en entree'            ,/,&
 '@      (ou sortie) a vitesse imposee avec un flux rentrant'   ,/,&
-'@      pour laquelle la valeur de', a,' n''a pas ete'         ,/,&
+'@      pour laquelle la valeur de ', a,' n''a pas ete'        ,/,&
 '@      specifiee (condition de Dirichlet).'                   ,/,&
 '@    Le calcul ne sera pas execute'                           ,/,&
 '@'                                                            ,/,&
