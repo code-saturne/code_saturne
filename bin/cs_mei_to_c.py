@@ -437,7 +437,7 @@ def split_for_assignment(l):
             if c_idx > 0 and l[c_idx-1] not in ('>', '<'):
                 lf.append(l[s_idx:c_idx])
                 s_idx = c_idx+1
-    if s_idx < e_idx:
+    if s_idx <= e_idx:
         lf.append(l[s_idx:e_idx])
 
     return lf
@@ -1591,7 +1591,7 @@ class mei_to_c_interpreter:
                         else:
                             for sca in sca_list:
                                 exp, req, sym = \
-                                stm.getGroundwaterSpeciesFormulaComponents(z_id, sca)
+                                stm.getGroundWaterSpeciesFormulaComponents(z_id, sca)
                                 self.init_block('src', zone_name, sca,
                                                 exp, req, sym, [],
                                                 source_type="scalar_source_term")
