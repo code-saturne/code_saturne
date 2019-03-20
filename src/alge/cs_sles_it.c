@@ -3616,8 +3616,9 @@ _gmres(cs_sles_it_t              *c,
       n_iter++;
       l_iter++;
 
-      if (cvg == 1 || l_iter == krylov_size - 1 || scaltest == 1) {
-#       pragma omp parallel for if(n_rows > CS_THR_MIN)
+      if (cvg == CS_SLES_CONVERGED || cvg == CS_SLES_MAX_ITERATION ||
+          l_iter == krylov_size - 1   || scaltest == 1) {
+#       pragma omp parallel for if (n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++)
           vx[jj] = fk[jj];
         break;
