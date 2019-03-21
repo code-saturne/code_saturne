@@ -2667,7 +2667,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
       for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
         cs_real_t xv = x_val[jj];
         sum += CS_ABS(xv);
-        if (col_id[jj] < f_n_rows && xv < 0)
+        if (xv < 0)
           a_max[ii] = CS_MAX(a_max[ii], -xv);
       }
 
@@ -2701,7 +2701,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
 
       for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
         cs_real_t xv = x_val[jj];
-        if (col_id[jj] < f_n_rows && xv < 0)
+        if (xv < 0)
           a_max[ii] = CS_MAX(a_max[ii], -xv);
       }
 
