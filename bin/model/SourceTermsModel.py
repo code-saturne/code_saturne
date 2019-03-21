@@ -203,7 +203,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         return formula
 
 
-    def getGroundWaterSpeciesFormulaComponents(self, zone, species):
+    def getGroundWaterSpeciesFormulaComponents(self, zone, scalar):
 
         exp = self.getGroundWaterSpeciesFormula(zone, scalar)
         if not exp:
