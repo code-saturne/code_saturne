@@ -429,3 +429,142 @@ deallocate(grad)
 
 return
 end subroutine csc2cl
+
+!===============================================================================
+
+!> \brief Initialization of the "itypfb(*, *) = icscpl" condition.
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvcp
+!> \param[in]     nfbcpl
+!> \param[in]     nfbncp
+!> \param[out]    icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
+!> \param[in]     lfbcpl
+!> \param[in]     lfbncp
+!> \param[out]    itypfb        boundary face types
+!______________________________________________________________________________
+
+subroutine csc2cl_init &
+ (nvcp, nfbcpl, nfbncp, icodcl, itypfb, lfbcpl, lfbncp)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use dimens, only: nvar
+use entsor
+use parall
+use period
+use cplsat
+use mesh
+use field
+use field_operator
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nvcp
+integer          nfbcpl , nfbncp
+
+integer          icodcl(nfabor,nvar)
+integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
+integer          itypfb(nfabor)
+
+! Local variables
+
+integer          ifac, icscp
+integer          ivar
+integer          ipt
+
+!===============================================================================
+
+!===============================================================================
+! 1.  Translation of the coupling to boundary conditions
+!===============================================================================
+
+if (ifaccp.eq.0) then
+  icscp = icscpl
+else
+  icscp = icscpd
+endif
+
+! Reminder: variables are received in the order of VARPOS;
+! looping on variables is thus sufficient.
+
+do ivar = 1, nvcp
+
+  if (ifaccp.eq.1) then
+
+    do ipt = 1, nfbcpl
+
+      ifac = lfbcpl(ipt)
+
+      itypfb(ifac) = icscp
+      icodcl(ifac,ivar  ) = 1
+
+    enddo
+
+  else
+
+    do ipt = 1, nfbcpl
+
+      ifac = lfbcpl(ipt)
+
+      itypfb(ifac) = icscp
+
+      if (ivar.ne.ipr) then
+        icodcl(ifac,ivar  ) = 1
+      else
+        icodcl(ifac,ivar  ) = 3
+      endif
+
+    enddo
+
+  endif
+
+  ! Non-located boundary faces
+
+  do ipt = 1, nfbncp
+
+    ifac = lfbncp(ipt)
+
+    itypfb(ifac) = icscp
+
+    icodcl(ifac,ivar  ) = 3
+
+  enddo
+
+enddo
+
+!----
+! End
+!----
+
+return
+end subroutine csc2cl_init
+
