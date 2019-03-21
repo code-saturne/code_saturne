@@ -393,7 +393,7 @@ class TurbulenceModel(Variables, Model):
         Set value of reference length into xml file.
         """
         self.isGreaterOrEqual(value, 0.0)
-        self.node_turb.xmlSetData('length',value)
+        self.node_turb.xmlSetData('reference_length',value)
 
 
     @Variables.noUndo
@@ -401,7 +401,7 @@ class TurbulenceModel(Variables, Model):
         """
         Return the value of reference length.
         """
-        value = self.node_turb.xmlGetDouble('length')
+        value = self.node_turb.xmlGetDouble('reference_length')
         if value == None:
             value = self.defaultTurbulenceValues()['reference_length']
             self.setLength(value)
