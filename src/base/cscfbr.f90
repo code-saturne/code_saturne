@@ -305,3 +305,143 @@ enddo
 
 return
 end subroutine
+
+!===============================================================================
+
+!> \brief Initialization for coupling two Code_Saturne intances
+!>        with boundary faces.
+!>
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
+!> \param[in]     itypfb        boundary face types
+!______________________________________________________________________________
+
+subroutine cscfbr_init(nscal, icodcl, itypfb)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use entsor
+use optcal
+use cstphy
+use cstnum
+use dimens, only: nvar
+use parall
+use period
+use cplsat
+use mesh
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nscal
+
+integer          icodcl(nfabor,nvar)
+integer          itypfb(nfabor)
+
+double precision dt(ncelet)
+double precision rcodcl(nfabor,nvar,3)
+
+! Local variables
+
+integer          numcpl , ivarcp
+integer          ncesup , nfbsup
+integer          ncecpl , nfbcpl , ncencp , nfbncp
+integer          ncedis , nfbdis
+integer          nfbcpg , nfbdig
+integer          ityloc , ityvar
+integer          stride
+
+integer, allocatable, dimension(:) :: lcecpl , lfbcpl , lcencp , lfbncp
+integer, allocatable, dimension(:) :: locpts
+
+double precision, allocatable, dimension(:,:) :: coopts , djppts , dofpts
+double precision, allocatable, dimension(:,:) :: dofcpl
+double precision, allocatable, dimension(:) :: pndpts
+double precision, allocatable, dimension(:) :: pndcpl
+double precision, allocatable, dimension(:,:) :: rvdis , rvfbr
+
+!===============================================================================
+
+
+do numcpl = 1, nbrcpl
+
+!===============================================================================
+! 1.  DEFINITION DE CHAQUE COUPLAGE
+!===============================================================================
+
+  call nbecpl                                                     &
+ ( numcpl ,                                                       &
+   ncesup , nfbsup ,                                              &
+   ncecpl , nfbcpl , ncencp , nfbncp )
+
+  ! Allocate temporary arrays for coupling information
+  allocate(lcecpl(ncecpl), lcencp(ncencp))
+  allocate(lfbcpl(nfbcpl), lfbncp(nfbncp))
+
+!       Liste des cellules et faces de bord localisées
+  call lelcpl                                                     &
+ ( numcpl ,                                                       &
+   ncecpl , nfbcpl ,                                              &
+   lcecpl , lfbcpl )
+
+!       Liste des cellules et faces de bord non localisées
+  call lencpl                                                     &
+ ( numcpl ,                                                       &
+   ncencp , nfbncp ,                                              &
+   lcencp , lfbncp )
+
+  ! Free memory
+  deallocate(lcecpl, lcencp)
+
+!===============================================================================
+! 2.  TRADUCTION DU COUPLAGE EN TERME DE CONDITIONS AUX LIMITES
+!===============================================================================
+
+  if (nfbcpg.gt.0) then
+
+    call csc2cl_init &
+  ( nvarcp(numcpl), nfbcpl , nfbncp ,                             &
+    icodcl , itypfb ,                                             &
+    lfbcpl , lfbncp )
+
+  endif
+
+  ! Free memory
+  deallocate(lfbcpl, lfbncp)
+
+enddo
+!     Fin de la boucle sur les couplages
+
+!----
+! FIN
+!----
+
+return
+end subroutine cscfbr_init
