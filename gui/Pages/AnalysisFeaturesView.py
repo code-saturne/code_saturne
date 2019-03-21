@@ -356,13 +356,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         elif gas != 'off':
             self.modelReactiveFlows.setItem(str_model='gas_combustion')
             self.modelGasCombustion.setItem(str_model=gas)
-            # self.comboBoxReactiveFlows.show()
             self.comboBoxGasCombustion.show()
 
         elif coal != 'off':
             self.modelReactiveFlows.setItem(str_model='pulverized_coal')
             self.modelCoalCombustion.setItem(str_model=coal)
-            # self.comboBoxReactiveFlows.show()
             self.comboBoxCoalCombustion.show()
 
         elif joule != 'off':
@@ -404,8 +402,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             if model_on:
                 base_model = False
-                radioButton.setChecked(True)
                 self.checkPrev = ind
+                radioButton.setChecked(True)
             else:
                 radioButton.setChecked(False)
 
@@ -438,8 +436,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.comboBoxLagrangian.setEnabled(False)
         else:
             self.comboBoxLagrangian.setEnabled(True)
-
-        model_expr = 'self.slot'+ind+'(model)'
 
 
     def switch_case_to_neptune(self):
