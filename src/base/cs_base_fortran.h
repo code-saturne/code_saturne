@@ -246,6 +246,9 @@ cs_user_parameters_wrapper(void);
 void
 cs_user_finalize_setup_wrapper(void);
 
+void
+cs_user_porosity_wrapper(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -102,11 +102,13 @@ BEGIN_C_DECLS
  *        (\ref cs_glob_porous_model > 0).
  *
  * This function is called at the begin of the simulation only.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(void)
+cs_user_porosity(cs_domain_t   *domain)
 {
 
 }

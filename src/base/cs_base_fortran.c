@@ -642,6 +642,13 @@ cs_user_finalize_setup_wrapper(void)
   cs_user_finalize_setup(cs_glob_domain);
 }
 
+void
+cs_user_porosity_wrapper(void)
+{
+  cs_user_porosity(cs_glob_domain);
+}
+
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -106,15 +106,17 @@ BEGIN_C_DECLS
  *        when porosity model is activated.
  *
  * This function is called at the beginning of the simulation only.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(void)
+cs_user_porosity(cs_domain_t   *domain)
 {
   /*!< [init_poro_mq] */
-  cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_mesh_t *m = domain->mesh;
+  cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)m->i_face_cells;
