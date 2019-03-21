@@ -223,21 +223,21 @@ static cs_time_step_t  _time_step = {
   .t_prev = 0.,
   .t_cur = 0.,
   .t_max = -1.,
-  .dt = {0., 0., 0.},
+  .dt = {0.1, 0.1, 0.1},
   .dt_ref = 0.1,
   .dt_next = 0.1
 };
 
 static cs_time_step_options_t  _time_step_options = {
   .iptlro = 0,
-  .idtvar = 0,
+  .idtvar = 0, /* constant time step by default */
   .coumax = 1.,
   .cflmmx = 0.99,
   .foumax = 10.,
   .varrdt = 0.1,
-  .dtmin  = -1.e12*10.,
-  .dtmax  = -1.e12*10.,
-  .relxst = 0.7
+  .dtmin  = -1.e13,
+  .dtmax  = -1.e13,
+  .relxst = 0.7 /* Not used in CDO schemes */
 };
 
 const cs_time_step_t  *cs_glob_time_step = &_time_step;

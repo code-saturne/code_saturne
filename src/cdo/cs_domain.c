@@ -152,7 +152,6 @@ _create_cdo_context(int     cdo_mode)
 cs_domain_t *
 cs_domain_create(void)
 {
-  cs_real_t  default_time_step = -1e13;
   cs_domain_t  *domain = NULL;
 
   BFT_MALLOC(domain, 1, cs_domain_t);
@@ -170,21 +169,6 @@ cs_domain_create(void)
 
   /* Global structure for time step management */
   domain->time_step = cs_get_glob_time_step();
-  domain->time_step->dt_ref = default_time_step;
-  domain->time_step->dt[0] = default_time_step;
-  domain->time_step->dt[1] = default_time_step;
-  domain->time_step->dt[2] = default_time_step;
-
-  /* Time options () */
-  domain->time_options.iptlro = 0;
-  domain->time_options.idtvar = 0; /* constant time step by default */
-  domain->time_options.coumax = 1.;
-  domain->time_options.cflmmx = 0.99;
-  domain->time_options.foumax = 10.;
-  domain->time_options.varrdt = 0.1;
-  domain->time_options.dtmin = default_time_step;
-  domain->time_options.dtmax = default_time_step;
-  domain->time_options.relxst = 0.7; /* Not useful in CDO schemes */
 
   /* Other options */
   domain->restart_nt = 0;
