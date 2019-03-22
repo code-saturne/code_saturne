@@ -1,6 +1,14 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Multigrid: simplify plotting behavior.
+  * Only convergence of cycles is now plotted, as many smoother
+    operators do not compute the residual
+  * With a high enough verbosity, the residual after each level's
+    smoother or solver application is logged.
+
 Architectural changes:
 
 - GUI: force SIP API version to 2 for PqQt4. This allows removing

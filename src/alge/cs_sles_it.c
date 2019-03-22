@@ -5778,35 +5778,5 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign existing time plot to iterative sparse linear equation solver.
- *
- * This is useful mainly when a time plot has a longer lifecycle than
- * the linear solver context, such as inside a multigrid solver.
- *
- * \param[in, out]  context     pointer to iterative solver info and context
- * \param[in]       time_plot   pointer to time plot structure
- * \param[in]       time_stamp  associated time stamp
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_assign_plot(cs_sles_it_t    *context,
-                       cs_time_plot_t  *time_plot,
-                       int              time_stamp)
-{
-  if (context != NULL) {
-
-    /* Destroy previous plot if present */
-    if (context->_plot != NULL)
-      cs_time_plot_finalize(&(context->_plot));
-
-    context->plot = time_plot;
-    context->plot_time_stamp = time_stamp;
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

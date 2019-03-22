@@ -325,9 +325,7 @@ struct _cs_multigrid_t {
 
   cs_multigrid_setup_data_t  *setup_data;   /* setup data */
 
-  char                       *plot_base_name;   /* base plot name, or NULL */
   cs_time_plot_t             *cycle_plot;       /* plotting of cycles */
-  cs_time_plot_t            **sles_it_plot;     /* plotting if smoothers */
   int                         plot_time_stamp;  /* plotting time stamp;
                                                    if < 0, use wall clock */
 };
@@ -829,11 +827,6 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
     if (mgd->n_levels_alloc == 0) {
       mgd->n_levels_alloc = n_lv_max_prev;
-      if (mg->plot_base_name != NULL) {
-        BFT_REALLOC(mg->sles_it_plot, mgd->n_levels_alloc, cs_time_plot_t *);
-        if (n_lv_max_prev < 2)
-          mg->sles_it_plot[0] = NULL;
-      }
       if (mgd->n_levels_alloc == 0)
         mgd->n_levels_alloc = 10;
     }
@@ -851,44 +844,11 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     }
 
     if (n_lv_max_prev < mgd->n_levels_alloc) {
-
       BFT_REALLOC(mg->lv_info, mgd->n_levels_alloc, cs_multigrid_level_info_t);
       for (ii = n_lv_max_prev; ii < mgd->n_levels_alloc; ii++)
         _multigrid_level_info_init(mg->lv_info + ii);
-
-      if (mg->plot_base_name != NULL) {
-        BFT_REALLOC(mg->sles_it_plot, mgd->n_levels_alloc, cs_time_plot_t *);
-        for (ii = n_lv_max_prev; ii < mgd->n_levels_alloc; ii++)
-          mg->sles_it_plot[ii] = NULL;
-      }
-
     }
 
-  }
-
-  /* Add plotting info if level is new */
-
-  if (mg->plot_base_name != NULL) {
-    int lv = mgd->n_levels;
-    if (mg->sles_it_plot[lv] == NULL) {
-      char *base_name;
-      bool use_iter_num = mg->plot_time_stamp > -1 ? true : false;
-      BFT_MALLOC(base_name, strlen(mg->plot_base_name) + 32, char);
-      sprintf(base_name, "%s_%02d", mg->plot_base_name, lv);
-      const char *probe_names[] = {base_name};
-      mg->sles_it_plot[lv]
-        = cs_time_plot_init_probe(base_name,
-                                  "monitoring/residue_",
-                                  CS_TIME_PLOT_CSV,  /* file format */
-                                  use_iter_num,
-                                  -1.,               /* force flush */
-                                  0,                 /* buffer size */
-                                  1,                 /* number of probes */
-                                  NULL,              /* probes list */
-                                  NULL,              /* probes coord. */
-                                  probe_names);
-      BFT_FREE(base_name);
-    }
   }
 
   /* Add new grid to hierarchy */
@@ -2394,7 +2354,7 @@ _dot_xu_xv_xw(const cs_multigrid_t  *mg,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_convergence_test(const cs_multigrid_t  *mg,
+_convergence_test(cs_multigrid_t        *mg,
                   const char            *var_name,
                   cs_lnum_t              n_f_cells,
                   int                    n_max_cycles,
@@ -2427,6 +2387,19 @@ _convergence_test(const cs_multigrid_t  *mg,
 
   if (cycle_id == 1)
     initial_residue = *residue;
+
+  /* Plot convergence if requested */
+
+  if (mg->cycle_plot != NULL) {
+    double vals = *residue;
+    double wall_time = cs_timer_wtime();
+    mg->plot_time_stamp += 1;
+    cs_time_plot_vals_write(mg->cycle_plot,
+                            mg->plot_time_stamp,
+                            wall_time,
+                            1,
+                            &vals);
+  }
 
   if (*residue < precision*r_norm) {
 
@@ -2483,6 +2456,61 @@ _convergence_test(const cs_multigrid_t  *mg,
 }
 
 /*----------------------------------------------------------------------------
+ * Log residue A.vx - Rhs
+ *
+ * parameters:
+ *   mg              <-- pointer to multigrid context info
+ *   int cycle_id    <-- cycle id
+ *   var_name        <-- variable name
+ *   a               <-- matrix
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static void
+_log_residual(const cs_multigrid_t   *mg,
+              int                     cycle_id,
+              const char             *var_name,
+              const cs_matrix_t      *a,
+              cs_halo_rotation_t      rotation_mode,
+              const cs_real_t        *rhs,
+              cs_real_t              *restrict vx)
+{
+  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * diag_block_size[0];
+  const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size[0];
+
+  cs_real_t  *r;
+  BFT_MALLOC(r, n_cols, cs_real_t);
+
+  cs_matrix_vector_multiply(rotation_mode, a, vx, r);
+
+  for (cs_lnum_t i = 0; i < n_rows; i++)
+    r[i] -= rhs[i];
+
+  double s = cs_dot_xx(n_rows, r);
+
+  BFT_FREE(r);
+
+#if defined(HAVE_MPI)
+
+  if (mg->comm != MPI_COMM_NULL) {
+    double _sum;
+    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, mg->comm);
+    s = _sum;
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  cs_log_printf(CS_LOG_DEFAULT, "  mg cycle %d: %s residual: %.3g\n",
+                cycle_id, var_name, s);
+}
+
+/*----------------------------------------------------------------------------
  * Update level information iteration counts
  *
  * parameters:
@@ -2535,7 +2563,7 @@ _level_names_size(const char  *name,
 
   if (n_levels > 1)
     buf_size =   (strlen(name) + strlen(":descent:") + w + 1)
-               * (n_levels-1)*2;
+               * (n_levels)*2;
   retval += CS_SIMD_SIZE(buf_size);
 
   return retval;
@@ -2571,13 +2599,10 @@ _level_names_init(const char  *name,
   const char **lv_names = (const char **)_lv_names;
   const size_t name_len = strlen(name) + strlen(":descent:") + w + 1;
 
-  lv_names[0] = name;
-  lv_names[1] = NULL;
-
   /* Second part: buffers */
 
-  for (int i = 1; i < n_levels -1; i++) {
-    lv_names[i*2] = _buffer + ptr_size + (i-1)*2*name_len;
+  for (int i = 0; i < n_levels -1; i++) {
+    lv_names[i*2] = _buffer + ptr_size + i*2*name_len;
     lv_names[i*2+1] = lv_names[i*2] + name_len;
     sprintf(_lv_names[i*2], "%s:descent:%0*d", name, w, i);
     sprintf(_lv_names[i*2+1], "%s:ascent:%0*d", name, w, i);
@@ -2585,7 +2610,7 @@ _level_names_init(const char  *name,
 
   if (n_levels > 1) {
     int i = n_levels - 1;
-    lv_names[i*2] = _buffer + ptr_size + (i-1)*2*name_len;
+    lv_names[i*2] = _buffer + ptr_size + i*2*name_len;
     lv_names[i*2+1] = NULL;
     sprintf(_lv_names[i*2], "%s:coarse:%0*d", name, w, i);
   }
@@ -2727,11 +2752,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
 
-    if (mg->sles_it_plot != NULL && mg_sles->solve_func == cs_sles_it_solve)
-      cs_sles_it_assign_plot(mg_sles->context,
-                             mg->sles_it_plot[level],
-                             mg->plot_time_stamp);
-
     c_cvg = mg_sles->solve_func(mg_sles->context,
                                 lv_names[level*2],
                                 _matrix,
@@ -2757,6 +2777,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     if (level == 0 && cycle_id == 1)
       *initial_residue = _initial_residue;
+
+    if (verbosity > 0)
+      _log_residual(mg, cycle_id, lv_names[level*2],
+                    _matrix, rotation_mode, rhs_lv, vx_lv);
 
     if (c_cvg < CS_SLES_BREAKDOWN) {
       end_cycle = true;
@@ -2847,15 +2871,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t1, &t0);
     lv_info->n_calls[4] += 1;
 
-    if (level == 0 && mg->cycle_plot != NULL) {
-      double wall_time = cs_timer_wtime();
-      cs_time_plot_vals_write(mg->cycle_plot,
-                              mg->plot_time_stamp,
-                              wall_time,
-                              1,
-                              residue);
-    }
-
   } /* End of loop on levels (descent) */
 
   if (end_cycle == false) {
@@ -2874,16 +2889,9 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
 
-    if (mg->sles_it_plot != NULL && mg_sles->solve_func == cs_sles_it_solve)
-      cs_sles_it_assign_plot(mg_sles->context,
-                             mg->sles_it_plot[level],
-                             mg->plot_time_stamp);
-
     _initial_residue = _residue;
 
     lv_info = mg->lv_info + level;
-
-    if (mg->sles_it_plot != NULL)
 
     t0 = cs_timer_time();
 
@@ -2906,9 +2914,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     lv_info->n_calls[1] += 1;
     _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
 
-    if (mg->plot_time_stamp > -1)
-      mg->plot_time_stamp += n_iter + 1;
-
     if (mg_sles->solve_func == cs_sles_it_solve)
       _initial_residue
         = cs_sles_it_get_last_initial_residue(mg_sles->context);
@@ -2916,6 +2921,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       _initial_residue = HUGE_VAL;
 
     *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
+
+    if (verbosity > 0)
+      _log_residual(mg, cycle_id, lv_names[level*2],
+                    _matrix, rotation_mode, rhs_lv, vx_lv);
 
     if (c_cvg < CS_SLES_BREAKDOWN)
       end_cycle = true;
@@ -2975,11 +2984,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
         cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2 + 1]);
 
-        if (mg->sles_it_plot != NULL && mg_sles->solve_func == cs_sles_it_solve)
-          cs_sles_it_assign_plot(mg_sles->context,
-                                 mg->sles_it_plot[level],
-                                 mg->plot_time_stamp);
-
         c_cvg = mg_sles->solve_func(mg_sles->context,
                                     lv_names[level*2+1],
                                     _matrix,
@@ -2999,9 +3003,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
         lv_info->n_calls[3] += 1;
         _lv_info_update_stage_iter(lv_info->n_it_as_smoothe, n_iter);
 
-        if (mg->plot_time_stamp > -1)
-          mg->plot_time_stamp += n_iter + 1;
-
         if (mg_sles->solve_func == cs_sles_it_solve)
           _initial_residue
             = cs_sles_it_get_last_initial_residue(mg_sles->context);
@@ -3009,6 +3010,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
           _initial_residue = HUGE_VAL;
 
         *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
+
+        if (verbosity > 0)
+          _log_residual(mg, cycle_id, lv_names[level*2+1],
+                        _matrix, rotation_mode, rhs_lv, vx_lv);
 
         if (c_cvg < CS_SLES_BREAKDOWN)
           break;
@@ -3082,10 +3087,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                    size_t                aux_size,
                    void                 *aux_vectors)
 {
-  /* Overcorrection option */
-
-  const bool overcorrection = false;
-
   /* Threshold parameter */
   const cs_real_t trsh = 0.25;
 
@@ -3095,7 +3096,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   cs_sles_convergence_state_t c_cvg = CS_SLES_ITERATING, cvg = CS_SLES_ITERATING;
   int n_iter = 0;
   double _residue = -1.;
-  double _initial_residue = 0.;
   cs_real_t r_norm_l = r_norm;
 
   size_t _aux_r_size = aux_size / sizeof(cs_real_t);
@@ -3157,11 +3157,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
   cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
 
-  if (mg->sles_it_plot != NULL && mg_sles->solve_func == cs_sles_it_solve)
-    cs_sles_it_assign_plot(mg_sles->context,
-                           mg->sles_it_plot[level],
-                           mg->plot_time_stamp);
-
   c_cvg = mg_sles->solve_func(mg_sles->context,
                               lv_names[level*2],
                               f_matrix,
@@ -3176,22 +3171,18 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                               _aux_r_size*sizeof(cs_real_t),
                               aux_vectors);
 
-  if (mg->plot_time_stamp > -1)
-    mg->plot_time_stamp += n_iter+1;
-
-  if (mg_sles->solve_func == cs_sles_it_solve)
-    _initial_residue = cs_sles_it_get_last_initial_residue(mg_sles->context);
-  else
-    _initial_residue = HUGE_VAL;
-
-  if (level == 0 && cycle_id == 1)
-    *initial_residue = _initial_residue;
+  if (initial_residue != NULL && cycle_id == 1)
+    *initial_residue = HUGE_VAL;
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[2]), &t0, &t1);
   lv_info->n_calls[2] += 1;
   _lv_info_update_stage_iter(lv_info->n_it_ds_smoothe, n_iter);
   *n_equiv_iter += n_iter * f_n_g_rows * denom_n_g_rows_0;
+
+  if (verbosity > 0)
+    _log_residual(mg, cycle_id, lv_names[level*2],
+                  f_matrix, rotation_mode, rhs_lv, vx_lv);
 
   /* Compute new residual */
   cs_matrix_vector_multiply(rotation_mode, f_matrix, vx_lv, rt_lv);
@@ -3234,21 +3225,13 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     return cvg;
   }
 
-  if (level == 0 && mg->cycle_plot != NULL) {
-    double wall_time = cs_timer_wtime();
-    cs_time_plot_vals_write(mg->cycle_plot,
-                            mg->plot_time_stamp,
-                            wall_time,
-                            1,
-                            residue);
-  }
-
   /* Arrays needed for the descent phase
      (mapped to preallocated mgd->rhs_vx to avoid extra allocations) */
 
   cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*na + 4];
   cs_real_t *restrict rhs_lv1 = mgd->rhs_vx[(level+1)*na + 5];
 
+# pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < _c_n_rows; i++)
     vx_lv1[i] = 0.0;
 
@@ -3270,11 +3253,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
     mg_sles = &(mgd->sles_hierarchy[coarsest_level*2]);
 
-    if (mg->sles_it_plot != NULL && mg_sles->solve_func == cs_sles_it_solve)
-      cs_sles_it_assign_plot(mg_sles->context,
-                             mg->sles_it_plot[coarsest_level],
-                             mg->plot_time_stamp);
-
     cvg = mg_sles->solve_func(mg_sles->context,
                               lv_names[coarsest_level*2],
                               c_matrix,
@@ -3294,14 +3272,9 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     lv_info->n_calls[1] += 1;
     _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
 
-    if (mg->plot_time_stamp > -1)
-      mg->plot_time_stamp += n_iter + 1;
-
-    if (mg_sles->solve_func == cs_sles_it_solve)
-      _initial_residue = cs_sles_it_get_last_initial_residue
-                           (mg_sles->context);
-    else
-      _initial_residue = HUGE_VAL;
+    if (verbosity > 0)
+      _log_residual(mg, cycle_id, lv_names[coarsest_level*2],
+                    c_matrix, rotation_mode, rhs_lv1, vx_lv1);
 
     *n_equiv_iter += n_iter * c_n_g_rows * denom_n_g_rows_0;
 
@@ -3320,7 +3293,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                                &n_iter,
                                precision,
                                r_norm,
-                               initial_residue,
+                               NULL,
                                residue,
                                rhs_lv1,
                                vx_lv1,
@@ -3357,6 +3330,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
     /* Test for the second coarse resolution */
     if (rt_lv1_norm < trsh * trsh * r_lv1_norm) {
+#     pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < _c_n_rows; i++)
         vx_lv1[i] = ar1 * vx_lv1[i];
     }
@@ -3366,6 +3340,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
       cs_real_t *restrict vx2_lv1 = mgd->rhs_vx[(level+1)*na + 8];
       cs_real_t *restrict w_lv1 = mgd->rhs_vx[(level+1)*na + 9];
 
+#     pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < _c_n_rows; i++) {
         vx2_lv1[i] = 0.0;
         w_lv1[i] = 0.0;
@@ -3409,6 +3384,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
       cs_real_t ar2 = alpha2 / rho2;
       cs_real_t ar1_ar2 = ar1 - (gamma / rho1) * ar2;
 
+#     pragma omp parallel for if(_c_n_rows > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < _c_n_rows; i++)
         vx_lv1[i] = ar1_ar2 * vx_lv1[i] + ar2 * vx2_lv1[i];
 
@@ -3434,6 +3410,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   cs_real_t *restrict z1_lv = mgd->rhs_vx[level*na + 2];
   cs_real_t *restrict z2_lv = mgd->rhs_vx[level*na + 3];
 
+# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
     z2_lv[ii] = 0.0;
 
@@ -3445,56 +3422,32 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   lv_info->n_calls[5] += 1;
 
   /* New residual */
-  if (!overcorrection) {
+  cs_matrix_vector_multiply(rotation_mode, f_matrix, z1_lv, rb_lv);
+# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
+    rb_lv[ii] = rt_lv[ii] - rb_lv[ii];
 
-    cs_matrix_vector_multiply(rotation_mode, f_matrix, z1_lv, rb_lv);
-    for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++)
-      rb_lv[ii] = rt_lv[ii] - rb_lv[ii];
-
-    t0 = cs_timer_time();
-    cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t1, &t0);
-    t1 = t0;
-  }
+  t0 = cs_timer_time();
+  cs_timer_counter_add_diff(&(lv_info->t_tot[5]), &t1, &t0);
+  t1 = t0;
 
   /* Post-smoothing */
 
   mg_sles = &(mgd->sles_hierarchy[level*2+1]);
 
-  if (mg->sles_it_plot != NULL && mg_sles->solve_func == cs_sles_it_solve)
-    cs_sles_it_assign_plot(mg_sles->context,
-                           mg->sles_it_plot[level],
-                           mg->plot_time_stamp);
-
-  if (overcorrection) {
-    cvg = mg_sles->solve_func(mg_sles->context,
-                              lv_names[level*2+1],
-                              f_matrix,
-                              0, /* verbosity */
-                              rotation_mode,
-                              precision*mg->info.precision_mult[1],
-                              r_norm_l,
-                              &n_iter,
-                              &_residue,
-                              rt_lv,
-                              z1_lv,
-                              _aux_r_size*sizeof(cs_real_t),
-                              aux_vectors);
-  }
-  else {
-    cvg = mg_sles->solve_func(mg_sles->context,
-                              lv_names[level*2+1],
-                              f_matrix,
-                              0, /* verbosity */
-                              rotation_mode,
-                              precision*mg->info.precision_mult[1],
-                              r_norm_l,
-                              &n_iter,
-                              &_residue,
-                              rb_lv,
-                              z2_lv,
-                              _aux_r_size*sizeof(cs_real_t),
-                              aux_vectors);
-  }
+  cvg = mg_sles->solve_func(mg_sles->context,
+                            lv_names[level*2+1],
+                            f_matrix,
+                            0, /* verbosity */
+                            rotation_mode,
+                            precision*mg->info.precision_mult[1],
+                            r_norm_l,
+                            &n_iter,
+                            &_residue,
+                            rb_lv,
+                            z2_lv,
+                            _aux_r_size*sizeof(cs_real_t),
+                            aux_vectors);
 
   t0 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[3]), &t1, &t0);
@@ -3502,33 +3455,13 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   _lv_info_update_stage_iter(lv_info->n_it_as_smoothe, n_iter);
   *n_equiv_iter += n_iter * f_n_g_rows * denom_n_g_rows_0;
 
-  if (mg->plot_time_stamp > -1)
-    mg->plot_time_stamp += n_iter+1;
+  if (verbosity > 0)
+    _log_residual(mg, cycle_id, lv_names[level*2 + 1],
+                  c_matrix, rotation_mode, rb_lv, z2_lv);
 
-  if (mg_sles->solve_func == cs_sles_it_solve)
-    _initial_residue
-      = cs_sles_it_get_last_initial_residue(mg_sles->context);
-  else
-    _initial_residue = HUGE_VAL;
-
-  if (overcorrection) {
-    cs_matrix_vector_multiply(rotation_mode, f_matrix, z1_lv, z2_lv);
-
-    cs_real_t x_temp = 0, y_temp = 0;
-
-    _dot_xy_yz(mg, _f_n_rows, rt_lv, z1_lv, z2_lv, &x_temp, &y_temp);
-
-    cs_real_t tt = x_temp / y_temp;
-
-    for (cs_lnum_t ii = 0; ii < _f_n_rows; ii++) {
-      vx_lv[ii] += z1_lv[ii] + z2_lv[ii];
-      vx_lv[ii] += tt*z1_lv[ii];
-    }
-  }
-  else {
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
-      vx_lv[ii] += z1_lv[ii] + z2_lv[ii];
-  }
+# pragma omp parallel for if(_f_n_rows > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
+    vx_lv[ii] += z1_lv[ii] + z2_lv[ii];
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(lv_info->t_tot[6]), &t0, &t1);
@@ -3710,9 +3643,7 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
   mg->post_row_rank = NULL;
   mg->post_name = NULL;
 
-  mg->plot_base_name = NULL;
   mg->cycle_plot = NULL;
-  mg->sles_it_plot = NULL;
   mg->plot_time_stamp = -1;
 
   if (mg_type == CS_MULTIGRID_V_CYCLE)
@@ -3780,16 +3711,8 @@ cs_multigrid_destroy(void  **context)
 
   BFT_FREE(mg->post_name);
 
-  if (mg->plot_base_name != NULL) {
-    BFT_FREE(mg->plot_base_name);
-    if (mg->cycle_plot != NULL)
-      cs_time_plot_finalize(&(mg->cycle_plot));
-    for (size_t i = 0; i <= mg->info.n_levels[2]; i++) {
-      if (mg->sles_it_plot[i] != NULL)
-        cs_time_plot_finalize(&(mg->sles_it_plot[i]));
-    }
-    BFT_FREE(mg->sles_it_plot);
-  }
+  if (mg->cycle_plot != NULL)
+    cs_time_plot_finalize(&(mg->cycle_plot));
 
   for (int i = 0; i < 3; i++) {
     if (mg->lv_mg[i] != NULL)
@@ -4242,6 +4165,9 @@ cs_multigrid_solve(void                *context,
   if (_aux_buf != aux_vectors)
     BFT_FREE(_aux_buf);
 
+  if (verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+
   /* Update statistics */
 
   t1 = cs_timer_time();
@@ -4625,8 +4551,6 @@ cs_multigrid_set_plot_options(cs_multigrid_t  *mg,
 
       if (use_iteration)
         mg->plot_time_stamp = 0;
-      BFT_MALLOC(mg->plot_base_name, strlen(base_name)+1, char);
-      strcpy(mg->plot_base_name, base_name);
     }
   }
 }
