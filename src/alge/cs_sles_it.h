@@ -42,6 +42,70 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_sles_it.c
+        Iterative linear solvers
+
+  \enum cs_sles_it_type_t
+
+  \brief Iterative solver types
+
+  \var CS_SLES_PCG
+       Preconditioned conjugate gradient
+  \var CS_SLES_FCG
+       Preconditioned flexible conjugate gradient, described in
+       \cite Notay:2015
+  \var CS_SLES_IPCG
+       Inexact preconditioned conjugate gradient
+  \var CS_SLES_JACOBI
+       Jacobi
+  \var CS_SLES_BICGSTAB
+       Preconditioned BiCGstab (biconjugate gradient stabilized)
+  \var CS_SLES_BICGSTAB2
+       Preconditioned BiCGstab2 (biconjugate gradient stabilized)
+  \var CS_SLES_GMRES
+       Preconditioned GMRES (generalized minimum residual)
+  \var CS_SLES_P_GAUSS_SEIDEL
+       Process-local Gauss-Seidel
+  \var CS_SLES_P_SYM_GAUSS_SEIDEL
+       Process-local symmetric Gauss-Seidel
+  \var CS_SLES_TS_F_GAUSS_SEIDEL
+       Truncated Gauss-Seidel smoother pass
+  \var CS_SLES_TS_B_GAUSS_SEIDEL
+       Truncated backward Gauss-Seidel smoother pass
+  \var CS_SLES_PCR3
+       3-layer conjugate residual
+
+ \page sles_it Iterative linear solvers.
+
+ For Krylov space solvers, default preconditioning is based
+ on a Neumann polynomial of degree \a poly_degree, with a negative value
+ meaning no preconditioning, and 0 diagonal preconditioning.
+
+ For positive values of \a poly_degree, the preconditioning is explained here:
+ \a D being the diagonal part of matrix \a A and \a X its extra-diagonal
+ part, it can be written \f$A=D(Id+D^{-1}X)\f$. Therefore
+ \f$A^{-1}=(Id+D^{-1}X)^{-1}D^{-1}\f$. A series development of
+ \f$Id+D^{-1}X\f$ can then be used which yields, symbolically,
+ \f[
+ Id+\sum\limits_{I=1}^{poly\_degree}\left(-D^{-1}X\right)^{I}
+ \f]
+
+ The efficiency of the polynomial preconditioning will vary depending
+ on the system type. In most cases, diagonal or degree 1 provide
+ best results. Each polynomial preconditioning degree above 0 adds one
+ matrix-vector product per inital matrix-vector product of the algorithm.
+ Switching from diagonal to polynomial degree 1 often divides the number of
+ required iterations by approximately 2, but each iteration then costs
+ close to 2 times that of diagonal preconditoning (other vector operations
+ are not doubled), so the net gain is often about 10%. Higher degree
+ polynomials usually lead to diminishing returns.
+*/
+
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -77,6 +141,10 @@ typedef enum {
 /* Iterative linear solver context (opaque) */
 
 typedef struct _cs_sles_it_t  cs_sles_it_t;
+
+/* Forward type declarations */
+
+typedef struct _cs_sles_it_convergence_t  cs_sles_it_convergence_t;
 
 /*============================================================================
  *  Global variables

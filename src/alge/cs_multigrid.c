@@ -59,6 +59,7 @@
 #include "cs_matrix_default.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_multigrid_smoother.h"
 #include "cs_post.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
@@ -141,8 +142,8 @@ typedef struct _cs_multigrid_info_t {
 
   /* Settings */
 
-  cs_sles_it_type_t    type[3];             /* Descent/ascent smoother
-                                               and solver type */
+  cs_sles_it_type_t    type[3];             /* Descent/ascent smoothers
+                                               Coarse solver */
 
   bool                 is_pc;               /* True if used as preconditioner */
   int                  n_max_cycles;        /* Maximum allowed cycles */
@@ -1908,12 +1909,11 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
       if (mg->info.type[j] < CS_SLES_N_IT_TYPES) {
         cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[i*2 + j]);
         mg_sles->context
-          = cs_sles_it_create(mg->info.type[j],
-                              mg->info.poly_degree[j],
-                              mg->info.n_max_iter[j],
-                              false); /* stats not updated here */
-        mg_sles->setup_func = cs_sles_it_setup;
-        mg_sles->solve_func = cs_sles_it_solve;
+          = cs_multigrid_smoother_create(mg->info.type[j],
+                                         mg->info.poly_degree[j],
+                                         mg->info.n_max_iter[j]);
+        mg_sles->setup_func = cs_multigrid_smoother_setup;
+        mg_sles->solve_func = cs_multigrid_smoother_solve;
         mg_sles->destroy_func = cs_sles_it_destroy;
 
         /* Share context between descent and ascent smoothers if both
