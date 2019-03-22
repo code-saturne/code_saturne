@@ -5161,7 +5161,7 @@ iterns = 1
 ! Locate internal BC-based coupling
 if (nbrcpl.gt.0) then
   call cscloc
-  call cscfbr_init(nscal, icodcl, itypfb)
+  call cscfbr_init(icodcl, itypfb)
 endif
 
 call typecl &
