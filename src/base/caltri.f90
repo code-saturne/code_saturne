@@ -555,27 +555,6 @@ if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
   call atmsol()
 endif
 
-! First pass for the BCs:
-! - initilalize itypfb, reference pressure point...
-!--------------------------------------------------
-
-! Deprecated, only for compatibility reason
-nvarcl = nvar
-
-allocate(icodcl(nfabor,nvar))
-allocate(rcodcl(nfabor,nvar,3))
-allocate(isostd(nfabor+1))
-
-! First pass for initialization BC types
-! -- Couplage Code_Saturne/Code_Saturne
-
-call cscini(nvar)
-call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
-
-deallocate(icodcl)
-deallocate(rcodcl)
-deallocate(isostd)
-
 !==============================================================================
 ! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
 ! au moins des cellules avec terme source de condensation.
@@ -710,6 +689,27 @@ if (nfpt1t.gt.0) then
   endif
 
 endif
+
+! First pass for the BCs:
+! - initilalize itypfb, reference pressure point...
+!--------------------------------------------------
+
+! Deprecated, only for compatibility reason
+nvarcl = nvar
+
+allocate(icodcl(nfabor,nvar))
+allocate(rcodcl(nfabor,nvar,3))
+allocate(isostd(nfabor+1))
+
+! First pass for initialization BC types
+! -- Couplage Code_Saturne/Code_Saturne
+
+call cscini(nvar)
+call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
+
+deallocate(icodcl)
+deallocate(rcodcl)
+deallocate(isostd)
 
 !===============================================================================
 ! Initialization for the Synthetic turbulence Inlets
