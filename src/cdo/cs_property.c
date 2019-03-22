@@ -501,10 +501,37 @@ cs_property_finalize_setup(void)
         pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
     }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Property \"%s\" exists with no definition.",
-                __func__, pty->name);
+    else {
+
+      switch (pty->type) {
+
+      case CS_PROPERTY_ISO:
+        cs_property_def_iso_by_value(pty, NULL, 1.0);
+        break;
+      case CS_PROPERTY_ORTHO:
+        {
+          cs_real_t unity[3] =  {1, 1, 1};
+          cs_property_def_ortho_by_value(pty, NULL, unity);
+        }
+        break;
+      case CS_PROPERTY_ANISO:
+        {
+          cs_real_t unity[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+          cs_property_def_aniso_by_value(pty, NULL, unity);
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
+                  __func__);
+      }
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %s: Property \"%s\" exists with no definition.\n"
+                    "     Switch to unity by default.", __func__, pty->name);
+
+    }
 
   } /* Loop on properties */
 
