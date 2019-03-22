@@ -797,8 +797,6 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
     _check_stiffness(sloc);
   }
 #endif
-
-  bft_error(__FILE__, __LINE__, 0, "Under construction");
 }
 
 /*----------------------------------------------------------------------------*/
