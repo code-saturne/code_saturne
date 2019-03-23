@@ -366,6 +366,9 @@ _create_grid(void)
 
   BFT_MALLOC(g, 1, cs_grid_t);
 
+  g->conv_diff = false;
+  g->symmetric = false;
+
   g->db_size[0] = 1;
   g->db_size[1] = 1;
   g->db_size[2] = 1;
@@ -442,7 +445,7 @@ _create_grid(void)
   g->merge_cell_idx = NULL;
 
   g->n_ranks = cs_glob_n_ranks;
-  g->comm_id = 0;
+  g->comm_id = -1;
 
 #endif
   return g;
@@ -543,7 +546,7 @@ _aggregation_stats_log(const cs_grid_t  *f,
     if (f->comm_id >= 0)
       comm = _grid_comm[f->comm_id];
     else
-      comm = MPI_COMM_NULL;
+      comm = cs_glob_mpi_comm;
   }
 #endif
 
@@ -831,7 +834,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_mpi_comm);
+    // MPI_Barrier(comm);
 
     /* Send data to distant ranks */
 
@@ -1240,9 +1243,14 @@ _coarsen(const cs_grid_t   *f,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    cs_gnum_t _c_n_rows = c_n_rows;
-    MPI_Allreduce(&_c_n_rows, &(c->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM,
-                  cs_glob_mpi_comm);
+    MPI_Comm comm = cs_glob_mpi_comm;
+    if (f->comm_id >= 0)
+      comm = _grid_comm[f->comm_id];
+    if (comm != MPI_COMM_NULL) {
+      cs_gnum_t _c_n_rows = c_n_rows;
+      MPI_Allreduce(&_c_n_rows, &(c->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM,
+                    comm);
+    }
   }
 #endif
 
@@ -1310,6 +1318,9 @@ _get_reduced_comm_id(int  n_ranks)
     if (n_ranks == cs_glob_n_ranks)
       _grid_comm[comm_id] = cs_glob_mpi_comm;
 
+    else if (n_ranks == 1)
+      _grid_comm[comm_id] = MPI_COMM_NULL;
+
     else {
 
       int ranges[1][3];
@@ -1349,7 +1360,8 @@ _finalize_reduced_communicators(void)
   int comm_id;
 
   for (comm_id = 1; comm_id < _n_grid_comms; comm_id++) {
-    if (_grid_comm[comm_id] != MPI_COMM_NULL)
+    if (   _grid_comm[comm_id] != MPI_COMM_NULL
+        && _grid_comm[comm_id] != cs_glob_mpi_comm)
       MPI_Comm_free(&(_grid_comm[comm_id]));
   }
 
@@ -3734,7 +3746,7 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
   MPI_Comm comm = cs_glob_mpi_comm;
   if (fine_grid->n_ranks > 1) {
-    if (_grid_ranks != NULL)
+    if (fine_grid->comm_id >= 0)
       comm = _grid_comm[fine_grid->comm_id];
     if (comm != MPI_COMM_NULL) {
       cs_gnum_t n_clips[2] = {n_clips_min, n_clips_max};
@@ -3856,6 +3868,7 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
  *
  * parameters:
  *   c           <-> coarse grid structure
+ *   symmetric   <-- symmetry flag
  *   c_row_index <-- MSR row index (0 to n-1)
  *   c_col_id    <-- MSR column id (0 to n-1)
  *   c_d_val     <-- diagonal values
@@ -3864,6 +3877,7 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
 
 static void
 _build_coarse_matrix_msr(cs_grid_t *c,
+                         bool       symmetric,
                          cs_lnum_t *c_row_index,
                          cs_lnum_t *c_col_id,
                          cs_real_t *c_d_val,
@@ -3892,7 +3906,7 @@ _build_coarse_matrix_msr(cs_grid_t *c,
                            NULL, NULL);
 
   cs_matrix_transfer_coefficients_msr(c->_matrix,
-                                      false,
+                                      symmetric,
                                       NULL,
                                       NULL,
                                       _c_row_index,
@@ -4793,8 +4807,121 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 
   }
 
-  _build_coarse_matrix_msr(coarse_grid, c_row_index, c_col_id,
+  _build_coarse_matrix_msr(coarse_grid, fine_grid->symmetric,
+                           c_row_index, c_col_id,
                            c_d_val, c_x_val);
+}
+
+/*----------------------------------------------------------------------------
+ * Build edge-based matrix values from MSR matrix.
+ *
+ * parameters:
+ *   grid <-> grid structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_native_from_msr(cs_grid_t  *g)
+
+{
+  const cs_lnum_t db_stride = g->db_size[3];
+  const cs_lnum_t eb_stride = g->eb_size[3];
+
+  const cs_lnum_t n_rows = g->n_rows;
+  const cs_lnum_t n_cols_ext = g->n_cols_ext;
+
+  /* Matrix in the MSR format */
+
+  const cs_lnum_t  *row_index, *col_id;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(g->matrix,
+                           &row_index,
+                           &col_id,
+                           &d_val,
+                           &x_val);
+
+  {
+    BFT_REALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
+    g->da = g->_da;
+
+    for (cs_lnum_t i = 0; i < n_rows; i++) {
+      for (cs_lnum_t l = 0; l < eb_stride; l++)
+        g->_da[i*db_stride + l] = d_val[i*db_stride + l];
+    }
+  }
+
+  if (g->symmetric) {
+    BFT_REALLOC(g->_face_cell, row_index[n_rows], cs_lnum_2_t);
+    BFT_REALLOC(g->_xa, eb_stride*row_index[n_rows], cs_real_t);
+
+    cs_lnum_t n_edges = 0;
+
+    for (cs_lnum_t i = 0; i < n_rows; i++) {
+      cs_lnum_t s_id = row_index[i];
+      cs_lnum_t e_id = row_index[i+1];
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
+        cs_lnum_t k = col_id[j];
+        if (k <= i)
+          continue;
+        g->_face_cell[n_edges][0] = i;
+        g->_face_cell[n_edges][1] = k;
+        for (cs_lnum_t l = 0; l < eb_stride; l++)
+          g->_xa[n_edges*eb_stride + l] = x_val[j*eb_stride + l];
+        n_edges += 1;
+      }
+    }
+
+    g->n_faces = n_edges;
+    BFT_REALLOC(g->_face_cell, n_edges, cs_lnum_2_t);
+    BFT_REALLOC(g->_xa, eb_stride*n_edges, cs_real_t);
+    g->face_cell = (const cs_lnum_2_t *)(g->_face_cell);
+    g->xa = g->_xa;
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: currently only implemented for symmetric cases.",
+              __func__);
+
+  /* Synchronize matrix diagonal values */
+
+  if (g->halo != NULL)
+    cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_da, g->db_size[3]);
+
+  cs_matrix_destroy(&(g->_matrix));
+  g->matrix = NULL;
+  cs_matrix_structure_destroy(&(g->matrix_struct));
+}
+
+/*----------------------------------------------------------------------------
+ * Build MSR matrix from edge-based matrix values.
+ *
+ * parameters:
+ *   grid <-> grid structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_msr_from_native(cs_grid_t  *g)
+
+{
+  g->matrix_struct = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                                true,
+                                                g->n_rows,
+                                                g->n_cols_ext,
+                                                g->n_faces,
+                                                g->face_cell,
+                                                g->halo,
+                                                NULL);
+
+  g->_matrix = cs_matrix_create(g->matrix_struct);
+
+  cs_matrix_set_coefficients(g->_matrix,
+                             g->symmetric,
+                             g->db_size,
+                             g->eb_size,
+                             g->n_faces,
+                             g->face_cell,
+                             g->da,
+                             g->xa);
 }
 
 /*----------------------------------------------------------------------------
@@ -5034,7 +5161,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
       g->n_ranks = _grid_ranks[g->comm_id];
     }
     else {
-      g->comm_id = 0;
+      g->comm_id = -1;
       g->n_ranks = cs_glob_n_ranks;
     }
 #endif
@@ -5043,6 +5170,9 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
     g->_matrix = cs_matrix_create_by_local_restrict(a);
     g->matrix = g->_matrix;
     g->comm_id = -1;
+#if defined(HAVE_MPI)
+    g->comm_id = _get_reduced_comm_id(1);
+#endif
     g->n_ranks = 1;
   }
 
@@ -5067,12 +5197,14 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
 #if defined(HAVE_MPI)
   if (g->halo != NULL && g->comm_id >= 0) {
     MPI_Comm comm;
-    if (_grid_comm != NULL)
+    if (g->comm_id >= 0)
       comm = _grid_comm[g->comm_id];
     else
       comm = cs_glob_mpi_comm;
-    cs_gnum_t _g_n_rows = g->n_rows;
-    MPI_Allreduce(&_g_n_rows, &(g->n_rows), 1, CS_MPI_GNUM, MPI_SUM, comm);
+    if (comm != MPI_COMM_NULL) {
+      cs_gnum_t _g_n_rows = g->n_rows;
+      MPI_Allreduce(&_g_n_rows, &(g->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM, comm);
+    }
   }
 #endif
 
@@ -5219,6 +5351,7 @@ cs_grid_get_info(const cs_grid_t  *g,
     *n_rows = g->n_rows;
   if (n_cols_ext != NULL)
     *n_cols_ext = g->n_cols_ext;
+  assert(g->n_rows <= g->n_cols_ext);
   if (n_entries != NULL)
     *n_entries = cs_matrix_get_n_entries(g->matrix);
 
@@ -5340,20 +5473,20 @@ cs_grid_get_matrix(const cs_grid_t  *g)
 MPI_Comm
 cs_grid_get_comm(const cs_grid_t  *g)
 {
-  int grid_id;
-
-  MPI_Comm comm = cs_glob_mpi_comm;
-
   assert(g != NULL);
 
   if (g->n_ranks != cs_glob_n_ranks) {
-    grid_id = 0;
-    while (_grid_ranks[grid_id] != g->n_ranks && grid_id < _n_grid_comms)
-      grid_id++;
-    comm = _grid_comm[grid_id];
+    for (int grid_id = 0; grid_id < _n_grid_comms; grid_id++) {
+      if (_grid_ranks[grid_id] == g->n_ranks)
+        return _grid_comm[grid_id];
+    }
+    if (g->n_ranks <= 1)
+      return MPI_COMM_NULL;
+
+    assert(0);
   }
 
-  return comm;
+  return cs_glob_mpi_comm;
 }
 
 /*----------------------------------------------------------------------------
@@ -5792,7 +5925,6 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
      structures are rebuilt often (so only CSR and MSR can be considered) */
 
   cs_matrix_type_t fine_matrix_type = cs_matrix_get_type(f->matrix);
-  cs_matrix_type_t coarse_matrix_type = CS_MATRIX_MSR;
 
   cs_grid_t *c = NULL;
 
@@ -5819,16 +5951,26 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
   if (verbosity > 3)
     _aggregation_stats_log(f, c, verbosity);
 
-  BFT_MALLOC(c->_da, c->n_cols_ext * c->db_size[3], cs_real_t);
-  c->da = c->_da;
-
-  BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
-  c->xa = c->_xa;
-
-  if (fine_matrix_type == CS_MATRIX_MSR)
+  if (fine_matrix_type == CS_MATRIX_MSR) {
     _compute_coarse_quantities_msr(f, c);
 
+#if defined(HAVE_MPI)
+    if (c->n_ranks > 0 && merge_stride > 1) {
+      _native_from_msr(c);
+      _merge_grids(c, merge_stride, verbosity);
+      _msr_from_native(c);
+    }
+#endif
+  }
+
   else if (f->face_cell != NULL) {
+
+    BFT_MALLOC(c->_da, c->n_cols_ext * c->db_size[3], cs_real_t);
+    c->da = c->_da;
+
+    BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
+    c->xa = c->_xa;
+
     _compute_coarse_quantities_native(f, c, verbosity);
 
     /* Synchronize matrix's geometric quantities */
@@ -5843,26 +5985,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
       _merge_grids(c, merge_stride, verbosity);
 #endif
 
-    c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
-                                                  true,
-                                                  c->n_rows,
-                                                  c->n_cols_ext,
-                                                  c->n_faces,
-                                                  c->face_cell,
-                                                  c->halo,
-                                                  NULL);
-
-    c->_matrix = cs_matrix_create(c->matrix_struct);
-
-    cs_matrix_set_coefficients(c->_matrix,
-                               c->symmetric,
-                               c->db_size,
-                               c->eb_size,
-                               c->n_faces,
-                               c->face_cell,
-                               c->da,
-                               c->xa);
-
+    _msr_from_native(c);
   }
 
   c->matrix = c->_matrix;

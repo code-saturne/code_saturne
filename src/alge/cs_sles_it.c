@@ -5207,18 +5207,22 @@ cs_sles_it_solve(void                *context,
 
   /* Only call solver for "active" ranks */
 
+  bool local_solve = true;
 #if defined(HAVE_MPI)
-  if (c->caller_n_ranks < 2 || c->comm != MPI_COMM_NULL) {
+  if (c->comm == MPI_COMM_NULL) {
+    cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+    if (n_rows == 0) {
+      local_solve = false;
+      cvg = CS_SLES_CONVERGED;
+    }
+  }
 #endif
 
+  if (local_solve)
     cvg = c->solve(c,
                    a, _diag_block_size, rotation_mode, &convergence,
                    rhs, vx,
                    aux_size, aux_vectors);
-
-#if defined(HAVE_MPI)
-  }
-#endif
 
   /* Broadcast convergence info from "active" ranks to others*/
 
@@ -5534,6 +5538,8 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
 
   if (c->caller_comm != MPI_COMM_NULL)
     MPI_Comm_size(c->caller_comm, &(c->caller_n_ranks));
+  else
+    c->caller_n_ranks = 1;
 
   if (comm != cs_glob_mpi_comm)
     cs_halo_set_use_barrier(0);

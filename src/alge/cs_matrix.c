@@ -5719,6 +5719,7 @@ cs_matrix_create_by_local_restrict(const cs_matrix_t  *src)
 
   BFT_MALLOC(m, 1, cs_matrix_t);
   memcpy(m, src, sizeof(cs_matrix_t));
+  m->n_cols_ext = m->n_rows;
 
   m->structure = NULL;
   m->_structure = NULL;
