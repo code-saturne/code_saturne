@@ -462,6 +462,7 @@ void
 cs_time_step_define_nt_max(int  nt_max)
 {
   _time_step.nt_max = nt_max;
+  _time_step.t_max = -1.;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -476,6 +477,7 @@ void
 cs_time_step_define_t_max(double  t_max)
 {
   _time_step.t_max = t_max;
+  _time_step.nt_max = -1;
 }
 
 /*----------------------------------------------------------------------------*/
