@@ -137,14 +137,7 @@ call cs_gui_physical_model_select
 iihmpu = iihmpr
 call usppmo(iihmpu)
 
-! GUI ALE parameters
-if (iihmpr.eq.1) then
-  call uialin (nalinf, nalimx, epalim)
-endif
-
-! User C function
-call cs_user_model
-
+!     ALE
 !     Turbulence
 !     Chaleur massique variable ou non
 
@@ -153,6 +146,9 @@ call cs_user_model
 
 if (iihmpr.eq.1) then
 
+  ! ALE parameters
+  call uialin (nalinf, nalimx, epalim)
+  
   call csther()
 
   ! turbulence model choice
@@ -167,6 +163,9 @@ endif
 
 iihmpu = iihmpr
 call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
+
+! User C function
+call cs_user_model
 
 ! Activate CDO for ALE
 if (iale.eq.2) then
