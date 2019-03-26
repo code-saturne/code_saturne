@@ -118,7 +118,8 @@ void CS_PROCF(cplact, CPLACT)
  *----------------------------------------------------------------------------*/
 
 void
-cs_coupling_discover_mpi_apps(const char  *app_name);
+cs_coupling_discover_mpi_apps(const char  *app_name,
+                              const char  *forced_app_type);
 
 /*----------------------------------------------------------------------------
  * Finalize MPI coupling helper structures.
