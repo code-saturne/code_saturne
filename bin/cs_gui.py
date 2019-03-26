@@ -49,7 +49,7 @@ try:
                 'QTime', 'QUrl', 'QVariant'):
         sip.setapi(api, 2)
 except Exception:
-    print("Warning: error forcing SIP to force v2 API.")
+    pass
 
 try:
     from code_saturne.Base.QtCore    import *
