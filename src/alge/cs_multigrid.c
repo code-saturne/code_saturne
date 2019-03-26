@@ -347,6 +347,9 @@ const char *cs_multigrid_type_name[]
 /* Tunable settings */
 
 static int _k_cycle_hpc_merge_stride = 512;
+static int _k_cycle_hpc_recurse_threshold = 256; /* under this size, coarsest
+                                                    level solver does not
+                                                    use k-cycle preconditioning */
 
 /*============================================================================
  * Private function prototypes for recursive
@@ -1540,14 +1543,18 @@ _multigrid_create_k_cycle_bottom_coarsest(cs_multigrid_t  *parent)
       if (size > _k_cycle_hpc_merge_stride)
         mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE_HPC); /* recursive */
       else {
-        mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
-        mg->aggregation_limit = 8;
-        mg->k_cycle_threshold = -1;
+        if (size > _k_cycle_hpc_recurse_threshold) {
+          mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
+          mg->aggregation_limit = 8;
+          mg->k_cycle_threshold = -1;
+        }
       }
-      mg->caller_comm = parent->comm;
-      mg->comm = cs_grid_get_comm_merge(parent->comm,
-                                        _k_cycle_hpc_merge_stride);
-      mg->subtype = CS_MULTIGRID_COARSE;
+      if (mg != NULL) {
+        mg->caller_comm = parent->comm;
+        mg->comm = cs_grid_get_comm_merge(parent->comm,
+                                          _k_cycle_hpc_merge_stride);
+        mg->subtype = CS_MULTIGRID_COARSE;
+      }
     }
 
   }
