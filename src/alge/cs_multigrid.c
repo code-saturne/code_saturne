@@ -1424,8 +1424,8 @@ _multigrid_pc_create(cs_multigrid_type_t  mg_type)
        1,   /* n max iter for descent */
        1,   /* n max iter for ascent */
        500, /* n max iter for coarse solve */
-       0, 0, 0,     /* precond degree */
-       -1, -1, 10); /* precision multiplier */
+       0, 0, 0,    /* precond degree */
+       -1, -1, 1); /* precision multiplier */
     break;
 
   default:
@@ -1628,10 +1628,10 @@ _multigrid_create_k_cycle_bottom(cs_multigrid_t  *parent)
   cs_multigrid_set_solver_options
     (mg,
      CS_SLES_N_IT_TYPES, CS_SLES_N_IT_TYPES, CS_SLES_FCG,
-     1, /* n max cycles */
-     1, /* n max iter for descent */
-     1, /* n max iter for ascent */
-     mg->merge_stride,
+     1,   /* n max cycles */
+     1,   /* n max iter for descent */
+     1,   /* n max iter for ascent */
+     500, /* n max iter coarse */
      -1, -1, pc_degree_bottom,   /* precond degree */
      1, 1, 1);  /* precision multiplier */
 
@@ -3867,7 +3867,7 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
        1,    /* n max iter for ascent */
        50,   /* n max iter for coarse solve */
        -1, -1, 0,   /* precond degree */
-       -1, -1, 10); /* precision multiplier */
+       -1, -1, 1);  /* precision multiplier */
 
   return mg;
 }
