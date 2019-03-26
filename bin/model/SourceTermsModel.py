@@ -203,9 +203,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         return formula
 
 
-    def getGroundWaterSpeciesFormulaComponents(self, zone, scalar):
+    def getGroundWaterSpeciesFormulaComponents(self, zone, species):
 
-        exp = self.getGroundWaterSpeciesFormula(zone, scalar)
+        exp = self.getGroundWaterSpeciesFormula(zone, species)
         if not exp:
             exp = """Q = 0;"""
 
@@ -215,7 +215,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('z', 'cell center coordinate'),
                ('t', 'current time')]
 
-        name = self.th_sca.getScalarName(self.scalar)
+        name = self.th_sca.getScalarName(species)
         sym.append((name, 'current species'))
 
         for (nme, val) in self.notebook.getNotebookList():
