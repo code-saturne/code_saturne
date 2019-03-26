@@ -5728,8 +5728,25 @@ cs_grid_coarsen(const cs_grid_t  *f,
 
   }
 
-  if (fine_matrix_type == CS_MATRIX_MSR && c->relaxation <= 0)
-    _compute_coarse_quantities_msr(f, c);
+  if (fine_matrix_type == CS_MATRIX_MSR && c->relaxation <= 0) {
+
+   _compute_coarse_quantities_msr(f, c);
+
+    /* Merge grids if we are below the threshold */
+#if defined(HAVE_MPI)
+   if (merge_stride > 1 && c->n_ranks > 1 && recurse == 0) {
+      cs_gnum_t  _n_ranks = c->n_ranks;
+      cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
+      if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
+          || c->n_g_rows < merge_rows_glob_threshold) {
+        _native_from_msr(c);
+        _merge_grids(c, merge_stride, verbosity);
+        _msr_from_native(c);
+      }
+    }
+#endif
+
+}
 
   else if (f->face_cell != NULL) {
 
