@@ -1760,13 +1760,14 @@ class mei_to_c_interpreter:
                                         'volume_fraction_'+str(fId),
                                         exp, req, sym, [])
 
-                        # Enthalpy
-                        exp, req, sym = mfi.getFormulaComponents(z_id,
-                                                                 fId,
-                                                                 'enthalpy')
-                        self.init_block('ini', zone_name,
-                                        'enthalpy_'+str(fId),
-                                        exp, req, sym, [])
+                        # Enthalpy (only if energy resolution is activated)
+                        if mfm.getEnergyResolution(fId) == 'on':
+                            exp, req, sym = mfi.getFormulaComponents(z_id,
+                                                                     fId,
+                                                                     'enthalpy')
+                            self.init_block('ini', zone_name,
+                                            'enthalpy_'+str(fId),
+                                            exp, req, sym, [])
 
                         # Non condensables
                         for nc in ncm.getNonCondensableByFieldId(fId):

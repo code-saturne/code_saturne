@@ -290,7 +290,7 @@ cs_run(void)
      may have the option of assigning a name to this instance. */
 
 #if defined(HAVE_MPI)
-  cs_coupling_discover_mpi_apps(opts.app_name);
+  cs_coupling_discover_mpi_apps(opts.app_name, NULL);
 #endif
 
   if (opts.app_name != NULL)

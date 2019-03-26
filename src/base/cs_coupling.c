@@ -175,7 +175,8 @@ void CS_PROCF(cplact, CPLACT)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coupling_discover_mpi_apps(const char  *app_name)
+cs_coupling_discover_mpi_apps(const char  *app_name,
+                              const char  *forced_app_type)
 {
   int mpi_flag;
   int world_size;
@@ -209,12 +210,20 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
       bft_printf_flush();
     }
 
-    _cs_glob_coupling_mpi_app_world
-      = ple_coupling_mpi_set_create(_cs_coupling_sync_flag,
-                                    app_type,
-                                    app_name,
-                                    MPI_COMM_WORLD,
-                                    cs_glob_mpi_comm);
+    if (forced_app_type == NULL)
+      _cs_glob_coupling_mpi_app_world
+        = ple_coupling_mpi_set_create(_cs_coupling_sync_flag,
+                                      app_type,
+                                      app_name,
+                                      MPI_COMM_WORLD,
+                                      cs_glob_mpi_comm);
+    else
+      _cs_glob_coupling_mpi_app_world
+        = ple_coupling_mpi_set_create(_cs_coupling_sync_flag,
+                                      forced_app_type,
+                                      app_name,
+                                      MPI_COMM_WORLD,
+                                      cs_glob_mpi_comm);
 
     n_apps = ple_coupling_mpi_set_n_apps(_cs_glob_coupling_mpi_app_world);
     app_id = ple_coupling_mpi_set_get_app_id(_cs_glob_coupling_mpi_app_world);
