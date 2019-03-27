@@ -173,12 +173,12 @@ completed
 \underline{Examples:}
 
 \begin{list}{$\bullet$}{}
-\item duplicates all cases from the \textbf{repository} in the \textbf{destination}, compile all user files and exits;
+\item read \texttt{sample.xml}, create \textbf{destination} directory and exits;
 {\noindentgroup\begin{lstlisting}
 $ code_saturne studymanager -f sample.xml
 \end{lstlisting}}
 
-\item as above, and run all cases if defined in \texttt{sample.xml}
+\item duplicates all cases from the \textbf{repository} in the \textbf{destination}, compile all user files and run enabled cases;
 {\noindentgroup\begin{lstlisting}
 $ code_saturne studymanager -f sample.xml -r
 \end{lstlisting}}
