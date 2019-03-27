@@ -92,7 +92,7 @@ class StandardItemModelHeadLosses(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariat(self.headers[section])
+            return to_qvariant(self.headers[section])
         return None
 
 
