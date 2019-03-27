@@ -1560,7 +1560,7 @@ class mei_to_c_interpreter:
             gwm = GroundwaterModel(self.case)
 
             for zone in vlm.getZones():
-                z_id = zone.getCodeNumber()
+                z_id = str(zone.getCodeNumber())
                 zone_name = zone.getLabel()
 
                 nature_list = zone.getNatureList()
@@ -1612,7 +1612,7 @@ class mei_to_c_interpreter:
             stm = MainFieldsSourceTermsModel(self.case)
 
             for zone in vlm.getZones():
-                z_id = zone.getCodeNumber()
+                z_id = str(zone.getCodeNumber())
                 zone_name = zone.getLabel()
 
                 nature_list = zone.getNatureList()

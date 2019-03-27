@@ -463,7 +463,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         Formula for non condensable
         """
         exp, req, sym = self.mdl.getNonCondensableFormulaComponents(self.zone,
-                                                                    self.currentId,
+                                                                    self.currentid,
                                                                     self.currentNonCond)
         if not exp:
             exp = self.currentNonCondLabel + """ = 0;\n"""
