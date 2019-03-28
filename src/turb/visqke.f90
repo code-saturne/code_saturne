@@ -146,7 +146,7 @@ do iel = 1, ncel
   xe   = cvar_ep(iel)
   xrom = crom(iel)
   xmu  = viscl(iel)
-  xdist= w_dist(iel)
+  xdist= max(w_dist(iel),1.d-10)
 
   xmut = xrom*xk**2/xe
   xrey = xdist*sqrt(xk)*xrom/xmu
