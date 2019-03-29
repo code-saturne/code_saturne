@@ -1240,6 +1240,9 @@ do iscal = 1, nscal
 ! End loop over scalars
 enddo
 
+! When called before time loop, some values are not yet available.
+if (ntcabs .eq. ntpabs) return
+
 !===============================================================================
 ! 6.bis  CONVERSION EN RCODCL ICODCL
 !   (SI CE DERNIER N'A PAS DEJA ETE RENSEIGNE PAR L'UTILISATEUR)
