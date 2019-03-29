@@ -5173,6 +5173,9 @@ call typecl &
 ! 3. check the consistency of the bcs
 !===============================================================================
 
+! When called before time loop, some values are not yet available.
+if (ntcabs .eq. ntpabs) return
+
 call vericl                                                       &
  ( nvar   , nscal  ,                                              &
    itypfb , icodcl ,                                              &
