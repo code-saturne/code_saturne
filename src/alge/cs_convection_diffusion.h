@@ -296,15 +296,16 @@ cs_slope_test_vector_old(const cs_real_3_t   pi,
                  + grdpai[isou][2]*grdpaj[isou][2];
 
     if (i_massflux>0.) {
-      dcc[isou] = gradi[isou][0]*i_face_normal[0]
-                + gradi[isou][1]*i_face_normal[1]
-                + gradi[isou][2]*i_face_normal[2];
+      dcc[isou] =   gradi[isou][0]*i_face_normal[0]
+                  + gradi[isou][1]*i_face_normal[1]
+                  + gradi[isou][2]*i_face_normal[2];
       ddi[isou] = testi[isou];
       ddj[isou] = (pj[isou]-pi[isou])/distf *srfan;
-    } else {
-      dcc[isou] = gradj[isou][0]*i_face_normal[0]
-          + gradj[isou][1]*i_face_normal[1]
-          + gradj[isou][2]*i_face_normal[2];
+    }
+    else {
+      dcc[isou] =   gradj[isou][0]*i_face_normal[0]
+                  + gradj[isou][1]*i_face_normal[1]
+                  + gradj[isou][2]*i_face_normal[2];
       ddi[isou] = (pj[isou]-pi[isou])/distf *srfan;
       ddj[isou] = testj[isou];
     }
@@ -355,26 +356,27 @@ cs_slope_test_tensor(const cs_real_t   pi[6],
   /* Slope test */
 
   for (int ij = 0; ij < 6; ij++) {
-    *testij += gradsti[ij][0]*gradstj[ij][0]
-             + gradsti[ij][1]*gradstj[ij][1]
-             + gradsti[ij][2]*gradstj[ij][2];
-    testi[ij] = gradsti[ij][0]*i_face_normal[0]
-              + gradsti[ij][1]*i_face_normal[1]
-              + gradsti[ij][2]*i_face_normal[2];
-    testj[ij] = gradstj[ij][0]*i_face_normal[0]
-              + gradstj[ij][1]*i_face_normal[1]
-              + gradstj[ij][2]*i_face_normal[2];
+    *testij +=   gradsti[ij][0]*gradstj[ij][0]
+               + gradsti[ij][1]*gradstj[ij][1]
+               + gradsti[ij][2]*gradstj[ij][2];
+    testi[ij] =   gradsti[ij][0]*i_face_normal[0]
+                + gradsti[ij][1]*i_face_normal[1]
+                + gradsti[ij][2]*i_face_normal[2];
+    testj[ij] =   gradstj[ij][0]*i_face_normal[0]
+                + gradstj[ij][1]*i_face_normal[1]
+                + gradstj[ij][2]*i_face_normal[2];
 
     if (i_massflux > 0.) {
-      dcc[ij] = gradi[ij][0]*i_face_normal[0]
-              + gradi[ij][1]*i_face_normal[1]
-              + gradi[ij][2]*i_face_normal[2];
+      dcc[ij] =   gradi[ij][0]*i_face_normal[0]
+                + gradi[ij][1]*i_face_normal[1]
+                + gradi[ij][2]*i_face_normal[2];
       ddi[ij] = testi[ij];
       ddj[ij] = (pj[ij]-pi[ij])/distf *srfan;
-    } else {
-      dcc[ij] = gradj[ij][0]*i_face_normal[0]
-              + gradj[ij][1]*i_face_normal[1]
-              + gradj[ij][2]*i_face_normal[2];
+    }
+    else {
+      dcc[ij] =   gradj[ij][0]*i_face_normal[0]
+                + gradj[ij][1]*i_face_normal[1]
+                + gradj[ij][2]*i_face_normal[2];
       ddi[ij] = (pj[ij]-pi[ij])/distf *srfan;
       ddj[ij] = testj[ij];
     }
@@ -414,10 +416,9 @@ cs_i_compute_quantities(const int          ircflp,
                         cs_real_t         *pip,
                         cs_real_t         *pjp)
 {
-  cs_real_t gradpf[3] = {
-    0.5*(gradi[0] + gradj[0]),
-    0.5*(gradi[1] + gradj[1]),
-    0.5*(gradi[2] + gradj[2])};
+  cs_real_t gradpf[3] = {0.5*(gradi[0] + gradj[0]),
+                         0.5*(gradi[1] + gradj[1]),
+                         0.5*(gradi[2] + gradj[2])};
 
   /* reconstruction only if IRCFLP = 1 */
   *recoi = ircflp*(cs_math_3_dot_product(gradpf, diipf));
@@ -470,12 +471,9 @@ cs_i_compute_quantities_vector(const int          ircflp,
     /* reconstruction only if IRCFLP = 1 */
 
     recoi[isou] = ircflp*(cs_math_3_dot_product(dpvf, diipf));
-
-
     recoj[isou] = ircflp*(cs_math_3_dot_product(dpvf, djjpf));
 
     pip[isou] = pi[isou] + recoi[isou];
-
     pjp[isou] = pj[isou] + recoj[isou];
 
   }
@@ -525,11 +523,9 @@ cs_i_compute_quantities_tensor(const int          ircflp,
     /* reconstruction only if IRCFLP = 1 */
 
     recoi[isou] = ircflp*(cs_math_3_dot_product(dpvf, diipf));
-
     recoj[isou] = ircflp*(cs_math_3_dot_product(dpvf, djjpf));
 
     pip[isou] = pi[isou] + recoi[isou];
-
     pjp[isou] = pj[isou] + recoj[isou];
 
   }
@@ -784,7 +780,7 @@ cs_solu_f_val(const cs_real_3_t  cell_cen,
               const cs_real_t    p,
               cs_real_t         *pf)
 {
-  cs_real_3_t df;
+  cs_real_t df[3];
 
   df[0] = i_face_cog[0] - cell_cen[0];
   df[1] = i_face_cog[1] - cell_cen[1];
@@ -812,7 +808,7 @@ cs_solu_f_val_vector(const cs_real_3_t   cell_cen,
                      const cs_real_3_t   p,
                      cs_real_t           pf[3])
 {
-  cs_real_3_t df;
+  cs_real_t df[3];
 
   for (int jsou = 0; jsou < 3; jsou++)
     df[jsou] = i_face_cog[jsou] - cell_cen[jsou];
@@ -844,7 +840,7 @@ cs_solu_f_val_tensor(const cs_real_3_t   cell_cen,
                      const cs_real_6_t   p,
                      cs_real_t           pf[6])
 {
-  cs_real_3_t df;
+  cs_real_t df[3];
 
   for (int jsou = 0; jsou < 3; jsou++)
     df[jsou] = i_face_cog[jsou] - cell_cen[jsou];
@@ -910,9 +906,9 @@ cs_blend_f_val_vector(const double       blencp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_blend_f_val_tensor(const double       blencp,
-                      const cs_real_6_t  p,
-                      cs_real_t          pf[6])
+cs_blend_f_val_tensor(const double     blencp,
+                      const cs_real_t  p[6],
+                      cs_real_t        pf[6])
 {
   for (int isou = 0; isou < 6; isou++)
     pf[isou] = blencp*(pf[isou])+(1.-blencp)*p[isou];
@@ -1083,7 +1079,7 @@ cs_i_diff_flux(const int        idiffp,
                const cs_real_t  pipr,
                const cs_real_t  pjpr,
                const cs_real_t  i_visc,
-               cs_real_2_t      fluxij)
+               cs_real_t        fluxij[2])
 {
   fluxij[0] += idiffp*thetap*i_visc*(pipr -pjp);
   fluxij[1] += idiffp*thetap*i_visc*(pip -pjpr);
@@ -1367,8 +1363,8 @@ cs_i_cd_steady_upwind_tensor(const int        ircflp,
                              cs_real_t        pipr[6],
                              cs_real_t        pjpr[6])
 {
-  cs_real_6_t pir, pjr;
-  cs_real_6_t recoi, recoj;
+  cs_real_t pir[6], pjr[6];
+  cs_real_t recoi[6], recoj[6];
 
   cs_i_compute_quantities_tensor(ircflp,
                                  diipf,
@@ -1486,7 +1482,7 @@ cs_i_cd_unsteady_upwind_vector(const int        ircflp,
                                cs_real_t        pip[3],
                                cs_real_t        pjp[3])
 {
-  cs_real_3_t recoi, recoj;
+  cs_real_t recoi[3], recoj[3];
 
   cs_i_compute_quantities_vector(ircflp,
                                  diipf,
@@ -1536,7 +1532,7 @@ cs_i_cd_unsteady_upwind_tensor(const int        ircflp,
                                cs_real_t        pip[6],
                                cs_real_t        pjp[6])
 {
-  cs_real_6_t recoi, recoj;
+  cs_real_t recoi[6], recoj[6];
 
   cs_i_compute_quantities_tensor(ircflp,
                                  diipf,
@@ -1797,8 +1793,8 @@ cs_i_cd_steady_vector(const int           ircflp,
                       cs_real_t           pipr[3],
                       cs_real_t           pjpr[3])
 {
-  cs_real_3_t pir, pjr;
-  cs_real_3_t recoi, recoj;
+  cs_real_t pir[3], pjr[3];
+  cs_real_t recoi[3], recoj[3];
 
   cs_i_compute_quantities_vector(ircflp,
                                  diipf,
@@ -1951,8 +1947,8 @@ cs_i_cd_steady_tensor(const int           ircflp,
                       cs_real_t           pjpr[6])
 
 {
-  cs_real_6_t pir, pjr;
-  cs_real_6_t recoi, recoj;
+  cs_real_t pir[6], pjr[6];
+  cs_real_t recoi[6], recoj[6];
 
   cs_i_compute_quantities_tensor(ircflp,
                                  diipf,
@@ -2043,7 +2039,6 @@ cs_i_cd_steady_tensor(const int           ircflp,
   cs_blend_f_val_tensor(blencp,
                         pjr,
                         pjfrj);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2260,7 +2255,7 @@ cs_i_cd_unsteady_vector(const int           ircflp,
                         cs_real_t           pjp[3])
 
 {
-  cs_real_3_t recoi, recoj;
+  cs_real_t recoi[3], recoj[3];
 
   cs_i_compute_quantities_vector(ircflp,
                                  diipf,
@@ -2400,7 +2395,7 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
                         cs_real_t           pjp[6])
 
 {
-  cs_real_6_t recoi, recoj;
+  cs_real_t recoi[6], recoj[6];
 
   cs_i_compute_quantities_tensor(ircflp,
                                  diipf,
@@ -2790,10 +2785,10 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
                                      cs_real_t           pipr[3],
                                      cs_real_t           pjpr[3])
 {
-  cs_real_3_t pir, pjr;
-  cs_real_3_t recoi, recoj;
+  cs_real_t pir[3], pjr[3];
+  cs_real_t recoi[3], recoj[3];
   cs_real_t distf, srfan;
-  cs_real_3_t testij, tesqck;
+  cs_real_t testij[3], tesqck[3];
   int isou;
 
   distf = i_dist;
@@ -3019,8 +3014,8 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
                                  cs_real_t           pipr[3],
                                  cs_real_t           pjpr[3])
 {
-  cs_real_3_t pir, pjr;
-  cs_real_3_t recoi, recoj;
+  cs_real_t pir[3], pjr[3];
+  cs_real_t recoi[3], recoj[3];
   cs_real_t testij, tesqck;
   int isou;
 
@@ -3247,8 +3242,8 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
                                  cs_real_t           pipr[6],
                                  cs_real_t           pjpr[6])
 {
-  cs_real_6_t pir, pjr;
-  cs_real_6_t recoi, recoj;
+  cs_real_t pir[6], pjr[6];
+  cs_real_t recoi[6], recoj[6];
   cs_real_t testij, tesqck;
   int isou;
 
@@ -3647,9 +3642,9 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
                                        cs_real_t           pip[3],
                                        cs_real_t           pjp[3])
 {
-  cs_real_3_t recoi, recoj;
+  cs_real_t recoi[3], recoj[3];
   cs_real_t distf, srfan;
-  cs_real_3_t testij, tesqck;
+  cs_real_t testij[3], tesqck[3];
   int isou;
 
   distf = i_dist;
@@ -3821,7 +3816,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                                    cs_real_t           pip[3],
                                    cs_real_t           pjp[3])
 {
-  cs_real_3_t recoi, recoj;
+  cs_real_t recoi[3], recoj[3];
   cs_real_t testij, tesqck;
 
   cs_i_compute_quantities_vector(ircflp,
@@ -3991,7 +3986,7 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
                                    cs_real_t           pip[6],
                                    cs_real_t           pjp[6])
 {
-  cs_real_6_t recoi, recoj;
+  cs_real_t recoi[6], recoj[6];
   cs_real_t testij, tesqck;
   int isou;
 
@@ -4160,9 +4155,9 @@ cs_b_compute_quantities_tensor(const cs_real_3_t   diipb,
                                cs_real_t           recoi[6])
 {
   for (int isou = 0; isou < 6; isou++) {
-    recoi[isou] = ircflp * (gradi[isou][0]*diipb[0]
-        + gradi[isou][1]*diipb[1]
-        + gradi[isou][2]*diipb[2]);
+    recoi[isou] = ircflp * (  gradi[isou][0]*diipb[0]
+                            + gradi[isou][1]*diipb[1]
+                            + gradi[isou][2]*diipb[2]);
   }
 }
 
