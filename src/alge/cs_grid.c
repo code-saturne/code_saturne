@@ -5972,7 +5972,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
     _compute_coarse_quantities_msr(f, c);
 
 #if defined(HAVE_MPI)
-    if (c->n_ranks > 0 && merge_stride > 1) {
+    if (c->n_ranks > 1 && merge_stride > 1) {
       _native_from_msr(c);
       _merge_grids(c, merge_stride, verbosity);
       _msr_from_native(c);
@@ -5998,7 +5998,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
     /* Merge grids if we are below the threshold */
 
 #if defined(HAVE_MPI)
-    if (c->n_ranks > 0 && merge_stride > 1)
+    if (c->n_ranks > 1 && merge_stride > 1)
       _merge_grids(c, merge_stride, verbosity);
 #endif
 
