@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-03-10 22:46+0100\n"
+"POT-Creation-Date: 2019-03-30 16:57+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3234,16 +3234,22 @@ msgstr "Itérative (ancienne)"
 #, c-format
 msgid ""
 "\n"
-"Summary of gradient computations pour \"%s\" (%s):\n"
+"Summary of gradient computations for \"%s\" (%s):\n"
 "\n"
-"  Number of calls:     %12d\n"
-"  Total elapsed time:  %12.3f\n"
+"  Number of calls:       %d\n"
 msgstr ""
 "\n"
 "Bilan des calculs de gradient pour \"%s\" (%s) :\n"
 "\n"
-"  Nombre d'appels :      %12d\n"
-"  Temps écoulé cumulé :  %12.3f\n"
+"  Nombre d'appels :      %d\n"
+
+#, c-format
+msgid "  Number of iterations:  %d mean, %d min., %d max.\n"
+msgstr "  Nombre d'itérations :  %d moyen, %d min., %d max.\n"
+
+#, c-format
+msgid "  Total elapsed time:    %.3f\n"
+msgstr "  Temps total écoulé :   %.3f\n"
 
 #, c-format
 msgid ""
@@ -3284,6 +3290,14 @@ msgstr ""
 #, c-format
 msgid " %s: isweep = %d, normed residual: %e, norm: %e, var: %s\n"
 msgstr " %s: isweep = %d, norme du résidu : %e, norme : %e, var = %s\n"
+
+#, c-format
+msgid ""
+"\n"
+"Total elapsed time for all gradient computations:  %.3f s\n"
+msgstr ""
+"\n"
+"Temps total écoulé pour l'ensemble des calculs de gradients :  %.3f s\n"
 
 msgid "default"
 msgstr "défaut"

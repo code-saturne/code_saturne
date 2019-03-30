@@ -115,6 +115,10 @@ typedef struct _cs_gradient_info_t {
 
   unsigned             n_calls;            /* Number of times system solved */
 
+  int                  n_iter_min;         /* Minimum number of iterations */
+  int                  n_iter_max;         /* Minimum number of iterations */
+  unsigned long        n_iter_tot;         /* Total number of iterations */
+
   cs_timer_counter_t   t_tot;              /* Total time used */
 
 } cs_gradient_info_t;
@@ -141,6 +145,7 @@ const char *cs_gradient_type_name[]
 
 /* Timer statistics */
 
+static cs_timer_counter_t   _gradient_t_tot;     /* Total time in gradients */
 static int _gradient_stat_id = -1;
 
 /*============================================================================
@@ -279,6 +284,9 @@ _gradient_info_create(const char          *name,
   new_info->type = type;
 
   new_info->n_calls = 0;
+  new_info->n_iter_min = 0;
+  new_info->n_iter_max = 0;
+  new_info->n_iter_tot = 0;
 
   CS_TIMER_COUNTER_INIT(new_info->t_tot);
 
@@ -302,6 +310,30 @@ _gradient_info_destroy(cs_gradient_info_t  **this_info)
 }
 
 /*----------------------------------------------------------------------------
+ * Update the number of sweeps for gradient information
+ *
+ * parameters:
+ *   this_info <-> pointer to linear system info structure
+ *   n_iter    <-- number of iterations
+ *----------------------------------------------------------------------------*/
+
+static void
+_gradient_info_update_iter(cs_gradient_info_t  *this_info,
+                           int                  n_iter)
+{
+  if (n_iter > this_info->n_iter_max) {
+    this_info->n_iter_max = n_iter;
+    /* for first pass: */
+    if (this_info->n_calls == 0)
+      this_info->n_iter_min = n_iter;
+  }
+  else if (n_iter < this_info->n_iter_min)
+    this_info->n_iter_min = n_iter;
+
+  this_info->n_iter_tot += n_iter;
+}
+
+/*----------------------------------------------------------------------------
  * Output information regarding gradient computation.
  *
  * parameters:
@@ -315,11 +347,19 @@ _gradient_info_dump(cs_gradient_info_t *this_info)
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
-                  "Summary of gradient computations pour \"%s\" (%s):\n\n"
-                  "  Number of calls:     %12d\n"
-                  "  Total elapsed time:  %12.3f\n"),
+                  "Summary of gradient computations for \"%s\" (%s):\n\n"
+                  "  Number of calls:       %d\n"),
                 this_info->name, cs_gradient_type_name[this_info->type],
-                n_calls, this_info->t_tot.wall_nsec*1e-9);
+                n_calls);
+  if (this_info->n_iter_tot > 0)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Number of iterations:  %d mean, %d min., %d max.\n"),
+                  (int)(this_info->n_iter_tot / (unsigned long)n_calls),
+                  this_info->n_iter_min,
+                  this_info->n_iter_max);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  Total elapsed time:    %.3f\n"),
+                this_info->t_tot.wall_nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------
@@ -362,7 +402,6 @@ _find_or_add_system(const char          *name,
   /* If found, return */
 
   if (cmp_ret == 0)
-
     return cs_glob_gradient_systems[mid_id];
 
   /* Reallocate global array if necessary */
@@ -1977,6 +2016,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   var_name       <-- variable name
+ *   gradient_info  <-- pointer to performance logging structure, or NULL
  *   recompute_cocg <-- flag to recompute cocg
  *   nswrgp         <-- number of sweeps for gradient reconstruction
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
@@ -2000,6 +2040,7 @@ static void
 _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                                cs_mesh_quantities_t        *fvq,
                                const char                  *var_name,
+                               cs_gradient_info_t          *gradient_info,
                                bool                         recompute_cocg,
                                int                          nswrgp,
                                int                          idimtr,
@@ -2061,7 +2102,11 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   int n_sweeps = 0;
   cs_real_t residue = 0.;
 
-  if (nswrgp <  1) return;
+  if (nswrgp <  1) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
+    return;
+  }
 
   /* Reconstruct gradients for non-orthogonal meshes */
   /*-------------------------------------------------*/
@@ -2120,8 +2165,11 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   if (fvq->max_vol > 1)
     rnorm /= fvq->max_vol;
 
-  if (rnorm <= cs_math_epzero)
+  if (rnorm <= cs_math_epzero) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
     return;
+  }
 
   /* Vector OijFij is computed in CLDijP */
 
@@ -2382,6 +2430,9 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                __func__, var_name, n_sweeps,
                (int)(strlen(__func__)), " ", residue/rnorm, rnorm);
   }
+
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, n_sweeps);
 }
 
 /*----------------------------------------------------------------------------
@@ -3866,6 +3917,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
  *   var_name       <-- variable's name
+ *   gradient_info  <-- pointer to performance logging structure, or NULL
  *   halo_type      <-- halo type (extended or not)
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   n_r_sweeps     --> >1: with reconstruction
@@ -3883,6 +3935,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_mesh_quantities_t   *fvq,
                            const cs_internal_coupling_t *cpl,
                            const char                   *var_name,
+                           cs_gradient_info_t           *gradient_info,
                            cs_halo_type_t                halo_type,
                            int                           inc,
                            int                           n_r_sweeps,
@@ -3894,7 +3947,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_real_t              *c_weight,
                            cs_real_33_t        *restrict grad)
 {
-  int isweep, g_id, t_id;
+  int isweep = 0;
+  int g_id, t_id;
   cs_lnum_t face_id;
   cs_real_t l2_norm, l2_residual, vecfac, pond;
 
@@ -4132,7 +4186,11 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                    (int)(strlen(__func__)), " ", l2_residual/l2_norm, l2_norm);
       }
     }
+
   }
+
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, isweep);
 
   BFT_FREE(rhs);
 }
@@ -5325,6 +5383,7 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   var_name       <-- variable's name
+ *   gradient_info  <-- pointer to performance logging structure, or NULL
  *   halo_type      <-- halo type (extended or not)
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   n_r_sweeps     --> >1: with reconstruction
@@ -5340,6 +5399,7 @@ static void
 _iterative_tensor_gradient(const cs_mesh_t              *m,
                            const cs_mesh_quantities_t   *fvq,
                            const char                   *var_name,
+                           cs_gradient_info_t           *gradient_info,
                            cs_halo_type_t                halo_type,
                            int                           inc,
                            int                           n_r_sweeps,
@@ -5350,7 +5410,8 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                            const cs_real_6_t   *restrict pvar,
                            cs_real_63_t        *restrict grad)
 {
-  int isweep, g_id, t_id;
+  int isweep = 0;
+  int g_id, t_id;
   cs_lnum_t face_id;
   cs_real_t l2_norm, l2_residual, vecfac, pond;
 
@@ -5570,7 +5631,11 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                    (int)(strlen(__func__)), " ", l2_residual/l2_norm, l2_norm);
       }
     }
+
   }
+
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, isweep);
 
   BFT_FREE(rhs);
 }
@@ -5869,6 +5934,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
  *   fvq             <-- pointer to associated finite volume quantities
  *   cpl             <-- structure associated with internal coupling, or NULL
  *   var_name        <-- variable name
+ *   gradient_info   <-- pointer to performance logging structure, or NULL
  *   nswrgp          <-- number of sweeps for gradient reconstruction
  *   idimtr          <-- 0 if ivar does not match a vector or tensor
  *                         or there is no periodicity of rotation
@@ -5891,6 +5957,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                            cs_mesh_quantities_t           *fvq,
                            const cs_internal_coupling_t   *cpl,
                            const char                     *var_name,
+                           cs_gradient_info_t             *gradient_info,
                            int                             nswrgp,
                            int                             idimtr,
                            int                             hyd_p_flag,
@@ -5952,7 +6019,11 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   int n_sweeps = 0;
   cs_real_t l2_residual = 0.;
 
-  if (nswrgp < 1) return;
+  if (nswrgp < 1) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
+    return;
+  }
 
   bool  *coupled_faces = (cpl == NULL) ?
     NULL : (bool *)cpl->coupled_faces;
@@ -5966,8 +6037,11 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
   rnorm = _l2_norm_1(3*n_cells, (cs_real_t *)grad);
 
-  if (rnorm <= cs_math_epzero)
+  if (rnorm <= cs_math_epzero) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
     return;
+  }
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_3_t);
 
@@ -6012,7 +6086,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                 / (      weight[face_id]  * c_weight[cell_id1]
                   + (1.0-weight[face_id]) * c_weight[cell_id2]);
 
-            fexd[0] = 0.5 * (f_ext[cell_id1][0] + f_ext[cell_id2][0]);//TODO add porous contrib, check sign changed by Erwan for VOF...
+            // TODO add porous contribution, check sign changed by Erwan for VOF...
+            fexd[0] = 0.5 * (f_ext[cell_id1][0] + f_ext[cell_id2][0]);
             fexd[1] = 0.5 * (f_ext[cell_id1][1] + f_ext[cell_id2][1]);
             fexd[2] = 0.5 * (f_ext[cell_id1][2] + f_ext[cell_id2][2]);
 
@@ -6266,6 +6341,9 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                (int)(strlen(__func__)), " ", l2_residual/rnorm, rnorm);
   }
 
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, n_sweeps);
+
   BFT_FREE(rhs);
 }
 
@@ -6279,6 +6357,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
  * have already been synchronized.
  *
  * \param[in]       var_name        variable name
+ * \param[in]       gradient_info   performance logging structure, or NULL
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
@@ -6308,6 +6387,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
 static void
 _gradient_scalar(const char                    *var_name,
+                 cs_gradient_info_t            *gradient_info,
                  cs_gradient_type_t             gradient_type,
                  cs_halo_type_t                 halo_type,
                  int                            inc,
@@ -6389,6 +6469,7 @@ _gradient_scalar(const char                    *var_name,
                                fvq,
                                cpl,
                                var_name,
+                               gradient_info,
                                n_r_sweeps,
                                tr_dim,
                                hyd_p_flag,
@@ -6420,6 +6501,7 @@ _gradient_scalar(const char                    *var_name,
     _iterative_scalar_gradient_old(mesh,
                                    fvq,
                                    var_name,
+                                   gradient_info,
                                    recompute_cocg,
                                    n_r_sweeps,
                                    tr_dim,
@@ -6529,6 +6611,7 @@ _gradient_scalar(const char                    *var_name,
  * \brief  Compute cell gradient of vector field.
  *
  * \param[in]       var_name        variable name
+ * \param[in]       gradient_info   performance logging structure, or NULL
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
@@ -6551,6 +6634,7 @@ _gradient_scalar(const char                    *var_name,
 
 static void
 _gradient_vector(const char                    *var_name,
+                 cs_gradient_info_t            *gradient_info,
                  cs_gradient_type_t             gradient_type,
                  cs_halo_type_t                 halo_type,
                  int                            inc,
@@ -6619,6 +6703,7 @@ _gradient_vector(const char                    *var_name,
                                  fvq,
                                  cpl,
                                  var_name,
+                                 gradient_info,
                                  halo_type,
                                  inc,
                                  n_r_sweeps,
@@ -6718,6 +6803,7 @@ _gradient_vector(const char                    *var_name,
  * \brief  Compute cell gradient of tensor.
  *
  * \param[in]       var_name        variable name
+ * \param[in]       gradient_info   performance logging structure, or NULL
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
@@ -6729,13 +6815,14 @@ _gradient_vector(const char                    *var_name,
  * \param[in]       bc_coeff_a      boundary condition term a
  * \param[in]       bc_coeff_b      boundary condition term b
  * \param[in]       var             gradient's base variable
- * \param[out]      grad           gradient
-                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ * \param[out]      grad            gradient
+                                      (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _gradient_tensor(const char                *var_name,
+                 cs_gradient_info_t        *gradient_info,
                  cs_gradient_type_t         gradient_type,
                  cs_halo_type_t             halo_type,
                  int                        inc,
@@ -6798,6 +6885,7 @@ _gradient_tensor(const char                *var_name,
       _iterative_tensor_gradient(mesh,
                                  fvq,
                                  var_name,
+                                 gradient_info,
                                  halo_type,
                                  inc,
                                  n_r_sweeps,
@@ -7250,6 +7338,8 @@ cs_gradient_initialize(void)
 {
   assert(cs_glob_mesh != NULL);
 
+  CS_TIMER_COUNTER_INIT(_gradient_t_tot);
+
   int stats_root = cs_timer_stats_id_by_name("operations");
   if (stats_root > -1) {
     _gradient_stat_id = cs_timer_stats_create("operations",
@@ -7268,6 +7358,11 @@ void
 cs_gradient_finalize(void)
 {
   int ii;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Total elapsed time for all gradient computations:  %.3f s\n"),
+                _gradient_t_tot.wall_nsec*1e-9);
 
   /* Free system info */
 
@@ -7379,6 +7474,7 @@ cs_gradient_scalar(const char                *var_name,
   }
 
   _gradient_scalar(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7402,6 +7498,8 @@ cs_gradient_scalar(const char                *var_name,
 
   t1 = cs_timer_time();
 
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
@@ -7409,6 +7507,7 @@ cs_gradient_scalar(const char                *var_name,
 
   if (_gradient_stat_id > -1)
     cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7460,8 +7559,9 @@ cs_gradient_vector(const char                *var_name,
 
   bool update_stats = true;
 
+  t0 = cs_timer_time();
+
   if (update_stats == true) {
-    t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -7482,6 +7582,7 @@ cs_gradient_vector(const char                *var_name,
   /* Compute gradient */
 
   _gradient_vector(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7497,11 +7598,17 @@ cs_gradient_vector(const char                *var_name,
                    cpl,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7547,8 +7654,9 @@ cs_gradient_tensor(const char                *var_name,
 
   bool update_stats = true;
 
+  t0 = cs_timer_time();
+
   if (update_stats == true) {
-    t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -7564,6 +7672,7 @@ cs_gradient_tensor(const char                *var_name,
   /* Compute gradient */
 
   _gradient_tensor(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7577,11 +7686,17 @@ cs_gradient_tensor(const char                *var_name,
                    (const cs_real_6_t *)var,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7665,6 +7780,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
     gradient_info = _find_or_add_system(var_name, gradient_type);
 
   _gradient_scalar(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7687,6 +7803,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                    grad);
 
   t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;
@@ -7748,14 +7866,15 @@ cs_gradient_vector_synced_input(const char                *var_name,
 
   bool update_stats = true;
 
-  if (update_stats == true) {
-    t0 = cs_timer_time();
+  t0 = cs_timer_time();
+
+  if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
-  }
 
   /* Compute gradient */
 
   _gradient_vector(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7771,11 +7890,17 @@ cs_gradient_vector_synced_input(const char                *var_name,
                    cpl,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7819,14 +7944,15 @@ cs_gradient_tensor_synced_input(const char                *var_name,
 
   bool update_stats = true;
 
-  if (update_stats == true) {
-    t0 = cs_timer_time();
+  t0 = cs_timer_time();
+
+  if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
-  }
 
   /* Compute gradient */
 
   _gradient_tensor(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7840,11 +7966,17 @@ cs_gradient_tensor_synced_input(const char                *var_name,
                    var,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------
