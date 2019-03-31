@@ -1279,15 +1279,12 @@ Airbus, ONERA, SAFRAN, ANSYS, Pointwise, Inc., Numeca, and others,
 this format(\emph{CFD General Notation System}) is quite well established in
 the world of CFD. The concept is similar to that of \med, with a bigger
 emphasis on normalization of variable names or calculation information, and
-even richer possibilities. Contrary to \med, the first version of this format
-was limited to multi-bloc structured meshes, unstructured meshes having been
-added in CGNS 2.
+even richer possibilities.
 
 Slightly older than \med, this library was free from the start, with a good
 English documentation, and is thus much better known. It is more focused
 on CFD, where \med is more generic. A certain number of tools accompany
-the CGNS distribution, including a mesh visualizer (which does not handle
-polygonal faces although the format defines them), and an interpolation
+the CGNS distribution, including a mesh visualizer, and an interpolation
 tool.
 
 \CS should be able to read almost any mesh written in this format, though
@@ -1328,11 +1325,10 @@ also defining volume fields on these faces. More recent versions of the
 documentation make it clear that a field must be defined on all elements
 of maximum dimension in a zone, not on all elements.}
 
-Though many tools support CGNS, that support was often quite disappointing,
-at least for unstructured meshes, until recent years.
+Many tools support CGNS, though that support may have limitations.
 Some editors seem to use different means to mark zones to associate with
 boundary conditions than the ones recommended in the CGNS documentation, and
-some behaviours are worse. Also, many readers do not allow the user to
+some behaviours are worse. Also, some readers do not allow the user to
 choose between multiple CGNS bases (meshes in the \CS sense),
 so when outputting to CGNS, it may be necessary to output
 each post-processing mesh using a separate output.

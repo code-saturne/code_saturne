@@ -11,6 +11,8 @@ User changes:
 
 Architectural changes:
 
+- Update CGNS support for CGNS 3.4 compatibility.
+
 - GUI: force SIP API version to 2 for PqQt4. This allows removing
   the "to_qvariant" wrapper function and makes code more readable;
   the GUI will fail if called from external code using PyQt4 which

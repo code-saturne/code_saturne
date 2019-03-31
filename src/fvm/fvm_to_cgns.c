@@ -2209,8 +2209,6 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
 
   _define_section(current_section, section_id, section_name, &cgns_elt_type);
 
-  /* TODO add parallel version of the API */
-
   /* For non-parallel IO, use serializer */
 
   {
@@ -2220,9 +2218,11 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
     block_end += 1;
     block_start = block_end - _block_size;
 
-    cgsize_t  s_start = *global_counter;
+    cgsize_t  s_start = *global_counter + 1;
+    cgsize_t  g_offset = 0;
 
     cgsize_t *_block_connect = NULL;
+    cgsize_t *_block_offsets = NULL;
 
     cs_file_serializer_t *s = cs_file_serializer_create(sizeof(cgsize_t),
                                                         1,
@@ -2243,17 +2243,39 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
 
         cgsize_t connect_size = range[1] - range[0];
         cgsize_t  s_end  = s_start;
-        cs_lnum_t elt_count = 0;
+        cs_lnum_t elt_count = 0, new_count = 0;
+
+#if CGNS_VERSION >= 3400
+
+        if (range[0] == 1) { /* First pass */
+          BFT_MALLOC(_block_offsets, block_size+1, cgsize_t);
+          _block_offsets[0] = g_offset;
+        }
+
+        while (elt_count < connect_size) {
+          cs_lnum_t elt_size = _block_connect[elt_count++];
+          g_offset += elt_size;
+          _block_offsets[s_end-s_start+1] = g_offset;
+          for (cs_lnum_t i = 0; i < elt_size; i++) {
+            _block_connect[new_count++] = _block_connect[elt_count++];
+          }
+          s_end += 1;
+        }
+        s_end -= 1;
+
+#else
+
         while (elt_count < connect_size) {
 #if CGNS_VERSION < 3200
-          elt_count += _block_connect[elt_count] - cgns_elt_type;
+          elt_count += _block_connect[elt_count] - cgns_elt_type + 1;
 #else
-          elt_count += _block_connect[elt_count];
+          elt_count += _block_connect[elt_count] + 1;
 #endif
           s_end += 1;
         }
         s_end -= 1;
 
+#endif
 
         if (range[0] == 1) { /* First pass */
           retval = cg_section_partial_write(writer->index,
@@ -2262,7 +2284,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
                                             section_name,
                                             cgns_elt_type,
                                             s_start,
-                                            s_end,
+                                            s_start + (num_end - num_start) - 1,
                                             0, /* unsorted boundary elements */
                                             &section_index);
           if (retval != CG_OK)
@@ -2273,6 +2295,31 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
                         "Associated section name: \"%s\"\n%s"),
                       writer->name, base->name, section_name, cg_get_error());
         }
+
+#if CGNS_VERSION >= 3400
+
+        if (retval == CG_OK)
+          retval = cg_poly_elements_partial_write(writer->index,
+                                                  base->index,
+                                                  zone_index,
+                                                  section_index,
+                                                  s_start,
+                                                  s_end,
+                                                  _block_connect,
+                                                  _block_offsets);
+        if (retval != CG_OK)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("cg_poly_elements_partial_write() failed to write elements:\n"
+                      "Associated writer: \"%s\"\n"
+                      "Associated base: \"%s\"\n"
+                      "Associated section name: \"%s\"\n"
+                      "Associated range: [%llu, %llu]\n%s\n"),
+                    writer->name, base->name, section_name,
+                    (unsigned long long) s_start,
+                    (unsigned long long) s_end,
+                    cg_get_error());
+
+#else /* CGNS_VERSION < 3400 */
 
         if (retval == CG_OK)
           retval = cg_elements_partial_write(writer->index,
@@ -2294,11 +2341,15 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
                     (unsigned long long) s_end,
                     cg_get_error());
 
+#endif /* CGNS_VERSION < 3400 */
+
         s_start = s_end + 1;
 
       }
 
     } while (_block_connect != NULL);
+
+    BFT_FREE(_block_offsets);
 
     cs_file_serializer_destroy(&s);
   }
@@ -2456,13 +2507,11 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
                          int                          section_id,
                          cs_gnum_t                   *global_counter)
 {
-  int  i, j, section_index;
+  int   section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t)  cgns_elt_type; /* Definition in cgnslib.h */
 
-  cs_lnum_t   connect_size = 0;
   cs_gnum_t   elt_start = 0, elt_end = 0;
-  cgsize_t  *connect = NULL;
 
   const  int  zone_index = 1; /* We always use zone index = 1 */
   const fvm_writer_section_t *current_section = export_section;
@@ -2477,25 +2526,76 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
   elt_start = *global_counter + 1;
   elt_end = *global_counter + section->n_elements;
 
-  BFT_MALLOC(connect,
-             section->n_elements + section->connectivity_size,
-             cgsize_t);
+#if CGNS_VERSION >= 3400
 
-  for (j = 0; j < section->n_elements; j++) {
-#if CGNS_VERSION < 3200
-    connect[connect_size++]
-      = CGNS_ENUMV(NGON_n) + section->vertex_index[j+1]
-                           - section->vertex_index[j];
-#else
-    connect[connect_size++] =   section->vertex_index[j+1]
-                              - section->vertex_index[j];
-#endif
+  cs_lnum_t connect_size = section->connectivity_size;
 
-    for (i = section->vertex_index[j]; i < section->vertex_index[j+1]; i++)
-      connect[connect_size++] = section->vertex_num[i];
+  if (connect_size > 0) {
+
+    cs_lnum_t  offsets_size = section->n_elements + 1;
+
+    cgsize_t  *offsets, *connect;
+    BFT_MALLOC(offsets, offsets_size, cgsize_t);
+    BFT_MALLOC(connect, section->connectivity_size, cgsize_t);
+
+    offsets[0] = 0;
+    for (cs_lnum_t i = 0; i < offsets_size; i++)
+      offsets[i] = section->vertex_index[i];
+
+    for (cs_lnum_t i = 0; i < connect_size; i++)
+      connect[i] = section->vertex_num[i];
+
+    retval = cg_poly_section_write(writer->index,
+                                   base->index,
+                                   zone_index,
+                                   section_name,
+                                   cgns_elt_type,
+                                   elt_start,
+                                   elt_end,
+                                   0, /* unsorted boundary elements */
+                                   connect,
+                                   offsets,
+                                   &section_index);
+
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("cg_poly_section_write() failed to write polygonal elements:\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated base: \"%s\"\n"
+                  "Associated section name: \"%s\"\n%s"),
+                writer->name, base->name, section_name, cg_get_error());
+
+    BFT_FREE(offsets);
+    BFT_FREE(connect);
+
   }
 
-  if (connect != NULL)
+#else /* CGNS_VERSION < 3400 */
+
+  cs_lnum_t connect_size = section->n_elements + section->connectivity_size;
+
+  if (connect_size > 0) {
+
+    cgsize_t *connect;
+    BFT_MALLOC(connect, connect_size, cgsize_t);
+
+    connect_size = 0;
+    for (cs_lnum_t j = 0; j < section->n_elements; j++) {
+#if CGNS_VERSION < 3200
+      connect[connect_size++]
+        = CGNS_ENUMV(NGON_n) + section->vertex_index[j+1]
+                             - section->vertex_index[j];
+#else
+      connect[connect_size++] =   section->vertex_index[j+1]
+                                - section->vertex_index[j];
+#endif
+
+      for (cs_lnum_t i = section->vertex_index[j];
+           i < section->vertex_index[j+1];
+           i++)
+        connect[connect_size++] = section->vertex_num[i];
+    }
+
     retval = cg_section_write(writer->index,
                               base->index,
                               zone_index,
@@ -2507,17 +2607,21 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
                               connect,
                               &section_index);
 
-  if (retval != CG_OK)
-    bft_error(__FILE__, __LINE__, 0,
-              _("cg_section_write() failed to write polygonal elements:\n"
-                "Associated writer: \"%s\"\n"
-                "Associated base: \"%s\"\n"
-                "Associated section name: \"%s\"\n%s"),
-              writer->name, base->name, section_name, cg_get_error());
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("cg_section_write() failed to write polygonal elements:\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated base: \"%s\"\n"
+                  "Associated section name: \"%s\"\n%s"),
+                writer->name, base->name, section_name, cg_get_error());
+
+    BFT_FREE(connect);
+
+  }
+
+#endif /* CGNS_VERSION < 3400 */
 
   *global_counter += section->n_elements;
-
-  BFT_FREE(connect);
 
   return current_section->next;
 }
