@@ -167,6 +167,7 @@ typedef struct {
   int            nbr_brd;                           /* Nbr. éléments de bord  */
   int            parent;                            /* 0 si pas de parents,
                                                        1 sinon                */
+  cgsize_t      *offsets;                           /* Offsets                */
   cgsize_t      *elems;                             /* Connect. temporaire    */
 } ecs_loc_cgns_section_t;
 
@@ -694,6 +695,7 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
             ecs_error(__FILE__, __LINE__, 0,
                       _("CGNS error:\n%s"), cg_get_error());
 
+          ptr_section->offsets = NULL;
           ptr_section->elems = NULL;
 
           printf(_("      Section %2d: \"%s\";\n"
@@ -2108,8 +2110,27 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         else
           parentdata = NULL;
 
+#if CGNS_VERSION >= 3400
+
+        if (   ptr_section->type == CS_CG_ENUM(MIXED)
+            || ptr_section->type == CS_CG_ENUM(NFACE_n)
+            || ptr_section->type == CS_CG_ENUM(NGON_n)) {
+          nbr_elt_loc = ptr_section->num_elt_fin - ptr_section->num_elt_deb + 1;
+          ECS_MALLOC(ptr_section->offsets, nbr_elt_loc + 1, cgsize_t);
+          ret = cg_poly_elements_read(num_fic, num_base, num_zone, num_section,
+                                      ptr_section->elems, ptr_section->offsets,
+                                      parentdata);
+        }
+        else
+          ret = cg_elements_read(num_fic, num_base, num_zone, num_section,
+                                 ptr_section->elems, parentdata);
+
+#else
+
         ret = cg_elements_read(num_fic, num_base, num_zone, num_section,
                                ptr_section->elems, parentdata);
+
+#endif
 
         if (ret != CG_OK)
           ecs_error(__FILE__, __LINE__, 0,
@@ -2122,7 +2143,6 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
     }
 
   }
-
 
   /*--------------------------------------------------------*/
   /* Dimensionnement de la connectivité nodale des éléments */
@@ -2181,6 +2201,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         if (ptr_section->type == CS_CG_ENUM(MIXED)) {
 
           cpt_elt_loc = 0;
+
+          cgsize_t *elt_idx = ptr_section->offsets;
           ptr_ele = ptr_section->elems;
 
           while (cpt_elt_loc < nbr_elt_loc) {
@@ -2201,7 +2223,15 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 #else
             ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
             nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
-            ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som + 1;
+            if (ind_type != CS_CG_ENUM(NGON_n))
+              ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som + 1;
+            else if (elt_idx != NULL) {
+              nbr_som_elt = elt_idx[cpt_elt_loc+1] - elt_idx[cpt_elt_loc+1] - 1;
+              ptr_ele += nbr_som_elt + 1;
+            }
+            else
+              ecs_error(__FILE__, __LINE__, 0,
+                        _("CGNS: unhandled NGON_n element in MIXED section\n"));
 #endif
 
             cpt_elt_loc++;
@@ -2235,6 +2265,13 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         else if (ptr_section->type == CS_CG_ENUM(NGON_n)) {
 
+#if CGNS_VERSION >= 3400
+
+          cpt_elt_ent[ient] += nbr_elt_loc;
+          cpt_val_ent[ient] += ptr_section->offsets[nbr_elt_loc];
+
+#else
+
           cpt_elt_loc = 0;
           ptr_ele = ptr_section->elems;
 
@@ -2250,11 +2287,19 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           }
 
+#endif
+
         }
 
 #if CGNS_VERSION >= 3000
 
         else if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
+
+#if CGNS_VERSION >= 3400
+
+          cpt_elt_ent[ient] += nbr_elt_loc;
+
+#else
 
           cpt_elt_loc = 0;
           ptr_ele = ptr_section->elems;
@@ -2271,6 +2316,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             /* cpt_val_ent[ient] handled later */
 
           }
+
+#endif
 
         }
 
@@ -2463,6 +2510,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           ient = ECS_ENTMAIL_CEL;
 
+          cgsize_t *elt_idx = ptr_section->offsets;
           ptr_ele = ptr_section->elems;
 
           size_t   connect_size = 0;
@@ -2470,10 +2518,15 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           ecs_int_t n_elts_loc =    ptr_section->num_elt_fin
                                   - ptr_section->num_elt_deb + 1;
+
           for (ecs_int_t ielt = 0; ielt < n_elts_loc; ielt++) {
 
+#if CGNS_VERSION >= 3400
+            ecs_int_t nbr_fac_elt = elt_idx[ielt+1] - elt_idx[ielt];
+#else
             ecs_int_t nbr_fac_elt = *ptr_ele;
             ptr_ele += 1;
+#endif
 
             for (ecs_int_t ind_fac = 0; ind_fac < nbr_fac_elt; ind_fac++) {
               ecs_int_t num_fac = *(ptr_ele + ind_fac);
@@ -2493,6 +2546,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         }
 
 #endif
+
+        cgsize_t *elt_idx = ptr_section->offsets;
 
         ptr_ele = ptr_section->elems;
 
@@ -2522,7 +2577,10 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             }
 #else
             ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
-            nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
+            if (ind_type != CS_CG_ENUM(NGON_n))
+              nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
+            else
+              nbr_som_elt = elt_idx[cpt_elt_loc+1] - elt_idx[cpt_elt_loc+1] - 1;
 #endif
 
             ptr_ele += 1;
@@ -2582,8 +2640,12 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           else if (ptr_section->type == CS_CG_ENUM(NGON_n)) {
 
+#if CGNS_VERSION >= 3400
+            nbr_som_elt = elt_idx[cpt_elt_loc + 1] - elt_idx[cpt_elt_loc];
+#else
             nbr_som_elt = *ptr_ele;
             ptr_ele += 1;
+#endif
 
             ind_pos = cpt_elt_ent[ient];
             ind_val = elt_pos_som_ent[ient][ind_pos] - 1;
@@ -2603,8 +2665,13 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           else if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
 
+#if CGNS_VERSION >= 3400
+            ecs_int_t nbr_fac_elt =    elt_idx[cpt_elt_loc + 1]
+                                     - elt_idx[cpt_elt_loc];
+#else
             ecs_int_t nbr_fac_elt = *ptr_ele;
             ptr_ele += 1;
+#endif
 
             ind_pos = cpt_elt_ent[ient];
             ind_val = elt_pos_som_ent[ient][ind_pos] - 1;

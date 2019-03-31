@@ -65,6 +65,8 @@ Bug fixes
 Architectural changes
 ---------------------
 
+- Update CGNS support for CGNS 3.4 compatibility.
+
 - Allow detection of Catalyst for ParaView versions above 5.6.
 
 - Preprocessor: update Gmsh reader to handle GMSH v4 and v4.1 format.
