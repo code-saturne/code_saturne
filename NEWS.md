@@ -113,6 +113,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Update CGNS support for CGNS 3.4 compatibility.
+
 - Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
 
 - Handle mathematical expression in GUI by generating corresponding C code
