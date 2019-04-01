@@ -610,9 +610,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgns",
-                    version="3.3.1",
-                    archive="CGNS-3.3.1.tar.gz",
-                    url="https://github.com/CGNS/CGNS/archive/v3.3.1.tar.gz")
+                    version="3.4.0",
+                    archive="CGNS-3.4.0.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v3.4.0.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
