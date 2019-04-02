@@ -150,6 +150,7 @@ do iel = 1, ncel
 
   xmut = xrom*xk**2/xe
   xrey = xdist*sqrt(xk)*xrom/xmu
+  xttke = xk/xe
   xss = xttke*sqrt(.5d0*s2(iel))
 
   xfmu = 1.d0-exp(-2.9d-2*xrey**.5d0-1.1d-4*xrey**2.d0)
