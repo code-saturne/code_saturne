@@ -1501,7 +1501,6 @@ _ensure_zones_order(void)
  *
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF (csther, CSTHER) (void)
 {
   cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
@@ -1539,21 +1538,10 @@ void CS_PROCF (csther, CSTHER) (void)
 }
 
 /*----------------------------------------------------------------------------
- * Turbulence model.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSTURB (ITURB, IWALLF, IGRAKE, IGRAKI, XLOMLG)
- * *****************
- *
- * INTEGER          ITURB   -->   turbulence model
- * INTEGER          IWALLF  -->   wall law treatment
- * INTEGER          IGRAKE  -->   k-eps gravity effects
- * INTEGER          IGRAKI  -->   Rij-eps gravity effects
- * DOUBLE PRECISION XLOMLG  -->   mixing_length_scale
+ * Turbulence model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csturb, CSTURB) (void)
+void cs_gui_turb_model(void)
 {
   cs_tree_node_t *tn_t = cs_tree_get_node(cs_glob_tree,
                                           "thermophysical_models/turbulence");
@@ -1633,6 +1621,29 @@ void CS_PROCF (csturb, CSTURB) (void)
     wall_fnt->iwallf = (cs_wall_f_type_t)iwallf;
   }
 
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--model: %s\n", model);
+  bft_printf("--iturb = %i\n", turb_mdl->iturb);
+  bft_printf("--igrake = %i\n", rans_mdl->igrake);
+  bft_printf("--igrari = %i\n", rans_mdl->igrari);
+  bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
+  bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Define reference length and reference velocity for initialization of the
+ * turbulence variables
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_turb_ref_values(void)
+{
+  cs_tree_node_t *tn_t = cs_tree_get_node(cs_glob_tree,
+                                          "thermophysical_models/turbulence");
+
+  cs_turb_model_t *turb_mdl = cs_get_glob_turb_model();
+
   if (turb_mdl->iturb != 0) {
     const char* length_choice = NULL;
     cs_turb_ref_values_t *ref_values = cs_get_glob_turb_ref_values();
@@ -1655,12 +1666,6 @@ void CS_PROCF (csturb, CSTURB) (void)
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--model: %s\n", model);
-  bft_printf("--iturb = %i\n", turb_mdl->iturb);
-  bft_printf("--igrake = %i\n", rans_mdl->igrake);
-  bft_printf("--igrari = %i\n", rans_mdl->igrari);
-  bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
-  bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
   bft_printf("--almax = %f\n", ref_values->almax);
   bft_printf("--uref  = %f\n", ref_values->uref);
 #endif
