@@ -478,8 +478,12 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                             'specific_heat', 'thermal_conductivity', 'surface_tension'))
         node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
 
-        c = node['choice']
-        self.isInList(c, ('constant', 'user_law', 'table_law'))
+        if node:
+            c = node['choice']
+            self.isInList(c, ('constant', 'user_law', 'table_law'))
+        else:
+            c = None
+
         return c
 
 
