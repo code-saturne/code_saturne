@@ -1643,6 +1643,9 @@ cs_log_iteration_clipping_field(int               f_id,
 void
 cs_log_l2residual(void)
 {
+  if (cs_glob_rank_id > 0)
+    return;
+
   const cs_time_step_t *ts = cs_glob_time_step;
   const int n_fields = cs_field_n_fields();
 
