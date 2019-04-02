@@ -128,43 +128,39 @@ iihmpr = cs_gui_file_is_loaded()
 ! 1. Initialize model settings
 !===============================================================================
 
-! GUI
+! Flow model selection through GUI
 
 call cs_gui_physical_model_select
 
-! User subroutine
+! Flow model selection through user Fortran subroutine
 
 iihmpu = iihmpr
 call usppmo(iihmpu)
 
-!     ALE
-!     Turbulence
-!     Chaleur massique variable ou non
-
-!   - Interface Code_Saturne
-!     ======================
+! Other models selection through GUI
 
 if (iihmpr.eq.1) then
 
   ! ALE parameters
   call uialin (nalinf, nalimx, epalim)
-  
-  call csther()
+
+  ! thermal model
+  call csther
 
   ! turbulence model choice
-  ! and reference values (uref, almax)
-  call csturb()
+  call cs_gui_turb_model
 
-  call cscpva()
+  ! constant or variable specific heat
+  call cscpva
 
 endif
 
-! User subroutine
+! Other models selection through user Fortran subroutine
 
 iihmpu = iihmpr
 call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
 
-! User C function
+! Flow and other models selection through user C function
 call cs_user_model
 
 ! Activate CDO for ALE
@@ -173,7 +169,6 @@ if (iale.eq.2) then
 endif
 
 ! Other model parameters, including user-defined scalars
-!-------------------------------------------------------
 
 if (iihmpr.eq.1) then
   call cs_gui_user_variables
@@ -295,6 +290,9 @@ if (iihmpr.eq.1) then
 
   ! Gravity, physical properties
   call csphys(viscv0, visls0, itempk)
+
+  ! Turbulence reference values (uref, almax)
+  call cs_gui_turb_ref_values
 
   ! Scamin, scamax, turbulent flux model
   call cssca2(iturt)

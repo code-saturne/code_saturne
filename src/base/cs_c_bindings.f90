@@ -1038,6 +1038,26 @@ module cs_c_bindings
       integer(c_int), value :: boundary_projection
     end subroutine cs_bad_cells_regularisation_sym_tensor
 
+    !---------------------------------------------------------------------------
+
+    !> Interface to C function defining turbulence model through the GUI.
+
+    subroutine cs_gui_turb_model()  &
+      bind(C, name='cs_gui_turb_model')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_turb_model
+
+    !---------------------------------------------------------------------------
+
+    !> Interface to C function defining reference length and reference velocity
+    !> for the initialization of the turbulence variables through the GUI.
+
+    subroutine cs_gui_turb_ref_values()  &
+      bind(C, name='cs_gui_turb_ref_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_turb_ref_values
 
     !---------------------------------------------------------------------------
 

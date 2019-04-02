@@ -56,20 +56,20 @@ BEGIN_C_DECLS
  *
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF (csther, CSTHER) (void);
 
 /*----------------------------------------------------------------------------
- * Turbulence model.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSTURB
- * *****************
- *
+ * Turbulence model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csturb, CSTURB) (void);
+void cs_gui_turb_model(void);
+
+/*----------------------------------------------------------------------------
+ * Define reference length and reference velocity for the initialization of
+ * the turbulence variables
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_turb_ref_values(void);
 
 /*----------------------------------------------------------------------------
  * Specific heat variable or constant indicator.
