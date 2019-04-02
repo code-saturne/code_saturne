@@ -44,44 +44,63 @@ implicit none
 !-----------------------------------------------
 
 !   Arrays specific to values read in the input meteo file:
-!> tmmet ---> time (in sec) of the meteo profile
+
+!> time (in sec) of the meteo profile
 double precision, allocatable, dimension(:) :: tmmet
-!> zdmet ---> altitudes of the dynamic profiles (read in the input meteo file)
+
+!> altitudes of the dynamic profiles (read in the input meteo file)
 double precision, allocatable, dimension(:) :: zdmet
-!> ztmet --> altitudes of the temperature profile (read in the input meteo file)
+
+!> altitudes of the temperature profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: ztmet
-!> umet --> meteo u  profiles (read in the input meteo file)
+
+!> meteo u  profiles (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: umet
-!> vmet --> meteo  v profiles (read in the input meteo file)
+
+!> meteo  v profiles (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: vmet
-!> wmet  --> meteo w profiles - unused
+
+!> meteo w profiles - unused
 double precision, allocatable, dimension(:,:) :: wmet
-!> ekmet --->  meteo turbulent kinetic energy profile (read in the input meteo file)
+
+!> meteo turbulent kinetic energy profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: ekmet
-!> epmet ---> meteo turbulent dissipation profile (read in the input meteo file)
+
+!> meteo turbulent dissipation profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: epmet
-!> ttmet --->  meteo temperature (Celsius) profile (read in the input meteo file)
+
+!> meteo temperature (Celsius) profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: ttmet
-!> qvmet ---> meteo specific humidity profile (read in the input meteo file)
+
+!> meteo specific humidity profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: qvmet
-!> ncmet ---> meteo specific drplet number profile (read in the input meteo file)
+
+!> meteo specific drplet number profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: ncmet
-!> pmer  ---> Sea level pressure (read in the input meteo file)
+
+!> Sea level pressure (read in the input meteo file)
 double precision, allocatable, dimension(:) :: pmer
-!> xmet --> X axis cooordinates of the meteo profile (read in the input meteo file)
+
+!> X axis cooordinates of the meteo profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: xmet
-!> ymet --> Y axis cooordinates of the meteo profile (read in the input meteo file)
+
+!> Y axis cooordinates of the meteo profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: ymet
 
 !   Arrays specific to values calculated from the meteo file (cf atlecm.f90):
-!> rmet -->  density profile
+
+!> density profile
 double precision, allocatable, dimension(:,:) :: rmet
-!> tpmet -->  potential temperature profile
+
+!> potential temperature profile
 double precision, allocatable, dimension(:,:) :: tpmet
-!> phmet -->  hydrostatic pressure from Laplace integration
+
+!> hydrostatic pressure from Laplace integration
 double precision, allocatable, dimension(:,:) :: phmet
+
 !> Diagnosed nebulosity
 double precision, allocatable, dimension(:) :: nebdia
+
 !> fractional nebulosity
 double precision, allocatable, dimension(:) :: nn
 
@@ -96,11 +115,14 @@ integer, save :: intdrp
 ! 1.3 Pointers for the positions of the properties for the specific phys.
 !------------------------------------------------------------------------
 !   Properties specific to the atmospheric physics:
-!> itempc---> temperature (in celsius)
+
+!> temperature (in Celsius)
 integer, save :: itempc
-!> iliqwt---> liquid water content
+
+!> liquid water content
 integer, save :: iliqwt
-!> imomst --> momentum source term field id (useful when iatmst > 0)
+
+!> momentum source term field id (useful when iatmst > 0)
 integer, save :: imomst
 
 !----------------------------------------------------------------------------
@@ -110,35 +132,43 @@ integer, save :: imomst
 ! 2.1 Data specific to the input meteo profile
 !----------------------------------------------
 
-!> imeteo --> flag for reading the meteo input file
-!>-        = 0 -> no reading
-!>-        = 1 -> reading
+!>flag for reading the meteo input file
+!> - = 0 -> no reading
+!> - = 1 -> reading
 integer, save :: imeteo
-!> nbmetd --> numbers of altitudes for the dynamics
+
+!> numbers of altitudes for the dynamics
 integer, save :: nbmetd
-!> nbmett --> numbers of altitudes for the temperature and specific humidity
+
+!> numbers of altitudes for the temperature and specific humidity
 integer, save :: nbmett
-!> nbmetm --> numbers of time steps for the meteo profiles
+
+!> numbers of time steps for the meteo profiles
 integer, save :: nbmetm
-!> iprofm --> read zone boundary conditions from profile
+
+!> read zone boundary conditions from profile
 integer, save :: iprofm(nozppm)
-!> iautom --> automatic inlet/outlet boundary condition flag
-!>            (0: not auto (default); 1,2: auto)
-!>            When meteo momentum source terms are activated (iatmst = 1),
-!>            iautom = 1 corresponds to a Dirichlet on the pressure and a
-!>            Neumann on the velocity, whereas iautom = 2 imposes a Dirichlet
-!>            on both pressure and velocity
+
+!> automatic inlet/outlet boundary condition flag
+!> (0: not auto (default); 1,2: auto)
+!> When meteo momentum source terms are activated (iatmst > 0),
+!> iautom = 1 corresponds to a Dirichlet on the pressure and a
+!> Neumann on the velocity, whereas iautom = 2 imposes a Dirichlet
+!> on both pressure and velocity
 integer, allocatable, dimension(:) :: iautom
-!> initmeteo --> use meteo profile for variables initialization
-!>                  (0: not used; 1: used (default))
+
+!> use meteo profile for variables initialization
+!> (0: not used; 1: used (default))
 integer, save :: initmeteo
-!> iatmst --> add a momentum source term based on the meteo profile
+
+!> add a momentum source term based on the meteo profile
 integer, save :: iatmst
-!> theo_interp --> flag for meteo velocity field interpolation
-!>                 0: linear interpolation of the meteo profile
-!>                 1: the user can directly impose the exact meteo velocity
-!>                 by declaring the 'meteo_velocity' field
-!>                 Useful for iatmst = 1
+
+!> flag for meteo velocity field interpolation
+!> - 0: linear interpolation of the meteo profile
+!> - 1: the user can directly impose the exact meteo velocity
+!> by declaring the 'meteo_velocity' field
+!> Useful for iatmst = 1
 integer, save :: theo_interp
 
 ! 2.1 Constant specific to the physics (defined in atini1.f90)
@@ -146,43 +176,55 @@ integer, save :: theo_interp
 
 !> reference pressure (to compute potential temp: 1.0d+5)
 double precision, save:: ps
+
 !> ratio gaz constant h2o/ dry air: 1.608d0
 double precision, save:: rvsra
+
 !> ratio Cp h2o/ dry air: 1.866d0
 double precision, save:: cpvcpa
+
 !> latent heat of evaporation: 2.501d+6
 double precision, save:: clatev
+
 !> temperature gradient for the standard atmosphere (-6.5d-03 K/m)
 double precision, save:: gammat
+
 !> rvsra*rair
 double precision, save:: rvap
 
 ! 2.2. Space and time reference of the run
 !-------------------------------------------------------------------------------
 
-!> syear --> starting year
+!> starting year
 integer, save:: syear
-!> squant --> starting quantile
+
+!> starting quantile
 integer, save:: squant
-!> shour --> starting hour
+
+!> starting hour
 integer, save:: shour
-!> smin --> starting min
+
+!> starting min
 integer, save:: smin
-!> ssec --> starting second
+
+!> starting second
 double precision, save :: ssec
-!> xlon --> longitude of the domain origin
+
+!> longitude of the domain origin
 double precision, save:: xlon
-!> xlat --> latitude of the domain origin
+
+!> latitude of the domain origin
 double precision, save:: xlat
 
 ! 2.3 Data specific to the meteo profile above the domain
 !--------------------------------------------------------
 !> Number of vertical levels (cf. 1D radiative scheme
 integer, save:: nbmaxt
-!> ihpm --> flag to compute the hydrostastic pressure by Laplace integration
-!>           in the meteo profiles
-!>-     = 0 : bottom to top Laplace integration, based on P(sea level) (default)
-!>-     = 1 : top to bottom Laplace integration based on P computed for
+
+!> flag to compute the hydrostastic pressure by Laplace integration
+!> in the meteo profiles
+!> = 0 : bottom to top Laplace integration, based on P(sea level) (default)
+!> = 1 : top to bottom Laplace integration based on P computed for
 !>            the standard atmosphere at z(nbmaxt)
 integer, save:: ihpm
 
@@ -190,41 +232,51 @@ integer, save:: ihpm
 ! 2.4 Data specific to the 1D vertical grid:
 !-------------------------------------------
 
-!> ivert  --> flag for the definition of the vertical grid
-!>-      -1 : no vertical grid (default)
-!>-       0 : automatic definition
-!>-       1 : definition by the user in cs_user_atmospheric_model.f90
+!> flag for the definition of the vertical grid
+!> - -1 : no vertical grid (default)
+!> -  0 : automatic definition
+!> -  1 : definition by the user in cs_user_atmospheric_model.f90
 integer, save:: ivert
-!> nvert  --> number of vertical arrays
+
+!> number of vertical arrays
 integer, save:: nvert
-!> kvert  --> number of levels (up to the top of the domain)
+
+!> number of levels (up to the top of the domain)
 integer, save:: kvert
-!> kmx    --> Number of levels (up to 11000 m if ray1d used)
-!>                    (automatically computed)
+
+!> Number of levels (up to 11000 m if ray1d used)
+!> (automatically computed)
 integer, save:: kmx
 
 ! 2.5 Data specific to the 1d atmospheric radiative module:
 !-------------------------------------------------------------------------------
-!> iatra1 -->  flag for the use of the 1d atmo radiative model
-!>-      = 0 no use (default)
-!>-      = 1 use
+!> flag for the use of the 1d atmo radiative model
+!> - 0 no use (default)
+!> - 1 use
 integer, save:: iatra1
-!> nfatr1 --> 1d radiative model pass frequency
+
+!> 1d radiative model pass frequency
 integer, save:: nfatr1
-!> iqv0   --> flag for the standard atmo humidity profile
-!>-      = 0 : q = 0 (default)
-!>-      = 1 : q = decreasing exponential
+
+!> flag for the standard atmo humidity profile
+!> - 0: q = 0 (default)
+!> - 1: q = decreasing exponential
 integer, save:: iqv0
+
 !> pointer for 1D infrared profile
 integer, save:: idrayi
+
 !> pointer for 1D solar profile
 integer, save:: idrayst
+
 !> grid formed by 1D profiles
 integer, save:: igrid
+
 !> Flag for the computation of downward and upward infrared radiative fluxes
 !> 0: disabled
 !> 1: enabled
 integer, save:: irdu
+
 !> Flag for storage of downward and upward solar radiative fluxes
 !> 0: disabled
 !> 1: enabled
@@ -235,42 +287,56 @@ integer, save:: soldu
 
 !> horizontal coordinates of the vertical grid
 double precision, allocatable, dimension(:,:) :: xyvert
+
 !> vertical grid for 1D radiative scheme initialize in
 !>       cs_user_atmospheric_model.f90
 double precision, allocatable, dimension(:) :: zvert
+
 !> absorption for CO2 + 03
 double precision, allocatable, dimension(:) :: acinfe
+
 !> differential absorption for CO2 + 03
 double precision, allocatable, dimension(:) :: dacinfe
+
 !> absorption for CO2 only
 double precision, allocatable, dimension(:,:) :: aco2, aco2s
+
 !> differential absorption for CO2 only
 double precision, allocatable, dimension(:,:) :: daco2, daco2s
+
 !> idem acinfe, flux descendant
 double precision, allocatable, dimension(:) :: acsup, acsups
+
 !> internal variable for 1D radiative model
 double precision, allocatable, dimension(:) :: dacsup, dacsups
+
 !> internal variable for 1D radiative model
 double precision, allocatable, dimension(:) :: tauzq
+
 !> internal variable for 1D radiative model
 double precision, allocatable, dimension(:) :: tauz
+
 !> internal variable for 1D radiative model
 double precision, allocatable, dimension(:) :: zq
+
 !> internal variable for 1D radiative model
 double precision, save :: tausup
+
 !> internal variable for 1D radiative model
 double precision, allocatable, dimension(:) :: zray
 double precision, allocatable, dimension(:,:) :: rayi, rayst
+
 !> Upward and downward radiative fluxes (infrared, solar) along each vertical
 double precision, allocatable, dimension(:,:) :: iru, ird, solu, sold
-
 
 ! 3.0 Data specific to the ground model
 !-------------------------------------------------------------------------------
 !> iatsoil  --> flag to use the ground model
 integer, save:: iatsoil
+
 !> Water content of the first ground reservoir
 double precision, save:: w1ini
+
 !> Water content of the second ground reservoir
 double precision, save:: w2ini
 
@@ -279,25 +345,29 @@ double precision, save:: w2ini
 !  -------------------------------------------------------------------------------
 
 !> Option for subgrid models
-!>-   modsub = 0 : the simplest parameterization (for numerical verifications)
-!>-   modsub = 1 : Bechtold et al. 1995 (Luc Musson-Genon)
-!>-   modsub = 2 : Bouzereau et al. 2004
-!>-   modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
+!>  - modsub = 0 : the simplest parameterization (for numerical verifications)
+!>  - modsub = 1 : Bechtold et al. 1995 (Luc Musson-Genon)
+!>  - modsub = 2 : Bouzereau et al. 2004
+!>  - modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
 !>                Deardorff 1977
 integer, save::  modsub
+
 !> Option for liquid water content distribution models
-!>-   moddis = 1 : all or nothing
-!>-   moddis = 2 : Gaussian distribution
+!>  - moddis = 1 : all or nothing
+!>  - moddis = 2 : Gaussian distribution
 integer, save::  moddis
+
 !> Option for nucleation
-!>-   modnuc = 0 : without nucleation
-!>-   modnuc = 1 : Pruppacher and Klett 1997
-!>-   modnuc = 2 : Cohard et al. 1998,1999
-!>-   modnuc = 3 : Abdul-Razzak et al. 1998,2000
+!>  - modnuc = 0 : without nucleation
+!>  - modnuc = 1 : Pruppacher and Klett 1997
+!>  - modnuc = 2 : Cohard et al. 1998,1999
+!>  - modnuc = 3 : Abdul-Razzak et al. 1998,2000
 !>  logaritmic standard deviation of the log-normal law of the droplet spectrum
 integer, save::  modnuc
+
 !> sedimentation flag
 integer, save::  modsedi
+
 !> deposition flag
 integer, save:: moddep
 
