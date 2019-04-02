@@ -3,6 +3,8 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Avoid opening residuals.csv from all ranks.
+
 - Fix for time moment which start is defined by a time value equal or close to
   a time step value.
 
