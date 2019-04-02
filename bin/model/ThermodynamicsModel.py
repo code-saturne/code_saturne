@@ -423,7 +423,10 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
-        return node.xmlGetString('formula')
+        if node:
+            return node.xmlGetString('formula')
+        else:
+            return None
 
 
     @Variables.undoLocal
