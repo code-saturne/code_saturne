@@ -334,7 +334,7 @@ do ifac = 1, nfabor
 
           !  Humid Atmosphere
           if ( ippmod(iatmos).eq.2 ) then
-            if (rcodcl(ifac,isca(itotwt),1).gt.rinfin*0.5d0)  then
+            if (rcodcl(ifac,isca(iymw),1).gt.rinfin*0.5d0)  then
               if (imbrication_flag .and. cressman_qw)then
                 qvent = qw_bord(ifac)
               else
@@ -342,7 +342,7 @@ do ifac = 1, nfabor
                 !==========
                 (nbmett, nbmetm, ztmet, tmmet, qvmet, zent, ttcabs, qvent )
               endif
-              rcodcl(ifac,isca(itotwt),1) = qvent
+              rcodcl(ifac,isca(iymw),1) = qvent
             endif
 
             if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then

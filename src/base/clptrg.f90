@@ -136,7 +136,7 @@ use field
 use lagran
 use turbomachinery
 use cs_c_bindings
-use atincl, only: itotwt, iliqwt, modsedi, moddep
+use atincl, only: iymw, iliqwt, modsedi, moddep
 
 !===============================================================================
 
@@ -620,7 +620,7 @@ cpro_rugt => null()
 if (ippmod(iatmos).ge.1) then
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
   if (ippmod(iatmos).eq.2) then
-    call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+    call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
     call field_get_val_s(iliqwt, cpro_liqwt)
 
     if (modsedi.eq.1.and.moddep.gt.0) then

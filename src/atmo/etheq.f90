@@ -67,11 +67,6 @@ double precision cp,lscp,beta1,a,alpha1
 double precision tl,qsl,de,alpha2,beta2,qs
 double precision rn,dd,aa,theta,t,q
 
-! Declaration des fonctions
-
-external         qsatliq
-double precision qsatliq
-
 !===============================================================================
 ! 0. The most probable and simplest case
 !===============================================================================
@@ -105,7 +100,7 @@ tl = (thetal*(p0/pphy)**(-rair/cp))
 beta1 = (clatev*clatev)/(cp*(rair*rvsra)*tl*tl)
 
 ! Calcul de ql de saturation
-qsl = qsatliq(tl,pphy)
+qsl = cs_air_yw_sat(tl-tkelvi,pphy)
 
 a = 1.d0/(1.d0 + beta1*qsl)
 
@@ -127,7 +122,7 @@ t = theta*(p0/pphy)**(-rair/cp)
 q = qw - qldia
 
 ! Calcul de q saturation
-qs = qsatliq(t,pphy)
+qs = cs_air_yw_sat(t-tkelvi,pphy)
 
 ! Calcul de de
 de = (clatev/cp)*((p0/pphy)**(rair/cp)) - rvsra*theta

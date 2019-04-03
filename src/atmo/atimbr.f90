@@ -1352,8 +1352,6 @@ integer ih2o
 data ih2o/0/
 save ih2o
 double precision rap
-double precision qsatliq
-external qsatliq
 
 if (ippmod(iatmos).eq.2) ih2o=1
 if(.not.allocated(pressure))then
@@ -1375,9 +1373,9 @@ integration_direction:if (ihpm.eq.0) then
              "hydrostatic_pressure::k=",k
         tmoy = 0.5d0*(tempC(k-1,j,i) + tempC(k,j,i)) + tkelvi
         if (ippmod(iatmos).eq.2) then
-          q0 = min( qw(k-1,j,i), qsatliq( tempC(k-1,j,i)+tkelvi, &
+          q0 = min( qw(k-1,j,i), cs_air_yw_sat( tempC(k-1,j,i), &
                pressure(k-1,j,i)))
-          q1 = min( qw(k  ,j,i), qsatliq( tempC(k  ,j,i)+tkelvi, &
+          q1 = min( qw(k  ,j,i), cs_air_yw_sat( tempC(k  ,j,i), &
                pressure(k-1,j,i)))
         else
           q0 = qw(k-1,j,i)
@@ -1399,9 +1397,9 @@ else
       do k = thermal_profile_dim, 2, -1
         tmoy = 0.5d0*(tempC(k-1,j,i) + tempC(k,j,i)) + tkelvi
         if (ippmod(iatmos).eq.2) then
-          q0 = min( qw(k-1,j,i), qsatliq( tempC(k-1,j,i)+tkelvi, &
+          q0 = min( qw(k-1,j,i), cs_air_yw_sat( tempC(k-1,j,i), &
                pressure(k  ,j,i)))
-          q1 = min( qw(k  ,j,i), qsatliq( tempC(k  ,j,i)+tkelvi, &
+          q1 = min( qw(k  ,j,i), cs_air_yw_sat( tempC(k  ,j,i), &
                pressure(k  ,j,i)))
         else
           q0 = qw(k-1,j,i)

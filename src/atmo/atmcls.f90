@@ -147,7 +147,7 @@ actt = xkappa/log((distbf+rugt)/rugt)
 
 ! Take into account humidity in ratio r/cp
 if (ippmod(iatmos).eq.2) then
-  rscp1 = (rair/cp0)*(1.d0 + (rvsra-cpvcpa) * rcodcl(ifac, isca(itotwt),1))
+  rscp1 = (rair/cp0)*(1.d0 + (rvsra-cpvcpa) * rcodcl(ifac, isca(iymw),1))
   ! Bouzerau PhD
   rscp2 = (rair/cp0)*(1.d0 + (rvsra-cpvcpa) * (totwt-liqwt))
 else
@@ -161,7 +161,7 @@ tpot2 = temp
 ! Compute virtual potential temperature at two levels
 
 if (ippmod(iatmos).eq.2) then
-  tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0) * rcodcl(ifac, isca(itotwt),1))
+  tpotv1 = tpot1*(1.d0 + (rvsra - 1.d0) * rcodcl(ifac, isca(iymw),1))
   ! Bouzerau PhD
   tpotv2 = tpot2*(1.d0 + (rvsra - 1.d0) * (totwt-liqwt))
 else

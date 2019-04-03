@@ -61,9 +61,7 @@ implicit none
 !    (see definition in atincl.f90):
 
 ps = 1.0d5
-rvsra = 1.608d0
 cpvcpa = 1.866d0
-clatev = 2.501d6
 gammat = -6.5d-03
 rvap = rvsra*rair
 

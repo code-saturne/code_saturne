@@ -386,8 +386,8 @@ cs_field_pointer_map_atmospheric(int        n_chem_species,
   cs_field_pointer_map(CS_ENUMF_(pot_t),
                        cs_field_by_name_try("temperature"));
 
-  cs_field_pointer_map(CS_ENUMF_(totwt),
-                       cs_field_by_name_try("total_water"));
+  cs_field_pointer_map(CS_ENUMF_(ym_w),
+                       cs_field_by_name_try("ym_water"));
   cs_field_pointer_map(CS_ENUMF_(ntdrp),
                        cs_field_by_name_try("number_of_droplets"));
 

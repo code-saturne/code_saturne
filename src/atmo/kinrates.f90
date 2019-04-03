@@ -84,7 +84,7 @@ if (ippmod(iatmos).ge.1) then
 endif
 
 if (ippmod(iatmos).ge.2) then
-  call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+  call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
   call field_get_val_s(iliqwt, cpro_liqwt)
 endif
 

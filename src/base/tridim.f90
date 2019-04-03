@@ -921,7 +921,7 @@ do while (iterns.le.nterup)
   if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then
     call field_get_val_s(icrom, crom)
     call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-    call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+    call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
     call solvar(cvar_scalt , cvar_totwt ,                &
                 crom   , dt ,                            &
                 rcodcl )

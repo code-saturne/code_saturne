@@ -308,6 +308,9 @@ static cs_fluid_properties_t  _fluid_properties = {
   .t0       = 293.15,
   .cp0      = 1017.24,
   .cv0      = 0.,
+  .r_pg_cnst = 287.,
+  .rvsra    = 1.608,
+  .clatev   = 2.501e6,
   .xmasmr   = 0.028966, /* air molar mass */
   .ipthrm   = 0,
   .pther    = 1.013e5,
@@ -373,6 +376,9 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **cv0,
+                                   double  **rair,
+                                   double  **rvsra,
+                                   double  **clatev,
                                    double  **xmasmr,
                                    int     **ipthrm,
                                    double  **pther,
@@ -436,6 +442,9 @@ cs_f_physical_constants_get_pointers(double  **gx,
  *   t0       --> pointer to cs_glob_fluid_properties->t0
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
  *   cv0      --> pointer to cs_glob_fluid_properties->cv0
+ *   rair     --> pointer to cs_glob_fluid_properties->r_pg_cnst
+ *   rvsra    --> pointer to cs_glob_fluid_properties->rvsra
+ *   clatev   --> pointer to cs_glob_fluid_properties->clatev
  *   xmasmr   --> pointer to cs_glob_fluid_properties->xmasmr
  *   ipthrm   --> pointer to cs_glob_fluid_properties->ipthrm
  *   pther    --> pointer to cs_glob_fluid_properties->pther
@@ -461,6 +470,9 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **cv0,
+                                   double  **rair,
+                                   double  **rvsra,
+                                   double  **clatev,
                                    double  **xmasmr,
                                    int     **ipthrm,
                                    double  **pther,
@@ -484,6 +496,9 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *t0       = &(_fluid_properties.t0);
   *cp0      = &(_fluid_properties.cp0);
   *cv0      = &(_fluid_properties.cv0);
+  *rair     = &(_fluid_properties.r_pg_cnst);
+  *rvsra    = &(_fluid_properties.rvsra);
+  *clatev   = &(_fluid_properties.clatev);
   *xmasmr   = &(_fluid_properties.xmasmr);
   *ipthrm   = &(_fluid_properties.ipthrm);
   *pther    = &(_fluid_properties.pther);

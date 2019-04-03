@@ -679,9 +679,6 @@ module ppincl
   !> \addtogroup cool_transported
   !> \{
 
-  !> Pointer to define the mass fraction of the water in array isca(iymw)
-  integer, save :: iymw
-
   !> Pointer to define mass fraction of liquid water which is injected in the packing
   integer, save :: iyml
 

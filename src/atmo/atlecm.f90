@@ -53,7 +53,6 @@ integer           imode
 
 ! a function used in the routine
 ! for the diagnostic of liquid water content
-double precision qsatliq
 
 ! Local variables
 
@@ -337,10 +336,10 @@ if (imode.eq.1) then
       tmoy = 0.5d0*(ttmet(k-1,itp) + ttmet(k,itp)) + tkelvi
 
       if(ippmod(iatmos).eq.2) then ! take liquid water into account
-        q0 = min( qvmet(k-1,itp), qsatliq( ttmet(k-1,itp) &
-            + tkelvi, phmet(k-1,itp)))
-        q1 = min( qvmet(k  ,itp), qsatliq( ttmet(k  ,itp) &
-            + tkelvi, phmet(k-1,itp)))
+        q0 = min( qvmet(k-1,itp), cs_air_yw_sat( ttmet(k-1,itp) &
+            , phmet(k-1,itp)))
+        q1 = min( qvmet(k  ,itp), cs_air_yw_sat( ttmet(k  ,itp) &
+            , phmet(k-1,itp)))
         !in q1=.. phmet(k-1,itp) is not a mistake: we can not use phmet(k,itp)
         !since this is what we want to estimate.
       else
@@ -360,8 +359,8 @@ if (imode.eq.1) then
       tmoy = 0.5d0*(ttmet(k+1,itp) + ttmet(k,itp)) + tkelvi
 
       if(ippmod(iatmos).eq.2) then ! take liquid water into account
-        q0 = min( qvmet(k,itp), qsatliq( ttmet(k,itp)+tkelvi, phmet(k+1,itp)))
-        q1 = min( qvmet(k+1  ,itp), qsatliq( ttmet(k+1,itp)+tkelvi, phmet(k+1,itp)))
+        q0 = min( qvmet(k,itp), cs_air_yw_sat( ttmet(k,itp), phmet(k+1,itp)))
+        q1 = min( qvmet(k+1  ,itp), cs_air_yw_sat( ttmet(k+1,itp), phmet(k+1,itp)))
         !in q0=.. phmet(k+1,itp) is not a mistake: we can not use phmet(k,itp)
         !since this is what we want to estimate.
       else
@@ -479,7 +478,7 @@ if (imode.eq.1) then
       write(nfecra,7999)                                            &
            ztmet(ii), ttmet(ii,itp), tpmet(ii,itp),              &
            rmet(ii,itp), phmet(ii,itp), qvmet(ii,itp),           &
-           qsatliq(ttmet(ii,itp)+tkelvi , phmet(ii,itp)),         &
+           cs_air_yw_sat(ttmet(ii,itp) , phmet(ii,itp)),         &
            ncmet(ii,itp)
 7999  format(1x, 3f8.2,f8.4,f12.3,e10.3,e10.3,e12.5)
     enddo

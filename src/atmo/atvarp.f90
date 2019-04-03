@@ -143,8 +143,8 @@ if (ippmod(iatmos).eq.2) then
   call field_set_key_double(f_id, kscmin, 200.d0)
 
   ! total water content
-  call add_model_scalar_field('total_water', 'TotWater', itotwt)
-  f_id = ivarfl(isca(itotwt))
+  call add_model_scalar_field('ym_water', 'Ym water', iymw)
+  f_id = ivarfl(isca(iymw))
   call field_set_key_double(f_id, kscmin, 0.d0)
 
   ! total number of droplets

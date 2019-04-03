@@ -34,6 +34,7 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
@@ -46,8 +47,8 @@ AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/alge \
-$(FCMODINCLUDE)$(top_builddir)/src/base \
 $(FCMODINCLUDE)$(top_builddir)/src/atmo \
+$(FCMODINCLUDE)$(top_builddir)/src/base \
 $(FCMODINCLUDE)$(top_builddir)/src/cfbl \
 $(FCMODINCLUDE)$(top_builddir)/src/cogz \
 $(FCMODINCLUDE)$(top_builddir)/src/comb \
@@ -63,7 +64,6 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_ctwr_air_props.h \
 cs_ctwr.h \
 cs_ctwr_headers.h
 
@@ -72,7 +72,6 @@ cs_ctwr_headers.h
 noinst_LTLIBRARIES = libcsctwr.la
 libcsctwr_la_SOURCES = \
 cs_ctwr.c \
-cs_ctwr_air_props.c \
 cs_ctwr_bcond.f90 \
 ctini1.f90 \
 ctiniv.f90 \

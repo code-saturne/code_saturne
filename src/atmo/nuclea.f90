@@ -58,6 +58,7 @@ use ppincl
 use atincl
 use atsoil
 use spefun
+use cs_c_bindings
 
 !===============================================================================
 
@@ -92,11 +93,6 @@ double precision ugauss2,sursat2,smax2,nuc2
 double precision ugauss3,sursat3,smax3,nuc3
 double precision nuc1snc,nuc2snc,nuc3snc
 double precision numcb,dencb
-
-! function declaration
-
-external         esatliq
-double precision esatliq
 
 double precision , parameter :: rhowater=1000. ! kg/m**3
 ! FIXME should be set somewhere else
@@ -156,7 +152,7 @@ do iel = 1, ncel
 
       tempk = tempc(iel) + tkelvi
       aa1   = 0.622d0*clatev*9.81d0/(rair*cp*tempk**2) - 9.81d0/(rair*tempk)
-      esat  = esatliq(tempk)
+      esat  = cs_air_pwv_sat(tempc(iel))
       aa2   = rair*tempk/(0.622d0 *esat) + (0.622d0 *clatev**2)/(tempk*pphy(iel)*cp)
       ddv   = 0.211d0 * ( tempk/tkelvi )**(1.94d0)*(101325d0/pphy(iel))*1.d-4
       kka   = ( (5.69d0 + 0.017d0*tempc(iel))/0.239d0 ) * 1.d-3
@@ -306,7 +302,7 @@ do iel = 1, ncel
                9.81d0/(rair*tempk)
 
          ! coefficient corresponding to liquid water condensation |aa2|
-         esat = esatliq(tempk)
+         esat = cs_air_pwv_sat(tempc(iel))
          aa2  = rair*tempk/(0.622d0*esat)+(0.622d0*clatev**2.d0) /   &
                 (tempk*pphy(iel)*cp)
 

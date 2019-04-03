@@ -54,8 +54,13 @@ module cstphy
   parameter(stephn = 5.6703d-8)
 
   !> Perfect gas constant for air (mixture)
-  double precision :: rair
-  parameter(rair = 287.d0)
+  real(c_double), pointer, save :: rair
+
+  !> ratio gaz constant h2o/ dry air
+  real(c_double), pointer, save :: rvsra
+
+  !> latent heat of evaporation
+  real(c_double), pointer, save :: clatev
 
   !> Boltzmann constant (\f$J.K^{-1}\f$)
   double precision kboltz
@@ -804,6 +809,9 @@ module cstphy
                                                   t0,      &
                                                   cp0,     &
                                                   cv0,     &
+                                                  rair,    &
+                                                  rvsra,   &
+                                                  clatev,  &
                                                   xmasmr,  &
                                                   ipthrm,  &
                                                   pther,   &
@@ -817,7 +825,7 @@ module cstphy
       implicit none
       type(c_ptr), intent(out) :: ixyzp0, icp, icv, irovar, ivivar, ivsuth
       type(c_ptr), intent(out) :: ro0, viscl0, p0, pred0
-      type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, xmasmr
+      type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, rair, rvsra, clatev, xmasmr
       type(c_ptr), intent(out) :: ipthrm
       type(c_ptr), intent(out) :: pther, pthera, pthermax
       type(c_ptr), intent(out) :: sleak, kleak, roref
@@ -912,7 +920,7 @@ contains
 
     type(c_ptr) :: c_ixyzp0, c_icp, c_icv, c_irovar, c_ivivar
     type(c_ptr) :: c_ivsuth, c_ro0, c_viscl0, c_p0
-    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr
+    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0,c_rair,c_rvsra,c_clatev, c_xmasmr
     type(c_ptr) :: c_ipthrm
     type(c_ptr) :: c_pther, c_pthera, c_pthermax
     type(c_ptr) :: c_sleak, c_kleak, c_roref
@@ -921,6 +929,7 @@ contains
                                             c_irovar, c_ivivar, c_ivsuth,   &
                                             c_ro0, c_viscl0, c_p0, c_pred0, &
                                             c_xyzp0, c_t0, c_cp0, c_cv0,    &
+                                            c_rair,c_rvsra,c_clatev,        &
                                             c_xmasmr,                       &
                                             c_ipthrm, c_pther, c_pthera,    &
                                             c_pthermax, c_sleak, c_kleak,   &
@@ -941,6 +950,9 @@ contains
     call c_f_pointer(c_t0, t0)
     call c_f_pointer(c_cp0, cp0)
     call c_f_pointer(c_cv0, cv0)
+    call c_f_pointer(c_rair, rair)
+    call c_f_pointer(c_rvsra, rvsra)
+    call c_f_pointer(c_clatev, clatev)
     call c_f_pointer(c_xmasmr, xmasmr)
     call c_f_pointer(c_ipthrm, ipthrm)
     call c_f_pointer(c_pther, pther)

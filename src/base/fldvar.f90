@@ -135,6 +135,11 @@ if (ippmod(igmix).ne.-1 .and. ippmod(icompf) .ne. -1) then
   nmodpp_compatibility = nmodpp_compatibility - 1
 endif
 
+! Atmo in humid atmosphere et Couling tower (iaeros) coupling
+if (ippmod(iatmos).eq.2 .and. ippmod(iaeros) .ne. -1) then
+  nmodpp_compatibility = nmodpp_compatibility - 1
+endif
+
 if (nmodpp_compatibility.gt.1) then
   write(nfecra,6000)
   iok = iok + 1

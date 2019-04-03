@@ -244,7 +244,7 @@ if (isuite.eq.0) then
       call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
     else if (ippmod(iatmos).eq.2) then
       call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-      call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+      call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
       call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
     endif
 

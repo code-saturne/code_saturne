@@ -107,8 +107,8 @@ double precision, allocatable, dimension(:) :: nn
 ! 1.2 Pointers for the positions of the variables
 !------------------------------------------------
 !   Variables specific to the atmospheric physics:
-!> itotwt---> total water content (for humid atmosphere)
-integer, save :: itotwt
+!> total water content (for humid atmosphere)
+integer, save :: iymw
 !> intdrp---> total number of droplets (for humid atmosphere)
 integer, save :: intdrp
 
@@ -177,14 +177,8 @@ integer, save :: theo_interp
 !> reference pressure (to compute potential temp: 1.0d+5)
 double precision, save:: ps
 
-!> ratio gaz constant h2o/ dry air: 1.608d0
-double precision, save:: rvsra
-
 !> ratio Cp h2o/ dry air: 1.866d0
 double precision, save:: cpvcpa
-
-!> latent heat of evaporation: 2.501d+6
-double precision, save:: clatev
 
 !> temperature gradient for the standard atmosphere (-6.5d-03 K/m)
 double precision, save:: gammat
@@ -385,6 +379,118 @@ integer, save :: init_at_chem
 integer, save :: kopint
 
 !> \}
+
+!=============================================================================
+
+  interface
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Calculation of the specific enthalpy of liquid water
+
+    !> \return specific enthalpy of liquid water
+
+    !> \param[in]  t_l  liquid water temperature (in Celsius)
+
+    function cs_liq_t_to_h(t_l) result(h_l) &
+        bind(C, name='cs_liq_t_to_h')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: t_l
+      real(c_double) :: h_l
+    end function cs_liq_t_to_h
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Calculation of the absolute humidity at saturation for a given temperature.
+
+    !> \param[in]  t_c  temperature (in Celsius)
+    !> \param[in]  p    pressure
+
+    function cs_air_x_sat(t_c, p) result(x_s) &
+        bind(C, name='cs_air_x_sat')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: t_c, p
+      real(c_double) :: x_s
+    end function cs_air_x_sat
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Calculation of the air water mass fraction at saturation for a given temperature.
+
+    !> \param[in]  t_c  temperature (in Celsius)
+    !> \param[in]  p    pressure
+
+    function cs_air_yw_sat(t_c, p) result(x_s) &
+        bind(C, name='cs_air_yw_sat')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: t_c, p
+      real(c_double) :: x_s
+    end function cs_air_yw_sat
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Computes the saturation water vapour pressure function of the temperature (C).
+
+    !> \param[in]  t_c  temperature (in Celsius)
+
+    function cs_air_pwv_sat(t_c) result(x_s) &
+        bind(C, name='cs_air_pwv_sat')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: t_c
+      real(c_double) :: x_s
+    end function cs_air_pwv_sat
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Convert the absolute humidity of humid air to the air water mass fraction.
+
+    !> \param[in]  x  absolute humidity of humid air
+
+    function cs_air_x_to_yw(x) result(qw) &
+        bind(C, name='cs_air_x_to_yw')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: x
+      real(c_double) :: qw
+    end function cs_air_x_to_yw
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Convert the air water mass fraction to the absolute humidity of humid air.
+
+    !> \param[in]  qw  air water mass fraction
+
+    function cs_air_yw_to_x(qw) result(x) &
+        bind(C, name='cs_air_yw_to_x')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: qw
+      real(c_double) :: x
+    end function cs_air_yw_to_x
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Calculation of the density of humid air.
+
+    !> \param[in]  qw  air water mass fraction
+    !> \param[in]  p    pressure
+    !> \param[in]  t_h  temperature (in Celsius)
+
+    function cs_rho_humidair(qw, p, t_h) result(rho_h) &
+        bind(C, name='cs_rho_humidair')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: qw, p, t_h
+      real(c_double) :: rho_h
+    end function cs_rho_humidair
+
+    !=============================================================================
+
+  end interface
 
 contains
 

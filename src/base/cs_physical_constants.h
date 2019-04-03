@@ -78,6 +78,9 @@ typedef struct {
   double        t0;           /* reference temperature */
   double        cp0;          /* reference specific heat */
   double        cv0;          /* reference specific heat */
+  double        r_pg_cnst;    /* Perfect Gas R constant */
+  double        rvsra;        /* ratio gaz constant h2o/ dry air */
+  double        clatev;       /* latent heat of evaporation: */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
                                  (if ieos=1) */
   int           ipthrm;       /* Uniform variable thermodynamic pressure for the

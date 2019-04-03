@@ -55,6 +55,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_air_props.h \
 cs_at_plugin.h \
 cs_at_opt_interp.h \
 cs_at_data_assim.h \
@@ -89,6 +90,7 @@ chem_solvelu.f90 \
 chem_source_terms.f90 \
 compute_gaseous_chemistry.f90 \
 compute_siream.f90 \
+cs_air_props.c \
 cs_at_plugin.c \
 cs_at_opt_interp.c \
 cs_at_data_assim.c \
@@ -104,7 +106,6 @@ rayive.f90 \
 rayso.f90 \
 raysze.f90 \
 roschem.f90 \
-satfun.f90 \
 solcat.f90 \
 soliva.f90 \
 solmoy.f90 \

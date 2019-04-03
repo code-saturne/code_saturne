@@ -232,7 +232,7 @@ allocate(gravke_qw(ncelet))
 ! Computation of the gradient of the potential temperature
 
 itpp = isca(iscalt)
-iqw = isca(itotwt)
+iqw = isca(iymw)
 
 call field_get_val_prev_s(ivarfl(itpp), cvara_tpp)
 call field_get_val_prev_s(ivarfl(iqw), cvara_qw)

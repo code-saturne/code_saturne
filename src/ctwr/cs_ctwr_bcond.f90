@@ -98,6 +98,7 @@ use mesh
 use ctincl
 use field
 use cs_c_bindings
+use atincl
 
 !===============================================================================
 
@@ -206,7 +207,7 @@ do ifac = 1, nfabor
     endif
     if (icodcl(ifac, isca(ihml)).eq.0) then
        t_l = t0-tkelvi
-       call h_liqwater(t_l, h_l)
+       h_l = cs_liq_t_to_h(t_l)
 
        ! Y_l . h_l is transported (and not h_l)
        h_l = h_l*rcodcl(ifac, isca(iyml), 1)
@@ -222,6 +223,7 @@ do ifac = 1, nfabor
     rcodcl(ifac, isca(iscalt), 3) = 0.d0
     icodcl(ifac, isca(iymw)) = 3
     rcodcl(ifac, isca(iymw), 3) = 0.d0
+
 
     icodcl(ifac, isca(ihml)) = 3
     rcodcl(ifac, isca(ihml), 3) = 0.d0
