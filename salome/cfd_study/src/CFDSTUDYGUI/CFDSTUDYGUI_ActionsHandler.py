@@ -860,7 +860,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
 
     def updateActionsXmlFile(self, XMLSobj) :
-
+        log.debug("updateActionsXmlFile")
         if XMLSobj != None:
             if CFDSTUDYGUI_DataModel.checkType(XMLSobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
                 self.solverAction(SolverCloseAction).setEnabled(False)

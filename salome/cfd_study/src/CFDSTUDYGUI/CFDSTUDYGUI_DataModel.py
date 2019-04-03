@@ -62,7 +62,6 @@ WARNING: a SALOME Study should not be confused with a CFD study.
 #-------------------------------------------------------------------------------
 # Standard modules
 #-------------------------------------------------------------------------------
-from __future__ import print_function
 import os
 import re
 import string

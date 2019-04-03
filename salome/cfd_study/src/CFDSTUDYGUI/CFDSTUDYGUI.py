@@ -132,13 +132,16 @@ def windows():
     return winMap
 
 
-#MPdef closeStudy(aStudyId) :
-#MP    """
-#MP    This method is called when salome study is closed (Salome desktop button File -> close -> close w/o saving button) and Salome Main window desktop is already available
-#MP    """
-#MP    if salome_version.getVersion() >= '7.5.0' :
-#MP        CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
-
+def closeStudy() :
+    """
+    This method is called when salome study is closed (Salome desktop button File -> close -> close w/o saving button) and Salome Main window desktop is already available
+    """
+    log.debug("closeStudy")
+    if salome_version.getVersion() >= '7.5.0' :
+        dsk = sgPyQt.getDesktop()
+        CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(dsk)
+        ActionHandler = _DesktopMgr.getActionHandler(dsk)
+        ActionHandler._SolverGUI.resizeObjBrowserDock()
 
 def views():
     """
@@ -170,8 +173,8 @@ def setWorkSpace(ws):
 
     dsk = sgPyQt.getDesktop()
     _DesktopMgr.setWorkspace(dsk, ws)
-    ActionHandler = _DesktopMgr.getActionHandler(dsk)
-    ActionHandler.connectSolverGUI()
+    #MPActionHandler = _DesktopMgr.getActionHandler(dsk)
+    #MPActionHandler.connectSolverGUI()
 
 def createPreferences():
     """
@@ -241,15 +244,24 @@ def activate():
     ActionHandler._SalomeSelection.currentSelectionChanged.connect(ActionHandler.updateActions)
 
     ActionHandler.connectSolverGUI()
-    ActionHandler.updateObjBrowser()
 
     # Hide the Python Console window layout
     for dock in sgPyQt.getDesktop().findChildren(QDockWidget):
         dockTitle = dock.windowTitle()
         log.debug("activate -> QDockWidget: %s" % dockTitle)
+        if "Object Browser" in str(dockTitle):
+            dock.raise_()
+            dock.show()
+            if dsk.dockWidgetArea(dock) == 0:
+                dsk.addDockWidget(Qt.LeftDockWidgetArea,dock)
         if dockTitle in ("Python Console", "Console Python",  "Message Window"):
             dock.setVisible(False)
-
+            dock.hide()
+#MP Analyser si on peut faire expand sur les case dans OB
+#    ob = sgPyQt.getObjectBrowser()
+#    if ob != None:
+#        ob.expandAll()
+#        ob.expandToDepth(2)
     return True
 
 
@@ -276,6 +288,10 @@ def deactivate():
     ActionHandler._SalomeSelection.currentSelectionChanged.disconnect(ActionHandler.updateActions)
 
     ActionHandler.disconnectSolverGUI()
+    ob = sgPyQt.getObjectBrowser()
+    if ob != None:
+        ob.collapseAll()
+
 
 
 def createPopupMenu(popup, context):

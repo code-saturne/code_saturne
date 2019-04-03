@@ -32,7 +32,6 @@ called by CFDSTUDYGUI_SolverGUI.
 # Standard modules
 #-------------------------------------------------------------------------------
 
-from __future__ import print_function
 import os, sys, logging
 
 
@@ -64,139 +63,123 @@ class Mapper:
 class CFDGUI_Management:
     """
     Dock windows are managed by CFDGUI_Management class
-    CFDGUI_Management.d_CfdCases[studyId].append([dock,mw.dockWidgetBrowser,mw,aStudyCFD,aCaseCFD,xmlFileName,sobjXML])
+    CFDGUI_Management.d_CfdCases.append([dock,mw,aStudyCFD,aCaseCFD,xmlFileName,sobjXML])
     """
     def __init__(self):
       self.dockPosInListe                  = 0
-      self.dockWBPosInListe                = 1
-      self.mwCFDPosInListe                 = 2
-      self.studyCFDPosInListe              = 3
-      self.caseCFDPosInListe               = 4
-      self.xmlCFDFileNamePosInListe        = 5
-      self.sobjXmlPosInListe               = 6
+      self.mwCFDPosInListe                 = 1
+      self.studyCFDPosInListe              = 2
+      self.caseCFDPosInListe               = 3
+      self.xmlCFDFileNamePosInListe        = 4
+      self.sobjXmlPosInListe               = 5
 
-      self.nbelem                          = 7
+      self.nbelem                          = 6
 
       self.dock                            = None
-      self.dockWB                          = None
       self.aMwCFD                          = None
       self.aStudyCFD                       = None
       self.aCaseCFD                        = None
       self.aXmlCFDFile                     = None
       self.sobjXml                         = None
 
-      self.d_CfdCases                      = {}
+      self.d_CfdCases                      = []
 
 
-    def set_d_CfdCases(self, studyId,
-                       dock, dockWB, mwCFD,
+    def set_d_CfdCases(self,
+                       dock, mwCFD,
                        aStudyCFD, aCaseCFD,
                        axmlCFDFile, sobjXml):
       """
       Add a new Solver GUI in the SALOME desktop.
       """
-      if studyId not in list(self.d_CfdCases.keys()):
-          self.d_CfdCases[studyId] = []
 
-      self.d_CfdCases[studyId].append([dock, dockWB, mwCFD,
+      self.d_CfdCases.append([dock, mwCFD,
                                        aStudyCFD, aCaseCFD,
                                        axmlCFDFile, sobjXml])
 
       self.dock          = dock
-      self.dockWB        = dockWB
       self.aMwCFD        = mwCFD
       self.aStudyCFD     = aStudyCFD
       self.aCaseCFD      = aCaseCFD
       self.aXmlCFDFile   = axmlCFDFile
       self.sobjXml       = sobjXml
 
-      log.debug("set_d_CfdCases \n\tdock = %s\n\tdockWB = %s\n\tmwCFD = %s\n\taStudyCFD = %s\n\taCaseCFD = %s\n\taxmlCFDFile = %s" % \
-                 (dock, dockWB, mwCFD, aStudyCFD, aCaseCFD, axmlCFDFile))
+      log.debug("set_d_CfdCases \n\tdock = %s\n\tmwCFD = %s\n\taStudyCFD = %s\n\taCaseCFD = %s\n\taxmlCFDFile = %s" % \
+                 (dock, mwCFD, aStudyCFD, aCaseCFD, axmlCFDFile))
 
 
-    def checkDockWindowsLists(self, studyId):
-      if studyId in list(self.d_CfdCases.keys()):
+    def checkDockWindowsLists(self):
+      if self.d_CfdCases!= []:
           return True
       else:
           return False
 
 
-    def getdockWB(self, studyId, dock):
-      dockWB = None
-      if self.checkDockWindowsLists(studyId):
-          d = self.getDocks(studyId)
-          if dock in list(d.keys()):
-              ind = d[dock]
-              dockWB = self.d_CfdCases[studyId][ind][self.dockWBPosInListe]
-      return dockWB
+    def getDockListe(self):
+      """
+      return a liste which contains all the CFD DockWidget instances opened in GUI
+      """
+      listeDock = []
+      if self.checkDockWindowsLists():
+          for liste in self.d_CfdCases:
+              listeDock.append(liste[self.dockPosInListe])
+      return listeDock
 
 
-    def getdock(self, studyId, dockWB):
-      dock = None
-      if self.checkDockWindowsLists(studyId):
-          d = self.getDocksWB(studyId)
-          if dockWB in list(d.keys()):
-              ind = d[dockWB]
-              dock = self.d_CfdCases[studyId][ind][self.dockPosInListe]
-      return dock
-
-
-    def getDockListes(self, studyId):
-      dockListe = []
-      dockListeWB = []
-      if self.checkDockWindowsLists(studyId):
-          for liste in self.d_CfdCases[studyId]:
-              dockListe.append(liste[self.dockPosInListe])
-              dockListeWB.append(liste[self.dockWBPosInListe])
-      return dockListe, dockListeWB
-
-
-    def getElem(self, studyId, elempos):
+    def getElem(self, elempos):
+        
         d = {}
         if elempos not in list(range(self.nbelem)):
             return d
-        if studyId in list(self.d_CfdCases.keys()):
-            for liste in self.d_CfdCases[studyId]:
-                d[liste[elempos]] = self.d_CfdCases[studyId].index(liste)
+        if self.checkDockWindowsLists():
+            for liste in self.d_CfdCases:
+                d[liste[elempos]] = self.d_CfdCases.index(liste)
         return d
 
 
-    def getDocks(self, studyId):
+    def getDocks(self):
         """
-        return a dictionary d
+        return a liste l - called in CFDSTUDYGUI_SolverGUI
         """
-        return self.getElem(studyId, self.dockPosInListe)
+        return self.getElem(self.dockPosInListe)
 
 
-    def getDocksWB(self, studyId):
+    def getDockListeWithCFDStudyAndCaseNames(self, studyCFDName, caseName):
         """
+        a CFD case can have more xml files
         """
-        return self.getElem(studyId, self.dockWBPosInListe)
-
-    def getDockWithCFDStudyAndCaseNames(self, studyId, studyCFDName, caseName):
         l = []
-        if self.d_CfdCases == {} :
+        if not self.checkDockWindowsLists():
             return l
-        for liste in self.d_CfdCases[studyId]:
+        for liste in self.d_CfdCases:
             if liste[self.studyCFDPosInListe].GetName() == studyCFDName \
               and liste[self.caseCFDPosInListe].GetName() == caseName:
                 l.append(liste)
         return l
 
-    def getDockWithCFDNames(self, studyId, studyCFDName, caseName, xmlName):
+
+    def getListeWithCFDNames(self, studyCFDName, caseName, xmlName):
         l = []
-        for liste in self.d_CfdCases[studyId]:
+        for liste in self.d_CfdCases:
             if liste[self.studyCFDPosInListe].GetName() == studyCFDName \
               and liste[self.caseCFDPosInListe].GetName() == caseName \
               and liste[self.xmlCFDFileNamePosInListe] == xmlName:
-                l = liste
+                return liste
         return l
 
 
-    def getStudyCaseXmlNames(self, studyId, mw):
+    def getDockWithCFDNames(self, studyCFDName, caseName, xmlName):
+        l = self.getListeWithCFDNames(studyCFDName, caseName, xmlName)
+        if l != []:
+            return l[self.dockPosInListe]
+        else:
+            return None
+
+
+    def getStudyCaseXmlNames(self, mw):
         log.debug("getStudyCaseXmlNames mw = %s" % mw)
-        if studyId in list(self.d_CfdCases.keys()):
-            for l in self.d_CfdCases[studyId]:
+        if self.checkDockWindowsLists():
+            for l in self.d_CfdCases:
                 if l[self.mwCFDPosInListe] == mw:
                     return l[self.studyCFDPosInListe].GetName(), \
                             l[self.caseCFDPosInListe].GetName(), \
@@ -204,149 +187,104 @@ class CFDGUI_Management:
         return None, None, None
 
 
-    def getCase(self, studyId, mw):
-        if studyId in list(self.d_CfdCases.keys()):
-            for l in self.d_CfdCases[studyId]:
+    def getCase(self, mw):
+        if self.checkDockWindowsLists():
+            for l in self.d_CfdCases:
                 if l[self.mwCFDPosInListe] == mw:
                     return l[self.caseCFDPosInListe]
         return None
 
 
-    def hideDocks(self,studyId):
-        if not self.checkDockWindowsLists(studyId):
+    def hideDocks(self):
+        if not self.checkDockWindowsLists():
             return
-        for liste in self.d_CfdCases[studyId]:
-            for pos in [self.dockPosInListe, self.dockWBPosInListe]:
-                if liste[pos] != None:
-                    liste[pos].hide()
-                    liste[pos].toggleViewAction().setVisible(False)
+        for liste in self.d_CfdCases:
+            if liste[self.dockPosInListe] != None:
+                liste[self.dockPosInListe].hide()
+                liste[self.dockPosInListe].toggleViewAction().setVisible(False)
 
 
-    def showDocks(self, studyId):
-        if not self.checkDockWindowsLists(studyId):
+    def showDocks(self):
+        if not self.checkDockWindowsLists():
             return
-        for liste in self.d_CfdCases[studyId]:
-            for pos in [self.dockPosInListe, self.dockWBPosInListe]:
-                if liste[pos] != None:
-                    liste[pos].show()
-                    liste[pos].setVisible(True)
-                    liste[pos].toggleViewAction().setVisible(True)
+        for liste in self.d_CfdCases:
+            if liste[self.dockPosInListe] != None:
+                liste[self.dockPosInListe].show()
+                liste[self.dockPosInListe].setVisible(True)
+                liste[self.dockPosInListe].toggleViewAction().setVisible(True)
 
 
     def findElem(self, xmlName, caseName, studyCFDName):
         boo = False
-        for studyId in list(self.d_CfdCases.keys()):
-            for l in self.d_CfdCases[studyId]:
+        if self.checkDockWindowsLists():
+            for l in self.d_CfdCases:
                 if l[self.xmlCFDFileNamePosInListe] == xmlName:
                     if l[self.caseCFDPosInListe].GetName() == caseName:
                         if l[self.studyCFDPosInListe].GetName() == studyCFDName:
-                            for pos in [self.dockPosInListe,self.dockWBPosInListe]:
-                                l[pos].show()
-                                l[pos].raise_()
-                                l[pos].setVisible(True)
-                                l[pos].toggleViewAction().setVisible(True)
-                                boo = True
+                            l[self.dockPosInListe].show()
+                            l[self.dockPosInListe].raise_()
+                            l[self.dockPosInListe].setVisible(True)
+                            l[self.dockPosInListe].toggleViewAction().setVisible(True)
+                            boo = True
         return boo
 
     def findDock(self, xmlName, caseName, studyCFDName):
         boo = False
-        for studyId in list(self.d_CfdCases.keys()):
-            for l in self.d_CfdCases[studyId]:
+        if self.checkDockWindowsLists():
+            for l in self.d_CfdCases:
                 if l[self.xmlCFDFileNamePosInListe] == xmlName:
                     if l[self.caseCFDPosInListe].GetName() == caseName:
                         if l[self.studyCFDPosInListe].GetName() == studyCFDName:
                             boo = True
         return boo
 
-    def showDockWindows(self, studyId, xmlName, caseName, studyCFDName):
-        for l in self.d_CfdCases[studyId]:
-            if l[self.xmlCFDFileNamePosInListe] == xmlName:
-                if l[self.caseCFDPosInListe].GetName() == caseName:
-                    if l[self.studyCFDPosInListe].GetName() == studyCFDName:
-                        for pos in [self.dockPosInListe, self.dockWBPosInListe]:
-                            l[pos].show()
-                            l[pos].raise_()
-                            l[pos].setVisible(True)
-                            l[pos].toggleViewAction().setVisible(True)
 
-
-    def getMW(self, studyId, dock):
-        """
-        return mW CFD window attached to dock in the liste d_CfdCases[StudyId]
-        """
-        d = self.getDocks(studyId)
-        if d != {}:
-            if dock in list(d.keys()):
-                return self.d_CfdCases[studyId][d[dock]][self.mwCFDPosInListe]
-        else:
-            return None
-
-
-    def delDockfromStudyAndCaseNames(self, dsk, studyId, studyCFDName, caseName):
+    def delDockfromStudyAndCaseNames(self, dsk, studyCFDName, caseName):
         """
         Delete all the opened dock windows from a study name and a case name
         """
-        liste = self.getDockWithCFDStudyAndCaseNames(studyId, studyCFDName, caseName)
+        liste = self.getDockListeWithCFDStudyAndCaseNames(studyCFDName, caseName)
         if liste == []:
             return
-        for ll in liste :
-            dockcfd, docwb = ll[self.dockPosInListe], ll[self.dockWBPosInListe]
-            for dock in [dockcfd, docwb]:
-                if dock != None:
-                    dsk.removeDockWidget(dock)
-                    dock.setParent(None)
-                    dock.close()
-            # remove the liste which contains the removed docks in the dictionary
-            self.d_CfdCases[studyId].remove(ll)
+        for l in liste:
+            dockcfd = l[self.dockPosInListe]
+            if dockcfd != None:
+                dsk.removeDockWidget(dockcfd)
+                dockcfd.setParent(None)
+                dockcfd.close()
+        # remove the liste which contains the removed docks in the main list self.d_CfdCases
+            self.d_CfdCases.remove(l)
 
-    def delDock(self, dsk, studyId, studyCFDName, caseName, xmlName):
+
+    def delDock(self, dsk, studyCFDName, caseName, xmlName):
         """
         Delete the opened dock window from a study name, a case name, a xml file name
         """
-        liste = self.getDockWithCFDNames(studyId, studyCFDName, caseName, xmlName)
+        liste = self.getListeWithCFDNames(studyCFDName, caseName, xmlName)
         if liste == []:
             return
-        dockcfd, docwb = liste[self.dockPosInListe], liste[self.dockWBPosInListe]
-        for dock in [dockcfd, docwb]:
-            if dock != None:
-                dsk.removeDockWidget(dock)
-                dock.setParent(None)
-                dock.close()
+        dockcfd = liste[self.dockPosInListe]
+        if dockcfd != None:
+            dsk.removeDockWidget(dockcfd)
+            dockcfd.setParent(None)
+            dockcfd.close()
         # remove the liste which contains the removed docks in the dictionary
-        self.d_CfdCases[studyId].remove(liste)
+        self.d_CfdCases.remove(liste)
 
 
     def cleanAllDock(self, dsk):
         """
-        clean all dock windows of cfd cases and clean attached dictionary;
+        clean all dock windows of cfd cases and clean attached main liste;
         called when closing salome study and remaining into the desktop
         """
-        if self.d_CfdCases == {} : return
-        for liste in list(self.d_CfdCases.values()) :
-            for liste_object in liste :
-                dockcfd, docwb = liste_object[self.dockPosInListe], liste_object[self.dockWBPosInListe]
-                for dock in [dockcfd, docwb]:
-                    if dock != None:
-                        dsk.removeDockWidget(dock)
-                        dock.setParent(None)
-                        dock.close()
+        log.debug("cleanAllDock")
+        if self.d_CfdCases == [] : return
+        for liste_object in self.d_CfdCases :
+            dockcfd = liste_object[self.dockPosInListe]
+            if dockcfd != None:
+                dsk.removeDockWidget(dockcfd)
+                dockcfd.setParent(None)
+                dockcfd.close()
         # clean the associated dictionary
         self.d_CfdCases.clear()
 
-
-    def tabifyDockWindows(self,dsk,studyId):
-        """
-        tabify all opened CFD windows and window CFD Browser
-        force le regroupement en onglets des fenetres d'etudes CFD
-        """
-        docListe, docListeWB = self.getDockListes(studyId)
-
-        if len(docListe) > 1:
-            for i in range(1,len(docListe)):
-                dsk.tabifyDockWidget(docListe[0], docListe[i])
-
-        if len(docListeWB) > 1:
-            for i in range(1,len(docListeWB)):
-                dsk.tabifyDockWidget(docListeWB[0], docListeWB[i])
-
-#-------------------------------------------------------------------------------
