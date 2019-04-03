@@ -1784,9 +1784,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           choice_d = NULL;
         }
         if (boundaries->meteo[izone].automatic) {
-          for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
-            cs_lnum_t ifbr = bz->elt_ids[ifac];
-            iautom[ifbr] = 1;
+          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+            cs_lnum_t face_id = bz->elt_ids[elt_id];
+            iautom[face_id] = 1;
           }
         }
       }

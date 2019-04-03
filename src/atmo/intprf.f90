@@ -54,7 +54,6 @@ integer          it, it1, it2
 integer          iz, iz1, iz2
 double precision alphaz, alphat, var1, var2
 
-
 !===============================================================================
 ! 1. Time interpolation
 !===============================================================================
@@ -115,3 +114,66 @@ var2 = alphaz*profv(iz1,it2) + (1.d0-alphaz)*profv(iz2,it2)
 var = alphat*var1 + (1.d0 - alphat)*var2
 
 end subroutine intprf
+
+!-------------------------------------------------------------------------------
+!> \brief z-axis interpolation for meteorological profiles
+!> An optimized linear interpolation is used.
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nprofz      total number of z-measure points
+!> \param[in]   profz       z coordonate of measure points
+!> \param[in]   profv       measured values
+!> \param[in]   xz          interpolation elevation
+!> \param[out]  var         interpolation result
+!-------------------------------------------------------------------------------
+subroutine intprz ( nprofz, profz, profv, xz, iz1, iz2, var )
+
+implicit none
+
+! Arguments
+
+integer          nprofz, iz1, iz2
+double precision profz(nprofz)
+double precision profv(nprofz)
+double precision xz, var
+
+! Local variables
+
+integer          iz
+double precision alphaz
+
+!===============================================================================
+! 1. Z interpolation
+!===============================================================================
+
+if (xz.le.profz(1)) then
+  iz1 = 1
+  iz2 = 1
+  alphaz = 1.d0
+else if (xz.ge.profz(nprofz)) then
+  iz1 = nprofz
+  iz2 = nprofz
+  alphaz = 1.d0
+else ! else nprofz > 1
+  iz = 1
+ 103    continue
+  if (xz.gt.profz(iz+1)) then
+    iz = iz + 1
+    goto 103
+  else
+    iz1 = iz
+    iz2 = iz + 1
+    alphaz = (profz(iz2) - xz)/(profz(iz2) - profz(iz1))
+  endif
+endif
+
+!===============================================================================
+! 2. Interpolation
+!===============================================================================
+
+var = alphaz*profv(iz1) + (1.d0-alphaz)*profv(iz2)
+
+end subroutine intprz

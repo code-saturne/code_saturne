@@ -463,7 +463,7 @@ if (ippmod(iatmos).ge.0) then
   if (f_oi_id.ge.0) then
     call cs_at_data_assim_source_term(ivarfl(iu), tsexp, tsimp)
   endif
-  if (iatmst.eq.1) then
+  if (iatmst.ge.1) then
     call cs_at_source_term_for_inlet(tsexp)
   endif
 endif

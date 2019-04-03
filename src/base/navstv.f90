@@ -1023,7 +1023,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
           iautof = iautom(ifac)
         endif
 
-        if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautof.eq.1) then
+        if (isostd(ifac).eq.1.or.iatmst.ge.1.and.iautof.eq.1) then
           coefa_p(ifac) = coefa_p(ifac) + coefa_dp(ifac)
         endif
       enddo

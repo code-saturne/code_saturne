@@ -131,7 +131,7 @@ endif
 
 ! ---> Physique particuliere : Atmospherique
 ! Momentum source terms
-if (ippmod(iatmos).ge.0 .and. iatmst.gt.0) then
+if (ippmod(iatmos).ge.0 .and. iatmst.ge.1) then
   call add_property_field('momentum_source_terms', 'MomentumSourceTerms', 3, .false., imomst)
   call field_set_key_int(imomst, keylog, 1)
   call field_set_key_int(imomst, keyvis, 1)

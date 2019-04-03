@@ -51,6 +51,13 @@ double precision, allocatable, dimension(:) :: tmmet
 !> altitudes of the dynamic profiles (read in the input meteo file)
 double precision, allocatable, dimension(:) :: zdmet
 
+!> Pressure drop integrated over a time step (used for automatic open boundaries)
+double precision, allocatable, dimension(:) :: dpdt_met
+
+!> Momentum for each level (used for automatic open boundaries)
+double precision, allocatable, dimension(:,:) :: mom_met
+double precision, allocatable, dimension(:,:) :: mom
+
 !> altitudes of the temperature profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: ztmet
 
@@ -162,6 +169,7 @@ integer, allocatable, dimension(:) :: iautom
 integer, save :: initmeteo
 
 !> add a momentum source term based on the meteo profile
+!> for automatic open boundaries
 integer, save :: iatmst
 
 !> flag for meteo velocity field interpolation
@@ -562,6 +570,9 @@ if (imeteo.gt.0) then
   ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatr1=1
   !           rmet,tpmet,phmet
   allocate(tmmet(nbmetm), zdmet(nbmetd), ztmet(nbmaxt))
+  allocate(dpdt_met(nbmetd))
+  allocate(mom(3, nbmetd))
+  allocate(mom_met(3, nbmetd))
   allocate(umet(nbmetd,nbmetm), vmet(nbmetd,nbmetm), wmet(nbmetd,nbmetm))
   allocate(ekmet(nbmetd,nbmetm), epmet(nbmetd,nbmetm))
   allocate(ttmet(nbmaxt,nbmetm), qvmet(nbmaxt,nbmetm), ncmet(nbmaxt,nbmetm))
@@ -627,6 +638,7 @@ endif
 if (imeteo.gt.0) then
 
   deallocate(tmmet, zdmet, ztmet)
+  deallocate(mom, mom_met, dpdt_met)
   deallocate(umet, vmet, wmet)
   deallocate(ekmet, epmet)
   deallocate(ttmet, qvmet, ncmet)

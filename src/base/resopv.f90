@@ -475,7 +475,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     indhyd = 0
   else
 
-    ! External forces containing bouyancy force ONLY
+    ! External forces containing buoyancy force ONLY
     do iel = 1, ncel
       dronm1 = (croma(iel)-ro0)
       drom   = (crom(iel)-ro0)
@@ -497,8 +497,8 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     !==========
     ( indhyd ,                                &
       !TODO
-      !frchy, dfrchy,                         &
-      frcxt  , dfrcxt ,                       &
+      !frchy, dfrchy,                         &!FIXME
+      frcxt  , dfrcxt ,                       &!FIXME
       cpro_hydro_pres, iflux  , bflux ,       &
       viscf  , viscb  ,                       &
       dam    , xam    ,                       &
@@ -551,7 +551,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         iautof = iautom(ifac)
       endif
 
-      if (isostd(ifac).eq.1.or.iatmst.eq.1.and.iautof.eq.1) then
+      if (isostd(ifac).eq.1.or.iatmst.ge.1.and.iautof.ge.1) then
         iel=ifabor(ifac)
 
         if (indhyd.eq.1) then
