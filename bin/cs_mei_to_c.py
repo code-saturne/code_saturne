@@ -1273,46 +1273,49 @@ class mei_to_c_interpreter:
                               'LatentHeat', 'd_Tsat_d_P',
                               'd_Hsat_d_P_Liquid', 'd_Hsat_d_P_Gas']
 
+            user_gas_liq_fields = False
             # surface tenstion
-            if tm.getPropertyMode('none', 'surface_tension') == 'user_law':
-                name = 'SurfaceTension'
-                exp, req, sca, sym = tm.getFormulaComponents('none',
-                                                             'surface_tension')
-                self.init_block('vol', 'all_cells', name,
-                                exp, req, sym, sca)
+            if tm:
+                if tm.getPropertyMode('none', 'surface_tension') == 'user_law':
+                    name = 'SurfaceTension'
+                    exp, req, sca, sym = tm.getFormulaComponents('none',
+                                                                 'surface_tension')
+                    self.init_block('vol', 'all_cells', name,
+                                    exp, req, sym, sca)
 
-            for fieldId in tm.getFieldIdList():
-                if tm.getMaterials(fieldId) == 'user_material':
-                    for fk in authorized_fields:
-                        if tm.getPropertyMode(fieldId, fk) == 'user_law':
-                            name = fk + '_' + str(fieldId)
-                            exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
+                for fieldId in tm.getFieldIdList():
+                    if tm.getMaterials(fieldId) == 'user_material':
+                        user_gas_liq_fields = True
+                        for fk in authorized_fields:
+                            if tm.getPropertyMode(fieldId, fk) == 'user_law':
+                                name = fk + '_' + str(fieldId)
+                                exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
+                                self.init_block('vol', 'all_cells', name,
+                                                exp, req, sym, sca)
+
+                        if mfm.getCompressibleStatus(fieldId) == 'on':
+                            for fk in compressible_fields:
+                                name = fk + '_' + str(fieldId)
+                                exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
+                                self.init_block('vol', 'all_cells', name,
+                                                exp, req, sym, sca)
+
+                        # Temperature as a function of enthalpy
+                        if mfm.getEnergyResolution(fieldId) == 'on':
+                            name = 'temperature_' + str(fieldId)
+                            exp, req, sca, sym = tm.getFormulaComponents(fieldId,
+                                                                        'temperature')
                             self.init_block('vol', 'all_cells', name,
                                             exp, req, sym, sca)
-
-                    if mfm.getCompressibleStatus(fieldId) == 'on':
-                        for fk in compressible_fields:
-                            name = fk + '_' + str(fieldId)
-                            exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk)
-                            self.init_block('vol', 'all_cells', name,
-                                            exp, req, sym, sca)
-
-                    # Temperature as a function of enthalpy
-                    if mfm.getEnergyResolution(fieldId) == 'on':
-                        name = 'temperature_' + str(fieldId)
-                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,
-                                                                    'temperature')
-                        self.init_block('vol', 'all_cells', name,
-                                        exp, req, sym, sca)
 
             # User properties for Water/Steam kind flows
             if mfm.getPredefinedFlow() != 'None' and \
                mfm.getPredefinedFlow() != "particles_flow":
-
-                   for fk in gas_liq_fields:
-                       exp, req, sca, sym = tm.getFormulaComponents('none', fk)
-                       self.init_block('vol', 'all_cells', fk,
-                                       exp, req, sym, sca)
+                if user_gas_liq_fields:
+                    for fk in gas_liq_fields:
+                        exp, req, sca, sym = tm.getFormulaComponents('none', fk)
+                        self.init_block('vol', 'all_cells', fk,
+                                        exp, req, sym, sca)
 
             # Porosity
             vlm = LocalizationModel('VolumicZone', self.case)
