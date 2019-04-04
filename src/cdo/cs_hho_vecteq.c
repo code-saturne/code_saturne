@@ -224,7 +224,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
                               --> tmp buffer for facto = n = 9
                               --> 45 + 9 = 54
          or the factorization of the cell_cell block of size 3*4,
-                               we need space for a lower  triangular matrix  --> (3*4)*(3*4+1)/2 = 78
+                               we need space for a lower  triangular matrix
+                              --> (3*4)*(3*4+1)/2 = 78
                                and a diagonal of size 3*4
 
       */

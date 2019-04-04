@@ -589,7 +589,7 @@ _assemble(const cs_cdovcb_scaleq_t          *eqc,
           const cs_cell_mesh_t              *cm,
           const cs_cell_sys_t               *csys,
           const cs_range_set_t              *rs,
-          cs_equation_assemble_t         *eqa,
+          cs_equation_assemble_t            *eqa,
           cs_matrix_assembler_values_t      *mav,
           cs_real_t                         *rhs)
 {
