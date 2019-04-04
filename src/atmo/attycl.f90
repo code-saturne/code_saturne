@@ -100,13 +100,14 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ifac, izone
+integer          ifac, iel, izone
 integer          ii
 integer jsp, isc
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
-double precision, dimension(:), pointer ::  brom, coefap
+double precision viscla, uref2, rhomoy, dhy, xiturb
+double precision, dimension(:), pointer :: brom, coefap, viscl
 
 ! arrays for cressman interpolation
 double precision , dimension(:),allocatable :: u_bord
@@ -130,6 +131,7 @@ xeent = 0.d0
 tpent = 0.d0
 
 call field_get_val_s(ibrom, brom)
+call field_get_val_s(iviscl, viscl)
 
 !===============================================================================
 ! 2.  SI IPROFM = 1 : CHOIX ENTREE/SORTIE SUIVANT LE PROFIL METEO SI
@@ -393,6 +395,36 @@ do ifac = 1, nfabor
 
         endif
 
+      endif
+
+    endif
+
+  else
+
+    if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
+
+      if (icalke(izone).eq.1) then
+        uref2 =   rcodcl(ifac,iu,1)**2                       &
+                + rcodcl(ifac,iv,1)**2                       &
+                + rcodcl(ifac,iw,1)**2
+        uref2 = max(uref2,epzero)
+        rhomoy = brom(ifac)
+        iel    = ifabor(ifac)
+        viscla = viscl(iel)
+        dhy    = dh(izone)
+        call turbulence_bc_inlet_hyd_diam(ifac,                            &
+                                          uref2, dhy, rhomoy, viscla,      &
+                                          rcodcl)
+      else if (icalke(izone).eq.1) then
+        uref2 =   rcodcl(ifac,iu,1)**2                       &
+                + rcodcl(ifac,iv,1)**2                       &
+                + rcodcl(ifac,iw,1)**2
+        uref2 = max(uref2,epzero)
+        dhy    = dh(izone)
+        xiturb = xintur(izone)
+        call turbulence_bc_inlet_turb_intensity(ifac,                      &
+                                                uref2, xiturb, dhy,        &
+                                                rcodcl)
       endif
 
     endif
