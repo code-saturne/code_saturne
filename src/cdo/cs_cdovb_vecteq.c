@@ -152,8 +152,8 @@ _vbv_create_cell_builder(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t  *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_vc, short int);
-  memset(cb->ids, 0, n_vc*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_vc, int);
+  memset(cb->ids, 0, n_vc*sizeof(int));
 
   int  size = n_ec*(n_ec+1);
   size = CS_MAX(4*n_ec + 3*n_vc, size);
@@ -168,11 +168,7 @@ _vbv_create_cell_builder(const cs_cdo_connect_t   *connect)
      operators */
   cb->hdg = cs_sdm_square_create(n_ec);
   cb->aux = cs_sdm_square_create(n_vc);
-
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_vc; i++)
-    block_sizes[i] = 3;
-  cb->loc = cs_sdm_block_create(n_vc, n_vc, block_sizes, block_sizes);
+  cb->loc = cs_sdm_block33_create(n_vc, n_vc);
 
   return cb;
 }
@@ -275,27 +271,22 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
                       cs_cell_sys_t                  *csys,
                       cs_cell_builder_t              *cb)
 {
-  const int  n_blocks = cm->n_vc;
-  const int  n_dofs = 3*n_blocks;
-
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_blocks; i++) block_sizes[i] = 3;
-
   csys->c_id = cm->c_id;
-  csys->n_dofs = n_dofs;
+  csys->n_dofs = 3*cm->n_vc;
   csys->cell_flag = cell_flag;
 
   /* Cell-wise view of the linear system to build:
      Initialize the local system */
   cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
 
-  cs_sdm_block_init(csys->mat, n_blocks, n_blocks, block_sizes, block_sizes);
+  cs_sdm_block33_init(csys->mat, cm->n_vc, cm->n_vc);
 
   for (short int v = 0; v < cm->n_vc; v++) {
     const cs_lnum_t  v_id = cm->v_ids[v];
+    const cs_real_t  *val_p = field_tn + 3*v_id;
     for (int k = 0; k < 3; k++) {
       csys->dof_ids[3*v + k] = 3*v_id + k;
-      csys->val_n[3*v + k] = field_tn[3*v_id + k];
+      csys->val_n[3*v + k] = val_p[k];
     }
   }
 

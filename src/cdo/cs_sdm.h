@@ -286,10 +286,26 @@ cs_sdm_create_transpose(cs_sdm_t  *mat);
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create(int                n_max_blocks_by_row,
-                    int                n_max_blocks_by_col,
-                    const short int    max_row_block_sizes[],
-                    const short int    max_col_block_sizes[]);
+cs_sdm_block_create(int          n_max_blocks_by_row,
+                    int          n_max_blocks_by_col,
+                    const int    max_row_block_sizes[],
+                    const int    max_col_block_sizes[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_sdm_t structure by block when the
+ *          block size is constant and equal to 3
+ *
+ * \param[in]  n_max_blocks_by_row    max number of blocks in a row
+ * \param[in]  n_max_blocks_by_col    max number of blocks in a column
+ *
+ * \return  a new allocated cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sdm_t *
+cs_sdm_block33_create(int      n_max_blocks_by_row,
+                      int      n_max_blocks_by_col);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -390,11 +406,27 @@ cs_sdm_square_init(int         n_rows,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_init(cs_sdm_t          *m,
-                  int                n_row_blocks,
-                  int                n_col_blocks,
-                  const short int    row_block_sizes[],
-                  const short int    col_block_sizes[]);
+cs_sdm_block_init(cs_sdm_t      *m,
+                  int            n_row_blocks,
+                  int            n_col_blocks,
+                  const int      row_block_sizes[],
+                  const int      col_block_sizes[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize the pattern of cs_sdm_t structure defined by 3x3 block
+ *          The matrix should have been allocated before calling this function
+ *
+ * \param[in, out] m
+ * \param[in]      n_row_blocks      number of blocks in a row
+ * \param[in]      n_col_blocks      number of blocks in a column
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block33_init(cs_sdm_t     *m,
+                    int           n_row_blocks,
+                    int           n_col_blocks);
 
 /*----------------------------------------------------------------------------*/
 /*!

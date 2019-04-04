@@ -229,10 +229,10 @@ cs_sdm_create_transpose(cs_sdm_t  *mat)
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create(int                n_max_blocks_by_row,
-                    int                n_max_blocks_by_col,
-                    const short int    max_row_block_sizes[],
-                    const short int    max_col_block_sizes[])
+cs_sdm_block_create(int          n_max_blocks_by_row,
+                    int          n_max_blocks_by_col,
+                    const int    max_row_block_sizes[],
+                    const int    max_col_block_sizes[])
 {
   cs_sdm_t  *m = NULL;
 
@@ -271,6 +271,48 @@ cs_sdm_block_create(int                n_max_blocks_by_row,
       p_val += _size;
 
     }
+  }
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_sdm_t structure by block when the
+ *          block size is constant and equal to 3
+ *
+ * \param[in]  n_max_blocks_by_row    max number of blocks in a row
+ * \param[in]  n_max_blocks_by_col    max number of blocks in a column
+ *
+ * \return  a new allocated cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sdm_t *
+cs_sdm_block33_create(int      n_max_blocks_by_row,
+                      int      n_max_blocks_by_col)
+{
+  cs_sdm_t  *m = NULL;
+
+  if (n_max_blocks_by_row < 1 || n_max_blocks_by_col < 1)
+    return m;
+
+  m = _create_sdm(CS_SDM_BY_BLOCK,
+                  3*n_max_blocks_by_row,
+                  3*n_max_blocks_by_col);
+
+  /* Define the block description */
+  m->block_desc->n_max_blocks_by_row = n_max_blocks_by_row;
+  m->block_desc->n_max_blocks_by_col = n_max_blocks_by_col;
+  m->block_desc->n_row_blocks = n_max_blocks_by_row;
+  m->block_desc->n_col_blocks = n_max_blocks_by_col;
+  BFT_MALLOC(m->block_desc->blocks,
+             n_max_blocks_by_row*n_max_blocks_by_col, cs_sdm_t);
+
+  cs_real_t  *p_val = m->val;
+  for (int i = 0; i < n_max_blocks_by_row*n_max_blocks_by_col; i++) {
+    cs_sdm_map_array(3, 3, m->block_desc->blocks + i, p_val);
+      p_val += 9;
   }
 
   return m;
@@ -319,11 +361,11 @@ cs_sdm_free(cs_sdm_t  *mat)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_init(cs_sdm_t          *m,
-                  int                n_row_blocks,
-                  int                n_col_blocks,
-                  const short int    row_block_sizes[],
-                  const short int    col_block_sizes[])
+cs_sdm_block_init(cs_sdm_t      *m,
+                  int            n_row_blocks,
+                  int            n_col_blocks,
+                  const int      row_block_sizes[],
+                  const int      col_block_sizes[])
 {
   /* Sanity checks */
   assert(m != NULL && row_block_sizes != NULL && col_block_sizes != NULL);
@@ -360,6 +402,45 @@ cs_sdm_block_init(cs_sdm_t          *m,
       shift++;
 
     }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize the pattern of cs_sdm_t structure defined by 3x3 block
+ *          The matrix should have been allocated before calling this function
+ *
+ * \param[in, out] m
+ * \param[in]      n_row_blocks      number of blocks in a row
+ * \param[in]      n_col_blocks      number of blocks in a column
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block33_init(cs_sdm_t     *m,
+                    int           n_row_blocks,
+                    int           n_col_blocks)
+{
+  /* Sanity checks */
+  assert(m != NULL);
+  assert(m->flag & CS_SDM_BY_BLOCK);
+  assert(m->block_desc != NULL);
+  assert(n_row_blocks <= m->block_desc->n_max_blocks_by_row);
+  assert(n_col_blocks <= m->block_desc->n_max_blocks_by_col);
+
+  cs_sdm_block_t  *bd = m->block_desc;
+
+  bd->n_row_blocks = n_row_blocks;
+  bd->n_col_blocks = n_col_blocks;
+  m->n_rows = 3*n_row_blocks;
+  m->n_cols = 3*n_col_blocks;
+
+  memset(m->val, 0, m->n_rows*m->n_cols*sizeof(cs_real_t));
+
+  cs_real_t  *p_val = m->val;
+  for (int i = 0; i < bd->n_row_blocks*bd->n_col_blocks; i++) {
+    cs_sdm_map_array(3, 3, bd->blocks + i, p_val);
+    p_val += 9; /* Each 3x3 block has 9 entries */
   }
 }
 

@@ -186,8 +186,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
   case CS_SPACE_SCHEME_HHO_P0:  /* TODO */
     {
-      BFT_MALLOC(cb->ids, n_fc + 1, short int);
-      memset(cb->ids, 0, (n_fc + 1)*sizeof(short int));
+      BFT_MALLOC(cb->ids, n_fc + 1, int);
+      memset(cb->ids, 0, (n_fc + 1)*sizeof(int));
 
       /* For post-processing errors = 38 */
       size = CS_MAX(38, n_fc*(n_fc+1));
@@ -198,15 +198,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
-      short int  *block_sizes = cb->ids;
-      for (int i = 0; i < n_fc + 1; i++)
-        block_sizes[i] = 3;
-
       /* Local square dense matrices used during the construction of
          operators */
       cb->hdg = cs_sdm_square_create(n_fc);
-      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, block_sizes, block_sizes);
       cb->aux = cs_sdm_square_create(n_fc + 1);
+      cb->loc = cs_sdm_block33_create(n_fc + 1, n_fc + 1);
 
 
     }
@@ -216,8 +212,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     {
       /* Store the block size description */
       size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, short int);
-      memset(cb->ids, 0, size*sizeof(short int));
+      BFT_MALLOC(cb->ids, size, int);
+      memset(cb->ids, 0, size*sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
          the Gauss point weights
@@ -243,11 +239,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
-      const short int g_size = 9;                   /* (basis (P_(k+1)) - 1) */
+      const int g_size = 9;                   /* (basis (P_(k+1)) - 1) */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 3*3;
       cb->ids[n_fc] = 3*4;
 
-      short int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
+      int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
       cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
@@ -258,8 +254,8 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     {
       /* Store the block size description */
       size = n_fc + 1;
-      BFT_MALLOC(cb->ids, size, short int);
-      memset(cb->ids, 0, size*sizeof(short int));
+      BFT_MALLOC(cb->ids, size, int);
+      memset(cb->ids, 0, size*sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
          the Gauss point weights */
@@ -288,11 +284,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
-      const short int g_size = 19; /* basis (P_(k+1)) - 1 */
+      const int g_size = 19; /* basis (P_(k+1)) - 1 */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 3*6;
       cb->ids[n_fc] = 3*10;
 
-      short int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
+      int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
       cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
@@ -338,7 +334,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
   const int  n_blocks = cm->n_fc + 1;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  short int  *block_sizes = cb->ids;
+  int  *block_sizes = cb->ids;
   for (int i = 0; i < cm->n_fc; i++)
     block_sizes[i] = eqc->n_face_dofs;
   block_sizes[cm->n_fc] = eqc->n_cell_dofs;
@@ -892,14 +888,14 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cell_dofs);
 
   cs_lnum_t  n_row_blocks = connect->c2f->idx[n_cells];
-  short int  *row_block_sizes = NULL;
+  int  *row_block_sizes = NULL;
 
-  BFT_MALLOC(row_block_sizes, n_row_blocks, short int);
+  BFT_MALLOC(row_block_sizes, n_row_blocks, int);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_row_blocks; i++)
     row_block_sizes[i] = eqc->n_face_dofs;
 
-  short int  col_block_size = eqc->n_cell_dofs;
+  int  col_block_size = eqc->n_cell_dofs;
   eqc->acf_tilda = cs_sdm_block_create(n_row_blocks, 1,
                                        row_block_sizes, &col_block_size);
   cs_sdm_block_init(eqc->acf_tilda,

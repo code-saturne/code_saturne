@@ -94,7 +94,7 @@ typedef struct {
 
   /* Temporary buffers (erase and updated several times during the system
      build */
-  short int    *ids;     /*!< local ids */
+  int          *ids;     /*!< local ids */
   double       *values;  /*!< local values */
   cs_real_3_t  *vectors; /*!< local 3-dimensional vectors */
 
@@ -446,16 +446,17 @@ cs_cdo_local_finalize(void);
  * \param[in]   n_max_fbyc      max number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
  * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
+ *                              Specific treatment n_blocks = 1.
  *
  * \return a pointer to a new allocated \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int          n_max_dofbyc,
-                   int          n_max_fbyc,
-                   short int    n_blocks,
-                   short int   *block_sizes);
+cs_cell_sys_create(int    n_max_dofbyc,
+                   int    n_max_fbyc,
+                   int    n_blocks,
+                   int   *block_sizes);
 
 /*----------------------------------------------------------------------------*/
 /*!

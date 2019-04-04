@@ -133,16 +133,11 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_dofs; i++)
-    block_sizes[i] = 3;
-
   /* Local square dense matrices used during the construction of
      operators */
   cb->hdg = cs_sdm_square_create(n_dofs);
   cb->aux = cs_sdm_square_create(n_dofs);
-
-  cb->loc = cs_sdm_block_create(n_dofs, n_dofs, block_sizes, block_sizes);
+  cb->loc = cs_sdm_block33_create(n_dofs, n_dofs);
 
   return cb;
 }
@@ -320,18 +315,14 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
 
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_blocks; i++)
-    block_sizes[i] = 3;
-
   /* Initialize the local system */
   cs_cell_sys_reset(cm->n_fc, csys);
 
-  cs_sdm_block_init(csys->mat, n_blocks, n_blocks, block_sizes, block_sizes);
+  cs_sdm_block33_init(csys->mat, n_blocks, n_blocks);
 
   /* One has to keep the same numbering for faces between cell mesh and cell
      system */
-  for (short int f = 0; f < cm->n_fc; f++) {
+  for (int f = 0; f < cm->n_fc; f++) {
 
     const cs_lnum_t  f_id = cm->f_ids[f];
     for (int k = 0; k < 3; k++) {
@@ -1268,8 +1259,7 @@ cs_cdofb_vecteq_init_common(const cs_cdo_quantities_t     *quant,
     cs_cdofb_cell_bld[i] = NULL;
   }
 
-  const short int  n_blocks = connect->n_max_fbyc + 1;
-  const short int  n_max_dofs = 3*n_blocks;
+  const int  n_max_dofs = 3*(connect->n_max_fbyc + 1);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -1278,29 +1268,25 @@ cs_cdofb_vecteq_init_common(const cs_cdo_quantities_t     *quant,
     assert(t_id < cs_glob_n_threads);
 
     cs_cell_builder_t  *cb = _cell_builder_create(connect);
-    short int  *block_sizes = cb->ids;
-    for (int i = 0; i < n_blocks; i++)
-      block_sizes[i] = 3;
-
-    cs_cdofb_cell_sys[t_id] = cs_cell_sys_create(n_max_dofs,
-                                                 n_blocks - 1,
-                                                 n_blocks,
-                                                 block_sizes);
     cs_cdofb_cell_bld[t_id] = cb;
+
+    int  block_size = 3;
+    cs_cdofb_cell_sys[t_id] = cs_cell_sys_create(n_max_dofs,
+                                                 connect->n_max_fbyc,
+                                                 1,
+                                                 &block_size);
   }
 #else
   assert(cs_glob_n_threads == 1);
 
   cs_cell_builder_t  *cb = _cell_builder_create(connect);
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_blocks; i++)
-    block_sizes[i] = 3;
-
-  cs_cdofb_cell_sys[0] =  cs_cell_sys_create(n_max_dofs,
-                                             n_blocks - 1,
-                                             n_blocks,
-                                             block_sizes);
   cs_cdofb_cell_bld[0] = cb;
+
+  int  block_size = 3;
+  cs_cdofb_cell_sys[0] =  cs_cell_sys_create(n_max_dofs,
+                                             connect->n_max_fbyc,
+                                             1,
+                                             &block_size);
 #endif /* openMP */
 }
 

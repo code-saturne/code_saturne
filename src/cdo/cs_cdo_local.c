@@ -232,17 +232,18 @@ cs_cdo_local_finalize(void)
  * \param[in]   n_max_dofbyc    max number of entries
  * \param[in]   n_max_fbyc      max number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
- * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
+ * \param[in]   block_sizes     size of each block or NULL.
+ *                              Specific treatment n_blocks = 1.
  *
  * \return a pointer to a new allocated \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int          n_max_dofbyc,
-                   int          n_max_fbyc,
-                   short int    n_blocks,
-                   short int   *block_sizes)
+cs_cell_sys_create(int      n_max_dofbyc,
+                   int      n_max_fbyc,
+                   int      n_blocks,
+                   int     *block_sizes)
 {
   cs_cell_sys_t  *csys = NULL;
 
@@ -307,8 +308,23 @@ cs_cell_sys_create(int          n_max_dofbyc,
     BFT_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
     memset(csys->dof_ids, 0, sizeof(cs_lnum_t)*n_max_dofbyc);
 
-    if (n_blocks == 1)
+    if (block_sizes == NULL)
       csys->mat = cs_sdm_square_create(n_max_dofbyc);
+
+    else if (n_blocks == 1) {
+
+      assert(block_sizes != NULL);
+      if (block_sizes[0] == 3) {
+        int  n_row_blocks = n_max_dofbyc/3;
+        assert(n_max_dofbyc % 3 == 0);
+        csys->mat = cs_sdm_block33_create(n_row_blocks, n_row_blocks);
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid initialization of the cellwise block matrix\n",
+                  __func__);
+
+    }
     else
       csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
                                       block_sizes,

@@ -147,8 +147,8 @@ _vbs_create_cell_builder(const cs_cdo_connect_t   *connect)
   assert(n_ec > n_vc);
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_ec, short int);
-  memset(cb->ids, 0, n_ec*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_ec, int);
+  memset(cb->ids, 0, n_ec*sizeof(int));
 
   int  size = n_ec*(n_ec+1);
   size = CS_MAX(4*n_ec + 3*n_vc, size);
