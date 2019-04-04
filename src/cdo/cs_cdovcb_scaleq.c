@@ -597,6 +597,7 @@ _assemble(const cs_cdovcb_scaleq_t          *eqc,
   eqc->assemble(csys, rs, eqa, mav);
 
   /* RHS assembly */
+#if CS_CDO_OMP_SYNC_SECTIONS > 0
 # pragma omp critical
   {
     for (short int v = 0; v < cm->n_vc; v++)
@@ -606,10 +607,32 @@ _assemble(const cs_cdovcb_scaleq_t          *eqc,
   if (eqc->source_terms != NULL) {
 
     /* Source term assembly */
-    for (short int v = 0; v < cm->n_vc; v++)
+#   pragma omp critical
+    {
+      for (short int v = 0; v < cm->n_vc; v++)
+        eqc->source_terms[cm->v_ids[v]] += csys->source[v];
+    }
+
+  }
+
+#else  /* Use atomic barrier */
+
+  for (short int v = 0; v < cm->n_vc; v++)
+#   pragma omp atomic
+    rhs[cm->v_ids[v]] += csys->rhs[v];
+
+  if (eqc->source_terms != NULL) {
+
+    /* Source term assembly */
+    for (int v = 0; v < cm->n_vc; v++)
 #     pragma omp atomic
       eqc->source_terms[cm->v_ids[v]] += csys->source[v];
 
+  }
+
+#endif
+
+  if (eqc->source_terms != NULL) {
     cs_real_t  *cell_sources = eqc->source_terms + cs_shared_quant->n_vertices;
 
     cell_sources[cm->c_id] = csys->source[cm->n_vc];

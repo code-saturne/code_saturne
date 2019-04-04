@@ -73,7 +73,7 @@ cs_cdovb_vecteq_is_initialized(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief    Allocate work buffer and general structures related to CDO
- *           vertex-based schemes
+ *           vector-valued vertex-based schemes
  *           Set shared pointers.
  *
  * \param[in]  quant       additional mesh quantities struct.

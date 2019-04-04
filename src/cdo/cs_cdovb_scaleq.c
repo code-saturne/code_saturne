@@ -604,17 +604,32 @@ _assemble(const cs_cdovb_scaleq_t           *eqc,
   eqc->assemble(csys, rs, eqa, mav);
 
   /* RHS assembly */
+#if CS_CDO_OMP_SYNC_SECTIONS > 0
 # pragma omp critical
   {
-    for (short int v = 0; v < cm->n_vc; v++)
+    for (int v = 0; v < cm->n_vc; v++)
       rhs[cm->v_ids[v]] += csys->rhs[v];
   }
 
   if (eqc->source_terms != NULL) {
-    for (short int v = 0; v < cm->n_vc; v++) /* Source term assembly */
+#   pragma omp critical
+    {
+      for (int v = 0; v < cm->n_vc; v++) /* Source term assembly */
+        eqc->source_terms[cm->v_ids[v]] += csys->source[v];
+    }
+  }
+#else  /* Use atomic barrier */
+
+  for (int v = 0; v < cm->n_vc; v++)
+#   pragma omp atomic
+    rhs[cm->v_ids[v]] += csys->rhs[v];
+
+  if (eqc->source_terms != NULL) {
+    for (int v = 0; v < cm->n_vc; v++) /* Source term assembly */
 #     pragma omp atomic
       eqc->source_terms[cm->v_ids[v]] += csys->source[v];
   }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

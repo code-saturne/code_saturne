@@ -281,7 +281,7 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
 
   cs_sdm_block33_init(csys->mat, cm->n_vc, cm->n_vc);
 
-  for (short int v = 0; v < cm->n_vc; v++) {
+  for (int v = 0; v < cm->n_vc; v++) {
     const cs_lnum_t  v_id = cm->v_ids[v];
     const cs_real_t  *val_p = field_tn + 3*v_id;
     for (int k = 0; k < 3; k++) {
@@ -319,13 +319,14 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
 
     assert(vtx_bc_flag != NULL);
 
-    for (short int v = 0; v < cm->n_vc; v++) {
+    for (int v = 0; v < cm->n_vc; v++) {
       for (int k = 0; k < 3; k++)
         csys->dof_flag[3*v+k] = vtx_bc_flag[cm->v_ids[v]];
       if (cs_cdo_bc_is_dirichlet(vtx_bc_flag[cm->v_ids[v]])) {
         csys->has_dirichlet = true;
+        const cs_real_t  *bc_val = dir_values + 3*cm->v_ids[v];
         for (int k = 0; k < 3; k++)
-          csys->dir_values[3*v+k] = dir_values[3*cm->v_ids[v]+k];
+          csys->dir_values[3*v+k] = bc_val[k];
       }
     }
 
@@ -335,14 +336,14 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
   if (cs_equation_param_has_internal_enforcement(eqp)) {
 
     assert(forced_ids != NULL);
-    for (short int v = 0; v < cm->n_vc; v++) {
+    for (int v = 0; v < cm->n_vc; v++) {
 
       const cs_lnum_t  id = forced_ids[cm->v_ids[v]];
 
       /* In case of a Dirichlet BC, this BC is applied and the enforcement
          is ignored */
       for (int k = 0; k < 3; k++) {
-        short int  dof_id = 3*v+k;
+        int  dof_id = 3*v+k;
         if (cs_cdo_bc_is_dirichlet(csys->dof_flag[dof_id]))
           csys->intern_forced_ids[dof_id] = -1;
         else {
@@ -442,7 +443,7 @@ _vbv_advection_diffusion_reaction(const cs_equation_param_t     *eqp,
       const double  ptyc = cb->rpty_val * cm->vol_c;
 
       /* Only the diagonal block and its diagonal entries are modified */
-      for (short int bi = 0; bi < cm->n_vc; bi++) {
+      for (int bi = 0; bi < cm->n_vc; bi++) {
 
         const double  vpty = cm->wvc[bi] * ptyc;
 
@@ -616,7 +617,7 @@ _vbv_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
   if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
 
     cs_real_t  _rhs_norm = 0;
-    for (short int v = 0; v < cm->n_vc; v++)
+    for (int v = 0; v < cm->n_vc; v++)
       for (int k = 0; k < 3; k++)
         _rhs_norm += cm->wvc[v] * csys->rhs[3*v+k]*csys->rhs[3*v+k];
 
@@ -628,7 +629,7 @@ _vbv_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
     const cs_sdm_t  *m = csys->mat;
 
     cs_real_t  _rhs_norm = 0;
-    for (short int v = 0; v < cm->n_vc; v++) {
+    for (int v = 0; v < cm->n_vc; v++) {
 
       const cs_sdm_t  *mVV = cs_sdm_get_block(m, v, v);
       const cs_real_t  d[3] = {mVV->val[0], mVV->val[4], mVV->val[8]};
@@ -808,7 +809,7 @@ cs_cdovb_vecteq_is_initialized(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief    Allocate work buffer and general structures related to CDO
- *           vertex-based schemes
+ *           vector-valued vertex-based schemes
  *           Set shared pointers.
  *
  * \param[in]  quant       additional mesh quantities struct.
@@ -841,8 +842,7 @@ cs_cdovb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
     _vbv_cell_builder[i] = NULL;
   }
 
-  const short int  n_blocks = connect->n_max_vbyc;
-  const short int  n_max_dofs = 3*n_blocks;
+  const int  n_max_dofs = 3*connect->n_max_vbyc;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -851,29 +851,25 @@ cs_cdovb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
     assert(t_id < cs_glob_n_threads);
 
     cs_cell_builder_t  *cb = _vbv_create_cell_builder(connect);
-    short int  *block_sizes = cb->ids;
-    for (int i = 0; i < n_blocks; i++)
-      block_sizes[i] = 3;
+    _vbv_cell_builder[t_id] = cb;
 
+    int  block_size = 3;
     _vbv_cell_system[t_id] = cs_cell_sys_create(n_max_dofs,
                                                 connect->n_max_fbyc,
-                                                n_blocks,
-                                                block_sizes);
-    _vbv_cell_builder[t_id] = cb;
+                                                1,
+                                                &block_size);
   }
 #else
   assert(cs_glob_n_threads == 1);
 
   cs_cell_builder_t  *cb = _vbv_create_cell_builder(connect);
-  short int  *block_sizes = cb->ids;
-  for (int i = 0; i < n_blocks; i++)
-    block_sizes[i] = 3;
+  _vbv_cell_builder[0] = cb;
 
+  int  block_size = 3;
   _vbv_cell_system[0] =  cs_cell_sys_create(n_max_dofs,
                                             connect->n_max_fbyc,
-                                            n_blocks,
-                                            block_sizes);
-  _vbv_cell_builder[0] = cb;
+                                            1,
+                                            &block_size);
 #endif /* openMP */
 }
 
@@ -1486,7 +1482,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                         csys->source);
 
         /* Update the RHS */
-        for (short int v = 0; v < csys->n_dofs; v++)
+        for (int v = 0; v < csys->n_dofs; v++)
           csys->rhs[v] += csys->source[v];
 
       } /* End of source term */
@@ -1512,7 +1508,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
 #     pragma omp critical
       {
-        for (short int i = 0; i < csys->n_dofs; i++)   /* RHS Assembly */
+        for (int i = 0; i < csys->n_dofs; i++)   /* RHS Assembly */
           rhs[csys->dof_ids[i]] += csys->rhs[i];
       }
 
