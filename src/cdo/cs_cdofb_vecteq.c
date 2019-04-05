@@ -122,8 +122,8 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
-  BFT_MALLOC(cb->ids, n_dofs, short int);
-  memset(cb->ids, 0, n_dofs*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_dofs, int);
+  memset(cb->ids, 0, n_dofs*sizeof(int));
 
   int  size = CS_MAX(n_fc*n_dofs, 6*n_dofs);
   BFT_MALLOC(cb->values, size, double);

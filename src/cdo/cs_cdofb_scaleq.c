@@ -131,8 +131,8 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cb->adv_fluxes, n_fc, double);
   memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
 
-  BFT_MALLOC(cb->ids, n_fc, short int);
-  memset(cb->ids, 0, n_fc*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_fc, int);
+  memset(cb->ids, 0, n_fc*sizeof(int));
 
   int  size = n_fc*(n_fc+1);
   BFT_MALLOC(cb->values, size, double);

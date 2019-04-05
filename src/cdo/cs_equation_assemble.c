@@ -1827,6 +1827,8 @@ cs_equation_assemble_block33_matrix(const cs_cell_sys_t              *csys,
                                     cs_equation_assemble_t           *eqa,
                                     cs_matrix_assembler_values_t     *mav)
 {
+  CS_UNUSED(eqa);
+
   const cs_lnum_t  *dof_ids = csys->dof_ids;
   const cs_sdm_t  *m = csys->mat;
   const cs_sdm_block_t  *bd = m->block_desc;
