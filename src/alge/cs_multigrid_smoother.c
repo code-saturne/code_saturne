@@ -106,32 +106,6 @@ static cs_lnum_t _pcg_sr_threshold = 512;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Convergence test.
- *
- * parameters:
- *   n_iter      <-- Number of iterations done
- *   convergence <-> Convergence information structure
- *
- * returns:
- *   convergence status.
- *----------------------------------------------------------------------------*/
-
-inline static cs_sles_convergence_state_t
-_convergence_test(unsigned                   n_iter,
-                  cs_sles_it_convergence_t  *convergence)
-{
-  /* Update conversion info structure */
-
-  convergence->n_iterations = n_iter;
-
-  /* If has reached the max number of iterations */
-  if (n_iter >= convergence->n_iterations_max)
-    return CS_SLES_MAX_ITERATION;
-
-  return CS_SLES_ITERATING;
-}
-
-/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using preconditioned conjugate gradient.
  *
  * Parallel-optimized version, groups dot products, at the cost of
@@ -165,7 +139,6 @@ _conjugate_gradient(cs_sles_it_t              *c,
                     size_t                     aux_size,
                     void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
   double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk;
@@ -207,67 +180,47 @@ _conjugate_gradient(cs_sles_it_t              *c,
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
-  /* Preconditioning */
+  {
+    /* Preconditioning */
 
-  c->setup_data->pc_apply(c->setup_data->pc_context,
-                          rotation_mode,
-                          rk,
-                          gk);
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            rk,
+                            gk);
 
-  /* Descent direction */
-  /*-------------------*/
+    /* Descent direction */
 
-#if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = gk[ii];
-
-#else
-
-  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  rk_gkm1 = _dot_product(c, rk, gk);
-
-  /* If no solving required, finish here */
-
-  cvg = _convergence_test(n_iter, convergence);
-
-  if (cvg == CS_SLES_ITERATING) {
-
-    n_iter = 1;
-
-    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
+    cs_matrix_vector_multiply(rotation_mode, a, gk, zk);  /* dk = gk */
 
     /* Descent parameter */
 
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
+    _dot_products_xy_yz(c, rk, gk, zk, &ro_0, &ro_1);
 
+    rk_gkm1 = ro_0;
     alpha = -ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
+    if (convergence->n_iterations_max < 2) {
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+        vx[ii] += (alpha * gk[ii]);
     }
-
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
-    /* Current Iteration */
-    /*-------------------*/
-
+    else {
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          dk[ii] = gk[ii];
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          vx[ii] += (alpha * gk[ii]);
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          rk[ii] += (alpha * zk[ii]);
+      }
+    }
   }
 
-  while (cvg == CS_SLES_ITERATING) {
+  for (n_iter = 1; n_iter < convergence->n_iterations_max; n_iter++) {
 
     /* Preconditioning */
 
@@ -279,16 +232,6 @@ _conjugate_gradient(cs_sles_it_t              *c,
     /* Prepare descent parameter */
 
     rk_gk = _dot_product(c, rk, gk);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(n_iter, convergence);
-
-    if (cvg != CS_SLES_ITERATING)
-      break;
-
-    n_iter += 1;
 
     /* Complete descent parameter computation and matrix.vector product */
 
@@ -305,23 +248,30 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     alpha = -ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+    if (n_iter + 1 < convergence->n_iterations_max) {
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          vx[ii] += (alpha * dk[ii]);
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          rk[ii] += (alpha * zk[ii]);
+      }
     }
-
+    else { /* last iteration */
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        vx[ii] += alpha * dk[ii];
+    }
   }
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -359,7 +309,6 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, gk_sk, beta;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk, *restrict sk;
@@ -398,71 +347,56 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
+  {
 
-  /* Preconditionning */
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] -= rhs[ii];
 
-  c->setup_data->pc_apply(c->setup_data->pc_context,
-                          rotation_mode,
-                          rk,
-                          gk);
+    /* Preconditionning */
 
-  /* Descent direction */
-  /*-------------------*/
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            rk,
+                            gk);
 
-#if defined(HAVE_OPENMP)
+    /* Descent direction */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = gk[ii];
+    cs_matrix_vector_multiply(rotation_mode, a, gk, zk); /* zk = A.dk
+                                                            dk == gk */
 
-#else
+    /* Descent parameter */
 
-  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  cs_matrix_vector_multiply(rotation_mode, a, dk, zk); /* zk = A.dk */
-
-  /* Descent parameter */
-
-  _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
-
-  /* If no solving required, finish here */
-
-  cvg = _convergence_test(n_iter, convergence);
-
-  if (cvg == CS_SLES_ITERATING) {
-
-    n_iter = 1;
+    _dot_products_xy_yz(c, rk, gk, zk, &ro_0, &ro_1);
 
     alpha = -ro_0 / ro_1;
-
     rk_gkm1 = ro_0;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
+    if (convergence->n_iterations_max < 2) {
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+        vx[ii] += (alpha * gk[ii]);
     }
-
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
+    else {
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          dk[ii] = gk[ii];
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          vx[ii] += (alpha * gk[ii]);
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          rk[ii] += (alpha * zk[ii]);
+      }
+    }
   }
 
   /* Current Iteration */
   /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
+  for (n_iter = 1; n_iter < convergence->n_iterations_max; n_iter++) {
 
     /* Preconditionning */
 
@@ -477,16 +411,6 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, gk, sk, &rk_gk, &gk_sk);
 
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(n_iter, convergence);
-
-    if (cvg != CS_SLES_ITERATING)
-      break;
-
-    n_iter += 1;
-
     /* Complete descent parameter computation and matrix.vector product */
 
     beta = rk_gk / rk_gkm1;
@@ -497,18 +421,25 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     alpha = -ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        dk[ii] = gk[ii] + (beta * dk[ii]);
-        vx[ii] += alpha * dk[ii];
+    if (n_iter + 1 < convergence->n_iterations_max) {
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+          dk[ii] = gk[ii] + (beta * dk[ii]);
+          vx[ii] += alpha * dk[ii];
+        }
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+          zk[ii] = sk[ii] + (beta * zk[ii]);
+          rk[ii] += alpha * zk[ii];
+        }
       }
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
-      }
+    }
+    else { /* last iteration */
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        vx[ii] += alpha * (gk[ii] + (beta * dk[ii]));
     }
 
   }
@@ -516,7 +447,9 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -550,7 +483,6 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
                         size_t                     aux_size,
                         void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, beta;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict zk;
@@ -590,74 +522,46 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
-  /* Descent direction */
-  /*-------------------*/
+  {
+    /* Descent direction */
 
-#if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = rk[ii];
-
-#else
-
-  memcpy(dk, rk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  rk_rkm1 = _dot_product_xx(c, rk);
-
-  /* If no solving required, finish here */
-
-  cvg = _convergence_test(n_iter, convergence);
-
-  if (cvg == CS_SLES_ITERATING) {
-
-    n_iter = 1;
-
-    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
+    cs_matrix_vector_multiply(rotation_mode, a, rk, zk); /* rk == dk */
 
     /* Descent parameter */
 
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
+    _dot_products_xy_yz(c, rk, rk, zk, &ro_0, &ro_1);
 
     alpha = -ro_0 / ro_1;
+    rk_rkm1 = ro_0;
+  }
 
+  if (convergence->n_iterations_max > 1) {
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
+        dk[ii] = rk[ii];
+#     pragma omp for nowait
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        vx[ii] += (alpha * rk[ii]);
 #     pragma omp for nowait
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         rk[ii] += (alpha * zk[ii]);
     }
-
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
+  }
+  else {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      vx[ii] += (alpha * rk[ii]);
   }
 
-  /* Current Iteration */
-  /*-------------------*/
+  /* Current Iterations */
 
-  while (cvg == CS_SLES_ITERATING) {
+  for (n_iter = 1; n_iter < convergence->n_iterations_max; n_iter++) {
 
     /* Prepare descent parameter */
 
-    rk_rk = _dot_product(c, rk, rk);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(n_iter, convergence);
-
-    if (cvg != CS_SLES_ITERATING)
-      break;
-
-    n_iter += 1;
+    rk_rk = _dot_product_xx(c, rk);
 
     /* Complete descent parameter computation and matrix.vector product */
 
@@ -674,15 +578,22 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     alpha = -ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
+    if (n_iter + 1 < convergence->n_iterations_max) {
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          vx[ii] += (alpha * dk[ii]);
+
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          rk[ii] += (alpha * zk[ii]);
+      }
+    }
+    else { /* last iteration */
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
         vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
     }
 
   }
@@ -690,7 +601,9 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -728,7 +641,6 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            size_t                     aux_size,
                            void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, rk_sk, beta;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict sk;
@@ -770,78 +682,44 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     rk[ii] = rk[ii] - rhs[ii];
 
-  /* Descent direction */
-  /*-------------------*/
+  {
+    /* Descent direction */
 
-#if defined(HAVE_OPENMP)
+    cs_matrix_vector_multiply(rotation_mode, a, rk, zk); /* zk = A.dk
+                                                            dk == rk*/
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = rk[ii];
+    /* Descent parameter */
 
-#else
-
-  memcpy(dk, rk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  cs_matrix_vector_multiply(rotation_mode, a, dk, zk); /* zk = A.dk */
-
-  /* Descent parameter */
-
-  _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
-
-  /* If no solving required, finish here */
-
-  cvg = _convergence_test(n_iter, convergence);
-
-  if (cvg == CS_SLES_ITERATING) {
-
-    n_iter = 1;
+    _dot_products_xy_yz(c, rk, rk, zk, &ro_0, &ro_1);
 
     alpha = -ro_0 / ro_1;
 
     rk_rkm1 = ro_0;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
+    if (convergence->n_iterations_max < 2) {
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+          vx[ii] += (alpha * rk[ii]);
     }
-
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
+    else {
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        dk[ii] = rk[ii];
+        vx[ii] += (alpha * rk[ii]);
+        rk[ii] += (alpha * zk[ii]);
+      }
+    }
   }
 
   /* Current Iteration */
-  /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
+  for (n_iter = 1; n_iter < convergence->n_iterations_max; n_iter++) {
 
     cs_matrix_vector_multiply(rotation_mode, a, rk, sk);  /* sk = A.zk */
 
-    /* Prepare descent parameter */
+    /* Descent parameter */
 
     _dot_products_xx_xy(c, rk, sk, &rk_rk, &rk_sk);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(n_iter, convergence);
-
-    if (cvg != CS_SLES_ITERATING)
-      break;
-
-    n_iter += 1;
-
-    /* Complete descent parameter computation and matrix.vector product */
 
     beta = rk_rk / rk_rkm1;
     rk_rkm1 = rk_rk;
@@ -851,18 +729,27 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     alpha = -ro_0 / ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        dk[ii] = rk[ii] + (beta * dk[ii]);
-        vx[ii] += alpha * dk[ii];
+    /* Complete descent parameter computation and matrix.vector product */
+
+    if (n_iter + 1 < convergence->n_iterations_max) {
+#     pragma omp parallel if(n_rows > CS_THR_MIN)
+      {
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+          dk[ii] = beta*dk[ii] + rk[ii];
+          vx[ii] += alpha * dk[ii];
+        }
+#       pragma omp for nowait
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+          zk[ii] = beta*zk[ii] + sk[ii];
+          rk[ii] += alpha * zk[ii];
+        }
       }
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
-      }
+    }
+    else { /* last iteration */
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+        vx[ii] += alpha * (beta*dk[ii] + rk[ii]);
     }
 
   }
@@ -870,7 +757,9 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -904,7 +793,6 @@ _jacobi(cs_sles_it_t              *c,
         size_t                     aux_size,
         void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
   cs_lnum_t  ii;
   cs_real_t *_aux_vectors;
   cs_real_t *restrict rk;
@@ -933,14 +821,10 @@ _jacobi(cs_sles_it_t              *c,
     rk = _aux_vectors;
   }
 
-  cvg = CS_SLES_ITERATING;
-
   /* Current iteration */
   /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
-
-    n_iter += 1;
+  for (n_iter = 0; n_iter < convergence->n_iterations_max; n_iter++) {
 
 #if defined(HAVE_OPENMP)
 
@@ -963,16 +847,14 @@ _jacobi(cs_sles_it_t              *c,
       vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
     }
 
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
   }
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -1010,7 +892,6 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
   assert(diag_block_size == 3);
 
-  cs_sles_convergence_state_t cvg;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict vxx;
 
@@ -1040,14 +921,11 @@ _block_3_jacobi(cs_sles_it_t              *c,
     vxx = _aux_vectors + wa_size;
   }
 
-  cvg = CS_SLES_ITERATING;
-
   /* Current iteration */
   /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
+  for (n_iter = 0; n_iter < convergence->n_iterations_max; n_iter++) {
 
-    n_iter += 1;
     memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
 
     /* Compute vxx <- vx - (a-diag).rk */
@@ -1063,15 +941,14 @@ _block_3_jacobi(cs_sles_it_t              *c,
                       rhs + 3*ii);
     }
 
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
   }
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
-  return cvg;
+
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -1105,7 +982,6 @@ _block_jacobi(cs_sles_it_t              *c,
               size_t                     aux_size,
               void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict vxx;
 
@@ -1136,14 +1012,11 @@ _block_jacobi(cs_sles_it_t              *c,
     vxx = _aux_vectors + wa_size;
   }
 
-  cvg = CS_SLES_ITERATING;
-
   /* Current iteration */
   /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
+  for (n_iter = 0; n_iter < convergence->n_iterations_max; n_iter++) {
 
-    n_iter += 1;
     memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
 
     /* Compute Vx <- Vx - (A-diag).Rk */
@@ -1159,16 +1032,14 @@ _block_jacobi(cs_sles_it_t              *c,
                     rhs + db_size[1]*ii);
     }
 
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
   }
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -1200,8 +1071,6 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                             const cs_real_t           *rhs,
                             cs_real_t                 *restrict vx)
 {
-  cs_sles_convergence_state_t cvg;
-
   unsigned n_iter = 0;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -1216,14 +1085,10 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
   const cs_lnum_t  *order = c->add_data->order;
 
-  cvg = CS_SLES_ITERATING;
-
   /* Current iteration */
   /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
-
-    n_iter += 1;
+  for (n_iter = 0; n_iter < convergence->n_iterations_max; n_iter++) {
 
     /* Synchronize ghost cells first */
 
@@ -1284,13 +1149,11 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
 
-    /* Convergence test */
-
-    cvg = _convergence_test(n_iter, convergence);
-
   }
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -1322,8 +1185,6 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
                     const cs_real_t           *rhs,
                     cs_real_t                 *restrict vx)
 {
-  cs_sles_convergence_state_t cvg;
-
   unsigned n_iter = 0;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -1336,14 +1197,10 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
   const int *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
-  cvg = CS_SLES_ITERATING;
-
   /* Current iteration */
   /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
-
-    n_iter += 1;
+  for (n_iter = 0; n_iter < convergence->n_iterations_max; n_iter++) {
 
     /* Synchronize ghost cells first */
 
@@ -1403,11 +1260,11 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
 
-    cvg = _convergence_test(n_iter, convergence);
-
   }
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
@@ -1444,8 +1301,6 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
-  cs_sles_convergence_state_t cvg;
-
   /* Check matrix storage type */
 
   if (cs_matrix_get_type(a) != CS_MATRIX_MSR)
@@ -1468,14 +1323,10 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   const int *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
-  cvg = CS_SLES_ITERATING;
-
   /* Current iteration */
   /*-------------------*/
 
-  while (cvg == CS_SLES_ITERATING) {
-
-    n_iter += 1;
+  for (n_iter = 0; n_iter < convergence->n_iterations_max; n_iter++) {
 
     /* Synchronize ghost cells first */
 
@@ -1592,11 +1443,11 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
 
-    cvg = _convergence_test(n_iter, convergence);
-
   }
 
-  return cvg;
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
 }
 
 /*----------------------------------------------------------------------------
