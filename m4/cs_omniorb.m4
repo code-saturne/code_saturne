@@ -221,6 +221,11 @@ then
   OMNIORB_IDLPYFLAGS_1='-bpython -nf '
   OMNIORB_IDLPYFLAGS_2=" -I${OMNIORB_ROOT}/idl"
   OMNIORB_IDLPYFLAGS=${OMNIORB_IDLPYFLAGS_1}${OMNIORB_IDLPYFLAGS_2}
+  for p in `cut -d: -f 1- --output-delimiter=$'\n' <<<"$PYTHONPATH"`; do
+    if test -f $p/omniidl_be/python.py; then
+      OMNIORB_IDLPYFLAGS="${OMNIORB_IDLPYFLAGS} -p ${p}"
+    fi
+  done
 
   AC_SUBST(OMNIORB_IDLCXXFLAGS)
   AC_SUBST(OMNIORB_IDLPYFLAGS)
