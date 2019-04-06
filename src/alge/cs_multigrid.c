@@ -497,7 +497,8 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
 
   for (int i = 0; i < 3; i++) {
 
-    if (mg->info.type[i] < CS_SLES_N_IT_TYPES) {
+    if (   mg->info.type[i] != CS_SLES_N_IT_TYPES
+        && mg->info.type[i] < CS_SLES_N_SMOOTHER_TYPES) {
       cs_log_printf(CS_LOG_SETUP,
                     _("  %s:\n"
                       "    Type:                            %s\n"),
@@ -573,7 +574,8 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
                 _(cs_multigrid_type_name[mg->type]),
                 _(cs_grid_coarsening_type_name[mg->coarsening_type]));
 
-  if (mg->info.type[0] != CS_SLES_N_IT_TYPES) {
+  if (   mg->info.type[0] != CS_SLES_N_IT_TYPES
+      && mg->info.type[0] < CS_SLES_N_SMOOTHER_TYPES) {
 
     const char *descent_smoother_name = cs_sles_it_type_name[mg->info.type[0]];
     const char *ascent_smoother_name = cs_sles_it_type_name[mg->info.type[1]];
@@ -1628,7 +1630,7 @@ _multigrid_create_k_cycle_bottom(cs_multigrid_t  *parent)
 
   cs_multigrid_set_solver_options
     (mg,
-     CS_SLES_N_IT_TYPES, CS_SLES_N_IT_TYPES, CS_SLES_FCG,
+     CS_SLES_N_SMOOTHER_TYPES, CS_SLES_N_SMOOTHER_TYPES, CS_SLES_FCG,
      1,   /* n max cycles */
      1,   /* n max iter for descent */
      1,   /* n max iter for ascent */
@@ -1755,12 +1757,11 @@ _multigrid_setup_sles_k_cycle_bottom(cs_multigrid_t  *mg,
 
   cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[0]);
 
-  if (mg->info.type[0] < CS_SLES_N_IT_TYPES) {
+  if (mg->info.type[0] < CS_SLES_N_SMOOTHER_TYPES) {
     mg_sles->context
-      = cs_sles_it_create(mg->info.type[0],
-                          mg->info.poly_degree[0],
-                          mg->info.n_max_iter[0],
-                          false); /* stats not updated here */
+      = cs_multigrid_smoother_create(mg->info.type[0],
+                                     mg->info.poly_degree[0],
+                                     mg->info.n_max_iter[0]);
     mg_sles->setup_func = cs_sles_it_setup;
     mg_sles->solve_func = cs_sles_it_solve;
     mg_sles->destroy_func = cs_sles_it_destroy;
@@ -1906,7 +1907,8 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
     }
 
     for (int j = 0; j < n_ops; j++) {
-      if (mg->info.type[j] < CS_SLES_N_IT_TYPES) {
+      if (   mg->info.type[i] != CS_SLES_N_IT_TYPES
+          && mg->info.type[i] < CS_SLES_N_SMOOTHER_TYPES) {
         cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[i*2 + j]);
         mg_sles->context
           = cs_multigrid_smoother_create(mg->info.type[j],
@@ -1918,8 +1920,9 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
         /* Share context between descent and ascent smoothers if both
            are of the cs_sles_it type */
-        if (j == 1 && mg->info.type[0] < CS_SLES_N_IT_TYPES) {
-          if (mg->info.type[0] < CS_SLES_N_IT_TYPES)
+        if (j == 1) {
+          if (   mg->info.type[0] != CS_SLES_N_IT_TYPES
+              && mg->info.type[0] < CS_SLES_N_SMOOTHER_TYPES)
             cs_sles_it_set_shareable(mgd->sles_hierarchy[i*2 + 1].context,
                                      mgd->sles_hierarchy[i*2].context);
         }
@@ -4029,7 +4032,7 @@ cs_multigrid_set_coarsening_options(cs_multigrid_t  *mg,
  * \param[in]       n_max_iter_descent      maximum iterations
  *                                          per descent smoothing
  * \param[in]       n_max_iter_ascent       maximum iterations
- *                                          per ascent smmothing
+ *                                          per ascent smoothing
  * \param[in]       n_max_iter_coarse       maximum iterations
  *                                          per coarsest solution
  * \param[in]       poly_degree_descent     preconditioning polynomial degree

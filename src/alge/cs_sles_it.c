@@ -60,6 +60,36 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *============================================================================*/
 
+/*!
+  \file cs_sles_it.c
+        Iterative linear solvers
+
+ \page sles_it Iterative linear solvers.
+
+ For Krylov space solvers, default preconditioning is based
+ on a Neumann polynomial of degree \a poly_degree, with a negative value
+ meaning no preconditioning, and 0 diagonal preconditioning.
+
+ For positive values of \a poly_degree, the preconditioning is explained here:
+ \a D being the diagonal part of matrix \a A and \a X its extra-diagonal
+ part, it can be written \f$A=D(Id+D^{-1}X)\f$. Therefore
+ \f$A^{-1}=(Id+D^{-1}X)^{-1}D^{-1}\f$. A series development of
+ \f$Id+D^{-1}X\f$ can then be used which yields, symbolically,
+ \f[
+ Id+\sum\limits_{I=1}^{poly\_degree}\left(-D^{-1}X\right)^{I}
+ \f]
+
+ The efficiency of the polynomial preconditioning will vary depending
+ on the system type. In most cases, diagonal or degree 1 provide
+ best results. Each polynomial preconditioning degree above 0 adds one
+ matrix-vector product per inital matrix-vector product of the algorithm.
+ Switching from diagonal to polynomial degree 1 often divides the number of
+ required iterations by approximately 2, but each iteration then costs
+ close to 2 times that of diagonal preconditoning (other vector operations
+ are not doubled), so the net gain is often about 10%. Higher degree
+ polynomials usually lead to diminishing returns.
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -99,9 +129,11 @@ const char *cs_sles_it_type_name[]
      N_("GMRES"),
      N_("Gauss-Seidel"),
      N_("Symmetric Gauss-Seidel"),
+     N_("3-layer conjugate residual"),
+     N_("None"), /* Smoothers beyond this */
      N_("Truncated forward Gauss-Seidel"),
      N_("Truncated backwards Gauss-Seidel"),
-     N_("3-layer conjugate residual")};
+};
 
 /*=============================================================================
  * Local Structure Definitions
@@ -3340,248 +3372,6 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using Truncated forward Gauss-Seidel.
- *
- * This variant is intended for smoothing with a fixed number of
- * iterations, so does not compute a residue or run a convergence test.
- *
- * parameters:
- *   c               <-- pointer to solver context info
- *   a               <-- linear equation matrix
- *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
- *   convergence     <-- convergence information structure
- *   rhs             <-- right hand side
- *   vx              <-> system solution
- *   aux_size        <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors     --- optional working area (unused here)
- *
- * returns:
- *   convergence state
- *----------------------------------------------------------------------------*/
-
-static cs_sles_convergence_state_t
-_ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
-                       const cs_matrix_t         *a,
-                       int                        diag_block_size,
-                       cs_halo_rotation_t         rotation_mode,
-                       cs_sles_it_convergence_t  *convergence,
-                       const cs_real_t           *rhs,
-                       cs_real_t                 *restrict vx,
-                       size_t                     aux_size,
-                       void                      *aux_vectors)
-{
-  CS_UNUSED(rotation_mode);
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
-
-  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-  const cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
-
-  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
-
-  const cs_lnum_t  *a_row_index, *a_col_id;
-  const cs_real_t  *a_d_val, *a_x_val;
-
-  const int *db_size = cs_matrix_get_diag_block_size(a);
-  cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
-
-  /* Single iteration */
-  /*------------------*/
-
-  /* Zeroe ghost cell values first */
-
-  cs_lnum_t s_id = n_rows*diag_block_size;
-  cs_lnum_t e_id = n_cols_ext*diag_block_size;
-
-  for (cs_lnum_t ii = s_id; ii < e_id; ii++)
-    vx[ii] = 0.0;
-
-  /* Compute Vx <- Vx - (A-diag).Rk */
-
-  if (diag_block_size == 1) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-      const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-      const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
-
-      cs_real_t vx0 = rhs[ii];
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] > ii) break;
-        vx0 -= (m_row[jj]*vx[col_id[jj]]);
-      }
-
-      vx0 *= ad_inv[ii];
-
-      vx[ii] = vx0;
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-      const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-      const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
-
-      cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
-
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx0[kk] = rhs[ii*db_size[1] + kk];
-      }
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] > ii) break;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
-      }
-
-      _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                       db_size[0],
-                       _vx,
-                       vx0);
-
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx[ii*db_size[1] + kk] = _vx[kk];
-      }
-
-    }
-
-  }
-
-  convergence->n_iterations = 1;
-
-  return CS_SLES_MAX_ITERATION;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using Truncated backward Gauss-Seidel.
- *
- * This variant is intended for smoothing with a fixed number of
- * iterations, so does not compute a residue or run a convergence test.
- *
- * parameters:
- *   c               <-- pointer to solver context info
- *   a               <-- linear equation matrix
- *   diag_block_size <-- diagonal block size
- *   rotation_mode   <-- halo update option for rotational periodicity
- *   convergence     <-- convergence information structure
- *   rhs             <-- right hand side
- *   vx              <-> system solution
- *   aux_size        <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors     --- optional working area (unused here)
- *
- * returns:
- *   convergence state
- *----------------------------------------------------------------------------*/
-
-static cs_sles_convergence_state_t
-_ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
-                       const cs_matrix_t         *a,
-                       int                        diag_block_size,
-                       cs_halo_rotation_t         rotation_mode,
-                       cs_sles_it_convergence_t  *convergence,
-                       const cs_real_t           *rhs,
-                       cs_real_t                 *restrict vx,
-                       size_t                     aux_size,
-                       void                      *aux_vectors)
-{
-  CS_UNUSED(rotation_mode);
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
-
-  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-  const cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
-
-  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
-
-  const cs_lnum_t  *a_row_index, *a_col_id;
-  const cs_real_t  *a_d_val, *a_x_val;
-
-  const int *db_size = cs_matrix_get_diag_block_size(a);
-  cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
-
-  /* Single iteration */
-  /*------------------*/
-
-  /* Zeroe ghost cell values first */
-
-  cs_lnum_t s_id = n_rows*diag_block_size;
-  cs_lnum_t e_id = n_cols_ext*diag_block_size;
-
-  for (cs_lnum_t ii = s_id; ii < e_id; ii++)
-    vx[ii] = 0.0;
-
-  /* Compute Vx <- Vx - (A-diag).Rk */
-
-  if (diag_block_size == 1) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
-    for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
-
-      const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-      const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-      const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
-
-      cs_real_t vx0 = rhs[ii];
-
-      for (cs_lnum_t jj = n_cols-1; jj > -1; jj--) {
-        if (col_id[jj] < ii) break;
-        vx0 -= (m_row[jj]*vx[col_id[jj]]);
-      }
-
-      vx0 *= ad_inv[ii];
-
-      vx[ii] = vx0;
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
-    for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
-
-      const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-      const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-      const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
-
-      cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
-
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx0[kk] = rhs[ii*db_size[1] + kk];
-      }
-
-      for (cs_lnum_t jj = n_cols-1; jj > -1; jj--) {
-        if (col_id[jj] < ii) break;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
-      }
-
-      _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                       db_size[0],
-                       _vx,
-                       vx0);
-
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx[ii*db_size[1] + kk] = _vx[kk];
-      }
-
-    }
-
-  }
-
-  convergence->n_iterations = 1;
-
-  return CS_SLES_MAX_ITERATION;
-}
-
-/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Process-local symmetric Gauss-Seidel.
  *
  * On entry, vx is considered initialized.
@@ -3853,8 +3643,6 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   case CS_SLES_JACOBI:
   case CS_SLES_P_GAUSS_SEIDEL:
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
-  case CS_SLES_TS_F_GAUSS_SEIDEL:
-  case CS_SLES_TS_B_GAUSS_SEIDEL:
     c->_pc = NULL;
     break;
   default:
@@ -4138,14 +3926,10 @@ cs_sles_it_setup(void               *context,
 
   if (   c->type == CS_SLES_JACOBI
       || (   c->type >= CS_SLES_P_GAUSS_SEIDEL
-          && c->type <= CS_SLES_TS_B_GAUSS_SEIDEL)) {
+          && c->type <= CS_SLES_P_SYM_GAUSS_SEIDEL)) {
     /* Force to Jacobi in case matrix type is not adapted */
     if (cs_matrix_get_type(a) != CS_MATRIX_MSR) {
       c->type = CS_SLES_JACOBI;
-      if (c->type >= CS_SLES_TS_B_GAUSS_SEIDEL) {
-        c->n_max_iter = 2;
-        c->ignore_convergence = true;
-      }
     }
     cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size, true);
   }
@@ -4230,15 +4014,6 @@ cs_sles_it_setup(void               *context,
     break;
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
     c->solve = _p_sym_gauss_seidel_msr;
-    break;
-
-  case CS_SLES_TS_F_GAUSS_SEIDEL:
-    c->solve = _ts_f_gauss_seidel_msr;
-    c->ignore_convergence = true;
-    break;
-  case CS_SLES_TS_B_GAUSS_SEIDEL:
-    c->solve = _ts_b_gauss_seidel_msr;
-    c->ignore_convergence = true;
     break;
 
   default:

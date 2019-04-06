@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-03-30 17:45+0100\n"
+"POT-Creation-Date: 2019-04-06 13:53+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1265,6 +1265,9 @@ msgid ""
 msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
+
+msgid "CGNS: unhandled NGON_n element in MIXED section\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3981,6 +3984,40 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Symmetric Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+"matrix using %s (%s) storage."
+msgstr ""
+
+#, c-format
+msgid ""
+"Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+"matrix using %s (%s) storage."
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Setup of solver for linear system \"%s\"\n"
+msgstr ""
+"\n"
+" Préparation du solveur pour le système linéaire \"%s\"\n"
+
+#, c-format
+msgid ""
+" %s: Setup of linear equation on \"%s\"\n"
+"with smoother type %d, which is not allowed or available)."
+msgstr ""
+
+#, c-format
+msgid ""
+" RHS norm:          %11.4e\n"
+"\n"
+msgstr ""
+" Norme du second-membre : %11.4e\n"
+"\n"
+
+#, c-format
+msgid ""
 "[%s]:\n"
 "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"
 msgstr ""
@@ -4126,14 +4163,17 @@ msgstr "Gauss-Seidel"
 msgid "Symmetric Gauss-Seidel"
 msgstr "Gauss-Seidel symmétrique"
 
+msgid "3-layer conjugate residual"
+msgstr "Résidu conjugué à 3 couches"
+
+msgid "None"
+msgstr ""
+
 msgid "Truncated forward Gauss-Seidel"
 msgstr "Gauss-Seidel tronqué avant"
 
 msgid "Truncated backwards Gauss-Seidel"
 msgstr "Gauss-Seidel tronqué arrière"
-
-msgid "3-layer conjugate residual"
-msgstr "Résidu conjugué à 3 couches"
 
 #, c-format
 msgid ""
@@ -4185,18 +4225,6 @@ msgstr ""
 #, c-format
 msgid "  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"
 msgstr "  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"
-
-#, c-format
-msgid ""
-"Symmetric Gauss-Seidel Jacobi hybrid solver only supported with a\n"
-"matrix using %s (%s) storage."
-msgstr ""
-
-#, c-format
-msgid ""
-"Gauss-Seidel Jacobi hybrid solver only supported with a\n"
-"matrix using %s (%s) storage."
-msgstr ""
 
 #, c-format
 msgid "  Solver type:                       %s\n"
@@ -4263,14 +4291,6 @@ msgstr ""
 "  Temps total de résolution :    %12.3f\n"
 
 #, c-format
-msgid ""
-"\n"
-" Setup of solver for linear system \"%s\"\n"
-msgstr ""
-"\n"
-" Préparation du solveur pour le système linéaire \"%s\"\n"
-
-#, c-format
 msgid "GMRES not supported with block_size > 1 (%s)."
 msgstr ""
 
@@ -4279,14 +4299,6 @@ msgid ""
 "Setup of linear equation on \"%s\"\n"
 "with solver type %d, which is not defined)."
 msgstr ""
-
-#, c-format
-msgid ""
-" RHS norm:          %11.4e\n"
-"\n"
-msgstr ""
-" Norme du second-membre : %11.4e\n"
-"\n"
 
 #, c-format
 msgid ""
@@ -11067,6 +11079,25 @@ msgstr ""
 #, c-format
 msgid ""
 "cg_section_partial_write() failed to write tesselated elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_poly_elements_partial_write() failed to write elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"Associated range: [%llu, %llu]\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_poly_section_write() failed to write polygonal elements:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
 "Associated section name: \"%s\"\n"

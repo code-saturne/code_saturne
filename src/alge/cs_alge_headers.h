@@ -48,6 +48,7 @@
 #include "cs_matrix_tuning.h"
 #include "cs_matrix_util.h"
 #include "cs_multigrid.h"
+#include "cs_multigrid_smoother.h"
 #include "cs_sles_default.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"

@@ -49,25 +49,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Solver types
- *----------------------------------------------------------------------------*/
-
-typedef enum {
-
-  CS_MULTIGRID_SMOOTHER_CG,                  /* Conjugate gradient */
-  CS_MULTIGRID_SMOOTHER_JACOBI,              /* Jacobi */
-  CS_MULTIGRID_SMOOTHER_P_GAUSS_SEIDEL,      /* Process-local Gauss-Seidel */
-  CS_MULTIGRID_SMOOTHER_P_SYM_GAUSS_SEIDEL,  /* Process-local symmetric
-                                                Gauss-Seidel */
-  CS_MULTIGRID_SMOOTHER_TS_F_GAUSS_SEIDEL,   /* Truncated forward Gauss-Seidel
-                                                smoothing */
-  CS_MULTIGRID_SMOOTHER_TS_B_GAUSS_SEIDEL,   /* Truncated backward Gauss-Seidel
-                                                smoothing */ /*  */
-  CS_MULTIGRID_N_SMOOTHER_TYPES /* Number of multigrid smoothers */
-
-} cs_multigrid_smoother_type_t;
-
 /* Iterative linear solver context (opaque) */
 
 typedef struct _cs_multigrid_smoother_t  cs_multigrid_smoother_t;
@@ -75,10 +56,6 @@ typedef struct _cs_multigrid_smoother_t  cs_multigrid_smoother_t;
 /*============================================================================
  *  Global variables
  *============================================================================*/
-
-/* Names for iterative solver types */
-
-extern const char *cs_multigrid_smoother_type_name[];
 
 /*=============================================================================
  * Public function prototypes
@@ -160,18 +137,18 @@ cs_multigrid_smoother_setup(void               *context,
 
 cs_sles_convergence_state_t
 cs_multigrid_smoother_solve(void                *context,
-                 const char          *name,
-                 const cs_matrix_t   *a,
-                 int                  verbosity,
-                 cs_halo_rotation_t   rotation_mode,
-                 double               precision,
-                 double               r_norm,
-                 int                 *n_iter,
-                 double              *residue,
-                 const cs_real_t     *rhs,
-                 cs_real_t           *vx,
-                 size_t               aux_size,
-                 void                *aux_vectors);
+                            const char          *name,
+                            const cs_matrix_t   *a,
+                            int                  verbosity,
+                            cs_halo_rotation_t   rotation_mode,
+                            double               precision,
+                            double               r_norm,
+                            int                 *n_iter,
+                            double              *residue,
+                            const cs_real_t     *rhs,
+                            cs_real_t           *vx,
+                            size_t               aux_size,
+                            void                *aux_vectors);
 
 /*----------------------------------------------------------------------------
  * Free iterative sparse linear equation solver setup context.
@@ -199,7 +176,7 @@ cs_multigrid_smoother_free(void  *context);
 
 void
 cs_multigrid_smoother_log(const void  *context,
-               cs_log_t     log_type);
+                          cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------
  * Return iterative solver type.
@@ -211,7 +188,7 @@ cs_multigrid_smoother_log(const void  *context,
  *   selected solver type
  *----------------------------------------------------------------------------*/
 
-cs_multigrid_smoother_type_t
+cs_sles_it_type_t
 cs_multigrid_smoother_get_type(const cs_multigrid_smoother_t  *context);
 
 /*----------------------------------------------------------------------------*/

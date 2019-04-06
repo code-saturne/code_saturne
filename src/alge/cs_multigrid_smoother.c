@@ -63,25 +63,11 @@ BEGIN_C_DECLS
 
 /*!
   \file cs_multigrid_smoother.c
-        Iterative linear solvers
+        Iterative linear solvers used as multigrid smoothers only.
 
-  \enum cs_multigrid_smoother_type_t
-
-  \brief Multigrid smoother types
-
-  \var CS_MULTIGRID_SMOOTHER_PCG
-       Preconditioned conjugate gradient
-  \var CS_MULTIGRID_SMOOTHER_JACOBI
-       Jacobi
-  \var CS_MULTIGRID_SMOOTHER_P_GAUSS_SEIDEL
-       Process-local Gauss-Seidel
-  \var CS_MULTIGRID_SMOOTHER_P_SYM_GAUSS_SEIDEL
-       Process-local symmetric Gauss-Seidel
-  \var CS_MULTIGRID_SMOOTHER_TS_F_GAUSS_SEIDEL
-       Truncated Gauss-Seidel smoother pass
-  \var CS_MULTIGRID_SMOOTHER_TS_B_GAUSS_SEIDEL
-       Truncated backward Gauss-Seidel smoother pass
-
+  These smoothers are based on iterative solvers, but are simplified so
+  as to avoid the cost of some residue computation and convergence testing
+  operations.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -114,16 +100,6 @@ static int _thread_debug = 0;
 /* Mean system rows threshold under which we use single-reduce version of PCG */
 
 static cs_lnum_t _pcg_sr_threshold = 512;
-
-/* Sparse linear equation solver type names */
-
-const char *cs_multigrid_smoother_type_name[]
-  = {N_("Conjugate Gradient"),
-     N_("Jacobi"),
-     N_("Gauss-Seidel"),
-     N_("Symmetric Gauss-Seidel"),
-     N_("Truncated forward Gauss-Seidel"),
-     N_("Truncated backwards Gauss-Seidel")};
 
 /*============================================================================
  * Private function definitions
@@ -347,7 +323,6 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   return cvg;
 }
-
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using preconditioned conjugate gradient
@@ -2070,18 +2045,27 @@ cs_multigrid_smoother_setup(void               *context,
     cs_matrix_log_info(a, verbosity);
   }
 
-  if (   c->type == CS_SLES_JACOBI
-      || (   c->type >= CS_SLES_P_GAUSS_SEIDEL
-          && c->type <= CS_SLES_TS_B_GAUSS_SEIDEL)) {
-    /* Force to Jacobi in case matrix type is not adapted */
+  if (c->type == CS_SLES_JACOBI)
+    cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size, true);
+
+  else if (   c->type == CS_SLES_P_GAUSS_SEIDEL
+           || c->type == CS_SLES_P_SYM_GAUSS_SEIDEL) {
+    /* Force to Jacobi type in case matrix type is not adapted */
+    if (cs_matrix_get_type(a) != CS_MATRIX_MSR)
+      c->type = CS_SLES_JACOBI;
+    cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size, true);
+  }
+
+  else if (   c->type == CS_SLES_TS_F_GAUSS_SEIDEL
+           || c->type == CS_SLES_TS_B_GAUSS_SEIDEL) {
+    /* Force to closest Jacobi type in case matrix type is not adapted */
     if (cs_matrix_get_type(a) != CS_MATRIX_MSR) {
       c->type = CS_SLES_JACOBI;
-      if (c->type >= CS_SLES_TS_B_GAUSS_SEIDEL) {
-        c->n_max_iter = 2;
-      }
+      c->n_max_iter = 2;
     }
     cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size, true);
   }
+
   else
     cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size, false);
 
