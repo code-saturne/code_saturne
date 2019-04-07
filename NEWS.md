@@ -115,6 +115,9 @@ Bug fixes:
 
 Architectural changes:
 
+- Allow sourcing environment before launching with the
+  --with-shell-env configure option.
+
 - Update CGNS support for CGNS 3.4 compatibility.
 
 - Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
