@@ -11,6 +11,9 @@ User changes:
 
 Architectural changes:
 
+- Allow sourcing environment before launching with the
+  --with-shell-env configure option.
+
 - Update CGNS support for CGNS 3.4 compatibility.
 
 - GUI: force SIP API version to 2 for PqQt4. This allows removing

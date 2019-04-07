@@ -83,6 +83,20 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 # Checks for programs.
 #------------------------------------------------------------------------------
 
+AC_ARG_WITH(shell-env,
+            [AS_HELP_STRING([--with-shell-env],
+                            [source given or detected shell environment)])],
+            [if test "x$with_shell_env" = "x"; then
+               shell_env=auto
+             elif test -f "$with_shell_env"; then
+               shell_env="$with_shell_env"
+             fi],
+            [shell_env=no]
+)
+AC_SUBST(shell_env)
+
+AM_CONDITIONAL(HAVE_SHELL_LAUNCHER, [test "${shell_env}" != no])
+
 # Check for environment modules
 #------------------------------
 
@@ -1285,7 +1299,7 @@ echo " PETSc support: "$cs_have_petsc""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support: "$cs_have_dlloader""
-if (test x$cs_env_modules != x) ; then
+if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""
 fi
 echo
