@@ -155,19 +155,31 @@ and their role is given in \S\ref{sec:list_ext_lib}.
 For some external libraries, such as Catalyst (see \ref{sec:list_ext_lib}),
 a C++ compiler is also required.
 
-The SALOME platform is currently only compatible with Python 2,
-so Python 3 should only be used when not building with SALOME support.
+The SALOME platform V9 and above requires Python 3, older versions Python 2,
+and a matching version should be used when building with SALOME support.
 
 In practice, the code is known to build and function properly at least with the
-GNU compilers 4.4 and above (up to 6.3 at this date), Intel compilers 11 and
-above (up to 17 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
+GNU compilers 4.4 and above (up to 8.x at this date), Intel compilers 11 and
+above (up to 18 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
 (tested with 3.7 or above).
 
 Note also that while \CS makes heavy use of Python, this is for scripts and
-for the GUI only; The solver only uses compiled code, so we may for example use
+for the GUI only; The solver only uses compiled code, so we could for example use
 a 32-bit version of Python with 64-bit \CS libraries and executables.
 Also, the version of Python used by ParaView/Catalyst may be independent
 from the one used for building \CS.
+
+\section{Loading an environment\label{sec:shell_env}}
+
+If installing and running \CS requires sourcing a given environment
+or loading environement modules (see \S\ref{sec:obtain_ext_lib}),
+the \texttt{--with-shell-env} option allows defining the path for a file
+to source, or if no path is given, loading default modules.
+
+By default, the main \texttt{code\_saturne} command is a Python
+script. When sourcing an environment, a launcher shell script is
+run first, loads the required environment, then calls Python with the
+\texttt{code\_saturne.py} script.
 
 \section{Third-Party libraries\label{sec:ext_lib}}
 
@@ -206,11 +218,12 @@ ways:
       but \texttt{libxml2-dev} must also be installed for the \CS
       build to be able to use the former.
 
-\item On many large compute clusters, Environment Modules allow
-      the administrators to provide multiple versions of many
+\item On some systems, especially compute clusters, Environment Modules
+      allow the administrators to provide multiple versions of many
       scientific libraries, as well us compilers or MPI libraries,
       using the \texttt{module} command. More details on
-      Environment Modules may be found at \url{http://modules.sourceforge.net}.
+      Environment Modules may be found at \url{http://modules.sourceforge.net}
+      or \url{https://github.com/TACC/Lmod}.
       When being configured and installed \CS checks for modules loaded
       with the \texttt{module} command, and records the list of loaded
       modules. Whenever running that build of \CS, the modules detected

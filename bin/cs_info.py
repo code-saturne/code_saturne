@@ -31,11 +31,9 @@ This module defines the following functions:
 - launch_manual
 """
 
-
 #-------------------------------------------------------------------------------
 # Library modules import
 #-------------------------------------------------------------------------------
-
 
 import os, sys, shutil, stat, fnmatch
 from optparse import OptionParser
@@ -65,7 +63,6 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA."""
 # Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
-
 def process_cmd_line(argv, pkg):
     """
     Processes the passed command line arguments.
@@ -92,6 +89,10 @@ def process_cmd_line(argv, pkg):
                       metavar="<guide>", action="append",
                       help="open a manual " + str(get_docs(pkg)))
 
+    parser.add_option("--modules", dest="modules",
+                      action="store_true",
+                      help="print evironment modules")
+
     parser.add_option("--version", dest="version",
                       action="store_true",
                       help="print version number")
@@ -106,6 +107,10 @@ def process_cmd_line(argv, pkg):
         print_version(pkg)
         sys.exit(0)
 
+    if options.modules:
+        print_modules(pkg)
+        sys.exit(0)
+
     if len(args) > 0 or len(options.guides) == 0:
         parser.print_help()
         sys.exit(1)
@@ -117,7 +122,6 @@ def process_cmd_line(argv, pkg):
 # Print Code_Saturne version
 #-------------------------------------------------------------------------------
 
-
 def print_version(pkg):
     """
     Print Code_Saturne version.
@@ -125,6 +129,21 @@ def print_version(pkg):
 
     print(pkg.code_name + " version: " + pkg.version_full)
 
+#-------------------------------------------------------------------------------
+# Print Environment modules info
+#-------------------------------------------------------------------------------
+
+def print_modules(pkg):
+    """
+    Print Code_Saturne environment modules info.
+    """
+
+    import cs_config
+    c = cs_config.config()
+
+    if c.env_modulecmd:
+        print("Module command:      " + str(c.env_modulecmd))
+        print("Environment modules: " + str(c.env_modules))
 
 #-------------------------------------------------------------------------------
 # Launch the PDF manual
@@ -143,7 +162,6 @@ def get_docs(pkg):
             for docs in fnmatch.filter(os.listdir(doxy_dir), 'index.html'):
                 l.append('Doxygen')
     return l
-
 
 def launch_manual(reader, m, pkg):
     """

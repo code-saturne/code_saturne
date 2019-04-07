@@ -45,6 +45,7 @@ build-aux/catalyst \
 build-aux/catalyst-5.6 \
 build-aux/cs_config_test.py \
 build-aux/cs_version.py \
+build-aux/list_modules.sh \
 build-aux/petsc-petscvariables.makefile \
 build-aux/petsc-variables.makefile \
 m4/codeset.m4 \
@@ -134,8 +135,8 @@ m4/cs_salome.m4 \
 m4/cs_scotch.m4 \
 m4/cs_zlib.m4
 
-# One adds several sub-directories and get rid of the .svn
-# directories with a dist-hook. The reason for this trick is that
+# One adds several sub-directories with a dist-hook.
+# The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples extras patches
 
@@ -197,13 +198,38 @@ edit_package = sed \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
 	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
 
+edit_shell = sed \
+	-e 's|@SHELL[@]|$(SHELL)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON)|g' \
+	-e 's|@cs_env_modules[@]|$(cs_env_modules)|g' \
+	-e 's|@shell_env[@]|$(shell_env)|g'
+
+if HAVE_SHELL_LAUNCHER
+  LAUNCHER_EXT=sh
+  edit_launcher=$(edit_shell)
+else
+  LAUNCHER_EXT=py
+  edit_launcher=$(edit_python)
+endif
+
 bin/code_saturne: Makefile
+	rm -f $@ $@.tmp
+	$(MKDIR_P) bin
+	srcdir=''; \
+	test -f ./$@.$(LAUNCHER_EXT).in || srcdir=$(srcdir)/; \
+	$(edit_launcher) $${srcdir}$@.$(LAUNCHER_EXT).in >$@.tmp
+	mv $@.tmp $@
+
+if HAVE_SHELL_LAUNCHER
+bin/code_saturne.py: Makefile
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
 	$(edit_python) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
+bin/code_saturne.py: $(srcdir)/bin/code_saturne.py.in
+endif
 
 bin/cs_package.py: Makefile
 	rm -f $@ $@.tmp
@@ -213,11 +239,14 @@ bin/cs_package.py: Makefile
 	$(edit_package) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
-bin/code_saturne: $(srcdir)/bin/code_saturne.in
+bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 
+BUILT_SOURCES = bin/cs_package.py
+
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in \
+EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
+	      bin/code_saturne.sh.in \
               data/thch/dp_radiat_MFS.tar.xz
 
 # Install binary scripts
@@ -225,11 +254,17 @@ EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in \
 nodist_bin_SCRIPTS = \
 bin/code_saturne
 
+if HAVE_SHELL_LAUNCHER
+nodist_bin_SCRIPTS += bin/code_saturne.py
+endif
+
 # Install Python library
 
 nodist_pkgpython_PYTHON = \
 bin/cs_config.py \
 bin/cs_package.py
+
+# Install Python library
 
 dist_pkgpython_PYTHON = \
 bin/__init__.py \
@@ -396,8 +431,6 @@ dist-hook: changelog
 	-rm -rf `find $(distdir)/patches -name .svn`
 	-rm -rf `find $(distdir)/salome -name .svn`
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --full > $(distdir)/build-aux/version
-
-all-local: bin/cs_package.py
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
