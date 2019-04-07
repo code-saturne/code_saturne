@@ -215,8 +215,10 @@ edit_shell = sed \
 
 if HAVE_SHELL_LAUNCHER
   LAUNCHER_EXT=sh
+  edit_launcher=$(edit_shell)
 else
   LAUNCHER_EXT=py
+  edit_launcher=$(edit_python)
 endif
 
 bin/code_saturne: Makefile
@@ -224,7 +226,7 @@ bin/code_saturne: Makefile
 	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.$(LAUNCHER_EXT).in || srcdir=$(srcdir)/; \
-	$(edit_shell) $${srcdir}$@.$(LAUNCHER_EXT).in >$@.tmp
+	$(edit_launcher) $${srcdir}$@.$(LAUNCHER_EXT).in >$@.tmp
 	mv $@.tmp $@
 
 if HAVE_SHELL_LAUNCHER
