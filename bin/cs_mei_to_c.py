@@ -1328,7 +1328,7 @@ class mei_to_c_interpreter:
                 if 'porosity' in nature_list:
                     if zone.getNature()['porosity'] == 'on':
                         exp, req, known_fields, sym = \
-                        prm.getPorosityFormulaComponents(zone_name)
+                        prm.getPorosityFormulaComponents(z_id)
 
                         self.init_block('vol', zone_name, 'porosity',
                                         exp, req, sym, known_fields)
