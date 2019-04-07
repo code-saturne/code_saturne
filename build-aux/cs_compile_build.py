@@ -315,6 +315,9 @@ class compile_install(cs_compile):
                 and (not pkg.config.libs[lib].dynamic_load)):
                 cmd_line += separate_args(pkg.config.libs[lib].flags[flag])
 
+        print(cmd_line)
+        print(self.pkg.config.rpath)
+
 #===============================================================================
 # Functions
 #===============================================================================

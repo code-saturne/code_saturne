@@ -50,6 +50,7 @@ build-aux/catalyst \
 build-aux/cs_compile_build.py \
 build-aux/cs_config_test.py \
 build-aux/cs_version.py \
+build-aux/list_modules.sh \
 build-aux/petsc-petscvariables.makefile \
 build-aux/petsc-variables.makefile \
 m4/codeset.m4 \
@@ -204,13 +205,38 @@ edit_package = sed \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
 	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
 
+edit_shell = sed \
+	-e 's|@SHELL[@]|$(SHELL)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON)|g' \
+	-e 's|@cs_env_modules[@]|$(cs_env_modules)|g' \
+	-e 's|@shell_env[@]|$(shell_env)|g'
+
+if HAVE_SHELL_LAUNCHER
+  LAUNCHER_EXT=sh
+  edit_launcher=$(edit_shell)
+else
+  LAUNCHER_EXT=py
+  edit_launcher=$(edit_python)
+endif
+
 bin/code_saturne: Makefile
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
-	test -f ./$@.py.in || srcdir=$(srcdir)/; \
-	$(edit_python) $${srcdir}$@.py.in >$@.tmp
+	test -f ./$@.$(LAUNCHER_EXT).in || srcdir=$(srcdir)/; \
+	$(edit_launcher) $${srcdir}$@.$(LAUNCHER_EXT).in >$@.tmp
 	mv $@.tmp $@
+
+if HAVE_SHELL_LAUNCHER
+bin/code_saturne.py: Makefile
+	rm -f $@ $@.tmp
+	$(MKDIR_P) bin
+	srcdir=''; \
+	test -f ./$@.in || srcdir=$(srcdir)/; \
+	$(edit_python) $${srcdir}$@.in >$@.tmp
+	mv $@.tmp $@
+bin/code_saturne.py: $(srcdir)/bin/code_saturne.py.in
+endif
 
 bin/cs_package.py: Makefile
 	rm -f $@ $@.tmp
@@ -220,19 +246,24 @@ bin/cs_package.py: Makefile
 	$(edit_package) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
-bin/code_saturne: $(srcdir)/bin/code_saturne.py.in
+bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 
 BUILT_SOURCES = bin/cs_package.py
 
 CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
+	      bin/code_saturne.sh.in \
               data/thch/dp_radiat_MFS.tar.xz
 
 # Install binary scripts
 
 nodist_bin_SCRIPTS = \
 bin/code_saturne
+
+if HAVE_SHELL_LAUNCHER
+nodist_bin_SCRIPTS += bin/code_saturne.py
+endif
 
 # Install Python library
 

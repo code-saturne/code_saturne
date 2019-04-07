@@ -10,6 +10,9 @@ Bug fixes:
 
 Architectural changes:
 
+- Allow sourcing environment before launching with the
+  --with-shell-env configure option.
+
 - Shared library numbering for libsaturne.so now set to 5.3 to avoid confusion
   with other versions of the 5.x series.
 
@@ -168,6 +171,8 @@ Bug fixes:
 - Fix bugs in ALE and free surface condition.
 
 - Fix  in gas mix initialization.
+
+- Update CGNS support for CGNS 3.4 compatibility.
 
 - Fix scalar viscosity time extrapolation (automatic default value not taken into
   account since Fortran-C conversion).

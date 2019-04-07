@@ -50,30 +50,8 @@ if test "x$with_modules" = "xcheck" ; then
 
     outfile=cs_ac_config_modules-tmp
 
-(
-    oldIFS=$IFS; IFS=:
-    for m in $LOADEDMODULES; do try_modules="$try_modules $m"; done
-    IFS=$oldIFS
-
-    module purge
-
-    while test "x$try_modules" != "x$try_modules_p" ;
-    do
-      try_modules_p=$try_modules
-      try_modules=""
-      for m in $try_modules_p ; do
-        prv_LOADED=$LOADEDMODULES
-        module load $m > /dev/null 2>&1
-        if test "$prv_LOADED" != "$LOADEDMODULES" ; then
-          cs_env_modules="$cs_env_modules $m"
-        else
-          try_modules="$retry_modules $m"
-        fi
-      done
-    done
-    echo "$cs_env_modules" > $outfile
-    module list
-)
+    cs_abs_srcdir=`cd $srcdir && pwd`
+    "$SHELL" "$cs_abs_srcdir/build-aux/list_modules.sh" "$outfile" >&5
 
     cs_env_modules=`cat $outfile`
     rm -fr $outfile

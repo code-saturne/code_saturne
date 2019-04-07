@@ -170,7 +170,7 @@ _code_saturne() {
                     COMPREPLY=( $(compgen -W "${guides}" -- ${cur}) )
                     return 0
                     ;;
-                *) cmdOpts="-r --reader -g --guide --version"
+                *) cmdOpts="-r --reader -g --guide --modules --version"
             esac
             ;;
         run)
