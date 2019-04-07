@@ -80,6 +80,8 @@ class MainFieldsSourceTermsModel(Model):
 
         known_fields = [('enthalpy_'+field_name, 'enthalpy_'+str(fieldId))]
 
+        return known_fields
+
     def getThermalFormulaComponents(self, zone, fieldId, scalar):
 
         exp = self.getThermalFormula(zone, fieldId, scalar)
@@ -92,7 +94,7 @@ class MainFieldsSourceTermsModel(Model):
                ('z', 'cell center coordinate')]
 
         for knf in self.getKnownFields(fieldId):
-            sym.append(knf[0], knf[1])
+            sym.append(knf)
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))

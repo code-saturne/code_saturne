@@ -162,7 +162,10 @@ class PorosityModel(Variables, Model):
         self.isInt(int(zoneid))
         node = self.node_porosit.xmlGetNode('porosity', zone_id=zoneid)
 
-        formula = node.xmlGetString('formula')
+        formula = "porosity = 1.0;"
+        if node:
+            formula = node.xmlGetString('formula')
+
         return formula
 
 
