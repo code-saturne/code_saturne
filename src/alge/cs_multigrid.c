@@ -1762,8 +1762,8 @@ _multigrid_setup_sles_k_cycle_bottom(cs_multigrid_t  *mg,
       = cs_multigrid_smoother_create(mg->info.type[0],
                                      mg->info.poly_degree[0],
                                      mg->info.n_max_iter[0]);
-    mg_sles->setup_func = cs_sles_it_setup;
-    mg_sles->solve_func = cs_sles_it_solve;
+    mg_sles->setup_func = cs_multigrid_smoother_setup;
+    mg_sles->solve_func = cs_multigrid_smoother_solve;
     mg_sles->destroy_func = cs_sles_it_destroy;
   }
   else if (i == 0 && mg->lv_mg[0] != NULL) {
@@ -1907,8 +1907,8 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
     }
 
     for (int j = 0; j < n_ops; j++) {
-      if (   mg->info.type[i] != CS_SLES_N_IT_TYPES
-          && mg->info.type[i] < CS_SLES_N_SMOOTHER_TYPES) {
+      if (   mg->info.type[j] != CS_SLES_N_IT_TYPES
+          && mg->info.type[j] < CS_SLES_N_SMOOTHER_TYPES) {
         cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[i*2 + j]);
         mg_sles->context
           = cs_multigrid_smoother_create(mg->info.type[j],
