@@ -72,7 +72,7 @@ class OutputControlModel(Model):
         default['listing_printing_frequency'] = 1
         default['probe_recording_frequency'] = 1
         default['probe_recording_frequency_time'] = 0.1
-        default['probe_format'] = "DAT"
+        default['probe_format'] = "CSV"
         default['coordinate'] = 0.0
 
         return default
