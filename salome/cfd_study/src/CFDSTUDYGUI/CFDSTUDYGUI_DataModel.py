@@ -179,13 +179,14 @@ dict_object["DESFile"]        = 100072
 dict_object["MESHFile"]       = 100073
 dict_object["DATFile"]        = 100074
 dict_object["CGNSFile"]       = 100075
-dict_object["GeomFile"]       = 100076
+dict_object["CcmFile"]        = 100076
 dict_object["CaseFile"]       = 100077
 dict_object["NeuFile"]        = 100078
 dict_object["MSHFile"]        = 100079
 dict_object["HexFile"]        = 100080
 dict_object["UnvFile"]        = 100081
 dict_object["SYRMESHFile"]    = 100082
+dict_object["MESHSubFolder"]  = 100083
 
 dict_object["POSTFolder"]     = 100090
 dict_object["POSTFile"]       = 100091
@@ -258,12 +259,13 @@ icon_collection[dict_object["SCRPTScriptFile"]]= "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICO
 icon_collection[dict_object["SCRPTFile"]]      = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 
 icon_collection[dict_object["MESHFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["MESHSubFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["MEDFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["MESHFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DESFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["DATFile"]]        = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["CGNSFile"]]       = "MESH_OBJ_ICON"
-icon_collection[dict_object["GeomFile"]]       = "MESH_OBJ_ICON"
+icon_collection[dict_object["CcmFile"]]       = "MESH_OBJ_ICON"
 icon_collection[dict_object["CaseFile"]]       = "MESH_OBJ_ICON"
 icon_collection[dict_object["NeuFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["MSHFile"]]        = "MESH_OBJ_ICON"
@@ -1026,7 +1028,7 @@ def _FillObject(theObject, theParent, theBuilder):
     # parent is MESH folder
     elif parentId == dict_object["MESHFolder"]:
         if os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
+            objectId = dict_object["MESHSubFolder"]
         else:
             if re.match(".*\.des$", name):
                 objectId = dict_object["DESFile"]
@@ -1036,8 +1038,8 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["DATFile"]
             elif re.match(".*\.cgns$", name):
                 objectId = dict_object["CGNSFile"]
-            elif re.match(".*\.ngeom$", name):
-                objectId = dict_object["GeomFile"]
+            elif re.match(".*\.ccm$", name):
+                objectId = dict_object["CcmFile"]
             elif re.match(".*\.case$", name):
                 objectId = dict_object["CaseFile"]
             elif re.match(".*\.neu$", name):
@@ -1053,6 +1055,34 @@ def _FillObject(theObject, theParent, theBuilder):
             else:
                 objectId = dict_object["MESHFile"]
 
+    elif parentId == dict_object["MESHSubFolder"]:
+        if os.path.isdir(path):
+            objectId = dict_object["OtherFolder"]
+        else:
+            if re.match(".*\.des$", name):
+                objectId = dict_object["DESFile"]
+            elif re.match(".*\.med$", name):
+                objectId = dict_object["MEDFile"]
+            elif re.match(".*\.dat$", name):
+                objectId = dict_object["DATFile"]
+            elif re.match(".*\.cgns$", name):
+                objectId = dict_object["CGNSFile"]
+            elif re.match(".*\.ccm$", name):
+                objectId = dict_object["CcmFile"]
+            elif re.match(".*\.case$", name):
+                objectId = dict_object["CaseFile"]
+            elif re.match(".*\.neu$", name):
+                objectId = dict_object["NeuFile"]
+            elif re.match(".*\.msh$", name):
+                objectId = dict_object["MSHFile"]
+            elif re.match(".*\.hex$", name):
+                objectId = dict_object["HexFile"]
+            elif re.match(".*\.unv$", name):
+                objectId = dict_object["UnvFile"]
+            elif re.match(".*\.syr$", name):
+                objectId = dict_object["SYRMESHFile"]
+            else:
+                objectId = dict_object["MESHFile"]
     # parent is POST folder
     elif parentId == dict_object["POSTFolder"]:
         if os.path.isdir(path):
@@ -1750,7 +1780,7 @@ def checkPreMEDType(theObject):
     """
     return checkType(theObject, dict_object["DESFile"]) or \
            checkType(theObject, dict_object["CGNSFile"]) or \
-           checkType(theObject, dict_object["GeomFile"]) or \
+           checkType(theObject, dict_object["CcmFile"]) or \
            checkType(theObject, dict_object["CaseFile"]) or \
            checkType(theObject, dict_object["NeuFile"]) or \
            checkType(theObject, dict_object["MSHFile"]) or \
