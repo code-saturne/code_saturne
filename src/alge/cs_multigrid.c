@@ -2208,7 +2208,7 @@ _setup_hierarchy(void             *context,
   if (mg->post_row_max > 0) {
     if (mg->info.n_calls[0] == 0) {
       int l_id = 0;
-      const cs_matrix_t *a = cs_grid_get_matrix(g);
+      const cs_matrix_t *a = cs_grid_get_matrix(f);
       const cs_lnum_t n_rows_a = cs_matrix_get_n_rows(a);
       if (n_rows_a == mesh->n_cells)
         l_id = CS_MESH_LOCATION_CELLS;
