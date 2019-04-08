@@ -182,7 +182,7 @@ integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
 integer          nswrsp
-integer          imvisp
+integer          imvisp, i_vof_mass_transfer
 integer          iflid, iflwgr, f_dim, imasac
 integer          f_id
 integer          icvflb
@@ -346,7 +346,7 @@ if (irovar.eq.1) then
   call field_get_val_prev_s(ibrom, broma)
 endif
 
-if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3)) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
   call field_get_id("density_mass", f_id)
   call field_get_val_s(f_id, cpro_rho_mass)
   call field_get_id("boundary_density_mass", f_id)
@@ -400,7 +400,7 @@ ibsize = 1
 iesize = 1
 
 ! Initialization dedicated to VOF algo.
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   ! The pressure correction is done through the volumetric flux (that is
   ! the convective flux of the void fraction), not the mass flux
   call field_get_key_int(ivarfl(ivolf2), kimasf, iflmas)
@@ -409,8 +409,10 @@ if (ivofmt.ge.0) then
   call field_get_val_s(iflmab, bmasfl)
 endif
 
+i_vof_mass_transfer = iand(ivofmt,VOF_MERKLE_MASS_TRANSFER)
+
 ! Calculation of dt/rho
-if (ivofmt.ge.0.or.idilat.eq.4) then
+if (ivofmt.gt.0.or.idilat.eq.4) then
 
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     allocate(xdtsro(ncelet))
@@ -663,7 +665,7 @@ do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
 ! Implicit part of the cavitation source
-if (icavit.gt.0.and.itscvi.eq.1) then
+if (i_vof_mass_transfer.ne.0.and.itscvi.eq.1) then
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel) - cell_f_vol(iel)*dgdpca(iel)*(1.d0/rho2 - 1.d0/rho1)
   enddo
@@ -709,7 +711,7 @@ if (vcopt_p%idiff.ge.1) then
   ! Scalar diffusivity
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
-    if (ivofmt.ge.0) then
+    if (ivofmt.gt.0) then
       imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
     else
       imvisp = imvisf
@@ -926,7 +928,7 @@ iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_u%epsrgr
 climgp = vcopt_u%climgr
 itypfl = 1
-if (ivofmt.ge.0.or.idilat.eq.4) itypfl = 0
+if (ivofmt.gt.0.or.idilat.eq.4) itypfl = 0
 
 call inimav &
 !==========
@@ -1316,7 +1318,7 @@ if (iilagr.eq.2 .and. ltsmas.eq.1) then
 endif
 
 ! --- Cavitation source term
-if (icavit.gt.0) then
+if (i_vof_mass_transfer.ne.0) then
   do iel = 1, ncel
     cpro_divu(iel) = cpro_divu(iel) - cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
   enddo
@@ -1364,7 +1366,7 @@ climgp = vcopt_u%climgr
 itypfl = 1
 ! VOF algorithm: the pressure step corresponds to the
 ! correction of the volumetric flux, not the mass flux
-if (idilat.ge.4.or.ivofmt.ge.0) itypfl = 0
+if (idilat.ge.4.or.ivofmt.gt.0) itypfl = 0
 
 call inimav &
 (f_id0  , itypfl ,                                              &
@@ -2268,7 +2270,7 @@ if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dphim1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy)
 if (allocated(hydro_pres)) deallocate(hydro_pres)
-if (ivofmt.ge.0.or.idilat.eq.4) then
+if (ivofmt.gt.0.or.idilat.eq.4) then
   if (allocated(xdtsro)) deallocate(xdtsro)
   if (allocated(tpusro)) deallocate(tpusro)
 endif

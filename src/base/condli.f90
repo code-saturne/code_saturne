@@ -1341,7 +1341,7 @@ call field_get_coefbf_s(ivarfl(ipr), cofbfp)
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
-if (ivofmt.ge.0)  call field_get_val_s(icrom, crom)
+if (ivofmt.gt.0)  call field_get_val_s(icrom, crom) ! FIXME consistancy with correction step
 
 do ifac = 1, nfabor
 
@@ -1353,14 +1353,14 @@ do ifac = 1, nfabor
   ! if a flux dt.grad p (w/m2) is set in cs_user_boundary
   if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
     hint = dt(iel)/distbf
-    if (ivofmt.ge.0)  hint = hint/crom(iel)
+    if (ivofmt.gt.0)  hint = hint/crom(iel)
     if (ippmod(idarcy).eq.1) hint = permeability(iel)/distbf
   else if (iand(vcopt%idften, ORTHOTROPIC_DIFFUSION).ne.0) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
            + dttens(3, iel)*surfbo(3,ifac)**2              &
            ) / (surfbn(ifac)**2 * distbf)
-    if (ivofmt.ge.0)  hint = hint/crom(iel)
+    if (ivofmt.gt.0)  hint = hint/crom(iel)
   ! symmetric tensor diffusivity
   else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     if (ippmod(idarcy).eq.-1) then
@@ -1417,7 +1417,7 @@ do ifac = 1, nfabor
     fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
 
     hint = viscis/surfbn(ifac)/fikis
-    if (ivofmt.ge.0)  hint = hint/crom(iel)
+    if (ivofmt.gt.0)  hint = hint/crom(iel)
 
   endif
 
@@ -1500,7 +1500,7 @@ enddo
 ! 11. void fraction (VOF): dirichlet and neumann and convective outlet
 !===============================================================================
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
 
   call field_get_coefa_s(ivarfl(ivolf2), coefap)
   call field_get_coefb_s(ivarfl(ivolf2), coefbp)
@@ -5187,5 +5187,3 @@ call vericl                                                       &
 
 return
 end subroutine condli_ini
-
-

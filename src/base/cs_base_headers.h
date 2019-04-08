@@ -91,6 +91,7 @@
 #include "cs_tree.h"
 #include "cs_turbomachinery.h"
 #include "cs_volume_zone.h"
+#include "cs_vof.h"
 #include "cs_wall_functions.h"
 #include "cs_zone.h"
 

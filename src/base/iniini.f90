@@ -163,6 +163,7 @@ call ctwr_properties_init
 call map_ale
 call cf_model_init
 call vof_model_init
+call cavitation_model_init
 
 call map_turbomachinery_model(iturbo, ityint)
 
@@ -609,12 +610,6 @@ pthermax= -1.d0
 sleak = 0.d0
 kleak = 2.9d0
 
-! --- Cavitation module (not activated by default)
-!       -1: module not activated
-!        0: no vaporization/condensation model
-!        1: Merkle's model
-icavit = -1
-
 ! --- Radiative Transfert (not activated by default)
 iirayo = 0
 
@@ -1019,12 +1014,6 @@ ifaccp = 0
 !===============================================================================
 
 tslagr => rvoid2
-
-!===============================================================================
-! 13. VOF/Cavitation module
-!===============================================================================
-
-call init_cavitation
 
 !===============================================================================
 ! 14. Exit

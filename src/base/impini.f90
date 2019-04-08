@@ -274,33 +274,30 @@ write(nfecra,9900)
 ! 3. MODELISATION PHYSIQUE
 !===============================================================================
 
-! --- VOF Model
+! --- Homogeneous VoF Model
 
 write(nfecra,2101)
 write(nfecra,2111) ivofmt
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
 
   write(nfecra,2121) rho1, mu1
   write(nfecra,2131) rho2,  mu2
 
-endif
+  ! --- cavitation model
 
-! --- Modele diphasique homogene de cavitation
+  write(nfecra,2100)
 
-write(nfecra,2100)
-write(nfecra,2110) icavit
+  if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
 
-if (icavit.ge.0) then
+    write(nfecra,2120)
+    write(nfecra,2130)
 
-  write(nfecra,2120)
-  write(nfecra,2130)
-
-  if (icavit.eq.1) then
     write(nfecra,2140) presat, linf, uinf
-  endif
-  if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
-    write(nfecra,2150) icvevm, mcav
+    if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
+      write(nfecra,2150) icvevm, mcav
+    endif
+
   endif
 
 endif
@@ -312,12 +309,8 @@ write(nfecra,9900)
 
  2100 format(                                                     &
                                                                 /,&
-' ** MODELE DIPHASIQUE HOMOGENE DE CAVITATION',                 /,&
+' ** MODELE DE CAVITATION                    ',                 /,&
 '    ----------------------------------------',                 /)
- 2110 format(                                                     &
-'       ICAVIT = ',4x,i10,    ' (-1: ecoulement monophasique )',/,&
-'                               ( 0: sans transfert de masse )',/,&
-'                               ( 1: modele de Merkle        )',/)
  2120 format(                                                     &
 '  -- Phase liquide : fluide 1',                                /)
  2130 format(                                                     &
@@ -334,11 +327,11 @@ write(nfecra,9900)
 
  2101 format(                                                     &
                                                                 /,&
-' ** METHODE VOF                             ',                 /,&
+' ** MODELE DIPHASIQUE HOMOGENE VoF          ',                 /,&
 '    ----------------------------------------',                 /)
  2111 format(                                                     &
-'       IVOFMT = ',4x,i10,    ' ( -1: inactif                 )',/,&
-'                               (  0: actif                   )',/)
+'       IVOFMT = ',4x,i10,    ' (  0  : inactif              )',/,&
+'                               (  >=0: actif                )',/)
  2121 format(                                                     &
 '  -- Fluide 1 :',                                              /,&
 '       RHO1     = ', e14.5,  ' (Masse volumique     de ref.)', /,&
@@ -352,12 +345,8 @@ write(nfecra,9900)
 
  2100 format(                                                     &
                                                                 /,&
-' ** HOMOGENEOUS MIXTURE MODEL FOR CAVITATION',                 /,&
+' ** CAVITATION MODEL                        ',                 /,&
 '    ----------------------------------------',                 /)
- 2110 format(                                                     &
-'       ICAVIT = ',4x,i10,    ' (-1: single phase flow       )',/,&
-'                               ( 0: no vap./cond. model     )',/,&
-'                               ( 1: Merkle''s model        )' ,/)
  2120 format(                                                     &
 '  -- Liquid phase: fluid 1',                                   /)
  2130 format(                                                     &
@@ -374,11 +363,11 @@ write(nfecra,9900)
 
  2101 format(                                                     &
                                                                 /,&
-' ** VOF METHOD                              ',                 /,&
+' ** HOMOGENEOUS MIXTURE MODEL VoF           ',                 /,&
 '    ----------------------------------------',                 /)
  2111 format(                                                     &
-'       IVOFMT = ',4x,i10,    ' ( -1: inactive                )',/,&
-'                               (  0: active                  )',/)
+'       IVOFMT = ',4x,i10,    ' ( 0  : disabled              )',/,&
+'                               ( >=0: enabled               )',/)
  2121 format(                                                     &
 '  -- Fluid 1:',                                                /,&
 '       RHO1   = ', e14.5,  ' (Reference density          )',   /,&

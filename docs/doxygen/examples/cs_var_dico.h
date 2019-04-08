@@ -197,7 +197,7 @@
   ------------------------------------------------ | ---------------------------- | ------------
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ipr), cvar_pr)       | CS_F_(p)->val       | Pressure
   call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iu), cvar_vel)       | CS_F_(vel)->val     | Velocity
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val  | Void fraction for cavitation modelling
+  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val  | Void fraction for Volume of Fluid model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val       | Turbulent kinetic energy \f$ k \f$
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iep ), cvar_eps)     | CS_F_(eps)->val     | Turbulent dissipation \f$ \varepsilon \f$
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir11), cvar_r11)     | CS_F_(r11)->val     | Reynolds stress component \f$ R_{xx} \f$

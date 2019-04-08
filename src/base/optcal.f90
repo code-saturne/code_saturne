@@ -1008,22 +1008,34 @@ module optcal
   ! Homogeneous mixture modelling
   !----------------------------------------------------------------------------
 
-  !> \defgroup homegeneous_mixture Homogeneous mixture modelling
-
-  !> \addtogroup homegeneous_mixture
+  !> \addtogroup homogeneous_mixture
+  !> \{
+  !> \addtogroup vof
   !> \{
 
-  !> cavitation module
-  !>    - -1: module not activated
-  !>    -  0: no vaporization/condensation model
-  !>    -  1: Merkle's model
-  integer, save :: icavit
-
-  !> VOF method
-  !>    - -1: module not activated
-  !>    -  0: method activated
+  !> VoF model (sum of masks defining VoF model and submodels).
+  !> See defined masks in \ref vof_masks.
   integer(c_int), pointer, save :: ivofmt
 
+  !> \addtogroup vof_masks
+  !> \{
+
+  !> Volume of Fluid model
+  integer :: VOF_ENABLED
+
+  !> Free surface model
+  integer :: VOF_FREE_SURFACE
+
+  !> Mass transfer Merkle model for vaporization / condensation (cavitation)
+  integer :: VOF_MERKLE_MASS_TRANSFER
+
+  parameter (VOF_ENABLED=1)
+  parameter (VOF_FREE_SURFACE=2)
+  parameter (VOF_MERKLE_MASS_TRANSFER=4)
+
+  !> \}
+
+  !> \}
   !> \}
 
   !----------------------------------------------------------------------------

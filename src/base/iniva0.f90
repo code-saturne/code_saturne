@@ -325,7 +325,7 @@ do iel = 1, ncel
 enddo
 
 ! initialize void fraction to minimum clipping value
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
 
   call field_get_key_id("min_scalar_clipping", kscmin)
   call field_get_key_double(ivarfl(ivolf2), kscmin, clvfmn)

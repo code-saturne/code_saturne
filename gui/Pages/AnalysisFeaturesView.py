@@ -63,6 +63,7 @@ from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
+from code_saturne.model.HgnModel import HgnModel
 
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.TurboMachineryModel import TurboMachineryModel
@@ -111,6 +112,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         # Set models and number of elements for combo boxes
 
         self.modelSinglePhase    = QtPage.ComboModel(self.comboBoxSinglePhase,3,1)
+        self.modelHgn            = QtPage.ComboModel(self.comboBoxHgn,2,1)
         self.modelAtmospheric    = QtPage.ComboModel(self.comboBoxAtmospheric,3,1)
         self.modelReactiveFlows  = QtPage.ComboModel(self.comboBoxReactiveFlows,2,1)
         self.modelGasCombustion  = QtPage.ComboModel(self.comboBoxGasCombustion,3,1)
@@ -153,6 +155,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.modelGroundwater.addItem(self.tr("Groundwater flows"), 'groundwater')
 
+        self.modelHgn.addItem(self.tr("No mass transfer"),
+                              'no_mass_transfer')
+        self.modelHgn.addItem(self.tr("Vaporization / Condensation Merkle model"),
+                              'merkle_model')
+
         self.modelNeptuneCFD.addItem(self.tr("User-defined"), "None")
         self.modelNeptuneCFD.addItem(self.tr("Thermal free surface flow"), "free_surface")
         self.modelNeptuneCFD.addItem(self.tr("Boiling flow"), "boiling_flow")
@@ -187,6 +194,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxJouleEffect.activated[str].connect(self.slotJouleEffect)
         self.comboBoxSinglePhase.activated[str].connect(self.slotSinglePhase)
         self.comboBoxGroundwater.activated[str].connect(self.slotGroundwater)
+        self.comboBoxHgn.activated[str].connect(self.slotHgn)
         self.comboBoxNeptuneCFD.activated[str].connect(self.slotNeptuneCFD)
         self.checkBoxALE.stateChanged.connect(self.slotALE)
         self.checkBoxFans.stateChanged.connect(self.slotFans)
@@ -194,9 +202,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxLagrangian.activated[str].connect(self.slotLagrangian)
         self.comboBoxTurboMachinery.activated[str].connect(self.slotTurboModel)
 
-        for ind in ['SinglePhase', 'Atmospheric', 'JouleEffect',
-                    'Groundwater', 'ReactiveFlows',
-                    'NeptuneCFD']:
+        for ind in ['SinglePhase', 'Atmospheric',
+                    'JouleEffect', 'Groundwater', 'ReactiveFlows',
+                    'Hgn', 'NeptuneCFD']:
             eval('self.radioButton'+ind+'.toggled.connect(self.slotRadioButton)')
 
         # Initializations based on code
@@ -244,9 +252,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.__hideComboBox()
 
-        for ind in ['SinglePhase', 'Atmospheric', 'JouleEffect',
-                    'Groundwater', 'ReactiveFlows',
-                    'NeptuneCFD']:
+        for ind in ['SinglePhase', 'Atmospheric',
+                    'JouleEffect', 'Groundwater', 'ReactiveFlows',
+                    'Hgn', 'NeptuneCFD']:
             eval('self.radioButton'+ind+'.setChecked(False)')
 
 
@@ -262,7 +270,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxCoalCombustion.hide()
         self.comboBoxJouleEffect.hide()
         self.comboBoxGroundwater.hide()
-
+        self.comboBoxHgn.hide()
         self.comboBoxNeptuneCFD.hide()
 
 
@@ -279,6 +287,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                         'CoalCombustion',
                         'JouleEffect',
                         'Groundwater',
+                        'Hgn',
                         'NeptuneCFD',
                         'Lagrangian',
                         'TurboMachinery']:
@@ -325,6 +334,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.atmo  = AtmosphericFlowsModel(self.case)
         self.comp  = CompressibleModel(self.case)
         self.darc  = GroundwaterModel(self.case)
+        self.hgn  = HgnModel(self.case)
 
         from code_saturne.model.TimeStepModel import TimeStepModel
 
@@ -334,6 +344,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         coal = self.pcoal.getCoalCombustionModel()
         gas = self.gas.getGasCombustionModel()
         compressible = self.comp.getCompressibleModel()
+        homogeneous = self.hgn.getHgnModel()
 
         # Compatibility between turbulence model and reactive flow models
         if self.turb.getTurbulenceModel() not in self.turb.RANSmodels():
@@ -537,6 +548,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         model_expr = None
 
         for ind in ['SinglePhase',
+                    'Hgn',
                     'Atmospheric',
                     'JouleEffect',
                     'Groundwater',
@@ -778,6 +790,17 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.browser.configureTree(self.case)
 
+
+    @pyqtSlot(str)
+    def slotHgn(self, text):
+        """
+        Called when the comboBoxHgn changed
+        """
+
+        model = self.__stringModelFromCombo('Hgn')
+        self.hgn.setHgnModel(model)
+
+        self.browser.configureTree(self.case)
 
     @pyqtSlot(str)
     def slotTurboModel(self, text):

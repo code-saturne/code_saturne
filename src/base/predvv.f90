@@ -269,7 +269,7 @@ else
 endif
 
 ! Density at time (n-1) if needed
-if ((idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3).and.irovar.eq.1) then
+if ((idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3).and.irovar.eq.1) then
   call field_get_val_prev2_s(icrom, cromaa)
 endif
 
@@ -282,7 +282,7 @@ if ((    (ippmod(icompf).ge.0.and.ippmod(icompf).ne.3)   &
   pcrom => croma
 
 ! VOF algorithm and Low Mach compressible algos: density at time n-1
-else if ((idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3) &
+else if ((idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3) &
          .and.irovar.eq.1) then
   if (iterns.eq.1) then
     pcrom => cromaa
@@ -362,7 +362,7 @@ if (iescal(iespre).gt.0) then
 endif
 
 if (iappel.eq.2) then
-  if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.ge.0) then
+  if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.gt.0) then
     call field_get_val_s(ivarfl(ipr), cvar_pr)
   endif
   if(iforbr.ge.0 .and. iterns.eq.1                                          &
@@ -382,7 +382,7 @@ if (iappel.eq.2) then
     endif
   endif
 else
-  if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.ge.0) then
+  if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.gt.0) then
     call field_get_val_s(ivarfl(ipr), cvar_pr)
   endif
   if(iforbr.ge.0 .and. iterns.eq.1                                          &

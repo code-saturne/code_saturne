@@ -73,6 +73,9 @@ class NumericalParamGlobalModel(Model):
         self.default['density_relaxation'] = 0.95
         self.default['velocity_pressure_coupling'] ='off'
         self.default['hydrostatic_pressure'] ='off'
+        from code_saturne.model.HgnModel import HgnModel
+        if HgnModel(self.case).getHgnModel() != 'free_surface':
+            self.default['hydrostatic_pressure'] ='on'
         self.default['hydrostatic_equilibrium'] ='on'
         self.default['wall_pressure_extrapolation'] = 'neumann'
         self.default['time_scheme_order'] = 1

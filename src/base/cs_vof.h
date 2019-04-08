@@ -42,29 +42,76 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*!
+   @addtogroup vof
+
+   \defgroup vof_masks Masks used to specify Volume of Fluid models
+
+   @addtogroup vof_masks
+   @{
+
+ */
+
+/*! Volume of Fluid model */
+#define CS_VOF_ENABLED (1 << 0)
+
+/*! Free surface model */
+#define CS_VOF_FREE_SURFACE (1 << 1)
+
+/*! Mass transfer Merkle model for vaporization / condensation (cavitation) */
+#define CS_VOF_MERKLE_MASS_TRANSFER (1 << 2)
+
+/*!
+    @}
+
+    @}
+*/
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
-/* VOF mixture properties */
-/*------------------------*/
+/* VOF model parameters */
+/*----------------------*/
 
 typedef struct {
 
+  unsigned      vof_model;   /* VoF model (sum of masks defining Volume of
+                                Fluid model and submodels */
+
   double        rho1;        /* density */
+
   double        rho2;
+
   double        mu1;         /* viscosity */
+
   double        mu2;
 
 } cs_vof_parameters_t;
 
+/* Cavitation parameters */
+/*-----------------------*/
+
+typedef struct {
+
+  cs_real_t        presat;  /* reference saturation pressure */
+  cs_real_t        uinf;    /* reference velocity */
+  cs_real_t        linf;    /* reference length scale */
+  cs_real_t        cdest;   /* constant of condensation model (Merkle) */
+  cs_real_t        cprod;   /* constant of vaporization model (Merkle) */
+  int              icvevm;  /* eddy-viscosity correction indicator */
+  cs_real_t        mcav;    /* eddy-viscosity correction cstt (Reboud) */
+  int              itscvi;  /* eddy-viscosity correction indicator */
+
+} cs_cavitation_parameters_t;
+
 /*=============================================================================
  * Global variables
  *============================================================================*/
-
-/* pointer to VOF model indicator */
-
-extern int cs_glob_vof_model;
 
 /* pointer to VOF model parameters structure */
 
@@ -134,6 +181,15 @@ cs_vof_update_phys_prop(const cs_domain_t *domain);
 
 void
 cs_vof_log_mass_budget(const cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide access to cavitation parameters structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cavitation_parameters_t *
+cs_get_glob_cavitation_parameters(void);
 
 /*----------------------------------------------------------------------------*/
 

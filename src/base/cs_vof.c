@@ -89,6 +89,11 @@ BEGIN_C_DECLS
 
 /*!
 
+  \defgroup homogeneous_mixture Homogeneous mixture modelling
+
+  @addtogroup homogeneous_mixture
+  @{
+
   \defgroup vof VOF model for free surface flow or dispersed flow
 
   @addtogroup vof
@@ -106,6 +111,10 @@ BEGIN_C_DECLS
   Members of this structure are publicly accessible to allow for concise
   syntax, as it is expected to be used in many places.
 
+  \var  cs_vof_parameters_t::vof_model
+        Volume of Fluid model - sum of masks defining VoF model and submodels.
+        See defined masks in \ref vof_masks.
+
   \var  cs_vof_parameters_t::rho1
         reference density of fluid 1 (kg/m3).
         By convention, liquid phase for cavitation model.
@@ -122,31 +131,75 @@ BEGIN_C_DECLS
 
   @}
 
+  \defgroup cavitation Cavitation model
+
+  @addtogroup cavitation
+  @{
+
+  \struct cs_cavitation_parameters_t
+
+  \brief Cavitation model parameters.
+
+  Members of this structure are publicly accessible to allow for concise
+  syntax, as it is expected to be used in many places.
+
+  \defgroup cav_source_term Vaporization/condensation model
+
+  @addtogroup cav_source_term
+  @{
+
+  \var  cs_cavitation_parameters_t::presat
+        Reference saturation pressure (kg/(m s2)).
+
+  \var  cs_cavitation_parameters_t::uinf
+        Reference velocity of the flow (m/s).
+
+  \var  cs_cavitation_parameters_t::linf
+        Reference length scale of the flow (m).
+
+  \var  cs_cavitation_parameters_t::cdest
+        Constant Cdest of the condensation source term (Merkle model).
+
+  \var  cs_cavitation_parameters_t::cprod
+        Constant Cprod of the vaporization source term (Merkle model).
+
+  @}
+
+  \defgroup cav_turbulence Interaction with turbulence
+
+  @addtogroup cav_turbulence
+  @{
+
+  \var  cs_cavitation_parameters_t::icvevm
+        Activation of the eddy-viscosity correction (Reboud correction).
+            - 1: activated
+            - 0: desactivated
+
+  \var  cs_cavitation_parameters_t::mcav
+        Constant mcav of the eddy-viscosity correction (Reboud correction).
+
+  @}
+
+  \defgroup cav_numerics Numerical parameters
+
+  @addtogroup cav_numerics
+  @{
+
+  \var  cs_cavitation_parameters_t::itscvi
+        Implicitation in pressure of the vaporization/condensation model
+           - 1: activated
+           - 0: desactivated
+
+  @}
+
+  @}
+
+  @}
+
   @}
 
 */
 /*----------------------------------------------------------------------------*/
-
-/*============================================================================
- * Global variables
- *============================================================================*/
-
-/*!
-  @addtogroup vof
-  @{
-
-  VOF model
-  - -1: model disabled
-  -  0: model enabled
-
-  Note that void fraction variable tracks fluid 2.
-*/
-
-int cs_glob_vof_model = -1;
-
-/*
-  @}
-*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -156,10 +209,23 @@ int cs_glob_vof_model = -1;
 
 static cs_vof_parameters_t  _vof_parameters =
 {
-  .rho1 =  1.e3,
-  .rho2 =    1.,
-  .mu1  = 1.e-3,
-  .mu2  = 1.e-5
+  .vof_model     = 0,
+  .rho1          = 1.e3,
+  .rho2          = 1.,
+  .mu1           = 1.e-3,
+  .mu2           = 1.e-5
+};
+
+static cs_cavitation_parameters_t  _cavit_parameters =
+{
+  .presat =  2.e3,
+  .uinf   =  -1e13,
+  .linf   =  1.e-1,
+  .cdest  =  5.e1,
+  .cprod  =  1.e4,
+  .icvevm =  1,
+  .mcav   =  1.e1,
+  .itscvi =  1
 };
 
 /*============================================================================
@@ -168,7 +234,7 @@ static cs_vof_parameters_t  _vof_parameters =
  *============================================================================*/
 
 void
-cs_f_vof_get_pointers(int **ivofmt,
+cs_f_vof_get_pointers(int    **ivofmt,
                       double **rho1,
                       double **rho2,
                       double **mu1,
@@ -179,6 +245,16 @@ cs_f_vof_update_phys_prop(void);
 
 void
 cs_f_vof_log_mass_budget(void);
+
+void
+cs_f_cavitation_get_pointers(double **presat,
+                             double **uinf,
+                             double **linf,
+                             double **cdest,
+                             double **cprod,
+                             int    **icvevm,
+                             double **mcav,
+                             int    **itscvi);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -191,7 +267,7 @@ cs_f_vof_log_mass_budget(void);
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   ivofmt --> pointer to cs_glob_vof_model
+ *   ivofmt --> pointer to cs_glob_vof_parameters->vof_model
  *   rho1   --> pointer to cs_glob_vof_parameters->rho1
  *   rho2   --> pointer to cs_glob_vof_parameters->rho2
  *   mu1    --> pointer to cs_glob_vof_parameters->mu1
@@ -205,7 +281,7 @@ cs_f_vof_get_pointers(int    **ivofmt,
                       double **mu1,
                       double **mu2)
 {
-  *ivofmt = &cs_glob_vof_model;
+  *ivofmt = &(_vof_parameters.vof_model);
   *rho1   = &(_vof_parameters.rho1);
   *rho2   = &(_vof_parameters.rho2);
   *mu1    = &(_vof_parameters.mu1);
@@ -213,7 +289,7 @@ cs_f_vof_get_pointers(int    **ivofmt,
 }
 
 /*----------------------------------------------------------------------------
- * wrappers to vof functions, intended for use by Fortran wrappers only.
+ * wrapper to a vof function, intended for use by Fortran wrapper only.
  *----------------------------------------------------------------------------*/
 
 void
@@ -222,10 +298,51 @@ cs_f_vof_update_phys_prop(void)
   cs_vof_update_phys_prop(cs_glob_domain);
 }
 
+/*----------------------------------------------------------------------------
+ * wrapper to a vof function, intended for use by Fortran wrapper only.
+ *----------------------------------------------------------------------------*/
+
 void
 cs_f_vof_log_mass_budget(void)
 {
   cs_vof_log_mass_budget(cs_glob_domain);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer to cavitation model indicator and parameters
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   presat --> pointer to cs_glob_cavitation_parameters->presat
+ *   uinf   --> pointer to cs_glob_cavitation_parameters->uinf
+ *   linf   --> pointer to cs_glob_cavitation_parameters->linf
+ *   cdest  --> pointer to cs_glob_cavitation_parameters->cdest
+ *   cprod  --> pointer to cs_glob_cavitation_parameters->cprod
+ *   icvevm --> pointer to cs_glob_cavitation_parameters->icvevm
+ *   mcav   --> pointer to cs_glob_cavitation_parameters->mcav
+ *   itscvi --> pointer to cs_glob_cavitation_parameters->itscvi
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_cavitation_get_pointers(double **presat,
+                             double **uinf,
+                             double **linf,
+                             double **cdest,
+                             double **cprod,
+                             int    **icvevm,
+                             double **mcav,
+                             int    **itscvi)
+{
+  *presat = &(_cavit_parameters.presat);
+  *uinf   = &(_cavit_parameters.uinf);
+  *linf   = &(_cavit_parameters.linf);
+  *cdest  = &(_cavit_parameters.cdest);
+  *cprod  = &(_cavit_parameters.cprod);
+  *icvevm = &(_cavit_parameters.icvevm);
+  *mcav   = &(_cavit_parameters.mcav);
+  *itscvi = &(_cavit_parameters.itscvi);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -496,6 +613,18 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
              cs_glob_time_step->nt_cur, glob_m_budget);
 
   BFT_FREE(divro);
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide access to cavitation parameters structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cavitation_parameters_t *
+cs_get_glob_cavitation_parameters(void)
+{
+  return &_cavit_parameters;
 }
 
 /*----------------------------------------------------------------------------*/

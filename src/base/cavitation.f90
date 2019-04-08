@@ -31,11 +31,11 @@ module cavitation
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   implicit none
 
   !=============================================================================
-
-  !> \defgroup cavitation Module for cavitating flow modelling
 
   !> \addtogroup cavitation
   !> \{
@@ -44,25 +44,23 @@ module cavitation
   ! Vaporization/condensation model
   !----------------------------------------------------------------------------
 
-  !> \defgroup cav_source_term Vaporization/condensation model
-
   !> \addtogroup cav_source_term
   !> \{
 
-  !> reference saturation pressure in kg/(m s2)
-  double precision, save :: presat
+  !> reference saturation pressure (kg/(m s2))
+  real(c_double), pointer, save :: presat
 
-  !> reference length scale of the flow in meters
-  double precision, save :: linf
+  !> reference velocity of the flow (m/s)
+  real(c_double), pointer, save :: uinf
 
-  !> reference velocity of the flow in m/s
-  double precision, save :: uinf
-
-  !> constant Cprod of the vaporization source term (Merkle model)
-  double precision, save :: cprod
+  !> reference length scale of the flow (m)
+  real(c_double), pointer, save :: linf
 
   !> constant Cdest of the condensation source term (Merkle model)
-  double precision, save :: cdest
+  real(c_double), pointer, save :: cdest
+
+  !> constant Cprod of the vaporization source term (Merkle model)
+  real(c_double), pointer, save :: cprod
 
   !> \}
 
@@ -70,18 +68,16 @@ module cavitation
   ! Interaction with turbulence
   !----------------------------------------------------------------------------
 
-  !> \defgroup cav_turbulence Interaction with turbulence
-
   !> \addtogroup cav_turbulence
   !> \{
 
   !> activation of the eddy-viscosity correction (Reboud correction)
   !>    - 1: activated
   !>    - 0: desactivated
-  integer,          save :: icvevm
+  integer(c_int), pointer, save :: icvevm
 
   !> constant mcav of the eddy-viscosity correction (Reboud correction)
-  double precision, save :: mcav
+  real(c_double), pointer, save :: mcav
 
   !> \}
 
@@ -89,60 +85,82 @@ module cavitation
   ! Numerical parameters
   !----------------------------------------------------------------------------
 
-  !> \defgroup cav_numerics Numerical parameters
-
   !> \addtogroup cav_numerics
   !> \{
 
   !> implicitation in pressure of the vaporization/condensation model
   !>    - 1: activated
   !>    - 0: desactivated
-  integer,          save :: itscvi
+  integer(c_int), pointer, save :: itscvi
 
   !> \}
 
   !> \}
+
+  !=============================================================================
+
+  interface
+
+     !---------------------------------------------------------------------------
+
+     !> \cond DOXYGEN_SHOULD_SKIP_THIS
+
+     !---------------------------------------------------------------------------
+
+     ! Interface to C function retrieving pointers to cavitation model indicator
+     ! and parameters
+
+     subroutine cs_f_cavitation_get_pointers(presat, uinf, linf, cdest, cprod, &
+                                             icvevm, mcav, itscvi)             &
+       bind(C, name='cs_f_cavitation_get_pointers')
+       use, intrinsic :: iso_c_binding
+       implicit none
+       type(c_ptr), intent(out) :: presat, uinf, linf, cdest, cprod
+       type(c_ptr), intent(out) :: icvevm, mcav, itscvi
+     end subroutine cs_f_cavitation_get_pointers
+
+     !---------------------------------------------------------------------------
+
+     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
+
+     !---------------------------------------------------------------------------
+
+  end interface
+
+  !=============================================================================
 
 contains
 
   !=============================================================================
 
-  !> \brief  Default initialization of the module variables.
+  !> \brief Initialize Fortran cavitation model API.
+  !> This maps Fortran pointers to global C structure members and indicator.
 
-  subroutine init_cavitation
+  subroutine cavitation_model_init
 
-    use cstphy
-    use field
-    use numvar
+    use, intrinsic :: iso_c_binding
 
-    ! Vaporization/condensation model parameters
-    !-------------------------------------------
+    implicit none
 
-    ! physical variables
-    presat = 2.d3
-    uinf = uref
-    linf = 0.1d0
+    ! Local variables
 
-    ! Merkle model constants
-    cdest = 5.d1
-    cprod = 1.d4
+    type(c_ptr) :: c_presat, c_uinf, c_linf, c_cdest, c_cprod
+    type(c_ptr) :: c_icvevm, c_mcav, c_itscvi
 
-    ! Interaction with turbulence
-    !----------------------------
+    call cs_f_cavitation_get_pointers(c_presat, c_uinf, c_linf,           &
+                                      c_cdest, c_cprod, c_icvevm, c_mcav, &
+                                      c_itscvi)
 
-    ! Activate the eddy-viscosity correction (Reboud correction)
-    icvevm = 1
+    call c_f_pointer(c_presat, presat)
+    call c_f_pointer(c_uinf, uinf)
+    call c_f_pointer(c_linf, linf)
+    call c_f_pointer(c_cdest, cdest)
+    call c_f_pointer(c_cprod, cprod)
+    call c_f_pointer(c_icvevm, icvevm)
+    call c_f_pointer(c_mcav, mcav)
+    call c_f_pointer(c_itscvi, itscvi)
 
-    ! Reboud correction constant
-    mcav = 10.d0
-
-    ! Numerical parameters
-    !---------------------
-
-    ! implicitation in pressure
-    itscvi = 1
-
-  end subroutine init_cavitation
+  end subroutine cavitation_model_init
 
   !=============================================================================
 
@@ -184,16 +202,7 @@ contains
     integer iel
     double precision tinf, cond, cvap, condens, vaporis
 
-    if (icavit.eq.0) then
-
-      ! No model
-
-      do iel = 1, ncel
-        gamcav(iel) = 0.d0
-        dgdpca(iel) = 0.d0
-      enddo
-
-    elseif (icavit.eq.1) then
+    if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
 
       ! Merkle model
 

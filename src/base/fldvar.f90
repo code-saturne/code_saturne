@@ -72,7 +72,7 @@ integer       nmodpp
 ! Local variables
 
 integer       ipp, iloc1, ityloc
-integer       iok   , keycpl, nmodpp_compatibility
+integer       iok   , keycpl, nmodpp_compatibility, vof_mask
 
 type(var_cal_opt) :: vcopt
 
@@ -193,8 +193,10 @@ else
   call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr, iloc1)
 endif
 
-! Cavitation: activate VoF
-if (icavit.ge.0.and.ivofmt.lt.0) ivofmt = 0
+! Enabled VoF model if free surface or mass transfer modeling enabled
+vof_mask = ior(VOF_FREE_SURFACE, VOF_MERKLE_MASS_TRANSFER)
+if (iand(ivofmt, vof_mask).ne.0) &
+     ivofmt = ior(VOF_ENABLED, ivofmt)
 
 ! Mass balance equation options (pressure)
 
@@ -210,12 +212,12 @@ else
 endif
 
 ! VoF algorithm: activate the weightening for the pressure
-if (ivofmt.ge.0) vcopt%iwgrec = 1
+if (ivofmt.gt.0) vcopt%iwgrec = 1
 
 call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! void fraction (VoF algorithm)
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2, iloc1)
   call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
   vcopt%idiff = 0  ! pure convection equation

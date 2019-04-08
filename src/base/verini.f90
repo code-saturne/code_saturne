@@ -865,7 +865,7 @@ endif
 ! 10. Cavitation modelling: 9100 formats
 !===============================================================================
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   ! VOF method is not compatible with dilatable or low-mach algorithms
   if (idilat.gt.1) then
     write(nfecra,9120) idilat

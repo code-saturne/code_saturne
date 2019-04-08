@@ -190,10 +190,8 @@ BEGIN_C_DECLS
 
   \var  cs_var_cal_opt_t::idften
         \anchor idften
-        Type of diffusivity:
-        - 1: scalar diffusivity
-        - 3: orthotropic diffusivity
-        - 6: symmetric tensor diffusivity
+        Type of diffusivity flag (sum of mask constants defining if diffusivity
+        is isotropic, anisotropic, ... Masks are defined in \ref scalar_params).
 
   \var  cs_var_cal_opt_t::iswdyn
         \anchor iswdyn

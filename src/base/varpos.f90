@@ -103,7 +103,7 @@ pflag = POST_ON_LOCATION + POST_MONITOR
 ! Additional physical properties
 !===============================================================================
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   ! variable density
   irovar = 1
   ivivar = 1
@@ -340,7 +340,7 @@ endif
 !  de vide pour l'algo. VOF.
 if (isno2t.gt.0) then
   call add_source_term_prev_field(ivarfl(iu))
-  if (ivofmt.ge.0) then
+  if (ivofmt.gt.0) then
     call add_source_term_prev_field(ivarfl(ivolf2))
   endif
 endif

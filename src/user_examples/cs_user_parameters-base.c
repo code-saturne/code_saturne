@@ -150,6 +150,16 @@ cs_user_model(void)
 
   /*--------------------------------------------------------------------------*/
 
+  /* Volume of Fluid model with mass transfer Merkle model (cavitating flow)
+   * to take into account vaporization / condensation */
+
+  /*! [enable_cavit] */
+  cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
+  vof_param->vof_model = CS_VOF_ENABLED | CS_VOF_MERKLE_MASS_TRANSFER;
+  /*! [enable_cavit] */
+
+  /*--------------------------------------------------------------------------*/
+
   /* Example: activate ALE (Arbitrary Lagrangian Eulerian) method
    *   CS_ALE_NONE: switch off
    *   CS_ALE_LEGACY: legacy solver
@@ -662,6 +672,64 @@ cs_user_parameters(cs_domain_t *domain)
   cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] = 1;
 
   /*! [param_var_q_criterion] */
+
+  /* Example: homogeneous mixture physical properties */
+  /*--------------------------------------------------*/
+
+  /*! [phprop] */
+
+  cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
+
+  /* Reference density, in kg/m3, and molecular viscosity, kg/(m s), of the
+     liquid phase */
+
+  vof_param->rho1 = 1.e3;
+  vof_param->mu1 = 1.e-3;
+
+  /* Reference density, in kg/m3, and molecular viscosity, kg/(m s), of the
+     gas phase */
+
+  vof_param->rho2 = 1.;
+  vof_param->mu2 = 1.e-5;
+
+  /*! [phprop] */
+
+  /* Example: retrieve cavitation parameters structure */
+  /*---------------------------------------------------*/
+
+  /*! [cavit_param] */
+
+  cs_cavitation_parameters_t *cavit_param =
+    cs_get_glob_cavitation_parameters();
+
+  /*! [cavit_param] */
+
+  /* Example: Model parameters of the vaporization term (Merkle model) */
+  /*-------------------------------------------------------------------*/
+
+  /* Reference saturation pressure in kg/(m s2) */
+
+  /*! [presat] */
+  cavit_param->presat = 2.e3;
+  /*! [presat] */
+
+  /* Reference length, in meters, and velocity scales, in m/s, of the flow */
+
+  /*! [scales_inf] */
+  cavit_param->linf = 0.1;
+  cavit_param->uinf = 1.;
+  /*! [scales_inf] */
+
+  /* Example: Interaction with turbulence */
+  /*--------------------------------------*/
+
+  /* Eddy-viscosity correction (Reboud et al. correction)
+     0: deactivated
+     1: activated */
+
+  /*! [reboud_activ] */
+  cavit_param->icvevm = 1;
+  /*! [reboud_activ] */
 }
 
 /*----------------------------------------------------------------------------*/

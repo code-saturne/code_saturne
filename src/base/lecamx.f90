@@ -231,25 +231,6 @@ if (italin.eq.-999) then
   endif
 endif
 
-!     Cavitation
-
-nberro = 0
-
-rubriq = 'cavitation'
-itysup = 0
-nbval  = 1
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-jcavit = ival(1)
-nberro=nberro+ierror
-
-! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers
-!                          anterieurs)
-!       -> on n'affiche le message que si ICAVIT>=0 (sinon RAS)
-if (nberro.ne.0) then
-  if (icavit.ge.0) write(nfecra,9220)
-  jcavit = -1
-endif
-
 !     VOF
 
 nberro = 0
@@ -261,11 +242,10 @@ call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
 jvolfl = ival(1)
 nberro=nberro+ierror
 
-! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers
-!                          anterieurs)
-!       -> on n'affiche le message que si IVOFMT=1 (sinon RAS)
+! warning if error found (backward compatibility)
+! and only if VoF model is enabled
 if (nberro.ne.0) then
-  if (ivofmt.ge.0) write(nfecra,9221)
+  if (ivofmt.gt.0) write(nfecra,9221)
   jvolfl = 0
 endif
 
@@ -328,7 +308,7 @@ endif
 inierr = 0
 
 if (    irovar.eq.1                   &
-    .or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+    .or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
 
   ! Masse volumique - cellules
   call restart_read_field_vals(rp, icrom, 0, ierror)
@@ -336,7 +316,7 @@ if (    irovar.eq.1                   &
   inierr = inierr+ierror
 
   ! Masse volumique du pdt precedent - cellules
-  if (ivofmt.ge.0.and.jvolfl.ge.0.or.idilat.ge.4) then
+  if (ivofmt.gt.0.and.jvolfl.ge.0.or.idilat.ge.4) then
     call restart_read_field_vals(rp, icrom, 1, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
@@ -375,14 +355,14 @@ endif
 !     Si on reussit, on l'indique
 
 call field_get_key_int(iviscl, key_t_ext_id, iviext)
-if (iviext.gt.0.or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+if (iviext.gt.0.or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
 
   inierr = 0
 
   !         Viscosite moleculaire - cellules
   !         Uniquement si elle est variable ou pour la methode VOF
   if (    ivivar.eq.1                   &
-      .or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+      .or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
     call restart_read_field_vals(rp, iviscl, 0, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
@@ -390,7 +370,7 @@ if (iviext.gt.0.or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
 endif
 
 call field_get_key_int(ivisct, key_t_ext_id, iviext)
-if (iviext.gt.0.or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+if (iviext.gt.0.or.(ivofmt.gt.0.and.jvolfl.ge.0)) then
   ! Viscosite turbulente ou de sous-maille - cellules
   if (iviext.gt.0) then
     call restart_read_field_vals(rp, ivisct, 0, ierror)
@@ -542,7 +522,7 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
   nberro=0
 
   ! Initialization of the void fraction convective flux, if required
-  if (ivofmt.ge.0.and.jvolfl.lt.0) then
+  if (ivofmt.gt.0.and.jvolfl.lt.0) then
 
     ! Interior faces
 
