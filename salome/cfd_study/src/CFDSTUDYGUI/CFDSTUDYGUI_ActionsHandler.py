@@ -918,6 +918,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
              id == CFDSTUDYGUI_DataModel.dict_object["POSTPROFolder"]        or \
              id == CFDSTUDYGUI_DataModel.dict_object["SCRPTFolder"]          or \
              id == CFDSTUDYGUI_DataModel.dict_object["MESHFolder"]           or \
+             id == CFDSTUDYGUI_DataModel.dict_object["MESHSubFolder"]        or \
              id == CFDSTUDYGUI_DataModel.dict_object["POSTFolder"] :
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFile"]:
@@ -982,7 +983,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DESFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["CGNSFile"] \
-             or id == CFDSTUDYGUI_DataModel.dict_object["GeomFile"] \
+             or id == CFDSTUDYGUI_DataModel.dict_object["CcmFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["CaseFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["NeuFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["MSHFile"] \
@@ -1984,15 +1985,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 return
 
         aStudyObj = CFDSTUDYGUI_DataModel.GetStudyByObj(aFirtsObj)
-        aChList = CFDSTUDYGUI_DataModel.ScanChildren(aStudyObj, "MESH")
-        if not len(aChList) == 1:
-            mess = cfdstudyMess.trMessage(self.tr("DIR_MESH_NOT_EXIST"),[])
-            cfdstudyMess.criticalMessage(mess)
-            return
 
-        aMeshFold = aChList[0]
+        aMeshFold = aFirtsObj.GetFather()
         thePath = CFDSTUDYGUI_DataModel._GetPath(aMeshFold)
-
         log.debug("slotMeshConvertToMed -> thePath = %s" % thePath)
         args = ""
 
