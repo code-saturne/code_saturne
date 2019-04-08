@@ -147,6 +147,7 @@ class CouplingDelegate(QItemDelegate):
 
         if self.mdl.getCriterion(fieldId) == "continuous" :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
+               self.modelCombo.disableItem(str_model="none")
         else :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
                carrier = self.mdl.getCarrierField(fieldId)
@@ -294,6 +295,9 @@ class StandardItemModelTurbulence(QStandardItemModel):
 
 
     def flags(self, index):
+
+        # NoItemsFlags is used to have a grayed out option
+
         if not index.isValid():
             return Qt.ItemIsEnabled
         if index.column() == 2 :
@@ -304,9 +308,9 @@ class StandardItemModelTurbulence(QStandardItemModel):
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
                 return Qt.NoItemFlags
-        elif index.column() == 4 :
+        elif index.column() == 1 or index.column() == 4 :
             if self.mdl.getCriterion(index.row()+1) == "continuous" :
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.NoItemFlags
             else :
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
@@ -346,6 +350,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
             new_pmodel = from_qvariant(value, to_text_string)
             self._data[row][col] = new_pmodel
             self.mdl.setTwoWayCouplingModel(FieldId, self.dicoV2M[new_pmodel])
+            self.updateItem()
 
         self.dataChanged.emit(index, index)
         return True
