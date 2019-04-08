@@ -2321,7 +2321,7 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
           cs_field_set_key_double(f, kscmin, scal_min);
           cs_field_set_key_double(f, kscmax, scal_max);
 
-          if (cs_glob_turb_model->iturb/10 == 3) {
+          if (cs_glob_turb_model->itytur == 3) {
             int turb_mdl;
             _variable_turbulent_flux_model(tn_v, &turb_mdl);
             iturt[i] = turb_mdl;
@@ -2356,7 +2356,7 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
     cs_field_set_key_double(f, kscmax, scal_max);
     int i = cs_field_get_key_int(f, keysca) - 1;
 
-    if (cs_glob_turb_model->iturb/10 == 3) {
+    if (cs_glob_turb_model->itytur == 3) {
       _variable_turbulent_flux_model(tn_v, &(iturt[i]));
     }
 #if _XML_DEBUG_

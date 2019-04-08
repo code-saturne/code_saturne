@@ -1185,15 +1185,15 @@ cs_turb_compute_constants(void)
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
 
 
-  if (   cs_glob_turb_model->iturb == 30
-      || cs_glob_turb_model->iturb == 31)
+  if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
+      || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
     cs_turb_sigmae = 1.22;
-  else if (cs_glob_turb_model->iturb == 32)
+  else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
     cs_turb_sigmae = 1.15;
   else
     cs_turb_sigmae = 1.30;
 
-  if (cs_glob_turb_model->iturb == 32)
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
     cs_turb_csrij = 0.21;
   else
     cs_turb_csrij = 0.22;
@@ -1297,16 +1297,16 @@ cs_turb_model_log_setup(void)
        cs_glob_wall_functions->ypluli,
        cs_glob_turb_rans_model->igrhok);
 
-  if (cs_glob_turb_model->iturb == 10) {
+  if (cs_glob_turb_model->iturb == CS_TURB_MIXING_LENGTH) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   Mixing length       (iturb = 10)\n"
+       _("   Mixing length       (iturb = CS_TURB_MIXING_LENGTH)\n"
          "    xlomlg:      %14.5e (Characteristic length)\n"),
          cs_glob_turb_rans_model->xlomlg);
-  } else if (cs_glob_turb_model->iturb == 20) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   k-epsilon           (iturb = 20)\n"
+       _("   k-epsilon           (iturb = CS_TURB_K_EPSILON)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    iclkep:      %14d (k-epsilon clipping model)\n"
@@ -1333,10 +1333,10 @@ cs_turb_model_log_setup(void)
     } else {
       cs_log_printf(CS_LOG_SETUP,_("\n"));
     }
-  } else if (cs_glob_turb_model->iturb == 21) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   Linear production k-epsilon (iturb = 21)\n"
+       _("   Linear production k-epsilon (iturb = CS_TURB_K_EPSILON_LIN_PROD)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    iclkep:      %14d (k-epsilon clipping model)\n"
@@ -1363,10 +1363,10 @@ cs_turb_model_log_setup(void)
     } else {
       cs_log_printf(CS_LOG_SETUP,_("\n"));
     }
-  } else if (cs_glob_turb_model->iturb == 30) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   Rij-epsilon LRR     (iturb = 30)\n"
+       _("   Rij-epsilon LRR     (iturb = CS_TURB_RIJ_EPSILON_LRR)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    irijco:      %14d (Coupled resolution)\n"
@@ -1387,10 +1387,10 @@ cs_turb_model_log_setup(void)
          cs_glob_turb_rans_model->igrari,
          cs_glob_turb_rans_model->iclsyr,
          cs_glob_turb_rans_model->iclptr);
-  } else if (cs_glob_turb_model->iturb == 31) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   Rij-epsilon SSG    (iturb = 31)\n"
+       _("   Rij-epsilon SSG    (iturb = CS_TURB_RIJ_EPSILON_SSG)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    irijco:      %14d (Coupled resolution)\n"
@@ -1407,10 +1407,10 @@ cs_turb_model_log_setup(void)
          cs_glob_turb_rans_model->igrari,
          cs_glob_turb_rans_model->iclsyr,
          cs_glob_turb_rans_model->iclptr);
-  } else if (cs_glob_turb_model->iturb == 32) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   Rij-epsilon EBRSM     (iturb = 32)\n"
+       _("   Rij-epsilon EBRSM     (iturb = CS_TURB_RIJ_EPSILON_EBRSM)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    reinit_                      (Reinitialization of the\n"
@@ -1433,7 +1433,9 @@ cs_turb_model_log_setup(void)
   } else if (cs_glob_turb_model->itytur == 4) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   LES                 (iturb = 40, 41, 42)\n"
+       _("   LES                 (iturb = CS_TURB_LES_SMAGO_CONST,\n"
+         "                                CS_TURB_LES_SMAGO_DYN,\n"
+         "                                CS_TURB_LES_WALE)\n"
          "                            (Sub-grid scale model)\n"
          "                            (40 Smagorinsky model)\n"
          "                            (41 Dynamic model)\n"
@@ -1456,10 +1458,10 @@ cs_turb_model_log_setup(void)
          cs_turb_cdries, cs_turb_xlesfd, cs_turb_smagmx,
          cs_glob_turb_les_model->ivrtex);
 
-  } else if (cs_glob_turb_model->iturb == 50) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   v2f phi-model       (iturb = 50)\n"
+       _("   v2f phi-model       (iturb = CS_TURB_V2F_PHI)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    iclkep:      %14d (k-epsilon clipping model)\n"
@@ -1485,10 +1487,10 @@ cs_turb_model_log_setup(void)
     } else {
       cs_log_printf(CS_LOG_SETUP,_("\n"));
     }
-  } else if (cs_glob_turb_model->iturb == 51) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
     cs_log_printf
      (CS_LOG_SETUP,
-      _("   v2f BL-v2/k         (iturb = 51)\n"
+      _("   v2f BL-v2/k         (iturb = CS_TURB_V2F_BL_V2K)\n"
         "    almax:       %14.5e (Characteristic length)\n"
         "    uref:        %14.5e (Characteristic velocity)\n"
         "    iclkep:      %14d (k-epsilon clipping model)\n"
@@ -1514,10 +1516,10 @@ cs_turb_model_log_setup(void)
     } else {
       cs_log_printf(CS_LOG_SETUP,_("\n"));
     }
-  } else if (cs_glob_turb_model->iturb == 60) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   k-omega SST         (iturb = 60)\n"
+       _("   k-omega SST         (iturb = CS_TURB_K_OMEGA)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    ikecou:      %14d (k-epsilon coupling mode)\n"
@@ -1543,11 +1545,11 @@ cs_turb_model_log_setup(void)
     } else {
       cs_log_printf(CS_LOG_SETUP,_("\n"));
     }
-  } else if (cs_glob_turb_model->iturb == 70) {
+  } else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
     cs_field_get_key_struct(CS_F_(nusa), key_cal_opt_id, &var_cal_opt);
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   Spalart-Allmaras    (iturb = 70)\n"
+       _("   Spalart-Allmaras    (iturb = CS_TURB_SPALART_ALLMARAS)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    relaxv:      %14.5e for nu (Relaxation)\n"),
@@ -1558,8 +1560,8 @@ cs_turb_model_log_setup(void)
 
   if (cs_glob_turb_model->itytur == 2
    || cs_glob_turb_model->itytur == 5
-   || cs_glob_turb_model->iturb == 60
-   || cs_glob_turb_model->iturb == 70) {
+   || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
+   || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
     cs_log_printf
       (CS_LOG_SETUP,
        _("   Rotation/curvature correction\n"

@@ -1111,7 +1111,8 @@ cs_parameters_check(void)
                                cs_glob_lagr_time_scheme->iilagr,
                                CS_LAGR_OFF);
 
-    int les_iturb[3] = {40, 41, 42};
+    int les_iturb[3] =
+    {CS_TURB_LES_SMAGO_CONST, CS_TURB_LES_SMAGO_DYN, CS_TURB_LES_WALE};
     cs_parameters_is_not_in_list_int(CS_ABORT_DELAYED,
                                      _("The steady algorithm is not compatible "
                                        "with L.E.S. turbulence modelling "
@@ -1279,14 +1280,22 @@ cs_parameters_check(void)
   /* Turbulence */
 
   /* Model */
-  const int iturb_vals[16] = {0,              /* laminar */
-                              10,             /* mixing length */
-                              20, 21, 22, 23, /* k-epsilon */
-                              30, 31, 32,     /* RSM */
-                              40, 41, 42,     /* LES */
-                              50, 51,         /* v2f */
-                              60,             /* k-omega */
-                              70};            /* Spallart-Allmaras */
+  const int iturb_vals[16] = {CS_TURB_NONE,   /* laminar */
+                              CS_TURB_MIXING_LENGTH,
+                              CS_TURB_K_EPSILON,
+                              CS_TURB_K_EPSILON_LIN_PROD,
+                              CS_TURB_K_EPSILON_LS,
+                              CS_TURB_K_EPSILON_QUAD,
+                              CS_TURB_RIJ_EPSILON_LRR,
+                              CS_TURB_RIJ_EPSILON_SSG,
+                              CS_TURB_RIJ_EPSILON_EBRSM,
+                              CS_TURB_LES_SMAGO_CONST,
+                              CS_TURB_LES_SMAGO_DYN,
+                              CS_TURB_LES_WALE,
+                              CS_TURB_V2F_PHI,
+                              CS_TURB_V2F_BL_V2K,
+                              CS_TURB_K_OMEGA,
+                              CS_TURB_SPALART_ALLMARAS};
 
   cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                _("while reading input data"),
@@ -1306,10 +1315,12 @@ cs_parameters_check(void)
   /* Rotation curvature correction compatible only with RANS eddy-viscosity
      models */
   if (cs_glob_turb_rans_model->irccor == 1) {
-    const int iturb_evm_vals[6] = {20, 21,     /* k-epsilon */
-                                   50, 51,     /* v2f */
-                                   60,         /* k-omega */
-                                   70};        /* Spallart-Allmaras */
+    const int iturb_evm_vals[6] = {CS_TURB_K_EPSILON,
+                                   CS_TURB_K_EPSILON_LIN_PROD,
+                                   CS_TURB_V2F_PHI,
+                                   CS_TURB_V2F_BL_V2K,
+                                   CS_TURB_K_OMEGA,
+                                   CS_TURB_SPALART_ALLMARAS};
 
     cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
@@ -1326,7 +1337,7 @@ cs_parameters_check(void)
   /* Delayed Detached Eddy Simulation model compatible only with RANS
      k-omega SST model */
   if (cs_glob_turb_rans_model->iddes == 1) {
-    const int iturb_ddes_vals[1] = {60} ;     /* k-omega */
+    const int iturb_ddes_vals[1] = {CS_TURB_K_OMEGA};
 
     cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
@@ -1351,7 +1362,7 @@ cs_parameters_check(void)
                                      "turbulence model"),
                                    "cs_glob_turb_model->iturb",
                                    cs_glob_turb_model->iturb,
-                                   60);
+                                   CS_TURB_K_OMEGA);
   }
 
   /* Vortex method for LES */
@@ -1407,7 +1418,7 @@ cs_parameters_check(void)
       || cs_glob_turb_model->itytur == 5
       || cs_glob_turb_model->itytur == 6) {
     /* iclkep option not available in k-omega */
-    if (cs_glob_turb_model->iturb != 60) {
+    if (cs_glob_turb_model->iturb != CS_TURB_K_OMEGA) {
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("while reading input data"),
                                     "cs_glob_turb_rans_model->iclkep",
@@ -1422,16 +1433,16 @@ cs_parameters_check(void)
                                   0, 2);
 
     /* En k-eps a prod lin/LS/Quad et en v2f on force IKECOU a 0 */
-    if (   cs_glob_turb_model->iturb == 21
-        || cs_glob_turb_model->iturb == 22
-        || cs_glob_turb_model->iturb == 23
+    if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
+        || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
+        || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD
         || cs_glob_turb_model->itytur == 5) {
       cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
-                                   "with k-epsilon LP (iturb=21),"
-                                   "k-epsilon LS (iturb=22), "
-                                   "k-epislon quadratic (iturb=23)"
-                                   "or v2f model (iturb=50/51)"),
+                                   "with k-epsilon LP (iturb=CS_TURB_K_EPSILON_LIN_PROD),"
+                                   "k-epsilon LS (iturb=CS_TURB_K_EPSILON_LS), "
+                                   "k-epislon quadratic (iturb=CS_TURB_K_EPSILON_QUAD)"
+                                   "or v2f model (iturb=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)"),
                                  "cs_glob_turb_rans_model->ikecou",
                                  cs_glob_turb_rans_model->ikecou,
                                  0);
@@ -1506,7 +1517,7 @@ cs_parameters_check(void)
 
   /* Check that relaxv is in [0,1] for Spallart-Allmaras nu variable
      (already done for steady) */
-  if (   cs_glob_turb_model->itytur == 7
+  if (   cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
       && cs_glob_time_step_options->idtvar >= 0) {
       cs_field_t *f = CS_F_(nusa);
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
@@ -1538,7 +1549,7 @@ cs_parameters_check(void)
 
     /* wall echo and specific implicitation of the diffusion of epsilon only
        in Rij LRR */
-    if (cs_glob_turb_model->iturb == 30) {
+    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("while reading input data"),
                                     "cs_glob_turb_rans_model->irijec",
@@ -1580,8 +1591,8 @@ cs_parameters_check(void)
                                   0, 2);
 
 
-    if (   cs_glob_turb_model->iturb == 41
-        || cs_glob_turb_model->iturb == 42) {
+    if (   cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN
+        || cs_glob_turb_model->iturb == CS_TURB_LES_WALE) {
       cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
                                    "Van Driest near wall damping not "
@@ -1594,7 +1605,7 @@ cs_parameters_check(void)
 
     /* The reduction of the extended neighborhood can degrade the results of the
        LES dynamic model */
-    if (cs_glob_turb_model->iturb == 41) {
+    if (cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
       int imrgra_cmp = CS_ABS(cs_glob_turb_model->iturb);
       switch(imrgra_cmp) {
       case 3:
@@ -1953,8 +1964,8 @@ cs_parameters_check(void)
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 3
       || cs_glob_turb_model->itytur == 5
-      || cs_glob_turb_model->iturb == 60
-      || cs_glob_turb_model->iturb == 70) {
+      || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
+      || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
     cs_parameters_is_greater_double(CS_WARNING,
                                     _("Reference velocity is used for the "
                                       "automatic initialisation and boundary "
@@ -1966,7 +1977,7 @@ cs_parameters_check(void)
                                     0.);
   }
 
-  if (cs_glob_turb_model->iturb == 10) {
+  if (cs_glob_turb_model->iturb == CS_TURB_MIXING_LENGTH) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("while reading input data"),
                                     "cs_glob_turb_rans_model->xlomlg "
@@ -2015,7 +2026,7 @@ cs_parameters_check(void)
                                       0.);
     }
 
-    if (cs_glob_turb_model->iturb == 41) {
+    if (cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
       cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                       _("LES dynamic model constant"),
                                       "cs_turb_xlesfd",
