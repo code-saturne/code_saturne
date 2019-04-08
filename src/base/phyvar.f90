@@ -208,7 +208,7 @@ if (iterns.ge.1) return
 !     On se sert de irovar (ivivar) pour ecrire et lire
 !       rho (visc) dans le fichier suite
 
-if (ntcabs.eq.ntpabs+1 .and. ivofmt.lt.0) then
+if (ntcabs.eq.ntpabs+1) then
 
   ! Masse volumique aux cellules et aux faces de bord
   iok1 = 0
@@ -622,7 +622,7 @@ endif
 ! 6. Eddy viscosity correction for cavitating flows
 !===============================================================================
 
-if (icavit.ge.0 .and. icvevm.eq.1) then
+if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0.and.icvevm.eq.1) then
   if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
 
     call field_get_val_s(icrom, crom)

@@ -163,10 +163,10 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
+      <item row="8" column="1">
        <widget class="QComboBox" name="comboBoxNeptuneCFD"/>
       </item>
-      <item row="7" column="0">
+      <item row="8" column="0">
        <widget class="QRadioButton" name="radioButtonNeptuneCFD">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Activate NEPTUNE_CFD module.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -175,6 +175,16 @@
          <string>Eulerian multiphase (NEPTUNE_CFD)</string>
         </property>
        </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QRadioButton" name="radioButtonHgn">
+        <property name="text">
+         <string>Homogeneous Eulerian - VoF model</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QComboBox" name="comboBoxHgn"/>
       </item>
      </layout>
     </widget>

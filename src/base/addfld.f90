@@ -484,7 +484,7 @@ endif
 
 ! Density at the second previous time step for VOF algorithm
 ! or dilatable algorithm
-if (ivofmt.ge.0.or.(idilat.gt.1.and.ipredfl.eq.0).or.irovar.eq.1) then
+if (ivofmt.gt.0.or.(idilat.gt.1.and.ipredfl.eq.0).or.irovar.eq.1) then
   call field_set_n_previous(icrom, 2)
   call field_set_n_previous(ibrom, 2)
 ! The density at the previous time step is required if

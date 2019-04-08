@@ -408,7 +408,7 @@ if (abs(vcopt%blencv+1.d0).lt.epzero) then
   call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 endif
 
-if (icavit.ge.0) then
+if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
   ii = ivolf2
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   if (abs(vcopt%blencv+1.d0).lt.epzero) then
@@ -1042,7 +1042,7 @@ endif
 ! 8. Define Min/Max clipping values of void fraction of VOF model
 !===============================================================================
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   call field_get_key_id("min_scalar_clipping", kscmin)
   call field_get_key_id("max_scalar_clipping", kscmax)
   call field_get_key_double(ivarfl(ivolf2), kscmin, clvfmn)
@@ -1050,11 +1050,11 @@ if (ivofmt.ge.0) then
 
   if (clvfmn.lt.-0.5d0*grand) then
     clvfmn = 0.d0
-    if (icavit.gt.0) clvfmn = epzero
+    if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) clvfmn = epzero
   endif
   if (clvfmx.gt.0.5d0*grand) then
     clvfmx = 1.d0
-    if (icavit.gt.0) clvfmx = 1.d0-epzero
+    if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) clvfmx = 1.d0-epzero
   endif
 
   call field_set_key_double(ivarfl(ivolf2), kscmin, clvfmn)

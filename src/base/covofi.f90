@@ -972,7 +972,7 @@ if (ippmod(icompf).ge.0.or.(idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1)) then
 
 ! Low Mach compressible algos (conservative in time).
 ! Same algo. for Volume of Fluid method
-else if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
+else if ((idilat.gt.1.or.ivofmt.gt.0).and.irovar.eq.1) then
   if (iterns.eq.1) then
     call field_get_val_prev2_s(icrom_scal, pcrom)
   else

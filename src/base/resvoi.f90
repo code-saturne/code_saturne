@@ -89,7 +89,7 @@ integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
-integer          iwarnp
+integer          iwarnp, i_mass_transfer
 integer          imucpp, idftnp, iswdyp
 
 integer          icvflb
@@ -122,6 +122,8 @@ type(var_cal_opt) :: vcopt
 ! 1. Initialization
 !===============================================================================
 
+i_mass_transfer = iand(ivofmt,VOF_MERKLE_MASS_TRANSFER)
+
 ivar = ivolf2
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
@@ -130,7 +132,7 @@ call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
 call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
 
 ! implicitation in pressure of the vaporization/condensation model (cavitation)
-if (icavit.ge.0.and.itscvi.eq.1) then
+if (i_mass_transfer.ne.0.and.itscvi.eq.1) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 endif
@@ -200,7 +202,7 @@ enddo
 !   if it has been implicited in pressure at correction step,
 !   in order to ensure mass conservation.
 
-if (icavit.ge.0.and.itscvi.eq.1) then
+if (i_mass_transfer.ne.0.and.itscvi.eq.1) then
   do iel = 1, ncel
     gamcav(iel) = gamcav(iel) + dgdpca(iel)*(cvar_pr(iel)-cvara_pr(iel))
   enddo
@@ -212,7 +214,7 @@ endif
 dtmaxl = 1.d15
 dtmaxg = 1.d15
 
-if (icavit.gt.0) then
+if (i_mass_transfer.ne.0) then
   do iel = 1, ncel
     if (gamcav(iel).lt.0.d0) then
       dtmaxl = -rho2*cvara_voidf(iel)/gamcav(iel)
@@ -234,7 +236,7 @@ endif
 !-------------
 
 ! Cavitation source term (explicit)
-if (icavit.ge.0) then
+if (i_mass_transfer.ne.0) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel) + cell_f_vol(iel)*gamcav(iel)/rho2
   enddo
@@ -332,7 +334,7 @@ call codits &
 iclmax(1) = 0
 iclmin(1) = 0
 
-if ((icavit.gt.0.and.dt(1).gt.dtmaxg).or.icavit.le.0) then
+if ((i_mass_transfer.ne.0.and.dt(1).gt.dtmaxg).or.i_mass_transfer.eq.0) then
 
   ! --- Calcul du min et max
   vmin(1) = cvar_voidf(1)

@@ -214,24 +214,6 @@ if (nberro.ne.0) then
   jale = 0
 endif
 
-!     Cavitation
-
-nberro = 0
-
-rubriq = 'cavitation'
-itysup = 0
-nbval  = 1
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-jcavit = ival(1)
-nberro=nberro+ierror
-
-! Message si erreur (pas de stop pour compatibilite avec fichiers anterieurs)
-! -> on n'affiche le message que si ICAVIT>=0 (sinon RAS)
-if (nberro.ne.0) then
-  if (icavit.ge.0) write(nfecra,9404)
-  jcavit = -1
-endif
-
 !     VOF
 
 nberro = 0
@@ -243,10 +225,10 @@ call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
 jvolfl = ival(1)
 nberro=nberro+ierror
 
-! Message si erreur (pas de stop pour compatibilite avec fichiers anterieurs)
-! -> on n'affiche le message que si IVOFMT>=0 (sinon RAS)
+! warning if error found (backward compatibility)
+! and only if VoF model is enabled
 if (nberro.ne.0) then
-  if (ivofmt.ge.0) write(nfecra,9405)
+  if (ivofmt.gt.0) write(nfecra,9405)
   jvolfl = -1
 endif
 

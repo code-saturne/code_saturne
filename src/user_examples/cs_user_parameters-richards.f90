@@ -126,13 +126,11 @@ end subroutine usppmo
 !> \param[in, out] iturb        turbulence model
 !> \param[in, out] itherm       thermal model
 !> \param[in, out] iale         ale module
-!> \param[in, out] ivofmt       vof method
-!> \param[in, out] icavit       cavitation model
 !______________________________________________________________________________!
 
 subroutine usipph &
 !================
- ( ixmlpu, iturb , itherm, iale , ivofmt, icavit )
+ ( ixmlpu, iturb , itherm, iale )
 
 !===============================================================================
 
@@ -145,7 +143,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu
-integer iturb, itherm, iale, ivofmt, icavit
+integer iturb, itherm, iale
 
 ! Local variables
 

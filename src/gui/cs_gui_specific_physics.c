@@ -60,6 +60,7 @@
 #include "cs_selector.h"
 #include "cs_elec_model.h"
 #include "cs_gwf_physical_properties.h"
+#include "cs_vof.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1374,6 +1375,14 @@ cs_gui_physical_model_select(void)
     else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
       if (cs_gui_strcmp(vars->model_value, "groundwater"))
         cs_glob_physical_model_flag[CS_GROUNDWATER] = 1;
+    }
+    else if (cs_gui_strcmp(vars->model, "hgn_model")) {
+      cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
+      if (cs_gui_strcmp(vars->model_value, "merkle_model")) {
+        vof_param = CS_VOF_ENABLED | CS_VOF_MERKLE_MASS_TRANSFER;
+      } else {
+        vof_param->vof_model = CS_VOF_ENABLED + CS_VOF_FREE_SURFACE;
+      }
     }
   }
 

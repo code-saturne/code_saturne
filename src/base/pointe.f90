@@ -343,7 +343,7 @@ contains
 
     ! liquid-vapour mass transfer term for cavitating flows
     ! and its part implicit in pressure
-    if (icavit.ge.0) then
+    if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
       allocate(gamcav(ncelet), dgdpca(ncelet))
     endif
 

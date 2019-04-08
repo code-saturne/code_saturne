@@ -133,7 +133,7 @@ endif
 ! Void fraction for VOF algo.
 !----------------------------
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   ivar = ivolf2
   if (ipass .eq. 1) then
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)

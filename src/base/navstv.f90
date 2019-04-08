@@ -295,7 +295,7 @@ endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
   call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
 endif
@@ -380,7 +380,7 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_s(icrom, crom_eos)
 call field_get_val_s(ibrom, brom_eos)
 
-if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0)) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0)) then
   ! If iterns = 1: this is density at time n
   call field_get_id("density_mass", f_id)
   call field_get_val_s(f_id, cpro_rho_mass)
@@ -465,14 +465,13 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 4. Compute liquid-vapour mass transfer term for cavitating flows
+! 4. VoF: compute liquid-vapour mass transfer term (cavitating flows)
 !===============================================================================
 
-if (icavit.ge.0) then
+if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
 
   call field_get_val_s(iprtot, cpro_prtot)
-
-  call cavitation_compute_source_term (cpro_prtot, cvara_voidf)
+  call cavitation_compute_source_term(cpro_prtot, cvara_voidf)
 
 endif
 
@@ -787,7 +786,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
       if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
-      if (ivofmt.ge.0) then
+      if (ivofmt.gt.0) then
         call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
         call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
       endif
@@ -936,7 +935,7 @@ if (ippmod(icompf).lt.0) then
     !Allocation
     allocate(gradp(3, ncelet))
 
-    if (ivofmt.lt.0) then
+    if (ivofmt.eq.0) then
       call gradient_potential_s &
        (ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
         iphydr , iwarnp , epsrgp , climgp , extrap ,                   &
@@ -1090,7 +1089,7 @@ if (ippmod(icompf).lt.0) then
     enddo
 
     ! vel = 1 / (rho Vol) SUM mass_flux (X_f - X_i)
-    if (ivofmt.lt.0) then
+    if (ivofmt.eq.0) then
       do ifac = 1, nfac
 
         iel1 = ifacel(1,ifac)
@@ -1204,7 +1203,7 @@ endif
 call cs_bad_cells_regularisation_vector(vel, 1)
 
 ! Mass flux initialization for VOF algorithm
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
   do ifac = 1, nfac
     imasfl(ifac) = 0.d0
   enddo
@@ -1362,7 +1361,7 @@ endif
 !      and mass flux (resopv solved the convective flux of void fraction, divU)
 !===============================================================================
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
 
   ! Void fraction solving
 
@@ -1389,7 +1388,7 @@ endif
 ! Update density (which is coherent with the mass)
 !-------------------------------------------------
 
-if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0)) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0)) then
   do iel = 1, ncelet
     cpro_rho_mass(iel) = crom_eos(iel)
   enddo

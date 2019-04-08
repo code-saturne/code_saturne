@@ -495,7 +495,7 @@ enddo
 !                and void fraction flux needs to be stored
 !-------------------------------------------------------------------
 
-if (ivofmt.ge.0) then
+if (ivofmt.gt.0) then
 
   itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
 
@@ -691,7 +691,7 @@ call cs_parameters_set_n_buoyant_scalars
 ! For Low Mach algorithms and VoF / Cavitation, a particular care
 ! must be taken when dealing with density in the unsteady term in the velocity
 ! pressure loop
-if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0)) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0)) then
   ! EOS density, imposed after the correction step, so we need
   ! to keep the previous one, which is in balance with the mass
   f_name = 'density_mass'

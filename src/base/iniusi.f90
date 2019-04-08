@@ -158,7 +158,7 @@ endif
 ! Other models selection through user Fortran subroutine
 
 iihmpu = iihmpr
-call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
+call usipph(iihmpu, iturb, itherm, iale)
 
 ! Flow and other models selection through user C function
 call cs_user_model

@@ -233,13 +233,6 @@ nbval  = 1
 ival(1) = iale
 call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
-!  ---> Cavitation
-rubriq = 'cavitation'
-itysup = 0
-nbval  = 1
-ival(1) = icavit
-call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
-
 !  ---> VOF
 rubriq = 'vof'
 itysup = 0
@@ -342,13 +335,6 @@ if (iecaux.eq.1) then
   ival(1) = iale
   call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
-  !  ---> Cavitation
-  rubriq = 'cavitation'
-  itysup = 0
-  nbval  = 1
-  ival(1) = icavit
-  call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
-
   !  ---> VOF
   rubriq = 'vof'
   itysup = 0
@@ -399,13 +385,13 @@ if (iecaux.eq.1) then
 
   !     Masse volumique si elle est variable uniquement
   !     La masse volumique est egalement ecrite pour l'algo. VOF
-  if (irovar.eq.1.or.ivofmt.ge.0) then
+  if (irovar.eq.1.or.ivofmt.gt.0) then
     ! Masse volumique - cellules
     call restart_write_field_vals(rp, icrom, 0)
 
     ! Masse volumique du pdt precedent - cellules
     ! only for VOF algo. and dilatable models (idilat = 4, 5)
-    if (ivofmt.ge.0.or.idilat.ge.4) then
+    if (ivofmt.gt.0.or.idilat.ge.4) then
       call restart_write_field_vals(rp, icrom, 1)
     endif
 
@@ -434,9 +420,9 @@ if (iecaux.eq.1) then
   !         pouvoir calculer la temperature H/Cp en debut de calcul
 
   call field_get_key_int(iviscl, key_t_ext_id, iviext)
-  if (iviext.gt.0.or.ivofmt.ge.0) then
+  if (iviext.gt.0.or.ivofmt.gt.0) then
     ! Molecular viscosity
-    if (ivivar.eq.1.or.ivofmt.ge.0) then
+    if (ivivar.eq.1.or.ivofmt.gt.0) then
       call restart_write_field_vals(rp, iviscl, 0)
     endif
   endif
