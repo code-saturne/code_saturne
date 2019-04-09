@@ -1451,7 +1451,8 @@ class mei_to_c_interpreter:
                 if len(boundary.sca_model.getThermalScalarName()) > 0:
                     scalar_list.append(boundary.sca_model.getThermalScalarName()[0])
 
-                if zone._nature not in ['free_inlet_outlet', 'free_surface']:
+                if zone._nature not in ['free_inlet_outlet', 'free_surface', \
+                                        'imposed_p_outlet']:
                   for sca in scalar_list:
                       c = boundary.getScalarChoice(sca)
                       sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
