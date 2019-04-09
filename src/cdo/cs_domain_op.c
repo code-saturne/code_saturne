@@ -157,8 +157,9 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
   else
     min = _min, max = _max, sum = _sum;
 
+
   cs_log_printf(CS_LOG_DEFAULT, "s- %20s  % -6.4e % -6.4e % -6.4e\n",
-                basename, min, max, sum/cdoq->n_cells);
+                basename, min, max, sum/cdoq->n_g_cells);
 }
 
 /*----------------------------------------------------------------------------*/
