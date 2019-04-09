@@ -109,7 +109,6 @@ build-aux/ylwrap
 EXTRA_DIST = \
 $(AUX_DIST) \
 install_saturne.py \
-install_saturne.sh \
 NEWS.md \
 README.md \
 QUALITY_ASSURANCE \
@@ -255,6 +254,7 @@ BUILT_SOURCES = bin/cs_package.py
 
 CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
+	      bin/code_saturne.sh.in \
               data/thch/dp_radiat_MFS.tar.xz
 
 # Install binary scripts
