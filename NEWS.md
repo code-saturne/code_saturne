@@ -3,6 +3,9 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Work around possible Intel icc compiler bug in least-squares vector
+  gradient (observed on v6.0 with icc 18.0.1 20171018).
+
 - Atmospheric model: fix issue combining meteo profiles and local injections.
 
 - Avoid opening residuals.csv from all ranks.
