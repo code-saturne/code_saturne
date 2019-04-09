@@ -246,220 +246,21 @@ if (ityturt(iscal).ne.3) then
 
   if (itt.gt.0) call field_get_val_prev_s(ivarfl(isca(itt)), cvara_tt)
 
-! Coupled version
-  if(irijco.eq.1) then
-    do iel = 1, ncel
-      !Rij
+  do iel = 1, ncel
+    !Rij
+    ! Coupled version
+    if(irijco.eq.1) then
       xrij(1,1) = cvara_rij(1,iel)
       xrij(2,2) = cvara_rij(2,iel)
       xrij(3,3) = cvara_rij(3,iel)
       xrij(1,2) = cvara_rij(4,iel)
-      xrij(1,3) = cvara_rij(6,iel)
       xrij(2,3) = cvara_rij(5,iel)
+      xrij(1,3) = cvara_rij(6,iel)
       xrij(2,1) = xrij(1,2)
       xrij(3,1) = xrij(1,3)
       xrij(3,2) = xrij(2,3)
-      ! Epsilon
-      xe = cvara_ep(iel)
-      ! Kinetic turbulent energy
-      xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
-      !  Turbulent time-scale (constant in AFM)
-      xtt = xk/xe
-
-      if(iturt(iscal).eq.11.or.iturt(iscal).eq.21) then
-
-        alpha_theta = cvar_al(iel)
-
-        ! Computation of production and buoyancy
-         xpk = -(xrij(1,1)*gradv(1,1,iel) +&
-                 xrij(1,2)*gradv(1,2,iel) +&
-                 xrij(1,3)*gradv(1,3,iel) +&
-                 xrij(2,1)*gradv(2,1,iel) +&
-                 xrij(2,2)*gradv(2,2,iel) +&
-                 xrij(2,3)*gradv(2,3,iel) +&
-                 xrij(3,1)*gradv(3,1,iel) +&
-                 xrij(3,2)*gradv(3,2,iel) +&
-                 xrij(3,3)*gradv(3,3,iel) )
-
-         if (ibeta.ge.0) then
-           xgk = cpro_beta(iel)*(xut(1,iel)*gx + xut(2,iel)*gy + xut(3,iel)*gz)
-         else
-           xgk = 0.d0
-         endif
-
-         ! Computation of the thermo-mecanical scales ratio R
-         xR_h = 0.5d0
-         if (ifcvsl.ge.0) then
-           prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
-         else
-           prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
-         endif
-         xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * xR_h
-
-         ! Compute the unite normal vector
-         xnoral = &
-              ( grad_al(1, iel)*grad_al(1, iel) &
-              + grad_al(2, iel)*grad_al(2, iel) &
-              + grad_al(3, iel)*grad_al(3, iel))
-         xnoral = sqrt(xnoral)
-
-         if (xnoral.le.epzero/cell_f_vol(iel)**(1.d0/3.d0)) then
-            xnal(1) = 0.d0
-            xnal(2) = 0.d0
-           xnal(3) = 0.d0
-         else
-          xnal(1) = grad_al(1, iel)/xnoral
-          xnal(2) = grad_al(2, iel)/xnoral
-          xnal(3) = grad_al(3, iel)/xnoral
-        endif
-      end if
-
-      ! Constants for EB-GGDH
-      if (iturt(iscal).eq.11) then
-        xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
-        xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
-             *(xpk+xgk)/cvara_ep(iel))
-        xxc3 = xxc2
-
-        ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
-                     +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
-
-        gamma_ebggdh = (1.d0-alpha_theta)*(xxc1 + xxc2)
-      ! Constants for EB-AFM
-      elseif (iturt(iscal).eq.21) then
-        xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
-        xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
-             *(xpk+xgk)/cvara_ep(iel))
-        xxc3 = xxc2
-
-        ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
-                        +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
-        gamma_ebafm   = (1.d0-alpha_theta)*(xxc1 + xxc2)
-        eta_ebafm     = 1.d0 - alpha_theta*0.6d0
-        xi_ebafm      = 1.d0 - alpha_theta*0.3d0
-      end if
-
-      ! Compute thermal flux u'T'
-
-      do ii = 1, 3
-        temp(ii) = 0.d0
-
-        ! AFM model
-        !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        if (iturt(iscal).eq.20) then
-          if (itt.gt.0.and.ibeta.ge.0) then
-            temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
-                       etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
-          endif
-
-          do jj = 1, 3
-            ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
-            ! Only the i.ne.j  components are added.
-            if (ii.ne.jj) then
-              temp(ii) = temp(ii)                                              &
-                       - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
-            endif
-          enddo
-        endif
-
-        ! EB-AFM model
-        !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2 + eps/k gamma uT' ni nj)"
-        if(iturt(iscal).eq.21) then
-          if (itt.gt.0.and.ibeta.ge.0) then
-            temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
-                       eta_ebafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
-          endif
-
-          do jj = 1, 3
-            ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u + eps/k gamma uT' ni nj)"
-            ! Only the i.ne.j  components are added.
-            if (ii.ne.jj) then
-              temp(ii) = temp(ii)                                                 &
-                       - ctheta(iscal)*xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)  &
-                       - ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel)
-            endif
-          enddo
-        end if
-
-        ! EB-GGDH model
-        !  "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
-        if(iturt(iscal).eq.11) then
-          do jj = 1, 3
-            ! Partial implicitation of "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
-            ! Only the i.ne.j  components are added.
-            if (ii.ne.jj) then
-              temp(ii) = temp(ii)                                                 &
-                       - ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(jj)*xut(jj,iel)
-            endif
-          enddo
-        end if
-
-      enddo
-
-      do ii = 1, 3
-        ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
-        !  "-C_theta*k/eps* R.grad T"
-        ! The resulting XUT array is only use for post processing purpose in
-        ! (EB)GGDH & (EB)AFM
-        xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
-                                                   + xrij(ii,2)*gradt(2,iel)  &
-                                                   + xrij(ii,3)*gradt(3,iel))
-
-        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )" for
-        ! EB-GGDH & (EB)-AFM
-        ! X_i = C*Y_ij*X_j -> X_i = Coeff_imp * Y_ij * X_j for i.ne.j
-        ! with Coeff_imp = C/(1+C*Y_ii)
-        if (iturt(iscal).eq.20) then
-          ! AFM
-          coeff_imp = 1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel)
-
-          xut(ii,iel) = xut(ii,iel)/ coeff_imp
-          temp(ii)    = temp(ii)   / coeff_imp
-          ! Calculation of the diffusion tensor for the implicited part
-          ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
-
-        else if(iturt(iscal).eq.21) then
-          ! EB-AFM
-          coeff_imp = 1.d0 + ctheta(iscal)*xtt*xi_ebafm*gradv(ii,ii,iel) &
-                           + ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(ii)
-
-          xut(ii,iel) = xut(ii,iel)/ coeff_imp
-          temp(ii)    = temp(ii)   / coeff_imp
-          ! Calculation of the diffusion tensor for the implicited part
-          ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
-
-        else if(iturt(iscal).eq.11) then
-          ! EB-GGDH
-          coeff_imp = 1.d0+ ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(ii)
-
-          xut(ii,iel) = xut(ii,iel)/ coeff_imp
-          temp(ii)    = temp(ii)   / coeff_imp
-          ! Calculation of the diffusion tensor for the implicited part
-          ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
-        endif
-
-        ! In the next step, we compute the divergence of:
-        !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
-        w1(ii,iel) = xcpp(iel)*temp(ii)
-      enddo
-
-      ! Extra diag part of the diffusion tensor for covofi
-      if(iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
-        vistet(4,iel) = ctheta(iscal)* xtt * xrij(1,2)
-        vistet(5,iel) = ctheta(iscal)* xtt * xrij(2,3)
-        vistet(6,iel) = ctheta(iscal)* xtt * xrij(1,3)
-      end if
-
-    enddo ! End loop over ncel
-
-  ! Uncoupled version
-  else
-    do iel = 1, ncel
-      !Rij
+    else
+    ! Uncoupled version
       xrij(1,1) = cvara_r11(iel)
       xrij(2,2) = cvara_r22(iel)
       xrij(3,3) = cvara_r33(iel)
@@ -469,204 +270,206 @@ if (ityturt(iscal).ne.3) then
       xrij(2,1) = xrij(1,2)
       xrij(3,1) = xrij(1,3)
       xrij(3,2) = xrij(2,3)
-      ! Epsilon
-      xe = cvara_ep(iel)
-      ! Kinetic turbulent energy
-      xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
-      !  Turbulent time-scale (constant in AFM)
-      xtt = xk/xe
+    endif
+    ! Epsilon
+    xe = cvara_ep(iel)
+    ! Kinetic turbulent energy
+    xk = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
+    !  Turbulent time-scale (constant in AFM)
+    xtt = xk/xe
 
-      if(iturt(iscal).eq.11.or.iturt(iscal).eq.21) then
+    if (iturt(iscal).eq.11.or.iturt(iscal).eq.21) then
 
-        alpha_theta = cvar_al(iel)
+      alpha_theta = cvar_al(iel)
 
-        ! Computation of production and buoyancy
-         xpk = -(xrij(1,1)*gradv(1,1,iel) +&
-                 xrij(1,2)*gradv(1,2,iel) +&
-                 xrij(1,3)*gradv(1,3,iel) +&
-                 xrij(2,1)*gradv(2,1,iel) +&
-                 xrij(2,2)*gradv(2,2,iel) +&
-                 xrij(2,3)*gradv(2,3,iel) +&
-                 xrij(3,1)*gradv(3,1,iel) +&
-                 xrij(3,2)*gradv(3,2,iel) +&
-                 xrij(3,3)*gradv(3,3,iel) )
+      ! Computation of production and buoyancy
+       xpk = -(xrij(1,1)*gradv(1,1,iel) +&
+               xrij(1,2)*gradv(1,2,iel) +&
+               xrij(1,3)*gradv(1,3,iel) +&
+               xrij(2,1)*gradv(2,1,iel) +&
+               xrij(2,2)*gradv(2,2,iel) +&
+               xrij(2,3)*gradv(2,3,iel) +&
+               xrij(3,1)*gradv(3,1,iel) +&
+               xrij(3,2)*gradv(3,2,iel) +&
+               xrij(3,3)*gradv(3,3,iel) )
 
-         if (ibeta.ge.0) then
-           xgk = cpro_beta(iel)*(xut(1,iel)*gx + xut(2,iel)*gy + xut(3,iel)*gz)
-         else
-           xgk = 0.d0
-         endif
+       if (ibeta.ge.0) then
+         xgk = cpro_beta(iel)*(xut(1,iel)*gx + xut(2,iel)*gy + xut(3,iel)*gz)
+       else
+         xgk = 0.d0
+       endif
 
-         ! Computation of the thermo-mecanical scales ratio R
-         xR_h = 0.5d0
-         if (ifcvsl.ge.0) then
-           prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
-         else
-           prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
-         endif
-         xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * xR_h
+       ! Computation of the thermo-mecanical scales ratio R
+       xR_h = 0.5d0
+       if (ifcvsl.ge.0) then
+         prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
+       else
+         prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+       endif
+       xR = ( 1.d0 - alpha_theta ) * prdtl + alpha_theta * xR_h
 
-         ! Compute the unite normal vector
-         xnoral = &
-              ( grad_al(1, iel)*grad_al(1, iel) &
-              + grad_al(2, iel)*grad_al(2, iel) &
-              + grad_al(3, iel)*grad_al(3, iel))
-         xnoral = sqrt(xnoral)
+       ! Compute the unite normal vector
+       xnoral = &
+            ( grad_al(1, iel)*grad_al(1, iel) &
+            + grad_al(2, iel)*grad_al(2, iel) &
+            + grad_al(3, iel)*grad_al(3, iel))
+       xnoral = sqrt(xnoral)
 
-         if (xnoral.le.epzero/cell_f_vol(iel)**(1.d0/3.d0)) then
-           xnal(1) = 0.d0
-           xnal(2) = 0.d0
-           xnal(3) = 0.d0
-         else
-          xnal(1) = grad_al(1, iel)/xnoral
-          xnal(2) = grad_al(2, iel)/xnoral
-          xnal(3) = grad_al(3, iel)/xnoral
+       if (xnoral.le.epzero/cell_f_vol(iel)**(1.d0/3.d0)) then
+         xnal(1) = 0.d0
+         xnal(2) = 0.d0
+         xnal(3) = 0.d0
+       else
+         xnal(1) = grad_al(1, iel)/xnoral
+         xnal(2) = grad_al(2, iel)/xnoral
+         xnal(3) = grad_al(3, iel)/xnoral
+      endif
+    end if
+
+    ! Constants for EB-GGDH
+    if (iturt(iscal).eq.11) then
+      xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
+      xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
+           *(xpk+xgk)/cvara_ep(iel))
+      xxc3 = xxc2
+
+      ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
+                   +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
+
+      gamma_ebggdh = (1.d0-alpha_theta)*(xxc1 + xxc2)
+    ! Constants for EB-AFM
+    elseif (iturt(iscal).eq.21) then
+      xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
+      xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
+           *(xpk+xgk)/cvara_ep(iel))
+      xxc3 = xxc2
+
+      ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
+                      +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
+      gamma_ebafm   = (1.d0-alpha_theta)*(xxc1 + xxc2)
+      eta_ebafm     = 1.d0 - alpha_theta*0.6d0
+      xi_ebafm      = 1.d0 - alpha_theta*0.3d0
+    end if
+
+    ! Compute thermal flux u'T'
+
+    do ii = 1, 3
+      temp(ii) = 0.d0
+
+      ! AFM model
+      !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
+      if (iturt(iscal).eq.20) then
+        if (itt.gt.0.and.ibeta.ge.0) then
+          temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
+                     etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
         endif
-      end if
 
-      ! Constants for EB-GGDH
-      if (iturt(iscal).eq.11) then
-        xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
-        xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
-             *(xpk+xgk)/cvara_ep(iel))
-        xxc3 = xxc2
-
-        ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
-                     +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
-
-        gamma_ebggdh = (1.d0-alpha_theta)*(xxc1 + xxc2)
-
-      ! Constants for EB-AFM
-      elseif (iturt(iscal).eq.21) then
-        xxc1 = 1.d0+2.d0*(1.d0 - alpha_theta)*(xpk+xgk)/cvara_ep(iel)
-        xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - alpha_theta) &
-             *(xpk+xgk)/cvara_ep(iel))
-        xxc3 = xxc2
-
-        ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
-                        +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
-        gamma_ebafm   = (1.d0-alpha_theta)*(xxc1 + xxc2)
-        eta_ebafm     = 1.d0 - alpha_theta*0.6d0
-        xi_ebafm      = 1.d0 - alpha_theta*0.3d0
-      end if
-
-      ! Compute thermal flux u'T'
-      do ii = 1, 3
-        temp(ii) = 0.d0
-
-        ! AFM model
-        !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        if (iturt(iscal).eq.20) then
-          if (itt.gt.0.and.ibeta.ge.0) then
-            temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
-                       etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
+        do jj = 1, 3
+          ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
+          ! Only the i.ne.j  components are added.
+          if (ii.ne.jj) then
+            temp(ii) = temp(ii)                                              &
+                     - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
           endif
+        enddo
+      endif
 
-          do jj = 1, 3
-            ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
-            ! Only the i.ne.j  components are added.
-            if (ii.ne.jj) then
-              temp(ii) = temp(ii)                                               &
-                       - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
-            endif
-          enddo
+      ! EB-AFM model
+      !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2 + eps/k gamma uT' ni nj)"
+      if(iturt(iscal).eq.21) then
+        if (itt.gt.0.and.ibeta.ge.0) then
+          temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
+                     eta_ebafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
         endif
 
-        ! EB-AFM model
-        !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2 + eps/k gamma uT' ni nj)"
-        if(iturt(iscal).eq.21) then
-          if (itt.gt.0.and.ibeta.ge.0) then
-            temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
-                       eta_ebafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
+        do jj = 1, 3
+          ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u + eps/k gamma uT' ni nj)"
+          ! Only the i.ne.j  components are added.
+          if (ii.ne.jj) then
+            temp(ii) = temp(ii)                                                 &
+                     - ctheta(iscal)*xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)  &
+                     - ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel)
           endif
-
-          do jj = 1, 3
-            ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u + eps/k gamma uT' ni nj)"
-            ! Only the i.ne.j  components are added.
-            if (ii.ne.jj) then
-              temp(ii) = temp(ii)                                                 &
-                       - ctheta(iscal)*xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)  &
-                       - ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel)
-            endif
-          enddo
-        end if
-
-        ! EB-GGDH model
-        !  "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
-        if(iturt(iscal).eq.11) then
-          do jj = 1, 3
-            ! Partial implicitation of "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
-            ! Only the i.ne.j  components are added.
-            if (ii.ne.jj) then
-              temp(ii) = temp(ii)                                                 &
-                       - ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(jj)*xut(jj,iel)
-            endif
-          enddo
-        end if
-
-      enddo
-
-      do ii = 1, 3
-        ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
-        !  "-C_theta*k/eps* R.grad T"
-        ! The resulting XUT array is only use for post processing purpose in
-        ! (EB)GGDH & (EB)AFM
-        xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
-                                                   + xrij(ii,2)*gradt(2,iel)  &
-                                                   + xrij(ii,3)*gradt(3,iel))
-
-        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )" for
-        ! EB-GGDH & (EB)-AFM
-        ! X_i = C*Y_ij*X_j -> X_i = Coeff_imp * Y_ij * X_j for i.ne.j
-        ! with Coeff_imp = C/(1+C*Y_ii)
-        if (iturt(iscal).eq.20) then
-          ! AFM
-          coeff_imp = 1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel)
-
-          xut(ii,iel) = xut(ii,iel)/ coeff_imp
-          temp(ii)    = temp(ii)   / coeff_imp
-          ! Calculation of the diffusion tensor for the implicited part
-          ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
-
-        else if(iturt(iscal).eq.21) then
-          ! EB-AFM
-          coeff_imp = 1.d0 + ctheta(iscal)*xtt*xi_ebafm*gradv(ii,ii,iel) &
-                           + ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(ii)
-
-          xut(ii,iel) = xut(ii,iel)/ coeff_imp
-          temp(ii)    = temp(ii)   / coeff_imp
-          ! Calculation of the diffusion tensor for the implicited part
-          ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
-
-        else if(iturt(iscal).eq.11) then
-          ! EB-GGDH
-          coeff_imp = 1.d0+ ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(ii)
-
-          xut(ii,iel) = xut(ii,iel)/ coeff_imp
-          temp(ii)    = temp(ii)   / coeff_imp
-          ! Calculation of the diffusion tensor for the implicited part
-          ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
-        endif
-
-        ! In the next step, we compute the divergence of:
-        !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
-        w1(ii,iel) = xcpp(iel)*temp(ii)
-      enddo
-
-      ! Extra diag part of the diffusion tensor for covofi
-      if(iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
-        vistet(4,iel) = ctheta(iscal)* xtt * xrij(1,2)
-        vistet(5,iel) = ctheta(iscal)* xtt * xrij(2,3)
-        vistet(6,iel) = ctheta(iscal)* xtt * xrij(1,3)
+        enddo
       end if
 
-    enddo ! End loop over ncel
+      ! EB-GGDH model
+      !  "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
+      if(iturt(iscal).eq.11) then
+        do jj = 1, 3
+          ! Partial implicitation of "-C_theta*k/eps*( eps/k gamma uT' ni nj)"
+          ! Only the i.ne.j  components are added.
+          if (ii.ne.jj) then
+            temp(ii) = temp(ii)                                                 &
+                     - ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(jj)*xut(jj,iel)
+          endif
+        enddo
+      end if
 
-  endif ! End test on irijco
+    enddo
+
+    do ii = 1, 3
+      ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
+      !  "-C_theta*k/eps* R.grad T"
+      ! The resulting XUT array is only use for post processing purpose in
+      ! (EB)GGDH & (EB)AFM
+      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
+                                                 + xrij(ii,2)*gradt(2,iel)  &
+                                                 + xrij(ii,3)*gradt(3,iel))
+
+      ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )" for
+      ! EB-GGDH & (EB)-AFM
+      ! X_i = C*Y_ij*X_j -> X_i = Coeff_imp * Y_ij * X_j for i.ne.j
+      ! with Coeff_imp = C/(1+C*Y_ii)
+      if (iturt(iscal).eq.20) then
+        ! AFM
+        coeff_imp = 1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel)
+        if (coeff_imp .le.0.1) write(nfecra,*) "ARCHTUNG", coeff_imp
+
+        coeff_imp = 1.d0
+
+        xut(ii,iel) = xut(ii,iel)/ coeff_imp
+        temp(ii)    = temp(ii)   / coeff_imp
+        ! Calculation of the diffusion tensor for the implicited part
+        ! of the model computed in covofi.f90
+        vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+
+      else if(iturt(iscal).eq.21) then
+        ! EB-AFM
+        coeff_imp = 1.d0 + ctheta(iscal)*xtt*xi_ebafm*gradv(ii,ii,iel) &
+                         + ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(ii)
+
+        xut(ii,iel) = xut(ii,iel)/ coeff_imp
+        temp(ii)    = temp(ii)   / coeff_imp
+        ! Calculation of the diffusion tensor for the implicited part
+        ! of the model computed in covofi.f90
+        vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+
+      else if(iturt(iscal).eq.11) then
+        ! EB-GGDH
+        coeff_imp = 1.d0+ ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(ii)
+
+        xut(ii,iel) = xut(ii,iel)/ coeff_imp
+        temp(ii)    = temp(ii)   / coeff_imp
+        ! Calculation of the diffusion tensor for the implicited part
+        ! of the model computed in covofi.f90
+        vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+      endif
+
+      ! In the next step, we compute the divergence of:
+      !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
+      !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
+      w1(ii,iel) = xcpp(iel)*temp(ii)
+    enddo
+
+    ! Extra diag part of the diffusion tensor for covofi
+    if(iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
+      vistet(4,iel) = ctheta(iscal)* xtt * xrij(1,2)
+      vistet(5,iel) = ctheta(iscal)* xtt * xrij(2,3)
+      vistet(6,iel) = ctheta(iscal)* xtt * xrij(1,3)
+    end if
+
+  enddo ! End loop over ncel
 
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
@@ -681,7 +484,7 @@ if (ityturt(iscal).ne.3) then
   climgp = vcopt%climgr
   extrap = vcopt%extrag
 
-  ! Local gradient boundaray conditions: homogenous Neumann
+  ! Local gradient boundary conditions: homogenous Neumann
   allocate(coefat(3,ndimfb))
   allocate(coefbt(3,3,ndimfb))
   do ifac = 1, nfabor
