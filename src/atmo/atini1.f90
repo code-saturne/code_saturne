@@ -59,8 +59,6 @@ implicit none
 integer          ii, isc, jj
 double precision turb_schmidt
 
-type(var_cal_opt) :: vcopt
-
 !===============================================================================
 
 !===============================================================================
@@ -140,8 +138,6 @@ if (ippmod(iatmos).eq.1) then
 
     jj = iscapp(isc)
 
-    call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
-
     if (iscavr(jj).le.0) then
       visls0(jj) = viscl0
     endif
@@ -163,8 +159,6 @@ if (ippmod(iatmos).eq.2) then
   do isc = 1, nscapp
 
     jj = iscapp(isc)
-
-    call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
     if (iscavr(jj).le.0) then
       visls0(jj) = viscl0
