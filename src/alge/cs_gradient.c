@@ -4047,6 +4047,11 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
  *   cocg             --> cocg
  *----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 2 /* Bug with O3 or above with icc 18.0.1 20171018
+                                at least on Xeon(R) Gold 6140 */
+#endif
+
 static void
 _init_cocg_lsq(cs_lnum_t                     cell_id,
                const cs_mesh_adjacencies_t  *madj,
