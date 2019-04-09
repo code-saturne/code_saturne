@@ -29,6 +29,7 @@ if test -f "$source_env" ; then
 else
   cs_env_modules="@cs_env_modules@"
   if test "x$cs_env_modules" != "xno" ; then
+    module purge
     module load $cs_env_modules
   fi
 fi
