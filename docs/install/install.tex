@@ -1021,11 +1021,13 @@ force the \CS \texttt{configure} script to find some libraries
 which may be available in the SALOME distribution, such as HDF5,
 MED, or CGNS. To indicate that the versions from SALOME should be used,
 without needing to provide the full paths, the following configuration
-options may be used for HDF5, CGNS, and MED respectively:
+options may be used for HDF5, CGNS, and MED respectively, as well
+as for Catalyst when available in a given Salome platform variant.
 
  \texttt{--with-hdf5=salome}\\
  \texttt{--with-cgns=salome}\\
- \texttt{--with-med=salome}
+ \texttt{--with-med=salome}\\
+ \texttt{--with-catalyst=salome}
 
 As CGNS and MED file formats are portable, MED or CGNS files produced
 by either \CS or SALOME remain interoperable.\footnote{At the least,

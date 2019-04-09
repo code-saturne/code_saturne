@@ -38,6 +38,13 @@ AC_ARG_WITH(catalyst,
                             [specify prefix directory for CATALYST])],
             [if test "x$withval" = "x"; then
                with_catalyst=no
+             elif test "x$withval" = "xsalome"; then
+               if test -z "$CATALYST_ROOT_DIR"; then
+                 AC_MSG_FAILURE([no SALOME  path information for Catalyst
+(CATALYST_ROOT_DIR environment variable needed by --with-catalyst=salome)!])
+               else
+                 with_catalyst=$CATALYST_ROOT_DIR
+               fi
              fi],
             [with_catalyst=no])
 

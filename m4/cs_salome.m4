@@ -87,24 +87,6 @@ if test "x$with_salome" != "xno" ; then
 
 fi
 
-# Paths for libraries provided by SALOME distibution, for automatic checks
-
-if test -z "$MEDCOUPLING_ROOT_DIR" ; then
-  MEDCOUPLING_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MEDCOUPLING_ROOT_DIR)
-fi
-
-if test -z "$HDF5HOME" ; then
-  HDF5HOME=$(eval $SALOMEENVCMD ; echo $HDF5HOME)
-fi
-
-if test -z "$MED3HOME" ; then
-  MED3HOME=$(eval $SALOMEENVCMD ; echo $MED3HOME)
-fi
-
-if test -z "$CGNSHOME" ; then
-  CGNSHOME=$(eval $SALOMEENVCMD ; echo $CGNSHOME)
-fi
-
 ])dnl
 
 # CS_AC_TEST_SALOME
@@ -141,6 +123,10 @@ if test x$with_salome != xno ; then
 
   if test -z "$CGNSHOME" ; then
     CGNSHOME=$(eval $SALOMEENVCMD ; echo $CGNSHOME)
+  fi
+
+  if test -z "$CATALYST_ROOT_DIR" ; then
+    CATALYST_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $CATALYST_ROOT_DIR)
   fi
 
   # Make sure omniidl will work by forcing PYTHONPATH
