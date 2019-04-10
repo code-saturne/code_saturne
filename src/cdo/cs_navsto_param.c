@@ -553,14 +553,14 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
               "%s: Invalid way of coupling the Navier-Stokes equations.\n",
               __func__);
 
-  cs_log_printf(CS_LOG_SETUP, " <NavSto/Verbosity> %d\n", nsp->verbosity);
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Verbosity: %d\n", nsp->verbosity);
 
-  cs_log_printf(CS_LOG_SETUP, " <NavSto/Model> %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
                 cs_navsto_param_model_name[nsp->model]);
-  cs_log_printf(CS_LOG_SETUP, " <NavSto/Time status> %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: %s\n",
                 cs_navsto_param_time_state_name[nsp->time_state]);
 
-  cs_log_printf(CS_LOG_SETUP, " <NavSto/Coupling> %s",
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s",
                 cs_navsto_param_coupling_name[nsp->coupling]);
   switch (nsp->coupling) {
 
@@ -576,17 +576,17 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     break;
   }
 
-  cs_log_printf(CS_LOG_SETUP, " <NavSto/Gravity effect> %s",
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Gravity effect: %s\n",
                 cs_base_strtf(nsp->has_gravity));
   if (nsp->has_gravity)
-    cs_log_printf(CS_LOG_SETUP, " vector: [% 5.3e; % 5.3e; % 5.3e]\n",
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * NavSto | Gravity vector: [% 5.3e; % 5.3e; % 5.3e]\n",
                   nsp->gravity[0], nsp->gravity[1], nsp->gravity[2]);
-  else
-    cs_log_printf(CS_LOG_SETUP, "\n");
 
   const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
-  if (nsp->space_scheme != CS_SPACE_N_SCHEMES)
-    cs_log_printf(CS_LOG_SETUP, " <NavSto/Space scheme> %s\n", space_scheme);
+  if (nsp->space_scheme < CS_SPACE_N_SCHEMES)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Space scheme: %s\n",
+                  space_scheme);
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Undefined space scheme.", __func__);
@@ -595,7 +595,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
     const char  *time_scheme = cs_param_get_time_scheme_name(nsp->time_scheme);
     if (time_scheme != NULL) {
-      cs_log_printf(CS_LOG_SETUP, " <NavSto/Time scheme> %s", time_scheme);
+      cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time scheme: %s", time_scheme);
       if (nsp->time_scheme == CS_TIME_SCHEME_THETA)
         cs_log_printf(CS_LOG_SETUP, " with value %f\n", nsp->theta);
       else
@@ -607,19 +607,25 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   }
 
   /* Initial conditions for the velocity */
+  char  prefix[256];
+
   cs_log_printf(CS_LOG_SETUP,
-                "  <NavSto/Velocity.Init.Cond> number of definitions %d\n",
+                "  * NavSto | Velocity.Init.Cond | Number of definitions %2d\n",
                 nsp->n_velocity_ic_defs);
-  for (int i = 0; i < nsp->n_velocity_ic_defs; i++)
-    cs_xdef_log(nsp->velocity_ic_defs[i]);
+
+  for (int i = 0; i < nsp->n_velocity_ic_defs; i++) {
+    sprintf(prefix, "  * NavSto | Velocity.Init.Cond | Definition %4d", i);
+    cs_xdef_log(prefix, nsp->velocity_ic_defs[i]);
+  }
 
   /* Initial conditions for the pressure */
   cs_log_printf(CS_LOG_SETUP,
-                "  <NavSto/Pressure.Init.Cond> number of definitions %d\n",
+                "  * NavSto | Pressure.Init.Cond | Number of definitions: %d\n",
                 nsp->n_pressure_ic_defs);
-  for (int i = 0; i < nsp->n_pressure_ic_defs; i++)
-    cs_xdef_log(nsp->pressure_ic_defs[i]);
-
+  for (int i = 0; i < nsp->n_pressure_ic_defs; i++) {
+    sprintf(prefix, "  * NavSto | Pressure.Init.Cond | Definition %4d", i);
+    cs_xdef_log(prefix, nsp->pressure_ic_defs[i]);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

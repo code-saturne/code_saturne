@@ -969,15 +969,18 @@ cs_gwf_soil_set_by_field(cs_property_t     *permeability,
 void
 cs_gwf_soil_log_setup(void)
 {
-  const char  *meta = "  <GWF/Hydraulic Model>";
-  cs_log_printf(CS_LOG_SETUP, "  <GWF/Soils>  n_soils %d", _n_soils);
+  cs_log_printf(CS_LOG_SETUP, "  * GWF | Number of soils: %d\n", _n_soils);
 
+  char  meta[64];
   for (int i = 0; i < _n_soils; i++) {
 
     const cs_gwf_soil_t  *soil = _soils[i];
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
-    cs_log_printf(CS_LOG_SETUP, "\n  <GWF/Soil_id %d> %s\n", soil->id, z->name);
+    cs_log_printf(CS_LOG_SETUP, "\n        Soil.%d | Zone: %s\n",
+                  soil->id, z->name);
+    sprintf(meta, "        Soil.%d | Model |", soil->id);
+
     switch (soil->model) {
 
     case CS_GWF_SOIL_GENUCHTEN:
@@ -986,23 +989,24 @@ cs_gwf_soil_log_setup(void)
           (cs_gwf_soil_genuchten_param_t *)soil->input;
 
         cs_log_printf(CS_LOG_SETUP, "%s VanGenuchten-Mualen\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil parameters>");
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", meta);
         cs_log_printf(CS_LOG_SETUP,
                       " residual_moisture %5.3e", si->residual_moisture);
         cs_log_printf(CS_LOG_SETUP,
                       " saturated_moisture %5.3e\n", si->saturated_moisture);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil parameters> n= %f, scale= %f,"
-                      "tortuosity= %f\n", si->n, si->scale, si->tortuosity);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil saturated permeability>");
-        cs_log_printf(CS_LOG_SETUP,
-                      " [%-4.2e %4.2e %4.2e; %-4.2e %4.2e %4.2e;"
-                      " %-4.2e %4.2e %4.2e]",
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", meta);
+        cs_log_printf(CS_LOG_SETUP, " n= %f, scale= %f, tortuosity= %f\n",
+                      si->n, si->scale, si->tortuosity);
+        cs_log_printf(CS_LOG_SETUP, "%s Saturated permeability\n", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s [%-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[0][0],
                       si->saturated_permeability[0][1],
-                      si->saturated_permeability[0][2],
+                      si->saturated_permeability[0][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[1][0],
                       si->saturated_permeability[1][1],
-                      si->saturated_permeability[1][2],
+                      si->saturated_permeability[1][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e]\n", meta,
                       si->saturated_permeability[2][0],
                       si->saturated_permeability[2][1],
                       si->saturated_permeability[2][2]);
@@ -1014,20 +1018,20 @@ cs_gwf_soil_log_setup(void)
         const cs_gwf_soil_saturated_param_t  *si =
           (cs_gwf_soil_saturated_param_t *)soil->input;
 
-        cs_log_printf(CS_LOG_SETUP, "%s saturated\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil parameters>");
+        cs_log_printf(CS_LOG_SETUP, "%s Saturated\n", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters", meta);
         cs_log_printf(CS_LOG_SETUP,
                       " saturated_moisture %5.3e\n", si->saturated_moisture);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil saturated permeability>");
-        cs_log_printf(CS_LOG_SETUP,
-                      " [%-4.2e %4.2e %4.2e; %-4.2e %4.2e %4.2e;"
-                      " %-4.2e %4.2e %4.2e]",
+        cs_log_printf(CS_LOG_SETUP, "%s Saturated permeability\n", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s [%-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[0][0],
                       si->saturated_permeability[0][1],
-                      si->saturated_permeability[0][2],
+                      si->saturated_permeability[0][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[1][0],
                       si->saturated_permeability[1][1],
-                      si->saturated_permeability[1][2],
+                      si->saturated_permeability[1][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e]\n", meta,
                       si->saturated_permeability[2][0],
                       si->saturated_permeability[2][1],
                       si->saturated_permeability[2][2]);
@@ -1035,7 +1039,7 @@ cs_gwf_soil_log_setup(void)
       break;
 
     case CS_GWF_SOIL_USER:
-      cs_log_printf(CS_LOG_SETUP, "%s user-defined\n", meta);
+      cs_log_printf(CS_LOG_SETUP, "%s **User-defined**\n", meta);
       break;
 
     default:

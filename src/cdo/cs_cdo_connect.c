@@ -953,7 +953,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
   /* Output */
   cs_log_printf(CS_LOG_DEFAULT, "\n Connectivity information:\n");
   cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- max. number of faces by cell:    %4d\n",
+                " - dim-- max. number of faces by cell:    %4d\n",
                 n_max_entbyc[0]);
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- max. number of edges by cell:    %4d\n",

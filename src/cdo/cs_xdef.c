@@ -601,14 +601,16 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Output the settings related to a a cs_xdef_t structure
+ * \brief  Output the settings related to a cs_xdef_t structure
  *
- * \param[in] d    pointer to a cs_xdef_t structure
+ * \param[in] prefix    optional string
+ * \param[in] d         pointer to a cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(const cs_xdef_t     *d)
+cs_xdef_log(const char          *prefix,
+            const cs_xdef_t     *d)
 {
   if (d == NULL)
     return;
@@ -618,64 +620,68 @@ cs_xdef_log(const cs_xdef_t     *d)
   if (d->state & CS_FLAG_STATE_STEADY)   is_steady = true;
   if (d->state & CS_FLAG_STATE_CELLWISE) is_cellwise = true;
 
+  const char  *_p;
+  const char _empty_prefix[2] = "";
+  if (prefix == NULL)
+    _p = _empty_prefix;
+  else
+    _p = prefix;
+
   cs_log_printf(CS_LOG_SETUP,
-                "  <Definition> uniform [%s], cellwise [%s], steady [%s],"
-                " meta: %u\n",
-                cs_base_strtf(is_uniform), cs_base_strtf(is_cellwise),
+                "%s | Uniform %s Cellwise %s Steady %s Meta: %u\n",
+                _p, cs_base_strtf(is_uniform), cs_base_strtf(is_cellwise),
                 cs_base_strtf(is_steady), d->meta);
 
   if (d->support == CS_XDEF_SUPPORT_VOLUME) {
 
     const cs_zone_t  *z = cs_volume_zone_by_id(d->z_id);
     assert(z != NULL);
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <Definition> support: volume, zone: %d, %s,"
-                  " mesh_location: %s\n",
-                  z->id, z->name, cs_mesh_location_get_name(z->location_id));
+    cs_log_printf(CS_LOG_SETUP, "%s | Support:   volume | Zone: %s (id:%5d)\n",
+                  _p, z->name, z->id);
 
   }
   else if (d->support == CS_XDEF_SUPPORT_BOUNDARY) {
 
     const cs_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
     assert(z != NULL);
-    cs_log_printf(CS_LOG_SETUP,
-                  "  <Definition> support: boundary, zone: %d, %s,"
-                  " mesh_location: %s\n",
-                  z->id, z->name, cs_mesh_location_get_name(z->location_id));
+    cs_log_printf(CS_LOG_SETUP, "%s | Support: boundary | Zone: %s (id:%5d)\n",
+                  _p, z->name, z->id);
 
   }
   else if (d->support == CS_XDEF_SUPPORT_TIME)
-    cs_log_printf(CS_LOG_SETUP, " <Definition> support: time\n");
+    cs_log_printf(CS_LOG_SETUP, "%s | Support: time\n", _p);
 
   switch (d->type) {
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_log_printf(CS_LOG_SETUP, "              by an analytical function\n");
+    cs_log_printf(CS_LOG_SETUP, "%s | Definition by an analytical function\n",
+                  _p);
     break;
 
   case CS_XDEF_BY_ARRAY:
-    cs_log_printf(CS_LOG_SETUP, "              by an array\n");
+    cs_log_printf(CS_LOG_SETUP, "%s | Definition by an array\n", _p);
     break;
 
   case CS_XDEF_BY_FIELD:
     {
       cs_field_t  *f = (cs_field_t *)d->input;
 
-      cs_log_printf(CS_LOG_SETUP, "              by the field %s\n",
-                    f->name);
+      cs_log_printf(CS_LOG_SETUP, "%s | Definition by the field %s\n",
+                    _p, f->name);
     }
     break;
 
   case CS_XDEF_BY_FUNCTION:
-    cs_log_printf(CS_LOG_SETUP, "              by function\n");
+    cs_log_printf(CS_LOG_SETUP, "%s | Definition by function\n", _p);
     break;
 
   case CS_XDEF_BY_QOV:
-    cs_log_printf(CS_LOG_SETUP, "              by quantity over a volume\n");
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s | Definition by a quantity over a volume\n", _p);
     break;
 
   case CS_XDEF_BY_TIME_FUNCTION:
-    cs_log_printf(CS_LOG_SETUP, "              by time function\n");
+    cs_log_printf(CS_LOG_SETUP, "%s | Definition by a time function\n", _p);
     break;
 
   case CS_XDEF_BY_VALUE:
@@ -683,35 +689,35 @@ cs_xdef_log(const cs_xdef_t     *d)
       cs_real_t *values = (cs_real_t *)d->input;
 
       if (d->dim == 1)
-        cs_log_printf(CS_LOG_SETUP, "              by_value, % 5.3e\n",
-                      values[0]);
+        cs_log_printf(CS_LOG_SETUP, "%s | Definition by_value: % 5.3e\n",
+                      _p, values[0]);
       else if (d->dim == 3)
-        cs_log_printf(CS_LOG_SETUP, "              by_value,"
-                      " (% 5.3e, % 5.3e, % 5.3e)\n",
-                      values[0], values[1], values[2]);
+        cs_log_printf(CS_LOG_SETUP, "%s | Definition by_value:"
+                      " [% 5.3e, % 5.3e, % 5.3e]\n",
+                      _p, values[0], values[1], values[2]);
       else if (d->dim == 9)
-        cs_log_printf(CS_LOG_SETUP, "              by_value,"
-                      " ((% 4.2e, % 4.2e, % 4.2e) (% 4.2e, % 4.2e, % 4.2e)"
-                      " (% 4.2e, % 4.2e, % 4.2e))\n",
-                      values[0], values[1], values[2],
-                      values[3], values[4], values[5],
-                      values[6], values[7], values[8]);
+        cs_log_printf(CS_LOG_SETUP, "%s | Definition by_value:"
+                      " [[% 4.2e, % 4.2e, % 4.2e], [% 4.2e, % 4.2e, % 4.2e],"
+                      " [% 4.2e, % 4.2e, % 4.2e]]\n",
+                      _p, values[0], values[1], values[2], values[3], values[4],
+                      values[5], values[6], values[7], values[8]);
       else
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid case. dim = %d (expected 3, 6 or 9)\n", d->dim);
+                  " %s: Invalid case. dim = %d (expected 3, 6 or 9)\n",
+                  __func__, d->dim);
     }
     break; // BY_VALUE
 
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of description."));
+    bft_error(__FILE__, __LINE__, 0, _("%s: Invalid type of description."),
+              __func__);
     break;
 
   } /* switch on def_type */
 
-  cs_log_printf(CS_LOG_SETUP, "  <Definition/Quadrature> %s\n",
-                cs_quadrature_get_type_name(d->qtype));
+  cs_log_printf(CS_LOG_SETUP, "%s | Quadrature: %s\n",
+                _p, cs_quadrature_get_type_name(d->qtype));
 
 }
 

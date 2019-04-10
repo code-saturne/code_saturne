@@ -119,10 +119,11 @@ typedef struct {
  * Global variables
  *============================================================================*/
 
-/* Separation lines: long, medium, short */
-extern const char lsepline[80];
-extern const char msepline[60];
-extern const char ssepline[40];
+/* Separation lines: header1, header2 (compatible with markdown), other */
+extern const char h1_sep[80];
+extern const char h2_sep[80];
+extern const char sepline[80];
+extern const char msepline[50];
 
 /* Activation of the CDO/HHO module */
 extern int  cs_param_cdo_mode;
@@ -156,6 +157,19 @@ cs_param_hodge_get_algo_name(const cs_param_hodge_t   h_info);
 
 const char *
 cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Output the settings related to a cs_param_hodge_t structure
+ *
+ * \param[in] prefix    optional string
+ * \param[in] hp        a cs_param_hodge_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_hodge_log(const char               *prefix,
+                   const cs_param_hodge_t    hp);
 
 /*----------------------------------------------------------------------------*/
 
