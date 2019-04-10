@@ -1548,7 +1548,12 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   const char *eqname = eqp->name;
 
-  cs_log_printf(CS_LOG_SETUP, "  <%s/type> ", eqname);
+  char  prefix[256];
+  assert(strlen(eqname) < 200); /* Check that prefix is large enough */
+
+  /* High-level settings */
+  cs_log_printf(CS_LOG_SETUP, "\n### %s: High-level settings\n", eqname);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Type: ", eqname);
   switch (eqp->type) {
   case CS_EQUATION_TYPE_GROUNDWATER:
     cs_log_printf(CS_LOG_SETUP, "Associated to groundwater flows\n");
@@ -1568,19 +1573,6 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
               " Eq. %s has no type.\n Please check your settings.", eqname);
   }
 
-  const char *space_scheme = cs_param_get_space_scheme_name(eqp->space_scheme);
-  if (eqp->space_scheme != CS_SPACE_N_SCHEMES)
-    cs_log_printf(CS_LOG_SETUP, "  <%s/space scheme> %s\n",
-                  eqname, space_scheme);
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Undefined space scheme for eq. %s", eqname);
-
-  cs_log_printf(CS_LOG_SETUP, "  <%s/space poly degree>  %d\n",
-                eqname, eqp->space_poly_degree);
-  cs_log_printf(CS_LOG_SETUP, "  <%s/Verbosity>  %d\n",
-                eqname, eqp->verbosity);
-
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
   bool  diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
@@ -1589,48 +1581,88 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   bool  force_values = (eqp->flag & CS_EQUATION_FORCE_VALUES) ? true : false;
 
   cs_log_printf(CS_LOG_SETUP,
-                "  <%s/Terms>  unsteady:%s, convection:%s, diffusion:%s,"
-                " reaction:%s, source term:%s, force internal values: %s\n",
+                "  * %s | Terms: unsteady:%s, convection:%s, diffusion:%s\n",
                 eqname, cs_base_strtf(unsteady), cs_base_strtf(convection),
-                cs_base_strtf(diffusion), cs_base_strtf(reaction),
-                cs_base_strtf(source_term), cs_base_strtf(force_values));
+                cs_base_strtf(diffusion));
+  cs_log_printf(CS_LOG_SETUP,
+                "  * %s | Terms: reaction:%s, source term:%s,"
+                " force internal values: %s\n",
+                eqname,cs_base_strtf(reaction), cs_base_strtf(source_term),
+                cs_base_strtf(force_values));
+
+  if (eqp->space_scheme < CS_SPACE_N_SCHEMES)
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Space scheme:       %s\n",
+                  eqname, cs_param_get_space_scheme_name(eqp->space_scheme));
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " Undefined space scheme for eq. %s", eqname);
+
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Space poly degree:  %d\n",
+                eqname, eqp->space_poly_degree);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Verbosity:          %d\n",
+                eqname, eqp->verbosity);
+
+  if (cs_glob_n_threads > 1) {
+    if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_CRITICAL)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | OpenMP.Assembly.Choice:  %s\n",
+                    eqname, "critical");
+    else if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_ATOMIC)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | OpenMP.Assembly.Choice:  %s\n",
+                    eqname, "atomic");
+  }
 
   /* Boundary conditions */
+  cs_log_printf(CS_LOG_SETUP, "\n### %s: Boundary condition settings\n",
+                eqname);
   cs_log_printf(CS_LOG_SETUP,
-                "  <%s/Boundary Conditions> default: %s, enforcement: %s\n",
-                eqname, cs_param_get_bc_name(eqp->default_bc),
+                "  * %s | Boundary conditions | Default: %s\n",
+                eqname, cs_param_get_bc_name(eqp->default_bc));
+  cs_log_printf(CS_LOG_SETUP,
+                "  * %s | Boundary conditions | Enforcement: %s\n",
+                eqname,
                 cs_param_get_bc_enforcement_name(eqp->default_enforcement));
-  if (eqp->default_enforcement != CS_PARAM_BC_ENFORCE_ALGEBRAIC)
+  if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED)
     cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/Boundary Conditions> penalization coefficient:"
+                  "  * %s | Boundary conditions | Penalization coefficient:"
                   " %5.3e\n", eqname, eqp->strong_pena_bc_coeff);
-  cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
-                eqname, eqp->n_bc_defs);
-  if (eqp->verbosity > 1) {
+  else if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+           eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Boundary conditions | Penalization coefficient:"
+                  " %5.3e\n", eqname, eqp->weak_pena_bc_coeff);
+
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Boundary conditions |"
+                " Number of definitions: %d\n", eqname, eqp->n_bc_defs);
+
+  if (eqp->verbosity > 0) {
     char  desc[128];
     for (int id = 0; id < eqp->n_bc_defs; id++) {
       const cs_xdef_t  *d = eqp->bc_defs[id];
+
       cs_cdo_bc_get_desc(d->meta, desc);
-      cs_log_printf(CS_LOG_SETUP, "  <%s/Boundary type> %s\n", eqname, desc);
-      cs_xdef_log(d);
+      sprintf(prefix, "        Definition %4d", id);
+      cs_log_printf(CS_LOG_SETUP, "\n%s | Type: %s\n", prefix, desc);
+      cs_xdef_log(prefix, d);
     }
   }
 
   if (unsteady) {
 
-    const cs_param_hodge_t  h_info = eqp->time_hodge;
-
-    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Unsteady term>\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s: Time settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP,
-                  "  <%s/Initial.Condition> number of definitions %d\n",
+                  "  * %s | Initial conditions | Number of definitions: %d",
                   eqname, eqp->n_ic_defs);
-
-    for (int i = 0; i < eqp->n_ic_defs; i++)
-      cs_xdef_log(eqp->ic_defs[i]);
+    if (eqp->n_ic_defs > 0)
+      cs_log_printf(CS_LOG_SETUP, "\n\n");
+    for (int i = 0; i < eqp->n_ic_defs; i++) {
+      sprintf(prefix, "        Definition %4d", i);
+      cs_xdef_log(prefix, eqp->ic_defs[i]);
+    }
 
     const char  *time_scheme = cs_param_get_time_scheme_name(eqp->time_scheme);
     if (time_scheme != NULL) {
-      cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Scheme> %s", eqname, time_scheme);
+      cs_log_printf(CS_LOG_SETUP, "\n  * %s | Time scheme: %s",
+                    eqname, time_scheme);
       if (eqp->time_scheme == CS_TIME_SCHEME_THETA)
         cs_log_printf(CS_LOG_SETUP, " with value %f\n", eqp->theta);
       else
@@ -1639,192 +1671,153 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
     else
       bft_error(__FILE__, __LINE__, 0, " Invalid time scheme.");
 
-    cs_log_printf(CS_LOG_SETUP, "  <%s/Mass.Lumping> %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Mass.Lumping: %s\n",
                   eqname, cs_base_strtf(eqp->do_lumping));
-    cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Property> %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Time property: %s\n\n",
                   eqname, cs_property_get_name(eqp->time_property));
 
-    if (eqp->verbosity > 0) {
-      cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Hodge> %s - %s\n",
-                    eqname, cs_param_hodge_get_type_name(h_info),
-                    cs_param_hodge_get_algo_name(h_info));
-      cs_log_printf(CS_LOG_SETUP,
-                    "    <%s/Time.Hodge.Inv> Inversion of property  %s\n",
-                    eqname, cs_base_strtf(h_info.inv_pty));
-      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        cs_log_printf(CS_LOG_SETUP, "    <%s/Time.Hodge.Coef> %.3e\n",
-                      eqname, h_info.coef);
-    }
+    sprintf(prefix, "        Time Hodge op. ");
+    cs_param_hodge_log(prefix, eqp->time_hodge);
 
   } /* Unsteady term */
 
   if (diffusion) {
 
-    const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+    cs_log_printf(CS_LOG_SETUP, "\n### %s: Diffusion term settings\n", eqname);
 
-    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Diffusion term>\n", eqname);
-    cs_log_printf(CS_LOG_SETUP, "  <%s/Diffusion.Property> %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Diffusion property: %s\n\n",
                   eqname, cs_property_get_name(eqp->diffusion_property));
 
-    if (eqp->verbosity > 0) {
-      cs_log_printf(CS_LOG_SETUP, "  <%s/Diffusion.Hodge> %s - %s\n",
-                    eqname, cs_param_hodge_get_type_name(h_info),
-                    cs_param_hodge_get_algo_name(h_info));
-      cs_log_printf(CS_LOG_SETUP, "    <%s/Diffusion.Hodge.Inv>", eqname);
-      cs_log_printf(CS_LOG_SETUP, " Inversion of property: %s\n",
-                    cs_base_strtf(h_info.inv_pty));
-      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST ||
-          h_info.algo == CS_PARAM_HODGE_ALGO_AUTO) {
-        cs_log_printf(CS_LOG_SETUP, "    <%s/Diffusion.Hodge.Coef> %.3e\n",
-                      eqname, h_info.coef);
-      }
-    }
+    sprintf(prefix, "        Diffusion Hodge op. ");
+    cs_param_hodge_log(prefix, eqp->diffusion_hodge);
 
   } /* Diffusion term */
 
   if (convection) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Advection term>\n", eqname);
-    cs_log_printf(CS_LOG_SETUP, "  <Advection field>  %s\n",
-                  cs_advection_field_get_name(eqp->adv_field));
+    cs_log_printf(CS_LOG_SETUP, "\n### %s: Advection term settings\n", eqname);
 
-    if (eqp->verbosity > 0) {
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: %s\n",
+                  eqname, cs_advection_field_get_name(eqp->adv_field));
 
-      cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Formulation>", eqname);
-      switch(eqp->adv_formulation) {
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Formulation:", eqname);
+    switch(eqp->adv_formulation) {
 
-      case CS_PARAM_ADVECTION_FORM_CONSERV:
-        cs_log_printf(CS_LOG_SETUP, " Conservative\n");
-        break;
-      case CS_PARAM_ADVECTION_FORM_NONCONS:
-        cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
-        break;
+    case CS_PARAM_ADVECTION_FORM_CONSERV:
+      cs_log_printf(CS_LOG_SETUP, " Conservative\n");
+      break;
+    case CS_PARAM_ADVECTION_FORM_NONCONS:
+      cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
+      break;
 
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid operator type for advection.");
-      } /* Switch on formulation */
+    default:
+      bft_error(__FILE__, __LINE__, 0, " Invalid operator type for advection.");
 
-      cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Scheme> ", eqname);
-      switch(eqp->adv_scheme) {
-      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        cs_log_printf(CS_LOG_SETUP, " centered\n");
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_CIP:
-        cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
-        cs_log_printf(CS_LOG_SETUP, " mixed centered-upwind (%3.2f %%)\n",
-                      100*eqp->upwind_portion);
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
-        cs_log_printf(CS_LOG_SETUP,
-                      " upwind weighted with Samarskii function\n");
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_SG:
-        cs_log_printf(CS_LOG_SETUP,
-                      " upwind weighted with Scharfetter-Gummel function\n");
-        break;
-      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        cs_log_printf(CS_LOG_SETUP, " upwind\n");
-        break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid weight algorithm for advection.");
-      }
+    } /* Switch on formulation */
 
-    } /* verbosity > 0 */
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Scheme:", eqname);
+    switch(eqp->adv_scheme) {
+    case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+      cs_log_printf(CS_LOG_SETUP, " centered\n");
+      break;
+    case CS_PARAM_ADVECTION_SCHEME_CIP:
+      cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
+      break;
+    case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
+      cs_log_printf(CS_LOG_SETUP, " centered-upwind (%3.2f %% of upwind)\n",
+                    100*eqp->upwind_portion);
+      break;
+    case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
+      cs_log_printf(CS_LOG_SETUP,
+                    " upwind weighted with Samarskii function\n");
+      break;
+    case CS_PARAM_ADVECTION_SCHEME_SG:
+      cs_log_printf(CS_LOG_SETUP,
+                    " upwind weighted with Scharfetter-Gummel function\n");
+      break;
+    case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+      cs_log_printf(CS_LOG_SETUP, " upwind\n");
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0, " Invalid scheme for advection.");
+    }
 
   } /* Advection term */
 
   if (reaction) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Number of reaction terms> %d\n",
+    cs_log_printf(CS_LOG_SETUP, "\n### %s: Reaction settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Reaction | Number of terms: %d\n",
                   eqname, eqp->n_reaction_terms);
 
-    if (eqp->verbosity > 0) {
-
-      const cs_param_hodge_t  h_info = eqp->reaction_hodge;
-
-      cs_log_printf(CS_LOG_SETUP, "  <%s/Reaction.Hodge> %s - %s\n",
-                    eqname, cs_param_hodge_get_type_name(h_info),
-                    cs_param_hodge_get_algo_name(h_info));
-      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        cs_log_printf(CS_LOG_SETUP,
-                      "    <%s/Reaction.Hodge.Coefficient> %.3e\n",
-                      eqname, h_info.coef);
-
-    }
+    sprintf(prefix, "        Reaction Hodge op. ");
+    cs_param_hodge_log(prefix, eqp->reaction_hodge);
 
   } /* Reaction terms */
 
   if (source_term) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n  <%s/Source terms>\n", eqname);
-    for (int s_id = 0; s_id < eqp->n_source_terms; s_id++)
-      cs_xdef_log(eqp->source_terms[s_id]);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s: Source term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Source terms | Number of terms: %d\n",
+                  eqname, eqp->n_source_terms);
+
+    for (int s_id = 0; s_id < eqp->n_source_terms; s_id++) {
+      sprintf(prefix, "        Definition %4d", s_id);
+      cs_xdef_log(prefix, eqp->source_terms[s_id]);
+    }
 
   } /* Source terms */
 
   /* Iterative solver information */
   const cs_param_sles_t   slesp = eqp->sles_param;
 
-  cs_log_printf(CS_LOG_SETUP, "\n  <%s/Sparse Linear Equation Solver (SLES)"
-                " family>", eqname);
+  cs_log_printf(CS_LOG_SETUP, "\n### %s: Linear algebra settings\n\n",
+                eqname);
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Family:");
   if (slesp.solver_class == CS_PARAM_SLES_CLASS_CS)
-    cs_log_printf(CS_LOG_SETUP, " Code_Saturne\n");
+    cs_log_printf(CS_LOG_SETUP, "             Code_Saturne\n");
   else if (slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC)
-    cs_log_printf(CS_LOG_SETUP, " PETSc\n");
+    cs_log_printf(CS_LOG_SETUP, "             PETSc\n");
 
-  cs_log_printf(CS_LOG_SETUP, "  <%s/SLES Verbosity>  %d\n",
-                eqname, slesp.verbosity);
-  cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.MaxIter     %d\n",
-                eqname, slesp.n_max_iter);
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Verbosity:          %d\n",
+                slesp.verbosity);
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.MaxIter:     %d\n",
+                slesp.n_max_iter);
 
-  cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Name        %s\n",
-                eqname, cs_param_get_solver_name(slesp.solver));
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Name:        %s\n",
+                cs_param_get_solver_name(slesp.solver));
   if (slesp.solver == CS_PARAM_ITSOL_AMG)
-    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> AMG.Type           %s\n",
-                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
-
-  cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Precond     %s\n",
-                eqname, cs_param_get_precond_name(slesp.precond));
+    cs_log_printf(CS_LOG_SETUP, "        SLES | AMG.Type:           %s\n",
+                  cs_param_get_amg_type_name(slesp.amg_type));
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Precond:     %s\n",
+                cs_param_get_precond_name(slesp.precond));
   if (slesp.precond == CS_PARAM_PRECOND_AMG)
-    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> AMG.Type           %s\n",
-                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
+    cs_log_printf(CS_LOG_SETUP, "        SLES | AMG.Type:           %s\n",
+                  cs_param_get_amg_type_name(slesp.amg_type));
 
-  cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Eps        % -10.6e\n",
-                eqname, slesp.eps);
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Eps:        % -10.6e\n",
+                slesp.eps);
 
   switch (slesp.resnorm_type) {
   case CS_PARAM_RESNORM_MAT_DIAG:
-    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
-                  eqname, "Matrix diagonal (\"matrix_diag\")");
+    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
+                  "Matrix diagonal (\"matrix_diag\")");
     break;
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
-    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
-                  eqname, "Weighted RHS (\"weighted_rhs\")");
+    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
+                  "Weighted RHS (\"weighted_rhs\")");
     break;
   case CS_PARAM_RESNORM_VOLTOT:
-    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
-                  eqname, "Volumic (\"vol_tot\")");
+    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
+                  "Volumic (\"vol_tot\")");
     break;
-
   case CS_PARAM_RESNORM_NONE:
   default:
-    cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> Solver.Normalized  %s\n",
-                  eqname, "None");
+    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
+                  "None");
     break;
   }
-
-  if (cs_glob_n_threads > 1) {
-    if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_CRITICAL)
-      cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> OpenMP.Assembly.Choice  %s\n",
-                    eqname, "critical");
-    else if (eqp->omp_assembly_choice == CS_PARAM_ASSEMBLE_OMP_ATOMIC)
-      cs_log_printf(CS_LOG_SETUP, "    <%s/SLES> OpenMP.Assembly.Choice  %s\n",
-                    eqname, "atomic");
-  }
+  cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
 /*----------------------------------------------------------------------------*/

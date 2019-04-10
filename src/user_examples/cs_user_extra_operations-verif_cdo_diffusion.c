@@ -237,7 +237,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
     fprintf(resume, " -bnd- Scal.Mean  % 10.6e\n", pdi_mean);
     fprintf(resume, " -bnd- Scal.Varia % 10.6e\n",
             pdi_ssum*inv - pdi_mean*pdi_mean);
-    fprintf(resume, "%s", msepline);
+    fprintf(resume, "%s", sepline);
 
   }
 
@@ -343,9 +343,9 @@ cs_user_extra_operations(cs_domain_t          *domain)
 
   resume = fopen(filename, "w");
 
-  bft_printf("\n%s", msepline);
+  bft_printf("\n%s", sepline);
   bft_printf("    Extra operations\n");
-  bft_printf("%s", msepline);
+  bft_printf("%s", sepline);
 
   /* Extra-operation depends on the numerical scheme */
   cs_param_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);

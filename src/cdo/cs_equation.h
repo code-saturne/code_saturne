@@ -349,6 +349,21 @@ cs_equation_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the count of equations of each macro type
+ *
+ * \param[out]  n_equations          total number of equations
+ * \param[out]  n_predef_equations   number of predefined equations
+ * \param[out]  n_user_equations     number of user equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_get_count(int      *n_equations,
+                      int      *n_predef_equations,
+                      int      *n_user_equations);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summarize all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
