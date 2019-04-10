@@ -5,6 +5,8 @@ Release 5.0.10 (unreleased)
 Bug fixes
 ---------
 
+- GUI reader: fix for cases with multiple mapped inlets.
+
 - Work around possible Intel icc compiler bug in least-squares vector
   gradient (observed on v6.0 with icc 18.0.1 20171018).
 

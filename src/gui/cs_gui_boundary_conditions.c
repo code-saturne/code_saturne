@@ -245,8 +245,8 @@ _mapped_inlet(const char                *label,
     for (int i = 0; i < 3; i++) {
       char *path = cs_xpath_init_path();
       double value = 0.;
-      cs_xpath_add_element(&path, "boundary_conditions");
-      cs_xpath_add_element(&path, "inlet");
+      cs_xpath_add_elements(&path, 2, "boundary_conditions", "inlet");
+      cs_xpath_add_test_attribute(&path, "label", label);
       cs_xpath_add_element(&path, "mapped_inlet");
       cs_xpath_add_element(&path, tname[i]);
       cs_xpath_add_function_text(&path);
