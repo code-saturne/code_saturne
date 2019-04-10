@@ -3046,6 +3046,9 @@ ple_locator_shift_locations(ple_locator_t  *this_locator,
                             ple_lnum_t      location_shift)
 {
   int n_intersects = this_locator->n_intersects;
+  if (n_intersects == 0)
+    return;
+
   const ple_lnum_t n_points = this_locator->distant_points_idx[n_intersects];
 
   for (ple_lnum_t i = 0; i < n_points; i++) {
