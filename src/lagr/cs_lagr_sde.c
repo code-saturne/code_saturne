@@ -48,12 +48,14 @@
 #include "cs_mesh_quantities.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_thermal_model.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_adh.h"
 #include "cs_lagr_deposition_model.h"
+#include "cs_lagr_event.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_prototypes.h"
@@ -88,6 +90,59 @@ static const double _k_boltz = 1.38e-23;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a resulspension event
+ *
+ * TODO add additional info to events.
+ *
+ * \param[in]  events             pointer to events set
+ * \param[in]  particles          pointer to particle set
+ * \param[in]  p_id               particle id
+ * \param[in]  face_id            associated face id
+ * \param[in]  particle_velocity  velocity after event
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_resuspension_event(cs_lagr_event_set_t     *events,
+                        cs_lagr_particle_set_t  *particles,
+                        cs_lnum_t                p_id,
+                        cs_lnum_t                face_id,
+                        const cs_real_t          particle_velocity[3])
+{
+  cs_lnum_t event_id = events->n_events;
+  if (event_id >= events->n_events_max) {
+    /* flush events */
+    cs_lagr_stat_update_event(events,
+                              CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+    events->n_events = 0;
+    event_id = 0;
+  }
+
+  cs_lagr_event_init_from_particle(events, particles, event_id, p_id);
+
+  cs_lagr_events_set_lnum(events,
+                          event_id,
+                          CS_LAGR_E_FACE_ID,
+                          face_id);
+
+  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                          event_id,
+                                          CS_LAGR_E_FLAG);
+
+  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
+                                              event_id,
+                                              CS_LAGR_E_VELOCITY);
+
+  *e_flag = *e_flag | CS_EVENT_RESUSPENSION;
+
+  for (int k = 0; k < 3; k++)
+    e_vel_post[k] = particle_velocity[k];
+
+  events->n_events += 1;
+}
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 1st order time scheme
  *
  * \param[in]  dtp       time step
@@ -97,8 +152,6 @@ static const double _k_boltz = 1.38e-23;
  * \param[in]  bx        caracteristiques de la turbulence
  * \param[in]  vagaus    gaussian random variables
  * \param[in]  brgaus    gaussian random variables
- * \param[in]  gradpr    pressure gradient
- * \param[in]  romp      particles associated density
  * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
  */
@@ -112,8 +165,6 @@ _lages1(cs_real_t           dtp,
         const cs_real_33_t  bx[],
         const cs_real_33_t  vagaus[],
         const cs_real_t     brgaus[],
-        const cs_real_3_t   gradpr[],
-        const cs_real_t     romp[],
         const cs_real_3_t   force_p[],
         cs_real_t          *terbru)
 {
@@ -162,8 +213,6 @@ _lages1(cs_real_t           dtp,
                                                            CS_LAGR_COORDS);
       cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_COORDS);
-
-      cs_real_t rom = extra->cromf->val[cell_id];
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -304,7 +353,7 @@ _lages1(cs_real_t           dtp,
           else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
             cs_lnum_t mode  = 1;
-            CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
+            CS_PROCF(usthht, USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
 
             tempf = tempf + tkelvi;
 
@@ -389,7 +438,6 @@ _lages1(cs_real_t           dtp,
  * \param[in]  tsfext    infos pour couplage retour dynamique
  * \param[in]  vagaus    variables aleatoires gaussiennes
  * \param[in]  brgaus    gaussian variable for brownian movement
- * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      masse volumique des particules
  * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
@@ -405,8 +453,6 @@ _lages2(cs_real_t           dtp,
         cs_real_t           tsfext[],
         const cs_real_33_t  vagaus[],
         const cs_real_t     brgaus[],
-        const cs_real_3_t   gradpr[],
-        const cs_real_t     romp[],
         const cs_real_3_t   force_p[],
         cs_real_t          *terbru)
 {
@@ -559,8 +605,6 @@ _lages2(cs_real_t           dtp,
             bx,
             vagaus,
             brgaus,
-            gradpr,
-            romp,
             force_p,
             terbru);
   }
@@ -698,28 +742,28 @@ _lages2(cs_real_t           dtp,
  * \param[in]  tlag      fluid characteristic time
  * \param[in]  piil      term in integration of UP SDEs
  * \param[in]  vagaus    gaussian random variables
- * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      particles associated density
  * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[in]  tempf     temperature of the fluid (K)
  * \param[in]  vislen    FIXME
+ * \param[in]  events    associated events set
  * \param[in]  depint    interface location near-wall/core-flow
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_lagesd(cs_real_t           dtp,
-        cs_lnum_t           ip,
-        const cs_real_t     taup[],
-        const cs_real_3_t   piil[],
-        const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
-        const cs_real_t     romp[],
-        const cs_real_3_t   force_p[],
-        cs_real_t           tempf,
-        const cs_real_t     vislen[],
-        cs_real_t          *depint,
-        cs_lnum_t          *nresnew)
+_lagesd(cs_real_t             dtp,
+        cs_lnum_t             ip,
+        const cs_real_t       taup[],
+        const cs_real_3_t     piil[],
+        const cs_real_33_t    vagaus[],
+        const cs_real_t       romp[],
+        const cs_real_3_t     force_p[],
+        cs_real_t             tempf,
+        const cs_real_t       vislen[],
+        cs_lagr_event_set_t  *events,
+        cs_real_t            *depint,
+        cs_lnum_t            *nresnew)
 {
   /* mesh and mesh quantities */
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -1207,17 +1251,14 @@ _lagesd(cs_real_t           dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires]
-              += p_stat_w;
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflres]
-              += p_stat_w + (p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflm]
-              += - (p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
+          if (events != NULL) {
+            const cs_real_t *part_vel
+              = cs_lagr_particles_attr_const(p_set, ip, CS_LAGR_VELOCITY);
+            _add_resuspension_event(events,
+                                    p_set,
+                                    ip,
+                                    face_id,
+                                    part_vel);
           }
 
           /* Update of surface covered and deposit height
@@ -1552,7 +1593,7 @@ _lagesd(cs_real_t           dtp,
          * equal to adhesion force between single particles
          * times the number of particle-particle contacts  */
 
-        cs_real_t adhes_energ, adhes_force, adhes_force_ps;
+        cs_real_t adhes_energ, adhes_force;
         cs_lagr_adh_pp(p_diam, tempf, &adhes_energ, &adhes_force);
         /* Average number of contact in a cluster */
         cs_real_t ncont_pp = cs_math_pow2(p_diam/diam_mean);
@@ -1569,11 +1610,9 @@ _lagesd(cs_real_t           dtp,
               (adhes_force - cs_glob_lagr_consolidation_model->force_consol) * 0.5
             * (1.0 + tanh((mean_depo_height - consol_height)
                           /(0.1 * consol_height)));
-            adhes_force_ps = cs_glob_lagr_consolidation_model->force_consol;
           }
           else {
             adhes_force *= ncont_pp;
-            adhes_force_ps = adhes_force;
           }
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_N_SMALL_ASPERITIES,
                                     ncont_pp);
@@ -1610,7 +1649,6 @@ _lagesd(cs_real_t           dtp,
           adhes_force *= ncont ;
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE,
                                     adhes_force);
-          adhes_force_ps = adhes_force;
 
           cs_real_t adhes_tor = adhes_force * p_diam * 0.5;
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE,
@@ -1633,17 +1671,14 @@ _lagesd(cs_real_t           dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires]
-              += p_stat_w;
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflres]
-              += p_stat_w + ( p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflm]
-              += - ( p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
+          if (events != NULL) {
+            const cs_real_t *part_vel
+              = cs_lagr_particles_attr_const(p_set, ip, CS_LAGR_VELOCITY);
+            _add_resuspension_event(events,
+                                    p_set,
+                                    ip,
+                                    face_id,
+                                    part_vel);
           }
 
           /* Update of surface covered and deposit height
@@ -1792,7 +1827,6 @@ _lagesd(cs_real_t           dtp,
 
             if (cond_resusp[0] > 0.0 || cond_resusp[1] > 0.0) {
               iresusp = 1;
-              cs_real_t clust_resusp_height;
               cs_real_t clust_consol_height;
               cs_real_t height_reent;
               cs_real_t random;
@@ -1800,7 +1834,6 @@ _lagesd(cs_real_t           dtp,
               if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT)
                   < diam_mean) {
                 cs_random_uniform(1, &random);
-                clust_resusp_height = random * p_height;
                 clust_consol_height = 0.0;
               }
               else {
@@ -2040,7 +2073,6 @@ _lagesd(cs_real_t           dtp,
  * \param[in] piil      term in integration of UP SDEs
  * \param[in] bx        turbulence characteristics
  * \param[in] vagaus    gaussian random variables
- * \param[in] gradpr    pressure gradient
  * \param[in] romp      particles associated density
  * \param[in] force_p   taup times forces on particles (m/s)
  * \param[in] vislen    FIXME
@@ -2054,7 +2086,6 @@ _lagdep(cs_real_t           dtp,
         const cs_real_3_t   piil[],
         const cs_real_33_t  bx[],
         const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
         const cs_real_t     romp[],
         const cs_real_3_t   force_p[],
         const cs_real_t     vislen[],
@@ -2082,10 +2113,17 @@ _lagdep(cs_real_t           dtp,
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
-  /* Interface location between near-wall region   */
-  /* and core of the flow (normalized units)  */
+  /* Interface location between near-wall region */
+  /* and core of the flow (normalized units) */
 
   cs_real_t depint      = 100.0;
+
+  /* Tracking events if requested */
+
+  cs_lagr_event_set_t  *events = NULL;
+
+  if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT))
+    events = cs_lagr_event_set_boundary_interaction();
 
   /* loop on the particles  */
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
@@ -2110,8 +2148,6 @@ _lagdep(cs_real_t           dtp,
                                                            CS_LAGR_COORDS);
       cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_COORDS);
-
-      cs_real_t romf = extra->cromf->val[cell_id];
 
       /* Fluid temperature computation depending on the type of flow  */
       cs_real_t tempf;
@@ -2333,11 +2369,11 @@ _lagdep(cs_real_t           dtp,
                 taup,
                 piil,
                 vagaus,
-                gradpr,
                 romp,
                 force_p,
                 tempf,
                 vislen,
+                events,
                 &depint,
                 nresnew);
 
@@ -2568,8 +2604,6 @@ cs_lagr_sde(cs_real_t           dt_p,
               bx,
               (const cs_real_33_t *)vagaus,
               brgaus,
-              gradpr,
-              romp,
               force_p,
               terbru);
 
@@ -2582,7 +2616,6 @@ cs_lagr_sde(cs_real_t           dt_p,
               piil,
               bx,
               (const cs_real_33_t *)vagaus,
-              gradpr,
               romp,
               force_p,
               vislen,
@@ -2603,8 +2636,6 @@ cs_lagr_sde(cs_real_t           dt_p,
             tsfext,
             (const cs_real_33_t *)vagaus,
             brgaus,
-            gradpr,
-            romp,
             force_p,
             terbru);
 

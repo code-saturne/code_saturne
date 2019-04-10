@@ -4,7 +4,7 @@ Release 6.0.0 (unreleased)
 Notes:
 
   This is a beta version of version 6.0, which should be released
-  late April 2019. Most features are frozen while the version undergoes
+  June 2019. Most features are frozen while the version undergoes
   the complete validation process, with the exceptions below.
 
 Changes expected between the current version and 6.0.0 final:
@@ -13,7 +13,6 @@ Changes expected between the current version and 6.0.0 final:
 - Run script improvements:
   * In new cases, replacement of SCRIPTS/runcase by DATA/run.cfg will
     allow keeping run settings across multiple system types
-- Ongoing work in the Lagrangian module may lead to some changes
 - The C API for user boundary conditions should be redesigned, leading
   to changes in the use of the cs_user_boundary_conditions function.
 - Various minor improvements not impacting current case setups
@@ -23,7 +22,15 @@ Changes expected between the current version and 6.0.0 final:
 
 User changes:
 
-- GUI: Improve global workflow by adding two new functions (buttons):
+- Lagrangian module: add particle event structure and associated statistics.
+  * This allow handling boundary statistics in a manner more consistent
+    with volume statistics.
+  * Additional boundary statistics may be defined by the user.
+  * The major boundary statistics are now handled through this system,
+    though some need to be updated in the future.
+  * This system could also be used to track volume events in the future.
+
+- GUI: improve global workflow by adding two new functions (buttons):
   * A built-in text editor in the GUI, which allows editing of user routines
     and/or functions inside the SRC folder, as well as opening log files
     in a RESU folder.

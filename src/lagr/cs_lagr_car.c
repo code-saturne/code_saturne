@@ -361,6 +361,7 @@ cs_lagr_car(int              iprev,
 
             cs_field_t *stat_vel
               = cs_lagr_stat_get_moment(stat_type,
+                                        CS_LAGR_STAT_GROUP_PARTICLE,
                                         CS_LAGR_MOMENT_MEAN,
                                         0,
                                         -1);
@@ -542,6 +543,7 @@ cs_lagr_car(int              iprev,
 
     cs_field_t *stat_vel
       = cs_lagr_stat_get_moment(stat_type,
+                                CS_LAGR_STAT_GROUP_PARTICLE,
                                 CS_LAGR_MOMENT_MEAN,
                                 0,
                                 -1);

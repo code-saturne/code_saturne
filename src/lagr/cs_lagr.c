@@ -299,30 +299,11 @@ cs_lagr_brownian_t *cs_glob_lagr_brownian = &_cs_glob_lagr_brownian;
 
 /* lagr boundary interactions structure and associated pointer */
 static cs_lagr_boundary_interactions_t _cs_glob_lagr_boundary_interactions
-  = {.nusbor = 0,
-     .npstf = 0,
+  = {.npstf = 0,
      .npstft = 0,
      .has_part_impact_nbr = 0,
-     .iflmbd = 0,
-     .iangbd= 0,
-     .ivitbd = 0,
      .iclgst = 0,
-     .iencnbbd = 0,
-     .iencmabd = 0,
-     .iencdibd = 0,
-     .iencckbd = 0,
      .inbr = -1,
-     .iflm = -1,
-     .iang = -1,
-     .ivit = -1,
-     .ires = -1,
-     .iflres = -1,
-     .iencnb = -1,
-     .iencma = -1,
-     .iencdi = -1,
-     .iencck = -1,
-     .iusb = NULL,
-     .imoybr = NULL,
      .inclg = -1,
      .inclgt = -1,
      .iclogt = -1,
@@ -1150,8 +1131,6 @@ cs_lagr_finalize(void)
 
   /* boundary interaction pointers */
 
-  BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
-
   for (int i = 0; i < cs_glob_lagr_dim->n_boundary_stats; i++)
     BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd[i]);
   BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd);
@@ -1672,6 +1651,9 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
 
+  /* Read statistics restart data */
+
+  cs_lagr_stat_restart_read();
 }
 
 /*----------------------------------------------------------------------------
@@ -1801,6 +1783,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
     }
 
   }
+
+  /* Prepare statistics for this time step */
+
+  cs_lagr_stat_prepare();
 
   /* Update boundary condition types;
      in most cases, this should be useful only at the first iteration,

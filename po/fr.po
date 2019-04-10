@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-03-30 17:45+0100\n"
+"POT-Creation-Date: 2019-04-27 21:20+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -11849,6 +11849,10 @@ msgstr ""
 msgid "Couplage thermique non-fonctionnel en multi-layer"
 msgstr ""
 
+#, c-format
+msgid "Out-of range attribute type: %d"
+msgstr ""
+
 msgid "in Lagrangian module"
 msgstr ""
 
@@ -12584,10 +12588,6 @@ msgstr ""
 "L'attribut %s a %d composantes\n"
 "mais la composante %d est demandée."
 
-#, c-format
-msgid "Out-of range attribute type: %d"
-msgstr ""
-
 msgid "   ** RESOLUTION POUR LA VARIABLE Pressure correction"
 msgstr ""
 
@@ -12637,6 +12637,17 @@ msgid "VARIANCE"
 msgstr ""
 
 #, c-format
+msgid "    start time: %g"
+msgstr "    temps de début : %g"
+
+#, c-format
+msgid "    start time step: %d"
+msgstr "    pas de temps de début : %d"
+
+msgid " (reset allowed)\n"
+msgstr " (remise à zéro autorisée)\n"
+
+#, c-format
 msgid "Out-of range statistics type: %d"
 msgstr ""
 
@@ -12647,12 +12658,22 @@ msgid ""
 " (previously \"%s\") does not match.\n"
 "  previous values:\n"
 "    weight accumulator location_id: %d\n"
-"    moment_type:                           %d\n"
+"    moment_type:                    %d\n"
 "    location_id:                    %d\n"
 "    dimension:                      %d\n"
 "    start time step:                %d\n"
 "    start time:                     %12.5e\n"
 msgstr ""
+"\n"
+"Les donées de reprise pour les statistques Lagrangiennes \"%s\"\n"
+" (anciennement \"%s\") ne correspondent pas.\n"
+"  valeurs précédentes:\n"
+"    id support accumulateur poids : %d\n"
+"    type de moment:                 %d\n"
+"    id support                      %d\n"
+"    dimension:                      %d\n"
+"    pas de temps de départ :        %d\n"
+"    temps de départ :               %12.5e\n"
 
 #, c-format
 msgid ""
@@ -12685,6 +12706,96 @@ msgid ""
 "Lagrangian statistics definition for \"%s\" is inconsistent:\n"
 " either starting time step or physical time must be >= 0."
 msgstr ""
+
+#, c-format
+msgid "The '%s' argument to %s must not be NULL."
+msgstr ""
+
+msgid ""
+"\n"
+"  Mesh-based statistics\n"
+"  ---------------------\n"
+msgstr ""
+"\n"
+"  Statistiques basées sur le maillage\n"
+"  -----------------------------------\n"
+
+#, c-format
+msgid ""
+"\n"
+"  statistic %d\n"
+"    group: %s\n"
+"    class: %d\n"
+msgstr ""
+
+#, c-format
+msgid "    field: \"%s\" (%d)\n"
+msgstr "    champ : \"%s\" (%d)\n"
+
+#, c-format
+msgid "    location: %s\n"
+msgstr "    support : %s\n"
+
+msgid "    mesh-based data function\n"
+msgstr ""
+
+msgid ""
+"\n"
+"  Lagrangian moment accumulators\n"
+"  ------------------------------\n"
+msgstr ""
+"\n"
+"  Accumulateurs pour moments Lagrangiens\n"
+"  --------------------------------------\n"
+
+#, c-format
+msgid ""
+"\n"
+"  accumulator %d\n"
+"    group: %s\n"
+"    class: %d\n"
+msgstr ""
+"\n"
+"  accumulateur : %d\n"
+"    groupe : %s\n"
+"    classe : %d\n"
+
+msgid "    particle-based data function\n"
+msgstr "    fonction de données basée sur les particules\n"
+
+msgid "    event-based data function\n"
+msgstr "    fonction de données basée sur les événements\n"
+
+msgid ""
+"\n"
+"  Lagrangian moments\n"
+"  ------------------\n"
+msgstr ""
+"\n"
+"  Moments statistiques Lagrangiens\n"
+"  --------------------------------\n"
+
+#, c-format
+msgid ""
+"\n"
+"  moment %d\n"
+"    accumulator id: %d\n"
+"    class: %d\n"
+"    moment type: %s\n"
+msgstr ""
+"\n"
+"  moment %d\n"
+"    id accumulateur : %d\n"
+"    classe : %d\n"
+"    type de moment : %s\n"
+
+#, c-format
+msgid "    predefined stat type: %d\n"
+msgstr "    type de statistique prédéfine : %d\n"
+
+#, c-format
+msgid "    component id: %d\n"
+msgstr "    id de composante : %d\n"
 
 msgid ""
 "\n"
