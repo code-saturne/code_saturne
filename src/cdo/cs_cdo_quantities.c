@@ -980,12 +980,16 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
 #     pragma omp parallel for if (cdoq->n_edges > CS_THR_MIN)
       for (cs_lnum_t e = 0; e < cdoq->n_edges; e++) {
 
-        cs_gnum_t  v1 = m->global_vtx_num[e2v_ids[2*e]];
-        cs_gnum_t  v2 = m->global_vtx_num[e2v_ids[2*e+1]];
-        if (v1 < v2)
-          e2v_gnum[2*e] = v1, e2v_gnum[2*e+1] = v2;
+        const cs_lnum_t  ee = 2*e;
+        const cs_lnum_t  *_e2v = e2v_ids + ee;
+        const cs_gnum_t  gv1 = m->global_vtx_num[_e2v[0]];
+        const cs_gnum_t  gv2 = m->global_vtx_num[_e2v[1]];
+        cs_gnum_t  *_e2v_gnum = e2v_gnum + ee;
+        assert(gv1 > 0 && gv2 > 0);
+        if (gv1 < gv2)
+          _e2v_gnum[0] = gv1, _e2v_gnum[1] = gv2;
         else
-          e2v_gnum[2*e+1] = v2, e2v_gnum[2*e+1] = v1;
+          _e2v_gnum[1] = gv2, _e2v_gnum[0] = gv1;
 
       }
 
