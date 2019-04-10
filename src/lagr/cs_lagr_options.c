@@ -55,6 +55,7 @@
 #include "cs_physical_model.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_event.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_prototypes.h"
@@ -1961,7 +1962,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                 _("in Lagrangian module"),
                                 "cs_glob_lagr_boundary_interactions->iflmbd",
                                 cs_glob_lagr_boundary_interactions->iflmbd,
-                                0, 2);
+                                0, 4);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Lagrangian module"),
@@ -2069,7 +2070,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   int irf = -1;
 
-  if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
+  if (cs_glob_lagr_boundary_interactions->iflmbd > 0) {
 
     irf++;
     cs_glob_lagr_boundary_interactions->iflm = irf;
@@ -2378,6 +2379,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   /* Now define particle map */
   cs_lagr_particle_attr_initialize();
+  cs_lagr_event_initialize();
 
   if (lagr_model->deposition > 0)
     cs_field_find_or_create("ustar",

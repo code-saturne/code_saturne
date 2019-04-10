@@ -57,13 +57,16 @@
 #include "bft_error.h"
 
 #include "cs_physical_constants.h"
+#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_thermal_model.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_stat.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_adh.h"
+#include "cs_lagr_event.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -94,6 +97,63 @@ BEGIN_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a resulspension event
+ *
+ * TODO add additional info to events.
+ *
+ * \param[in]  events             pointer to events set
+ * \param[in]  particles          pointer to particle set
+ * \param[in]  p_id               particle id
+ * \param[in]  face_id            associated face id
+ * \param[in]  particle_velocity  velocity after event
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_resuspension_event(cs_lagr_event_set_t     *events,
+                        cs_lagr_particle_set_t  *particles,
+                        cs_lnum_t                p_id,
+                        cs_lnum_t                face_id,
+                        cs_real_t                particle_velocity[3])
+{
+  cs_lnum_t event_id = events->n_events;
+  if (event_id >= events->n_events_max) {
+    /* flush events */
+    cs_lagr_stat_update_event(events,
+                              CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+    events->n_events = 0;
+    event_id = 0;
+  }
+
+  cs_lagr_event_init_from_particle(events, particles, event_id, p_id);
+
+  cs_lagr_events_set_lnum(events,
+                          event_id,
+                          CS_LAGR_E_FACE_ID,
+                          face_id);
+
+  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                          event_id,
+                                          CS_LAGR_E_FLAG);
+
+  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
+                                              event_id,
+                                              CS_LAGR_E_VELOCITY);
+
+  *e_flag = *e_flag | CS_EVENT_RESUSPENSION;
+
+  for (int k = 0; k < 3; k++)
+    e_vel_post[k] = particle_velocity[k];
+
+  events->n_events += 1;
+}
+
+/*=============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -121,6 +181,16 @@ cs_lagr_resuspension(void)
 
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
+
+  cs_lagr_event_set_t  *events = NULL;
+
+  if (lag_bi->iflmbd > 0) {
+    events = cs_lagr_event_set_boundary_interaction();
+    /* Event set "expected" size: n boundary faces*2 */
+    cs_lnum_t events_min_size = mesh->n_b_faces * 2;
+    if (events->n_events_max < events_min_size)
+      cs_lagr_event_set_resize(events, events_min_size);
+  }
 
   /* ================================================================  */
   /* 1.    Resuspension sub model   */
@@ -288,12 +358,18 @@ cs_lagr_resuspension(void)
               p_set->n_part_resusp += 1;
               p_set->weight_resusp += p_stat_weight;
 
-              if (lag_bi->iflmbd == 1) {
+              if (lag_bi->iflmbd > 0) {
 
                 bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
                 bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
                 bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
               }
+              if (events != NULL)
+                _add_resuspension_event(events,
+                                        p_set,
+                                        ip,
+                                        face_id,
+                                        part_vel);
 
             }
 
@@ -360,13 +436,19 @@ cs_lagr_resuspension(void)
                 p_set->n_part_resusp += 1;
                 p_set->weight_resusp += p_stat_weight;
 
-                if (lag_bi->iflmbd == 1) {
+                if (lag_bi->iflmbd > 0) {
 
                   bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
                   bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
                   bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
 
                 }
+                if (events != NULL)
+                  _add_resuspension_event(events,
+                                          p_set,
+                                          ip,
+                                          face_id,
+                                          part_vel);
 
               }
 
@@ -496,13 +578,19 @@ cs_lagr_resuspension(void)
             p_set->n_part_resusp += 1;
             p_set->weight_resusp += p_stat_weight;
 
-            if (lag_bi->iflmbd == 1) {
+            if (lag_bi->iflmbd > 0) {
 
               bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
               bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
               bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
 
             }
+            if (events != NULL)
+              _add_resuspension_event(events,
+                                      p_set,
+                                      ip,
+                                      face_id,
+                                      part_vel);
 
           }
 

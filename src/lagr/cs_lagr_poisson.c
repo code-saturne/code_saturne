@@ -412,12 +412,14 @@ cs_lagr_poisson(const int  itypfb[])
 
   cs_field_t *mean_vel
     = cs_lagr_stat_get_moment(stat_type,
+                              CS_LAGR_STAT_GROUP_PARTICLE,
                               CS_LAGR_MOMENT_MEAN,
                               0,
                               -1);
 
   cs_field_t *mean_fv
     = cs_lagr_stat_get_moment(CS_LAGR_STAT_VOLUME_FRACTION,
+                              CS_LAGR_STAT_GROUP_PARTICLE,
                               CS_LAGR_MOMENT_MEAN,
                               0,
                               -1);

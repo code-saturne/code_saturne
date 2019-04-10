@@ -61,6 +61,7 @@ cs_lagr_fragmentation.h \
 cs_lagr_head_losses.h \
 cs_lagr_roughness.h \
 cs_lagr_dlvo.h \
+cs_lagr_event.h \
 cs_lagr_extract.h \
 cs_lagr_injection.h \
 cs_lagr_geom.h \
@@ -98,6 +99,7 @@ cs_lagr_fragmentation.c \
 cs_lagr_roughness.c \
 cs_lagr.c \
 cs_lagr_dlvo.c \
+cs_lagr_event.c \
 cs_lagr_extract.c \
 cs_lagr_injection.c \
 cs_lagr_post.c \

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-04-23 00:43+0200\n"
+"POT-Creation-Date: 2019-04-25 17:17+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -11929,6 +11929,10 @@ msgstr ""
 msgid "Couplage thermique non-fonctionnel en multi-layer"
 msgstr ""
 
+#, c-format
+msgid "Out-of range attribute type: %d"
+msgstr ""
+
 msgid "in Lagrangian module"
 msgstr ""
 
@@ -12660,10 +12664,6 @@ msgstr ""
 "L'attribut %s a %d composantes\n"
 "mais la composante %d est demandée."
 
-#, c-format
-msgid "Out-of range attribute type: %d"
-msgstr ""
-
 msgid "   ** RESOLUTION POUR LA VARIABLE Pressure correction"
 msgstr ""
 
@@ -12723,12 +12723,22 @@ msgid ""
 " (previously \"%s\") does not match.\n"
 "  previous values:\n"
 "    weight accumulator location_id: %d\n"
-"    moment_type:                           %d\n"
+"    moment_type:                    %d\n"
 "    location_id:                    %d\n"
 "    dimension:                      %d\n"
 "    start time step:                %d\n"
 "    start time:                     %12.5e\n"
 msgstr ""
+"\n"
+"Les donées de reprise pour les statistques Lagrangiennes \"%s\"\n"
+" (anciennement \"%s\") ne correspondent pas.\n"
+"  valeurs précédentes:\n"
+"    id support accumulateur poids : %d\n"
+"    type de moment:                 %d\n"
+"    id support                      %d\n"
+"    dimension:                      %d\n"
+"    pas de temps de départ :        %d\n"
+"    temps de départ :               %12.5e\n"
 
 #, c-format
 msgid ""
@@ -12760,6 +12770,10 @@ msgstr ""
 msgid ""
 "Lagrangian statistics definition for \"%s\" is inconsistent:\n"
 " either starting time step or physical time must be >= 0."
+msgstr ""
+
+#, c-format
+msgid "The '%s' argument to %s must not be NULL."
 msgstr ""
 
 msgid ""

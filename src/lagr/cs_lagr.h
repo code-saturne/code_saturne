@@ -803,6 +803,8 @@ typedef struct {
   /*!  activation (=1) or not (=0) of the recording of the particulate mass flow
     related to the particle/boundary interactions, and of the calculation of
     the associated boundary statistics.
+    If set to 2 or 3 respectively, time averages and variances are also
+    computed.
     \ref has_part_impact_nbr is set to 1 when using \ref iflmbd=1.
    */
   int  iflmbd;

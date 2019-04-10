@@ -1088,6 +1088,8 @@ cs_lagr_injection(int        time_id,
                   const int  itypfb[],
                   cs_real_t  vislen[])
 {
+  CS_UNUSED(itypfb);
+
   cs_real_t dnbpnw_preci = 0.;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
@@ -1401,6 +1403,52 @@ cs_lagr_injection(int        time_id,
 
           BFT_FREE(saved_coords);
           BFT_FREE(saved_cell_num);
+
+          /* Add particle tracking events for boundary injection */
+
+          if (   particle_face_ids != NULL
+              && cs_glob_lagr_boundary_interactions->iflmbd) {
+
+            cs_lagr_event_set_t  *events
+              = cs_lagr_event_set_boundary_interaction();
+
+            /* Event set "expected" size: n boundary faces*2 */
+            cs_lnum_t events_min_size = mesh->n_b_faces * 2;
+            if (events->n_events_max < events_min_size)
+              cs_lagr_event_set_resize(events, events_min_size);
+
+            for (cs_lnum_t i = 0; i < n_inject; i++) {
+              cs_lnum_t p_id = particle_range[0] + i;
+
+              cs_lnum_t event_id = events->n_events;
+              events->n_events += 1;
+
+              if (event_id >= events->n_events_max) {
+                /* flush events */
+                cs_lagr_stat_update_event(events,
+                                          CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+                events->n_events = 0;
+                event_id = 0;
+              }
+
+              cs_lagr_event_init_from_particle(events, p_set, event_id, p_id);
+
+              cs_lnum_t face_id = particle_face_ids[i];
+              cs_lagr_events_set_lnum(events,
+                                      event_id,
+                                      CS_LAGR_E_FACE_ID,
+                                      face_id);
+
+              cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                                      event_id,
+                                                      CS_LAGR_E_FLAG);
+
+              *e_flag = *e_flag | CS_EVENT_INFLOW;
+
+            }
+
+          }
+
           BFT_FREE(particle_face_ids);
 
         }

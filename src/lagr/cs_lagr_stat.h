@@ -35,6 +35,7 @@
 #include "cs_restart.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_event.h"
 #include "cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
@@ -58,6 +59,15 @@ typedef enum {
 
 } cs_lagr_stat_moment_t;
 
+ /*! Particle statistics moment data type */
+
+typedef enum {
+
+  CS_LAGR_STAT_GROUP_PARTICLE,
+  CS_LAGR_STAT_GROUP_TRACKING_EVENT
+
+} cs_lagr_stat_group_t;
+
 /*! Moment restart behavior */
 
 typedef enum {
@@ -79,6 +89,7 @@ typedef enum {
                                       may be activated separately) */
 
   CS_LAGR_STAT_VOLUME_FRACTION,     /*!< particle volume fraction */
+  CS_LAGR_STAT_MASS_FLUX,           /*!< particle mass flux */
 
   CS_LAGR_STAT_PARTICLE_ATTR        /*!< particle attribute; add attribute id
                                       for given attribute */
@@ -107,6 +118,27 @@ typedef void
                            cs_real_t                       vals[]);
 
 /*----------------------------------------------------------------------------
+ * Function pointer for computation of event data values for
+ * Lagrangian statistics.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   input     <-- pointer to optional (untyped) value or structure.
+ *   events    <-- pointer to events
+ *   event_id  <-- event id range (first to past-last)
+ *   vals      --> pointer to values
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_lagr_moment_e_data_t) (const void                 *input,
+                           const cs_lagr_event_set_t  *events,
+                           cs_lnum_t                   id_range[2],
+                           cs_real_t                   vals[]);
+
+/*----------------------------------------------------------------------------
  * Function pointer for computation of data values for particle statistics
  * based on mesh
  *
@@ -117,17 +149,19 @@ typedef void
  * not be temporary (i.e. local);
  *
  * parameters:
- *   input       <-- pointer to optional (untyped) value or structure.
+ *   input       <-- pointer to optional value or structure, or NULL
+ *   events      <-- pointer to optional events set, or NULL.
  *   location_id <-- associated mesh location id
  *   class_id    <-- associated particle class id (0 for all)
  *   vals        --> pointer to values (size: n_local elements*dimension)
  *----------------------------------------------------------------------------*/
 
 typedef void
-(cs_lagr_moment_m_data_t) (const void  *input,
-                           int          location_id,
-                           int          class_id,
-                           cs_real_t    vals[]);
+(cs_lagr_moment_m_data_t) (const void                 *input,
+                           const cs_lagr_event_set_t  *events,
+                           int                         location_id,
+                           int                         class_id,
+                           cs_real_t                   vals[]);
 
 /*! Structure defining Lagrangian statistics options */
 
@@ -173,13 +207,14 @@ extern cs_lagr_stat_options_t   *cs_glob_lagr_stat_options;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a particle statistic.
+ * \brief Define a particle-based statistic.
  *
  * If dimension > 1, the val array is interleaved
  *
  * \param[in]  name           statistics base name
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  stat_type      predefined statistics type, or -1
+ * \param[in]  stat_group     statistics group (particle or event)
  * \param[in]  m_type         moment type
  * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  dim            dimension associated with element data
@@ -201,20 +236,67 @@ extern cs_lagr_stat_options_t   *cs_glob_lagr_stat_options;
 /*----------------------------------------------------------------------------*/
 
 int
-cs_lagr_stat_define(const char                *name,
-                    int                        location_id,
-                    int                        stat_type,
-                    cs_lagr_stat_moment_t      m_type,
-                    int                        class_id,
-                    int                        dim,
-                    int                        component_id,
-                    cs_lagr_moment_p_data_t   *data_func,
-                    void                      *data_input,
-                    cs_lagr_moment_p_data_t   *w_data_func,
-                    void                      *w_data_input,
-                    int                        nt_start,
-                    double                     t_start,
-                    cs_lagr_stat_restart_t     restart_mode);
+cs_lagr_stat_particle_define(const char                *name,
+                             int                        location_id,
+                             int                        stat_type,
+                             cs_lagr_stat_moment_t      m_type,
+                             int                        class_id,
+                             int                        dim,
+                             int                        component_id,
+                             cs_lagr_moment_p_data_t   *data_func,
+                             void                      *data_input,
+                             cs_lagr_moment_p_data_t   *w_data_func,
+                             void                      *w_data_input,
+                             int                        nt_start,
+                             double                     t_start,
+                             cs_lagr_stat_restart_t     restart_mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define an event-based statistic.
+ *
+ * If dimension > 1, the val array is interleaved
+ *
+ * \param[in]  name           statistics base name
+ * \param[in]  location_id    id of associated mesh location
+ * \param[in]  stat_type      predefined statistics type, or -1
+ * \param[in]  stat_group     statistics group (event type)
+ * \param[in]  m_type         moment type
+ * \param[in]  class_id       particle class id, or 0 for all
+ * \param[in]  dim            dimension associated with element data
+ * \param[in]  component_id   attribute component id, or < 0 for all
+ * \param[in]  data_func      pointer to function to compute statistics
+ *                            (if stat_type < 0)
+ * \param[in]  data_input     associated input
+ * \param[in]  w_data_func    pointer to function to compute weight
+ *                            (if NULL, statistic weight assumed)
+ * \param[in]  w_data_input   associated input for w_data_func
+ * \param[in]  nt_start       starting time step (or -1 to use t_start,
+ *                            0 to use idstnt)
+ * \param[in]  t_start        starting time
+ * \param[in]  restart_mode   behavior in case of restart (reset,
+ *                            automatic, or strict)
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_lagr_stat_event_define(const char                *name,
+                          int                        location_id,
+                          int                        stat_type,
+                          cs_lagr_stat_group_t       stat_group,
+                          cs_lagr_stat_moment_t      m_type,
+                          int                        class_id,
+                          int                        dim,
+                          int                        component_id,
+                          cs_lagr_moment_e_data_t   *data_func,
+                          void                      *data_input,
+                          cs_lagr_moment_e_data_t   *w_data_func,
+                          void                      *w_data_input,
+                          int                        nt_start,
+                          double                     t_start,
+                          cs_lagr_stat_restart_t     restart_mode);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -226,6 +308,7 @@ cs_lagr_stat_define(const char                *name,
  *
  * \param[in]  name           statistics base name
  * \param[in]  location_id    id of associated mesh location
+ * \param[in]  stat_group     statistics group (particle or event)
  * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  w_data_func    pointer to function to compute particle weight
  *                            (if NULL, statistic weight assumed)
@@ -243,6 +326,7 @@ cs_lagr_stat_define(const char                *name,
 int
 cs_lagr_stat_accumulator_define(const char                *name,
                                 int                        location_id,
+                                cs_lagr_stat_group_t       stat_group,
                                 int                        class_id,
                                 cs_lagr_moment_p_data_t   *w_data_func,
                                 void                      *w_data_input,
@@ -252,11 +336,56 @@ cs_lagr_stat_accumulator_define(const char                *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define mesh-based statistic based on particles or particle events.
+ *
+ * This type of statistic is reinitialized and evaluated during each time step,
+ * but may be computed incrementally when based on particle events, so the
+ * associated data function must uptate the statistics without reinitializing
+ * them at each call.
+ *
+ * As this type of statistic does not need to keep state between time steps,
+ * it is ignored by the lagragian statistics checkpoint/restart mechanism.
+ *
+ * If dimension > 1, the val array is interleaved
+ *
+ * \param[in]  name           statistics base name
+ * \param[in]  location_id    id of associated mesh location
+ * \param[in]  stat_group     statistics group (particle or event)
+ * \param[in]  class_id       particle class id, or 0 for all
+ * \param[in]  dim            dimension associated with element data
+ * \param[in]  data_func      pointer to function to compute statistics
+ * \param[in]  data_input     associated input
+ * \param[in]  nt_start       starting time step (or -1 to use t_start,
+ *                            0 to use idstnt)
+ * \param[in]  t_start        starting time
+ *
+ * \return id of new moment in case of success, -1 in case of error.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_lagr_stat_mesh_define(const char                *name,
+                         int                        location_id,
+                         cs_lagr_stat_group_t       stat_group,
+                         int                        class_id,
+                         int                        dim,
+                         cs_lagr_moment_m_data_t   *data_func,
+                         void                      *data_input,
+                         int                        nt_start,
+                         double                     t_start);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define a time moment associated to particle statistics.
  *
  * This is similar to general time moments (see \ref cs_time_moment.c),
  * with restart, logging, and unsteady reinitialization behavior
- * similar to other particle statistics.
+ * aligned with other particle statistics.
+ *
+ * Time moments must be based on values available at the end of each
+ * time step, so they cannot be based directly on events (though they
+ * can be based on fields defined through \ref cs_lagr_stat_mesh_define,
+ * as the matching event-based fields will be updated first).
  *
  * If dimension > 1, the val array is interleaved
  *
@@ -270,9 +399,6 @@ cs_lagr_stat_accumulator_define(const char                *name,
  * \param[in]  data_func      pointer to function to compute statistics
  *                            (if stat_type < 0)
  * \param[in]  data_input     associated input
- * \param[in]  w_data_func    pointer to function to compute weight
- *                            (if NULL, statistic weight assumed)
- * \param[in]  w_data_input   associated input for w_data_func
  * \param[in]  nt_start       starting time step (or -1 to use t_start,
  *                            0 to use idstnt)
  * \param[in]  t_start        starting time
@@ -293,8 +419,6 @@ cs_lagr_stat_time_moment_define(const char                *name,
                                 int                        component_id,
                                 cs_lagr_moment_m_data_t   *data_func,
                                 void                      *data_input,
-                                cs_lagr_moment_m_data_t   *w_data_func,
-                                void                      *w_data_input,
                                 int                        nt_start,
                                 double                     t_start,
                                 cs_lagr_stat_restart_t     restart_mode);
@@ -410,12 +534,46 @@ cs_lagr_stat_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Read particle statistics restart info if needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_stat_restart_read(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prepare particle statistics for a given time step.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_stat_prepare(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update particle statistics for a given time step.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_stat_update(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update event-based moment accumulators.
+ *
+ * Partial updates are allowed, so as to balance memory cost for storing
+ * events and repetition of mesh-location-based weigh updates.
+ *
+ * \param[in]  events  pointer to event set
+ * \param[in]  group   event group to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
+                          cs_lagr_stat_group_t   group);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -449,10 +607,11 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return field associated with a given Lagrangian statistic,
- *        given a statistics type (i.e. variable), moment order,
- *        statistical class, and component id.
+ *        given a statistics type (i.e. variable), group (particles or event),
+ *        moment order, statistical class, and component id.
  *
  * \param[in]  stat_type     statistics type
+ * \param[in]  stat_group    statistics group (particle or event)
  * \param[in]  m_type        moment type (mean or variance)
  * \param[in]  class_id      particle statistical class
  * \param[in]  component_id  component id, or -1 for all
@@ -463,6 +622,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart);
 
 cs_field_t *
 cs_lagr_stat_get_moment(int                    stat_type,
+                        cs_lagr_stat_group_t   stat_group,
                         cs_lagr_stat_moment_t  m_type,
                         int                    class_id,
                         int                    component_id);
@@ -497,7 +657,7 @@ cs_lagr_stat_get_age(void);
  *
  * \param[in]  f  field associated with given statistic
  *
- * \returns age of give statistic, or -1 if not active yet
+ * \returns age of given statistic, or -1 if not active yet
  */
 /*----------------------------------------------------------------------------*/
 

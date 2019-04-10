@@ -48,6 +48,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_thermal_model.h"
 
@@ -97,8 +98,6 @@ static const double _k_boltz = 1.38e-23;
  * \param[in]  bx        caracteristiques de la turbulence
  * \param[in]  vagaus    gaussian random variables
  * \param[in]  brgaus    gaussian random variables
- * \param[in]  gradpr    pressure gradient
- * \param[in]  romp      particles associated density
  * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
  */
@@ -112,8 +111,6 @@ _lages1(cs_real_t           dtp,
         const cs_real_33_t  bx[],
         const cs_real_33_t  vagaus[],
         const cs_real_t     brgaus[],
-        const cs_real_3_t   gradpr[],
-        const cs_real_t     romp[],
         const cs_real_3_t   force_p[],
         cs_real_t          *terbru)
 {
@@ -162,8 +159,6 @@ _lages1(cs_real_t           dtp,
                                                            CS_LAGR_COORDS);
       cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_COORDS);
-
-      cs_real_t rom = extra->cromf->val[cell_id];
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -304,7 +299,7 @@ _lages1(cs_real_t           dtp,
           else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
             cs_lnum_t mode  = 1;
-            CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
+            CS_PROCF(usthht, USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
 
             tempf = tempf + tkelvi;
 
@@ -389,7 +384,6 @@ _lages1(cs_real_t           dtp,
  * \param[in]  tsfext    infos pour couplage retour dynamique
  * \param[in]  vagaus    variables aleatoires gaussiennes
  * \param[in]  brgaus    gaussian variable for brownian movement
- * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      masse volumique des particules
  * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
@@ -405,8 +399,6 @@ _lages2(cs_real_t           dtp,
         cs_real_t           tsfext[],
         const cs_real_33_t  vagaus[],
         const cs_real_t     brgaus[],
-        const cs_real_3_t   gradpr[],
-        const cs_real_t     romp[],
         const cs_real_3_t   force_p[],
         cs_real_t          *terbru)
 {
@@ -559,8 +551,6 @@ _lages2(cs_real_t           dtp,
             bx,
             vagaus,
             brgaus,
-            gradpr,
-            romp,
             force_p,
             terbru);
   }
@@ -698,7 +688,6 @@ _lages2(cs_real_t           dtp,
  * \param[in]  tlag      fluid characteristic time
  * \param[in]  piil      term in integration of UP SDEs
  * \param[in]  vagaus    gaussian random variables
- * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      particles associated density
  * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[in]  tempf     temperature of the fluid (K)
@@ -713,7 +702,6 @@ _lagesd(cs_real_t           dtp,
         const cs_real_t     taup[],
         const cs_real_3_t   piil[],
         const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
         const cs_real_t     romp[],
         const cs_real_3_t   force_p[],
         cs_real_t           tempf,
@@ -1207,7 +1195,7 @@ _lagesd(cs_real_t           dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
+          if (cs_glob_lagr_boundary_interactions->iflmbd > 0) {
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires]
               += p_stat_w;
@@ -1633,7 +1621,7 @@ _lagesd(cs_real_t           dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
+          if (cs_glob_lagr_boundary_interactions->iflmbd > 0) {
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires]
               += p_stat_w;
@@ -2040,7 +2028,6 @@ _lagesd(cs_real_t           dtp,
  * \param[in] piil      term in integration of UP SDEs
  * \param[in] bx        turbulence characteristics
  * \param[in] vagaus    gaussian random variables
- * \param[in] gradpr    pressure gradient
  * \param[in] romp      particles associated density
  * \param[in] force_p   taup times forces on particles (m/s)
  * \param[in] vislen    FIXME
@@ -2054,7 +2041,6 @@ _lagdep(cs_real_t           dtp,
         const cs_real_3_t   piil[],
         const cs_real_33_t  bx[],
         const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
         const cs_real_t     romp[],
         const cs_real_3_t   force_p[],
         const cs_real_t     vislen[],
@@ -2110,8 +2096,6 @@ _lagdep(cs_real_t           dtp,
                                                            CS_LAGR_COORDS);
       cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_COORDS);
-
-      cs_real_t romf = extra->cromf->val[cell_id];
 
       /* Fluid temperature computation depending on the type of flow  */
       cs_real_t tempf;
@@ -2333,7 +2317,6 @@ _lagdep(cs_real_t           dtp,
                 taup,
                 piil,
                 vagaus,
-                gradpr,
                 romp,
                 force_p,
                 tempf,
@@ -2568,8 +2551,6 @@ cs_lagr_sde(cs_real_t           dt_p,
               bx,
               (const cs_real_33_t *)vagaus,
               brgaus,
-              gradpr,
-              romp,
               force_p,
               terbru);
 
@@ -2582,7 +2563,6 @@ cs_lagr_sde(cs_real_t           dt_p,
               piil,
               bx,
               (const cs_real_33_t *)vagaus,
-              gradpr,
               romp,
               force_p,
               vislen,
@@ -2603,8 +2583,6 @@ cs_lagr_sde(cs_real_t           dt_p,
             tsfext,
             (const cs_real_33_t *)vagaus,
             brgaus,
-            gradpr,
-            romp,
             force_p,
             terbru);
 

@@ -1670,6 +1670,9 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
 
+  /* Read statistics restart data */
+
+  cs_lagr_stat_restart_read();
 }
 
 /*----------------------------------------------------------------------------
@@ -1799,6 +1802,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
     }
 
   }
+
+  /* Prepare statistics for this time step */
+
+  cs_lagr_stat_prepare();
 
   /* Update boundary condition types;
      in most cases, this should be useful only at the first iteration,
