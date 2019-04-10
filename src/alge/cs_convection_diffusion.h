@@ -111,6 +111,320 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the normalised face scalar using the specified NVD scheme.
+ *
+ * \param[in]   scheme      choice of the NVD scheme
+ * \param[in]   nvf_p_c     normalised property of the current cell
+ * \param[in]   nvf_r_f     normalised distance from the face
+ * \param[in]   nvf_r_c     normalised distance from the current cell
+ *
+ * \return normalised face scalar value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+cs_nvd_scheme_scalar(const cs_nvd_type_t  limiter,
+                     const cs_real_t      nvf_p_c,
+                     const cs_real_t      nvf_r_f,
+                     const cs_real_t      nvf_r_c)
+{
+  cs_real_t nvf_p_f;
+
+  cs_real_t beta_m, rfc, r1f, r1, r2, r3, b1, b2;
+
+  switch (limiter) {
+  case CS_NVD_GAMMA: /* Gamma scheme */
+    beta_m = 0.1; /* in [0.1, 0.5] */
+    rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+
+    if (nvf_p_c < beta_m) {
+      nvf_p_f = nvf_p_c*(1.+rfc*(1.-nvf_p_c)/beta_m);
+    } else {
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    }
+
+    break;
+
+  case CS_NVD_SMART: /* SMART scheme */
+    if (nvf_p_c < (nvf_r_c/3.)) {
+      r1 = nvf_r_f*(1.-3.*nvf_r_c+2.*nvf_r_f);
+      r2 = nvf_r_c*(1.-nvf_r_c);
+
+      nvf_p_f = nvf_p_c*r1/r2;
+    } else if (nvf_p_c <= (nvf_r_c*(1.+nvf_r_f-nvf_r_c)/nvf_r_f)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(r1f*nvf_p_c/nvf_r_c + rfc);
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_CUBISTA: /* CUBISTA scheme */
+    if (nvf_p_c < (3.*nvf_r_c/4.)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(1.+rfc/3.)*nvf_p_c/nvf_r_c;
+    } else if (nvf_p_c <= (nvf_r_c*(1.+2.*(nvf_r_f-nvf_r_c))/(2.*nvf_r_f-nvf_r_c))) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(r1f*nvf_p_c/nvf_r_c+rfc);
+    } else {
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = 1.-.5*r1f*(1.-nvf_p_c);
+    }
+
+    break;
+
+  case CS_NVD_SUPERBEE: /* SuperBee scheme */
+    if (nvf_p_c < (nvf_r_c/(2.-nvf_r_c))) {
+      nvf_p_f = (2.*nvf_r_f-nvf_r_c)*nvf_p_c/nvf_r_c;
+    } else if (nvf_p_c < nvf_r_c) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    } else if (nvf_p_c < (nvf_r_c/nvf_r_f)) {
+      nvf_p_f = nvf_r_f*nvf_p_c/nvf_r_c;
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_MUSCL: /* MUSCL scheme */
+    if (nvf_p_c < (.5*nvf_r_c)) {
+      nvf_p_f = (2.*nvf_r_f-nvf_r_c)*nvf_p_c/nvf_r_c;
+    } else if (nvf_p_c < (1.+nvf_r_c-nvf_r_f)) {
+      nvf_p_f = nvf_p_c+nvf_r_f-nvf_r_c;
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_MINMOD: /* MINMOD scheme */
+    if (nvf_p_c < nvf_r_c) {
+      nvf_p_f = nvf_r_f*nvf_p_c/nvf_r_c;
+    } else {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    }
+
+    break;
+
+  case CS_NVD_CLAM: /* CLAM scheme */
+    r1 = nvf_r_c*nvf_r_c-nvf_r_f;
+    r2 = nvf_r_c*(nvf_r_c-1.);
+    r3 = nvf_r_f-nvf_r_c;
+
+    nvf_p_f = nvf_p_c*(r1+r3*nvf_p_c)/r2;
+
+    break;
+
+  case CS_NVD_STOIC: /* STOIC scheme */
+    b1 = (nvf_r_c-nvf_r_f)*nvf_r_c;
+    b2 = nvf_r_c+nvf_r_f+2.*nvf_r_f*nvf_r_f-4.*nvf_r_f*nvf_r_c;
+
+    if (nvf_p_c < (b1/b2)) {
+      r1 = -nvf_r_f*(1.-3.*nvf_r_c+2.*nvf_r_f);
+      r2 = nvf_r_c*(nvf_r_c-1.);
+
+      nvf_p_f = nvf_p_c*r1/r2;
+    } else if (nvf_p_c < nvf_r_c) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    } else if (nvf_p_c < (nvf_r_c*(1.+nvf_r_f-nvf_r_c)/nvf_r_f)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(nvf_p_c*r1f/nvf_r_c+rfc);
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_OSHER: /* OSHER scheme */
+    if (nvf_p_c < (nvf_r_c/nvf_r_f)) {
+      nvf_p_f = nvf_r_f*nvf_p_c/nvf_r_c;
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_WASEB: /* WASEB scheme */
+    r1 = nvf_r_c*nvf_r_f*(nvf_r_f-nvf_r_c);
+    r2 = 2.*nvf_r_c*(1.-nvf_r_c)-nvf_r_f*(1.-nvf_r_f);
+
+    if (nvf_p_c < (r1/r2)) {
+      nvf_p_f = 2.*nvf_p_c;
+    } else if (nvf_p_c <= (nvf_r_c*(1.+nvf_r_f-nvf_r_c)/nvf_r_f)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(nvf_p_c*r1f/nvf_r_c+rfc);
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  default: /* Upwinding */
+    nvf_p_f = nvf_p_c;
+    break;
+  }
+
+  return nvf_p_f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the normalised face scalar using the specified NVD scheme
+ *        for the case of a Volume-of-Fluid (VOF) transport equation.
+ *
+ * \param[in]  limiter         choice of the NVD scheme
+ * \param[in]  i_face_normal   normal of face ij
+ * \param[in]  face_id         the current cell face
+ * \param[in]  nvf_p_c         normalised property of the current cell
+ * \param[in]  nvf_r_f         normalised distance from the face
+ * \param[in]  nvf_r_c         normalised distance from the current cell
+ * \param[in]  gradv_c         gradient at central cell
+ * \param[in]  courant_c       courant at central cell
+ *
+ * \return  normalised face scalar
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+cs_nvd_vof_scheme_scalar(const cs_nvd_type_t  limiter,
+                         const cs_real_3_t    i_face_normal,
+                         const cs_real_t      nvf_p_c,
+                         const cs_real_t      nvf_r_f,
+                         const cs_real_t      nvf_r_c,
+                         const cs_real_3_t    gradv_c,
+                         const cs_real_t      c_courant)
+{
+  assert(limiter >= CS_NVD_VOF_HRIC);
+
+  cs_real_t nvf_p_f;
+  cs_real_t blend, high_order, low_order, ratio;
+
+  /* Compute gradient angle indicator */
+  cs_real_t dotp = CS_ABS(cs_math_3_dot_product(gradv_c, i_face_normal));
+  cs_real_t sgrad = cs_math_3_norm(gradv_c);
+  cs_real_t snorm = cs_math_3_norm(i_face_normal);
+  cs_real_t denom = snorm*sgrad;
+
+  if (limiter == CS_NVD_VOF_HRIC) {   /* M-HRIC scheme */
+    /* High order scheme : Bounded Downwind */
+    if (nvf_p_c <= .5) {
+      high_order = 2.*nvf_p_c;
+    } else {
+      high_order = 1.;
+    }
+
+    /* Low order scheme : MUSCL */
+    low_order = cs_nvd_scheme_scalar(CS_NVD_MUSCL,
+                                     nvf_p_c,
+                                     nvf_r_f,
+                                     nvf_r_c);
+
+    /* Compute the blending factor */
+    if (denom <= (cs_math_epzero*dotp)) {
+      blend = 1.;
+    } else {
+      ratio = dotp/denom;
+      blend = CS_MIN(1., pow(ratio, .5));
+    }
+
+    /* Blending */
+    nvf_p_f = blend*high_order + (1.-blend)*low_order;
+
+    /* Extra blending due to the cell Courant number */
+    if (c_courant < .7 && c_courant > .3) {
+      nvf_p_f = nvf_p_f + (nvf_p_f - low_order)*(.7 - c_courant )/.4;
+    } else if (c_courant >= .7) {
+      nvf_p_f = low_order;
+    }
+  } else if (limiter == CS_NVD_VOF_CICSAM) { /* M-CICSAM scheme */
+    /* High order scheme : HYPER-C + SUPERBEE */
+    if (c_courant <= .3) {
+      high_order = CS_MIN(1., nvf_p_c/(c_courant+cs_math_epzero));
+    } else if (c_courant <= .6) {
+      high_order = CS_MIN(1., nvf_p_c/.3);
+    } else if (c_courant <= .7) {
+      cs_real_t superbee = cs_nvd_scheme_scalar(CS_NVD_SUPERBEE,
+                                                nvf_p_c,
+                                                nvf_r_f,
+                                                nvf_r_c);
+      high_order =  10.*(  (.7-c_courant)*CS_MIN(1., nvf_p_c/.3)
+                         + (c_courant-.6)*superbee);
+    }
+    else {
+      high_order = cs_nvd_scheme_scalar(CS_NVD_SUPERBEE,
+                                        nvf_p_c,
+                                        nvf_r_f,
+                                        nvf_r_c);
+    }
+
+    /* Low order scheme : MUSCL */
+    low_order = cs_nvd_scheme_scalar(CS_NVD_MUSCL,
+                                     nvf_p_c,
+                                     nvf_r_f,
+                                     nvf_r_c);
+
+    /* Compute the blending factor */
+    if (denom <= (cs_math_epzero*dotp)) {
+      blend = 1.;
+    } else {
+      ratio = dotp/denom;
+      blend = CS_MIN(1., pow(ratio, 2.));
+    }
+
+    /* Blending */
+    nvf_p_f = blend*high_order + (1.-blend)*low_order;
+  } else { /* STACS scheme */
+    /* High order scheme : SUPERBEE */
+    high_order = cs_nvd_scheme_scalar(CS_NVD_SUPERBEE,
+                                      nvf_p_c,
+                                      nvf_r_f,
+                                      nvf_r_c);
+
+    /* Low order scheme : STOIC */
+    low_order = cs_nvd_scheme_scalar(CS_NVD_STOIC,
+                                     nvf_p_c,
+                                     nvf_r_f,
+                                     nvf_r_c);
+
+    /* Compute the blending factor */
+    if (denom <= (cs_math_epzero*dotp)) {
+      blend = 1.;
+    } else {
+      ratio = dotp/denom;
+      blend = CS_MIN(1., pow(ratio, 4.));
+    }
+
+    /* Blending */
+    nvf_p_f = blend*high_order + (1.-blend)*low_order;
+  }
+
+  return nvf_p_f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute slope test criteria at internal face between cell i and j.
  *
  * \param[in]     pi              value at cell i
@@ -3588,6 +3902,141 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Determine the upwind and downwind sides of an internal face and
+ *        matching cell indices.
+ *
+ * \param[in]     ii              index of cell (0)
+ * \param[in]     jj              index of cell (1)
+ * \param[in]     i_massflux      mass flux at face ij
+ * \param[out]    ic              index of central cell (upwind w.r.t. the face)
+ * \param[out]    id              index of downwind cell
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_central_downwind_cells(const cs_lnum_t    ii,
+                          const cs_lnum_t    jj,
+                          const cs_real_t    i_massflux,
+                          cs_lnum_t         *ic,
+                          cs_lnum_t         *id)
+{
+  if (i_massflux >= 0.) {
+    *ic = ii;
+    *id = jj;
+  } else {
+    *ic = jj;
+    *id = ii;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the convection flux
+ *        computation in case of an unsteady algorithm and using NVD schemes.
+ *
+ * \param[in]     limiter         choice of the NVD scheme
+ * \param[in]     cell_cen_c      center of gravity coordinates of central cell
+ * \param[in]     cell_cen_d      center of gravity coordinates of downwind cell
+ * \param[in]     i_face_normal   normal of face ij
+ * \param[in]     i_face_cog      center of gravity coordinates of face ij
+ * \param[in]     i_massflux      mass flux at face ij
+ * \param[in]     gradv_c         gradient at central cell
+ * \param[in]     p_c             value at central cell
+ * \param[in]     p_d             value at downwind cell
+ * \param[in]     local_max_c     local maximum of variable
+ * \param[in]     local_min_c     local minimum of variable
+ * \param[in]     courant_c       central cell courant number
+ * \param[out]    pif             contribution of i to flux from i to j
+ * \param[out]    pjf             contribution of j to flux from i to j
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
+                     const cs_real_3_t    cell_cen_c,
+                     const cs_real_3_t    cell_cen_d,
+                     const cs_real_3_t    i_face_normal,
+                     const cs_real_3_t    i_face_cog,
+                     const cs_real_3_t    gradv_c,
+                     const cs_real_t      p_c,
+                     const cs_real_t      p_d,
+                     const cs_real_t      local_max_c,
+                     const cs_real_t      local_min_c,
+                     const cs_real_t      courant_c,
+                     cs_real_t           *pif,
+                     cs_real_t           *pjf)
+{
+  /* distance between face center and central cell center */
+  cs_real_t dist_fc;
+  cs_real_3_t nfc;
+  cs_math_3_length_unitv(cell_cen_c, i_face_cog, &dist_fc, nfc);
+
+  /* unit vector and distance between central and downwind cells centers */
+  cs_real_t dist_dc;
+  cs_real_3_t ndc;
+  cs_math_3_length_unitv(cell_cen_c, cell_cen_d, &dist_dc, ndc);
+
+  /* Place the upwind point on the line that joins
+     the two cells on the upwind side and the same
+     distance as that between the two cells */
+  const cs_real_t dist_cu = dist_dc;
+  const cs_real_t dist_du = dist_dc + dist_cu;
+
+  /* Compute the property on the upwind assuming a parabolic
+     variation of the property between the two cells */
+  const cs_real_t gradc = cs_math_3_dot_product(gradv_c, ndc);
+
+  const cs_real_t grad2c = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
+
+  cs_real_t p_u = p_c + (grad2c*dist_cu - gradc)*dist_cu;
+  p_u = CS_MAX(CS_MIN(p_u, local_max_c), local_min_c);
+
+  /* Compute the normalised distances */
+  const cs_real_t nvf_r_f = (dist_fc+dist_cu)/dist_du;
+  const cs_real_t nvf_r_c = dist_cu/dist_du;
+
+  /* Check for the bounds of the NVD diagram and compute the face
+     property according to the selected NVD scheme */
+  const cs_real_t _small = cs_math_epzero
+                         * (CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
+
+  if (CS_ABS(p_d-p_u) <= _small) {
+    *pif = p_c;
+    *pjf = p_c;
+  } else {
+    const cs_real_t nvf_p_c = (p_c - p_u)/(p_d - p_u);
+
+    if (nvf_p_c <= 0. || nvf_p_c >= 1.) {
+      *pif = p_c;
+      *pjf = p_c;
+    } else {
+      cs_real_t nvf_p_f;
+
+      /* Highly compressive NVD scheme for VOF */
+      if (limiter >= CS_NVD_VOF_HRIC) {
+        nvf_p_f = cs_nvd_vof_scheme_scalar(limiter,
+                                           i_face_normal,
+                                           nvf_p_c,
+                                           nvf_r_f,
+                                           nvf_r_c,
+                                           gradv_c,
+                                           courant_c);
+      } else { /* Regular NVD scheme */
+        nvf_p_f = cs_nvd_scheme_scalar(limiter,
+                                       nvf_p_c,
+                                       nvf_r_f,
+                                       nvf_r_c);
+      }
+
+      *pif = p_u + nvf_p_f*(p_d - p_u);
+      *pif = CS_MAX(CS_MIN(*pif, local_max_c), local_min_c);
+      *pjf = *pif;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief DEPRECATED Handle preparation of internal face values for the fluxes computation
  * in case of a unsteady algorithm and using slope tests.
  *
@@ -5272,6 +5721,65 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                const cs_real_t           i_visc[],
                                const cs_real_t           b_visc[],
                                cs_real_t       *restrict rhs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * <a name="cs_face_convection_scalar"></a>
+ *
+ * \brief Update face flux with convection contribution of a standard transport
+ * equation of a scalar field \f$ \varia \f$.
+ *
+ * \f[
+ * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
+ * \f]
+ *
+ * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     f_id          field id (or -1)
+ * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     icvflb        global indicator of boundary convection flux
+ *                               - 0 upwind scheme at all boundary faces
+ *                               - 1 imposed flux at some boundary faces
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     iccocg        indicator
+ *                               - 1 re-compute cocg matrix
+ *                                   (for iterative gradients)
+ *                               - 0 otherwise
+ * \param[in]     imasac        take mass accumulation into account?
+ * \param[in]     pvar          solved variable (current time step)
+ * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     icvfli        boundary face indicator array of convection flux
+ *                               - 0 upwind scheme
+ *                               - 1 imposed flux
+ * \param[in]     coefap        boundary condition array for the variable
+ *                               (explicit part)
+ * \param[in]     coefbp        boundary condition array for the variable
+ *                               (implicit part)
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in,out] i_conv_flux   scalar convection flux at interior faces
+ * \param[in,out] b_conv_flux   scalar convection flux at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_face_convection_scalar(int                       idtvar,
+                          int                       f_id,
+                          const cs_var_cal_opt_t    var_cal_opt,
+                          int                       icvflb,
+                          int                       inc,
+                          int                       iccocg,
+                          int                       imasac,
+                          cs_real_t       *restrict pvar,
+                          const cs_real_t *restrict pvara,
+                          const cs_int_t            icvfli[],
+                          const cs_real_t           coefap[],
+                          const cs_real_t           coefbp[],
+                          const cs_real_t           i_massflux[],
+                          const cs_real_t           b_massflux[],
+                          cs_real_2_t               i_conv_flux[],
+                          cs_real_t                 b_conv_flux[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
