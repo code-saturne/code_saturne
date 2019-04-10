@@ -903,19 +903,31 @@ _cs_renumber_update_vertices(cs_mesh_t        *mesh,
                           mesh->i_face_vtx_lst,
                           o2n_v);
 
-  BFT_FREE(o2n_v);
-
   /* Update global numbering */
 
   _update_global_num(n_vertices, n2o_v, &(mesh->global_vtx_num));
 
-  /* Update parent vertes numbers for post-processing meshes
+  /* Interfaces for vertices  */
+
+  if (mesh->vtx_interfaces != NULL)
+    cs_interface_set_renumber(mesh->vtx_interfaces, o2n_v);
+
+  BFT_FREE(o2n_v);
+
+  /* Update the numbering of parent vertices for post-processing meshes
      that may already have been built; Post-processing meshes
      built after renumbering will have correct parent numbers
 
      This should not be the standard behavior. Otherwise, this is
      something to do.
   */
+
+  /* Sanity check: if not true, one should update this members of the mesh
+   structure. This should not be the case since the renumbering should be called
+   at the first steps of the computation */
+  assert(mesh->gcell_vtx_idx == NULL);
+  assert(mesh->gcell_vtx_lst == NULL);
+  assert(mesh->vtx_range_set == NULL);
 }
 
 /*----------------------------------------------------------------------------
