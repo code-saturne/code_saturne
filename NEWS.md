@@ -3,6 +3,9 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix link issue on MacOs and possibly other static builds with
+  cs_user_physical_properties.f90.
+
 - GUI reader: fix for cases with multiple mapped inlets.
 
 - Work around possible Intel icc compiler bug in least-squares vector
