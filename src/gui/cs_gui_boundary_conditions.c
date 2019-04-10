@@ -287,7 +287,14 @@ _mapped_inlet(const char                *label,
   ple_locator_t *bl = NULL;
 
   int mapped_inlet = 0;
-  _boundary_status("inlet", label, "mapped_inlet", &mapped_inlet);
+
+  cs_tree_node_t *tn
+    = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+  tn = cs_tree_get_node(tn, "inlet");
+  tn = cs_tree_node_get_sibling_with_tag(tn, "label", label);
+
+  tn = cs_tree_get_node(tn, "mapped_inlet");
+  cs_gui_node_get_status_int(tn, &mapped_inlet);
 
   if (mapped_inlet) {
     cs_real_t coord_shift[3] = {0., 0., 0.};
@@ -298,13 +305,11 @@ _mapped_inlet(const char                *label,
     for (int i = 0; i < 3; i++) {
 
       cs_tree_node_t *node = NULL;
-      node = cs_tree_get_node(cs_glob_tree, "boundary_conditions/inlet");
-      node = cs_tree_get_node(node, "mapped_inlet");
-      node = cs_tree_get_node(node, tname[i]);
+      node = cs_tree_get_node(tn, tname[i]);
 
       const  cs_real_t *v = NULL;
       v = cs_tree_node_get_values_real(node);
-      if( v != NULL )
+      if (v != NULL )
         coord_shift[i] = v[0];
     }
 
