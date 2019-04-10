@@ -1,3 +1,11 @@
+Release 2.0.3 (Unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Avoid crash in ple_locator_shift_location() for empty locator.
+
 Release 2.0.2 (March 16, 2018)
 ==============================
 
