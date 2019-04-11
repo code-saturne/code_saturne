@@ -186,7 +186,6 @@ dict_object["MSHFile"]        = 100079
 dict_object["HexFile"]        = 100080
 dict_object["UnvFile"]        = 100081
 dict_object["SYRMESHFile"]    = 100082
-dict_object["MESHSubFolder"]  = 100083
 
 dict_object["POSTFolder"]     = 100090
 dict_object["POSTFile"]       = 100091
@@ -204,6 +203,9 @@ dict_object["SRCSYRFolder"]             = 100108
 dict_object["USRSRCSYRFile"]            = 100109
 dict_object["CouplingStudy"]            = 100110
 dict_object["OpenSyrthesCaseFile"]      = 100111
+d_dirMesh      = {}
+MESHSubFolder = "MESHSubFolder"
+MESHSubFolder_int = 200000
 #-------------------------------------------------------------------------------
 # Definition of the icon of objects to represent in the Object Browser.
 # Attribut "AttributePixMap" for the related SObject.
@@ -259,7 +261,6 @@ icon_collection[dict_object["SCRPTScriptFile"]]= "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICO
 icon_collection[dict_object["SCRPTFile"]]      = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 
 icon_collection[dict_object["MESHFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["MESHSubFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["MEDFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["MESHFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DESFile"]]        = "MESH_OBJ_ICON"
@@ -869,6 +870,38 @@ def getNameCodeFromXmlCasePath(XMLCasePath) :
     return code
 
 
+def searchDepth(directory):
+    l = []
+    l = directory.split(str(os.sep))
+    niveau = 0
+    for i in list(reversed(range(len(l)-1))):
+        if l[i] == "MESH":
+            niveau = len(l)-1-i
+            return len(l)-1-i
+    return niveau
+
+
+def parseDir(dirname):
+    """
+    External method which permits to return a directory whose keys are objectId for the salome study and value is a list of MESH sub-directories to see then into Object Browser, to access to the med or other extensions mesh files
+    """
+    global d_dirMesh
+    niveau = 0
+    for root,dirs,files in os.walk(dirname):
+        l_dirs = []
+        if dirs != []:
+            for j in dirs:
+                l_dirs.append(os.path.join(root,j))
+            niveau = searchDepth(root)+1
+            key = MESHSubFolder_int+niveau
+            if key not in list(d_dirMesh.keys()):
+                d_dirMesh[key] = l_dirs
+                dict_object[MESHSubFolder+str(niveau)] = key
+                icon_collection[dict_object[MESHSubFolder+str(niveau)]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
+            else:
+                d_dirMesh[key] = d_dirMesh[key]+l_dirs
+
+
 def _FillObject(theObject, theParent, theBuilder):
     """
     Creates the attribute "AttributeLocalID" for the branch I{theObject}.
@@ -906,6 +939,7 @@ def _FillObject(theObject, theParent, theBuilder):
                 else:
                     if name == "MESH":
                         objectId = dict_object["MESHFolder"]
+                        parseDir(path)
                     elif name == "POST":
                         objectId = dict_object["POSTFolder"]
                     else:
@@ -1028,7 +1062,10 @@ def _FillObject(theObject, theParent, theBuilder):
     # parent is MESH folder
     elif parentId == dict_object["MESHFolder"]:
         if os.path.isdir(path):
-            objectId = dict_object["MESHSubFolder"]
+            if d_dirMesh != {}:
+                for key in list(d_dirMesh.keys()):
+                    if path in d_dirMesh[key]:
+                        objectId = key
         else:
             if re.match(".*\.des$", name):
                 objectId = dict_object["DESFile"]
@@ -1055,34 +1092,6 @@ def _FillObject(theObject, theParent, theBuilder):
             else:
                 objectId = dict_object["MESHFile"]
 
-    elif parentId == dict_object["MESHSubFolder"]:
-        if os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
-        else:
-            if re.match(".*\.des$", name):
-                objectId = dict_object["DESFile"]
-            elif re.match(".*\.med$", name):
-                objectId = dict_object["MEDFile"]
-            elif re.match(".*\.dat$", name):
-                objectId = dict_object["DATFile"]
-            elif re.match(".*\.cgns$", name):
-                objectId = dict_object["CGNSFile"]
-            elif re.match(".*\.ccm$", name):
-                objectId = dict_object["CcmFile"]
-            elif re.match(".*\.case$", name):
-                objectId = dict_object["CaseFile"]
-            elif re.match(".*\.neu$", name):
-                objectId = dict_object["NeuFile"]
-            elif re.match(".*\.msh$", name):
-                objectId = dict_object["MSHFile"]
-            elif re.match(".*\.hex$", name):
-                objectId = dict_object["HexFile"]
-            elif re.match(".*\.unv$", name):
-                objectId = dict_object["UnvFile"]
-            elif re.match(".*\.syr$", name):
-                objectId = dict_object["SYRMESHFile"]
-            else:
-                objectId = dict_object["MESHFile"]
     # parent is POST folder
     elif parentId == dict_object["POSTFolder"]:
         if os.path.isdir(path):
@@ -1233,6 +1242,40 @@ def _FillObject(theObject, theParent, theBuilder):
             objectId = dict_object["RESUFile"]
         elif re.match("listing$", name):
             objectId = dict_object["RESUFile"]
+
+#MESH sub folder
+    if parentId in list(d_dirMesh.keys()):
+        if os.path.isdir(path):
+            if d_dirMesh != {}:
+                for key in list(d_dirMesh.keys()):
+                    if path in d_dirMesh[key]:
+                        objectId = key
+        else:
+            if re.match(".*\.des$", name):
+                objectId = dict_object["DESFile"]
+            elif re.match(".*\.med$", name):
+                objectId = dict_object["MEDFile"]
+            elif re.match(".*\.dat$", name):
+                objectId = dict_object["DATFile"]
+            elif re.match(".*\.cgns$", name):
+                objectId = dict_object["CGNSFile"]
+            elif re.match(".*\.ccm$", name):
+                objectId = dict_object["CcmFile"]
+            elif re.match(".*\.case$", name):
+                objectId = dict_object["CaseFile"]
+            elif re.match(".*\.neu$", name):
+                objectId = dict_object["NeuFile"]
+            elif re.match(".*\.msh$", name):
+                objectId = dict_object["MSHFile"]
+            elif re.match(".*\.hex$", name):
+                objectId = dict_object["HexFile"]
+            elif re.match(".*\.unv$", name):
+                objectId = dict_object["UnvFile"]
+            elif re.match(".*\.syr$", name):
+                objectId = dict_object["SYRMESHFile"]
+            else:
+                objectId = dict_object["MESHFile"]
+
 
     if objectId == dict_object["OtherFile"]:
         if re.match(".*\.[fF]$", name) or \

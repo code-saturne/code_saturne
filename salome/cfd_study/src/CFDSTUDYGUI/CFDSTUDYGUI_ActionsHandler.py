@@ -918,7 +918,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
              id == CFDSTUDYGUI_DataModel.dict_object["POSTPROFolder"]        or \
              id == CFDSTUDYGUI_DataModel.dict_object["SCRPTFolder"]          or \
              id == CFDSTUDYGUI_DataModel.dict_object["MESHFolder"]           or \
-             id == CFDSTUDYGUI_DataModel.dict_object["MESHSubFolder"]        or \
              id == CFDSTUDYGUI_DataModel.dict_object["POSTFolder"] :
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFile"]:
