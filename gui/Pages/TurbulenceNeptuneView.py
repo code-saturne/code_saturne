@@ -253,7 +253,7 @@ class TurbFluxDelegate(QItemDelegate):
 
 class StandardItemModelTurbulence(QStandardItemModel):
 
-    def __init__(self, mdl, dicoM2V, dicoV2M):
+    def __init__(self, mdl, case, dicoM2V, dicoV2M):
         """
         """
         QStandardItemModel.__init__(self)
@@ -269,7 +269,8 @@ class StandardItemModelTurbulence(QStandardItemModel):
         self.tooltip = []
 
         self._data = []
-        self.mdl = mdl
+        self.mdl      = mdl
+        self.case     = case
         self.dicoM2V  = dicoM2V
         self.dicoV2M  = dicoV2M
 
@@ -336,6 +337,25 @@ class StandardItemModelTurbulence(QStandardItemModel):
             new_pmodel = from_qvariant(value, to_text_string)
             self._data[row][col] = new_pmodel
             self.mdl.setTurbulenceModel(FieldId, self.dicoV2M[new_pmodel])
+            
+            # Security check for mixing length, which cannot have a formula on inlet!
+            if new_pmodel == 'mixing length':
+                from code_saturne.model.LocalizationModel import LocalizationModel
+                from code_saturne.model.BoundaryNeptune import Boundary
+
+                blm = LocalizationModel('BoundaryZone', self.case)
+
+                for zone in blm.getZones():
+                    if "inlet" in zone.getNature():
+                        boundary = Boundary(zone.getNature(),
+                                            zone.getLabel(),
+                                            self.case,
+                                            FieldId)
+
+                        tc = boundary.getTurbulenceChoice(FieldId)
+                        if tc == "formula":
+                            boundary.setTurbulenceChoice(FieldId, "hydraulic_diameter")
+
             self.updateItem()
 
         # Turbulent thermal fluxes (for continuous phases)
@@ -460,7 +480,8 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         validatorMix.setExclusiveMin(False)
         self.lineEditMixingLength.setValidator(validatorMix)
 
-        self.tableModelTurbulence = StandardItemModelTurbulence(self.mdl, self.dicoM2V, self.dicoV2M)
+        self.tableModelTurbulence = StandardItemModelTurbulence(self.mdl, self.case,
+                                                                self.dicoM2V, self.dicoV2M)
         self.tableViewTurbulence.setModel(self.tableModelTurbulence)
         self.tableViewTurbulence.resizeColumnsToContents()
         self.tableViewTurbulence.resizeRowsToContents()

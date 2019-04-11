@@ -378,13 +378,18 @@ class InletBoundary(Boundary):
         if value == 'hydraulic_diameter' :
             self.getHydraulicDiameter(fieldId)
             XMLTurbulenceNode.xmlRemoveChild('turbulent_intensity')
+            XMLTurbulenceNode.xmlRemoveChild('formula')
 
         elif value == 'turbulent_intensity' :
             self.getHydraulicDiameter(fieldId)
             self.getTurbulentIntensity(fieldId)
+            XMLTurbulenceNode.xmlRemoveChild('hydraulic_diameter')
+            XMLTurbulenceNode.xmlRemoveChild('formula')
 
         elif value == 'formula' :
             self.getTurbFormula(fieldId)
+            XMLTurbulenceNode.xmlRemoveChild('turbulent_intensity')
+            XMLTurbulenceNode.xmlRemoveChild('hydraulic_diameter')
 
 
     @Variables.noUndo
