@@ -506,6 +506,7 @@ Boundary zones
     Particle boundary conditions
     Fluid structure interaction
     Cathare Coupling
+    Immersed Boundaries
 Time settings
     Start/Restart
 Numerical parameters
@@ -795,6 +796,7 @@ Calculation management
         self.setRowClose(self.tr('Particle boundary conditions'))
         self.setRowClose(self.tr('Fluid structure interaction'))
         self.setRowClose(self.tr('Cathare Coupling'))
+        self.setRowClose(self.tr('Immersed Boundaries'))
         """
 
         self.setRowClose(self.tr('Time settings'))
@@ -1050,6 +1052,7 @@ Calculation management
         self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
         self.setRowShow(self.tr('Fluid structure interaction'), m_ale)
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
+        self.setRowShow(self.tr('Immersed Boundaries'), is_ncfd)
 
         # Time settings
 

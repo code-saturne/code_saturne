@@ -73,6 +73,7 @@ GasCombustionView.py \
 GlobalNumericalParametersView.py \
 HeadLossesView.py \
 IdentityAndPathesView.py \
+ImmersedBoundariesViewNeptune.py \
 InitializationView.py \
 InterfacialEnthalpyView.py \
 InterfacialForcesView.py \
@@ -165,6 +166,7 @@ FluidStructureInteractionForm.ui \
 GasCombustionForm.ui \
 HeadLossesForm.ui \
 IdentityAndPathesForm.ui \
+ImmersedBoundariesNeptune.ui \
 InitializationForm.ui \
 LagrangianAdvancedOptionsDialogForm.ui \
 LagrangianBoundariesForm.ui \
