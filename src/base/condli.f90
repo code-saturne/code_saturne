@@ -644,7 +644,7 @@ if (iturbo.ne.0) then
 endif
 
 call typecl &
- ( nvar   , nscal  , iterns ,                                     &
+ ( nvar   , nscal  , iterns , .false. ,                           &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 
@@ -5165,7 +5165,7 @@ if (nbrcpl.gt.0) then
 endif
 
 call typecl &
- ( nvar   , nscal  , iterns ,                                     &
+ ( nvar   , nscal  , iterns , .true. ,                            &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 

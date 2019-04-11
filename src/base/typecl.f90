@@ -33,6 +33,7 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     iterns        iteration number on Navier-Stokes equations
+!> \param[in]     init          partial treatment (before time loop) if true
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    itrifb        tab d'indirection pour tri des faces
 !> \param[in,out] icodcl        face boundary condition code:
@@ -68,7 +69,7 @@
 !______________________________________________________________________________
 
 subroutine typecl &
- ( nvar   , nscal  , iterns ,                                     &
+ ( nvar   , nscal  , iterns , init   ,                            &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 
@@ -102,6 +103,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal, iterns
+logical          init
 
 integer          icodcl(ndimfb,nvar)
 integer          itypfb(ndimfb) , itrifb(ndimfb)
@@ -1241,7 +1243,7 @@ do iscal = 1, nscal
 enddo
 
 ! When called before time loop, some values are not yet available.
-if (ntcabs .eq. ntpabs) return
+if (init .eqv. .true.) return
 
 !===============================================================================
 ! 6.bis  CONVERSION EN RCODCL ICODCL
