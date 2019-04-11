@@ -578,9 +578,19 @@ _read_physical_names(ecs_file_t       *mesh_file,
       }
       _phys_name_id[tag_phys_name] = cpt_phys_names;
 
+      /* Remove extra quotes */
+
+      size_t s_id = 0, e_id = strlen(name);
+      if (e_id > 2) {
+        if (name[0] == '"' && name[e_id-1] == '"') {
+          s_id += 1;
+          e_id -= 1;
+          name[e_id] = '\0';
+        }
+      }
       ECS_REALLOC(_phys_name, cpt_phys_names+1, char *);
-      ECS_MALLOC(_phys_name[cpt_phys_names], strlen(name) + 1, char);
-      strcpy(_phys_name[cpt_phys_names], name);
+      ECS_MALLOC(_phys_name[cpt_phys_names], e_id - s_id + 1, char);
+      strcpy(_phys_name[cpt_phys_names], name+s_id);
 
       cpt_phys_names += 1;
     }
