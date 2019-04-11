@@ -1527,7 +1527,7 @@ class mei_to_c_interpreter:
                         tc = boundary.getTurbulenceChoice(fId)
                         turb_model = tm.getTurbulenceModel(fId)
                         if tc == 'formula' and turb_model != 'none':
-                            exp, req, sym = boundary.getTurbFormulaComponents(fId,
+                            exp, reqo, sym = boundary.getTurbFormulaComponents(fId,
                                                                               turb_model)
                             if turb_model in('k-epsilon', 'k-epsilon_linear_production'):
                                 name = 'turbulence_ke_%s' % (fId)
@@ -1539,6 +1539,11 @@ class mei_to_c_interpreter:
                                 name = 'turbulence_r2q12_%s' % (fId)
                             elif turb_model in ('r2-r12-tchen'):
                                 name = 'turbulence_r2r12_%s' % (fId)
+
+                            if type(reqo[0]) == tuple:
+                                req = [r[0] for r in reqo]
+                            else:
+                                req = reqo
 
                             self.init_block('bnd',
                                             zone.getLabel(),
