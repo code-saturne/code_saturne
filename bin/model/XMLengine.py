@@ -617,6 +617,13 @@ class XMLElement:
                         nn = n
                         break
 
+        # For user arrays, force the order of arrays to be that of creation
+        # The problem arises because in the current model these arrays
+        # have the type "property"
+        for k, v in list(kwargs.items()):
+            if (k, v) == ('type', 'user'):
+                nn = None
+
         log.debug("xmlAddChild-> %s %s" % (tag, self.__xmlLog()))
 
         return self._inst(self.el.insertBefore(el, nn))
