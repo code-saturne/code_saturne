@@ -783,7 +783,7 @@ _read_entities(int             n_phys_names_max,
 
         /* bounding box (unused here) */
         double bbox[6];
-        ecs_file_read(bbox, sizeof(double), l, mesh_file);
+        ecs_file_read(bbox, sizeof(double), n_coo, mesh_file);
 
         unsigned long n_phys = 0;
         ecs_file_read(&n_phys, sizeof(unsigned long), 1, mesh_file);
@@ -1029,9 +1029,16 @@ ecs_loc_pre_gmsh__lit_nodes_v4(ecs_maillage_t   *maillage,
 
     ecs_file_set_type(fic_maillage, ECS_FILE_TYPE_BINARY);
 
-    {
+    if (version_fmt_gmsh < 41) {
       unsigned long buf[2];
       ecs_file_read(buf, sizeof(unsigned long), 2, fic_maillage);
+
+      n_ent_blocks = buf[0];
+      nbr_nod = buf[1];
+    }
+    else {
+      size_t buf[4];
+      ecs_file_read(buf, sizeof(size_t), 4, fic_maillage);
 
       n_ent_blocks = buf[0];
       nbr_nod = buf[1];
@@ -1043,12 +1050,13 @@ ecs_loc_pre_gmsh__lit_nodes_v4(ecs_maillage_t   *maillage,
     for (unsigned long eb = 0; eb < n_ent_blocks; eb++) {
 
       int buf_i[3];
-      unsigned long n_ent_nodes;
 
       ecs_file_read(buf_i, sizeof(int), 3, fic_maillage);
-      ecs_file_read(&n_ent_nodes, sizeof(unsigned long), 1, fic_maillage);
 
       if (version_fmt_gmsh < 41) {
+
+        unsigned long n_ent_nodes;
+        ecs_file_read(&n_ent_nodes, sizeof(unsigned long), 1, fic_maillage);
 
         for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
 
@@ -1067,11 +1075,16 @@ ecs_loc_pre_gmsh__lit_nodes_v4(ecs_maillage_t   *maillage,
       }
       else {
 
+        size_t n_ent_nodes;
+        ecs_file_read(&n_ent_nodes, sizeof(size_t), 1, fic_maillage);
+
         for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
           size_t label;
           ecs_file_read(&label, sizeof(size_t), 1, fic_maillage);
           (*som_val_label)[ind_nod] = label;
         }
+
+        ind_nod -= n_ent_nodes;
 
         for (unsigned long bn = 0; bn < n_ent_nodes; bn++, ind_nod++) {
           double xyz[3];
@@ -1584,7 +1597,6 @@ ecs_loc_pre_gmsh__lit_elements(ecs_maillage_t  *maillage,
        elt_val_som_ent[ient]);
   }
 
-
   ECS_FREE(*som_val_label);
 
   /* Transfert des valeurs lues dans les structures d'entités de maillage */
@@ -1608,6 +1620,7 @@ ecs_loc_pre_gmsh__lit_elements(ecs_maillage_t  *maillage,
 static void
 ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
                                   ecs_file_t      *fic_maillage,
+                                  int              version_fmt_gmsh,
                                   int              type_fmt_gmsh,
                                   int             *num_ligne,
                                   ecs_int_t        nbr_som,
@@ -1628,8 +1641,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
   ecs_int_t   ind_nod_elt;
   ecs_int_t   ind_som_elt;
   ecs_int_t   nbr_som_elt;
-
-  int         data[100];
 
   int         type_gmsh;
   ecs_int_t   nbr_nod_elt_gmsh;
@@ -1687,11 +1698,18 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
 
     ecs_file_set_type(fic_maillage, ECS_FILE_TYPE_BINARY);
 
-    unsigned long buf[2];
-    ecs_file_read(buf, sizeof(unsigned long), 2, fic_maillage);
-
-    n_ent_blocks = buf[0];
-    nbr_elt = buf[1];
+    if (version_fmt_gmsh < 41) {
+      unsigned long buf[2];
+      ecs_file_read(buf, sizeof(unsigned long), 2, fic_maillage);
+      n_ent_blocks = buf[0];
+      nbr_elt = buf[1];
+    }
+    else {
+      size_t buf[4];
+      ecs_file_read(buf, sizeof(size_t), 4, fic_maillage);
+      n_ent_blocks = buf[0];
+      nbr_elt = buf[1];
+    }
 
   }
 
@@ -1733,8 +1751,12 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
                     fic_maillage,
                     num_ligne);
 
-      retour = sscanf(chaine,"%d %d %d %lu",
-                      &tag_ent, &dim_ent, &elt_type, &n_ent_elt);
+      if (version_fmt_gmsh < 41)
+        retour = sscanf(chaine,"%d %d %d %lu",
+                        &tag_ent, &dim_ent, &elt_type, &n_ent_elt);
+      else
+        retour = sscanf(chaine,"%d %d %d %lu",
+                        &dim_ent, &tag_ent, &elt_type, &n_ent_elt);
 
       if (retour != 4)
         ecs_error
@@ -1862,15 +1884,31 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
 
     for (unsigned long eb = 0; eb < n_ent_blocks; eb++) {
 
+      int tag_ent = -1;
+      unsigned long n_ent_elt = 0;
+
       int buf_i[3];
-      unsigned long n_ent_elt;
 
       ecs_file_read(buf_i, sizeof(int), 3, fic_maillage);
-      ecs_file_read(&n_ent_elt, sizeof(unsigned long), 1, fic_maillage);
 
-      int tag_ent = buf_i[0];
-      /* dim_ent = buf_i[1] */
+      if (version_fmt_gmsh < 41) {
+        tag_ent = buf_i[0];
+        /* dim_ent = buf_i[1] */
+      }
+      else {
+        /* dim_ent = buf_i[0] */
+        tag_ent = buf_i[1];
+      }
       type_gmsh  = buf_i[2];
+
+      if (version_fmt_gmsh < 41) {
+        ecs_file_read(&n_ent_elt, sizeof(unsigned long), 1, fic_maillage);
+      }
+      else {
+        size_t _n_ent_elt;
+        ecs_file_read(&_n_ent_elt, sizeof(size_t), 1, fic_maillage);
+        n_ent_elt = _n_ent_elt;
+      }
 
       if (type_gmsh < (int)GMSH_SEG2 || type_gmsh > (int) GMSH_POINT1)
         ecs_error(__FILE__, __LINE__, 0,
@@ -1884,24 +1922,54 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
 
       for (unsigned long be = 0; be < n_ent_elt; be++, ind_elt++) {
 
-        ecs_file_read(&data, sizeof(int),
-                      1 + nbr_nod_elt_gmsh, fic_maillage);
+        if (version_fmt_gmsh < 41) {
 
-        if (type_gmsh == GMSH_POINT1) {
-          cpt_point += 1;
-          continue;
+          int  data[100];
+
+          ecs_file_read(&data, sizeof(int),
+                        1 + nbr_nod_elt_gmsh, fic_maillage);
+
+          if (type_gmsh == GMSH_POINT1) {
+            cpt_point += 1;
+            continue;
+          }
+          else if (type_gmsh == GMSH_SEG2 || type_gmsh == GMSH_SEG3) {
+            cpt_are += 1;
+            continue;
+          }
+
+          label = data[0];
+
+          /* Lecture des numéros des sommets de l'élément courant */
+
+          for (ind_nod_elt = 0; ind_nod_elt < nbr_nod_elt_gmsh; ind_nod_elt++)
+            num_nod_elt_gmsh[ind_nod_elt] = data[1 + ind_nod_elt];
+
         }
-        else if (type_gmsh == GMSH_SEG2 || type_gmsh == GMSH_SEG3) {
-          cpt_are += 1;
-          continue;
+        else {
+
+          size_t  data[100];
+
+          ecs_file_read(&data, sizeof(size_t),
+                        1 + nbr_nod_elt_gmsh, fic_maillage);
+
+          if (type_gmsh == GMSH_POINT1) {
+            cpt_point += 1;
+            continue;
+          }
+          else if (type_gmsh == GMSH_SEG2 || type_gmsh == GMSH_SEG3) {
+            cpt_are += 1;
+            continue;
+          }
+
+          label = data[0];
+
+          /* Lecture des numéros des sommets de l'élément courant */
+
+          for (ind_nod_elt = 0; ind_nod_elt < nbr_nod_elt_gmsh; ind_nod_elt++)
+            num_nod_elt_gmsh[ind_nod_elt] = data[1 + ind_nod_elt];
+
         }
-
-        label = data[0];
-
-        /* Lecture des numéros des sommets de l'élément courant */
-
-        for (ind_nod_elt = 0; ind_nod_elt < nbr_nod_elt_gmsh; ind_nod_elt++)
-          num_nod_elt_gmsh[ind_nod_elt] = data[1 + ind_nod_elt];
 
         /* Stockage des valeurs avant transfert dans la structure `maillage' */
         /*===================================================================*/
@@ -2159,6 +2227,7 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
       if (version_fmt_gmsh/10 == 4)
         ecs_loc_pre_gmsh__lit_elements_v4(maillage,
                                           fic_maillage,
+                                          version_fmt_gmsh,
                                           type_fmt_gmsh,
                                           &num_ligne,
                                           maillage->n_vertices,
