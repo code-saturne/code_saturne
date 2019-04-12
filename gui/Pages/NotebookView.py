@@ -59,6 +59,15 @@ logging.basicConfig()
 log = logging.getLogger("NotebookView")
 log.setLevel(GuiParam.DEBUG)
 
+#-------------------------------------------------------------------------------
+# List of labels which are forbidden as notebook variables names
+#-------------------------------------------------------------------------------
+
+forbidden_labels = ['temperature', 'pressure', 'density', 'specific_heat',
+                    'molecular_viscosty', 'thermal_conductivity',
+                    'rho', 'rho0', 'ro0', 'mu', 'mu0', 'viscl0',
+                    'p0', 'cp0', 'cp', 'lambda0',
+                    'enthalpy', 'volume_fraction', 'vol_f']
 
 #-------------------------------------------------------------------------------
 # item class
@@ -154,7 +163,7 @@ class LabelDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
         self.regExp = QRegExp(rx)
-        v =  RegExpValidator(editor, self.regExp)
+        v =  RegExpValidator(editor, self.regExp, forbidden_labels)
         editor.setValidator(v)
         return editor
 

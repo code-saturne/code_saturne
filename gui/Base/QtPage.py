@@ -814,13 +814,14 @@ class RegExpValidator(QRegExpValidator):
     """
     Validator for regular expression.
     """
-    def __init__(self, parent, rx):
+    def __init__(self, parent, rx, forbidden_labels=None):
         """
         Initialization for validator
         """
         QRegExpValidator.__init__(self, parent)
         self.parent = parent
         self.state = QRegExpValidator.Invalid
+        self.forbidden = forbidden_labels
 
         self.__validator = QRegExpValidator(rx, parent)
 
@@ -838,6 +839,10 @@ class RegExpValidator(QRegExpValidator):
         QValidator.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
         state = self.__validator.validate(stri, pos)[0]
+
+        if self.forbidden:
+            if stri in self.forbidden:
+                state = QValidator.Intermediate
 
         palette = self.parent.palette()
 
