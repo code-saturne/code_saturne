@@ -297,9 +297,6 @@ class StandardItemModelScalars(QStandardItemModel):
 
         self.setColumnCount(len(self.headers))
 
-        self.toolTipRole = [self.tr("Code_Saturne keyword: NSCAUS"),
-                            self.tr("Code_Saturne keyword: ITURT")]
-
         self._data = []
         self.parent = parent
         self.mdl  = mdl
@@ -312,8 +309,6 @@ class StandardItemModelScalars(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.ToolTipRole:
-            return to_qvariant(self.toolTipRole[col])
         if role == Qt.DisplayRole:
             return to_qvariant(self._data[row][col])
 
@@ -429,8 +424,6 @@ class StandardItemModelVariance(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.ToolTipRole:
-            return to_qvariant(self.toolTipRole[col])
         if role == Qt.DisplayRole:
             return to_qvariant(self._data[row][col])
 
