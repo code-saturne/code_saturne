@@ -1396,6 +1396,9 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
                          _vx,
                          vx0);
 
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
+          vx[ii*db_size[1] + kk] = _vx[kk];
+
       }
 
     }
@@ -1581,6 +1584,9 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                          db_size[0],
                          _vx,
                          vx0);
+
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
+          vx[ii*db_size[1] + kk] = _vx[kk];
 
       }
 
