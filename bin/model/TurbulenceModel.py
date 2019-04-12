@@ -579,7 +579,7 @@ class TurbulenceModelTestCase(ModelTest):
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
             'Could not set the linear production k-epsilon turbulence model'
 
-    def checkSetkepsilonPL(self):
+    def checkSetLaunderSharma(self):
         """Check whether the k-epsilon turbulence model could be set"""
         mdl = TurbulenceModel(self.case)
         mdl.setTurbulenceModel('Launder-Sharma')
