@@ -445,6 +445,15 @@ class StandardItemModelMainFields(QStandardItemModel):
         # Label
         if col == 0:
             new_plabel = from_qvariant(value, to_text_string)
+
+            # Since all fields' labels are using the phase label, we rename
+            # the labels in all formulas!
+            old_plabel = self._data[row][col]
+            for nf in self.case.xmlGetNodeList('formula'):
+                if nf:
+                    ftext = (str(nf).replace('<formula>','')).replace('</formula>','')
+                    nf.xmlSetTextNode(ftext.replace(old_plabel, new_plabel))
+
             self._data[row][col] = new_plabel
             self.mdl.setLabel(FieldId, new_plabel)
             self.updateItem()
