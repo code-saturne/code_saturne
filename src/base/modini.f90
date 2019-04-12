@@ -66,12 +66,12 @@ integer          nscacp, iscal
 integer          imrgrp
 integer          kcpsyr, icpsyr
 integer          nfld, f_type
-integer          key_t_ext_id, icpext
+integer          key_t_ext_id, icpext, kscmin, kscmax
 integer          iviext
 
 logical          is_set
 
-double precision relxsp
+double precision relxsp, clvfmn, clvfmx
 
 character(len=80) :: name
 
@@ -1029,18 +1029,26 @@ if (nbrcpl.ge.1.and.iturbo.ne.0) then
 endif
 
 !===============================================================================
-! 8. Parameters of VOF/cavitation modules
+! 8. Define Min/Max clipping values of void fraction of VOF model
 !===============================================================================
 
 if (ivofmt.ge.0) then
-  if (clvfmn.lt.-grand) then
+  call field_get_key_id("min_scalar_clipping", kscmin)
+  call field_get_key_id("max_scalar_clipping", kscmax)
+  call field_get_key_double(ivarfl(ivolf2), kscmin, clvfmn)
+  call field_get_key_double(ivarfl(ivolf2), kscmax, clvfmx)
+
+  if (clvfmn.lt.-0.5d0*grand) then
     clvfmn = 0.d0
     if (icavit.gt.0) clvfmn = epzero
   endif
-  if (clvfmx.gt.grand) then
+  if (clvfmx.gt.0.5d0*grand) then
     clvfmx = 1.d0
     if (icavit.gt.0) clvfmx = 1.d0-epzero
   endif
+
+  call field_set_key_double(ivarfl(ivolf2), kscmin, clvfmn)
+  call field_set_key_double(ivarfl(ivolf2), kscmax, clvfmx)
 endif
 
 !===============================================================================

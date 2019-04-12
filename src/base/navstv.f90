@@ -121,7 +121,6 @@ integer          nswrgp, imligp, iwarnp
 integer          nbrval, iappel
 integer          ndircp, icpt
 integer          numcpl
-integer          iflvoi, iflvob
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
@@ -164,8 +163,6 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, broma, crom, croma, viscl, visct
-double precision, dimension(:), pointer :: ivoifl, bvoifl
-double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
@@ -1375,32 +1372,15 @@ if (ivofmt.ge.0) then
 
   call synsca(cvar_voidf)
 
-  ! Get the void fraction boundary conditions
-
-  call field_get_coefa_s(ivarfl(ivolf2), coavoi)
-  call field_get_coefb_s(ivarfl(ivolf2), cobvoi)
-
-  ! Get the convective flux of the void fraction
-
-  call field_get_key_int(ivarfl(ivolf2), kimasf, iflvoi)
-  call field_get_key_int(ivarfl(ivolf2), kbmasf, iflvob)
-  call field_get_val_s(iflvoi, ivoifl)
-  call field_get_val_s(iflvob, bvoifl)
-
   ! Update mixture density/viscosity and mass flux
 
-  call vof_update_phys_prop &
- ( cvar_voidf, coavoi, cobvoi, ivoifl, bvoifl, &
-   crom, brom, imasfl, bmasfl )
+  call vof_update_phys_prop
 
   ! Verbosity
 
   if (mod(ntcabs,ntlist).eq.0.and.iterns.eq.nterup) then
 
-    call field_get_val_prev_s(icrom, croma)
-
-    call vof_print_mass_budget &
-   ( crom, croma, brom, dt, imasfl, bmasfl )
+    call vof_log_mass_budget
 
   endif
 

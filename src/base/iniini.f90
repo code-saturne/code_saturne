@@ -59,6 +59,7 @@ use turbomachinery
 use cs_nz_condensation, only: nzones
 use ctincl
 use cfpoin
+use vof
 
 !===============================================================================
 
@@ -158,6 +159,7 @@ call gas_mix_options_init
 call ctwr_properties_init
 call map_ale
 call cf_model_init
+call vof_model_init
 
 call map_turbomachinery_model(iturbo, ityint)
 
@@ -1025,7 +1027,6 @@ tslagr => rvoid2
 ! 13. VOF/Cavitation module
 !===============================================================================
 
-call init_vof
 call init_cavitation
 
 !===============================================================================

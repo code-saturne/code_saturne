@@ -86,7 +86,7 @@ integer          keyvar
 
 logical          have_previous
 
-double precision xxk, xcmu, trii
+double precision xxk, xcmu, trii, clvfmn
 
 double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: brom, crom
@@ -323,14 +323,11 @@ do iel = 1, ncel
   cvar_pr(iel) = pred0
 enddo
 
-! On definit les clipping du taux de vide et on initialize au clipping inf.
+! initialize void fraction to minimum clipping value
 if (ivofmt.ge.0) then
 
   call field_get_key_id("min_scalar_clipping", kscmin)
-  call field_get_key_id("max_scalar_clipping", kscmax)
-
-  call field_set_key_double(ivarfl(ivolf2), kscmin, clvfmn)
-  call field_set_key_double(ivarfl(ivolf2), kscmax, clvfmx)
+  call field_get_key_double(ivarfl(ivolf2), kscmin, clvfmn)
 
   call field_get_val_s(ivarfl(ivolf2), field_s_v)
   do iel = 1, ncel

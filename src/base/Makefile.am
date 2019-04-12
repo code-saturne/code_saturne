@@ -160,6 +160,7 @@ cs_timer.h \
 cs_timer_stats.h \
 cs_tree.h \
 cs_turbomachinery.h \
+cs_vof.h \
 cs_volume_zone.h \
 cs_wall_functions.h \
 cs_zone.h \
@@ -315,6 +316,7 @@ cs_time_plot.c \
 cs_time_step.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
+cs_vof.c \
 cs_volume_zone.c \
 cs_wall_functions.c \
 cs_internal_coupling.c \

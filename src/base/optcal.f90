@@ -1017,7 +1017,7 @@ module optcal
   !> VOF method
   !>    - -1: module not activated
   !>    -  0: method activated
-  integer, save :: ivofmt
+  integer(c_int), pointer, save :: ivofmt
 
   !> \}
 
