@@ -759,7 +759,7 @@ class mei_to_c_interpreter:
                      + usr_defs
 
         # List of fields where we need to use the label instead of the name:
-        label_not_name = ['Additional scalar', 'Thermal scalar']
+        label_not_name = ['Additional scalar', 'Thermal scalar', 'Pressure']
         for f in known_fields:
             (fl, fn) = f
             for line in exp_lines_comp:
@@ -1338,6 +1338,8 @@ class mei_to_c_interpreter:
 
     def generate_boundary_code(self):
 
+        from code_saturne.model.NotebookModel import NotebookModel
+
         if self.pkg_name == 'code_saturne':
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.Boundary import Boundary
@@ -1366,6 +1368,9 @@ class mei_to_c_interpreter:
                             req = ['q_v']
                             sym = ['t', 'dt', 'iter']
 
+                        for (name, val) in NotebookModel(self.case).getNotebookList():
+                            sym.append((name, 'value (notebook) = ' + str(val)))
+
                         name = 'velocity'
 
                         exp = boundary.getVelocity()
@@ -1378,6 +1383,10 @@ class mei_to_c_interpreter:
                         req  = ['dir_x', 'dir_y', 'dir_z']
                         exp  = boundary.getDirection('direction_formula')
                         sym = ['t', 'dt', 'iter']
+
+                        for (name, val) in NotebookModel(self.case).getNotebookList():
+                            sym.append((name, 'value (notebook) = ' + str(val)))
+
                         name = 'direction'
 
                         self.init_block('bnd', zone._label, name,
@@ -1389,6 +1398,10 @@ class mei_to_c_interpreter:
                     if tc == 'formula':
                         turb_model = tm.getTurbulenceModel()
                         sym = ['x', 'y', 'z', 't', 'dt', 'iter']
+
+                        for (name, val) in NotebookModel(self.case).getNotebookList():
+                            sym.append((name, 'value (notebook) = ' + str(val)))
+
                         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
                             name = 'turbulence_ke'
                             req  = ['k', 'epsilon']
@@ -1426,6 +1439,9 @@ class mei_to_c_interpreter:
                     name = "head_loss"
                     req  = ['K']
                     sym  = ['t', 'dt', 'iter']
+                    for (name, val) in NotebookModel(self.case).getNotebookList():
+                        sym.append((name, 'value (notebook) = ' + str(val)))
+
                     exp  = boundary.getHeadLossesFormula()
                     self.init_block('bnd', zone._label, name,
                                     exp, req, sym,
@@ -1435,6 +1451,9 @@ class mei_to_c_interpreter:
                 if zone._nature == 'groundwater':
                     c = boundary.getHydraulicHeadChoice()
                     sym  = ['t', 'dt', 'iter']
+                    for (name, val) in NotebookModel(self.case).getNotebookList():
+                        sym.append((name, 'value (notebook) = ' + str(val)))
+
                     if c == 'dirichlet_formula':
                         name = 'hydraulic_head'
                         req  = ['H']
@@ -1456,6 +1475,9 @@ class mei_to_c_interpreter:
                   for sca in scalar_list:
                       c = boundary.getScalarChoice(sca)
                       sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
+                      for (name, val) in NotebookModel(self.case).getNotebookList():
+                          sym.append((name, 'value (notebook) = ' + str(val)))
+
                       if '_formula' in c:
                           exp = boundary.getScalarFormula(sca, c)
                           if c == 'dirichlet_formula':
@@ -1496,6 +1518,9 @@ class mei_to_c_interpreter:
                                 req = ['u_norm']
                                 sym = ['t', 'dt', 'iter']
 
+                            for (name, val) in NotebookModel(self.case).getNotebookList():
+                                sym.append((name, 'value (notebook) = ' + str(val)))
+
                             exp = boundary.getVelocity(fId)
 
                             self.init_block('bnd',
@@ -1513,6 +1538,8 @@ class mei_to_c_interpreter:
                             exp = boundary.getDirection(fId, 'direction_formula')
                             req = ['dir_x', 'dir_y', 'dir_z']
                             sym = ['t', 'dt', 'iter']
+                            for (name, val) in NotebookModel(self.case).getNotebookList():
+                                sym.append((name, 'value (notebook) = ' + str(val)))
 
                             self.init_block('bnd',
                                             zone.getLabel(),

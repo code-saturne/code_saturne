@@ -31,6 +31,7 @@ from code_saturne.model.MainFieldsModel import *
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModelsDescription
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -464,6 +465,8 @@ class InletBoundary(Boundary):
                ('t','time'),
                ('dt','time step'),
                ('iter','number of time step')]
+        for (name, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
 
         if turbModel in ('k-epsilon', 'k-epsilon_linear_production'):
             req = [('k', "turbulent energy"),
