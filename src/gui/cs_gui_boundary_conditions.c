@@ -2156,7 +2156,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             return;
 
           if (   cs_gui_strcmp(model, "k-epsilon")
-              || cs_gui_strcmp(model, "k-epsilon-PL")) {
+              || cs_gui_strcmp(model, "k-epsilon-PL")
+	      || cs_gui_strcmp(model, "Launder-Sharma")) {
 
             cs_real_t *new_vals = cs_meg_boundary_function("turbulence_ke",
                                                            "formula",
