@@ -75,6 +75,7 @@ class TurbulenceModel(Variables, Model):
                             'mixing_length',
                             'k-epsilon',
                             'k-epsilon-PL',
+                            'Launder-Sharma',
                             'Rij-epsilon',
                             'Rij-SSG',
                             'Rij-EBRSM',
@@ -215,7 +216,7 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties([], 'smagorinsky_constant^2')
             self.node_turb.xmlRemoveChild('wall_function')
 
-        elif model_turb in ('k-epsilon', 'k-epsilon-PL'):
+        elif model_turb in ('k-epsilon', 'k-epsilon-PL', 'Launder-Sharma'):
             lst = ('k', 'epsilon')
             for v in lst:
                 self.setNewVariable(self.node_turb, v, label=v)
@@ -480,7 +481,7 @@ class TurbulenceModel(Variables, Model):
         model = self.getTurbulenceModel()
         nodeList = []
 
-        if model in ('k-epsilon','k-epsilon-PL'):
+        if model in ('k-epsilon','k-epsilon-PL', 'Launder-Sharma'):
             nodeList.append(self.node_turb.xmlGetNode('variable', name='k'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='epsilon'))
         elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
@@ -577,6 +578,21 @@ class TurbulenceModelTestCase(ModelTest):
               </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
             'Could not set the linear production k-epsilon turbulence model'
+
+    def checkSetkepsilonPL(self):
+        """Check whether the k-epsilon turbulence model could be set"""
+        mdl = TurbulenceModel(self.case)
+        mdl.setTurbulenceModel('Launder-Sharma')
+        doc ='''<turbulence model="Launder-Sharma">
+                <variable label="TurbEner" name="k"/>
+                <variable label="Dissip" name="epsilon"/>
+                <property label="TurbVisc" name="turbulent_viscosity"/>
+                <initialization choice="reference_velocity">
+                  <reference_velocity>1</reference_velocity>
+                </initialization>
+              </turbulence>'''
+        assert mdl.node_turb == self.xmlNodeFromString(doc),\
+            'Could not set the Launder-Sharma k-epsilon turbulence model'
 
     def checkSetRijepsilon(self):
         """Check whether the Rij-epsilon turbulence model could be set"""
