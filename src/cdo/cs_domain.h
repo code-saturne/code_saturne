@@ -84,19 +84,19 @@ typedef struct {
 typedef struct {
 
   /* Code_Saturne mesh and mesh quantities structures already computed */
-  const  cs_mesh_t              *mesh;
-  const  cs_mesh_quantities_t   *mesh_quantities;
+  cs_mesh_t                *mesh;
+  cs_mesh_quantities_t     *mesh_quantities;
 
   /* CDO structures:
    * - cs_cdo_connect_t contains additional information about connectivity
    * - cs_cdo_quantities_t contains additional information on mesh quantities
    */
-  cs_cdo_connect_t              *connect;
-  cs_cdo_quantities_t           *cdo_quantities;
+  cs_cdo_connect_t         *connect;
+  cs_cdo_quantities_t      *cdo_quantities;
 
   /* Boundary of the computational domain */
-  cs_boundary_t                 *boundaries;
-  cs_boundary_t                 *ale_boundaries;
+  cs_boundary_t            *boundaries;
+  cs_boundary_t            *ale_boundaries;
 
   /* Time step management */
   bool                      only_steady;
@@ -106,9 +106,9 @@ typedef struct {
   cs_time_step_options_t    time_options;     /* time step options */
 
   /* Output options */
-  int        output_nt;   /* Log information every nt iterations */
-  int        restart_nt;  /* Write a restart every nt iterations */
-  int        verbosity;   /* Level of details given in log */
+  int                       output_nt;   /* Logging done every nt iterations */
+  int                       restart_nt;  /* Restart done every nt iterations */
+  int                       verbosity;   /* Level of details given in log */
 
   /* Specific context structure related to the numerical schemes */
   cs_domain_cdo_context_t   *cdo_context;
