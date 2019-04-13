@@ -420,15 +420,13 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t udbfs = 1. / b_face_surf[face_id];
-
-          cs_real_t dddij[3];
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+          cs_real_3_t normal;
+          /* Normal is vector 0 if the b_face_normal norm is too small */
+          cs_math_3_normalise(b_face_normal[face_id], normal);
 
           for (cs_lnum_t ll = 0; ll < 3; ll++) {
             for (cs_lnum_t mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
+              cocg[ii][ll][mm] += normal[ll] * normal[mm];
           }
 
         } /* face without internal coupling */
