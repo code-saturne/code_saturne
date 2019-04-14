@@ -492,8 +492,7 @@ _vcb_apply_weak_bc(cs_real_t                      time_eval,
     /* Neumann boundary conditions */
     if (csys->has_nhmg_neumann) {
       for (short int v  = 0; v < cm->n_vc; v++)
-        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[v]) == false)
-          csys->rhs[v] += csys->neu_values[v];
+        csys->rhs[v] += csys->neu_values[v];
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
