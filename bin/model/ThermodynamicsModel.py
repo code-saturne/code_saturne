@@ -574,24 +574,32 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = "rho = 1.8;"
         req = [('rho', 'Density')]
 
+        # Predefined Symbols
         symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
            symbols.append(s)
+           known_fields.append(s)
 
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, "enthalpy_"+str(fieldId)))
+            known_fields.append((label, "enthalpy_"+str(fieldId)))
 
         rho0_value = self.getInitialValue(fieldId, 'density')
         symbols.append(('rho0', 'Density (reference value) = '+str(rho0_value)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
+            known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, self.list_scalars, symbols
+        return exp, req, known_fields, symbols
 
 
     def getFormulaMuComponents(self, fieldId):
@@ -603,24 +611,32 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = "mu = 4.56e-05;"
         req = [('mu', 'Molecular Viscosity')]
 
+        # Predefined Symbols
         symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
            symbols.append(s)
+           known_fields.append(s)
 
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
+            known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
         mu0_val = self.getInitialValue(fieldId, 'molecular_viscosity')
         symbols.append(('mu0', 'Viscosity (reference value) = '+str(mu0_val)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
+            known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, self.list_scalars, symbols
+        return exp, req, known_fields, symbols
 
 
     def getFormulaCpComponents(self, fieldId):
@@ -633,23 +649,32 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = "cp = 4000.;"
         req = [('cp', 'Specific heat')]
 
-        symbols_cp = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-           symbols_cp.append(s)
+           symbols.append(s)
+           known_fields.append(s)
 
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_cp.append((label, "enthalpy_"+str(fieldId)))
+            symbols.append((label, "enthalpy_"+str(fieldId)))
+            known_fields.append((label, "enthalpy_"+str(fieldId)))
+
         cp0_val = self.getInitialValue(fieldId, "specific_heat")
-        symbols_cp.append(('cp0', 'Specific heat (reference value) = '+str(cp0_val)))
+        symbols.append(('cp0', 'Specific heat (reference value) = '+str(cp0_val)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_cp.append((s, s))
+            symbols.append((s, s))
+            known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
-            symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, self.list_scalars, symbols_cp
+        return exp, req, known_fields, symbols
 
 
     def getFormulaAlComponents(self, fieldId):
@@ -661,22 +686,32 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = "lambda = 1.e-5;"
         req = [('lambda', 'Thermal conductivity')]
 
-        symbols_al = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-           symbols_al.append(s)
+           symbols.append(s)
+           known_fields.append(s)
+
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols_al.append((label, 'enthalpy_'+str(fieldId)))
+            symbols.append((label, 'enthalpy_'+str(fieldId)))
+            known_fields.append((label, 'enthalpy_'+str(fieldId)))
+
         l0_val = self.getInitialValue(fieldId, 'thermal_conductivity')
-        symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = '+str(l0_val)))
+        symbols.append(('lambda0', 'Thermal conductivity (reference value) = '+str(l0_val)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols_al.append((s, s))
+            symbols.append((s, s))
+            known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
-            symbols_al.append((nme, 'value (notebook) = ' + str(val)))
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, self.list_scalars, symbols_al
+        return exp, req, known_fields, symbols
 
 
     def getFormulaStComponents(self):
@@ -688,23 +723,33 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = "sigma = 0.075;"
         req = [('sigma', 'Surface Tension')]
 
-        symbols_st = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-           symbols_st.append(s)
+           symbols.append(s)
+           known_fields.append(s)
+
         for fieldId in self.getFieldIdList():
             if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
                 label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-                symbols_st.append((label, 'enthalpy_'+str(fieldId)))
+                symbols.append((label, 'enthalpy_'+str(fieldId)))
+                known_fields.append((label, 'enthalpy_'+str(fieldId)))
+
         s0_val = self.getInitialValue('none', 'surface_tension')
-        symbols_st.append(('sigma0', 'Surface tension (reference value) = '+str(s0_val)))
+        symbols.append(('sigma0', 'Surface tension (reference value) = '+str(s0_val)))
 
         for s in self.m_spe.getScalarNameList():
-              symbols_st.append((s, s))
+              symbols.append((s, s))
+              known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
-            symbols_st.append((nme, 'value (notebook) = ' + str(val)))
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, self.list_scalars, symbols_st
+        return exp, req, known_fields, symbols
 
 
     def getFormulaTemperatureComponents(self, fieldId):
@@ -717,20 +762,27 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = label + " = 273.15;"
         req = [(label, 'temperature')]
 
+        # Predefined Symbols
         symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
            symbols.append(s)
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
+            known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
+            known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, self.list_scalars, symbols
+        return exp, req, known_fields, symbols
 
 
     def getFormuladrodpComponents(self, fieldId):
@@ -742,20 +794,29 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = "d_rho_d_P = 0.;"
         req = [('d_rho_d_P', 'Partial derivative of density with respect to pressure')]
 
+        # Predefined Symbols
         symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
            symbols.append(s)
+           known_fields.append(s)
+
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
+            known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
+            known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return  exp, req, self.list_scalars, symbols
+        return  exp, req, known_fields, symbols
 
 
     def getFormuladrodhComponents(self, fieldId):
@@ -767,20 +828,29 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             exp = "d_rho_d_h = 0.;"
         req = [('d_rho_d_h', 'Partial derivative of density with respect to enthalpy')]
 
+        # Predefined Symbols
         symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
            symbols.append(s)
+           known_fields.append(s)
+
         if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
+            known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
+            known_fields.append((s, s))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
-        return exp, req, self.list_scalars, symbols
+        return exp, req, known_fields, symbols
 
 
     def getFormuladTsatdpComponents(self):
@@ -789,14 +859,21 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         label = self.m_out.getVariableLabel('none', 'd_Tsat_d_P')
         req = [(label, 'Partial derivative of Saturation temperature with respect to pressure')]
 
-        sym = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-            sym.append(s)
+            symbols.append(s)
+            known_fields.append(s)
 
         for s in self.m_spe.getScalarNameList():
-            sym.append((s, self.tr("Additional species")))
+            symbols.append((s, self.tr("Additional species")))
+            known_fields.append((s, self.tr("Additional species")))
 
-        return exp, req, self.list_scalars, sym
+        return exp, req, known_fields, symbols
 
 
     def getFormulaHlatComponents(self):
@@ -805,14 +882,21 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         label = self.m_out.getVariableLabel('none', 'LatentHeat')
         req = [(label, 'latent heat')]
 
-        sym = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-            sym.append(s)
+            symbols.append(s)
+            known_fields.append(s)
 
         for s in self.m_spe.getScalarNameList():
-            sym.append((s, self.tr('Additional species')))
+            symbols.append((s, self.tr('Additional species')))
+            known_fields.append((s, self.tr('Additional species')))
 
-        return exp, req, self.list_scalars, sym
+        return exp, req, known_fields, symbols
 
 
     def getFormulaTsatComponents(self):
@@ -821,14 +905,21 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         label = self.m_out.getVariableLabel('none', 'SaturationTemperature')
         req = [(label, 'SaturationTemperature')]
 
-        sym = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-            sym.append(s)
+            symbols.append(s)
+            known_fields.append(s)
 
         for s in self.m_spe.getScalarNameList():
-            sym.append((s, self.tr('additional species')))
+            symbols.append((s, self.tr('additional species')))
+            known_fields.append((s, self.tr('additional species')))
 
-        return exp, req, self.list_scalars, sym
+        return exp, req, known_fields, symbols
 
     def getFormuladHsatdpComponents(self, tag):
 
@@ -837,14 +928,21 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         label = self.m_out.getVariableLabel('none', tag)
         req  = [(label, 'Partial derivative of enthalpy of saturation with respect to pressure')]
 
-        sym = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-            sym.append(s)
+            symbols.append(s)
+            known_fields.append(s)
 
         for s in self.m_spe.getScalarNameList():
-            sym.append((s, self.tr('Additional species')))
+            symbols.append((s, self.tr('Additional species')))
+            known_fields.append((s, self.tr('Additional species')))
 
-        return exp, req, self.list_scalars, sym
+        return exp, req, known_fields, symbols
 
 
     def getFormulaHsatComponents(self, tag):
@@ -854,14 +952,21 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         req = [(label, 'enthalpy of saturation')]
 
-        sym = []
+        # Predefined Symbols
+        symbols = []
+
+        # Known fields (for equation->C translation) within the code
+        known_fields = []
+
         for s in self.list_scalars:
-            sym.append(s)
+            symbols.append(s)
+            known_fields.append(s)
 
         for s in self.m_spe.getScalarNameList():
-            sym.append((s, self.tr('additional species')))
+            symbols.append((s, self.tr('additional species')))
+            known_fields.append((s, self.tr('additional species')))
 
-        return exp, req, self.list_scalars, sym
+        return exp, req, known_fields, symbols
 
 
     def tr(self, text):
