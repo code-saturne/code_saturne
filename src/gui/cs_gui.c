@@ -1999,55 +1999,24 @@ void CS_PROCF (cstime, CSTIME) (void)
 }
 
 /*----------------------------------------------------------------------------
- * Treatment of local numerical aspects:
- *     BLENCV, ISCHCV, ISSTPC, IRCFLU, CDTVAR, NITMAX, EPSILO
+ * Space scheme options, linear solver precision and time step factor
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
 {
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  int var_key_id = cs_field_key_id("variable_id");
+  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  const int var_key_id = cs_field_key_id("variable_id");
+  const int keysca = cs_field_key_id("scalar_id");
   cs_var_cal_opt_t var_cal_opt;
 
-  /* 1) variables from velocity_pressure and turbulence */
-  /* 1-a) for pressure or hydraulic head */
-  cs_field_t *f = NULL;
-  if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
-    f = cs_field_by_name("hydraulic_head");
-  }
-  else {
-    f = cs_field_by_name("pressure");
-  }
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-  cs_tree_node_t *tn_v = _find_node_variable(f->name);
-
-  cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
-  cs_gui_node_get_child_int(tn_v, "rhs_reconstruction", &var_cal_opt.nswrsm);
-  cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.iwarni);
-
-  /* For CDO equation */
-  cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);
-  if (eqp != NULL) {
-    eqp->sles_param.eps = var_cal_opt.epsilo;
-  }
-
-  /* Set Field calculation options in the field structure */
-  cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
-
-  /* 1-b) for the other variables */
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    f = cs_field_by_id(f_id);
-    if (   f->type & CS_FIELD_VARIABLE
-        && !cs_gui_strcmp(f->name, "pressure")
-        && !cs_gui_strcmp(f->name, "hydraulic_head")) {
-
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
       int j = cs_field_get_key_int(f, var_key_id) -1;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
       const char *ref_name = f->name;
-
       if (   cs_gui_strcmp(f->name, "r11")
           || cs_gui_strcmp(f->name, "r22")
           || cs_gui_strcmp(f->name, "r33")
@@ -2056,29 +2025,37 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
           || cs_gui_strcmp(f->name, "r13"))
         ref_name = "rij";
 
-      tn_v = _find_node_variable(ref_name);
+      cs_tree_node_t *tn_v = _find_node_variable(ref_name);
 
-      cs_gui_node_get_child_real(tn_v, "blending_factor", &var_cal_opt.blencv);
       cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
+      cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
+                                       &var_cal_opt.ircflu);
+      cs_gui_node_get_child_int(tn_v, "rhs_reconstruction",
+                                &var_cal_opt.nswrsm);
+      cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.iwarni);
 
       /* For CDO equation, if non-automatic value ie != -1 */
-      eqp = cs_equation_param_by_name(f->name);
+      cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);
       if (eqp != NULL && cs_gui_is_equal_real(var_cal_opt.epsilo, -1) == 0)
         eqp->sles_param.eps = var_cal_opt.epsilo;
 
-      // only for nscaus and model scalar
-      cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar[j]);
+      /* convection scheme options */
+      if (var_cal_opt.iconv > 0) {
+        cs_gui_node_get_child_real(tn_v, "blending_factor",
+                                   &var_cal_opt.blencv);
+        _order_scheme_value(tn_v, &var_cal_opt.ischcv);
+        _slope_test_value(tn_v, &var_cal_opt.isstpc);
+      }
 
-      _order_scheme_value(tn_v, &var_cal_opt.ischcv);
-      _slope_test_value(tn_v, &var_cal_opt.isstpc);
-      cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
-                                       &var_cal_opt.ircflu);
-
-      cs_gui_node_get_child_int(tn_v, "rhs_reconstruction", &var_cal_opt.nswrsm);
-      cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.iwarni);
-
-      // Set Field calculation options in the field structure
+      /* set field calculation options */
       cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+      /* only for additional variables (user or model) */
+      int isca = cs_field_get_key_int(f, keysca);
+      if (isca > 0) {
+        /* time step factor */
+        cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar[j]);
+      }
     }
   }
 

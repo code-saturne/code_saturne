@@ -545,10 +545,9 @@ if (dtmax.le.-grand) then
   dtmax = 1.0d3*dtref
 endif
 
-!     Ici, ce n'est pas grave pour le moment,
-!      etant entendu que ces coefs ne servent pas
-!      s'ils servaient, attention dans le cas a plusieurs phases avec
-!      une seule pression : celle ci prend le coef de la derniere phase
+! Init. of time step factor for velocity, pressure and turbulent variables
+! FIXME time step factor is used ONLY for additional variables (user or model)
+
 cdtvar(iv ) = cdtvar(iu)
 cdtvar(iw ) = cdtvar(iu)
 cdtvar(ipr) = cdtvar(iu)
