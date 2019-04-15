@@ -918,8 +918,14 @@ cs_parameters_set_n_buoyant_scalars(void)
 void
 cs_parameters_define_field_keys(void)
 {
-  cs_field_define_key_int("inner_mass_flux_id", -1, 0);
-  cs_field_define_key_int("boundary_mass_flux_id", -1, 0);
+  /* field ids of the mass or volume fluxes convecting the variable field */
+  cs_field_define_key_int("inner_mass_flux_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("boundary_mass_flux_id", -1, CS_FIELD_VARIABLE);
+
+  /* field ids of the fluxes of the variable field (it needs to be stored
+     for some quantities such as void fraction flux for the VoF algo.) */
+  cs_field_define_key_int("inner_flux_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("boundary_flux_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
   cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */

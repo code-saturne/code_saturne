@@ -108,7 +108,7 @@ double precision normp
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: dpvar, divu
-double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: ivolfl, bvolfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_voidf
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
@@ -136,6 +136,7 @@ if (icavit.ge.0.and.itscvi.eq.1) then
 endif
 
 ! Allocate temporary arrays
+
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet),rovsdt(ncelet))
 
@@ -154,8 +155,11 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
 call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
-call field_get_val_s(iflmas, imasfl)
-call field_get_val_s(iflmab, bmasfl)
+call field_get_val_s(iflmas, ivolfl)
+call field_get_val_s(iflmab, bvolfl)
+
+call field_get_key_int(icrom, kimasf, iflmas)
+call field_get_key_int(icrom, kbmasf, iflmab)
 
 ! Key id for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
@@ -241,9 +245,10 @@ endif
 
 ! Source term linked with the non-conservative form of convection term
 ! in codits (always implicited)
-
+! FIXME set imasac per variable? Here it could be set to 0
+! and divu not added
 init = 1
-call divmas (init,imasfl,bmasfl,divu)
+call divmas (init,ivolfl,bvolfl,divu)
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) - divu(iel)
@@ -316,7 +321,7 @@ call codits &
    relaxp , thetap ,                                              &
    cvara_voidf     , cvara_voidf     ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
-   imasfl , bmasfl ,                                              &
+   ivolfl , bvolfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &

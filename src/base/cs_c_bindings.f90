@@ -4553,6 +4553,7 @@ contains
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
+    vcopt%icoupl = -1
     vcopt%ndircl = ndircp
     vcopt%idiff  = idiffp
     vcopt%idifft = -1

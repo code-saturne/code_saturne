@@ -1831,7 +1831,7 @@ if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
    viscap ,                                                                    &
    imasfl , bmasfl )
 
-  ! The last increment is not reconstructed to fullfill exactly the continuity
+  ! The last increment is not reconstructed to fulfill exactly the continuity
   ! equation (see theory guide). The value of dfrcxt has no importance.
   iccocg = 0
   nswrgp = 0

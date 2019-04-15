@@ -254,7 +254,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
+  const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   int isym, inc, isweep, niterf, iccocg, nswmod, itenso, iinvpe;
@@ -322,10 +323,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   bool symmetric = (isym == 1) ? true : false;
 
-  BFT_MALLOC(xam,isym*n_faces,cs_real_t);
+  BFT_MALLOC(xam,isym*n_i_faces,cs_real_t);
   if (conv_diff_mg) {
-    BFT_MALLOC(xam_conv, 2*n_faces, cs_real_t);
-    BFT_MALLOC(xam_diff,   n_faces, cs_real_t);
+    BFT_MALLOC(xam_conv, 2*n_i_faces, cs_real_t);
+    BFT_MALLOC(xam_diff,   n_i_faces, cs_real_t);
   }
 
   /* Matrix block size */
@@ -905,6 +906,103 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       bft_printf("@\n@ @@ WARNING: %s CONVECTION-DIFFUSION-SOURCE-TERMS\n@"
                  "=========\n@  Maximum number of iterations %d reached\n@",
                  var_name,nswmod);
+  }
+
+
+  /* Rebuild final flux at faces */
+
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
+
+    const int kiflux = cs_field_key_id("inner_flux_id");
+    const int kbflux = cs_field_key_id("boundary_flux_id");
+
+    int i_flux_id = cs_field_get_key_int(f, kiflux);
+    int b_flux_id = cs_field_get_key_int(f, kbflux);
+
+    if (i_flux_id > -1 && b_flux_id > -1) {
+      assert(idtvar != -1);
+      /* flux is non-conservative with the steady algorithm but flux field is of
+         dimension 1. Forbidden at parameters check */
+
+      cs_field_t *i_flux = cs_field_by_id(i_flux_id);
+      cs_field_t *b_flux = cs_field_by_id(b_flux_id);
+
+      /* rebuild before-last value of variable */
+      cs_real_t *prev_s_pvar;
+      BFT_MALLOC(prev_s_pvar, n_cells_ext, cs_real_t);
+#     pragma omp parallel for
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        prev_s_pvar[iel] = pvar[iel]-dpvar[iel];
+      }
+
+      cs_real_t *i_flux2;
+      BFT_MALLOC(i_flux2, 2*n_i_faces, cs_real_t);
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+        i_flux2[2*face_id  ] = 0.;
+        i_flux2[2*face_id+1] = 0.;
+      }
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+        b_flux->val[face_id] = 0.;
+
+      inc  = 1;
+      iccocg = 1;
+      imasac = 0; /* mass accumluation not taken into account */
+
+      cs_face_convection_scalar(idtvar,
+                                f_id,
+                                *var_cal_opt,
+                                icvflb,
+                                inc,
+                                iccocg,
+                                imasac,
+                                prev_s_pvar,
+                                pvara,
+                                icvfli,
+                                coefap,
+                                coefbp,
+                                i_massflux,
+                                b_massflux,
+                                (cs_real_2_t *)i_flux2,
+                                b_flux->val);
+      BFT_FREE(prev_s_pvar);
+
+      /* last increment in upwind to fulfill exactly the considered
+         balance equation */
+
+      inc  = 0;
+      iccocg = 0;
+
+      cs_var_cal_opt_t var_cal_opt_loc;
+      int k_id = cs_field_key_id("var_cal_opt");
+      cs_field_get_key_struct(f, k_id, &var_cal_opt_loc);
+
+      var_cal_opt_loc.nswrgr = 0;
+      var_cal_opt_loc.blencv = 0.;
+
+      cs_face_convection_scalar(idtvar,
+                                f_id,
+                                var_cal_opt_loc,
+                                icvflb,
+                                inc,
+                                iccocg,
+                                imasac,
+                                dpvar,
+                                pvara,
+                                icvfli,
+                                coefap,
+                                coefbp,
+                                i_massflux,
+                                b_massflux,
+                                (cs_real_2_t *)i_flux2,
+                                b_flux->val);
+
+      /* FIXME diffusion part */
+
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+        i_flux->val[face_id] = i_flux2[2*face_id];
+      BFT_FREE(i_flux2);
+    }
   }
 
   /*============================================================================

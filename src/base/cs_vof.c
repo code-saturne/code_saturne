@@ -234,6 +234,18 @@ cs_f_vof_log_mass_budget(void)
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide access to VOF structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_vof_parameters_t *
+cs_get_glob_vof_parameters(void)
+{
+  return &_vof_parameters;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the mixture density, mixture dynamic viscosity and mixture
@@ -289,13 +301,14 @@ cs_vof_update_phys_prop(const cs_domain_t *domain)
 
   cs_real_t *cpro_viscl = CS_F_(mu)->val;
 
-  cs_real_t rho1 =_vof_parameters.rho1;
-  cs_real_t rho2 = _vof_parameters.rho2;
-  cs_real_t mu1 = _vof_parameters.mu1;
-  cs_real_t mu2 = _vof_parameters.mu2;
+  const cs_real_t rho1 =_vof_parameters.rho1;
+  const cs_real_t rho2 = _vof_parameters.rho2;
+  const cs_real_t mu1 = _vof_parameters.mu1;
+  const cs_real_t mu2 = _vof_parameters.mu2;
 
   /*  Update mixture density and viscocity on cells */
 
+# pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t vf = cvar_voidf[c_id];
     cpro_rom[c_id]   = rho2*vf + rho1*(1. - vf);
@@ -311,11 +324,18 @@ cs_vof_update_phys_prop(const cs_domain_t *domain)
     cs_lnum_t c_id = b_face_cells[f_id];
     cs_real_t vf = a_voidf[f_id] + b_voidf[f_id]*cvar_voidf[c_id];
 
-    bpro_rom[c_id]   = rho2*vf + rho1*(1. - vf);
+    bpro_rom[f_id]   = rho2*vf + rho1*(1. - vf);
   }
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const int kiflux = cs_field_key_id("inner_flux_id");
+  const int kbflux = cs_field_key_id("boundary_flux_id");
+
+  const cs_real_t *restrict i_voidflux =
+    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kiflux))->val;
+  const cs_real_t *restrict b_voidflux =
+    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kbflux))->val;
 
   const cs_real_t *restrict i_volflux =
     cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
@@ -327,23 +347,14 @@ cs_vof_update_phys_prop(const cs_domain_t *domain)
   cs_real_t *restrict b_massflux =
     cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
 
+  cs_real_t drho = rho2 - rho1;
+
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    cs_lnum_t  c_id_i = i_face_cells[f_id][0];
-    cs_lnum_t  c_id_j = i_face_cells[f_id][1];
-
-    cs_real_t flui = 0.5*(i_volflux[f_id] +fabs(i_volflux[f_id]));
-    cs_real_t fluj = 0.5*(i_volflux[f_id] -fabs(i_volflux[f_id]));
-
-    i_massflux[f_id] += (flui*cpro_rom[c_id_i] + fluj*cpro_rom[c_id_j]);
+    i_massflux[f_id] += drho * i_voidflux[f_id] + rho1*i_volflux[f_id];
   }
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    cs_lnum_t  c_id = b_face_cells[f_id];
-
-    cs_real_t flui = 0.5*(b_volflux[f_id] +fabs(b_volflux[f_id]));
-    cs_real_t flub = 0.5*(b_volflux[f_id] -fabs(b_volflux[f_id]));
-
-    b_massflux[f_id] += (flui*cpro_rom[c_id] + flub*bpro_rom[f_id]);
+    b_massflux[f_id] += drho * b_voidflux[f_id] + rho1*b_volflux[f_id];
   }
 }
 
