@@ -93,7 +93,7 @@ integer          iscdri, icla, iclap
 integer          keyccl, keydri
 integer          idfm, iggafm, nfld
 integer          iflidp, idimf, n_fans
-integer          f_dim
+integer          f_dim, kiflux, kbflux
 
 character(len=80) :: name, f_name
 
@@ -528,22 +528,34 @@ enddo
 
 !===============================================================================
 
-! VOF algorithm: the void fraction has its spectific convective flux
+! VOF algorithm: the void fraction has its specific convective flux
+!                and void fraction flux needs to be stored
 !-------------------------------------------------------------------
 
 if (ivofmt.ge.0) then
 
   itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
 
+  call field_get_key_id("inner_flux_id", kiflux)
+  call field_get_key_id("boundary_flux_id", kbflux)
+
   ityloc = 2  ! inner faces
-  f_name = 'inner_void_fraction_flux'
+  f_name = 'inner_volume_flux'
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
   call field_set_key_int(ivarfl(ivolf2), kimasf, f_id)
 
+  f_name = 'inner_void_fraction_flux'
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  call field_set_key_int(ivarfl(ivolf2), kiflux, f_id)
+
   ityloc = 3 ! boundary faces
-  f_name = 'boundary_void_fraction_flux'
+  f_name = 'boundary_volume_flux'
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
   call field_set_key_int(ivarfl(ivolf2), kbmasf, f_id)
+
+  f_name = 'boundary_void_fraction_flux'
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  call field_set_key_int(ivarfl(ivolf2), kbflux, f_id)
 
 endif
 

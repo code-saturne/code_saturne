@@ -74,6 +74,15 @@ extern const cs_vof_parameters_t *cs_glob_vof_parameters;
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide access to VOF structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_vof_parameters_t *
+cs_get_glob_vof_parameters(void);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the mixture density, mixture dynamic viscosity and mixture

@@ -1099,6 +1099,23 @@ cs_parameters_check(void)
                                       var_cal_opt.isstpc,
                                       -1, 2);
 
+        const int kiflux = cs_field_key_id("inner_flux_id");
+        const int kbflux = cs_field_key_id("boundary_flux_id");
+        int i_flux_id = cs_field_get_key_int(f, kiflux);
+        int b_flux_id = cs_field_get_key_int(f, kbflux);
+
+        cs_parameters_is_equal_int(CS_ABORT_DELAYED,
+                                   _(f_desc),
+                                   "key inner_flux_id (inner flux field id)",
+                                   i_flux_id,
+                                   -1);
+
+        cs_parameters_is_equal_int(CS_ABORT_DELAYED,
+                                   _(f_desc),
+                                   "key boundary_flux_id (boundary flux field id)",
+                                   b_flux_id,
+                                   -1);
+
         BFT_FREE(f_desc);
       }
     }
