@@ -1963,8 +1963,9 @@ cs_parameters_check(void)
 
       int diff_id = cs_field_get_key_int(f, kivisl);
       int isca = cs_field_get_key_int(f, keysca);
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-      if (isca > -1 && diff_id == -1) {
+      if (isca > 0 && diff_id == -1 && var_cal_opt.idiff > 0) {
         cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                         _(f_desc),
                                         "key diffusivity_ref",
