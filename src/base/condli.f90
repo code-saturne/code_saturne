@@ -626,7 +626,7 @@ if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
     .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
     .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
   call pptycl &
- ( nvar   ,                                                       &
+ ( nvar   , .false.,                                              &
    icodcl , itypfb , izfppp ,                                     &
    dt     ,                                                       &
    rcodcl )
@@ -5139,7 +5139,7 @@ if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
     .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
     .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
   call pptycl &
- ( nvar   ,                                                       &
+ ( nvar   , .true.,                                               &
    icodcl , itypfb , izfppp ,                                     &
    dt     ,                                                       &
    rcodcl )

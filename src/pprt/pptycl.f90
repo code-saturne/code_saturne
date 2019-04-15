@@ -36,6 +36,7 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
+!> \param[in]     init          partial treatment (before time loop) if true
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet
@@ -72,7 +73,7 @@
 
 
 subroutine pptycl &
- ( nvar   ,                                                       &
+ ( nvar   , init   ,                                              &
    icodcl , itypfb , izfppp ,                                     &
    dt     ,                                                       &
    rcodcl )
@@ -109,6 +110,7 @@ implicit none
 ! Arguments
 
 integer          nvar
+logical          init
 
 integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor)
@@ -163,7 +165,6 @@ if (ippmod(icompf).lt.0) then
         write(nfecra,1001) nbzppm
         write(nfecra,1002)(ilzppp(ii),ii=1,nbzppm)
         call csexit (1)
-        !==========
       endif
     endif
   enddo
@@ -175,85 +176,70 @@ if (ippmod(icompf).lt.0) then
     izone = ilzppp(ii)
     izonem = max(izonem,izone)
   enddo
-  if(irangp.ge.0) then
+  if (irangp.ge.0) then
     call parcmx(izonem)
-    !==========
   endif
   nozapm = izonem
 endif
 
 !===============================================================================
 ! 2. Call to boundary conditions computations, model by model.
+!    Computations should not be called under initialization for most
+!    models; those for which it should be called are tested first.
 !===============================================================================
 
+! Atmospheric flows
+if (ippmod(iatmos).ge.0) then
+  call attycl(itypfb, izfppp, icodcl, rcodcl)
 
-! ---> Chimie 3 points : USD3PC
+! Cooling towers
+elseif (ippmod(iaeros).ge.0) then
+  call cs_ctwr_bcond(itypfb, izfppp, icodcl, rcodcl)
 
-if (ippmod(icod3p).ge.0) then
-
-  call d3ptcl(itypfb, izfppp, icodcl, rcodcl)
-  !==========
-
-! ---> Combustion gaz USEBUC
-!      Flamme de premelange modele EBU
-
-elseif (ippmod(icoebu).ge.0) then
-
-  call ebutcl(itypfb, izfppp, rcodcl)
-  !==========
-
-! ---> Combustion gaz USLWCC
-!      Flamme de premelange modele LWC
-
-elseif (ippmod(icolwc).ge.0) then
-
-  call lwctcl(itypfb, izfppp, rcodcl)
-  !==========
-
-! ---> Combustion charbon pulverise
-
-elseif (ippmod(iccoal).ge.0) then
-
-  call cs_coal_bcond(itypfb, izfppp, icodcl, rcodcl)
-  !=================
-
-! ---> Combustion charbon pulverise couple Lagrangien USCPLC
-
-elseif (ippmod(icpl3c).ge.0) then
-
-  call cpltcl(itypfb, izfppp, rcodcl)
-  !==========
-
-! ---> Combustion fuel
-
-elseif (ippmod(icfuel).ge.0) then
-
-  call cs_fuel_bcond(itypfb, izfppp, icodcl, rcodcl)
-  !=================
-
-! ---> Compressible
+! Compressible
 
 elseif (ippmod(icompf).ge.0) then
-
   call cfxtcl                                                     &
-  !==========
  ( nvar   ,                                                       &
    icodcl , itypfb ,                                              &
    dt     ,                                                       &
    rcodcl )
 
-! ---> Ecoulements atmospheriques
+endif
 
-elseif (ippmod(iatmos).ge.0) then
+if (init .eqv. .true.) return
 
-  call attycl(itypfb, izfppp, icodcl, rcodcl)
-  !==========
+! ---> Chimie 3 points : USD3PC
 
-! ---> Cooling towers
+if (ippmod(icod3p).ge.0) then
+  call d3ptcl(itypfb, izfppp, icodcl, rcodcl)
 
-elseif (ippmod(iaeros).ge.0) then
+! ---> Combustion gaz USEBUC
+!      Flamme de premelange modele EBU
 
-  call cs_ctwr_bcond(itypfb, izfppp, icodcl, rcodcl)
+elseif (ippmod(icoebu).ge.0) then
+  call ebutcl(itypfb, izfppp, rcodcl)
+
+! ---> Combustion gaz USLWCC
+!      Flamme de premelange modele LWC
+
+elseif (ippmod(icolwc).ge.0) then
+  call lwctcl(itypfb, izfppp, rcodcl)
+
+! ---> Combustion charbon pulverise
+
+elseif (ippmod(iccoal).ge.0) then
+  call cs_coal_bcond(itypfb, izfppp, icodcl, rcodcl)
+
+! ---> Combustion charbon pulverise couple Lagrangien USCPLC
+
+elseif (ippmod(icpl3c).ge.0) then
+  call cpltcl(itypfb, izfppp, rcodcl)
+
+! ---> Combustion fuel
+
+elseif (ippmod(icfuel).ge.0) then
+  call cs_fuel_bcond(itypfb, izfppp, icodcl, rcodcl)
 
 endif
 
