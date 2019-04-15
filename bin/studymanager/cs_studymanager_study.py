@@ -1097,7 +1097,7 @@ class Studies(object):
         # try to determine if current directory is a study one
         cwd = os.getcwd()
         is_study = isStudy(cwd)
-
+        studyd = None
         studyp = None
         if is_study:
             # default study directory is current one
@@ -1170,7 +1170,7 @@ class Studies(object):
             if not self.__dest: # default value
                 # if current directory is a study
                 # set destination as a directory "../RUN_(study_name)
-                if is_study:
+                if is_study and studyd != None:
                     self.__parser.setDestination(os.path.join(studyp,
                                                               "../RUN_"+studyd))
                     self.__dest = self.__parser.getDestination()
