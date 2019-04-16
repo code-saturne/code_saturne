@@ -4,6 +4,11 @@ Release 5.1.7 (unreleased)
 Bug fixes
 ---------
 
+- Fix balance on vectorial work arrays (if no field id is provided) for example
+  used if dynamic reconstruction algorithm is enabled (iswdyn >= 1).
+  Internal coupling indicator was used uninitialiazed, blending coefficient
+  applied after slope test (blend_st) was forced to 0.
+
 - Fix for time moment which start is defined by a time value equal or close to
   a time step value.
 

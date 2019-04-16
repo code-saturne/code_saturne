@@ -188,6 +188,7 @@ BEGIN_C_DECLS
         - 0: Second Order Linear Upwind
         - 1: Centered \n
         - 2: Second Order with upwind-gradient reconstruction (SOLU) \n
+        - 3: Blending between Second Order Linear Upwind and Centered scheme \n
         Useful for all the unknowns variables which are convected
         (\ref iconv = 1) and for which a second-order scheme is used
         (\ref blencv > 0).
