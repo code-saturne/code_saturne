@@ -3,6 +3,8 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix CGNS files with NFACE_n elements and multiple sections.
+
 - Fix link issue on MacOs and possibly other static builds with
   cs_user_physical_properties.f90.
 

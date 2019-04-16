@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-01-15 17:43+0100\n"
+"POT-Creation-Date: 2019-04-12 18:34+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1826,6 +1826,48 @@ msgstr ""
 msgid ""
 "Error decoding line %ld of file\n"
 "\"%s\" :\n"
+"The information on physical groups form \"numPhysicalNames\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of entity <%d> physical group was expected in the form "
+"\"dimension tag names\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"The end of the physical names specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on entities form \"numPoints numCurves numSurfaces numVolumes"
+"\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on entities does not seem to match the spec."
+msgstr ""
+
+#, c-format
+msgid ""
+"The end of the entities specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
 "The information on node counts was expected in the form \"numEntityBlocks "
 "numNodes\"."
 msgstr ""
@@ -1845,6 +1887,20 @@ msgstr ""
 "\"%s\" :\n"
 "La description des points de l'entité <%d> était attendue sous la forme "
 "\"tagEntity dimEntity parametric numNodes\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The point <%ld> label was expected in the form \"label\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The point <%ld> coordinates were expected in the form \"x y z\"."
+msgstr ""
 
 #, c-format
 msgid ""
