@@ -2498,6 +2498,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                         &ic,  /* central cell id */
                                         &id); /* downwind cell id */
 
+              cs_real_t courant_c = -1.;
+              if (courant != NULL)
+                courant_c = courant[ic];
+
               cs_i_cd_unsteady_nvd(limiter_choice,
                                    cell_cen[ic],
                                    cell_cen[id],
@@ -2508,7 +2512,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                    _pvar[id],
                                    local_max[ic],
                                    local_max[id],
-                                   courant[ic],
+                                   courant_c,
                                    &pif,
                                    &pjf);
 
@@ -3676,6 +3680,10 @@ cs_face_convection_scalar(int                       idtvar,
                                         &ic,  /* central cell id */
                                         &id); /* downwind cell id */
 
+              cs_real_t courant_c = -1.;
+              if (courant != NULL)
+                courant_c = courant[ic];
+
               cs_i_cd_unsteady_nvd(limiter_choice,
                                    cell_cen[ic],
                                    cell_cen[id],
@@ -3686,7 +3694,7 @@ cs_face_convection_scalar(int                       idtvar,
                                    _pvar[id],
                                    local_max[ic],
                                    local_max[id],
-                                   courant[ic],
+                                   courant_c,
                                    &pif,
                                    &pjf);
 
