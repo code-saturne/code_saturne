@@ -1148,6 +1148,30 @@ cs_equation_destroy_all(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if a steady-state computation is requested according to the
+ *         setting
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_needs_steady_state_solve(void)
+{
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+
+    if (cs_equation_is_steady(eq))
+      return true;
+
+  } /* Loop on equations */
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Print a synthesis of the monitoring information in the performance
  *         file
  */

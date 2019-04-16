@@ -339,6 +339,18 @@ cs_equation_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if a steady-state computation is requested according to the
+ *         setting
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_needs_steady_state_solve(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Print a synthesis of the monitoring information in the performance
  *         file
  */

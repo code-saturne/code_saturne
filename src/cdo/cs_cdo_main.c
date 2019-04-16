@@ -189,6 +189,9 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
+  if (!cs_equation_needs_steady_state_solve())
+    return;
+
   bool  do_output = cs_domain_needs_log(domain);
 
   /* Output information */
@@ -200,7 +203,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   else if (do_output) {
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "-ite- 0; >> Solve only steady-state equations if needed");
+                  "-ite- 0; >> Solve only requested steady-state equations");
     cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
   }
 
@@ -227,7 +230,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   _compute_steady_user_equations(domain);
 
   /* Extra operations and post-processing of the computed solutions */
-  cs_domain_post(domain, true);
+  cs_domain_post(domain);
 
 }
 
@@ -515,6 +518,9 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Read a restart file if needed */
   cs_domain_read_restart(domain);
 
+  /* Force the activation of writers for postprocessing */
+  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
+
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
@@ -540,7 +546,7 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_domain_increment_time(domain);
 
     /* Extra operations and post-processing of the computed solutions */
-    cs_domain_post(domain, false);
+    cs_domain_post(domain);
 
     /* Increment time */
     cs_domain_increment_time_step(domain);
