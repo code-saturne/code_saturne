@@ -370,6 +370,8 @@ class MainView(object):
         self.fileCloseAction.triggered.connect(self.close)
         self.fileQuitAction.triggered.connect(self.fileQuit)
 
+        self.openTextEditorAction.triggered.connect(self.fileEditorOpen)
+
         self.openXtermAction.triggered.connect(self.openXterm)
         self.displayCaseAction.triggered.connect(self.displayCase)
 
@@ -871,6 +873,20 @@ class MainView(object):
             self.loadFile(file_name)
 
         self.statusbar.clearMessage()
+
+
+    def fileEditorOpen(self):
+        """
+        public slot
+
+        open a text file
+        """
+
+        from code_saturne.Base.QFileEditor import QFileEditor
+
+        fileEditor = QFileEditor(self)
+        fileEditor.show()
+
 
 
     def openXterm(self):
