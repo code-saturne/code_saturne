@@ -1439,8 +1439,8 @@ class mei_to_c_interpreter:
                     name = "head_loss"
                     req  = ['K']
                     sym  = ['t', 'dt', 'iter']
-                    for (name, val) in NotebookModel(self.case).getNotebookList():
-                        sym.append((name, 'value (notebook) = ' + str(val)))
+                    for (nb_var, val) in NotebookModel(self.case).getNotebookList():
+                        sym.append((nb_var, 'value (notebook) = ' + str(val)))
 
                     exp  = boundary.getHeadLossesFormula()
                     self.init_block('bnd', zone._label, name,
