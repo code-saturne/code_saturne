@@ -2397,6 +2397,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
   cpt_section = 0;
   num_som_deb = 1;
 
+  ecs_int_t face_id_shift = 0;
+
   for (ind_zone = 0; ind_zone < nzones; ind_zone++) {
 
     num_zone = ind_zone + 1;
@@ -2532,6 +2534,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
               ecs_int_t num_fac = *(ptr_ele + ind_fac);
               if (num_fac < 0)
                 num_fac = -num_fac;
+              num_fac += face_id_shift;
               connect_size +=   pos_som_fac[num_fac]
                               - pos_som_fac[num_fac - 1] + 1;
             }
@@ -2682,7 +2685,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             for (ecs_int_t i = 0; i < nbr_fac_elt; i++) {
 
               ecs_int_t num_fac = *(ptr_ele + i);
-              ecs_int_t ind_fac = ECS_ABS(num_fac) - 1;
+              ecs_int_t ind_fac = ECS_ABS(num_fac) - 1 + face_id_shift;
 
               size_t s_id = pos_som_fac[ind_fac] - 1;
               size_t e_id = pos_som_fac[ind_fac + 1] - 1;
@@ -2764,6 +2767,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
     } /* Fin traitement structuré/non structuré */
 
     num_som_deb += ptr_zone->nbr_som;
+
+    face_id_shift = cpt_elt_ent[ECS_ENTMAIL_FAC];
 
   } /* Fin boucle sur les zones */
 
