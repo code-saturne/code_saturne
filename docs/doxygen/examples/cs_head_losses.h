@@ -104,8 +104,8 @@
   know which zone we are dealing with using in case of multiple zones.
 
   head loss tensor coefficients for each cell are organized as follows:
-  cku11, cku22, cku33, cku12, cku13, cku23.
-  
+  \c cku11, \c cku22, \c cku33, \c cku12, \c cku13, \c cku23.
+
   Coefficients are set to zero (then computed based on definitions provided
   through the GUI if this is the case) before calling this function, so
   setting values to zero is usually not necessary, unless we want to fully
@@ -114,20 +114,21 @@
   Note that diagonal coefficients must be positive; the calculation may
   crash if this is not the case.
 
-  \subsection diagonal_tensor Example 1: head losses in direction \c x
+  \subsection diagonal_tensor Example 1: head losses alined with an axis of the computation frame
 
   Using the previously defined zone, we define head losses in direction \c x
 
   \snippet cs_user_head_losses.c head_loss_1
 
-  \subsection alpha_tensor Example 2: alpha = 45 degres
+  \subsection alpha_tensor Example 2: head losses along a direction at 45 degrees
 
-  3x3 tensor: Example of head losses at alpha = 45 degres x,y
-  direction \c x resists by \c cku1 and \c y by \c cku2 \n
-  <tt> cku2 = 0 </tt> represents vanes as follows:
-  in coordinate system \c x, \c y
+  Necessary, we shall use here a 3x3 tensor to impose head losses at an angle \f$ alpha = 45^{o} \f$ with respect to x and y
+  direction of the computation frame. Namely, resistance is set along components \c x by \c cku1 and \c y by \c cku2 \n.
 
   \image html orthogonal_reference_frame_sketch.gif "Orthogonal reference frame sketch"
+
+  In the present example, it is chosen to set a head loss representing friction along \c X and to model a vane in Y direction
+  by setting <tt> ck1 = 0 </tt>.
 
   \snippet cs_user_head_losses.c head_loss_2
 
