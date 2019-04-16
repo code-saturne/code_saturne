@@ -381,6 +381,17 @@ cs_cell_sys_reset(int              n_fbyc,
   for (int i = 0; i < csys->n_dofs; i++)
     csys->intern_forced_ids[i] = -1; /* Not selected */
 
+#if defined(DEBUG) && !defined(NDEBUG)
+  memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
+  memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
+  memset(csys->bf_ids  , 0, sizeof(cs_lnum_t)*n_fbyc);
+  memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
+
+  memset(csys->dir_values, 0, s);
+  memset(csys->neu_values, 0, s);
+  memset(csys->rob_values, 0,
+         CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
+#else
   if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
       (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)) {
 
@@ -395,7 +406,7 @@ cs_cell_sys_reset(int              n_fbyc,
            CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
 
   } /* Boundary cell -> reset BC-related members */
-
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
