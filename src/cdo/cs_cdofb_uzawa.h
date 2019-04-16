@@ -193,6 +193,23 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
                              void                         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
+ *         using a Uzawa-Lagrangian Augmented approach. It builds the matrix
+ *         at each iteration
+ *
+ * \param[in] mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
+                                      const cs_navsto_param_t *nsp,
+                                      void                    *scheme_context);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
