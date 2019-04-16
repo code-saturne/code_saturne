@@ -389,24 +389,16 @@ cs_domain_post_init(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Process the computational domain after the resolution
+ * \brief  Post-processing of the computational domain after a resolution
  *
  * \param[in]  domain            pointer to a cs_domain_t structure
- * \param[in]  force_activation  true or false
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post(cs_domain_t  *domain,
-               bool          force_activation)
+cs_domain_post(cs_domain_t  *domain)
 {
   cs_timer_t  t0 = cs_timer_time();
-
-  /* Pre-stage for post-processing for the current time step */
-  cs_post_time_step_begin(domain->time_step);
-
-  if (force_activation) /* Force the activation of writers for postprocessing */
-    cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
   /* Extra-operations */
   /* ================ */
@@ -416,6 +408,9 @@ cs_domain_post(cs_domain_t  *domain,
 
   if (domain->cdo_context->force_advfield_update)
     cs_advection_field_update(domain->time_step->t_cur, true);
+
+  /* Pre-stage for post-processing for the current time step */
+  cs_post_time_step_begin(domain->time_step);
 
   /* User-defined extra operations */
   cs_user_extra_operations(domain);
@@ -432,8 +427,9 @@ cs_domain_post(cs_domain_t  *domain,
     /* Post-processing of adimensional numbers */
     if (_needs_adimensional_numbers()) {
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " ------------------------------------------------------------\n");
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         " ------------------------------------------------------------\n");
       cs_log_printf(CS_LOG_DEFAULT, "s- %20s %10s %10s %10s\n",
                     "Adim. number", "min", "max", "mean");
 
@@ -458,8 +454,9 @@ cs_domain_post(cs_domain_t  *domain,
                              domain->cdo_quantities,
                              domain->time_step);
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " ------------------------------------------------------------\n");
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         " ------------------------------------------------------------\n");
 
     } /* Needs to compute adimensional numbers */
 
