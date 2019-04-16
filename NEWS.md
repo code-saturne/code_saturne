@@ -3,6 +3,11 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix balance on vectorial work arrays (if no field id is provided) for example
+  used if dynamic reconstruction algorithm is enabled (iswdyn >= 1).
+  Internal coupling indicator was used uninitialiazed, blending coefficient
+  applied after slope test (blend_st) was forced to 0.
+
 - Fix in ALE wall BCs.
 
 - Fix CGNS files with NFACE_n elements and multiple sections.
