@@ -1302,7 +1302,10 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
    * step of an unsteady computation. */
   _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
-    /* Initialize the local system: matrix and rhs */
+  if (eqb->init_step)
+    eqb->init_step = false;
+
+  /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
@@ -1512,7 +1515,10 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
-    /* Initialize the local system: matrix and rhs */
+  if (eqb->init_step)
+    eqb->init_step = false;
+
+  /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
@@ -1791,15 +1797,20 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Detect the first call (in this case, we compute the initial source term)*/
   bool  compute_initial_source = false;
-  if (cs_equation_param_has_sourceterm(eqp)) {
+  if (eqb->init_step) {
 
-    if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
+    eqb->init_step = false;
+    if (cs_equation_param_has_sourceterm(eqp))
       compute_initial_source = true; /* First iteration */
 
-    else { /* Add contribution of the previous computed source term */
+  }
+  else {
 
-      /* Only vertices (and not cells) since there is an assembly process
-         on vertices (and not on cells) */
+    if (cs_equation_param_has_sourceterm(eqp)) {
+
+      /* Add contribution of the previous computed source term
+       * Only vertices (and not cells) since there is an assembly process
+       * on vertices (and not on cells) */
       for (cs_lnum_t v = 0; v < n_vertices; v++)
         rhs[v] += tcoef * eqc->source_terms[v];
       memset(eqc->source_terms, 0, n_vertices * sizeof(cs_real_t));
@@ -1814,8 +1825,9 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
         }
 
       } /* Algebraic or penalized enforcement is set */
-    }   /* Not the first time step */
-  } /* At least one source term is defined */
+    } /* At least one source term is defined */
+
+  }   /* Not the first time step */
 
   /* ------------------------- */
   /* Main OpenMP block on cell */

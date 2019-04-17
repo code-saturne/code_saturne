@@ -247,6 +247,8 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
 
   BFT_MALLOC(eqb, 1, cs_equation_builder_t);
 
+  eqb->init_step = true;
+
   /* Initialize flags used to knows what kind of cell quantities to build */
   eqb->msh_flag = 0;
   eqb->bd_msh_flag = 0;

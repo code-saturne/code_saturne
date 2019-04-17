@@ -1450,6 +1450,9 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   _vbs_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag,
              &dir_values, &forced_ids);
 
+  if (eqb->init_step)
+    eqb->init_step = false;
+
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
@@ -1642,6 +1645,9 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   _vbs_setup(t_cur + dt_cur, mesh, eqp, eqb, eqc->vtx_bc_flag,
              &dir_values,  &forced_ids);
+
+  if (eqb->init_step)
+    eqb->init_step = false;
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1897,9 +1903,10 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Detect the first call (in this case, we compute the initial source term)*/
   _Bool  compute_initial_source = false;
-  if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0) {
+  if (eqb->init_step) {
 
     compute_initial_source = true;
+    eqb->init_step = false;
 
   }
   else { /* Add contribution of the previous computed source term */
