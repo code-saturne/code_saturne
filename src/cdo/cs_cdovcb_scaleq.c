@@ -1764,9 +1764,13 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
   const cs_real_t  dt_cur = ts->dt[0];
-  const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
   const cs_real_t  inv_dtcur = 1/dt_cur;
   const cs_real_t  tcoef = 1 - eqp->theta;
+
+  /* Time_eval = (1-theta).t^n + theta.t^(n+1) = t^n + theta.dt
+   * since t^(n+1) = t^n + dt
+   */
+  const cs_real_t  time_eval = t_cur + eqp->theta*dt_cur;
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);

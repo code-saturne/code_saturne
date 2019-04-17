@@ -1988,7 +1988,10 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
     int  t_id = 0;
 #endif
 
-    const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
+    /* Time_eval = (1-theta).t^n + theta.t^(n+1) = t^n + theta.dt
+     * since t^(n+1) = t^n + dt
+     */
+    const cs_real_t  time_eval = t_cur + eqp->theta*dt_cur;
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
