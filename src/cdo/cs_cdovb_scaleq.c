@@ -1285,10 +1285,22 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.is_iso   = true;
   eqc->hdg_mass.inv_pty  = false;
   eqc->hdg_mass.type = CS_PARAM_HODGE_TYPE_VPCD;
-  eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_WBS;
   eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
-  eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+  if (eqp->do_lumping ||
+      eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG ||
+      eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
+
+    eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    eqc->get_mass_matrix = cs_hodge_vpcd_voro_get;
+
+  }
+  else { /* WBS algorithm */
+
+    eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_WBS;
+    eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+
+  }
 
   /* Assembly process */
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
