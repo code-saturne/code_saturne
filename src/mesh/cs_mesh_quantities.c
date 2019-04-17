@@ -2315,6 +2315,7 @@ _compute_face_vectors(int                dim,
   }
 
   /* Border faces */
+  cs_gnum_t w_count = 0;
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -2344,15 +2345,31 @@ _compute_face_vectors(int                dim,
                          + diipb[face_id*dim + 1] * diipb[face_id*dim + 1]
                          + diipb[face_id*dim + 2] * diipb[face_id*dim + 2]);
 
+      bool is_clipped = false;
       cs_real_t corri = 1.;
-      if (iip > 0.5 * b_dist[face_id])
+
+      if (iip > 0.5 * b_dist[face_id]) {
+        is_clipped = true;
         corri = 0.5 * b_dist[face_id] / iip;
+      }
 
       diipb[face_id*dim]    *= corri;
       diipb[face_id*dim +1] *= corri;
       diipb[face_id*dim +2] *= corri;
+      
+      if (is_clipped)
+        w_count++;
     }
   }
+
+  cs_parall_counter(&w_count, 1);
+
+  if (w_count > 0)
+    bft_printf(_("\n"
+                 "%llu boundary faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"),
+               (unsigned long long)w_count);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2499,8 +2516,9 @@ _compute_face_sup_vectors(const cs_lnum_t    n_cells,
 
   if (w_count > 0)
     bft_printf(_("\n"
-                 "%llu faces have a too large reconstruction distance.\n"
-                 "For these faces, reconstruction are limited.\n"),
+                 "%llu internal faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"
+                 "\n"),
                (unsigned long long)w_count);
 
 }
