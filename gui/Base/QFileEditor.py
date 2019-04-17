@@ -89,6 +89,7 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
         # Keywords (C or Fortran)
         self.kw = ['if', 'else', 'endif', '\#', 'include',
                    'void', 'int', 'integer', 'double',
+                   'subroutine', 'function', 'def',
                    'double precision', 'use', 'implicit none',
                    'allocatable', 'dimension', 'string', 'float',
                    'char', 'for', 'while', 'assert',
@@ -98,7 +99,8 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
         # Operators
         self.op = ['=', '==', '!=', '<', '>', '<=', '>=',
                    '\+', '-', '\*', '/', '\%', '\*\*',
-                   '\+=', '-=', '\*=', '/=', 'allocate',
+                   '\+=', '-=', '\*=', '/=',
+                   'allocate', 'deallocate',
                    '\^', '\|', '\&', '\|\|', '\&\&']
 
         # Braces
