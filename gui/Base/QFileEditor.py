@@ -33,6 +33,11 @@ This module defines the following classes:
 
 import sys
 from code_saturne.Base import QtGui, QtCore
+has_qstring = True
+try:
+    from code_saturne.Base.QtCore import QString
+except ImportError:
+    has_qstring = False
 
 #-------------------------------------------------------------------------------
 # Local functions and/or definitions
@@ -148,7 +153,10 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
             while index >= 0:
                 length = exp.matchedLength()
                 self.setFormat(index, length, rule.format)
-                index = text.indexOf(exp, index + length)
+                if has_qstring:
+                    index = text.indexOf(exp, index + length)
+                else:
+                    index = text.find(exp.cap(), index + length)
 
         self.setCurrentBlockState(0)
 
@@ -180,7 +188,10 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
             else:
                 self.setCurrentBlockState(ref_state)
-                length = text.length() - start + add
+                if has_qstring:
+                    length = text.length() - start + add
+                else:
+                    length = len(text) - start + add
 
             self.setFormat(start, length, format_styles['comment'])
             start = endExpression.indexIn(text, start + length)
