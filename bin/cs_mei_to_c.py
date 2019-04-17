@@ -783,8 +783,9 @@ class mei_to_c_interpreter:
                                                 _cs_math_internal_name[key]+'(')
 
         for line in exp_lines_comp:
-            if 'pi' in line:
+            if 'pi' in line and 'pi' not in known_symbols:
                 usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
+                known_symbols.append('pi')
 
         for s in required:
             known_symbols.append(s);
@@ -920,8 +921,9 @@ class mei_to_c_interpreter:
                                                 _cs_math_internal_name[key]+'(')
 
         for line in exp_lines_comp:
-            if 'pi' in line:
+            if 'pi' in line and 'pi' not in known_symbols:
                 usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
+                known_symbols.append('pi')
 
         if need_for_loop:
             ntabs += 1
@@ -1047,8 +1049,9 @@ class mei_to_c_interpreter:
                                                 _cs_math_internal_name[key]+'(')
 
         for line in exp_lines_comp:
-            if 'pi' in line:
+            if 'pi' in line and 'pi' not in known_symbols:
                 usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
+                known_symbols.append('pi')
 
         for r in required:
             known_symbols.append(r)
@@ -1179,8 +1182,9 @@ class mei_to_c_interpreter:
                                                 _cs_math_internal_name[key]+'(')
 
         for line in exp_lines_comp:
-            if 'pi' in line:
+            if 'pi' in line and 'pi' not in known_symbols:
                 usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
+                known_symbols.append('pi')
 
         for r in required:
             known_symbols.append(r)
