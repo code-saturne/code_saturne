@@ -1276,7 +1276,7 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
     BFT_MALLOC(c_grad_mvar, n_cells_ext, cs_real_63_t);
 
     /* Computation of c_mass_var gradient
-       (vectorial gradient, the periodicity has already been treated) */
+       (tensor gradient, the periodicity has already been treated) */
 
     cs_gradient_tensor(var_name,
                        gradient_type,

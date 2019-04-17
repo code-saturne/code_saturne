@@ -4193,7 +4193,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize cocg for lsq vector gradient.
+ * Initialize cocg for lsq vector and tensor gradient.
  *
  * parameters:
  *   cell_id          <-- cell id

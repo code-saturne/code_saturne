@@ -1053,7 +1053,9 @@ cs_turbulence_bc_rij_transform(int        is_sym,
 
   /* alpha(i,j)  for i in [1,3] and j in [4,6]: 9 terms */
 
+  /* Correcponding line to j */
   const int _jj_to_kk[3] = {0, 1, 0};
+  /* Corresponding column to j*/
   const int _jj_to_pp[3] = {1, 2, 2};
 
   for (int ii = 0; ii < 3; ii++) {
@@ -1080,6 +1082,7 @@ cs_turbulence_bc_rij_transform(int        is_sym,
       int kk = _jj_to_kk[ii];
       int pp = _jj_to_pp[ii];
 
+      /* Note: could be simplified because it is 0.5*alpha[jj+3][ii] */
       alpha[jj][ii + 3] =
           p_lg[0][kk] * p_lg[0][pp] * p_lg2[0][jj]
         + p_lg[1][kk] * p_lg[1][pp] * p_lg2[1][jj]
