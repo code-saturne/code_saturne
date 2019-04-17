@@ -27,6 +27,10 @@ Release 6.0.0 (unreleased)
 
 User changes:
 
+- GUI: Add a built-in text editor in the GUI. This allows for
+  * Editing user routines files directly within the GUI
+  * Opening log files in a RESU folder
+
 - GUI: allow disabling paralel IO for MED output writer.
 
 - GUI: significant reorganization
