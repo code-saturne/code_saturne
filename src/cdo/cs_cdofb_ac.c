@@ -1137,8 +1137,12 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
   const cs_real_t  dt_cur = ts->dt[0];
-  const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
   const double  tcoef = 1 - mom_eqp->theta;
+
+  /* Time_eval = (1-theta).t^n + theta.t^(n+1) = t^n + theta.dt
+   * since t^(n+1) = t^n + dt
+   */
+  const cs_real_t  time_eval = t_cur + mom_eqp->theta*dt_cur;
 
   /* Sanity checks */
   assert(cs_equation_param_has_time(mom_eqp) == true);
