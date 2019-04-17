@@ -473,10 +473,10 @@ cs_cell_sys_dump(const char             msg[],
                     cs_base_strtf(csys->has_robin),
                     cs_base_strtf(csys->has_sliding));
       cs_log_printf(CS_LOG_DEFAULT, ">> Boundary faces\n"
-                    ">> %-10s | %-10s | %-10s\n", "_ID", "ID", "FLAG");
+                    ">> %-8s | %-8s | %-6s\n", "_ID", "ID", "FLAG");
       for (int i = 0; i < csys->n_bc_faces; i++) {
         short int f = csys->_f_ids[i];
-        cs_log_printf(CS_LOG_DEFAULT, ">> %10d | %10d | %10d\n",
+        cs_log_printf(CS_LOG_DEFAULT, ">> %8d | %8d | %6d\n",
                       f, csys->bf_ids[f], csys->bf_flag[f]);
       }
     }
@@ -486,13 +486,13 @@ cs_cell_sys_dump(const char             msg[],
     else
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
 
-    cs_log_printf(CS_LOG_DEFAULT, ">> %-10s | %-10s | %-10s | %-10s | %-10s |"
-                  " %-10s | %-10s\n",
+    cs_log_printf(CS_LOG_DEFAULT, ">> %-8s | %-10s | %-10s | %-10s | %-8s |"
+                  " %-6s | %-10s\n",
                   "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED", "FLAG",
                   "DIR_VALS");
     for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e |"
-                    " %10d | %10d | % -.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, ">> %8d | % -.3e | % -.3e | % -.3e |"
+                    " %8d | %6d | % -.3e\n",
                     csys->dof_ids[i], csys->rhs[i], csys->source[i],
                     csys->val_n[i], csys->intern_forced_ids[i],
                     csys->dof_flag[i], csys->dir_values[i]);
