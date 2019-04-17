@@ -1442,7 +1442,7 @@ class mei_to_c_interpreter:
                 if zone._nature == 'free_inlet_outlet':
                     name = "head_loss"
                     req  = ['K']
-                    sym  = ['t', 'dt', 'iter']
+                    sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
                     for (nb_var, val) in NotebookModel(self.case).getNotebookList():
                         sym.append((nb_var, 'value (notebook) = ' + str(val)))
 
@@ -1454,7 +1454,7 @@ class mei_to_c_interpreter:
                 # Hydraulic head for groundwater flow
                 if zone._nature == 'groundwater':
                     c = boundary.getHydraulicHeadChoice()
-                    sym  = ['t', 'dt', 'iter']
+                    sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
                     for (name, val) in NotebookModel(self.case).getNotebookList():
                         sym.append((name, 'value (notebook) = ' + str(val)))
 
