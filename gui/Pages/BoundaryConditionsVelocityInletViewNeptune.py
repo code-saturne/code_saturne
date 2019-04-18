@@ -51,6 +51,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.model.LocalizationModelNeptune import LocalizationModel, Zone
 from code_saturne.model.BoundaryNeptune import Boundary
+from code_saturne.model.NotebookModel import NotebookModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
@@ -115,6 +116,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.__currentField = fieldId
         self.groupBoxCompressible.hide()
         self.groupBoxGasCombustion.hide()
+        self.notebook = NotebookModel(self.__case)
 
 
     def showWidget(self, boundary):
@@ -246,6 +248,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                    ('dt', 'time step'),
                    ('t', 'current time'),
                    ('iter', 'number of iteration')]
+
+        for (name, val) in self.notebook.getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),
