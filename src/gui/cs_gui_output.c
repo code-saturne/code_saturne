@@ -633,7 +633,7 @@ cs_gui_postprocess_activate(void)
 
     const char *frequency_choice
       = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "frequency"),
-                             "perio");
+                             "period");
 
     if (cs_gui_strcmp(frequency_choice, "formula")) {
       const char *formula = cs_tree_node_get_child_value_str(tn, "frequency");
