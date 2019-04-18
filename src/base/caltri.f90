@@ -610,6 +610,13 @@ if (nftcdt.gt.0) then
 endif
 
 !===============================================================================
+! Initialization for the Synthetic turbulence Inlets
+!===============================================================================
+
+nent = 0
+call defsyn(nent)
+
+!===============================================================================
 ! Possible restart
 !===============================================================================
 
@@ -652,6 +659,10 @@ if (isuite.eq.1) then
   ! Lagrangian module restart (particles) */
   if (iilagr.gt.0) then
     call laglec()
+  endif
+
+  if (isuisy.eq.1) then
+    call lecsyn('les_inflow'//c_null_char)
   endif
 
   ! TODO
@@ -709,18 +720,6 @@ if (nfpt1t.gt.0) then
 
   endif
 
-endif
-
-!===============================================================================
-! Initialization for the Synthetic turbulence Inlets
-!===============================================================================
-
-nent = 0
-
-call defsyn(nent)
-
-if (isuisy.eq.1) then
-  call lecsyn('les_inflow'//c_null_char)
 endif
 
 !===============================================================================
