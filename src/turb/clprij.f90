@@ -444,20 +444,26 @@ do iel = 1, ncel
     eigen_min = minval(eigen_vals(1:3))
     eigen_max = maxval(eigen_vals(1:3))
 
+    ! If negative eigen value, return to isotropie
     if ( (eigen_min .le. (eigen_tol*eigen_max)) .or. &
       (eigen_min .le. epzero) ) then
 
       is_clipped = 1
 
-      eigen_offset = (eigen_tol - eigen_min) * trrij
-
+      eigen_min = min(eigen_min, - eigen_tol)
       eigen_offset = max(eigen_offset, epzero*rijref)
+      eigen_offset = min(- eigen_min / (1.d0/3.d0 - eigen_min) + 0.1d0, 1.d0)
 
-      do isou = 1, 3
-        cvar_rij(isou,iel) = cvar_rij(isou,iel) + eigen_offset
+
+      do isou = 1, 6
+        cvar_rij(isou,iel) = (1.d0 - eigen_offset) * cvar_rij(isou,iel)
+
+        if (isou.le.3) then
+          cvar_rij(isou,iel) = cvar_rij(isou,iel) + trrij * eigen_offset / 3.d0
+        endif
 
         if (clip_r_id.ge.0) &
-          cpro_rij_clipped(isou, iel) = eigen_offset
+          cpro_rij_clipped(isou, iel) = eigen_offset * cvar_rij(isou,iel)
 
         iclrij(isou) = iclrij(isou) + 1
       end do
