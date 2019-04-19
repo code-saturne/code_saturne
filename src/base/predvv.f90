@@ -1051,20 +1051,20 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
 
   ! Flux computation options
   f_id = -1
-  init = 1;
-  inc  = 1;
-  iflmb0 = 0;
+  init = 1
+  inc  = 1
+  iflmb0 = 0
   if(itytur.eq.3) then
     call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
   else
     call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
   end if
-  nswrgp = vcopt%nswrgr;
-  imligp = vcopt%imligr;
-  iwarnp = vcopt%iwarni;
-  epsrgp = vcopt%epsrgr;
-  climgp = vcopt%climgr;
-  itypfl = 1;
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  itypfl = 1
 
   allocate(tflmas(3,nfac))
   allocate(tflmab(3,nfabor))

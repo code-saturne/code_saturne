@@ -4279,14 +4279,13 @@ _init_cocg_lsq(cs_lnum_t                     cell_id,
 
     cs_lnum_t face_id = cell_b_faces[i];
 
-    cs_real_t udbfs = 1. / fvq->b_face_surf[face_id];
-
-    for (int ii = 0; ii < 3; ii++)
-      dc[ii] = udbfs * b_face_normal[face_id][ii];
+    cs_real_3_t normal;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(b_face_normal[face_id], normal);
 
     for (int ii = 0; ii < 3; ii++) {
       for (int jj = 0; jj < 3; jj++)
-        cocg[ii][jj] += dc[ii]*dc[jj];
+        cocg[ii][jj] += normal[ii] * normal[jj];
     }
 
   }
@@ -4379,13 +4378,11 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
 
     /* build cocgb_v matrix */
 
-    cs_real_t udbfs = 1. / b_face_surf[face_id];
     const cs_real_t *restrict iipbf = diipb[face_id];
 
-    /* db = I'F / ||I'F|| */
-    cs_real_t  nb[3];
-    for (int ii = 0; ii < 3; ii++)
-      nb[ii] = udbfs * b_face_normal[face_id][ii];
+    cs_real_3_t nb;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(b_face_normal[face_id], nb);
 
     cs_real_t db = 1./b_dist[face_id];
     cs_real_t db2 = db*db;
@@ -4417,13 +4414,13 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
         int rr = _33_9_idx[pp][0];
         int ss = _33_9_idx[pp][1];
 
-        /* part from derivative of 1/2*|| B*t*IIp/db ||^2 */
+        /* part from derivative of 1/2*|| B*t*II'/db ||^2 */
         cs_real_t cocgv = 0.;
         for (int mm = 0; mm < 3; mm++)
           cocgv += bt[mm][kk]*bt[mm][rr];
         cocgb_v[ll_9+pp] += cocgv*(iipbf[qq]*iipbf[ss])*db2;
 
-        /* part from derivative of -< t*nb , B*t*IIp/db > */
+        /* part from derivative of -< t*nb , B*t*II'/db > */
         cocgb_v[ll_9+pp] -= (  nb[ss]*bt[rr][kk]*iipbf[qq]
                              + nb[qq]*bt[kk][rr]*iipbf[ss])
                              *db;
@@ -4436,7 +4433,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
       int pp = _33_9_idx[ll][0];
       int qq = _33_9_idx[ll][1];
 
-      /* part from derivative of < (B-1)*t*IIp/db , (A+(B-1)*v)/db > */
+      /* part from derivative of < (B-1)*t*II'/db , (A+(B-1)*v)/db > */
       cs_real_t rhsv = 0.;
       for (int rr = 0; rr < 3; rr++) {
         rhsv +=   bt[rr][pp]*diipb[face_id][qq]
@@ -4584,7 +4581,7 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     cell_id,
         cs_real_t cocgt = 0.;
         for (int mm = 0; mm < 6; mm++)
           cocgt += bt[mm][kk]*bt[mm][rr];
-        cocgb_t[ll_18+pp] += cocgt*(iipbf[qq]*iipbf[ss])*db2;
+        cocgb_t[ll_18+pp] += cocgt * (iipbf[qq]*iipbf[ss]) * db2;
 
         /* part from derivative of -< t*nb , B*t*IIp/db > */
         cocgb_t[ll_18+pp] -= (  nb[ss]*bt[rr][kk]*iipbf[qq]

@@ -2271,7 +2271,7 @@ _compute_face_vectors(int                dim,
 
   cs_real_t dipjp, psi, pond;
   cs_real_t surfnx, surfny, surfnz;
-  cs_real_t vecigx, vecigy, vecigz, vecijx, vecijy, vecijz;
+  cs_real_t vecijx, vecijy, vecijz;
 
   /* Interior faces */
 
@@ -2321,29 +2321,22 @@ _compute_face_vectors(int                dim,
 
     cell_id = b_face_cells[face_id];
 
-    /* Normalized normal */
-    surfnx = b_face_normal[face_id*dim]     / b_face_surf[face_id];
-    surfny = b_face_normal[face_id*dim + 1] / b_face_surf[face_id];
-    surfnz = b_face_normal[face_id*dim + 2] / b_face_surf[face_id];
+    cs_real_3_t normal;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(&b_face_normal[face_id*dim], normal);
 
-    /* ---> IG */
-    vecigx = b_face_cog[face_id*dim]     - cell_cen[cell_id*dim];
-    vecigy = b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1];
-    vecigz = b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2];
+    /* ---> IF */
+    cs_real_t vec_if[3] = {
+      b_face_cog[face_id*dim]     - cell_cen[cell_id*dim],
+      b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1],
+      b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2]};
 
-    /* ---> PSI = IG.NIJ */
-    psi = vecigx*surfnx + vecigy*surfny + vecigz*surfnz;
-
-    /* ---> DIIPB = IG - (IG.NIJ)NIJ */
-    diipb[face_id*dim]     = vecigx - psi*surfnx;
-    diipb[face_id*dim + 1] = vecigy - psi*surfny;
-    diipb[face_id*dim + 2] = vecigz - psi*surfnz;
+    /* ---> diipb = IF - (IF.NIJ)NIJ */
+    cs_math_3_orthogonal_projection(normal, vec_if, &diipb[face_id*dim]);
 
     /* Limiter on boundary face reconstruction */
     if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
-      double iip = sqrt(   diipb[face_id*dim]     * diipb[face_id*dim]
-                         + diipb[face_id*dim + 1] * diipb[face_id*dim + 1]
-                         + diipb[face_id*dim + 2] * diipb[face_id*dim + 2]);
+      cs_real_t iip = cs_math_3_norm(&diipb[face_id*dim]);
 
       bool is_clipped = false;
       cs_real_t corri = 1.;
