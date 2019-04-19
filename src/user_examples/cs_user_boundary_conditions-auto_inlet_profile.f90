@@ -338,7 +338,11 @@ else
     call parrsm(2, acc)
   endif
 
-  fmul = fmprsc/(acc(1)/acc(2)) ! 1 / estimate flow multiplier
+  if (acc(1).le.epzero) then
+     fmul = 0.d0 ! zero velocity in bulk domain
+  else
+     fmul = fmprsc/(acc(1)/acc(2)) ! 1 / estimate flow multiplier
+  endif
 
   ! Apply BC
 
