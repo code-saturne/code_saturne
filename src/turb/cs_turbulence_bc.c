@@ -985,7 +985,7 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
  * \f$\tens{P}_{lg}\f$ is the change of basis orthogonal matrix from local
  * to global reference frame.
 
- * \f$\tens{\alpha}\f$ is a 6 by 6 matrix such that:
+ * \f$\tens{\alpha}\f$ is a 6 by 6 matrix defined such that:
  * \f[
  * \vect{R}_{g,\fib} = \tens{\alpha} \vect{R}_{g,\centip} + \vect{R}_{g}^*
  * \f]
@@ -995,7 +995,7 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
  *                              R_{g,12},R_{g,13},R_{g,23}\right)}
  * \f].
  *
- * \f$\tens{\alpha}\f$ is defined so that \f$ \tens{R}_{g,\fib} \f$ is computed
+ * \f$ \tens{R}_{g,\fib} \f$ should be computed
  * as a function of \f$\tens{R}_{g,\centip}\f$ as follows:
  * \f[
  * \tens{R}_{g,\fib}=\tens{P}_{lg}\tens{R}_{l,\fib}\transpose{\tens{P}_{lg}}
@@ -1005,15 +1005,15 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
  * \f[
  * \tens{R}_{l,\fib} =
  * \begin{bmatrix}
- * R_{l,11,\centip}   &   u^* u_k        & c R_{l,13,\centip}\\
- *   u^* u_k          & R_{l,22,\centip} & 0                 \\
+ * R_{l,11,\centip}   &   0        & c R_{l,13,\centip}\\
+ *   0          & R_{l,22,\centip} & 0                 \\
  * c R_{l,13,\centip} & 0                & R_{l,33,\centip}
  * \end{bmatrix} +
  * \underbrace{\begin{bmatrix}
- *                 0  &   u^* u_k        & 0                 \\
- *   u^* u_k          & 0                & 0                 \\
+ *                 0  &   (1-c) u^* u_k        & 0                 \\
+ *   (1-c) u^* u_k          & 0                & 0                 \\
  * 0                  & 0                & 0
- * \end{bmatrix}}_{\tens{R}_l^*}
+ * \end{bmatrix}}_{\vect{R}_l^*}
  * \f]
  *
  * and
@@ -1022,6 +1022,8 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
  *
  * Constant c is chosen depending on the type of the boundary face:
  * \f$c = 0\f$ at a wall face, \f$c = 1\f$ at a symmetry face.
+ *
+ *
  *
  * \param[in]      is_sym  Constant c in description above
  *                         (1 at a symmetry face, 0 at a wall face)
