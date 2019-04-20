@@ -509,10 +509,6 @@ cs_lagr_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal diameter");
   if (cs_glob_lagr_boundary_interactions->iencckbd)
     cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal coke fraction");
-  if (cs_glob_lagr_boundary_interactions->nusbor)
-    cs_log_printf(CS_LOG_SETUP,
-                  _("    number of additional user statistics: %d\n"),
-                  cs_glob_lagr_boundary_interactions->nusbor);
 
   /* Volumic statistics   */
 

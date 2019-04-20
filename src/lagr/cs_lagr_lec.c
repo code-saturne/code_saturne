@@ -116,7 +116,7 @@ CS_PROCF(lagout, LAGOUT)(void)
 void
 cs_restart_lagrangian_checkpoint_read(void)
 {
-  cs_lnum_t mstits, musbor, nberro;
+  cs_lnum_t mstits, nberro;
   cs_lnum_t mstist, jdstnt, nclsto, mstbor, jsttio;
   cs_lnum_t jturb , jtytur;
 
@@ -534,66 +534,6 @@ cs_restart_lagrangian_checkpoint_read(void)
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
                ficsui);
-
-        }
-
-        /* --> Stats supplementaires utilisateurs   */
-        {
-          cs_int_t tabvar[1];
-          char rubriq[] = "nombre_stats_frontieres_utilisateur";
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
-                                           CS_MESH_LOCATION_NONE,
-                                           1, CS_TYPE_cs_int_t, tabvar);
-          musbor  = tabvar[0];
-        }
-        if (cs_glob_lagr_boundary_interactions->nusbor < musbor)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-             "@\n"
-             "@    L'indicateur du  nombre de statistiques aux frontieres\n"
-             "@      supplementaires utilisateur est modifie,\n"
-             "@      ou n'a pas pu etre relu.\n"
-             "@\n"
-             "@              NUSBOR\n"
-             "@    AMONT : %d      ACTUEL : %d\n"
-             "@\n"
-             "@    Si ACTUEL > AMONT, on initialise les %d 1eres\n"
-             "@      statistiques supplementaires actuelles avec celles\n"
-             "@      du fichier suite, les autres sont initialisees a zero.\n"
-             "@\n"
-             "@    Si ACTUEL < AMONT, on initialise les %d 1eres\n"
-             "@      statistiques supplementaires actuelles avec les 1eres\n"
-             "@      du fichier suite, le reste des statistiques du fichier\n"
-             "@      suite sont perdues.\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             musbor,
-             cs_glob_lagr_boundary_interactions->nusbor,
-             cs_glob_lagr_boundary_interactions->nusbor,
-             cs_glob_lagr_boundary_interactions->nusbor);
-
-        /*  Read boundary stats. No error treatment, we assume changes are
-            due to physical model changes. */
-
-        for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->n_boundary_stats; ivar++) {
-
-          char rubriq[32];
-          sprintf(rubriq, "stat_bord_%s",
-                  cs_glob_lagr_boundary_interactions->nombrd[ivar]);
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
-                                           CS_MESH_LOCATION_INTERIOR_FACES,
-                                           1, CS_TYPE_cs_real_t,
-                                           &bound_stat[nfabor * ivar]);
 
         }
 
@@ -1641,15 +1581,6 @@ cs_restart_lagrangian_checkpoint_write(void)
                                  "temps_stats_frontieres_stationnaires",
                                  CS_MESH_LOCATION_NONE,
                                  1, CS_TYPE_cs_real_t, tabvar);
-      }
-
-      {
-        cs_lnum_t tabvar[1] = {cs_glob_lagr_boundary_interactions->nusbor};
-
-        cs_restart_write_section(cs_lag_stat_restart,
-                                 "nombre_stats_frontieres_utilisateur",
-                                 CS_MESH_LOCATION_NONE,
-                                 1, CS_TYPE_cs_int_t, tabvar);
       }
 
       /* Boundary statistics */
