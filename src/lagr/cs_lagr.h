@@ -777,10 +777,6 @@ typedef struct {
 
 typedef struct {
 
-  /*! number of additional user data to record for the calculation
-    of additional boundary statistics in \ref bound_stat */
-  int  nusbor;
-
   /*! number of iterations during which steady boundary statistics have
     been accumulated.
     Useful if \ref isttio=1 and \ref nstist inferior
@@ -867,9 +863,6 @@ typedef struct {
 
   /*! id for coke fraction of fouled coal particles */
   int  iencck;
-
-  /*!  supplementary user boundary statistics */
-  int  *iusb;
 
   /*! the recordings in \ref bound_stat at every particle/boundary interaction are
       cumulated values (possibly reset to zero at every iteration in the

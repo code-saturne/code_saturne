@@ -197,10 +197,6 @@ _free_lagr_encrustation_pointers(void)
 static void
 _init_lagr_boundary_interaction_pointers(void)
 {
-  if (cs_glob_lagr_boundary_interactions->iusb == NULL)
-    BFT_MALLOC(cs_glob_lagr_boundary_interactions->iusb,
-               cs_glob_lagr_boundary_interactions->nusbor, int);
-
   if (cs_glob_lagr_boundary_interactions->imoybr == NULL)
     BFT_MALLOC(cs_glob_lagr_boundary_interactions->imoybr,
                cs_glob_lagr_const_dim->nusbrd + 10,
@@ -214,7 +210,6 @@ _init_lagr_boundary_interaction_pointers(void)
 static void
 _free_lagr_boundary_interaction_pointers(void)
 {
-  BFT_FREE(cs_glob_lagr_boundary_interactions->iusb);
   BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
 }
 
@@ -334,9 +329,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   cs_glob_lagr_boundary_interactions->iencmabd = 0;
   cs_glob_lagr_boundary_interactions->iencdibd = 0;
   cs_glob_lagr_boundary_interactions->iencckbd = 0;
-  cs_glob_lagr_boundary_interactions->nusbor = 0;
 
-  for (int ii = 0; ii < cs_glob_lagr_const_dim->nusbrd + 10; ii++)
+  for (int ii = 0; ii < 10; ii++)
     cs_glob_lagr_boundary_interactions->imoybr[ii] = 0;
 
   /* User setup
@@ -1981,12 +1975,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                 cs_glob_lagr_boundary_interactions->ivitbd,
                                 0, 2);
 
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("in Lagrangian module"),
-                                "cs_glob_lagr_boundary_interactions->nusbor",
-                                cs_glob_lagr_boundary_interactions->nusbor,
-                                0, cs_glob_lagr_const_dim->nusbrd + 1);
-
   if (lagr_model->physical_model == 2 &&
       lagr_model->fouling == 1) {
 
@@ -2197,21 +2185,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     /* Activate the number of recorded particle/boundary interactions
      * with fouling*/
     cs_glob_lagr_boundary_interactions->iencnbbd = 1;
-
-  }
-
-  if (cs_glob_lagr_boundary_interactions->nusbor > 0) {
-
-    for (int ii = 0; ii<cs_glob_lagr_boundary_interactions->nusbor; ii++) {
-
-      irf++;
-      char buf[64];
-      cs_glob_lagr_boundary_interactions->iusb[ii] = irf;
-      snprintf(buf, 64, "addRec%d", ii);
-      _copy_boundary_varname(irf, buf);
-      cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-    }
 
   }
 

@@ -299,8 +299,7 @@ cs_lagr_brownian_t *cs_glob_lagr_brownian = &_cs_glob_lagr_brownian;
 
 /* lagr boundary interactions structure and associated pointer */
 static cs_lagr_boundary_interactions_t _cs_glob_lagr_boundary_interactions
-  = {.nusbor = 0,
-     .npstf = 0,
+  = {.npstf = 0,
      .npstft = 0,
      .has_part_impact_nbr = 0,
      .iflmbd = 0,
@@ -321,7 +320,6 @@ static cs_lagr_boundary_interactions_t _cs_glob_lagr_boundary_interactions
      .iencma = -1,
      .iencdi = -1,
      .iencck = -1,
-     .iusb = NULL,
      .imoybr = NULL,
      .inclg = -1,
      .inclgt = -1,
@@ -1150,7 +1148,6 @@ cs_lagr_finalize(void)
 
   /* boundary interaction pointers */
 
-  BFT_FREE(cs_glob_lagr_boundary_interactions->iusb);
   BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
 
   for (int i = 0; i < cs_glob_lagr_dim->n_boundary_stats; i++)
@@ -2123,10 +2120,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   (const cs_real_3_t *)piil,
                   (const cs_real_33_t *)bx,
                   tsfext,
-                  extra->grad_pr,
-                  extra->grad_vel,
+                  (const cs_real_3_t *)extra->grad_pr,
+                  (const cs_real_33_t *)extra->grad_vel,
                   terbru,
-                  vislen,
+                  (const cs_real_t *)vislen,
                   &nresnew);
 
       /* Save bx values associated with particles for next pass */

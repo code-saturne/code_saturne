@@ -563,15 +563,6 @@ cs_user_lagr_model(void)
     cs_glob_lagr_boundary_interactions->iencckbd      = 0;
   }
 
-  /* Additional user information to be recorded
-     ------------------------------------------
-     (for instance, erosion rate, temperature..)
-     * these additional recordings are stored in the bound_stat array
-     * here we prescribe the nusbor number of additional recordings
-     * the max value of this number is nusbrd=10 */
-
-  cs_glob_lagr_boundary_interactions->nusbor = 0;
-
   /* Name of the recordings for display,
      Average in time of particle average
      of the boundary statistics

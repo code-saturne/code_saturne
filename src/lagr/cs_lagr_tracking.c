@@ -1868,11 +1868,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     if (cs_glob_lagr_boundary_interactions->ivitbd > 0)
       bound_stat[cs_glob_lagr_boundary_interactions->ivit * n_b_faces + face_id]
         += norm_vel * particle_stat_weight;
-
-    /* User statistics management. By defaut, set to zero */
-    if (cs_glob_lagr_boundary_interactions->nusbor > 0)
-      for (int n1 = 0; n1 < cs_glob_lagr_boundary_interactions->nusbor; n1++)
-        bound_stat[cs_glob_lagr_boundary_interactions->iusb[n1] * n_b_faces + face_id] = 0.0;
   }
 
   return particle_state;
