@@ -336,8 +336,6 @@ do ifac = 1, nfabor
         !  Tx, Ty, Tz is not used (we cancel the velocity), so we assign any
         !  value (zero for example)
 
-        txn0 = 0.d0
-
         tx  = 0.d0
         ty  = 0.d0
         tz  = 0.d0
