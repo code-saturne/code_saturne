@@ -1334,21 +1334,15 @@ cs_lagr_injection(int        time_id,
                                   time_id,
                                   vislen);
 
-        /* for safety, build values at previous time step */
+        /* Advanced user modification:
 
-        for (cs_lnum_t p_id = particle_range[0];
-             p_id < particle_range[1];
-             p_id++)
-          cs_lagr_particles_current_to_previous(p_set, p_id);
+           WARNING: the user may change the particle coordinates but is
+           prevented from changing the previous location (otherwise, if
+           the particle is not in the same cell anymore, it would be lost).
 
-        /* advanced user modification:
-         * WARNING: the user may change the particle coordinates BUT it is
-         * forbidden to change the previous location (otherwise, if the particle
-         * is not in the same cell anymore, it will be lost for ever).
-         *
-         * Moreover, a precaution has to be taken when calling "current to previous"
-         * in the tracking
-         * */
+           Moreover, a precaution has to be taken when calling
+           "current to previous" in the tracking stage.
+        */
 
         {
           cs_lnum_t *particle_face_ids = NULL;
@@ -1358,13 +1352,57 @@ cs_lagr_injection(int        time_id,
                                                        z_elt_ids,
                                                        elt_particle_idx);
 
+          cs_lnum_t *saved_cell_num;
+          cs_real_3_t *saved_coords;
+          BFT_MALLOC(saved_cell_num, n_inject, cs_lnum_t);
+          BFT_MALLOC(saved_coords, n_inject, cs_real_3_t);
+
+          for (cs_lnum_t i = 0; i < n_inject; i++) {
+            cs_lnum_t p_id = particle_range[0] + i;
+
+            saved_cell_num[i] = cs_lagr_particles_get_lnum(p_set,
+                                                           p_id,
+                                                           CS_LAGR_CELL_NUM);
+            const cs_real_t *p_coords
+              = cs_lagr_particles_attr_const(p_set,
+                                             p_id,
+                                             CS_LAGR_COORDS);
+            for (cs_lnum_t j = 0; j < 3; j++)
+              saved_coords[i][j] = p_coords[j];
+          }
+
           cs_user_lagr_in(p_set,
                           zis,
                           particle_range,
                           particle_face_ids,
                           vislen);
 
+          /* For safety, build values at previous time step, but reset saved values
+             for previous cell number and particle coordinates */
+
+          for (cs_lnum_t i = 0; i < n_inject; i++) {
+            cs_lnum_t p_id = particle_range[0] + i;
+
+            cs_lagr_particles_current_to_previous(p_set, p_id);
+
+            cs_lagr_particles_set_lnum_n(p_set,
+                                         p_id,
+                                         1,
+                                         CS_LAGR_CELL_NUM,
+                                         saved_cell_num[i]);
+            cs_real_t *p_coords
+              = cs_lagr_particles_attr_n(p_set,
+                                         p_id,
+                                         1,
+                                         CS_LAGR_COORDS);
+            for (cs_lnum_t j = 0; j < 3; j++)
+              p_coords[j] = saved_coords[i][j];
+          }
+
+          BFT_FREE(saved_coords);
+          BFT_FREE(saved_cell_num);
           BFT_FREE(particle_face_ids);
+
         }
 
         /* check some particle attributes consistency */
