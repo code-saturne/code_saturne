@@ -2349,7 +2349,7 @@ _compute_face_vectors(int                dim,
       diipb[face_id*dim]    *= corri;
       diipb[face_id*dim +1] *= corri;
       diipb[face_id*dim +2] *= corri;
-      
+
       if (is_clipped)
         w_count++;
     }

@@ -449,7 +449,7 @@ def _SetCaseLocation(theCasePath):
         meshObject = getSObject(studyObject,"MESH")
         if meshObject != None:
             UpdateSubTree(meshObject)
-        
+
 
 def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
                       theCopyOpt, theNameRef = "", theSyrthesOpt =False, theSyrthesCase = "",theNprocs=""):
