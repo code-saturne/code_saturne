@@ -127,7 +127,7 @@ class CFDGUI_Management:
 
 
     def getElem(self, elempos):
-        
+
         d = {}
         if elempos not in list(range(self.nbelem)):
             return d

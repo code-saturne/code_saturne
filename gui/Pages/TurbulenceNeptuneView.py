@@ -337,7 +337,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
             new_pmodel = from_qvariant(value, to_text_string)
             self._data[row][col] = new_pmodel
             self.mdl.setTurbulenceModel(FieldId, self.dicoV2M[new_pmodel])
-            
+
             # Security check for mixing length, which cannot have a formula on inlet!
             if new_pmodel == 'mixing length':
                 from code_saturne.model.LocalizationModel import LocalizationModel
