@@ -1351,7 +1351,9 @@ class Studies(object):
         Create all studies and all cases.
         """
         for l, s in self.studies:
-            self.reporting("  o Create study " + l)
+            create_msg = "  o Create study " + l
+            dest = True
+            self.report_action_location(create_msg, dest)
             log_lines = s.create_cases()
             for line in log_lines:
                 self.reporting(line)
