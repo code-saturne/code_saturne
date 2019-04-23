@@ -3,6 +3,8 @@ Release 5.3.3 - Unreleased
 
 Bug fixes:
 
+- Fix in ALE wall BCs.
+
 - Fix CGNS files with NFACE_n elements and multiple sections.
 
 - Fix link issue on MacOs and possibly other static builds with

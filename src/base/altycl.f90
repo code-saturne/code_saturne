@@ -407,7 +407,7 @@ do ifac = 1, nfabor
         rcodcz = rcodcl(ifac,iw,1)
         rcodsn = (rcodcl(ifac,iuma,1)-rcodcx)*rnx                 &
              +   (rcodcl(ifac,ivma,1)-rcodcy)*rny                 &
-             +   (rcodcl(ifac,ivma,1)-rcodcz)*rnz
+             +   (rcodcl(ifac,iwma,1)-rcodcz)*rnz
         rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
         rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
         rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz
