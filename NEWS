@@ -5,6 +5,8 @@ Release 4.0.10 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in ALE wall BCs.
+
 - Fix memory leak leading to crash in legacy porosity model.
 
 - Compressible: fix density time scheme in transported passive scalar/vector
@@ -13,7 +15,7 @@ Bug fixes:
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
 
-- Fix allocation of pmappers to scalar fields in atmospheric aerosols model. 
+- Fix allocation of pmappers to scalar fields in atmospheric aerosols model.
 
 
 Release 4.0.9 (26 Sep 2018)
