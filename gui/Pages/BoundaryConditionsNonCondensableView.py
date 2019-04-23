@@ -94,7 +94,7 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
         self.__currentField = fieldId
 
@@ -105,14 +105,14 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
         """
         self.__boundary = boundary
 
-        NonCondensableList = NonCondensableModel(self.__case).getNonCondensableByFieldId(self.__currentField)
+        NonCondensableList = NonCondensableModel(self.case).getNonCondensableByFieldId(self.__currentField)
 
         if len(NonCondensableList) > 0 :
             for nb in range(len(self.__NonCondensablemodel.getItems())):
                 self.__NonCondensablemodel.delItem(0)
 
             for var in NonCondensableList :
-                name = NonCondensableModel(self.__case).getNonCondLabel(var)
+                name = NonCondensableModel(self.case).getNonCondLabel(var)
                 self.__NonCondensablemodel.addItem(self.tr(name), var)
 
             self.__currentNonCondensable = NonCondensableList[0]

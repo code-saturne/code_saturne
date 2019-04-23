@@ -7,6 +7,13 @@ from types import MethodType
 from QtGui import *
 from QtWidgets import *
 from QtCore import *
+
+has_qstring = True
+try:
+    from code_saturne.Base.QtCore import QString
+except ImportError:
+    has_qstring = False
+
 # ------------------------------------------------------------------------------
 # QTextEdit with autocompletion
 def CompletionTextEdit(target):
@@ -28,14 +35,14 @@ def CompletionTextEdit(target):
 
     def insertCompletion(target, completion):
         tc = target.textCursor()
-        if QT_API == "PYQT4":
+        if QT_API == "PYQT4" and has_qstring:
             extra = (completion.length() -
                 target.completer.completionPrefix().length())
             tc.movePosition(QTextCursor.Left)
             tc.movePosition(QTextCursor.EndOfWord)
             tc.insertText(completion.right(extra))
             target.setTextCursor(tc)
-        elif QT_API == "PYQT5":
+        elif QT_API == "PYQT5" or has_qstring == False:
             extra = (len(completion) -
                 len(target.completer.completionPrefix()))
             tc.movePosition(QTextCursor.Left)
@@ -73,11 +80,11 @@ def CompletionTextEdit(target):
         ## ctrl or shift key on it's own??
         ctrlOrShift = event.modifiers() in (Qt.ControlModifier ,
                     Qt.ShiftModifier)
-        if QT_API == "PYQT4":
+        if QT_API == "PYQT4" and has_qstring:
             if ctrlOrShift and event.text().isEmpty():
                 # ctrl or shift key on it's own
                 return
-        elif QT_API == "PYQT5":
+        elif QT_API == "PYQT5" or has_qstring == False:
             if ctrlOrShift and len(event.text()) < 1:
                 # ctrl or shift key on it's own
                 return
@@ -89,14 +96,14 @@ def CompletionTextEdit(target):
         completionPrefix = target.textUnderCursor()
 
         # EOW test and compatibily with PyQt4/PyQt5
-        if QT_API == "PYQT4":
+        if QT_API == "PYQT4" and has_qstring:
             eow = QString("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-=") #end of word
             if (not isShortcut and (hasModifier or event.text().isEmpty() or
             completionPrefix.length() < 2 or
             eow.contains(event.text().right(1)))):
                 target.completer.popup().hide()
                 return
-        elif QT_API == "PYQT5":
+        elif QT_API == "PYQT5" or has_qstring == False:
             eow = "~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-=" #end of word
             if (not isShortcut and (hasModifier or len(event.text()) < 1 or
             len(completionPrefix) < 2 or

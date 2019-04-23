@@ -228,6 +228,118 @@ class ImmersedBoundariesModel(Variables, Model):
                                     self.setObjectInteraction)
     # ----------------------------------
 
+    # ----------------------------------
+    @Variables.undoLocal
+    def setObjectDensity(self, num, density):
+
+        self.isStr(density)
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node.xmlSetData('object_density', density)
+
+
+    @Variables.noUndo
+    def getObjectDensity(self, num):
+
+        return self.__getStringData(num-1, 'object_density',
+                                    self.setObjectDensity)
+    # ----------------------------------
+
+    # ----------------------------------
+    @Variables.undoLocal
+    def setObjectStiffness(self, num, stiffness):
+        self.isStr(stiffness)
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node.xmlSetData('object_stiffness', stiffness)
+
+
+    @Variables.noUndo
+    def getObjectStiffness(self, num):
+
+        return self.__getStringData(num-1, 'object_density',
+                                    self.setObjectStiffness)
+    # ----------------------------------
+
+    # ----------------------------------
+    @Variables.undoLocal
+    def setObjectDamping(self, num, damping):
+        self.isStr(damping)
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node.xmlSetData('object_damping', damping)
+
+
+    @Variables.noUndo
+    def getObjectDamping(self, num):
+
+        return self.__getStringData(num-1, 'object_damping',
+                                    self.setObjectDamping)
+    # ----------------------------------
+
+    # ----------------------------------
+    @Variables.undoLocal
+    def setObjectEqPosition(self, num, xeq=None, yeq=None, zeq=None):
+
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_eq = node.xmlInitNode('equilibrium_position')
+        if xeq:
+            node_eq['xeq'] = xeq
+        if yeq:
+            node_eq['yeq'] = yeq
+        if zeq:
+            node_eq['zeq'] = zeq
+
+
+    @Variables.noUndo
+    def getObjectEqPosition(self, num):
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_eq = node.xmlGetChildNode('equilibrium_position')
+
+        return node_eq['xeq'], node_eq['yeq'], node_eq['zeq']
+    # ----------------------------------
+
+    # ----------------------------------
+    @Variables.undoLocal
+    def setObjectInitPosition(self, num, xini=None, yini=None, zini=None):
+
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_ini = node.xmlInitNode('initial_position')
+        if xini:
+            node_ini['xini'] = xini
+        if yini:
+            node_ini['yini'] = yini
+        if zini:
+            node_ini['zini'] = zini
+
+
+    @Variables.noUndo
+    def getObjectInitPosition(self, num):
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_ini = node.xmlGetChildNode('initial_position')
+
+        return node_ini['xini'], node_ini['yini'], node_ini['zini']
+    # ----------------------------------
+
+    # ----------------------------------
+    @Variables.undoLocal
+    def setObjectInitVel(self, num, vx=None, vy=None, vz=None):
+
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_vel = node.xmlInitNode('initial_velocity')
+        if vx:
+            node_vel['vx'] = vx
+        if vy:
+            node_vel['vy'] = vy
+        if vz:
+            node_vel['vz'] = vz
+
+
+    @Variables.noUndo
+    def getObjectEqPosition(self, num):
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_vel = node.xmlGetChildNode('initial_velocity')
+
+        return node_vel['vx'], node_vel['vy'], node_vel['vz']
+    # ----------------------------------
+
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

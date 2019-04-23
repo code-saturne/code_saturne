@@ -87,7 +87,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
 

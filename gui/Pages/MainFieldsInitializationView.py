@@ -57,7 +57,7 @@ from code_saturne.model.NonCondensableModel import NonCondensableModel
 from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -343,12 +343,22 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         exa = "u = 3.0;\nv = 1.0;\nw = 0.0;\n"
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        name = 'velocity_%s' % (str(self.currentid))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'ini',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -373,12 +383,22 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         exa = "vol_f = 1.0;\n"
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        name = 'volume_fraction_%s' % (str(self.currentid))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'ini',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -413,12 +433,22 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         exa = """#example: """
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        name = 'enthalpy_%s' % (str(self.currentid))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'ini',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -443,12 +473,22 @@ zmax = 1.2;
 Po = 1.e6;
 pressure = P0 + rho0 * g * (zmax - z);"""
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        name = 'pressure'
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'ini',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -470,12 +510,22 @@ pressure = P0 + rho0 * g * (zmax - z);"""
 
         exa = """#example: """
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        name = self.currentNonCondLabel
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'ini',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -497,12 +547,22 @@ pressure = P0 + rho0 * g * (zmax - z);"""
 
         exa = """#example: """
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        name = self.currentScalarLabel
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'ini',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))

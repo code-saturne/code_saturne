@@ -81,12 +81,12 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
-        self.mdl = CompressibleModel(self.__case)
+        self.mdl = CompressibleModel(self.case)
 
         # Connections
         self.comboBoxTypeOutlet.activated[str].connect(self.slotOutletType)
@@ -103,7 +103,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         # Apply validators
         self.lineEditPressure.setValidator(validatorP)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -111,7 +111,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         Show the widget
         """
         label = boundary.getLabel()
-        self.__boundary = Boundary('compressible_outlet', label, self.__case)
+        self.__boundary = Boundary('compressible_outlet', label, self.case)
         self.initialize()
 
 

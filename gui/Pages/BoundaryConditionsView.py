@@ -130,9 +130,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
         Ui_BoundaryConditionsForm.__init__(self)
         self.setupUi(self)
-        self.__case = case
+        self.case = case
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         # Model and QTreeView for Boundaries
 
@@ -142,8 +142,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
         # Fill the model with the boundary zone
 
-        if MobileMeshModel(self.__case).getMethod() == "off":
-            if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
+        if MobileMeshModel(self.case).getMethod() == "off":
+            if GroundwaterModel(self.case).getGroundwaterModel() == "off":
                 lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet', \
                        'imposed_p_outlet')
             else:
@@ -152,7 +152,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
                    'imposed_p_outlet')
 
-        d = LocalizationModel('BoundaryZone', self.__case)
+        d = LocalizationModel('BoundaryZone', self.case)
         for zone in d.getZones():
             label = zone.getLabel()
             nature = zone.getNature()
@@ -164,28 +164,28 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.treeViewBoundaries.clicked[QModelIndex].connect(self.__slotSelectBoundary)
 
         # Set the case for custom widgets
-        self.roughWidget.setup(self.__case)
-        self.slidingWidget.setup(self.__case)
-        self.convectiveInletWidget.setup(self.__case)
-        self.mappedInletWidget.setup(self.__case)
-        self.velocityWidget.setup(self.__case)
-        self.turbulenceWidget.setup(self.__case)
-        self.compressibleOutletWidget.setup(self.__case)
-        self.coalWidget.setup(self.__case)
-        self.scalarsWidget.setup(self.__case)
-        self.meteoWidget.setup(self.__case, self.velocityWidget,
+        self.roughWidget.setup(self.case)
+        self.slidingWidget.setup(self.case)
+        self.convectiveInletWidget.setup(self.case)
+        self.mappedInletWidget.setup(self.case)
+        self.velocityWidget.setup(self.case)
+        self.turbulenceWidget.setup(self.case)
+        self.compressibleOutletWidget.setup(self.case)
+        self.coalWidget.setup(self.case)
+        self.scalarsWidget.setup(self.case)
+        self.meteoWidget.setup(self.case, self.velocityWidget,
                                self.turbulenceWidget,
                                self.scalarsWidget)
-        self.mobileMeshWidget.setup(self.__case)
-        self.radiativeWidget.setup(self.__case)
-        self.electricalWidget.setup(self.__case)
-        self.hydraulicheadWidget.setup(self.__case)
-        self.pressureWidget.setup(self.__case)
-        self.externalHeadLossesWidget.setup(self.__case)
+        self.mobileMeshWidget.setup(self.case)
+        self.radiativeWidget.setup(self.case)
+        self.electricalWidget.setup(self.case)
+        self.hydraulicheadWidget.setup(self.case)
+        self.pressureWidget.setup(self.case)
+        self.externalHeadLossesWidget.setup(self.case)
 
         self.__hideAllWidgets()
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     @pyqtSlot("QModelIndex")
@@ -197,7 +197,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         log.debug("slotSelectBoundary label %s (%s)" % (label, nature))
 
         self.__hideAllWidgets()
-        boundary = Boundary(nature, label, self.__case)
+        boundary = Boundary(nature, label, self.case)
 
         if nature == 'wall':
             self.__selectWallBoundary(boundary)
@@ -221,7 +221,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         """
         self.hydraulicheadWidget.hideWidget()
         if self.coalWidget.getCoalNumber() == 0:
-            if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
+            if GroundwaterModel(self.case).getGroundwaterModel() == "off":
                 self.velocityWidget.showWidget(boundary)
             else:
                 self.velocityWidget.hideWidget()
@@ -273,7 +273,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.compressibleOutletWidget.hideWidget()
         self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
-        if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
+        if GroundwaterModel(self.case).getGroundwaterModel() == "off":
             self.hydraulicheadWidget.hideWidget()
         else:
             self.hydraulicheadWidget.showWidget(boundary)

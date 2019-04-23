@@ -86,13 +86,13 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
-        self.__model = MobileMeshModel(self.__case)
-        self.notebook = NotebookModel(self.__case)
+        self.__model = MobileMeshModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         self.__comboModel = ComboModel(self.comboMobilBoundary, 6, 1)
         self.__comboModel.addItem(self.tr("Fixed boundary"), "fixed_boundary")
@@ -105,7 +105,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         self.comboMobilBoundary.activated[str].connect(self.__slotCombo)
         self.pushButtonMobilBoundary.clicked.connect(self.__slotFormula)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     @pyqtSlot()
@@ -139,7 +139,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
             symbs.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
+                                check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbs,

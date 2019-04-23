@@ -218,10 +218,10 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         # Create the Page layout.
 
@@ -241,16 +241,16 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.lineEditIntTemperature.textChanged[str].connect(self.slotIntTemperature)
         self.lineEditConductionFlux.textChanged[str].connect(self.slotConductionFlux)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, b):
         """
         Show the widget
         """
-        if ThermalRadiationModel(self.__case).getRadiativeModel() != "off":
+        if ThermalRadiationModel(self.case).getRadiativeModel() != "off":
             label = b.getLabel()
-            self.__boundary = Boundary('radiative_wall', label, self.__case)
+            self.__boundary = Boundary('radiative_wall', label, self.case)
             choice = self.__boundary.getRadiativeChoice()
             self.modelRadiative.setItem(str_model=choice)
             self.__updateView__()

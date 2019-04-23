@@ -54,7 +54,7 @@ from code_saturne.model.Boundary import Boundary
 from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.model.GasCombustionModel import GasCombustionModel
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -88,14 +88,14 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
-        self.mdl = CompressibleModel(self.__case)
-        self.gas = GasCombustionModel(self.__case)
-        self.notebook = NotebookModel(self.__case)
+        self.mdl = CompressibleModel(self.case)
+        self.gas = GasCombustionModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         # Connections
         self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
@@ -181,7 +181,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.pushButtonVelocityFormula.clicked.connect(self.__slotVelocityFormula)
         self.pushButtonDirectionFormula.clicked.connect(self.__slotDirectionFormula)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -448,12 +448,16 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "bnd",
+                                zone_name     = self.__boundary._label,
+                                variable_name = "velocity",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -548,12 +552,16 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "bnd",
+                                zone_name     = self.__boundary._label,
+                                variable_name = "direction",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = "formula",
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))

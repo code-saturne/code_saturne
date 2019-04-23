@@ -53,8 +53,6 @@ from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 from code_saturne.model.CompressibleModel import CompressibleModel
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -85,10 +83,10 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         # Connections
         self.groupBoxConvectiveInlet.clicked[bool].connect(self.__slotConvectiveInlet)
@@ -97,7 +95,7 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
 
         # Apply validators
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -109,7 +107,7 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
         checked = False
         hide = False
 
-        mdl = CompressibleModel(self.__case)
+        mdl = CompressibleModel(self.case)
         if mdl.getCompressibleModel() != "off":
             hide = True
 

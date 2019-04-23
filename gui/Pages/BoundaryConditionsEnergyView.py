@@ -93,7 +93,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
         self.__currentField = fieldId
 
@@ -117,7 +117,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             self.__modelEnergy.addItem(self.tr("Temperature"), 'temperature')
 
         if self.__boundary.getNature() == "inlet" or  self.__boundary.getNature() == "outlet":
-            if MainFieldsModel(self.__case).getEnergyResolution(self.__currentField) == 'on' :
+            if MainFieldsModel(self.case).getEnergyResolution(self.__currentField) == 'on' :
                 energychoice = self.__boundary.getEnthalpyChoice(self.__currentField)
                 self.__modelEnergy.setItem(str_model=energychoice)
                 if energychoice == "hsat_P" :
@@ -135,7 +135,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
                     else :
                         self.labelEnergy.setText('K')
                 self.show()
-                if ThermodynamicsModel(self.__case).getMaterials(self.__currentField) == 'user_material' :
+                if ThermodynamicsModel(self.case).getMaterials(self.__currentField) == 'user_material' :
                     self.__modelEnergy.disableItem(2)
                     self.__modelEnergy.disableItem(3)
                 else :
@@ -144,7 +144,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             else :
                 self.hideWidget()
         elif self.__boundary.getNature() == "wall" :
-            if len(MainFieldsModel(self.__case).getEnthalpyResolvedField()) != 0 :
+            if len(MainFieldsModel(self.case).getEnthalpyResolvedField()) != 0 :
                 energychoice = self.__boundary.getEnthalpyChoice("none")
                 self.__modelEnergy.setItem(str_model=energychoice)
                 val = self.__boundary.getEnthalpy("none")
