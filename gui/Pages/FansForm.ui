@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxDefineFans">
      <property name="title">
-      <string>Fans definitions</string>
+      <string>Fan definitions</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
