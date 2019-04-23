@@ -175,14 +175,14 @@ class StandardItemModelFans(QStandardItemModel):
 
         self.mdl = mdl
 
-        self.headers = [self.tr("Zone id"),
+        self.headers = [self.tr("Fan id"),
                         self.tr("Mesh dimension"),
                         self.tr("Fan radius"),
                         self.tr("Hub radius"),
                         self.tr("Axial torque"),
                         self.tr("Blade radius")]
 
-        self.tooltip = [self.tr("Zone id"),
+        self.tooltip = [self.tr("Fan id"),
                         self.tr("Mesh dimension"),
                         self.tr("Fan radius"),
                         self.tr("Hub radius"),
