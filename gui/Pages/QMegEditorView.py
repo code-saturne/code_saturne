@@ -57,6 +57,7 @@ from code_saturne.Base.CompletionTextEditor import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.Pages.QMeiEditorForm import Ui_QMeiDialog
 
+from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -151,7 +152,9 @@ class QMeiHighlighter(QSyntaxHighlighter):
 class QMegEditorView(QDialog, Ui_QMeiDialog):
     """
     """
-    def __init__(self, parent, mei_to_c = None, expression = "", symbols = [], required = [], examples = ""):
+    def __init__(self, parent, function_type, zone_name, variable_name,
+                expression = '', required = [], symbols = [], known_fields = [],
+                condition = None, source_type = None, examples = ""):
         """
         Constructor.
         """
@@ -160,7 +163,17 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         Ui_QMeiDialog.__init__(self)
         self.setupUi(self)
 
-        self.mei_to_c = mei_to_c
+        self.mei_to_c = mei_to_c_interpreter(parent.case, False)
+
+        self.mei_to_c.init_block(function_type,
+                                 zone_name,
+                                 variable_name,
+                                 expression,
+                                 required,
+                                 symbols,
+                                 known_fields,
+                                 condition,
+                                 source_type)
 
         sym = [('todelete','')]
         base = []

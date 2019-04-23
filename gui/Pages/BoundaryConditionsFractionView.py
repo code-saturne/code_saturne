@@ -94,7 +94,7 @@ class BoundaryConditionsFractionView(QWidget, Ui_BoundaryConditionsFraction) :
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
         self.__currentField = fieldId
 

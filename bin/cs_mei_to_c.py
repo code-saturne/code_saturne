@@ -682,7 +682,7 @@ class mei_to_c_interpreter:
         if type(func_params['req'][0]) == tuple:
             required = [r[0] for r in func_params['req']]
         else:
-            required   = func_params['req']
+            required = func_params['req']
 
         if len(required) > 1:
             raise Exception("Recieved more than one argument in write_cell_block function")
@@ -829,10 +829,14 @@ class mei_to_c_interpreter:
         func_params = self.funcs['bnd'][func_key]
 
         expression   = func_params['exp']
-        required     = func_params['req']
         symbols      = func_params['sym']
         known_fields = func_params['knf']
         cname        = func_params['cnd']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
 
         exp_lines_comp = func_params['lines']
 
@@ -1519,7 +1523,7 @@ class mei_to_c_interpreter:
                                 req = ['u_norm']
                                 sym = ['x', 'y', 'z', 't', 'dt', 'iter']
                             elif c == 'flow1_formula':
-                                req = ['u_norm']
+                                req = ['q_m']
                                 sym = ['t', 'dt', 'iter']
 
                             for (name, val) in NotebookModel(self.case).getNotebookList():
@@ -1529,7 +1533,7 @@ class mei_to_c_interpreter:
 
                             self.init_block('bnd',
                                             zone.getLabel(),
-                                            'veloctiy_'+str(fId),
+                                            'velocity_'+str(fId),
                                             exp,
                                             req,
                                             sym,

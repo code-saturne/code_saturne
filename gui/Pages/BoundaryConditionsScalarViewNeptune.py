@@ -94,7 +94,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
         self.__currentField = fieldId
 
@@ -105,14 +105,14 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         """
         self.__boundary = boundary
 
-        ScalarList = SpeciesModel(self.__case).getScalarByFieldId(self.__currentField)
+        ScalarList = SpeciesModel(self.case).getScalarByFieldId(self.__currentField)
 
         if len(ScalarList) > 0 :
             for nb in range(len(self.__Scalarmodel.getItems())):
                 self.__Scalarmodel.delItem(0)
 
             for var in ScalarList :
-                name = SpeciesModel(self.__case).getScalarLabelByName(var)
+                name = SpeciesModel(self.case).getScalarLabelByName(var)
                 self.__Scalarmodel.addItem(self.tr(name), var)
             self.__currentScalar = ScalarList[0]
             self.__Scalarmodel.setItem(str_model=self.__currentScalar)

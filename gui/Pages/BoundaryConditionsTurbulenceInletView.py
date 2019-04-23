@@ -53,8 +53,6 @@ from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
-from code_saturne.cs_mei_to_c import mei_to_c_interpreter
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -85,11 +83,11 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
-        self.notebook = NotebookModel(self.__case)
+        self.case.undoStopGlobal()
+        self.notebook = NotebookModel(self.case)
 
         self.comboBoxTurbulence.activated[str].connect(self.__slotChoiceTurbulence)
 
@@ -111,7 +109,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.lineEditDiameterIntens.setValidator(validatorDiam)
         self.lineEditIntensity.setValidator(validatorIntensity)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -120,7 +118,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         self.__boundary = boundary
 
-        if TurbulenceModel(self.__case).getTurbulenceVariable():
+        if TurbulenceModel(self.case).getTurbulenceVariable():
             turb_choice = boundary.getTurbulenceChoice()
             self.__modelTurbulence.setItem(str_model=turb_choice)
             self.pushButtonTurb.setEnabled(False)
@@ -217,7 +215,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         INPUT user formula
         """
-        turb_model = TurbulenceModel(self.__case).getTurbulenceModel()
+        turb_model = TurbulenceModel(self.case).getTurbulenceModel()
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
 
             exp = self.__boundary.getTurbFormula()
@@ -262,21 +260,17 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_block('bnd',
-                           self.__boundary._label,
-                           name = 'turbulence_ke',
-                           expression = exp,
-                           required = ['k', 'epsilon'],
-                           symbols = [],
-                           known_fields = [],
-                           condition = 'formula')
-            dialog = QMegEditorView(self,
-                                    mei_to_c   = mci,
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
+            dialog = QMegEditorView(parent        = self,
+                                    function_type = 'bnd',
+                                    zone_name     = self.__boundary._label,
+                                    variable_name = 'turbulence_ke',
+                                    expression    = exp,
+                                    required      = req,
+                                    symbols       = sym,
+                                    condition     = 'formula',
+                                    examples      = exa)
+
+
             if dialog.exec_():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
@@ -342,7 +336,7 @@ r23 = 0;
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.__case, False)
+            mci = mei_to_c_interpreter(self.case, False)
             mci.init_block('bnd',
                            self.__boundary._label,
                            'turbulence_rije',
@@ -427,7 +421,7 @@ alpha =  1.;
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.__case, False)
+            mci = mei_to_c_interpreter(self.case, False)
             mci.init_block('bnd',
                            self.__boundary._label,
                            name = 'turbulence_rij_ebrsm',
@@ -502,21 +496,15 @@ alpha = 0;"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_block('bnd',
-                           self.__boundary._label,
-                           name = 'turbulence_v2f',
-                           expression = exp,
-                           required = ['k', 'epsilon', 'phi', 'alpha'],
-                           symbols = [],
-                           known_fields = [],
-                           condition = 'formula')
-            dialog = QMegEditorView(self,
-                                    mei_to_c   = mci,
+            dialog = QMegEditorView(parent = self,
+                                    function_type = 'bnd',
+                                    zone_name = self.__boundary._label,
+                                    variable_name = 'turbulence_v2f',
                                     expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
+                                    required = req,
+                                    symbols = sym,
+                                    condition = 'formula',
+                                    examples = exa)
 
             if dialog.exec_():
                 result = dialog.get_result()
@@ -571,21 +559,16 @@ omega = eps/(cmu * k);"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_block('bnd',
-                           self.__boundary._label,
-                           name = 'turbulence_kw',
-                           expression = exp,
-                           required = ['k', 'omega'],
-                           symbols = [],
-                           known_fields = [],
-                           condition = 'formula')
-            dialog = QMegEditorView(self,
-                                    mei_to_c   = mci,
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
+
+            dialog = QMegEditorView(parent        = self,
+                                    function_type = 'bnd',
+                                    zone_name     = self.__boundary._label,
+                                    variable_name = 'turbulence_kw',
+                                    expression    = exp,
+                                    required      = req,
+                                    symbols       = sym,
+                                    condition     = 'formula',
+                                    examples      = exa)
 
             if dialog.exec_():
                 result = dialog.get_result()
@@ -639,21 +622,15 @@ nu_tilda = eps/(cmu * k);"""
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.__case, False)
-            mci.init_bnd_block('bnd',
-                               self.__boundary._label,
-                               name = 'turbulence_spalart',
-                               expression = exp,
-                               required = ['nu_tilda'],
-                               symbols = [],
-                               known_fields = [],
-                               condition = 'formula')
-            dialog = QMegEditorView(self,
-                                    mei_to_c   = mci,
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
+            dialog = QMegEditorView(parent        = self,
+                                    function_type = 'bnd',
+                                    zone_name     = self.__boundary._label,
+                                    variable_name = 'turbulence_spalart',
+                                    expression    = exp,
+                                    required      = req,
+                                    symbols       = sym,
+                                    condition     = 'formula',
+                                    examples      = exa)
 
             if dialog.exec_():
                 result = dialog.get_result()

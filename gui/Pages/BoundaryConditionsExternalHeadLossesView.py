@@ -52,7 +52,7 @@ from code_saturne.Pages.BoundaryConditionsExternalHeadLossesForm import Ui_Bound
 
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -83,15 +83,15 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
-        self.notebook = NotebookModel(self.__case)
+        self.notebook = NotebookModel(self.case)
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         self.pushButtonHeadLossesFormula.clicked.connect(self.slotHeadLossesFormula)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, b):
@@ -99,7 +99,7 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         Show the widget
         """
         label = b.getLabel()
-        self.__boundary = Boundary('free_inlet_outlet', label, self.__case)
+        self.__boundary = Boundary('free_inlet_outlet', label, self.case)
         exp = self.__boundary.getHeadLossesFormula()
         if exp:
             self.pushButtonHeadLossesFormula.setStyleSheet("background-color: green")
@@ -139,12 +139,16 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = 'head_loss',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = 'formula',
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))

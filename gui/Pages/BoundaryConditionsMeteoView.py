@@ -84,23 +84,23 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         """
         Setup the widget.
         """
-        self.__case = case
+        self.case = case
         self.velocityWidget = velocityWidget
         self.turbulenceWidget = turbulenceWidget
         self.scalarsWidget = scalarsWidget
         self.__boundary = None
 
-        sca_mo  = DefineUserScalarsModel(self.__case)
+        sca_mo  = DefineUserScalarsModel(self.case)
         self.species_list = sca_mo.getUserScalarNameList()
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
-        self.__model = AtmosphericFlowsModel(self.__case)
+        self.__model = AtmosphericFlowsModel(self.case)
 
         self.checkBoxReadData.clicked[bool].connect(self.__slotReadData)
         self.checkBoxAutoNature.clicked[bool].connect(self.__slotAutoNature)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, b):
@@ -114,7 +114,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
 
             label = b.getLabel()
             nature = "meteo_" + b.getNature()
-            self.__boundary = Boundary(nature, label, self.__case)
+            self.__boundary = Boundary(nature, label, self.case)
 
             if self.__boundary.getMeteoDataStatus() == 'on':
                 self.checkBoxReadData.setChecked(True)

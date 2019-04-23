@@ -53,8 +53,6 @@ from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 from code_saturne.model.CompressibleModel import CompressibleModel
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -85,10 +83,10 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         # Connections
         self.groupBoxMappedInlet.clicked[bool].connect(self.__slotMappedInlet)
@@ -107,7 +105,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         self.lineEditTranslationY.setValidator(validatorY)
         self.lineEditTranslationZ.setValidator(validatorZ)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -119,7 +117,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         checked = False
         hide = False
 
-        mdl = CompressibleModel(self.__case)
+        mdl = CompressibleModel(self.case)
         if mdl.getCompressibleModel() != "off":
             hide = True
 

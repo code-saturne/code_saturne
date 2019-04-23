@@ -50,7 +50,7 @@ from code_saturne.Pages.MainFieldsSourceTerms import Ui_MainFieldsSourceTerms
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
 from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.MainFieldsSourceTermsModel import MainFieldsSourceTermsModel
@@ -184,12 +184,23 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
                                                              self.currentId,
                                                              self.th_sca_name)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        name = 'enthalpy_%s' % (str(self.currentId))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'thermal_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
