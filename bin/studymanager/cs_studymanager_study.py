@@ -1431,8 +1431,9 @@ class Studies(object):
                     pdir = case.pkg.get_dir('pythondir')
                     pdir = pdir + ":" + case.pkg.get_dir('pkgpythondir')
                     retcode, t = run_studymanager_command(cmd, self.__log, pythondir = pdir)
+                    stat = "FAILED" if retcode != 0 else "OK"
                     os.chdir(repbase)
-                    self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
+                    self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t))
                 else:
                     self.reporting('    - script %s not found' % cmd)
 
@@ -1699,7 +1700,9 @@ class Studies(object):
                                 d = os.path.join(self.__dest, l, case.label, "RESU", dest[i])
                                 cmd += " -d " + d
                             retcode, t = run_studymanager_command(cmd, self.__log)
-                            self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
+                            stat = "FAILED" if retcode != 0 else "OK"
+
+                            self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t))
                         else:
                             self.reporting('    - script %s not found' % cmd)
 
@@ -1747,13 +1750,14 @@ class Studies(object):
                                        stdout=True, report=False, status=True)
 
                         retcode, t = run_studymanager_command(cmd, self.__log)
+                        stat = "FAILED" if retcode != 0 else "OK"
 
-                        self.reporting('    - postpro %s --> OK (%s s)' \
-                                       % (sc_name, t),
+                        self.reporting('    - postpro %s --> %s (%s s)' \
+                                       % (stat, sc_name, t),
                                        stdout=True, report=False)
 
-                        self.reporting('    - postpro %s --> OK (%s s)' \
-                                       % (cmd, t),
+                        self.reporting('    - postpro %s --> %s (%s s)' \
+                                       % (stat, cmd, t),
                                        stdout=False, report=True)
                     else:
                         self.reporting('    - postpro %s not found' % cmd)
