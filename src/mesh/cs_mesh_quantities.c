@@ -2314,7 +2314,7 @@ _compute_face_vectors(int                dim,
          + (1. - pond)*cell_cen[cell_id2*dim + 2]);
   }
 
-  /* Border faces */
+  /* Boundary faces */
   cs_gnum_t w_count = 0;
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
