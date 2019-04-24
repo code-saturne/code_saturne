@@ -1422,6 +1422,7 @@ class Studies(object):
                     cmd = os.path.join(filePath, label[i])
 
                 if os.path.isfile(cmd):
+                    sc_name = os.path.basename(cmd)
                     # ensure script is executable
                     set_executable(cmd)
 
@@ -1429,13 +1430,21 @@ class Studies(object):
                     cmd += " -c " + os.path.join(self.__dest, l, case.label)
                     repbase = os.getcwd()
                     os.chdir(os.path.join(self.__dest, l, "MESH"))
+
                     # Prepro external script might need pythondir and pkgpythondir
                     pdir = case.pkg.get_dir('pythondir')
                     pdir = pdir + ":" + case.pkg.get_dir('pkgpythondir')
                     retcode, t = run_studymanager_command(cmd, self.__log, pythondir = pdir)
                     stat = "FAILED" if retcode != 0 else "OK"
+
                     os.chdir(repbase)
-                    self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t))
+
+                    self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
+                                   stdout=True, report=False)
+
+                    self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
+                                   stdout=False, report=True)
+
                 else:
                     self.reporting('    - script %s not found' % cmd)
 
@@ -1691,6 +1700,7 @@ class Studies(object):
                     if script[i] and case.is_run != "KO":
                         cmd = os.path.join(self.__dest, l, "POST", label[i])
                         if os.path.isfile(cmd):
+                            sc_name = os.path.basename(cmd)
                             # ensure script is executable
                             set_executable(cmd)
 
@@ -1704,7 +1714,11 @@ class Studies(object):
                             retcode, t = run_studymanager_command(cmd, self.__log)
                             stat = "FAILED" if retcode != 0 else "OK"
 
-                            self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t))
+                            self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
+                                           stdout=True, report=False)
+
+                            self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
+                                           stdout=True, report=False)
                         else:
                             self.reporting('    - script %s not found' % cmd)
 
