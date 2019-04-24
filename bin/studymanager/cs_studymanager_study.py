@@ -176,7 +176,7 @@ class Case(object):
 
         self.is_compiled= "not done"
         self.is_run     = "not done"
-        self.is_time    = "not done"
+        self.is_time    = None
         self.is_plot    = "not done"
         self.is_compare = "not done"
         self.threshold  = "default"
@@ -489,7 +489,8 @@ class Case(object):
 
     def run(self):
         """
-        Run the case a thread.
+        Check if a run with same result subdirectory name exists
+        and launch run if not.
         """
         home = os.getcwd()
         if self.subdomains:
@@ -502,15 +503,11 @@ class Case(object):
             run_dir = os.path.join(self.__dest, self.label, self.resu, run_id)
 
             if os.path.isdir(run_dir):
-                print("Warning: the directory %s already exists in the destination." % run_dir)
-
                 if os.path.isfile(os.path.join(run_dir, "error")):
                     self.is_run = "KO"
-                    self.is_time = 0.
                     error = 1
                 else:
                     self.is_run = "OK"
-                    self.is_time = 0.
                     error = 0
                 os.chdir(home)
 
@@ -520,7 +517,6 @@ class Case(object):
             run_id, run_dir = self.__suggest_run_id()
 
             while os.path.isdir(run_dir):
-                time.sleep(5)
                 run_id, run_dir = self.__suggest_run_id()
 
         self.run_id  = run_id
@@ -1458,7 +1454,7 @@ class Studies(object):
         the run of the case is also repeated.
         """
         for l, s in self.studies:
-            self.reporting("  o Script prepro and run of study: " + l)
+            self.reporting("  o Prepro scripts and runs for study: " + l)
             for case in s.cases:
                 self.prepro(l, s, case)
                 if self.__running:
@@ -1483,14 +1479,19 @@ class Studies(object):
                         self.reporting('    - running %s ...' % case.label,
                                        stdout=True, report=False, status=True)
                         error = case.run()
+                        if case.is_time:
+                            is_time = "%s s".format(case.is_time)
+                        else:
+                            is_time = "existed already"
+
                         if not error:
                             if not case.run_id:
                                 self.reporting("    - run %s --> Warning suffix"
                                                " is not read" % case.label)
 
-                            self.reporting('    - run %s --> OK (%s s) in %s' \
+                            self.reporting('    - run %s --> OK (%s) in %s' \
                                            % (case.label, \
-                                              case.is_time, \
+                                              is_time, \
                                               case.run_id))
                             self.__parser.setAttribute(case.node,
                                                        "compute",
@@ -1508,10 +1509,13 @@ class Studies(object):
                                     self.__parser.setAttribute(n, "dest", case.run_id)
                         else:
                             if not case.run_id:
-                                self.reporting('    - run %s --> FAILED' % case.label)
+                                self.reporting('    - run %s --> FAILED (%s)' \
+                                               % (case.label, is_time))
                             else:
-                                self.reporting('    - run {0} --> FAILED in {1}'.format(case.label,
-                                                                                        case.run_id))
+                                self.reporting('    - run %s --> FAILED (%s) in %s' \
+                                               % (case.label, \
+                                                  is_time, \
+                                                  case.run_id))
 
                         self.__log.flush()
 
