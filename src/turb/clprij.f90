@@ -451,7 +451,6 @@ do iel = 1, ncel
       is_clipped = 1
 
       eigen_min = min(eigen_min, - eigen_tol)
-      eigen_offset = max(eigen_offset, epzero*rijref)
       eigen_offset = min(- eigen_min / (1.d0/3.d0 - eigen_min) + 0.1d0, 1.d0)
 
 
@@ -459,7 +458,7 @@ do iel = 1, ncel
         cvar_rij(isou,iel) = (1.d0 - eigen_offset) * cvar_rij(isou,iel)
 
         if (isou.le.3) then
-          cvar_rij(isou,iel) = cvar_rij(isou,iel) + trrij * eigen_offset / 3.d0
+          cvar_rij(isou,iel) = cvar_rij(isou,iel) + trrij * (eigen_offset + eigen_tol) / 3.d0
         endif
 
         if (clip_r_id.ge.0) &
