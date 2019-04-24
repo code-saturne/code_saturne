@@ -499,7 +499,7 @@ def parse_gui_expression(expression,
                     if if_open:
                         usr_defs += 2*tab + 'cs_real_t %s = -1.;\n' % (lf[0])
                     else:
-                        l = 'const cs_real_t '+l
+                        l = 'cs_real_t '+l
 
                 elif lf[0].strip() in req:
                     if func_type == 'vol':
@@ -1860,16 +1860,15 @@ class mei_to_c_interpreter:
         err.close()
 
         n_errors = 0
+        msg = ''
         if compilation_test != 0:
             errors = open('comp.err', 'r').readlines()
             for i in range(len(errors)):
                 if 'error:' in errors[i]:
-                    msg = errors[i].split('error:')[-1].strip()+'\n'
+                    msg += errors[i].split('error:')[-1].strip()+'\n'
                     msg += errors[i+1].strip() + '\n'
 
                     n_errors += 1
-        else:
-            msg = None
 
         os.chdir(self.data_path)
 
