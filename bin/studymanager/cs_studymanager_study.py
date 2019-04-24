@@ -1480,7 +1480,7 @@ class Studies(object):
                                        stdout=True, report=False, status=True)
                         error = case.run()
                         if case.is_time:
-                            is_time = "%s s".format(case.is_time)
+                            is_time = "%s s" % case.is_time
                         else:
                             is_time = "existed already"
 
