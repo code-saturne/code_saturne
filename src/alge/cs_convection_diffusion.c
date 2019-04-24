@@ -2579,7 +2579,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   } /* iupwin */
 
 
-  if (iwarnp >= 2) {
+  if (iwarnp >= 2 && iconvp == 1) {
 
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
@@ -3734,7 +3734,7 @@ cs_face_convection_scalar(int                       idtvar,
   } /* iupwin */
 
 
-  if (iwarnp >= 2) {
+  if (iwarnp >= 2 && iconvp == 1) {
 
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
@@ -4984,7 +4984,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   } /* iupwin */
 
-  if (iwarnp >= 2) {
+  if (iwarnp >= 2 && iconvp == 1) {
 
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
@@ -6282,7 +6282,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
     } /* idtvar */
   } /* iupwin */
 
-  if (iwarnp >= 2) {
+  if (iwarnp >= 2 && iconvp == 1) {
 
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
@@ -7379,7 +7379,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   } /* iupwin */
 
 
-  if (iwarnp >= 2) {
+  if (iwarnp >= 2 && iconvp == 1) {
 
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
@@ -7681,7 +7681,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   char var_name[32];
 
-  int n_upwind;
   int tr_dim = 0;
   int w_stride = 1;
 
@@ -7858,8 +7857,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
      ---> Contribution from interior faces
      ======================================================================*/
 
-  n_upwind = 0;
-
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
@@ -7871,7 +7868,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   if (idtvar < 0) {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -7879,10 +7876,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t pi = _pvar[ii];
           cs_real_t pj = _pvar[jj];
@@ -7972,7 +7965,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   } else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -7980,10 +7973,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t pi = _pvar[ii];
           cs_real_t pj = _pvar[jj];
@@ -8414,8 +8403,6 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
   char var_name[32];
 
-  cs_gnum_t n_upwind;
-
   cs_real_33_t *gradv;
   cs_real_t *bndcel;
 
@@ -8508,8 +8495,6 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
      ---> Contribution from interior faces
      ======================================================================*/
 
-  n_upwind = 0;
-
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
@@ -8523,7 +8508,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   if (idtvar < 0) {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -8531,11 +8516,6 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t pip[3], pjp[3], pipr[3], pjpr[3];
 
@@ -8588,7 +8568,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   } else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -8596,11 +8576,6 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t pip[3], pjp[3];
 
@@ -8948,8 +8923,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
   char var_name[32];
 
-  cs_gnum_t n_upwind;
-
   cs_real_6_t *viscce;
   cs_real_33_t *grad;
 
@@ -9046,7 +9019,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
      ---> Contribution from interior faces
      ======================================================================*/
 
-  n_upwind = 0;
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
@@ -9060,7 +9032,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
   if (idtvar < 0) {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -9068,11 +9040,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t visci[3][3], viscj[3][3];
           cs_real_t diippf[3], djjppf[3], pipp[3], pjpp[3];
@@ -9165,7 +9132,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
   } else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -9173,11 +9140,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t visci[3][3], viscj[3][3];
           cs_real_t diippf[3], djjppf[3], pipp[3], pjpp[3];
@@ -9619,8 +9581,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
   char var_name[32];
 
-  int  n_upwind;
-
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_63_t *grad;
@@ -9749,8 +9709,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
      ---> Contribution from interior faces
      ======================================================================*/
 
-  n_upwind = 0;
-
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext -n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
@@ -9764,7 +9722,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   if (idtvar < 0) {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -9772,11 +9730,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t visci[3][3], viscj[3][3];
           cs_real_t diippf[3], djjppf[3], pipp[6], pjpp[6];
@@ -9871,7 +9824,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   } else {
 
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for reduction(+:n_upwind)
+#     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
         for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -9879,10 +9832,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
-          /* in parallel, face will be counted by one and only one rank */
-          if (ii < n_cells) {
-            n_upwind++;
-          }
 
           cs_real_t visci[3][3], viscj[3][3];
           cs_real_t diippf[3], djjppf[3], pipp[6], pjpp[6];
