@@ -23,9 +23,12 @@ Changes expected between the current version and 6.0.0 final:
 
 User changes:
 
-- GUI: Add a built-in text editor in the GUI. This allows for
-  * Editing user routines files directly within the GUI
-  * Opening log files in a RESU folder
+- GUI: Improve global workflow by adding two new functions (buttons):
+  * A built-in text editor in the GUI, which allows editing of user routines
+    and/or functions inside the SRC folder, as well as opening log files
+    in a RESU folder.
+  * A compiling test for possible user functions. In case of a compiling error,
+    the message is transmitted to the GUI window for the user to analyse.
 
 - GUI: allow disabling paralel IO for MED output writer.
 

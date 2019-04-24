@@ -322,8 +322,8 @@ r23 = 0;
                    ('r22', "Reynolds stress R22"),
                    ('r33', "Reynolds stress R33"),
                    ('r12', "Reynolds stress R12"),
-                   ('r13', "Reynolds stress R13"),
-                   ('r23', "Reynolds stress R23"),
+                   ('r23', "Reynolds stress R13"),
+                   ('r13', "Reynolds stress R23"),
                    ('epsilon', "turbulent dissipation")]
 
             sym = [('x','cell center coordinate'),
@@ -336,23 +336,14 @@ r23 = 0;
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.case, False)
-            mci.init_block('bnd',
-                           self.__boundary._label,
-                           'turbulence_rije',
-                           expression = exp,
-                           required = ['r11', 'r22', 'r33',
-                                       'r12', 'r23', 'r13',
-                                       'epsilon'],
-                           symbols = [],
-                           known_fields = [],
-                           condition = 'formula')
-            dialog = QMegEditorView(self,
-                                    mei_to_c   = mci,
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
+            dialog = QMegEditorView(parent        = self,
+                                    function_type = 'bnd',
+                                    zone_name     = self.__boundary._label,
+                                    variable_name = 'turbulence_rije',
+                                    expression    = exp,
+                                    required      = req,
+                                    symbols       = sym,
+                                    examples      = exa)
 
             if dialog.exec_():
                 result = dialog.get_result()
@@ -406,8 +397,8 @@ alpha =  1.;
                    ('r22', "Reynolds stress R22"),
                    ('r33', "Reynolds stress R33"),
                    ('r12', "Reynolds stress R12"),
-                   ('r13', "Reynolds stress R13"),
-                   ('r23', "Reynolds stress R23"),
+                   ('r23', "Reynolds stress R13"),
+                   ('r13', "Reynolds stress R23"),
                    ('epsilon', "turbulent dissipation"),
                    ('alpha', "alpha")]
 
@@ -421,23 +412,14 @@ alpha =  1.;
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            mci = mei_to_c_interpreter(self.case, False)
-            mci.init_block('bnd',
-                           self.__boundary._label,
-                           name = 'turbulence_rij_ebrsm',
-                           expression = exp,
-                           required = ['r11', 'r22', 'r33',
-                                       'r12', 'r23', 'r13',
-                                       'epsilon', 'alpha'],
-                           symbols = [],
-                           known_fields = [],
-                           condition = 'formula')
-            dialog = QMegEditorView(self,
-                                    mei_to_c   = mci,
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
+            dialog = QMegEditorView(parent        = self,
+                                    function_type = 'bnd',
+                                    zone_name     = self.__boundary._label,
+                                    variable_name = 'turbulence_rij_ebrsm',
+                                    expression    = exp,
+                                    required      = req,
+                                    symbols       = sym,
+                                    examples      = exa)
 
             if dialog.exec_():
                 result = dialog.get_result()

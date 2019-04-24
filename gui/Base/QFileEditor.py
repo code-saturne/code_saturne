@@ -33,12 +33,18 @@ This module defines the following classes:
 
 import sys
 from code_saturne.Base import QtGui, QtCore
+
+# Check if QString exists
 has_qstring = True
 try:
     from code_saturne.Base.QtCore import QString
+    _fromUtf8 = QString.fromUtf8
 except ImportError:
     has_qstring = False
+    def _fromUtf8(s):
+        return s
 
+import resource_base_rc
 #-------------------------------------------------------------------------------
 # Local functions and/or definitions
 #-------------------------------------------------------------------------------
@@ -64,11 +70,12 @@ def loc_format(color, style=''):
 
     return f
 
-format_styles = {'keyword' : loc_format('blue', 'bold'),
-                 'operator': loc_format('red', 'bold'),
-                 'brace'   : loc_format('orange', 'bold'),
-                 'string'  : loc_format('magenta', 'italic'),
-                 'comment' : loc_format('darkGreen', 'italic')}
+format_styles = {'keyword'    : loc_format('blue', 'bold'),
+                 'operator'   : loc_format('red', 'bold'),
+                 'brace'      : loc_format('orange', 'bold'),
+                 'string'     : loc_format('magenta', 'italic'),
+                 'comment'    : loc_format('darkGreen', 'italic'),
+                 'expression' : loc_format('black')}
 
 class HighlightingRule():
 
@@ -93,10 +100,12 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
         # Keywords (C or Fortran)
         self.kw = ['if', 'else', 'endif', '\#', 'include',
-                   'void', 'int', 'integer', 'double',
+                   'void', 'int', 'integer', 'double', 'const',
+                   'fprintf', 'bft_printf', 'bft_printf_flush',
                    'subroutine', 'function', 'def',
                    'double precision', 'use', 'implicit none',
                    'allocatable', 'dimension', 'string', 'float',
+                   'allocate', 'deallocate',
                    'char', 'for', 'while', 'assert',
                    'continue', 'break', 'switch',
                    'del', 'pass', 'return', 'true', 'false']
@@ -105,7 +114,6 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
         self.op = ['=', '==', '!=', '<', '>', '<=', '>=',
                    '\+', '-', '\*', '/', '\%', '\*\*',
                    '\+=', '-=', '\*=', '/=',
-                   'allocate', 'deallocate',
                    '\^', '\|', '\&', '\|\|', '\&\&']
 
         # Braces
@@ -141,6 +149,17 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
         rcf = HighlightingRule(pcf, format_styles['comment'])
         self.highlightingRules.append(rcf)
 
+        # numerals
+        pn1 = QtCore.QRegExp('[+-]?[0-9]+[lL]?')
+        rn1 = HighlightingRule(pn1, format_styles['expression'])
+        self.highlightingRules.append(rn1)
+        pn2 = QtCore.QRegExp('[+-]?0[xX][0-9A-Fa-f]+[lL]?')
+        rn2 = HighlightingRule(pn2, format_styles['expression'])
+        self.highlightingRules.append(rn2)
+        pn3 = QtCore.QRegExp('[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?')
+        rn3 = HighlightingRule(pn3, format_styles['expression'])
+        self.highlightingRules.append(rn3)
+
 
     def highlightBlock(self, text):
         """
@@ -152,7 +171,15 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
             while index >= 0:
                 length = exp.matchedLength()
-                self.setFormat(index, length, rule.format)
+                ok_to_highlight = True
+                if len(text) > index+length:
+                    if text[index+length] not in self.op+[' ']:
+                        ok_to_highlight = False
+                if text[index:index+length] not in self.op+self.br:
+                    ok_to_highlight = True
+
+                if ok_to_highlight:
+                    self.setFormat(index, length, rule.format)
                 if has_qstring:
                     index = text.indexOf(exp, index + length)
                 else:
@@ -208,28 +235,61 @@ class QFileEditor(QtGui.QMainWindow):
         self.setGeometry(50, 50, 500, 300)
         self.setWindowTitle("Text editor")
 
-        openFile = QtGui.QAction("Open", self)
+        # Open file action
+        open_img_path = ":/icons/22x22/document-open.png"
+        icon_open     = QtGui.QIcon()
+        icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
+                            QtGui.QIcon.Normal,
+                            QtGui.QIcon.Off)
+        openFile = QtGui.QAction(icon_open, "Open", self)
         openFile.setShortcut("Ctrl+O")
         openFile.setStatusTip('Open File')
         openFile.triggered.connect(self.openFile)
 
-        newFile = QtGui.QAction("New", self)
+        # New file action
+        new_img_path = ":/icons/22x22/document-new.png"
+        icon_new     = QtGui.QIcon()
+        icon_new.addPixmap(QtGui.QPixmap(_fromUtf8(new_img_path)),
+                          QtGui.QIcon.Normal,
+                          QtGui.QIcon.Off)
+        newFile = QtGui.QAction(icon_new, "New", self)
         newFile.setShortcut("Ctrl+E")
         newFile.setStatusTip('Create new file')
         newFile.triggered.connect(self.newFile)
 
-        saveFile = QtGui.QAction("Save", self)
+        # Save as action
+        save_img_path = ":/icons/22x22/document-save-as.png"
+        icon_save     = QtGui.QIcon()
+        icon_save.addPixmap(QtGui.QPixmap(_fromUtf8(save_img_path)),
+                          QtGui.QIcon.Normal,
+                          QtGui.QIcon.Off)
+        saveFile = QtGui.QAction(icon_save, "Save", self)
         saveFile.setShortcut("Ctrl+S")
         saveFile.setStatusTip('Save file')
         saveFile.triggered.connect(self.saveFile)
 
-        quitAction = QtGui.QAction("Quit", self)
+        # Exit editor action
+        quit_img_path = ":/icons/22x22/system-log-out.png"
+        icon_quit     = QtGui.QIcon()
+        icon_quit.addPixmap(QtGui.QPixmap(_fromUtf8(quit_img_path)),
+                          QtGui.QIcon.Normal,
+                          QtGui.QIcon.Off)
+        quitAction = QtGui.QAction(icon_quit, "Quit", self)
         quitAction.setShortcut("Ctrl+Q")
         quitAction.setStatusTip('Quit the editor')
         quitAction.triggered.connect(self.closeApplication)
 
         self.statusBar()
 
+        # File toolbar
+        self.toolbar = self.addToolBar("Options")
+
+        self.toolbar.addAction(newFile)
+        self.toolbar.addAction(openFile)
+        self.toolbar.addAction(saveFile)
+        self.toolbar.addAction(quitAction)
+
+        # File menu
         mainMenu = self.menuBar()
 
         fileMenu = mainMenu.addMenu('&File')
