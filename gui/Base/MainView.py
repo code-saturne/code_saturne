@@ -371,6 +371,7 @@ class MainView(object):
         self.fileQuitAction.triggered.connect(self.fileQuit)
 
         self.openTextEditorAction.triggered.connect(self.fileEditorOpen)
+        self.testUserCompilationAction.triggered.connect(self.testUserFilesCompilation)
 
         self.openXtermAction.triggered.connect(self.openXterm)
         self.displayCaseAction.triggered.connect(self.displayCase)
@@ -887,6 +888,87 @@ class MainView(object):
         fileEditor = QFileEditor(self)
         fileEditor.show()
 
+
+    def testUserFilesCompilation(self):
+        """
+        public slot
+        test the compilation for the files within the SRC sub-folder
+        """
+
+        if not hasattr(self, 'case'):
+            return
+
+        test_title = "Compilation test"
+
+        ori_dir = os.getcwd()
+        src_dir = self.case['case_path'] + '/SRC'
+
+        if not os.path.exists(src_dir):
+            msg  = "You are not in a CASE structure.\n"
+            msg += "Compilation aborted.\n"
+            QMessageBox.warning(self, self.tr(test_title), msg)
+            return
+
+        os.chdir(src_dir)
+
+        # Check if there are any user files within the SRC folder
+        from glob import glob
+        usr_files = glob("*.c") + glob("*.cxx") + glob("*.f90")
+
+        if len(usr_files) > 0:
+            from code_saturne import cs_compile
+
+            out = open('comp.out', 'w')
+            err = open('comp.err', 'w')
+
+            state = cs_compile.compile_and_link(self.case['package'],
+                                                src_dir,
+                                                destdir=None,
+                                                opt_cflags='-w',
+                                                stdout=out,
+                                                stderr=err)
+
+            out.close()
+            err.close()
+
+            n_errors = 0
+            if state == 0:
+                msg = "User functions compilation succeeded"
+                QMessageBox.information(self, self.tr(test_title), msg)
+
+            else:
+                errors = open('comp.err', 'r').readlines()
+                msg = ''
+                for i in range(len(errors)):
+                    if 'error:' in errors[i]:
+                        msg += errors[i].split('error:')[-1].strip()+'\n'
+                        msg += errors[i+1].strip() + '\n'
+                        n_errors += 1
+                    elif 'erreur:' in errors[i]:
+                        msg += errors[i].split('erreur:')[-1].strip()+'\n'
+                        msg += errors[i+1].strip() + '\n'
+                        n_errors += 1
+
+                msg = msg.decode('utf-8').replace(u"\u2018", "'")
+                msg = msg.replace(u"\u2019", "'")
+                msg = 'Compilation failed with the following error:\n' + msg
+                log.debug(msg)
+                QMessageBox.critical(self, self.tr(test_title), msg)
+
+        else:
+            msg = "There are no user files inside the SRC subfolder."
+            QMessageBox.information(self, self.tr(test_title), msg)
+
+
+        # Cleanup
+        if os.path.exists('comp.out'):
+            os.remove('comp.out')
+        if os.path.exists('comp.err'):
+            os.remove('comp.err')
+
+        os.chdir(ori_dir)
+
+        return
 
 
     def openXterm(self):

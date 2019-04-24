@@ -60,7 +60,6 @@ from code_saturne.model.Boundary import Boundary
 from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
-from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

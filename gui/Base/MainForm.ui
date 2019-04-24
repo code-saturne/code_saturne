@@ -54,6 +54,7 @@
     <addaction name="displayCaseAction"/>
     <addaction name="separator"/>
     <addaction name="openTextEditorAction"/>
+    <addaction name="testUserCompilationAction"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -172,6 +173,7 @@
    <addaction name="openXtermAction"/>
    <addaction name="displayCaseAction"/>
    <addaction name="openTextEditorAction"/>
+   <addaction name="testUserCompilationAction"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetBrowser">
    <attribute name="dockWidgetArea">
@@ -299,7 +301,7 @@
   <action name="openTextEditorAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/format-justify-fill.png</normaloff>:/icons/22x22/format-justify-fill.png</iconset>
+     <normaloff>:/icons/22x22/editor-icon.png</normaloff>:/icons/22x22/editor-icon.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Text file editor</string>
@@ -309,6 +311,21 @@
    </property>
    <property name="statusTip">
     <string>Open a text file using an editor.</string>
+   </property>
+  </action>
+  <action name="testUserCompilationAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/compiler-icon.png</normaloff>:/icons/22x22/compiler-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;User functions compiler test</string>
+   </property>
+   <property name="toolTip">
+    <string>Test the compilation of user function inside the SRC folder</string>
+   </property>
+   <property name="statusTip">
+    <string>Test the compilation of user function inside the SRC folder</string>
    </property>
   </action>
   <action name="reload_modulesAction">
