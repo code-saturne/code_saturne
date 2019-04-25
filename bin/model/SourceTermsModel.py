@@ -149,9 +149,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         return formula
 
 
-    def getSpeciesFormulaComponents(self, zone, scalar):
+    def getSpeciesFormulaComponents(self, zone, species):
 
-        exp = self.getSpeciesFormula(zone, scalar)
+        exp = self.getSpeciesFormula(zone, species)
         if not exp:
             exp = """S = 0;\ndS = 0;\n"""
         req = [('S', 'species source term'),
@@ -159,7 +159,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
-        name = self.th_sca.getScalarName(self.scalar)
+        name = self.th_sca.getScalarName(species)
         sym.append((name, 'current species'))
 
         for (nme, val) in self.notebook.getNotebookList():
