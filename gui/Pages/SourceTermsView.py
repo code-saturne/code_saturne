@@ -424,6 +424,10 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                 unit = "Kelvin"
             elif model == "enthalpy":
                 unit = "J/kg"
+            elif model == "potential_temperature":
+                unit = "Kelvin"
+            else:
+                unit = None
         else:
             th_sca_name = ''
             unit = None
