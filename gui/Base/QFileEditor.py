@@ -31,7 +31,7 @@ This module defines the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import sys
+import sys, os
 from code_saturne.Base import QtGui, QtCore
 
 # Check if QString exists
@@ -44,7 +44,17 @@ except ImportError:
     def _fromUtf8(s):
         return s
 
+    def QString(s):
+        return s
+
 import resource_base_rc
+
+#-------------------------------------------------------------------------------
+# Local constants
+#-------------------------------------------------------------------------------
+
+_tab_size = 2
+
 #-------------------------------------------------------------------------------
 # Local functions and/or definitions
 #-------------------------------------------------------------------------------
@@ -102,6 +112,7 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
         self.kw = ['if', 'else', 'endif', '\#', 'include',
                    'void', 'int', 'integer', 'double', 'const',
                    'fprintf', 'bft_printf', 'bft_printf_flush',
+                   'cs_real_t',
                    'subroutine', 'function', 'def',
                    'double precision', 'use', 'implicit none',
                    'allocatable', 'dimension', 'string', 'float',
@@ -235,6 +246,16 @@ class QFileEditor(QtGui.QMainWindow):
         self.setGeometry(50, 50, 500, 300)
         self.setWindowTitle("Text editor")
 
+        self.parent = parent
+        if hasattr(self.parent, 'case'):
+            self.case_dir = self.parent.case['case_path']
+        else:
+            self.case_dir = None
+
+        self.last_dir = self.case_dir
+
+        self.dialog = QtGui.QFileDialog(self)
+
         # Open file action
         open_img_path = ":/icons/22x22/document-open.png"
         icon_open     = QtGui.QIcon()
@@ -257,8 +278,8 @@ class QFileEditor(QtGui.QMainWindow):
         newFile.setStatusTip('Create new file')
         newFile.triggered.connect(self.newFile)
 
-        # Save as action
-        save_img_path = ":/icons/22x22/document-save-as.png"
+        # Save action
+        save_img_path = ":/icons/22x22/document-save.png"
         icon_save     = QtGui.QIcon()
         icon_save.addPixmap(QtGui.QPixmap(_fromUtf8(save_img_path)),
                           QtGui.QIcon.Normal,
@@ -267,6 +288,16 @@ class QFileEditor(QtGui.QMainWindow):
         saveFile.setShortcut("Ctrl+S")
         saveFile.setStatusTip('Save file')
         saveFile.triggered.connect(self.saveFile)
+
+        # Save as action
+        saveas_img_path = ":/icons/22x22/document-save-as.png"
+        icon_saveas     = QtGui.QIcon()
+        icon_saveas.addPixmap(QtGui.QPixmap(_fromUtf8(saveas_img_path)),
+                              QtGui.QIcon.Normal,
+                              QtGui.QIcon.Off)
+        saveFileAs = QtGui.QAction(icon_saveas, "Save as", self)
+        saveFileAs.setStatusTip('Save file as')
+        saveFileAs.triggered.connect(self.saveFileAs)
 
         # Exit editor action
         quit_img_path = ":/icons/22x22/system-log-out.png"
@@ -287,6 +318,7 @@ class QFileEditor(QtGui.QMainWindow):
         self.toolbar.addAction(newFile)
         self.toolbar.addAction(openFile)
         self.toolbar.addAction(saveFile)
+        self.toolbar.addAction(saveFileAs)
         self.toolbar.addAction(quitAction)
 
         # File menu
@@ -296,46 +328,87 @@ class QFileEditor(QtGui.QMainWindow):
         fileMenu.addAction(newFile)
         fileMenu.addAction(openFile)
         fileMenu.addAction(saveFile)
+        fileMenu.addAction(saveFileAs)
         fileMenu.addAction(quitAction)
 
+        # Font
+        base_font = QtGui.QFont()
+        base_font.setFamily("Courier")
+        base_font.setStyleHint(QtGui.QFont.Monospace)
+        base_font.setFixedPitch(True)
+        base_font.setPointSize(10)
+
+        font_metrics = QtGui.QFontMetrics(base_font)
+        _tab_string = ''
+        for i in range(_tab_size):
+            _tab_string += ' '
+
+        # Main text zone
         self.textEdit = QtGui.QTextEdit()
+        self.textEdit.setFont(base_font)
         self.textEdit.textChanged.connect(self.updateFileState)
+        self.setCentralWidget(self.textEdit)
+
+        # tab
+        self.textEdit.setTabStopWidth(font_metrics.width(_tab_string))
+
+        # file attributes
+        self.filename = ""
 
     def updateFileState(self, new_state = False):
         self.saved = new_state
 
     def openFile(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
 
-        if name != None and name != '':
-            file = open(name,'r')
+
+        self.filename = self.dialog.getOpenFileName(self, 'Open File', self.last_dir)
+
+        self.last_dir = os.path.split(self.filename)[0]
+
+        if self.filename != None and self.filename != '':
+            file = open(self.filename,'r')
 
             self.newFile()
             with file:
                 text = file.read()
                 self.textEdit.setText(text)
-                self.saved = True
+                self.updateFileState(True)
 
 
     def newFile(self):
 
-        self.saved = False
+        self.updateFileState(False)
         hl = QtextHighlighter(self.textEdit)
-        self.setCentralWidget(self.textEdit)
         self.textEdit.show()
 
 
 
     def saveFile(self):
-        name = QtGui.QFileDialog.getSaveFileName(self, 'Save File')
 
-        if name != None and name != '':
-            file = open(name,'w')
+        if self.filename != None and self.filename != '':
+            file = open(self.filename,'w')
             text = self.textEdit.toPlainText()
             file.write(text)
             file.close()
 
-            self.saved = True
+            self.updateFileState(True)
+
+        else:
+            self.saveFileAs()
+
+
+    def saveFileAs(self):
+
+        self.filename = self.dialog.getSaveFileName(self, 'Save File')
+        self.last_dir = os.path.split(self.filename)[0]
+
+        if self.filename != None and self.filename != '':
+            file = open(self.filename,'w')
+            text = self.textEdit.toPlainText()
+            file.write(text)
+            file.close()
+
+            self.updateFileState(True)
 
 
     def closeApplication(self):
