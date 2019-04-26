@@ -64,7 +64,9 @@ typedef enum {
 typedef enum {
 
   CS_LAGR_STAT_GROUP_PARTICLE,
-  CS_LAGR_STAT_GROUP_TRACKING_EVENT
+  CS_LAGR_STAT_GROUP_TRACKING_EVENT,
+
+  CS_LAGR_STAT_GROUP_N_GROUPS
 
 } cs_lagr_stat_group_t;
 
@@ -78,21 +80,44 @@ typedef enum {
 
 } cs_lagr_stat_restart_t;
 
-/*! Prefedined particle statistics, not based on particle attributes */
-/* ----------------------------------------------------------------- */
+/*! Predefined particle and event statistics */
+/* ----------------------------------------- */
 
 typedef enum {
 
-  CS_LAGR_STAT_CUMULATIVE_WEIGHT,   /*!< cumulative particle statistical
-                                      weight (active if any particle
-                                      attribute statistics are active,
-                                      may be activated separately) */
+  /* Volume statistics */
 
-  CS_LAGR_STAT_VOLUME_FRACTION,     /*!< particle volume fraction */
-  CS_LAGR_STAT_MASS_FLUX,           /*!< particle mass flux */
+  CS_LAGR_STAT_CUMULATIVE_WEIGHT,        /*!< cumulative particle statistical
+                                           weight (active if any particle
+                                           attribute statistics are active,
+                                           may be activated separately) */
+  CS_LAGR_STAT_VOLUME_FRACTION,          /*!< particle volume fraction */
 
-  CS_LAGR_STAT_PARTICLE_ATTR        /*!< particle attribute; add attribute id
-                                      for given attribute */
+  /* Boundary statistics */
+
+  /*! cumulative particle event  statistical weight */
+  CS_LAGR_STAT_E_CUMULATIVE_WEIGHT,
+
+  /*! cumulative fouling event statistical weight */
+  CS_LAGR_STAT_RESUSPENSION_CUMULATIVE_WEIGHT,
+
+  /*! cumulative fouling event statistical weight */
+  CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT,
+
+  CS_LAGR_STAT_MASS_FLUX,                /*!< particle mass flux */
+  CS_LAGR_STAT_RESUSPENSION_MASS_FLUX,   /*!< particle resuspension mass flux */
+  CS_LAGR_STAT_FOULING_MASS_FLUX,        /*!< particle fouling mass flux */
+
+  CS_LAGR_STAT_IMPACT_ANGLE,             /*!< particle impact angle
+                                           (in radians) */
+  CS_LAGR_STAT_IMPACT_VELOCITY,          /*!< particle impact velocity */
+  CS_LAGR_STAT_FOULING_DIAMETER,         /*!< fouled particle diameter */
+  CS_LAGR_STAT_FOULING_COKE_FRACTION,    /*!< fouled particle coke fraction */
+
+  /* Particle or event-based attributes */
+
+  CS_LAGR_STAT_ATTR                      /*!< particle or event attribute; add
+                                           attribute id for given attribute */
 
 } cs_lagr_stat_type_t;
 
@@ -310,9 +335,11 @@ cs_lagr_stat_event_define(const char                *name,
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  stat_group     statistics group (particle or event)
  * \param[in]  class_id       particle class id, or 0 for all
- * \param[in]  w_data_func    pointer to function to compute particle weight
+ * \param[in]  p_data_func    pointer to function to compute particle weight
  *                            (if NULL, statistic weight assumed)
- * \param[in]  w_data_input   associated input for w_data_func
+ * \param[in]  e_data_func    pointer to function to compute event weight
+ *                            (if NULL, statistic weight assumed)
+ * \param[in]  data_input     associated input for data_func
  * \param[in]  nt_start       starting time step (or -1 to use t_start,
  *                            0 to use idstnt)
  * \param[in]  t_start        starting time
@@ -328,8 +355,9 @@ cs_lagr_stat_accumulator_define(const char                *name,
                                 int                        location_id,
                                 cs_lagr_stat_group_t       stat_group,
                                 int                        class_id,
-                                cs_lagr_moment_p_data_t   *w_data_func,
-                                void                      *w_data_input,
+                                cs_lagr_moment_p_data_t   *p_data_func,
+                                cs_lagr_moment_e_data_t   *e_data_func,
+                                void                      *data_input,
                                 int                        nt_start,
                                 double                     t_start,
                                 cs_lagr_stat_restart_t     restart_mode);
@@ -438,6 +466,26 @@ cs_lagr_stat_activate(int  stat_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Activate time moment for some predefined Lagrangian statistics types.
+ *
+ * By default, statistics such as mass flows are based on a current time step,
+ * and time moments are not computed by default. This function allows forcing
+ * the associated moment level so that it is computed also.
+ *
+ * Note that requesting a higher order moment will automatically include lower
+ * order moments, so activating the variance also activates the mean.
+ *
+ * \param[in]  stat_type   particle statistics type
+ * \param[in]  moment      associated time moment level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_stat_activate_time_moment(int                    stat_type,
+                                  cs_lagr_stat_moment_t  moment);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Deactivate Lagrangian statistics for a given statistics type.
  *
  * This function is ignored if called after \ref cs_lagr_stat_initialize.
@@ -534,6 +582,19 @@ cs_lagr_stat_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Indicate if a given statistics type has active statistics.
+ *
+ * \param[in]  group   event group to update
+ *
+ * \return true if statistics are active for the given group
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_lagr_stat_is_active( cs_lagr_stat_group_t   group);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Read particle statistics restart info if needed.
  */
 /*----------------------------------------------------------------------------*/
@@ -564,7 +625,7 @@ cs_lagr_stat_update(void);
  * \brief Update event-based moment accumulators.
  *
  * Partial updates are allowed, so as to balance memory cost for storing
- * events and repetition of mesh-location-based weigh updates.
+ * events and repetition of mesh-location-based weight updates.
  *
  * \param[in]  events  pointer to event set
  * \param[in]  group   event group to update
@@ -583,6 +644,15 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
 
 void
 cs_lagr_stat_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log moment definition setup information
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_stat_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

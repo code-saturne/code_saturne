@@ -191,29 +191,6 @@ _free_lagr_encrustation_pointers(void)
   BFT_FREE(cs_glob_lagr_encrustation->visref);
 }
 
-/*----------------------------------------------------------------------------
- * Initialize boundary interaction pointers.
- *----------------------------------------------------------------------------*/
-
-static void
-_init_lagr_boundary_interaction_pointers(void)
-{
-  if (cs_glob_lagr_boundary_interactions->imoybr == NULL)
-    BFT_MALLOC(cs_glob_lagr_boundary_interactions->imoybr,
-               cs_glob_lagr_const_dim->nusbrd + 10,
-               int);
-}
-
-/*----------------------------------------------------------------------------
- * Free boundary interaction pointers.
- *----------------------------------------------------------------------------*/
-
-static void
-_free_lagr_boundary_interaction_pointers(void)
-{
-  BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -299,7 +276,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   /* Initializations for physical models */
   _init_lagr_encrustation_pointers();
-  _init_lagr_boundary_interaction_pointers();
 
   lagr_time_scheme->isttio = 0;
 
@@ -323,16 +299,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   lagr_time_scheme->added_mass_const = 1.0;
 
   cs_glob_lagr_boundary_interactions->has_part_impact_nbr = 0;
-  cs_glob_lagr_boundary_interactions->iflmbd = 0;
-  cs_glob_lagr_boundary_interactions->iangbd = 0;
-  cs_glob_lagr_boundary_interactions->ivitbd = 0;
-  cs_glob_lagr_boundary_interactions->iencnbbd = 0;
-  cs_glob_lagr_boundary_interactions->iencmabd = 0;
-  cs_glob_lagr_boundary_interactions->iencdibd = 0;
-  cs_glob_lagr_boundary_interactions->iencckbd = 0;
-
-  for (int ii = 0; ii < 10; ii++)
-    cs_glob_lagr_boundary_interactions->imoybr[ii] = 0;
 
   /* User setup
      ---------- */
@@ -345,7 +311,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   if (lagr_time_scheme->iilagr == CS_LAGR_OFF) {
 
     _free_lagr_encrustation_pointers();
-    _free_lagr_boundary_interaction_pointers();
 
     BFT_FREE(cs_glob_lagr_source_terms->itsmv1);
     BFT_FREE(cs_glob_lagr_source_terms->itsmv2);
@@ -1958,62 +1923,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                 cs_glob_lagr_boundary_interactions->has_part_impact_nbr,
                                 0, 2);
 
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("in Lagrangian module"),
-                                "cs_glob_lagr_boundary_interactions->iflmbd",
-                                cs_glob_lagr_boundary_interactions->iflmbd,
-                                0, 4);
-
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("in Lagrangian module"),
-                                "cs_glob_lagr_boundary_interactions->iangbd",
-                                cs_glob_lagr_boundary_interactions->iangbd,
-                                0, 2);
-
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("in Lagrangian module"),
-                                "cs_glob_lagr_boundary_interactions->ivitbd",
-                                cs_glob_lagr_boundary_interactions->ivitbd,
-                                0, 2);
-
-  if (lagr_model->physical_model == 2 &&
-      lagr_model->fouling == 1) {
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_boundary_interactions->iencnbbd",
-                                  cs_glob_lagr_boundary_interactions->iencnbbd,
-                                  0, 2);
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_boundary_interactions->iencmabd",
-                                  cs_glob_lagr_boundary_interactions->iencmabd,
-                                  0, 2);
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_boundary_interactions->iencdibd",
-                                  cs_glob_lagr_boundary_interactions->iencdibd,
-                                  0, 2);
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_boundary_interactions->iencckbd",
-                                  cs_glob_lagr_boundary_interactions->iencckbd,
-                                  0, 2);
-
-
-  }
-  else {
-
-    cs_glob_lagr_boundary_interactions->iencnbbd = 0;
-    cs_glob_lagr_boundary_interactions->iencmabd = 0;
-    cs_glob_lagr_boundary_interactions->iencdibd = 0;
-    cs_glob_lagr_boundary_interactions->iencckbd = 0;
-
-  }
-
   if (iok != 0)
     cs_exit (1);
 
@@ -2057,135 +1966,40 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   /* 3.7 DEFINITION DES POINTEURS LIES AUX STATISTIQUES AUX FRONTIERES
    * has_part_impact_nbr: activate stats on particle/boundary interaction number
-   * IFLMBD : FLUX DE MASSE PARTICULAIRE
-   * IANGBD : ANGLE VITESSE
-   * IVITBD : VITESSE DE LA PARTICULE
 
-   * IENCNBBD : NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES AVEC ENCRASSEMENT CHARBON
-   * IENCMABD : MASSE DE GRAINS DE CHARBON ENCRASSES
-   * IENCDIBD : DIAMETRE DES GRAINS DE CHARBON ENCRASSES
-   * IENCCKBD : FRACTION DE COKE DES GRAINS DE CHARBON ENCRASSES
-   * NUSBOR : INFORMATIONS UTILISATEUR SUPPLEMENTAIRES
    * NVISBR : NOMBRE TOTAL D'INTERACTIONS A ENREGISTRER */
 
   int irf = -1;
-
-  if (cs_glob_lagr_boundary_interactions->iflmbd > 0) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->iflm = irf;
-    _copy_boundary_varname(irf, "Part_bndy_mass_flux");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
-
-  }
-
-  if (cs_glob_lagr_boundary_interactions->iangbd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->iang = irf;
-    _copy_boundary_varname(irf, "Part_impact_angle");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 2;
-
-  }
-
-  if (cs_glob_lagr_boundary_interactions->ivitbd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->ivit = irf;
-    _copy_boundary_varname(irf, "Part_impact_velocity");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 2;
-
-  }
-
-  if (lagr_model->resuspension == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->ires = irf;
-    _copy_boundary_varname(irf, "Part_resusp_number");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-    irf++;
-    cs_glob_lagr_boundary_interactions->iflres = irf;
-    _copy_boundary_varname(irf, "Part_resusp_mass_flux");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
-
-  }
 
   if (lagr_model->clogging == 1) {
 
     irf++;
     cs_glob_lagr_boundary_interactions->inclg = irf;
     _copy_boundary_varname(irf, "Part_deposited_number");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->inclgt = irf;
     _copy_boundary_varname(irf, "Part_deposited_part");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->iclogt = irf;
     _copy_boundary_varname(irf, "Part_deposited_time");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->iclogh = irf;
     _copy_boundary_varname(irf, "Part_consolidation_height");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->iscovc = irf;
     _copy_boundary_varname(irf, "Part_surf_coverage");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->ihdepm = irf;
     _copy_boundary_varname(irf, "Part_dep_height_mean");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->ihdiam = irf;
     _copy_boundary_varname(irf, "Part_dep_diameter_mean");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->ihsum = irf;
     _copy_boundary_varname(irf, "Part_dep_diameter_sum");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
     irf++;
     cs_glob_lagr_boundary_interactions->ihdepv = irf;
     _copy_boundary_varname(irf, "Part_dep_height_variance");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-
-  }
-
-  if (lagr_model->physical_model == 2 &&
-      lagr_model->fouling == 1 &&
-      cs_glob_lagr_boundary_interactions->iencmabd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->iencma = irf;
-    _copy_boundary_varname(irf, "Part_fouled_mass_flux");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 1;
-
-  }
-
-  if (lagr_model->physical_model == 2 &&
-      lagr_model->fouling == 1 &&
-      cs_glob_lagr_boundary_interactions->iencdibd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->iencdi = irf;
-    _copy_boundary_varname(irf, "Part_fouled_diam");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
-    /* Activate the number of recorded particle/boundary interactions
-     * with fouling*/
-    cs_glob_lagr_boundary_interactions->iencnbbd = 1;
-  }
-
-  if (lagr_model->physical_model == 2 &&
-      lagr_model->fouling == 1 &&
-      cs_glob_lagr_boundary_interactions->iencckbd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->iencck = irf;
-    _copy_boundary_varname(irf, "Part_fouled_Xck");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 3;
-    /* Activate the number of recorded particle/boundary interactions
-     * with fouling*/
-    cs_glob_lagr_boundary_interactions->iencnbbd = 1;
 
   }
 
@@ -2197,19 +2011,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     irf++;
     cs_glob_lagr_boundary_interactions->inbr = irf;
     _copy_boundary_varname(irf, "Part_impact_number");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
   }
-
-  if (lagr_model->physical_model == 2 &&
-      lagr_model->fouling == 1 &&
-      cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
-
-    irf++;
-    cs_glob_lagr_boundary_interactions->iencnb = irf;
-    _copy_boundary_varname(irf, "Part_fouled_impact_number");
-    cs_glob_lagr_boundary_interactions->imoybr[irf] = 0;
-  }
-
 
   lagdim->n_boundary_stats = irf + 1;
 

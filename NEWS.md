@@ -27,7 +27,15 @@ Release 6.0.0 (unreleased)
 
 User changes:
 
-- GUI: Improve global workflow by adding two new functions (buttons):
+- Lagrangian module: add particle event structure and associated statistics.
+  * This allow handling boundary statistics in a manner more consistent
+    with volume statistics.
+  * Additional boundary statistics may be defined by the user.
+  * The major boundary statistics are now handled through this system,
+    though some need to be updated in the future.
+  * This system could also be used to track volume events in the future.
+
+- GUI: improve global workflow by adding two new functions (buttons):
   * A built-in text editor in the GUI, which allows editing of user routines
     and/or functions inside the SRC folder, as well as opening log files
     in a RESU folder.

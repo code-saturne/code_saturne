@@ -46,6 +46,105 @@
 #include "cs_notebook.h"
 #include "cs_prototypes.h"
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*============================================================================
+ * Local (user defined) function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute boundary impact weight for Lagrangian statistics.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   input     <-- pointer to optional (untyped) value or structure.
+ *   events    <-- pointer to events
+ *   event_id  <-- event id range (first to past-last)
+ *   vals      --> pointer to values
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_impact_weight(const void                 *input,
+                        const cs_lagr_event_set_t  *events,
+                        cs_lnum_t                   id_range[2],
+                        cs_real_t                   vals[])
+{
+  CS_UNUSED(input);
+
+  cs_lnum_t i, ev_id;
+
+  for (i = 0, ev_id = id_range[0]; ev_id < id_range[1]; i++, ev_id++) {
+
+    int flag = cs_lagr_events_get_lnum(events, ev_id, CS_LAGR_E_FLAG);
+
+    double p_weight;
+
+    if (flag & (CS_EVENT_INFLOW | CS_EVENT_OUTFLOW))
+      p_weight = 0;
+    else
+      p_weight = cs_lagr_events_get_real(events,
+                                         ev_id,
+                                         CS_LAGR_STAT_WEIGHT);
+
+    vals[i] = p_weight;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute incident kinetic energy impact weight for Lagrangian statistics.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   input     <-- pointer to optional (untyped) value or structure.
+ *   events    <-- pointer to events
+ *   event_id  <-- event id range (first to past-last)
+ *   vals      --> pointer to values
+ *----------------------------------------------------------------------------*/
+
+static void
+_incident_kinetic_energy(const void                 *input,
+                         const cs_lagr_event_set_t  *events,
+                         cs_lnum_t                   id_range[2],
+                         cs_real_t                   vals[])
+{
+  CS_UNUSED(input);
+
+  cs_lnum_t i, ev_id;
+
+  for (i = 0, ev_id = id_range[0]; ev_id < id_range[1]; i++, ev_id++) {
+
+    int flag = cs_lagr_events_get_lnum(events, ev_id, CS_LAGR_E_FLAG);
+
+    double ke;
+
+    if (flag & (CS_EVENT_INFLOW | CS_EVENT_OUTFLOW))
+      ke = 0;
+    else {
+      const cs_real_t  part_mass = cs_lagr_events_get_real(events, ev_id,
+                                                           CS_LAGR_MASS);
+      const cs_real_t  *part_vel = cs_lagr_events_attr_const(events, ev_id,
+                                                             CS_LAGR_VELOCITY);
+      cs_real_t vel_norm2 = cs_math_3_square_norm(part_vel);
+
+      ke = 0.5 * vel_norm2 * part_mass;
+    }
+
+    vals[i] = ke;
+  }
+}
+
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
 /*---------------------------------------------------------------------------*/
 /*
  * \brief User function of the Lagrangian particle-tracking module
@@ -145,7 +244,7 @@ cs_user_lagr_model(void)
        boundary condition definitions.
 
        * Post-processing:
-       * iencnbbd = 1 / iencmabd = 1 / iencdibd = 1 /iencckbd = 1 (10.2) */
+       * iencnbbd = 1 / iencckbd = 1 (10.2) */
 
     cs_glob_lagr_model->fouling = 0;
 
@@ -527,40 +626,70 @@ cs_user_lagr_model(void)
   /* Boundary statistics
    * =================== */
 
-  /* The boundary statistic 'number of particle/boundary interactions' must be
-     selected to activate the particle average imoybr(...) = 2 */
-
   /* Number of particle/boundary interactions
      (default off: 0 ; on: 1) */
   cs_glob_lagr_boundary_interactions->has_part_impact_nbr      = 1;
 
-  /* Particle mass flux associated to particle/boundary interactions
-     (default off: 0 ; on: 1)*/
-  cs_glob_lagr_boundary_interactions->iflmbd      = 1;
+  /* Particle mass flux associated to particle/boundary interactions */
 
-  /* Angle between particle velocity and the plan of the boundary face
-     (default off: 0 ; on: 1) */
-  cs_glob_lagr_boundary_interactions->iangbd      = 0;
+  cs_lagr_stat_activate(CS_LAGR_STAT_MASS_FLUX);
 
-  /* Norm of particle velocity during the interation with the boundary face
-     (default off: 0 ; on: 1) */
-  cs_glob_lagr_boundary_interactions->ivitbd      = 0;
+  cs_lagr_stat_activate_time_moment(CS_LAGR_STAT_MASS_FLUX,
+                                    CS_LAGR_MOMENT_MEAN);
+
+  /* Angle between particle velocity and the plane of the boundary face */
+
+  cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_ANGLE);
+
+  /* Norm of particle velocity during the interation with the boundary face;
+     example: deactivate even if activated in GUI */
+
+  cs_lagr_stat_deactivate(CS_LAGR_STAT_IMPACT_VELOCITY);
 
   /* (default off: 0 ; on: 1) */
   if (   cs_glob_lagr_model->physical_model == 2
       && cs_glob_lagr_model->fouling == 1) {
 
-    /* Number of particle/boundary interactions with fouling */
-    cs_glob_lagr_boundary_interactions->iencnbbd      = 0;
-
     /* Mass of fouled coal particles */
-    cs_glob_lagr_boundary_interactions->iencmabd      = 0;
+    cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_MASS_FLUX);
 
     /* Diameter of fouled coal particles */
-    cs_glob_lagr_boundary_interactions->iencdibd      = 0;
+    cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_DIAMETER);
 
     /* Coke fraction of fouled coal particles */
-    cs_glob_lagr_boundary_interactions->iencckbd      = 0;
+    cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_COKE_FRACTION);
+  }
+
+  /* Add a user-defined boundary statistic:
+     incident kinetic energy */
+
+  for (int class = 0;
+       class < cs_glob_lagr_model->n_stat_classes + 1;
+       class++) {
+
+    for (cs_lagr_stat_moment_t m_type = CS_LAGR_MOMENT_MEAN;
+         m_type <= CS_LAGR_MOMENT_VARIANCE;
+         m_type++) {
+
+      cs_lagr_stat_event_define
+        ("part_kinetic_energy",
+         CS_MESH_LOCATION_BOUNDARY_FACES,
+         -1,                        /* non predefined stat type */
+         CS_LAGR_STAT_GROUP_TRACKING_EVENT,
+         m_type,
+         class,
+         1,                         /* dimension */
+         -1,                        /* component_id, */
+         _incident_kinetic_energy,  /* data_func */
+         NULL,                      /* data_input */
+         _boundary_impact_weight,   /* w_data_func */
+         NULL,                      /* w_data_input */
+         0,
+         -1,
+         CS_LAGR_MOMENT_RESTART_AUTO);
+
+    }
+
   }
 
   /* Name of the recordings for display,
@@ -573,25 +702,6 @@ cs_user_lagr_model(void)
      the type of average that he wishes to apply to it for the writing
      of the log and the post-processing.
 
-     * The applied average is prescribed through the imoybr array:
-     - if imoybr(iusb(ii)) = 0 -> no average applied
-     - if imoybr(iusb(ii)) = 1 -> a time average is applied, i.e. the
-         statistic is divided by the last time step in the case of an unsteady
-         calculation with a number of iterations lower than nstist; or that
-         the statistic is divided by the recording time in the case of a
-         steady calculation.
-     - if imoybr(iusb(ii)) = 2 -> a particle average is applied, i.e. the
-         statistic is divided by the number of recorded particle/boundary
-         interactions (in terms of statistical weight) in bound_stat(nfabor,inbr)
-         To use this average, has_part_impact_nbr is set to 1.
-     - if imoybr(iusb(ii)) = 3 -> (coal fouling only) a particle average
-         is applied, i.e. the statistic is divided by the number of recorded
-         particle/boundary interactions with fouling (in terms of statistical
-         weight) in bound_stat(nfabor,inbr), To use this average, iencnbbd must be
-         set to 1.
-     * The back-ups in the restart file are performed without applying
-       this average. */
-
   /* Frequency for the output of the Lagrangian log
    * ============================================== */
 
@@ -601,8 +711,6 @@ cs_user_lagr_model(void)
    * ================================ */
 
   cs_lagr_post_set_attr(CS_LAGR_STAT_CLASS, true);
-
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -50,16 +50,28 @@ BEGIN_C_DECLS
  */
 
 /*! inflow event */
-#define CS_EVENT_INFLOW              (1 << 0)
+#define CS_EVENT_INFLOW                (1 << 0)
 
 /*! outflow event */
-#define CS_EVENT_OUTFLOW             (1 << 1)
+#define CS_EVENT_OUTFLOW               (1 << 1)
 
 /*! rebound on wall */
-#define CS_EVENT_REBOUND             (1 << 2)
+#define CS_EVENT_REBOUND               (1 << 2)
 
-/*! resulspension event */
-#define CS_EVENT_RESUSPENSION        (1 << 3)
+/*! deposistion event */
+#define CS_EVENT_DEPOSITION            (1 << 3)
+
+/*! resuspension event */
+#define CS_EVENT_RESUSPENSION          (1 << 4)
+
+/*! roll off */
+#define CS_EVENT_ROLL_OFF              (1 << 5)
+
+/*! roll on */
+#define CS_EVENT_ROLL_ON               (1 << 6)
+
+/*! fouling  */
+#define CS_EVENT_FOULING               (1 << 7)
 
 /*============================================================================
  * Type definitions

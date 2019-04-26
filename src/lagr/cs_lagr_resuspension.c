@@ -184,7 +184,7 @@ cs_lagr_resuspension(void)
 
   cs_lagr_event_set_t  *events = NULL;
 
-  if (lag_bi->iflmbd > 0) {
+  if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT)) {
     events = cs_lagr_event_set_boundary_interaction();
     /* Event set "expected" size: n boundary faces*2 */
     cs_lnum_t events_min_size = mesh->n_b_faces * 2;
@@ -358,12 +358,6 @@ cs_lagr_resuspension(void)
               p_set->n_part_resusp += 1;
               p_set->weight_resusp += p_stat_weight;
 
-              if (lag_bi->iflmbd > 0) {
-
-                bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
-                bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
-                bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
-              }
               if (events != NULL)
                 _add_resuspension_event(events,
                                         p_set,
@@ -436,13 +430,6 @@ cs_lagr_resuspension(void)
                 p_set->n_part_resusp += 1;
                 p_set->weight_resusp += p_stat_weight;
 
-                if (lag_bi->iflmbd > 0) {
-
-                  bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
-                  bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
-                  bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
-
-                }
                 if (events != NULL)
                   _add_resuspension_event(events,
                                           p_set,
@@ -578,13 +565,6 @@ cs_lagr_resuspension(void)
             p_set->n_part_resusp += 1;
             p_set->weight_resusp += p_stat_weight;
 
-            if (lag_bi->iflmbd > 0) {
-
-              bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
-              bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
-              bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
-
-            }
             if (events != NULL)
               _add_resuspension_event(events,
                                       p_set,

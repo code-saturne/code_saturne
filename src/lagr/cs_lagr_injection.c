@@ -1407,7 +1407,7 @@ cs_lagr_injection(int        time_id,
           /* Add particle tracking events for boundary injection */
 
           if (   particle_face_ids != NULL
-              && cs_glob_lagr_boundary_interactions->iflmbd) {
+              && cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT)) {
 
             cs_lagr_event_set_t  *events
               = cs_lagr_event_set_boundary_interaction();

@@ -701,35 +701,31 @@ typedef struct {
 
 typedef struct {
 
-  /*  activates (=1) or not (=0) the option of coal particle fouling.
-   It then is necessary to specify the domain boundaries
-   on which fouling may take place. Useful if \ref physical_model = 2*/
+  /* Activates (=1) or not (=0) the option of coal particle fouling.
+     It then is necessary to specify the domain boundaries
+     on which fouling may take place. Useful if \ref physical_model = 2*/
   int  iencra;
 
-  /*  encrustation data*/
+  /* encrustation data*/
   int  npencr;
   // TODO cf particles->n_part_fou in cs_lagr_tracking.c
 
-  /*  encrustation data*/
-//TODO
-  cs_real_t  *enc1;//ncharm2
-  /*  encrustation data*/
-//TODO
-  cs_real_t  *enc2;//ncharm2
+  /* encrustation data*/
+  cs_real_t  *enc1;  // size: ncharm2
+  /* encrustation data*/
+  cs_real_t  *enc2;  // size: ncharm2
 
-  /*  limit temperature (in degree Celsius) below which the coal particles do
-   not cause any fouling (if the fouling model is activated).
-   Useful if \ref physical_model = 2 and \ref iencra = 1*/
-//TODO
-  cs_real_t  *tprenc;//ncharm2
+  /* Limit temperature (in degree Celsius) below which the coal particles do
+     not cause any fouling (if the fouling model is activated).
+     Useful if \ref physical_model = 2 and \ref iencra = 1*/
+  cs_real_t  *tprenc; // size: ncharm2
 
-  /*  ash critical viscosity in \f$ kg.m^{-1}.s^{-1} \f$, in the fouling model
-   cf J.D. Watt et T. Fereday (J.Inst.Fuel, Vol.42-p99).
-   Useful if \ref physical_model = 2 and \ref iencra = 1*/
-//TODO
-  cs_real_t  *visref;//ncharm2
+  /* Ash critical viscosity in \f$ kg.m^{-1}.s^{-1} \f$, in the fouling model
+     cf J.D. Watt et T. Fereday (J.Inst.Fuel, Vol.42-p99).
+     Useful if \ref physical_model = 2 and \ref iencra = 1*/
+  cs_real_t  *visref;  // size: ncharm2
 
-  /*  encrustation data */
+  /* encrustation data */
   cs_real_t  dnpenc;
 
 } cs_lagr_encrustation_t;
@@ -777,7 +773,7 @@ typedef struct {
 
 typedef struct {
 
-  /*! number of iterations during which steady boundary statistics have
+  /*! Number of iterations during which steady boundary statistics have
     been accumulated.
     Useful if \ref isttio=1 and \ref nstist inferior
     or equal to the current time step.
@@ -795,94 +791,16 @@ typedef struct {
 
   /*! activation (=1) or not (=0) of the recording of the number of
     particle/boundary interactions, and of the calculation of the associated
-    boundary statistics.
-    \ref has_part_impact_nbr is set to 1 when using the particulate average
-    \ref imoybr = 2. */
+    boundary statistics. */
   int  has_part_impact_nbr;
-
-  /*!  activation (=1) or not (=0) of the recording of the particulate mass flow
-    related to the particle/boundary interactions, and of the calculation of
-    the associated boundary statistics.
-    If set to 2 or 3 respectively, time averages and variances are also
-    computed.
-    \ref has_part_impact_nbr is set to 1 when using \ref iflmbd=1.
-   */
-  int  iflmbd;
-
-  /*!  activation (=1) or not (=0) of the recording of the angle between a
-    particle trajectory and a boundary face involved in a particle/boundary
-    interaction, and of the calculation of the associated boundary statistics. */
-  int  iangbd;
-
-  /*!  activation (=1) or not (=0) of the recording of the velocity of a particle
-    involved in a particle/boundary interaction, and of the calculation of
-    the associated boundary statistics. */
-  int  ivitbd;
 
   /*!  activation (=1) or not (=0) of the recording of clogging parameters
     involved in a particle/boundary interaction, and of the calculation of
     the associated boundary statistics. */
   int  iclgst;
 
-  /*! flag for number of recorded particle/boundary interactions with fouling */
-  int  iencnbbd;
-
-  /*! flag for mass of fouled coal particles */
-  int  iencmabd;
-
-  /*! flag for diameter of fouled coal particles */
-  int  iencdibd;
-
-  /*! flag for coke fraction of fouled coal particles */
-  int  iencckbd;
-
   /*!  id for number of particle/boundary interactions */
   int  inbr;
-
-  /*!  id for particle mass flow at the boundary faces */
-  int  iflm;
-
-  /*!  id for mean interaction angle with the boundary faces */
-  int  iang;
-
-  /*!  id for mean interaction velocity with the boundary faces */
-  int  ivit;
-
-  /*!  id for number of resuspended particles */
-  int  ires;
-
-  /*!  id for mass flow of resuspended particles at the boundary faces */
-  int  iflres;
-
-  /*! flag for number of recorded particle/boundary interactions with fouling */
-  int  iencnb;
-
-  /*! id for mass of fouled coal particles */
-  int  iencma;
-
-  /*! id for diameter of fouled coal particles */
-  int  iencdi;
-
-  /*! id for coke fraction of fouled coal particles */
-  int  iencck;
-
-  /*! the recordings in \ref bound_stat at every particle/boundary interaction are
-      cumulated values (possibly reset to zero at every iteration in the
-      unsteady case). They must therefore be divided by a quantity to
-      get boundary statistics. The user can choose between two average types:
-      - = 0: no average is applied to the recorded cumulated values.
-      - = 1: a time-average is calculated. The cumulated value
-             is divided by the physical duration in the case of steady
-             averages (\ref isttio=1). The cumulated value is divided by the
-             value of the last time step in the case of unsteady averages
-             (\ref isttio=0), and also in the case of steady averages while the
-             absolute iteration number is inferior to \ref nstist.
-      - = 2: a particulate average is calculated. The cumulated value is divided
-             by the number of particle/boundary interactions (in terms of
-             statistical weight) recorded in \ref bound_stat "bound_stat"(nfabor,inbr).
-             This average can only be calculated when \ref has_part_impact_nbr = 1.
-             Only the cumulated value is recorded in the restart file. */
-  int  *imoybr;
 
   /*! id for number of deposited particles */
   int  inclg;

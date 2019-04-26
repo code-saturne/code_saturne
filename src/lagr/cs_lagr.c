@@ -302,25 +302,8 @@ static cs_lagr_boundary_interactions_t _cs_glob_lagr_boundary_interactions
   = {.npstf = 0,
      .npstft = 0,
      .has_part_impact_nbr = 0,
-     .iflmbd = 0,
-     .iangbd= 0,
-     .ivitbd = 0,
      .iclgst = 0,
-     .iencnbbd = 0,
-     .iencmabd = 0,
-     .iencdibd = 0,
-     .iencckbd = 0,
      .inbr = -1,
-     .iflm = -1,
-     .iang = -1,
-     .ivit = -1,
-     .ires = -1,
-     .iflres = -1,
-     .iencnb = -1,
-     .iencma = -1,
-     .iencdi = -1,
-     .iencck = -1,
-     .imoybr = NULL,
      .inclg = -1,
      .inclgt = -1,
      .iclogt = -1,
@@ -1147,8 +1130,6 @@ cs_lagr_finalize(void)
   BFT_FREE(cs_glob_lagr_encrustation->visref);
 
   /* boundary interaction pointers */
-
-  BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
 
   for (int i = 0; i < cs_glob_lagr_dim->n_boundary_stats; i++)
     BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd[i]);

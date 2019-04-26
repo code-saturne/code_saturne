@@ -423,6 +423,10 @@ cs_lagr_event_initialize(void)
        CS_LAGR_TEMPERATURE,
        CS_LAGR_FLUID_TEMPERATURE,
        CS_LAGR_CP,
+       CS_LAGR_WATER_MASS,
+       CS_LAGR_COAL_MASS,
+       CS_LAGR_COKE_MASS,
+       CS_LAGR_SHRINKING_DIAMETER,
        CS_LAGR_STAT_CLASS,
        CS_LAGR_USER};
 
