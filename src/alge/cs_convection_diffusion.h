@@ -703,7 +703,7 @@ cs_slope_test_tensor(const cs_real_t   pi[6],
 /*!
  * \brief Reconstruct values in I' and J'.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
@@ -718,7 +718,7 @@ cs_slope_test_tensor(const cs_real_t   pi[6],
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_compute_quantities(const int          ircflp,
+cs_i_compute_quantities(const cs_real_t    bldfrp,
                         const cs_real_3_t  diipf,
                         const cs_real_3_t  djjpf,
                         const cs_real_3_t  gradi,
@@ -735,8 +735,8 @@ cs_i_compute_quantities(const int          ircflp,
                          0.5*(gradi[2] + gradj[2])};
 
   /* reconstruction only if IRCFLP = 1 */
-  *recoi = ircflp*(cs_math_3_dot_product(gradpf, diipf));
-  *recoj = ircflp*(cs_math_3_dot_product(gradpf, djjpf));
+  *recoi = bldfrp*(cs_math_3_dot_product(gradpf, diipf));
+  *recoj = bldfrp*(cs_math_3_dot_product(gradpf, djjpf));
   *pip = pi + *recoi;
   *pjp = pj + *recoj;
 }
@@ -745,7 +745,7 @@ cs_i_compute_quantities(const int          ircflp,
 /*!
  * \brief Reconstruct values in I' and J'.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
@@ -760,7 +760,7 @@ cs_i_compute_quantities(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_compute_quantities_vector(const int          ircflp,
+cs_i_compute_quantities_vector(const cs_real_t    bldfrp,
                                const cs_real_3_t  diipf,
                                const cs_real_3_t  djjpf,
                                const cs_real_33_t gradi,
@@ -784,8 +784,8 @@ cs_i_compute_quantities_vector(const int          ircflp,
 
     /* reconstruction only if IRCFLP = 1 */
 
-    recoi[isou] = ircflp*(cs_math_3_dot_product(dpvf, diipf));
-    recoj[isou] = ircflp*(cs_math_3_dot_product(dpvf, djjpf));
+    recoi[isou] = bldfrp*(cs_math_3_dot_product(dpvf, diipf));
+    recoj[isou] = bldfrp*(cs_math_3_dot_product(dpvf, djjpf));
 
     pip[isou] = pi[isou] + recoi[isou];
     pjp[isou] = pj[isou] + recoj[isou];
@@ -797,7 +797,7 @@ cs_i_compute_quantities_vector(const int          ircflp,
 /*!
  * \brief Reconstruct values in I' and J'.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
@@ -812,7 +812,7 @@ cs_i_compute_quantities_vector(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_compute_quantities_tensor(const int          ircflp,
+cs_i_compute_quantities_tensor(const cs_real_t    bldfrp,
                                const cs_real_3_t  diipf,
                                const cs_real_3_t  djjpf,
                                const cs_real_63_t gradi,
@@ -836,8 +836,8 @@ cs_i_compute_quantities_tensor(const int          ircflp,
 
     /* reconstruction only if IRCFLP = 1 */
 
-    recoi[isou] = ircflp*(cs_math_3_dot_product(dpvf, diipf));
-    recoj[isou] = ircflp*(cs_math_3_dot_product(dpvf, djjpf));
+    recoi[isou] = bldfrp*(cs_math_3_dot_product(dpvf, diipf));
+    recoj[isou] = bldfrp*(cs_math_3_dot_product(dpvf, djjpf));
 
     pip[isou] = pi[isou] + recoi[isou];
     pjp[isou] = pj[isou] + recoj[isou];
@@ -1470,7 +1470,7 @@ cs_i_diff_flux_tensor(const int        idiffp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of a steady algorithm and a pure upwind flux.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     relaxp       relaxation coefficient
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
@@ -1492,7 +1492,7 @@ cs_i_diff_flux_tensor(const int        idiffp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_upwind(const int         ircflp,
+cs_i_cd_steady_upwind(const cs_real_t   bldfrp,
                       const cs_real_t   relaxp,
                       const cs_real_t   diipf[3],
                       const cs_real_t   djjpf[3],
@@ -1514,7 +1514,7 @@ cs_i_cd_steady_upwind(const int         ircflp,
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
 
-  cs_i_compute_quantities(ircflp,
+  cs_i_compute_quantities(bldfrp,
                           diipf,
                           djjpf,
                           gradi,
@@ -1553,7 +1553,7 @@ cs_i_cd_steady_upwind(const int         ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of a steady algorithm and a pure upwind flux.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     relaxp       relaxation coefficient
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
@@ -1575,7 +1575,7 @@ cs_i_cd_steady_upwind(const int         ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_upwind_vector(const int        ircflp,
+cs_i_cd_steady_upwind_vector(const cs_real_t  bldfrp,
                              const cs_real_t  relaxp,
                              const cs_real_t  diipf[3],
                              const cs_real_t  djjpf[3],
@@ -1597,7 +1597,7 @@ cs_i_cd_steady_upwind_vector(const int        ircflp,
   cs_real_t pir[3], pjr[3];
   cs_real_t recoi[3], recoj[3];
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -1636,7 +1636,7 @@ cs_i_cd_steady_upwind_vector(const int        ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of a steady algorithm and a pure upwind flux.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     relaxp       relaxation coefficient
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
@@ -1658,7 +1658,7 @@ cs_i_cd_steady_upwind_vector(const int        ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_upwind_tensor(const int        ircflp,
+cs_i_cd_steady_upwind_tensor(const cs_real_t  bldfrp,
                              const cs_real_t  relaxp,
                              const cs_real_t  diipf[3],
                              const cs_real_t  djjpf[3],
@@ -1680,7 +1680,7 @@ cs_i_cd_steady_upwind_tensor(const int        ircflp,
   cs_real_t pir[6], pjr[6];
   cs_real_t recoi[6], recoj[6];
 
-  cs_i_compute_quantities_tensor(ircflp,
+  cs_i_compute_quantities_tensor(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -1719,7 +1719,7 @@ cs_i_cd_steady_upwind_tensor(const int        ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of an unsteady algorithm and a pure upwind flux.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
@@ -1734,7 +1734,7 @@ cs_i_cd_steady_upwind_tensor(const int        ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_upwind(const int         ircflp,
+cs_i_cd_unsteady_upwind(const cs_real_t   bldfrp,
                         const cs_real_t   diipf[3],
                         const cs_real_t   djjpf[3],
                         const cs_real_t   gradi[3],
@@ -1748,7 +1748,7 @@ cs_i_cd_unsteady_upwind(const int         ircflp,
 {
   cs_real_t recoi, recoj;
 
-  cs_i_compute_quantities(ircflp,
+  cs_i_compute_quantities(bldfrp,
                           diipf,
                           djjpf,
                           gradi,
@@ -1769,7 +1769,7 @@ cs_i_cd_unsteady_upwind(const int         ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of an unsteady algorithm and a pure upwind flux.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
@@ -1784,7 +1784,7 @@ cs_i_cd_unsteady_upwind(const int         ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_upwind_vector(const int        ircflp,
+cs_i_cd_unsteady_upwind_vector(const cs_real_t  bldfrp,
                                const cs_real_t  diipf[3],
                                const cs_real_t  djjpf[3],
                                const cs_real_t  gradi[3][3],
@@ -1798,7 +1798,7 @@ cs_i_cd_unsteady_upwind_vector(const int        ircflp,
 {
   cs_real_t recoi[3], recoj[3];
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -1819,7 +1819,7 @@ cs_i_cd_unsteady_upwind_vector(const int        ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of an unsteady algorithm and a pure upwind flux.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     diipf        distance II'
  * \param[in]     djjpf        distance JJ'
  * \param[in]     gradi        gradient at cell i
@@ -1834,7 +1834,7 @@ cs_i_cd_unsteady_upwind_vector(const int        ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_upwind_tensor(const int        ircflp,
+cs_i_cd_unsteady_upwind_tensor(const cs_real_t  bldfrp,
                                const cs_real_t  diipf[3],
                                const cs_real_t  djjpf[3],
                                const cs_real_t  gradi[6][3],
@@ -1848,7 +1848,7 @@ cs_i_cd_unsteady_upwind_tensor(const int        ircflp,
 {
   cs_real_t recoi[6], recoj[6];
 
-  cs_i_compute_quantities_tensor(ircflp,
+  cs_i_compute_quantities_tensor(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -1870,7 +1870,7 @@ cs_i_cd_unsteady_upwind_tensor(const int        ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of a steady algorithm and without enabling slope tests.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
  * \param[in]     relaxp       relaxation coefficient
  * \param[in]     blencp       proportion of centered or SOLU scheme,
@@ -1901,7 +1901,7 @@ cs_i_cd_unsteady_upwind_tensor(const int        ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady(const int         ircflp,
+cs_i_cd_steady(const cs_real_t   bldfrp,
                const int         ischcp,
                const double      relaxp,
                const double      blencp,
@@ -1931,7 +1931,7 @@ cs_i_cd_steady(const int         ircflp,
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
 
-  cs_i_compute_quantities(ircflp,
+  cs_i_compute_quantities(bldfrp,
                           diipf,
                           djjpf,
                           gradi,
@@ -2053,7 +2053,7 @@ cs_i_cd_steady(const int         ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of a steady algorithm and without enabling slope tests.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
  * \param[in]     relaxp       relaxation coefficient
  * \param[in]     blencp       proportion of centered or SOLU scheme,
@@ -2082,7 +2082,7 @@ cs_i_cd_steady(const int         ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_vector(const int           ircflp,
+cs_i_cd_steady_vector(const cs_real_t     bldfrp,
                       const int           ischcp,
                       const double        relaxp,
                       const double        blencp,
@@ -2110,7 +2110,7 @@ cs_i_cd_steady_vector(const int           ircflp,
   cs_real_t pir[3], pjr[3];
   cs_real_t recoi[3], recoj[3];
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -2206,7 +2206,7 @@ cs_i_cd_steady_vector(const int           ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of a steady algorithm and without enabling slope tests.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
  * \param[in]     relaxp       relaxation coefficient
  * \param[in]     blencp       proportion of centered or SOLU scheme,
@@ -2235,7 +2235,7 @@ cs_i_cd_steady_vector(const int           ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_tensor(const int           ircflp,
+cs_i_cd_steady_tensor(const cs_real_t     bldfrp,
                       const int           ischcp,
                       const double        relaxp,
                       const double        blencp,
@@ -2264,7 +2264,7 @@ cs_i_cd_steady_tensor(const int           ircflp,
   cs_real_t pir[6], pjr[6];
   cs_real_t recoi[6], recoj[6];
 
-  cs_i_compute_quantities_tensor(ircflp,
+  cs_i_compute_quantities_tensor(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -2360,7 +2360,7 @@ cs_i_cd_steady_tensor(const int           ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of a unsteady algorithm and without enabling slope tests.
  *
- * \param[in]     ircflp         recontruction flag
+ * \param[in]     bldfrp         reconstruction blending factor
  * \param[in]     ischcp         second order convection scheme flag
  * \param[in]     blencp         proportion of centered or SOLU scheme,
  *                               (1-blencp) is the proportion of upwind.
@@ -2388,7 +2388,7 @@ cs_i_cd_steady_tensor(const int           ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady(const int          ircflp,
+cs_i_cd_unsteady(const cs_real_t    bldfrp,
                  const int          ischcp,
                  const double       blencp,
                  const cs_real_t    weight,
@@ -2412,7 +2412,7 @@ cs_i_cd_unsteady(const int          ircflp,
 {
   cs_real_t recoi, recoj;
 
-  cs_i_compute_quantities(ircflp,
+  cs_i_compute_quantities(bldfrp,
                           diipf,
                           djjpf,
                           gradi,
@@ -2524,7 +2524,7 @@ cs_i_cd_unsteady(const int          ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of an unsteady algorithm and without enabling slope tests.
  *
- * \param[in]     ircflp         recontruction flag
+ * \param[in]     bldfrp         reconstruction blending factor
  * \param[in]     ischcp         second order convection scheme flag
  * \param[in]     blencp         proportion of centered or SOLU scheme,
  *                               (1-blencp) is the proportion of upwind.
@@ -2548,7 +2548,7 @@ cs_i_cd_unsteady(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_vector(const int           ircflp,
+cs_i_cd_unsteady_vector(const cs_real_t     bldfrp,
                         const int           ischcp,
                         const double        blencp,
                         const cs_real_t     weight,
@@ -2571,7 +2571,7 @@ cs_i_cd_unsteady_vector(const int           ircflp,
 {
   cs_real_t recoi[3], recoj[3];
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -2668,7 +2668,7 @@ cs_i_cd_unsteady_vector(const int           ircflp,
  * \brief Handle preparation of internal face values for the fluxes computation
  * in case of an unsteady algorithm and without enabling slope tests.
  *
- * \param[in]     ircflp       recontruction flag
+ * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
  * \param[in]     blencp       proportion of centered or SOLU scheme,
  *                             (1-blencp) is the proportion of upwind.
@@ -2690,7 +2690,7 @@ cs_i_cd_unsteady_vector(const int           ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_tensor(const int           ircflp,
+cs_i_cd_unsteady_tensor(const cs_real_t     bldfrp,
                         const int           ischcp,
                         const double        blencp,
                         const cs_real_t     weight,
@@ -2711,7 +2711,7 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
 {
   cs_real_t recoi[6], recoj[6];
 
-  cs_i_compute_quantities_tensor(ircflp,
+  cs_i_compute_quantities_tensor(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -2774,7 +2774,7 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
  * \param[in]     blencp          proportion of centered or SOLU scheme,
@@ -2816,7 +2816,7 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
 inline static void
 cs_i_cd_steady_slope_test(bool              *upwind_switch,
                           const int          iconvp,
-                          const int          ircflp,
+                          const cs_real_t    bldfrp,
                           const int          ischcp,
                           const double       relaxp,
                           const double       blencp,
@@ -2856,7 +2856,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
 
   *upwind_switch = false;
 
-  cs_i_compute_quantities(ircflp,
+  cs_i_compute_quantities(bldfrp,
                           diipf,
                           djjpf,
                           gradi,
@@ -3031,7 +3031,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
  * \param[in]     blencp          proportion of centered or SOLU scheme,
@@ -3068,7 +3068,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
 inline static void
 cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
                                      const int           iconvp,
-                                     const int           ircflp,
+                                     const cs_real_t     bldfrp,
                                      const int           ischcp,
                                      const double        relaxp,
                                      const double        blencp,
@@ -3108,7 +3108,7 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
   distf = i_dist;
   srfan = i_face_surf;
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -3256,7 +3256,7 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
  * \param[in]     blencp          proportion of centered or SOLU scheme,
@@ -3296,7 +3296,7 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
 inline static void
 cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
                                  const int           iconvp,
-                                 const int           ircflp,
+                                 const cs_real_t     bldfrp,
                                  const int           ischcp,
                                  const double        relaxp,
                                  const double        blencp,
@@ -3333,7 +3333,7 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
   cs_real_t testij, tesqck;
   int isou;
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -3484,7 +3484,7 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
  * \param[in]     blencp          proportion of centered or SOLU scheme,
@@ -3524,7 +3524,7 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
 inline static void
 cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
                                  const int           iconvp,
-                                 const int           ircflp,
+                                 const cs_real_t     bldfrp,
                                  const int           ischcp,
                                  const double        relaxp,
                                  const double        blencp,
@@ -3561,7 +3561,7 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
   cs_real_t testij, tesqck;
   int isou;
 
-  cs_i_compute_quantities_tensor(ircflp,
+  cs_i_compute_quantities_tensor(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -3715,7 +3715,7 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
@@ -3750,7 +3750,7 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
 inline static void
 cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                             const int          iconvp,
-                            const int          ircflp,
+                            const cs_real_t    bldfrp,
                             const int          ischcp,
                             const double       blencp,
                             const double       blend_st,
@@ -3784,7 +3784,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
 
   *upwind_switch = false;
 
-  cs_i_compute_quantities(ircflp,
+  cs_i_compute_quantities(bldfrp,
                           diipf,
                           djjpf,
                           gradi,
@@ -4037,7 +4037,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
@@ -4067,7 +4067,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
 inline static void
 cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
                                        const int           iconvp,
-                                       const int           ircflp,
+                                       const cs_real_t     bldfrp,
                                        const int           ischcp,
                                        const double        blencp,
                                        const cs_real_t     weight,
@@ -4099,7 +4099,7 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
   distf = i_dist;
   srfan = i_face_surf;
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -4207,7 +4207,7 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
@@ -4240,7 +4240,7 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
 inline static void
 cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                                    const int           iconvp,
-                                   const int           ircflp,
+                                   const cs_real_t     bldfrp,
                                    const int           ischcp,
                                    const double        blencp,
                                    const double        blend_st,
@@ -4268,7 +4268,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
   cs_real_t recoi[3], recoj[3];
   cs_real_t testij, tesqck;
 
-  cs_i_compute_quantities_vector(ircflp,
+  cs_i_compute_quantities_vector(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -4377,7 +4377,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
  *
  * \param[out]    upwind_switch   slope test result
  * \param[in]     iconvp          convection flag
- * \param[in]     ircflp          recontruction flag
+ * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
@@ -4410,7 +4410,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
 inline static void
 cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
                                    const int           iconvp,
-                                   const int           ircflp,
+                                   const cs_real_t     bldfrp,
                                    const int           ischcp,
                                    const double        blencp,
                                    const double        blend_st,
@@ -4439,7 +4439,7 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
   cs_real_t testij, tesqck;
   int isou;
 
-  cs_i_compute_quantities_tensor(ircflp,
+  cs_i_compute_quantities_tensor(bldfrp,
                                  diipf,
                                  djjpf,
                                  gradi,
@@ -4546,7 +4546,7 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
  *
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[out]    recoi    reconstruction at cell i
  */
 /*----------------------------------------------------------------------------*/
@@ -4554,10 +4554,10 @@ cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
 inline static void
 cs_b_compute_quantities(const cs_real_3_t  diipb,
                         const cs_real_3_t  gradi,
-                        const int          ircflp,
+                        const cs_real_t    bldfrp,
                         cs_real_t         *recoi)
 {
-  *recoi = ircflp * (  gradi[0]*diipb[0]
+  *recoi = bldfrp * (  gradi[0]*diipb[0]
                      + gradi[1]*diipb[1]
                      + gradi[2]*diipb[2]);
 }
@@ -4568,7 +4568,7 @@ cs_b_compute_quantities(const cs_real_3_t  diipb,
  *
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[out]    recoi    reconstruction at cell i
  */
 /*----------------------------------------------------------------------------*/
@@ -4576,11 +4576,11 @@ cs_b_compute_quantities(const cs_real_3_t  diipb,
 inline static void
 cs_b_compute_quantities_vector(const cs_real_3_t   diipb,
                                const cs_real_33_t  gradi,
-                               const int           ircflp,
+                               const cs_real_t     bldfrp,
                                cs_real_t           recoi[3])
 {
   for (int isou = 0; isou < 3; isou++) {
-    recoi[isou] = ircflp * (  gradi[isou][0]*diipb[0]
+    recoi[isou] = bldfrp * (  gradi[isou][0]*diipb[0]
                             + gradi[isou][1]*diipb[1]
                             + gradi[isou][2]*diipb[2]);
   }
@@ -4592,7 +4592,7 @@ cs_b_compute_quantities_vector(const cs_real_3_t   diipb,
  *
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[out]    recoi    reconstruction at cell i
  */
 /*----------------------------------------------------------------------------*/
@@ -4600,11 +4600,11 @@ cs_b_compute_quantities_vector(const cs_real_3_t   diipb,
 inline static void
 cs_b_compute_quantities_tensor(const cs_real_3_t   diipb,
                                const cs_real_63_t  gradi,
-                               const int           ircflp,
+                               const cs_real_t     bldfrp,
                                cs_real_t           recoi[6])
 {
   for (int isou = 0; isou < 6; isou++) {
-    recoi[isou] = ircflp * (  gradi[isou][0]*diipb[0]
+    recoi[isou] = bldfrp * (  gradi[isou][0]*diipb[0]
                             + gradi[isou][1]*diipb[1]
                             + gradi[isou][2]*diipb[2]);
   }
@@ -5109,7 +5109,7 @@ cs_b_diff_flux_tensor(const int          idiffp,
  * \brief Handle preparation of boundary face values for the flux computation in
  * case of a steady algorithm.
  *
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[in]     relaxp   relaxation coefficient
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
@@ -5121,7 +5121,7 @@ cs_b_diff_flux_tensor(const int          idiffp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_cd_steady(const int          ircflp,
+cs_b_cd_steady(const cs_real_t    bldfrp,
                const double       relaxp,
                const cs_real_3_t  diipb,
                const cs_real_3_t  gradi,
@@ -5134,7 +5134,7 @@ cs_b_cd_steady(const int          ircflp,
 
   cs_b_compute_quantities(diipb,
                           gradi,
-                          ircflp,
+                          bldfrp,
                           &recoi);
 
   cs_b_relax_c_val(relaxp,
@@ -5150,7 +5150,7 @@ cs_b_cd_steady(const int          ircflp,
  * \brief Handle preparation of boundary face values for the flux computation in
  * case of a steady algorithm.
  *
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[in]     relaxp   relaxation coefficient
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
@@ -5162,7 +5162,7 @@ cs_b_cd_steady(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_cd_steady_vector(const int          ircflp,
+cs_b_cd_steady_vector(const cs_real_t    bldfrp,
                       const double       relaxp,
                       const cs_real_3_t  diipb,
                       const cs_real_33_t gradi,
@@ -5175,7 +5175,7 @@ cs_b_cd_steady_vector(const int          ircflp,
 
   cs_b_compute_quantities_vector(diipb,
                                  gradi,
-                                 ircflp,
+                                 bldfrp,
                                  recoi);
 
   cs_b_relax_c_val_vector(relaxp,
@@ -5191,7 +5191,7 @@ cs_b_cd_steady_vector(const int          ircflp,
  * \brief Handle preparation of boundary face values for the flux computation in
  * case of a steady algorithm.
  *
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[in]     relaxp   relaxation coefficient
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
@@ -5203,7 +5203,7 @@ cs_b_cd_steady_vector(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_cd_steady_tensor(const int          ircflp,
+cs_b_cd_steady_tensor(const cs_real_t    bldfrp,
                       const double       relaxp,
                       const cs_real_3_t  diipb,
                       const cs_real_63_t gradi,
@@ -5216,7 +5216,7 @@ cs_b_cd_steady_tensor(const int          ircflp,
 
   cs_b_compute_quantities_tensor(diipb,
                                  gradi,
-                                 ircflp,
+                                 bldfrp,
                                  recoi);
 
   cs_b_relax_c_val_tensor(relaxp,
@@ -5232,7 +5232,7 @@ cs_b_cd_steady_tensor(const int          ircflp,
  * \brief Handle preparation of boundary face values for the flux computation in
  * case of an unsteady algorithm.
  *
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
  * \param[in]     pi       value at cell i
@@ -5241,7 +5241,7 @@ cs_b_cd_steady_tensor(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_cd_unsteady(const int          ircflp,
+cs_b_cd_unsteady(const cs_real_t    bldfrp,
                  const cs_real_3_t  diipb,
                  const cs_real_3_t  gradi,
                  const cs_real_t    pi,
@@ -5251,7 +5251,7 @@ cs_b_cd_unsteady(const int          ircflp,
 
   cs_b_compute_quantities(diipb,
                           gradi,
-                          ircflp,
+                          bldfrp,
                           &recoi);
 
   *pip = pi + recoi;
@@ -5262,7 +5262,7 @@ cs_b_cd_unsteady(const int          ircflp,
  * \brief Handle preparation of boundary face values for the flux computation in
  * case of a steady algorithm.
  *
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
  * \param[in]     pi       value at cell i
@@ -5271,7 +5271,7 @@ cs_b_cd_unsteady(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_cd_unsteady_vector(const int          ircflp,
+cs_b_cd_unsteady_vector(const cs_real_t    bldfrp,
                         const cs_real_3_t  diipb,
                         const cs_real_33_t gradi,
                         const cs_real_3_t  pi,
@@ -5281,7 +5281,7 @@ cs_b_cd_unsteady_vector(const int          ircflp,
 
   cs_b_compute_quantities_vector(diipb,
                                  gradi,
-                                 ircflp,
+                                 bldfrp,
                                  recoi);
 
   for (int isou = 0; isou < 3; isou++)
@@ -5293,7 +5293,7 @@ cs_b_cd_unsteady_vector(const int          ircflp,
  * \brief Handle preparation of boundary face values for the flux computation in
  * case of a steady algorithm.
  *
- * \param[in]     ircflp   recontruction flag
+ * \param[in]     bldfrp   reconstruction blending factor
  * \param[in]     diipb    distance I'I'
  * \param[in]     gradi    gradient at cell i
  * \param[in]     pi       value at cell i
@@ -5302,7 +5302,7 @@ cs_b_cd_unsteady_vector(const int          ircflp,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_b_cd_unsteady_tensor(const int          ircflp,
+cs_b_cd_unsteady_tensor(const cs_real_t    bldfrp,
                         const cs_real_3_t  diipb,
                         const cs_real_63_t gradi,
                         const cs_real_6_t  pi,
@@ -5312,7 +5312,7 @@ cs_b_cd_unsteady_tensor(const int          ircflp,
 
   cs_b_compute_quantities_tensor(diipb,
                                  gradi,
-                                 ircflp,
+                                 bldfrp,
                                  recoi);
 
   for(int isou = 0; isou< 6; isou++)

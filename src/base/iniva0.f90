@@ -83,6 +83,7 @@ integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
 integer          f_type, idftnp
 integer          keyvar
+integer          f_id, kdflim
 
 logical          have_previous
 
@@ -94,7 +95,7 @@ double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
 double precision, dimension(:), pointer :: field_s_v
-
+double precision, dimension(:), pointer :: cpro_diff_lim
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
@@ -645,6 +646,31 @@ do iflid = 0, nfld - 1
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_current_to_previous(iflid)
+  endif
+enddo
+
+
+! Diffusion limiter initialization
+call field_get_key_id("diffusion_limiter_id", kdflim)
+
+do f_id = 0, nfld - 1
+
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+
+    call field_get_key_int(f_id, kdflim, iflid)
+
+    if (iflid.ne.-1) then
+
+      call field_get_val_s(iflid, cpro_diff_lim)
+
+      do iel = 1, ncelet
+        cpro_diff_lim(iel) = 1.d0
+      enddo
+
+    endif
   endif
 enddo
 
