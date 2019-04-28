@@ -118,11 +118,11 @@ class Plot(object):
         self.fmt = parser.getAttribute(node, "fmt", "")
         xcol  = int(parser.getAttribute(node,   "xcol",  0))
         xplus = float(parser.getAttribute(node, "xplus", 0))
-        xfois = float(parser.getAttribute(node, "xfois", 1))
+        xscale = float(parser.getAttribute(node, "xscale", 1))
         yplus = float(parser.getAttribute(node, "yplus", 0))
-        yfois = float(parser.getAttribute(node, "yfois", 1))
+        yscale = float(parser.getAttribute(node, "yscale", 1))
 
-        self.uploadData(xcol, ycol, xplus, xfois, yplus, yfois)
+        self.uploadData(xcol, ycol, xplus, xscale, yplus, yscale)
 
         try:
             xerr = [int(s) for s in parser.getAttribute(node, "xerr").split()]
@@ -158,7 +158,7 @@ class Plot(object):
         # List of additional matplotlib commands
         for k, v in parser.getAttributes(node).items():
             if k not in ('fig', 'fmt', 'legend', 'xcol', 'ycol', \
-                         'xplus', 'yplus', 'xfois', 'yfois', \
+                         'xplus', 'yplus', 'xscale', 'yscale', \
                          'xerr', 'yerr', 'xerrp', 'yerrp', 'id'):
                 self.cmd.append("plt.setp(lines, " + k + "=" + v + ")")
 
@@ -178,7 +178,7 @@ class Plot(object):
 
     #---------------------------------------------------------------------------
 
-    def uploadData(self, xcol, ycol, xplus, xfois, yplus, yfois):
+    def uploadData(self, xcol, ycol, xplus, xscale, yplus, yscale):
         """
         Upload and parse data
         """
@@ -191,11 +191,11 @@ class Plot(object):
                 line = line.replace(", ", " ") # compatibility with CSV
                 line = line.lstrip()
                 if xcol:
-                    self.xspan.append(float(line.split()[xcol-1])*xfois + xplus)
+                    self.xspan.append(float(line.split()[xcol-1])*xscale + xplus)
                 else:
                     self.xspan.append(j)
 
-                self.yspan.append(float(line.split()[ycol-1])*yfois + yplus)
+                self.yspan.append(float(line.split()[ycol-1])*yscale + yplus)
 
     #---------------------------------------------------------------------------
 

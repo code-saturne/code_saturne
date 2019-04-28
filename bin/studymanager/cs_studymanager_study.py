@@ -58,6 +58,7 @@ except Exception:
     pass
 
 from studymanager.cs_studymanager_run import run_studymanager_command
+from studymanager.cs_studymanager_xml_init import XMLinit
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -75,7 +76,7 @@ def nodot(item):
 
 #-------------------------------------------------------------------------------
 
-def create_base_xml_file(filepath):
+def create_base_xml_file(filepath, pkg):
     """Create studymanager XML file.
     """
 
@@ -86,7 +87,7 @@ def create_base_xml_file(filepath):
         sys.exit(1)
 
     # using xml engine from Code_Saturne GUI
-    smgr = XMLengine.Case(None, studymanager=True)
+    smgr = XMLengine.Case(package=pkg, studymanager=True)
     smgr['xmlfile'] = filename
     pm = PathesModel(smgr)
 
@@ -240,9 +241,9 @@ class Case(object):
         from model.XMLengine import Case
 
         if self.exe == "code_saturne":
-            from model.XMLinitialize import XMLinit
+            from model.XMLinitialize import XMLinit as solver_xml_init
         elif self.exe == "neptune_cfd":
-            from model.XMLinitializeNeptune import XMLinit
+            from model.XMLinitializeNeptune import XMLinit as solver_xml_init
 
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)
@@ -262,7 +263,7 @@ class Case(object):
 
                     case['xmlfile'] = fp
                     case.xmlCleanAllBlank(case.xmlRootNode())
-                    XMLinit(case).initialize()
+                    solver_xml_init(case).initialize()
                     case.xmlSaveDocument()
 
 
@@ -1099,6 +1100,8 @@ class Studies(object):
             # default study directory is current one
             studyp = cwd
 
+        smgr = None
+
         # Create file of parameters
 
         filename = options.filename
@@ -1108,7 +1111,7 @@ class Studies(object):
                 filename = "smgr_" + studyd + ".xml"
 
             filepath = os.path.join(studyp, filename)
-            smgr = create_base_xml_file(filepath)
+            smgr = create_base_xml_file(filepath, pkg)
 
             init_xml_file_with_study(smgr, studyp)
 
@@ -1132,6 +1135,16 @@ class Studies(object):
         else:
             print("Specified XML parameter file for studymanager does not exist.")
             sys.exit(1)
+
+        # call smgr xml backward compatibility
+
+        if not smgr:
+            smgr = XMLengine.Case(package=pkg, file_name=filename, studymanager=True)
+            smgr['xmlfile'] = filename
+
+        # minimal modification of xml for now
+        XMLinit(smgr).initialize(reinit_indices = False)
+        smgr.xmlSaveDocument(prettyString=False)
 
         self.__xmlupdate = options.update_xml
 

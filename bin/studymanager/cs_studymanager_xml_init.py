@@ -55,7 +55,7 @@ class XMLinit(Variables):
         self.case = case
 
 
-    def initialize(self):
+    def initialize(self, reinit_indices = True):
         """
         Verify that all Headings exist only once in the XMLDocument and
         create the missing heading.
@@ -64,7 +64,10 @@ class XMLinit(Variables):
         if msg:
             return msg
 
-        self.__reinitIndices()
+        self.__backwardCompatibility()
+
+        if reinit_indices:
+            self.__reinitIndices()
 
         return msg
 
@@ -136,7 +139,7 @@ class XMLinit(Variables):
 
             idxx = 0
             for node in nn.xmlGetNodeList("plot"):
-                lst = node['fig']
+                lst = node['spids']
                 new_lst = ''
                 if lst:
                     for idl in lst.split(" "):
@@ -145,7 +148,7 @@ class XMLinit(Variables):
                                 new_lst = new_lst + " " + str(dico[idl])
                             else:
                                 new_lst = str(dico[idl])
-                    node['fig'] = new_lst
+                    node['spids'] = new_lst
                     if not node['id']:
                         node['id'] = idxx
                     idxx = idxx + 1
@@ -206,6 +209,17 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility.
         """
+        # rename some atrributes of plot markup
+        for o_attr in ['xfois', 'yfois', 'fig']:
+            for node in self.case.xmlGetNodeList('plot', o_attr):
+                val = node.xmlGetAttribute(o_attr)
+                node.xmlDelAttribute(o_attr)
+                if o_attr == "xfois":
+                    node.xmlSetAttribute(xscale = val)
+                elif o_attr == "yfois":
+                    node.xmlSetAttribute(yscale = val)
+                elif o_attr == "fig":
+                    node.xmlSetAttribute(spids = val)
 
 #-------------------------------------------------------------------------------
 # End of XMLinit
