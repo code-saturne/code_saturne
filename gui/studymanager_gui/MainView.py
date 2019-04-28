@@ -30,9 +30,9 @@ informations in the XML document, which reflets the treated case.
 This module defines the following classes:
 - MainView
 
-    @copyright: 1998-2017 EDF S.A., France
+    @copyright: 1998-2019 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
-    @license: GNU GPL v2, see COPYING for details.
+    @license: GNU GPL v2 or later, see COPYING for details.
 """
 
 #-------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ from code_saturne.model.XMLmodel import *
 from code_saturne.model.Common import XML_DOC_VERSION, GuiParam
 from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
 from code_saturne.studymanager_gui.BrowserView import BrowserView
-from code_saturne.studymanager_gui.XMLinitialize import *
+from code_saturne.studymanager.cs_studymanager_xml_init import *
 
 try:
     import code_saturne.Pages
@@ -113,7 +113,7 @@ class MainView(object):
         """
         Factory
         """
-        return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case)
+        return MainViewSmgr.__new__(MainViewSmgr, cmd_package, cmd_case)
 
 
     @staticmethod
@@ -135,7 +135,7 @@ class MainView(object):
         icon = QIcon(QPixmap(iconpath))
         self.setWindowIcon(icon)
 
-        self.setWindowTitle(self.package.code_name + " STUDYMANAGER GUI" + " - " + self.package.version)
+        self.setWindowTitle(self.package.code_name + " studymanager")
 
         self.dockWidgetBrowser.setWidget(self.Browser)
 
@@ -408,9 +408,9 @@ class MainView(object):
             self.case = XMLengine.Case(package=self.package, studymanager=True)
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
+
             title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" STUDYMANAGER GUI") \
-                     + " - " + self.package.version
+                     " - " + self.tr(self.package.code_name) + self.tr(" studymanager")
             self.setWindowTitle(title)
 
             self.Browser.configureTree(self.case)
@@ -816,13 +816,13 @@ class MainView(object):
         return text
 
 #-------------------------------------------------------------------------------
-# Main Window for Code_Saturne
+# Main Window for studymanager
 #-------------------------------------------------------------------------------
 
-class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
+class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
 
     def __new__(cls, cmd_package = None, cmd_case = ""):
-        return super(MainViewSaturne, cls). __new__(cls, cmd_package, cmd_case)
+        return super(MainViewSmgr, cls). __new__(cls, cmd_package, cmd_case)
 
 
     def __init__(self,
@@ -831,7 +831,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         Initializes a Main Window for a new document:
           1. finish the Main Window layout
-          2. connection betwenn signal and slot
+          2. connection between signal and slot
           3. Ctrl+C signal handler
           4. create some instance variables
           5. restore system settings

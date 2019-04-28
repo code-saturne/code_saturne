@@ -80,24 +80,23 @@ class XMLinit(Variables):
             nodeList = self.case.root().xmlInitChildNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. " \
-                      "There is more than one occurence of the tag: \n\n" + tag +  \
-                      "\n\nThe application will finish. Sorry."
+                msg = "More than one occurence of the tag: \n\n" + tag \
+                      + "\n\nThe application will finish."
 
         for tag in tagList:
             nodeList = self.case.xmlInitNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. " \
-                      "There is more than one occurence of the tag: \n\n" + tag +  \
-                      "\n\nThe application will finish. Sorry."
+                msg = "More than one occurence of the tag: \n\n" + tag \
+                      + "\n\nThe application will finish."
 
         return msg
 
 
     def __reinitIndices(self):
         """
-        Change XML in order to ensure backward compatibility.
+        Insert indices to make xml compatible with GUI
+        and reinitialize all indices.
         """
         for nn in self.case.xmlGetNodeList('study'):
             idx = 0
@@ -152,6 +151,61 @@ class XMLinit(Variables):
                     idxx = idxx + 1
 
 
+    def __backwardCompatibility(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        cur_vers = self.case['package'].version
+
+        if self.case.root()["solver_version"]:
+            his_r = self.case.root()["solver_version"]
+            history = his_r.split(";")
+            last_vers = self.__clean_version(history[len(history) - 1])
+            if last_vers == cur_vers:
+                self.__backwardCompatibilityCurrentVersion()
+            else:
+                self.__backwardCompatibilityOldVersion(last_vers)
+                self.__backwardCompatibilityCurrentVersion()
+            his = ""
+            vp = ""
+            for v in history:
+                vc = self.__clean_version(v)
+                if vc != vp:
+                    his += vc + ";"
+                    vp = vc
+            if cur_vers != vp:
+                his += cur_vers + ";"
+            his = his[:-1]
+            if his != his_r:
+                self.case.root().xmlSetAttribute(solver_version = his)
+
+        else:
+            vers = cur_vers
+            self.case.root().xmlSetAttribute(solver_version = vers)
+
+            # apply all backwardCompatibilities as we don't know
+            # when it was created
+            self.__backwardCompatibilityOldVersion("-1")
+            self.__backwardCompatibilityCurrentVersion()
+
+
+    def __backwardCompatibilityOldVersion(self, from_vers):
+        """
+        Change XML in order to ensure backward compatibility for old version
+        """
+        if from_vers <= "-1.0":
+            self.__backwardCompatibilityBefore_6_0()
+
+
+    def __backwardCompatibilityBefore_6_0(self):
+        """
+        Change XML to ensure backward compatibility from before 6.0 to 6.0
+        """
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

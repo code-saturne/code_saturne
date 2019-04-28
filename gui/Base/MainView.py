@@ -813,7 +813,7 @@ class MainView(object):
         if not datadir:
             datadir = os.getcwd()
         (casedir, data) = os.path.split(datadir)
-        if data != 'DATA': # inconsistent paramaters location.
+        if data != 'DATA': # inconsistent parameters location.
             casedir = ''
         case_name = os.path.basename(casedir)
 
