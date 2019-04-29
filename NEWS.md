@@ -192,6 +192,12 @@ Physical modelling:
 
 - Make particle tracking compatible with transient turbomachinery model.
 
+- Add a new continuous "all-y+" 2-scale wall model (iwallf=7) available
+  with the EB-RSM and set by default for this model:
+  * Ensure convergence towards standard EB-RSM when mesh is refined.
+  * Degenerate in a SSG-like model on high Reynolds meshes.
+  This was adapted from developpements done in J.F. Wald PhD.
+
 - Major modification for K-omega SST (iturb=60) boundary condition.
   * Switch from a Neumann boundary condition to a Dirichlet
     boundary condition on omega.
