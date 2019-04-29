@@ -55,6 +55,7 @@
     <addaction name="separator"/>
     <addaction name="openTextEditorAction"/>
     <addaction name="testUserCompilationAction"/>
+    <addaction name="openResultsFileAction"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -172,8 +173,20 @@
    </attribute>
    <addaction name="openXtermAction"/>
    <addaction name="displayCaseAction"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar_Editor1">
+   <property name="windowTitle">
+    <string>toolBar_Editor1</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
    <addaction name="openTextEditorAction"/>
    <addaction name="testUserCompilationAction"/>
+   <addaction name="openResultsFileAction"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetBrowser">
    <attribute name="dockWidgetArea">
@@ -304,13 +317,13 @@
      <normaloff>:/icons/22x22/editor-icon.png</normaloff>:/icons/22x22/editor-icon.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Text file editor</string>
+    <string>&amp;Manage user functions</string>
    </property>
    <property name="toolTip">
-    <string>Open a text file using an editor</string>
+    <string>Manage user functions within the SRC folder</string>
    </property>
    <property name="statusTip">
-    <string>Open a text file using an editor.</string>
+    <string>Manage user functions within the SRC folder</string>
    </property>
   </action>
   <action name="testUserCompilationAction">
@@ -326,6 +339,21 @@
    </property>
    <property name="statusTip">
     <string>Test the compilation of user function inside the SRC folder</string>
+   </property>
+  </action>
+  <action name="openResultsFileAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/viewer-icon.png</normaloff>:/icons/22x22/viewer-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Examine output files</string>
+   </property>
+   <property name="toolTip">
+    <string>View output and log file of a run</string>
+   </property>
+   <property name="statusTip">
+    <string>View output and log file of a run</string>
    </property>
   </action>
   <action name="reload_modulesAction">
