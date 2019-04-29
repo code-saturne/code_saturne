@@ -371,6 +371,7 @@ class MainView(object):
         self.fileQuitAction.triggered.connect(self.fileQuit)
 
         self.openTextEditorAction.triggered.connect(self.fileEditorOpen)
+        self.openResultsFileAction.triggered.connect(self.fileViewerOpen)
         self.testUserCompilationAction.triggered.connect(self.testUserFilesCompilation)
 
         self.openXtermAction.triggered.connect(self.openXterm)
@@ -878,15 +879,36 @@ class MainView(object):
 
     def fileEditorOpen(self):
         """
-        public slot
-
+        public
         open a text file
         """
 
         from code_saturne.Base.QFileEditor import QFileEditor
 
-        fileEditor = QFileEditor(self)
+        if not hasattr(self, 'case'):
+            return
+
+        fileEditor = QFileEditor(parent=self,
+                                 case_dir=self.case['case_path']+'/SRC')
         fileEditor.show()
+
+
+    def fileViewerOpen(self):
+        """
+        public
+        open a text file
+        """
+
+        from code_saturne.Base.QFileEditor import QFileEditor
+
+        if not hasattr(self, 'case'):
+            return
+
+        fileViewer = QFileEditor(parent=self,
+                                 case_dir=self.case['case_path']+'/RESU',
+                                 readOnly=True)
+        fileViewer.show()
+
 
 
     def testUserFilesCompilation(self):

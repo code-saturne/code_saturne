@@ -30,5 +30,6 @@
     <file>icons/22x22/numerical_params.png</file>
     <file>icons/22x22/time_stepping.png</file>
     <file>icons/22x22/physical_properties.png</file>
+    <file>icons/22x22/viewer-icon.png</file>
   </qresource>
 </RCC>

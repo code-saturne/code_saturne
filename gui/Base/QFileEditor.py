@@ -31,8 +31,8 @@ This module defines the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import sys, os
-from code_saturne.Base import QtGui, QtCore
+import sys, os, shutil
+from code_saturne.Base import QtGui, QtCore, QtWidgets
 
 # Check if QString exists
 has_qstring = True
@@ -87,12 +87,20 @@ format_styles = {'keyword'    : loc_format('blue', 'bold'),
                  'comment'    : loc_format('darkGreen', 'italic'),
                  'expression' : loc_format('black')}
 
+#-------------------------------------------------------------------------------
+# HighlightingRule class
+#-------------------------------------------------------------------------------
+
 class HighlightingRule():
 
+    # ---------------------------------------------------------------
     def __init__(self, pattern, format):
 
         self.pattern = pattern
         self.format  = format
+    # ---------------------------------------------------------------
+
+
 #-------------------------------------------------------------------------------
 # QtextHighlighter class
 #-------------------------------------------------------------------------------
@@ -102,6 +110,7 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
     Syntax highighting
     """
 
+    # ---------------------------------------------------------------
     def __init__(self, parent):
 
         QtGui.QSyntaxHighlighter.__init__(self, parent)
@@ -170,8 +179,10 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
         pn3 = QtCore.QRegExp('[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?')
         rn3 = HighlightingRule(pn3, format_styles['expression'])
         self.highlightingRules.append(rn3)
+    # ---------------------------------------------------------------
 
 
+    # ---------------------------------------------------------------
     def highlightBlock(self, text):
         """
         Apply the syntax highlighting
@@ -200,8 +211,10 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
         # C/C++ comments
         self.highlightCommentsOverLines(text, "/\\*", "\\*/")
+    # ---------------------------------------------------------------
 
 
+    # ---------------------------------------------------------------
     def highlightCommentsOverLines(self, text, dls, dle):
 
         startExpression = QtCore.QRegExp(dls)
@@ -233,6 +246,30 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
             self.setFormat(start, length, format_styles['comment'])
             start = endExpression.indexIn(text, start + length)
+    # ---------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# QFileEditor class
+#-------------------------------------------------------------------------------
+class FormWidget(QtWidgets.QWidget):
+    """
+    Main widget used to include both the browser and the editor zone
+    """
+
+    # ---------------------------------------------------------------
+    def __init__(self, parent, wlist):
+        super(FormWidget, self).__init__(parent)
+
+        self.layout = QtWidgets.QHBoxLayout(self)
+
+        for w in wlist:
+            if w == wlist[0]:
+                w.setMaximumWidth(400)
+            self.layout.addWidget(w)
+
+        self.setLayout(self.layout)
+    # ---------------------------------------------------------------
 
 
 #-------------------------------------------------------------------------------
@@ -240,19 +277,27 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 #-------------------------------------------------------------------------------
 
 class QFileEditor(QtGui.QMainWindow):
+    """
+    Editor class. Used for file editing and/or viewing
+    """
 
-    def __init__(self, parent=None):
+    # ---------------------------------------------------------------
+    def __init__(self, parent=None, case_dir=None, readOnly=False):
         super(QFileEditor, self).__init__(parent)
         self.setGeometry(50, 50, 500, 300)
-        self.setWindowTitle("Text editor")
 
+        self.setWindowTitle("Code_Saturne built-in file editor")
         self.parent = parent
-        if hasattr(self.parent, 'case'):
-            self.case_dir = self.parent.case['case_path']
-        else:
-            self.case_dir = None
 
-        self.last_dir = self.case_dir
+        self.case_dir = case_dir
+        if self.case_dir:
+            self.case_name = os.path.split(case_dir)[-1]
+
+        self.last_dir = case_dir
+
+        self.readOnly = readOnly
+
+        self.saved = True
 
         self.dialog = QtGui.QFileDialog(self)
 
@@ -262,10 +307,10 @@ class QFileEditor(QtGui.QMainWindow):
         icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
                             QtGui.QIcon.Normal,
                             QtGui.QIcon.Off)
-        openFile = QtGui.QAction(icon_open, "Open", self)
-        openFile.setShortcut("Ctrl+O")
-        openFile.setStatusTip('Open File')
-        openFile.triggered.connect(self.openFile)
+        self.openFileAction = QtGui.QAction(icon_open, "Open", self)
+        self.openFileAction.setShortcut("Ctrl+O")
+        self.openFileAction.setStatusTip('Open File')
+        self.openFileAction.triggered.connect(self.openFile)
 
         # New file action
         new_img_path = ":/icons/22x22/document-new.png"
@@ -273,10 +318,10 @@ class QFileEditor(QtGui.QMainWindow):
         icon_new.addPixmap(QtGui.QPixmap(_fromUtf8(new_img_path)),
                           QtGui.QIcon.Normal,
                           QtGui.QIcon.Off)
-        newFile = QtGui.QAction(icon_new, "New", self)
-        newFile.setShortcut("Ctrl+E")
-        newFile.setStatusTip('Create new file')
-        newFile.triggered.connect(self.newFile)
+        self.newFileAction = QtGui.QAction(icon_new, "New", self)
+        self.newFileAction.setShortcut("Ctrl+E")
+        self.newFileAction.setStatusTip('Create new file')
+        self.newFileAction.triggered.connect(self.newFile)
 
         # Save action
         save_img_path = ":/icons/22x22/document-save.png"
@@ -284,10 +329,10 @@ class QFileEditor(QtGui.QMainWindow):
         icon_save.addPixmap(QtGui.QPixmap(_fromUtf8(save_img_path)),
                           QtGui.QIcon.Normal,
                           QtGui.QIcon.Off)
-        saveFile = QtGui.QAction(icon_save, "Save", self)
-        saveFile.setShortcut("Ctrl+S")
-        saveFile.setStatusTip('Save file')
-        saveFile.triggered.connect(self.saveFile)
+        self.saveFileAction = QtGui.QAction(icon_save, "Save", self)
+        self.saveFileAction.setShortcut("Ctrl+S")
+        self.saveFileAction.setStatusTip('Save file')
+        self.saveFileAction.triggered.connect(self.saveFile)
 
         # Save as action
         saveas_img_path = ":/icons/22x22/document-save-as.png"
@@ -295,9 +340,21 @@ class QFileEditor(QtGui.QMainWindow):
         icon_saveas.addPixmap(QtGui.QPixmap(_fromUtf8(saveas_img_path)),
                               QtGui.QIcon.Normal,
                               QtGui.QIcon.Off)
-        saveFileAs = QtGui.QAction(icon_saveas, "Save as", self)
-        saveFileAs.setStatusTip('Save file as')
-        saveFileAs.triggered.connect(self.saveFileAs)
+        self.saveFileAsAction = QtGui.QAction(icon_saveas, "Save as", self)
+        self.saveFileAsAction.setStatusTip('Save file as')
+        self.saveFileAsAction.triggered.connect(self.saveFileAs)
+
+
+        # Close file action
+        close_img_path = ":/icons/22x22/process-stop.png"
+        icon_close     = QtGui.QIcon()
+        icon_close.addPixmap(QtGui.QPixmap(_fromUtf8(close_img_path)),
+                             QtGui.QIcon.Normal,
+                             QtGui.QIcon.Off)
+        self.closeFileAction  = QtGui.QAction(icon_close, "Close file", self)
+        self.closeFileAction.setShortcut("Ctrl+Q")
+        self.closeFileAction.setStatusTip('Close opened file')
+        self.closeFileAction.triggered.connect(self.closeOpenedFile)
 
         # Exit editor action
         quit_img_path = ":/icons/22x22/system-log-out.png"
@@ -305,31 +362,53 @@ class QFileEditor(QtGui.QMainWindow):
         icon_quit.addPixmap(QtGui.QPixmap(_fromUtf8(quit_img_path)),
                           QtGui.QIcon.Normal,
                           QtGui.QIcon.Off)
-        quitAction = QtGui.QAction(icon_quit, "Quit", self)
-        quitAction.setShortcut("Ctrl+Q")
-        quitAction.setStatusTip('Quit the editor')
-        quitAction.triggered.connect(self.closeApplication)
+        self.quitAction = QtGui.QAction(icon_quit, "Quit", self)
+        self.quitAction.setStatusTip('Quit the editor')
+        self.quitAction.triggered.connect(self.closeApplication)
 
         self.statusBar()
 
         # File toolbar
         self.toolbar = self.addToolBar("Options")
 
-        self.toolbar.addAction(newFile)
-        self.toolbar.addAction(openFile)
-        self.toolbar.addAction(saveFile)
-        self.toolbar.addAction(saveFileAs)
-        self.toolbar.addAction(quitAction)
+        self.toolbar.addAction(self.newFileAction)
+        self.toolbar.addAction(self.openFileAction)
+        self.toolbar.addAction(self.saveFileAction)
+        self.toolbar.addAction(self.saveFileAsAction)
+        self.toolbar.addAction(self.closeFileAction)
+        self.toolbar.addAction(self.quitAction)
 
         # File menu
-        mainMenu = self.menuBar()
+        self.mainMenu = self.menuBar()
 
-        fileMenu = mainMenu.addMenu('&File')
-        fileMenu.addAction(newFile)
-        fileMenu.addAction(openFile)
-        fileMenu.addAction(saveFile)
-        fileMenu.addAction(saveFileAs)
-        fileMenu.addAction(quitAction)
+        self.fileMenu = self.mainMenu.addMenu('&File')
+        self.fileMenu.addAction(self.newFileAction)
+        self.fileMenu.addAction(self.openFileAction)
+        self.fileMenu.addAction(self.saveFileAction)
+        self.fileMenu.addAction(self.saveFileAsAction)
+        self.fileMenu.addAction(self.closeFileAction)
+        self.fileMenu.addAction(self.quitAction)
+
+        # Explorer
+        self.explorer = self._initFileExplorer()
+        self._initExplorerActions()
+
+        # Editor
+        self.textEdit = self._initFileEditor()
+
+        # file attributes
+        self.filename = ""
+
+        self.mainWidget = FormWidget(self, [self.explorer, self.textEdit])
+        self.setCentralWidget(self.mainWidget)
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _initFileEditor(self):
+        """
+        Create the Editor widget based on QTextEdit
+        """
 
         # Font
         base_font = QtGui.QFont()
@@ -344,26 +423,250 @@ class QFileEditor(QtGui.QMainWindow):
             _tab_string += ' '
 
         # Main text zone
-        self.textEdit = QtGui.QTextEdit()
-        self.textEdit.setFont(base_font)
-        self.textEdit.textChanged.connect(self.updateFileState)
-        self.setCentralWidget(self.textEdit)
+        textEdit = QtGui.QTextEdit()
+        textEdit.setFont(base_font)
+        textEdit.textChanged.connect(self.updateFileState)
+        textEdit.setReadOnly(self.readOnly)
+        policy = textEdit.sizePolicy()
+        policy.setHorizontalPolicy(QtGui.QSizePolicy.Expanding)
+        textEdit.setSizePolicy(policy)
 
         # tab
-        self.textEdit.setTabStopWidth(font_metrics.width(_tab_string))
+        textEdit.setTabStopWidth(font_metrics.width(_tab_string))
 
-        # file attributes
-        self.filename = ""
+        return textEdit
+    # ---------------------------------------------------------------
 
+
+    # ---------------------------------------------------------------
+    def _initFileExplorer(self, base_dir=None):
+        """
+        Create the File explorer object based on the QFileSystemModel widget.
+        """
+
+        model = QtWidgets.QFileSystemModel()
+        rootp = ''
+        if base_dir:
+            rootp = base_dir
+        elif self.case_dir:
+            rootp = self.case_dir
+
+        model.setRootPath(rootp)
+
+        tree = QtWidgets.QTreeView(None)
+
+        tree.setModel(model)
+        tree.setSortingEnabled(True)
+        tree.setWindowTitle('Explorer')
+        tree.setRootIndex(model.index(rootp))
+
+        # Hide unnecessary columns
+        nc = tree.header().count()
+        for i in range(1, nc):
+            tree.hideColumn(i)
+
+        # Right click menu
+        tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        tree.customContextMenuRequested.connect(self.explorerContextMenu)
+
+        return tree;
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _initExplorerActions(self):
+        """
+        Create explorer actions dictionary
+        """
+
+        _editAction = QtGui.QAction(self.explorer.model())
+        _editAction.setText('Edit file')
+        _editAction.triggered.connect(self._editSelectedFile)
+
+        _viewAction = QtGui.QAction(self.explorer.model())
+        _viewAction.setText('View file')
+        _viewAction.triggered.connect(self._viewSelectedFile)
+
+        _copyAction = QtGui.QAction(self.explorer.model())
+        _copyAction.setText('Copy to SRC')
+        _copyAction.triggered.connect(self._copySelectedFile)
+
+        _deleteAction = QtGui.QAction(self.explorer.model())
+        _deleteAction.setText('Remove from SRC')
+        _deleteAction.triggered.connect(self._removeSelectedFile)
+
+        self._explorerActions = {'edit':_editAction,
+                                 'view':_viewAction,
+                                 'copy':_copyAction,
+                                 'remove':_deleteAction}
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _editSelectedFile(self):
+        """
+        Edit action for mouse right-click
+        """
+
+        self.readOnly = False
+
+        t = "Editor: %s" % (self._currentSelection['filename'])
+        self.setWindowTitle(t)
+
+        fn = os.path.join(self.case_dir,
+                          self._currentSelection['subpath'],
+                          self._currentSelection['filename'])
+        self.openFile(fn=fn)
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _viewSelectedFile(self):
+        """
+        View action for mouse left-click
+        """
+
+        self.readOnly = True
+
+        t = "Viewer: %s" % (self._currentSelection['filename'])
+        self.setWindowTitle(t)
+
+        fn = os.path.join(self.case_dir,
+                          self._currentSelection['subpath'],
+                          self._currentSelection['filename'])
+        self.openFile(fn=fn)
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _copySelectedFile(self):
+        """
+        Copy files in subdirectories, such as REFERENCES or EXAMPLES
+        to the SRC folder. Used by the mouse right-click
+        """
+
+        src_path = os.path.join(self.case_dir,
+                                self._currentSelection['subpath'],
+                                self._currentSelection['filename'])
+
+        if self.case_name == 'SRC':
+            trg_path = os.path.join(self.case_dir,
+                                    self._currentSelection['filename'])
+        else:
+            sp = self._currentSelection['subpath']
+            while '/' in sp and len(sp) > 3:
+                e1, e2 = os.path.split(sp)
+                if e2 == 'SRC':
+                    break
+                else:
+                    sp = e1
+
+            trg_path = os.path.join(sp, self._currentSelection['filename'])
+
+        shutil.copy2(src_path, trg_path)
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _removeSelectedFile(self):
+        """
+        Remove a file from the SRC dir
+        """
+
+        title = "Remove file"
+        question = "Remove %s from the SRC folder ?" % (self._currentSelection['filename'])
+
+        choice = QtGui.QMessageBox.question(self,
+                                            title,
+                                            question,
+                                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+
+        if choice == QtGui.QMessageBox.Yes:
+            fn = os.path.join(self.case_dir,
+                              self._currentSelection['subpath'],
+                              self._currentSelection['filename'])
+
+            os.remove(fn)
+        else:
+            pass
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def explorerContextMenu(self, position):
+        """
+        Custom menu for the mouse right-click.
+        Depends on whether the file is in the SRC, SRC/subfolder
+        or RESU/subfolder.
+        Possible actions are 'edit', 'view' and 'copy' (to SRC)
+        """
+
+        # Find file position (SRC, REFERENCE, EXAMPLES, other)
+        path2file = ''
+        for idx in self.explorer.selectedIndexes():
+            fname = idx.data(QtCore.Qt.DisplayRole)
+            c = idx
+            p = c.parent()
+            ps = p.data(QtCore.Qt.DisplayRole)
+            while True:
+                ctxt = c.data(QtCore.Qt.DisplayRole)
+                ptxt = p.data(QtCore.Qt.DisplayRole)
+                if ptxt in [None, self.case_name]:
+                    pe = ptxt
+                    break
+                path2file = ptxt + '/' + path2file
+                c = p
+                p = c.parent()
+
+        self._currentSelection = {'filename':fname,
+                                  'subpath' :path2file,
+                                  'filedir' :ps,
+                                  'origdir' :pe}
+
+
+        self._contextMenu = QtGui.QMenu()
+        if pe == 'RESU':
+            self._contextMenu.addAction(self._explorerActions['view'])
+        elif pe == 'SRC':
+            if ps == 'SRC':
+                self._contextMenu.addAction(self._explorerActions['edit'])
+                self._contextMenu.addAction(self._explorerActions['remove'])
+            else:
+                self._contextMenu.addAction(self._explorerActions['view'])
+                self._contextMenu.addAction(self._explorerActions['copy'])
+
+        self._contextMenu.exec_(self.explorer.viewport().mapToGlobal(position))
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
     def updateFileState(self, new_state = False):
+        """
+        Update file state (saved or not)
+        """
         self.saved = new_state
+    # ---------------------------------------------------------------
 
-    def openFile(self):
 
+    # ---------------------------------------------------------------
+    def openFile(self, fn = None):
+        """
+        Open a file in the editor
+        """
 
-        self.filename = self.dialog.getOpenFileName(self, 'Open File', self.last_dir)
+        if not self.saved:
+            self.closeOpenedFile()
+
+        if fn:
+            self.filename = fn
+        else:
+            self.filename = self.dialog.getOpenFileName(self, 'Open File', self.last_dir)
 
         self.last_dir = os.path.split(self.filename)[0]
+
+        self.textEdit.setReadOnly(self.readOnly)
+        self.saveFileAction.setEnabled(not self.readOnly)
+        self.saveFileAsAction.setEnabled(not self.readOnly)
 
         if self.filename != None and self.filename != '':
             file = open(self.filename,'r')
@@ -373,17 +676,26 @@ class QFileEditor(QtGui.QMainWindow):
                 text = file.read()
                 self.textEdit.setText(text)
                 self.updateFileState(True)
+    # ---------------------------------------------------------------
 
 
+    # ---------------------------------------------------------------
     def newFile(self):
+        """
+        Create a new file (blank)
+        """
 
         self.updateFileState(False)
         hl = QtextHighlighter(self.textEdit)
         self.textEdit.show()
+    # ---------------------------------------------------------------
 
 
-
+    # ---------------------------------------------------------------
     def saveFile(self):
+        """
+        Save file
+        """
 
         if self.filename != None and self.filename != '':
             file = open(self.filename,'w')
@@ -395,9 +707,14 @@ class QFileEditor(QtGui.QMainWindow):
 
         else:
             self.saveFileAs()
+    # ---------------------------------------------------------------
 
 
+    # ---------------------------------------------------------------
     def saveFileAs(self):
+        """
+        Save file as
+        """
 
         self.filename = self.dialog.getSaveFileName(self, 'Save File')
         self.last_dir = os.path.split(self.filename)[0]
@@ -409,24 +726,46 @@ class QFileEditor(QtGui.QMainWindow):
             file.close()
 
             self.updateFileState(True)
+    # ---------------------------------------------------------------
 
 
+    # ---------------------------------------------------------------
+    def closeOpenedFile(self):
+        """
+        Close an opened file
+        """
+
+        if self.saved == False:
+            choice = QtGui.QMessageBox.question(self, 'Built-in editor',
+                                                'File changed.\nDo you want to save?',
+                                                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+            if choice == QtGui.QMessageBox.Yes:
+                self.saveFile()
+            else:
+                pass
+
+        self.saved = True
+        self.filename = ''
+        self.textEdit.setText('')
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
     def closeApplication(self):
+        """
+        Close the editor
+        """
         choice = QtGui.QMessageBox.question(self, 'Built-in editor',
                                             "Exit text editor?",
                                             QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if choice == QtGui.QMessageBox.Yes:
-#            sys.exit()
-            if self.saved == False:
-                choice = QtGui.QMessageBox.question(self, 'Built-in editor',
-                                                    'File changed.\nDo you want to save?',
-                                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-                if choice == QtGui.QMessageBox.Yes:
-                    self.saveFile()
-                else:
-                    pass
+            self.closeOpenedFile()
             self.close()
         else:
             pass
+    # ---------------------------------------------------------------
 
 
+#-------------------------------------------------------------------------------
+# END OF FILE
+#-------------------------------------------------------------------------------
