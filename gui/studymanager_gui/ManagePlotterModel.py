@@ -113,7 +113,7 @@ class ManagePlotterModel(Model):
         study_node = self.case.xmlGetNode("study", label = study)
         lst = []
         for node in study_node.xmlGetNodeList("measurement"):
-            lst.append(node['file'])
+            lst.append((node['file'], node['path']))
         return lst
 
 
@@ -547,11 +547,11 @@ class ManagePlotterModel(Model):
             idx = idx + 1
 
 
-    def getMeasurementPlotList(self, study, measurement_name):
+    def getMeasurementPlotList(self, study, name, path):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        measurement_node = study_node.xmlGetNode("measurement", file = measurement_name)
+        measurement_node = study_node.xmlGetNode("measurement", file=name, path=path)
         lst = []
         for node in measurement_node.xmlGetNodeList("plot"):
             lst.append(node['id'])
@@ -836,7 +836,7 @@ class ManagePlotterModel(Model):
 
     def getMeasurementIdList(self, study, measurement_idx, idx):
         """
-        Return subplot id list for a figure
+        Return subplot id list for a plot of a measurement
         """
         study_node = self.case.xmlGetNode("study", label = study)
         lst = study_node.xmlGetNodeList("measurement")
@@ -850,7 +850,7 @@ class ManagePlotterModel(Model):
 
     def setMeasurementIdList(self, study, measurement_idx, idx, idlist):
         """
-        Set subplot id list for a figure
+        Set subplot id list for a plot of a measurement
         """
         study_node = self.case.xmlGetNode("study", label = study)
         lst = study_node.xmlGetNodeList("measurement")

@@ -722,9 +722,7 @@ class StandardItemModelMeasurement(QAbstractItemModel):
         self.study = study
 
         self.noderoot = {}
-        self.prtlist = []
-        for name in self.mdl.getMeasurementList(self.study):
-            self.prtlist.append(name)
+        self.prtlist = self.mdl.getMeasurementList(self.study)
 
         self.rootItem = TreeItem(None, "ALL", None)
         self.parents = {0 : self.rootItem}
@@ -752,11 +750,11 @@ class StandardItemModelMeasurement(QAbstractItemModel):
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("type"))
+                return to_qvariant(self.tr("measurement file"))
             elif index.column() == 1:
-                return to_qvariant(self.tr("identification"))
+                return to_qvariant(self.tr("plot id"))
             elif index.column() == 2:
-                return to_qvariant(self.tr("subplot id list"))
+                return to_qvariant(self.tr("subplot id"))
 
         # Display
         if role == Qt.DisplayRole:
@@ -775,11 +773,11 @@ class StandardItemModelMeasurement(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("type"))
+                return to_qvariant(self.tr("measurement file"))
             elif section == 1:
-                return to_qvariant(self.tr("identification"))
+                return to_qvariant(self.tr("plot id"))
             elif section == 2:
-                return to_qvariant(self.tr("subplot id list"))
+                return to_qvariant(self.tr("subplot id"))
         return to_qvariant()
 
 
@@ -830,19 +828,20 @@ class StandardItemModelMeasurement(QAbstractItemModel):
 
 
     def populateModel(self):
-        for name in self.prtlist:
+        for (name, path) in self.prtlist:
             row = self.rowCount()
-            item = item_class("measurement", name, "")
+            ms_file = os.path.join(path, name)
+            item = item_class(ms_file, "", "")
             newparent = TreeItem(item, name, self.rootItem)
             self.rootItem.appendChild(newparent)
             self.noderoot[name] = newparent
 
         measurement_idx = 0
-        for name in self.prtlist:
-            for idx in self.mdl.getMeasurementPlotList(self.study, name):
+        for (name, path) in self.prtlist:
+            for idx in self.mdl.getMeasurementPlotList(self.study, name, path):
                 parentItem = self.noderoot[name]
                 idlist = self.mdl.getMeasurementIdList(self.study, measurement_idx, idx)
-                item = item_class("plot", str(idx), idlist)
+                item = item_class("", str(idx), idlist)
                 new_item = TreeItem(item, "", parentItem)
                 parentItem.appendChild(new_item)
             measurement_idx = measurement_idx + 1
