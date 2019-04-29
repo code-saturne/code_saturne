@@ -415,58 +415,15 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   }
 
-  if (lagr_time_scheme->isuila == 1 &&
-      *isuite == 0) {
+  if (lagr_time_scheme->isuila == 1 && *isuite == 0)
+    lagr_time_scheme->isuila = 0;
 
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ALERTE A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@                                                  (LAGOPT).\n"
-               "@\n"
-               "@  Le module lagrangien est active en suite de calcul,\n"
-               "@   alors que le calcul de la phase continue n'est pas\n"
-               "@   une suite.\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de ISUILA.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n");
-    iok++;
-
-  }
+  if (cs_glob_lagr_stat_options->isuist < 0)
+    cs_glob_lagr_stat_options->isuist = 0;
 
   if (lagr_time_scheme->isuila == 1) {
-
-    if (cs_glob_lagr_stat_options->isuist < 0 ||
-        cs_glob_lagr_stat_options->isuist > 1)  {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE SUITE DE CALCUL SUR LES STATISTIQUES\n"
-                 "@       VOLUMIQUE ET AUX FRONTIERES, AINSI QUE SUR LES\n"
-                 "@       TERMES SOURCES DE COUPLAGES RETOUR\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    ISUIST DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI ISUIST = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de ISUIST.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-        cs_glob_lagr_stat_options->isuist);
-      iok++;
-
-    }
+    if (cs_glob_lagr_stat_options->isuist > 1)
+      cs_glob_lagr_stat_options->isuist = 1;
   }
   else
     cs_glob_lagr_stat_options->isuist = 0;

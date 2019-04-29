@@ -664,22 +664,21 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
                                      CS_MESH_LOCATION_BOUNDARY_FACES,
                                      1, /* numbering base */
                                      (cs_lnum_t *)vals);
-      for (cs_lnum_t i = 0; i < p_set->n_particles; i++)
-        ((cs_lnum_t *)vals)[i] -= 1;
       if (sec_code == CS_RESTART_SUCCESS) {
-        _set_particle_values(p_set,
-                             attr,
-                             CS_LNUM_TYPE,
-                             1,
-                             -1,
-                             vals);
-        if (attr == CS_LAGR_STAT_WEIGHT) {
-          cs_real_t *w = (cs_real_t *)vals;
-          for (cs_lnum_t i = 0; i < p_set->n_particles; i++)
-            p_set->weight += w[i];
-        }
+        for (cs_lnum_t i = 0; i < p_set->n_particles; i++)
+          ((cs_lnum_t *)vals)[i] -= 1;
+        retval += 1;
       }
-      retval += 1;
+      else {
+        for (cs_lnum_t i = 0; i < p_set->n_particles; i++)
+          ((cs_lnum_t *)vals)[i] = -1;
+      }
+      _set_particle_values(p_set,
+                           attr,
+                           CS_LNUM_TYPE,
+                           1,
+                           -1,
+                           vals);
       break;
 
     default:
@@ -749,6 +748,12 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
         }
 
         else if (sec_code == CS_RESTART_SUCCESS) {
+
+          if (attr == CS_LAGR_STAT_WEIGHT) {
+            cs_real_t *w = (cs_real_t *)vals;
+            for (cs_lnum_t i = 0; i < p_set->n_particles; i++)
+              p_set->weight += w[i];
+          }
 
           _set_particle_values(p_set,
                                attr,

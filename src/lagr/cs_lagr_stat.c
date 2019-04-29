@@ -3308,11 +3308,13 @@ _event_stat_initialize(void)
 
   char name[64];
 
-  assert(_base_stat_activate != NULL); /* should exist at this calling stage */
-
   /* init moments */
 
   _init_events_attribute();
+
+  /* should exist at this calling stage if stats are activated */
+  if (_base_stat_activate == NULL)
+    return;
 
   cs_lagr_stat_group_t  stat_group = CS_LAGR_STAT_GROUP_TRACKING_EVENT;
 
