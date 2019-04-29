@@ -224,15 +224,15 @@ Numerics:
     will then be activated. This was developped in the PhD of C. Colas.
 
 - Improvements in mesh quantity computations.
-  * Cell centers are now based on the actual center of gravity.
-  * The previous method based on face centers can be restored using
-    the cs_mesh_quantities_cell_cen_choice function.
   * Previous face center adjustment for volume removed. Adjustment
     used in versions 1.1 to 5.2 may be restored using
     the cs_mesh_quantities_face_cog_choice function.
   * A refinement of the face center computation (for warped faces)
     may be activated using the CS_FACE_CENTER_REFINE mesh quantities
     computation flag.
+  * An option to compute cell centers based on the actual center of gravity is
+    available. It can be enabled using the cs_mesh_quantities_cell_cen_choice
+    function. The method based on face centers is kept as default.
 
 - Added dispersion modeling option to DOM radiative model:
   * May be activated by setting
