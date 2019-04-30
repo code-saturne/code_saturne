@@ -641,7 +641,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         inserted_vel_f[2] = p1_vel_f[2];
 
         cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
-                                   CS_LAGR_CELL_NUM, cell_id+1);
+                                   CS_LAGR_CELL_ID, cell_id);
         cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
                                    CS_LAGR_PARTICLE_AGGREGATE, new_class_nb);
 
@@ -700,13 +700,12 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
       cs_lnum_t part_idx = interf_tot[start_gap][1];
       cs_real_t weight = cs_lagr_particles_get_real
                           (p_set, part_idx, CS_LAGR_STAT_WEIGHT);
-      /* Delete particle (if weight <0) */
+      /* Delete particle (if weight < 0) */
       if (weight <= 0.) {
         cs_lagr_particles_set_lnum(p_set, part_idx,
                                    CS_LAGR_PARTICLE_AGGREGATE, 0);
         cs_lagr_particles_set_real(p_set, part_idx, CS_LAGR_STAT_WEIGHT, 0);
-        cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_CELL_NUM, -2); //cemetary cell
+        cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
       }
 
       continue;
@@ -759,12 +758,11 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         cs_lnum_t part_idx = interf_tot[idx][1];
         cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
                                                       CS_LAGR_STAT_WEIGHT);
-
         if (weight > 0. && weight < parcmin && idx != last_small) {
           cs_lagr_particles_set_lnum(p_set, part_idx,
                                      CS_LAGR_PARTICLE_AGGREGATE, 0);
           cs_lagr_particles_set_real(p_set, part_idx, CS_LAGR_STAT_WEIGHT, 0);
-          cs_lagr_particles_set_lnum(p_set, part_idx, CS_LAGR_CELL_NUM, -2);
+          cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
         }
       }
     }
@@ -779,7 +777,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         cs_lagr_particles_set_lnum(p_set, part_idx,
                                    CS_LAGR_PARTICLE_AGGREGATE, 0);
         cs_lagr_particles_set_real(p_set, part_idx, CS_LAGR_STAT_WEIGHT, 0);
-        cs_lagr_particles_set_lnum(p_set, part_idx, CS_LAGR_CELL_NUM, -2);
+        cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
       }
     }
   }

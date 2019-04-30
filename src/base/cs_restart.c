@@ -2799,7 +2799,7 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
 int
 cs_restart_read_particles(cs_restart_t  *restart,
                           int            particles_location_id,
-                          cs_lnum_t     *particle_cell_num,
+                          cs_lnum_t     *particle_cell_id,
                           cs_real_t     *particle_coords)
 {
   double timing[2];
@@ -2864,7 +2864,7 @@ cs_restart_read_particles(cs_restart_t  *restart,
                                      false,
                                      g_cells_num,
                                      g_part_cell_num,
-                                     particle_cell_num);
+                                     particle_cell_id);
 
     BFT_FREE(g_part_cell_num);
 
@@ -2875,13 +2875,16 @@ cs_restart_read_particles(cs_restart_t  *restart,
 
 #endif /* #if defined(HAVE_MPI) */
 
-  if (cs_glob_n_ranks == 1)
+  if (cs_glob_n_ranks == 1) {
     retcode = cs_restart_read_section(restart,
                                       sec_name,
                                       particles_location_id,
                                       1,
                                       CS_TYPE_cs_int_t,
-                                      particle_cell_num);
+                                      particle_cell_id);
+    for (cs_lnum_t i = 0; i < n_particles; i++)
+      particle_cell_id[i] -= 1;
+  }
 
   BFT_FREE(sec_name);
 
@@ -2902,8 +2905,8 @@ cs_restart_read_particles(cs_restart_t  *restart,
  *                                on local numbers, plus the sum of particles
  *                                on lower MPI ranks
  * \param[in]  n_particles        local number of particles
- * \param[in]  particle_cell_num  local cell number (1 to n) to which particles
- *                                belong; 0 for untracked particles
+ * \param[in]  particle_cell_id   local cell id (0 to n-1) to which particles
+ *                                belong
  * \param[in]  particle_coords    local particle coordinates (interleaved)
  *
  * \return  the location id assigned to the particles
@@ -2915,7 +2918,7 @@ cs_restart_write_particles(cs_restart_t     *restart,
                            const char       *name,
                            bool              number_by_coords,
                            cs_lnum_t         n_particles,
-                           const cs_lnum_t  *particle_cell_num,
+                           const cs_lnum_t  *particle_cell_id,
                            const cs_real_t  *particle_coords)
 {
   double timing[2];
@@ -2989,15 +2992,15 @@ cs_restart_write_particles(cs_restart_t     *restart,
     const cs_gnum_t  *g_cell_num
       = restart->location[CS_MESH_LOCATION_CELLS-1].ent_global_num;
     for (i = 0; i < n_particles; i++) {
-      if (particle_cell_num[i] > 0)
-        global_part_cell_num[i] = g_cell_num[particle_cell_num[i]-1];
+      if (particle_cell_id[i] > -1)
+        global_part_cell_num[i] = g_cell_num[particle_cell_id[i]];
       else
         global_part_cell_num[i] = 0;
     }
   }
   else {
     for (i = 0; i < n_particles; i++)
-      global_part_cell_num[i] = particle_cell_num[i];
+      global_part_cell_num[i] = particle_cell_id[i] + 1;
   }
 
   BFT_MALLOC(sec_name, strlen(name) + strlen(cell_num_postfix) + 1, char);

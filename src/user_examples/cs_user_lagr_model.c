@@ -695,12 +695,12 @@ cs_user_lagr_model(void)
   /* Name of the recordings for display,
      Average in time of particle average
      of the boundary statistics
-     -----------------------------------
+     -----------------------------------*/
 
-     * A priori the user intervenes only in the additional user information
+  /* The user intervenes only in the additional user information
      to be recorded: he must prescribe the name of the recording as well as
      the type of average that he wishes to apply to it for the writing
-     of the log and the post-processing.
+     of the log and the post-processing. */
 
   /* Frequency for the output of the Lagrangian log
    * ============================================== */

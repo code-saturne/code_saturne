@@ -86,6 +86,13 @@ Physical modelling:
 
 - Lagrangian module:
   * Add agglomeration and fragmentation algorithms.
+  * A global bit-mask based CS_LAGR_P_FLAG attribute is now always present;
+    It includes the features CS_LAGR_DEPOSITION_FLAG, and also includes a
+    CS_LAGR_PART_FIXED bit replacing the use of a negative particle cell number.
+  * Local zero-based particle cell id is now used instead of a
+    signed 1-based cell-number
+  * Advanced user functions are added for particle/face interaction, replacing
+    the (never implemented) JBORD codes.
 
 - Add a compressible two-phase homogeneous model
   * This model is solved using a fractional step method borrowing mass,

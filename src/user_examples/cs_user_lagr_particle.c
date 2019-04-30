@@ -284,23 +284,19 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 
         unsigned char *part = p_set->p_buffer + p_am->extents * npt;
 
-        cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+        cs_lnum_t iel = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
-        if( iel >= 0 ) {
+        const cs_real_t *part_coords
+          = cs_lagr_particle_attr_const(part, p_am, CS_LAGR_COORDS);
+        const cs_real_t *prev_part_coords
+          = cs_lagr_particle_attr_n_const(part, p_am, 1, CS_LAGR_COORDS);
 
-          const cs_real_t *part_coords
-            = cs_lagr_particle_attr_const(part, p_am, CS_LAGR_COORDS);
-          const cs_real_t *prev_part_coords
-            = cs_lagr_particle_attr_n_const(part, p_am, 1, CS_LAGR_COORDS);
-
-          if (    part_coords[0] > zz[iplan]
-              && prev_part_coords[0] <= zz[iplan])
-            _m_flow[iplan] +=  cs_lagr_particle_get_real(part, p_am,
-                                                        CS_LAGR_STAT_WEIGHT)
-                             * cs_lagr_particle_get_real(part, p_am,
-                                                         CS_LAGR_MASS);
-
-        }
+        if (    part_coords[0] > zz[iplan]
+            && prev_part_coords[0] <= zz[iplan])
+          _m_flow[iplan] +=  cs_lagr_particle_get_real(part, p_am,
+                                                       CS_LAGR_STAT_WEIGHT)
+                           * cs_lagr_particle_get_real(part, p_am,
+                                                       CS_LAGR_MASS);
 
       }
 
@@ -710,30 +706,26 @@ cs_user_lagr_sde(const cs_real_t  dt[],
     for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
       unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-      cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+      cs_lnum_t iel = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
       cs_real_t *usr_var
         = cs_lagr_particle_attr_n(part, p_am, 0, CS_LAGR_USER);
       cs_real_t *prev_usr_var
         = cs_lagr_particle_attr_n(part, p_am, 1, CS_LAGR_USER);
 
-      if (iel >= 0) {
+      /* Characteristic time tca of the differential equation,
+         This example must be adapted to the case */
+      tcarac[npt] = 1.0;
 
-        /* Characteristic time tca of the differential equation,
-           This example must be adapted to the case */
-        tcarac[npt] = 1.0;
+      /* Prediction at the first substep;
+         This example must be adapted to the case */
+      if (cs_glob_lagr_time_step->nor == 1)
+        pip[npt] = prev_usr_var[i];
 
-        /* Prediction at the first substep;
-           This example must be adapted to the case */
-        if (cs_glob_lagr_time_step->nor == 1)
-          pip[npt] = prev_usr_var[i];
-
-        /* Correction at the second substep;
-           This example must be adapted to the case */
-        else
-          pip[npt] = usr_var[i];
-
-      }
+      /* Correction at the second substep;
+         This example must be adapted to the case */
+      else
+        pip[npt] = usr_var[i];
 
     }
 

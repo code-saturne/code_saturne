@@ -82,35 +82,18 @@ typedef void
 
 typedef enum {
 
-  CS_LAGR_BC_UNDEFINED,
-  CS_LAGR_INLET,
-  CS_LAGR_OUTLET,
-  CS_LAGR_REBOUND,
-  CS_LAGR_DEPO1,
-  CS_LAGR_DEPO2,
-  CS_LAGR_FOULING,
-  CS_LAGR_JBORD1,
-  CS_LAGR_JBORD2,
-  CS_LAGR_JBORD3,
-  CS_LAGR_JBORD4,
-  CS_LAGR_JBORD5,
-  CS_LAGR_DEPO_DLVO,
-  CS_LAGR_SYM
+  CS_LAGR_BC_UNDEFINED,  /*!< undefined conditions */
+  CS_LAGR_SYM,           /*!< symmetry */
+  CS_LAGR_INLET,         /*!< inlet */
+  CS_LAGR_OUTLET,        /*!< outlet */
+  CS_LAGR_REBOUND,       /*!< elastic rebound */
+  CS_LAGR_DEPO1,         /*!< immediate deposition and elimination */
+  CS_LAGR_DEPO2,         /*!< deposition */
+  CS_LAGR_DEPO_DLVO,     /*!< deposition based on DLVO theory */
+  CS_LAGR_FOULING,       /*!< fouling (combustion) */
+  CS_LAGR_BC_USER        /*!< user-defined */
 
 } cs_lagr_bc_type_t;
-
-/*! Lagrangian deposition state */
-
-typedef enum {
-
-  CS_LAGR_PART_IN_FLOW        = 0,
-  CS_LAGR_PART_DEPOSITED      = 1,
-  CS_LAGR_PART_ROLLING        = 2,
-  CS_LAGR_PART_TO_DELETE      = 3,
-  CS_LAGR_PART_NO_MOTION      = 10,
-  CS_LAGR_PART_IMPOSED_MOTION = 11
-
-} cs_lagr_deposition_state_t;
 
   /*! Lagrangian module status.
      the different values correspond to the following coupling:
@@ -132,7 +115,6 @@ typedef enum {
   CS_LAGR_TWOWAY_COUPLING = 2,
   CS_LAGR_FROZEN_CONTINUOUS_PHASE = 3
 } cs_lagr_module_status_t;
-
 
 /*! Fixed maximum sizes */
 /*----------------------*/

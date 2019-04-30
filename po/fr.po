@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-04-27 21:20+0200\n"
+"POT-Creation-Date: 2019-05-02 04:23+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -11926,7 +11926,7 @@ msgid ""
 " Here IDIRLA = %d\n"
 msgstr ""
 
-msgid "Couplage thermique non-fonctionnel en multi-layer"
+msgid "Thermal coupling not implemented in multi-layer case"
 msgstr ""
 
 #, c-format
@@ -12566,14 +12566,17 @@ msgstr ""
 msgid "rebound"
 msgstr "rebond"
 
+msgid "deposition and elimination"
+msgstr ""
+
 msgid "deposition"
 msgstr "déposition"
 
 msgid "fouling"
 msgstr "encrassement"
 
-msgid "dlvo conditions"
-msgstr "conditions dlvo"
+msgid "DLVO conditions"
+msgstr "conditions DLVO"
 
 msgid "   Boundary statistics :\n"
 msgstr ""
@@ -12680,12 +12683,6 @@ msgstr "%s ne devrait pas être appelée après %s."
 
 msgid "Error reading main particle restart data."
 msgstr "Erreur à la lecture des données de reprise particulaires."
-
-#, c-format
-msgid ""
-" Error in %s: inclg < 0 \n"
-"Face number: %d, Particle number %d \n"
-msgstr ""
 
 #, c-format
 msgid ""

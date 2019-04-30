@@ -297,8 +297,8 @@ cs_lagr_stat_options_t *cs_glob_lagr_stat_options = &_lagr_stat_options;
 /* Event filters for boundary mass flow */
 
 static int _bdy_mass_flux_filter[2]
-= {CS_EVENT_INFLOW || CS_EVENT_RESUSPENSION,
-   CS_EVENT_OUTFLOW || CS_EVENT_DEPOSITION || CS_EVENT_FOULING};
+= {CS_EVENT_INFLOW | CS_EVENT_RESUSPENSION,
+   CS_EVENT_OUTFLOW | CS_EVENT_DEPOSITION | CS_EVENT_FOULING};
 
 static int _bdy_resusp_mass_flux_filter[2] = {0, CS_EVENT_RESUSPENSION};
 static int _bdy_fouling_mass_flux_filter[2] = {0, CS_EVENT_FOULING};
@@ -467,7 +467,8 @@ _vol_fraction(const void                 *input,
       cs_real_t diam = cs_lagr_particle_get_real(particle, p_set->p_am,
                                                  CS_LAGR_DIAMETER);
 
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_set->p_am);
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
+                                                    CS_LAGR_CELL_ID);
 
       cs_real_t p_weight = cs_lagr_particle_get_real(particle, p_set->p_am,
                                                      CS_LAGR_STAT_WEIGHT);
@@ -495,7 +496,8 @@ _vol_fraction(const void                 *input,
         cs_real_t diam = cs_lagr_particle_get_real(particle, p_set->p_am,
                                                    CS_LAGR_DIAMETER);
 
-        cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_set->p_am);
+        cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
+                                                      CS_LAGR_CELL_ID);
 
         cs_real_t p_weight = cs_lagr_particle_get_real(particle, p_set->p_am,
                                                        CS_LAGR_STAT_WEIGHT);
@@ -2747,8 +2749,8 @@ _cs_lagr_stat_update_all(void)
               unsigned char *particle
                 = p_set->p_buffer + p_set->p_am->extents * part;
 
-              cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle,
-                                                               p_set->p_am);
+              cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
+                                                            CS_LAGR_CELL_ID);
 
               int p_class = 0;
               if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
@@ -2917,8 +2919,8 @@ _cs_lagr_stat_update_all(void)
         unsigned char *particle
           = p_set->p_buffer + p_set->p_am->extents * part;
 
-        cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle,
-                                                         p_set->p_am);
+        cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
+                                                      CS_LAGR_CELL_ID);
 
         int p_class = 0;
         if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)

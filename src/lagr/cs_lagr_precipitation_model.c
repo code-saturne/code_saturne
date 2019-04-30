@@ -176,7 +176,8 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
               * pow(cs_lagr_particle_get_real(particle, p_am,
                                               CS_LAGR_DIAMETER),3.0);
 
-          if (   cs_lagr_particle_get_cell_id(particle, p_am) == iel
+          if (   cs_lagr_particle_get_lnum(particle, p_am,
+                                           CS_LAGR_CELL_ID) == iel
               &&   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
                  - part_mass < 1e-12)
 
@@ -222,7 +223,8 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
                                                            CS_LAGR_DIAMETER);
               cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am,
                                                            CS_LAGR_MASS);
-              cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+              cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                            CS_LAGR_CELL_ID);
               cs_real_t mass = preci->rho * pis6 * pow(p_diam,3.0);
               if (   cell_id == iel
                   && p_diam - ref_diameter < 1e-12
@@ -341,7 +343,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
     if (preci->nbprec[iel] > 0) {
 
       for (cs_lnum_t i = 0; i < preci->nbprec[iel]; i++)
-        cell[nbprec_tot + i]      = iel;
+        cell[nbprec_tot + i] = iel;
 
       nbprec_tot += preci->nbprec[iel];
 
@@ -362,14 +364,15 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
         for (cs_lnum_t iclas = 0; iclas < preci->nbrclas; iclas++) {
 
-          if (   cs_lagr_particle_get_cell_id(particle, p_am) == iel
+          if (   cs_lagr_particle_get_lnum(particle, p_am,
+                                           CS_LAGR_CELL_ID) == iel
               && (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
                   - ref_diameter < 1e-12)
               && (mp[iclas] < mp_diss[iel * preci->nbrclas + iclas])) {
 
             /* Removing of particles due to dissolution */
 
-            cs_lagr_particle_set_cell_id(particle, p_am, -1);
+            cs_lagr_particles_set_flag(p_set, npt, CS_LAGR_PART_TO_DELETE);
             cs_real_t d3 = pow (cs_lagr_particle_get_real(particle, p_am,
                                                           CS_LAGR_DIAMETER), 3);
             mp[iclas] += cs_lagr_particle_get_real(particle, p_am,
@@ -414,7 +417,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
       for (cs_lnum_t i = 0; i <  3; i++)
         part_coord[i] = fvq->cell_cen[cell[ip - npt] * 3 + i];
 
-      cs_lagr_particle_set_cell_id(particle, p_am, cell[ip - npt]);
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, cell[ip - npt]);
 
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
 
@@ -451,8 +454,8 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
                                   CS_LAGR_MARKO_VALUE, -1);
         cs_lagr_particle_set_lnum(particle, p_am,
                                   CS_LAGR_NEIGHBOR_FACE_ID, -1);
-        cs_lagr_particle_set_lnum(particle, p_am,
-                                  CS_LAGR_DEPOSITION_FLAG, CS_LAGR_PART_IN_FLOW);
+        cs_lagr_particles_unset_flag(p_set, ip,
+                                     CS_LAGR_PART_DEPOSITION_FLAGS);
 
       }
 

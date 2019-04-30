@@ -784,8 +784,9 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    * ---------------------------------------------------*/
 
   cs_real_t pgam2  = 0.5 * kaux2 * *tlag2 * l2l;
-  cs_real_t ggam2  = the2 * pgam2 + k2the2 * (  l3 * ( -2. * tltp / tlptp)
-                                              + l2p * (taup * 0.5));
+  cs_real_t ggam2  = the2 * pgam2
+                     + k2the2 * (  l3 * (-2. * tltp / tlptp)
+                                 + l2p * (taup * 0.5));
   cs_real_t ome2   = k2the2 * ( dtl * cs_math_pow2(tlmtp) + l2l * (tl2 * *tlag2 * 0.5)
                                + l2p * (tp2 * taup * 0.5)
                                + l1l * ( -2.0 * tl2 * tlmtp)
@@ -793,8 +794,8 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                                + l3 * ( -2.0 * (cs_math_pow2(tltp)) / tlptp));
 
   cs_real_t pgagga = thet * (pgam2 - kaux2 * tltp / tlptp * l3);
-  cs_real_t pgaome = thet * *tlag2 * ( -pgam2 + kaux2 * (  l1l * tlmtp
-                                                         + l3 * tp2 /  tlptp));
+  cs_real_t pgaome = thet * *tlag2 * (-pgam2 + kaux2 * (  l1l * tlmtp
+                                                        + l3 * tp2 /  tlptp));
   cs_real_t ggaome = k2the2 * (  tlmtp * ( *tlag2 * l1l + l1p * ( -taup))
                                + l2l * ( -tl2 * 0.5)
                                + l2p * ( -tp2 * 0.5) + l3 * tltp);

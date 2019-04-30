@@ -418,7 +418,6 @@ cs_lagr_event_initialize(void)
        CS_LAGR_YPLUS,
        CS_LAGR_INTERF,
        CS_LAGR_MARKO_VALUE,
-       CS_LAGR_DEPOSITION_FLAG,
        CS_LAGR_FOULING_INDEX,
        CS_LAGR_TEMPERATURE,
        CS_LAGR_FLUID_TEMPERATURE,
@@ -746,10 +745,7 @@ cs_lagr_event_init_from_particle(cs_lagr_event_set_t     *events,
   }
 
   cs_lnum_t cell_id = cs_lagr_particles_get_lnum(particles, particle_id,
-                                                 CS_LAGR_CELL_NUM);
-  if (cell_id > 0)
-    cell_id --;
-
+                                                 CS_LAGR_CELL_ID);
   cs_lagr_events_set_lnum(events,
                           event_id,
                           CS_LAGR_E_CELL_ID,
