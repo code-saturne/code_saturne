@@ -131,10 +131,8 @@ cs_lagr_coupling(cs_real_t taup[],
   cs_real_3_t *st_vel = NULL, *t_st_vel = NULL;
   cs_real_6_t *st_rij = NULL, *t_st_rij = NULL;
 
-  /* ====================================================================   */
-  /* 1. INITIALISATION    */
-  /* ====================================================================   */
-
+  /* Initialization
+     ============== */
   {
     cs_field_t *f = cs_field_by_name_try("velocity_st_lagr");
     if (f != NULL)
@@ -192,9 +190,9 @@ cs_lagr_coupling(cs_real_t taup[],
 
   }
 
-  /* ====================================================================   */
-  /* 2. CALCULS PRELIMINAIRES  */
-  /* ====================================================================   */
+  /* Preliminary computations
+     ======================== */
+
   /* Finalisation des forces externes (Si la particule a interagit avec     */
   /* une frontiere du domaine de calcul, on degenere a l'ordre 1).     */
 
@@ -231,9 +229,8 @@ cs_lagr_coupling(cs_real_t taup[],
 
   }
 
-  /* ====================================================================   */
-  /* 3. TERMES SOURCES DE QUANTITE DE MOUVEMENT    */
-  /* ====================================================================   */
+  /* Momentum source terms
+     ===================== */
 
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
@@ -251,17 +248,13 @@ cs_lagr_coupling(cs_real_t taup[],
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
-                                                      CS_LAGR_STAT_WEIGHT);
+      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
 
-      cs_real_t  prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                           CS_LAGR_DIAMETER);
-      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                           CS_LAGR_MASS);
-      cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am,
-                                                    CS_LAGR_MASS);
+      cs_real_t  prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
+      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
+      cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
 
-      cs_lnum_t iel = cs_lagr_particle_get_cell_id(particle, p_am);
+      cs_lnum_t iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
       /* Volume et masse des particules dans la maille */
       volp[iel] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0;
@@ -275,9 +268,8 @@ cs_lagr_coupling(cs_real_t taup[],
 
     }
 
-    /* ====================================================================   */
-    /* 4. TERMES SOURCES SUR LA TURBULENCE */
-    /* ====================================================================   */
+  /* Turbulence source terms
+     ======================= */
 
     if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60) {
 
@@ -289,7 +281,8 @@ cs_lagr_coupling(cs_real_t taup[],
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-        cs_lnum_t  iel         = cs_lagr_particle_get_cell_id(particle, p_am);
+        cs_lnum_t  iel         = cs_lagr_particle_get_lnum(particle, p_am,
+                                                           CS_LAGR_CELL_ID);
         cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                          CS_LAGR_VELOCITY_SEEN);
         cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am,
@@ -328,7 +321,8 @@ cs_lagr_coupling(cs_real_t taup[],
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-        cs_lnum_t  iel         = cs_lagr_particle_get_cell_id(particle, p_am);
+        cs_lnum_t  iel         = cs_lagr_particle_get_lnum(particle, p_am,
+                                                           CS_LAGR_CELL_ID);
 
         cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                          CS_LAGR_VELOCITY_SEEN);
@@ -373,9 +367,8 @@ cs_lagr_coupling(cs_real_t taup[],
 
   }
 
-  /* ====================================================================   */
-  /* 5. TERME SOURCE MASSIQUES */
-  /* ====================================================================   */
+  /* Mass source terms
+     ================= */
 
   if (    cs_glob_lagr_source_terms->ltsmas == 1
       && (   cs_glob_lagr_specific_physics->impvar == 1
@@ -385,22 +378,26 @@ cs_lagr_coupling(cs_real_t taup[],
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
-      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
-      cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
+      cs_real_t  p_stat_w
+        = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+      cs_real_t  prev_p_mass
+        = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
+      cs_real_t  p_mass
+        = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
 
-      /* Dans saturne TSmasse > 0 ===> Apport de masse sur le fluide  */
-      cs_lnum_t iel = cs_lagr_particle_get_cell_id(particle, p_am);
+      /* Fluid mass source term > 0 -> add mass to fluid */
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
 
-      tslag[iel + (lag_st->itsmas-1) * ncelet] += - p_stat_w * (p_mass - prev_p_mass) / dtp;
+      tslag[cell_id + (lag_st->itsmas-1) * ncelet]
+        += - p_stat_w * (p_mass - prev_p_mass) / dtp;
 
     }
 
   }
 
-  /* ====================================================================   */
-  /* 6. TERMES SOURCES THERMIQUE    */
-  /* ====================================================================   */
+  /* Thermal source terms
+     ==================== */
 
   if (cs_glob_lagr_source_terms->ltsthe == 1) {
 
@@ -410,7 +407,7 @@ cs_lagr_coupling(cs_real_t taup[],
       for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-        cs_lnum_t iel = cs_lagr_particle_get_cell_id(particle, p_am);
+        cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
         cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
         cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
         cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_CP);
@@ -429,7 +426,7 @@ cs_lagr_coupling(cs_real_t taup[],
         for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-          cs_lnum_t iel = cs_lagr_particle_get_cell_id(particle, p_am);
+          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
           cs_real_t  p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_DIAMETER);
           cs_real_t  p_eps = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_EMISSIVITY);
           cs_real_t  p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE);
@@ -448,7 +445,7 @@ cs_lagr_coupling(cs_real_t taup[],
     else if (cs_glob_lagr_model->physical_model == 2) {
       if (cs_glob_lagr_const_dim->nlayer > 1)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Couplage thermique non-fonctionnel en multi-layer"));
+                  _("Thermal coupling not implemented in multi-layer case"));
 
       else {
 
@@ -456,7 +453,7 @@ cs_lagr_coupling(cs_real_t taup[],
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-          cs_lnum_t iel  = cs_lagr_particle_get_cell_id(particle, p_am);
+          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
           cs_lnum_t icha = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
 
           cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
@@ -485,10 +482,9 @@ cs_lagr_coupling(cs_real_t taup[],
 
   }
 
-  /* ====================================================================   */
-  /* 7. Verif que le taux volumique maximal TVMAX admissible de particules  */
-  /*    ne soit pas depasse dans quelques cellules.     */
-  /* ====================================================================   */
+  /* Check that the maximum admissible volume fraction of particles
+     is not exceeded in some cells.
+     ============================================================== */
 
   cs_real_t *st_val = cs_glob_lagr_source_terms->st_val; /* short alias */
 
@@ -527,9 +523,8 @@ cs_lagr_coupling(cs_real_t taup[],
 
   }
 
-  /* ====================================================================   */
-  /* 8. MOYENNE TEMPORELLE DES TERMES SOURCES */
-  /* ====================================================================   */
+  /* Time average of source terms
+     ============================ */
 
   if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0) {
 

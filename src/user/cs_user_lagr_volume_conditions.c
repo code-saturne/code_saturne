@@ -87,5 +87,34 @@ cs_user_lagr_volume_conditions(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handling of a particle interaction with a interior face of type
+ *        \ref CS_LAGR_BC_USER.
+ *
+ * \param[in, out]  particles       pointer to particle set
+ * \param[in]       p_id            particle id
+ * \param[in]       face_id         interior face id
+ * \param[in]       face_norm       unit face (or face subdivision) normal
+ * \param[in]       c_intersect     coordinates of intersection with the face
+ * \param[in]       t_intersect     relative distance (in [0, 1]) of the
+ *                                  intersection point with the face relative
+ *                                  to the initial trajectory segment
+ * \param[in, out]  tracking_state  particle tracking state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    *particles,
+                                  cs_lnum_t                  p_id,
+                                  cs_lnum_t                  face_id,
+                                  const cs_real_t            face_norm[3],
+                                  const cs_real_t            c_intersect[3],
+                                  cs_real_t                  t_intersect,
+                                  cs_lagr_tracking_state_t  *tracking_state)
+{
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

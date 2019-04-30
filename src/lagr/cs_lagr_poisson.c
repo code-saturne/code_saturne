@@ -494,7 +494,7 @@ cs_lagr_poisson(const int  itypfb[])
   for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
     unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-    cs_lnum_t      iel  = cs_lagr_particle_get_cell_id(part, p_am);
+    cs_lnum_t      iel  = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
     if (iel >= 0) {
 

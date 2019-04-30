@@ -154,7 +154,8 @@ union cs_lagr_value_t {
 /* Enumerator names */
 
 const char *cs_lagr_attribute_name[] = {
-  "cell_num",
+  "state_flag",
+  "cell_id",
   "rank_id",
   "rebound_id",
   "random_value",
@@ -177,7 +178,6 @@ const char *cs_lagr_attribute_name[] = {
   "interf",
   "neighbor_face_id",
   "marko_value",
-  "deposition_flag",
   "fouling_index",
   "n_large_asperities",
   "n_small_asperities",
@@ -667,16 +667,19 @@ cs_lagr_particle_attr_initialize(void)
   }
 
   /* Special case:
-     cell number is also needed in for previous time step.
+     cell id is also needed in for previous time step.
   */
 
-  attr_keys[CS_LAGR_CELL_NUM][0] = CS_LAGR_P_IVAR;
-  attr_keys[CS_LAGR_CELL_NUM][1] = ++loc_count;
+  attr_keys[CS_LAGR_CELL_ID][0] = CS_LAGR_P_IVAR;
+  attr_keys[CS_LAGR_CELL_ID][1] = ++loc_count;
 
   attr_keys[CS_LAGR_RANK_ID][0] = CS_LAGR_P_RKID;
   attr_keys[CS_LAGR_RANK_ID][1] = 1;
 
   /* Other attributes */
+
+  attr_keys[CS_LAGR_P_FLAG][0] = CS_LAGR_P_IPRP;
+  attr_keys[CS_LAGR_P_FLAG][1] = ++loc_count;
 
   attr_keys[CS_LAGR_REBOUND_ID][0] = CS_LAGR_P_IPRP;
   attr_keys[CS_LAGR_REBOUND_ID][1] = ++loc_count;
@@ -750,9 +753,6 @@ cs_lagr_particle_attr_initialize(void)
 
     attr_keys[CS_LAGR_INTERF][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_INTERF][1] = ++loc_count;
-
-    attr_keys[CS_LAGR_DEPOSITION_FLAG][0] = CS_LAGR_P_IPRP;
-    attr_keys[CS_LAGR_DEPOSITION_FLAG][1] = ++loc_count;
 
     attr_keys[CS_LAGR_NEIGHBOR_FACE_ID][0] = CS_LAGR_P_IPRP;
     attr_keys[CS_LAGR_NEIGHBOR_FACE_ID][1] = ++loc_count;

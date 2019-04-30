@@ -604,15 +604,17 @@ cs_lagr_log_iteration(void)
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_OUTLET)
         chcond = _("outlet");
 
-      else if (   bdy_cond->zone_type[z_id] == CS_LAGR_DEPO1
-               || bdy_cond->zone_type[z_id] == CS_LAGR_DEPO2)
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO1)
+        chcond = _("deposition and elimination");
+
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO2)
         chcond = _("deposition");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_FOULING)
         chcond = _("fouling");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO_DLVO)
-        chcond = _("dlvo conditions");
+        chcond = _("DLVO conditions");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_SYM)
         chcond = _("symmetry");

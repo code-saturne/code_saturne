@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>419</width>
-    <height>414</height>
+    <height>418</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -61,10 +61,10 @@
         <item row="1" column="1">
          <widget class="QLabel" name="labelNBCLST">
           <property name="toolTip">
-           <string/>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Defining multiple statistical classes allows compation of separate statistics for each statistical class of particles. These classes can be used to keep track of different physical characteristics as well as injection zones, in any combination needed.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Statistical class 0 includes all particles, so statistical classes assigned to injected particles should be &amp;gt; 0 where separate statistics are required for those particles.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Number of particle clusters </string>
+           <string>Number of particle statistical classes</string>
           </property>
          </widget>
         </item>

@@ -723,8 +723,8 @@ cs_restart_read_particles(cs_restart_t  *restart,
  *                                on local numbers, plus the sum of particles
  *                                on lower MPI ranks
  * \param[in]  n_particles        local number of particles
- * \param[in]  particle_cell_num  local cell number (1 to n) to which particles
- *                                belong; 0 for untracked particles
+ * \param[in]  particle_cell_id   local cell id (0 to n-1) to which particles
+ *                                belong
  * \param[in]  particle_coords    local particle coordinates (interleaved)
  *
  * \return  the location id assigned to the particles
@@ -736,7 +736,7 @@ cs_restart_write_particles(cs_restart_t     *restart,
                            const char       *name,
                            bool              number_by_coords,
                            cs_lnum_t         n_particles,
-                           const cs_lnum_t  *particle_cell_num,
+                           const cs_lnum_t  *particle_cell_id,
                            const cs_real_t  *particle_coords);
 
 /*----------------------------------------------------------------------------*/
