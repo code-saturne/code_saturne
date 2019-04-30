@@ -786,20 +786,18 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
           cs_lnum_t  *neighbor_face_id;
           cs_real_t  *particle_yplus;
 
-          if (cs_glob_lagr_model->deposition > 0) {
-            neighbor_face_id
-              = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
-            particle_yplus
-              = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
-          }
-          else {
-            neighbor_face_id = NULL;
-            particle_yplus = 0;  /* allow tests even without particle y+ */
-          }
+          neighbor_face_id
+            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+          particle_yplus
+            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
 
           cs_lagr_test_wall_cell(particle, p_am, visc_length,
                                  particle_yplus, neighbor_face_id);
 
+        }
+        else {
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID, -1);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_YPLUS, 0.);
         }
 
       }

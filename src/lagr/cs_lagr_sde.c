@@ -822,11 +822,6 @@ _lagesd(cs_real_t             dtp,
   else
     tvisq = cs_math_big_r;
 
-  /* Friction velocity    */
-
-  face_id  = cs_lagr_particle_get_lnum(particle, p_am,
-                                       CS_LAGR_NEIGHBOR_FACE_ID);
-
   /* Constants for the calculation of bxp and tlp  */
   cs_real_t c0 = 2.1;
   cs_real_t cl = 1.0 / (0.5 + (3.0 / 4.0) * c0);

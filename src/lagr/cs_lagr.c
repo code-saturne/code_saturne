@@ -1959,7 +1959,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   part_c = cs_lagr_update_particle_counter();
 
-  /* GLobal number of particles > 0 */
+  /* Global number of particles > 0 */
   if (part_c->n_g_total > 0) {
 
   /* Record particle's starting cell and rank, and update rebound time id */
