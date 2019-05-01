@@ -76,7 +76,7 @@ from code_saturne.model.XMLmodel import *
 from code_saturne.model.Common import XML_DOC_VERSION, GuiParam
 from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
 from code_saturne.studymanager_gui.BrowserView import BrowserView
-from code_saturne.studymanager.cs_studymanager_xml_init import *
+from code_saturne.studymanager.cs_studymanager_xml_init import smgr_xml_init
 
 try:
     import code_saturne.Pages
@@ -885,7 +885,7 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        XMLinit(self.case).initialize()
+        smgr_xml_init(self.case).initialize()
 
 
     def displayCSManual(self):

@@ -58,7 +58,7 @@ except Exception:
     pass
 
 from studymanager.cs_studymanager_run import run_studymanager_command
-from studymanager.cs_studymanager_xml_init import XMLinit
+from studymanager.cs_studymanager_xml_init import smgr_xml_init
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -1143,7 +1143,7 @@ class Studies(object):
             smgr['xmlfile'] = filename
 
         # minimal modification of xml for now
-        XMLinit(smgr).initialize(reinit_indices = False)
+        smgr_xml_init(smgr).initialize(reinit_indices = False)
         smgr.xmlSaveDocument(prettyString=False)
 
         self.__xmlupdate = options.update_xml

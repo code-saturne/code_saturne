@@ -23,10 +23,10 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the XML data model.
+This module contains the XML file initialization class for studymanager.
 
 This module contains the following class:
-- XMLinit
+- smgr_xml_init
 """
 
 #-------------------------------------------------------------------------------
@@ -39,21 +39,16 @@ import sys, unittest, re
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.XMLvariables import Variables
+from code_saturne.model.XMLinitialize import BaseXmlInit
 
 #-------------------------------------------------------------------------------
-# class XMLinit
+# class smgr_xml_init
 #-------------------------------------------------------------------------------
 
-class XMLinit(Variables):
+class smgr_xml_init(BaseXmlInit):
     """
-    This class initializes the XML contents of the case.
+    This class initializes the content of a smgr xml parameter file.
     """
-    def __init__(self, case):
-        """
-        """
-        self.case = case
-
 
     def initialize(self, reinit_indices = True):
         """
@@ -64,7 +59,7 @@ class XMLinit(Variables):
         if msg:
             return msg
 
-        self.__backwardCompatibility()
+        self._backwardCompatibility()
 
         if reinit_indices:
             self.__reinitIndices()
@@ -154,45 +149,7 @@ class XMLinit(Variables):
                     idxx = idxx + 1
 
 
-    def __backwardCompatibility(self):
-        """
-        Change XML in order to ensure backward compatibility.
-        """
-        cur_vers = self.case['package'].version
-
-        if self.case.root()["solver_version"]:
-            his_r = self.case.root()["solver_version"]
-            history = his_r.split(";")
-            last_vers = self.__clean_version(history[len(history) - 1])
-            if last_vers == cur_vers:
-                self.__backwardCompatibilityCurrentVersion()
-            else:
-                self.__backwardCompatibilityOldVersion(last_vers)
-                self.__backwardCompatibilityCurrentVersion()
-            his = ""
-            vp = ""
-            for v in history:
-                vc = self.__clean_version(v)
-                if vc != vp:
-                    his += vc + ";"
-                    vp = vc
-            if cur_vers != vp:
-                his += cur_vers + ";"
-            his = his[:-1]
-            if his != his_r:
-                self.case.root().xmlSetAttribute(solver_version = his)
-
-        else:
-            vers = cur_vers
-            self.case.root().xmlSetAttribute(solver_version = vers)
-
-            # apply all backwardCompatibilities as we don't know
-            # when it was created
-            self.__backwardCompatibilityOldVersion("-1")
-            self.__backwardCompatibilityCurrentVersion()
-
-
-    def __backwardCompatibilityOldVersion(self, from_vers):
+    def _backwardCompatibilityOldVersion(self, from_vers):
         """
         Change XML in order to ensure backward compatibility for old version
         """
@@ -205,7 +162,7 @@ class XMLinit(Variables):
         Change XML to ensure backward compatibility from before 6.0 to 6.0
         """
 
-    def __backwardCompatibilityCurrentVersion(self):
+    def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
