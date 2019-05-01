@@ -108,12 +108,10 @@ static bool _compute_cocg_lsq = false;
 /* Flag (mask) to activate bad cells correction
  * CS_BAD_CELLS_WARPED_CORRECTION
  * CS_FACE_DISTANCE_CLIP
- * CS_FACE_RECONSTRUCTION_CLIP
  * are set as default options
  * */
 unsigned cs_glob_mesh_quantities_flag =
-  CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP
-  + CS_FACE_RECONSTRUCTION_CLIP;
+  CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP;
 
 /* Choice of the porous model */
 int cs_glob_porous_model = 0;
