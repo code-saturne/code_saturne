@@ -109,7 +109,7 @@ class Plot(object):
         self.f = open(file, 'r')
 
         # Read mandatory attributes
-        self.subplots = [int(s) for s in parser.getAttribute(node,"fig").split()]
+        self.subplots = [int(s) for s in parser.getAttribute(node,"spids").split()]
         ycol         = int(parser.getAttribute(node, "ycol"))
 
         # Read optional attributes
@@ -157,7 +157,7 @@ class Plot(object):
 
         # List of additional matplotlib commands
         for k, v in parser.getAttributes(node).items():
-            if k not in ('fig', 'fmt', 'legend', 'xcol', 'ycol', \
+            if k not in ('spids', 'fmt', 'legend', 'xcol', 'ycol', \
                          'xplus', 'yplus', 'xscale', 'yscale', \
                          'xerr', 'yerr', 'xerrp', 'yerrp', 'id'):
                 self.cmd.append("plt.setp(lines, " + k + "=" + v + ")")
