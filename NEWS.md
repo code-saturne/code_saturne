@@ -102,6 +102,14 @@ Physical modelling:
   displacement. To activate it use "cs_glob_ale = 2" in C or "iale = 2" in
   Fortran.
 
+Default option changes:
+
+- Disable CS_FACE_RECONSTRUCTION_CLIP bad cells correction by default
+  (clipping of face reconstruction distances |II'| and |JJ'|).
+  This reduces precision (consistancy loss) and can impair space convergence
+  on several verification test cases run on tetrahedral meshes
+  (INTERNAL_COUPLING, PERMEABILITY_GRADIENT, PLANE_COUETTE_FLOW).
+
 Bug fixes:
 
 - Fixes for GMSH import.
@@ -313,7 +321,7 @@ Default option changes:
 
 - Change default options for bad meshes:
   CS_BAD_CELLS_WARPED_CORRECTION, CS_FACE_DISTANCE_CLIP, CS_FACE_RECONSTRUCTION
-  are switch on by default.
+  are switched on by default.
 
 Bug fixes:
 
