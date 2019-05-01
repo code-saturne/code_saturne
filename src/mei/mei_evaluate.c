@@ -357,6 +357,7 @@ _evaluate(mei_node_t  *p)
         return t1 / t2;
       else
         bft_error(__FILE__, __LINE__, 0, _("Error: floating point exception\n"));
+      break;
 
     case '^':
       return pow(_evaluate(p->type->opr.op[0]), _evaluate(p->type->opr.op[1]));
