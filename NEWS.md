@@ -11,6 +11,9 @@ Default option changes:
 
 Bug fixes:
 
+- Lagrangian module with deposition: fix use of wrong Eulerian
+  fluid velocity in some terms.
+
 - Fix balance on vectorial work arrays (if no field id is provided) for example
   used if dynamic reconstruction algorithm is enabled (iswdyn >= 1).
   Internal coupling indicator was used uninitialiazed, blending coefficient
