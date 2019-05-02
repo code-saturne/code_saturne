@@ -5,6 +5,9 @@ Release 5.0.10 (unreleased)
 Bug fixes
 ---------
 
+- Lagrangian module with deposition: fix use of wrong Eulerian
+  fluid velocity in some terms.
+
 - Fix in ALE wall BCs.
 
 - GUI reader: fix for cases with multiple mapped inlets.

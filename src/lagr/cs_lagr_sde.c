@@ -886,7 +886,7 @@ _lagesd(cs_real_t           dtp,
 
   cs_real_t vflui[3];
 
-  cs_math_33_3_product(rot_m, vela, vflui);
+  cs_math_33_3_product(rot_m, vela+cell_id*3, vflui);
 
   cs_real_t norm = sqrt(pow(vflui[1],2)+pow(vflui[2],2));
 
