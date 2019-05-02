@@ -341,7 +341,7 @@ _class_name(const char  *name,
   size_t l0 = strlen(_class_ext);
 
   snprintf(class_name, 63 - l0, name);
-  class_name[64-l0] = '\0';
+  class_name[63-l0] = '\0';
   strcat(class_name, _class_ext);
   class_name[63] = '\0';
 }
@@ -1087,7 +1087,7 @@ _moment_name(const char            *base_name,
 
   snprintf(name,
            63 - l0,
-           "%s_particle_%s",
+           "%s_%s",
            type_name[moment_type],
            base_name);
   name[63] = '\0';
@@ -3324,7 +3324,7 @@ _event_stat_initialize(void)
      (all part of particle movement) */
 
   int                      b_stat_type[3];
-  char                     b_stat_name[64][3];
+  char                     b_stat_name[3][64];
   cs_lagr_moment_m_data_t *b_stat_u_func[3];
   cs_lagr_moment_m_data_t *b_stat_tm_func[3];
   void                    *b_stat_u_input[3];
@@ -3479,37 +3479,29 @@ _event_stat_initialize(void)
 
         switch(stat_type) {
         case CS_LAGR_STAT_IMPACT_ANGLE:
-          _moment_name("particle_impact_angle", -1, class, m_type, name);
+          strncpy(name, "particle_impact_angle", 63);
           stat_type_def = -1;
           data_func = _boundary_impact_angle;
           break;
         case CS_LAGR_STAT_IMPACT_VELOCITY:
-          _moment_name("particle_impact_velocity", -1, class, m_type, name);
+          strncpy(name, "particle_impact_velocity", 63);
           stat_type_def = -1;
           data_func = _boundary_impact_velocity;
           break;
         case CS_LAGR_STAT_FOULING_DIAMETER:
-          _moment_name("particle_fouing_diameter", -1, class, m_type, name);
+          strncpy(name, "particle_fouling_diameter", 63);
           stat_type_def = -1;
           data_func = _boundary_fouling_diameter;
           w_data_func = _boundary_fouling_weight;
           break;
         case CS_LAGR_STAT_FOULING_COKE_FRACTION:
-          _moment_name("particle_fouing_coke_fraction", -1, class, m_type, name);
+          strncpy(name, "particle_fouling_coke_fraction", 63);
           stat_type_def = -1;
           data_func = _boundary_fouling_coke_fraction;
           w_data_func = _boundary_fouling_weight;
           break;
         default:
-          {
-            const int attr_id = cs_lagr_stat_type_to_attr_id(stat_type);
-            if (attr_id > 0)
-              _attr_moment_name(attr_id,
-                                -1,       /* component_id */
-                                class,
-                                m_type,
-                                name);
-          }
+          snprintf(name, 63, "particle_event_%d", (int)stat_type);
           break;
         }
 
@@ -3963,7 +3955,7 @@ cs_lagr_stat_activate(int  stat_type)
 
   int level = 3;
 
-  if (stat_type < CS_LAGR_STAT_ATTR) {
+  if (stat_type < CS_LAGR_STAT_IMPACT_ANGLE) { /* TODO keep this updated */
     switch(stat_type) {
     case CS_LAGR_STAT_CUMULATIVE_WEIGHT:
     case CS_LAGR_STAT_E_CUMULATIVE_WEIGHT:
@@ -4223,10 +4215,8 @@ cs_lagr_stat_initialize(void)
 
           if (stat_type == CS_LAGR_STAT_VOLUME_FRACTION) {
 
-            _moment_name("particle_volume_fraction", -1, class, m_type, name);
-
             cs_lagr_stat_time_moment_define
-              (name,
+              ("particle_volume_fraction",
                CS_MESH_LOCATION_CELLS,
                stat_type,
                m_type,

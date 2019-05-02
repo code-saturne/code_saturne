@@ -423,6 +423,11 @@ cs_gui_particles_model(void)
         cs_lagr_stat_activate(CS_LAGR_STAT_MASS_FLUX);
 
       flag = 0;
+      _get_stats_post(tn_bs, "Part_impact_angle", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_ANGLE);
+
+      flag = 0;
       _get_stats_post(tn_bs, "Part_impact_velocity", &flag);
       if (flag)
         cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_VELOCITY);
