@@ -1390,7 +1390,7 @@ class mei_to_c_interpreter:
                     if d == 'formula':
                         req  = ['dir_x', 'dir_y', 'dir_z']
                         exp  = boundary.getDirection('direction_formula')
-                        sym = ['t', 'dt', 'iter']
+                        sym = ['x', 'y', 'z', 't', 'dt', 'iter']
 
                         for (name, val) in NotebookModel(self.case).getNotebookList():
                             sym.append((name, 'value (notebook) = ' + str(val)))
@@ -1521,10 +1521,9 @@ class mei_to_c_interpreter:
                         if '_formula' in c:
                             if c == 'norm_formula':
                                 req = ['u_norm']
-                                sym = ['x', 'y', 'z', 't', 'dt', 'iter']
                             elif c == 'flow1_formula':
                                 req = ['q_m']
-                                sym = ['t', 'dt', 'iter']
+                            sym = ['x', 'y', 'z', 't', 'dt', 'iter']
 
                             for (name, val) in NotebookModel(self.case).getNotebookList():
                                 sym.append((name, 'value (notebook) = ' + str(val)))
@@ -1545,7 +1544,7 @@ class mei_to_c_interpreter:
                         if d == 'formula':
                             exp = boundary.getDirection(fId, 'direction_formula')
                             req = ['dir_x', 'dir_y', 'dir_z']
-                            sym = ['t', 'dt', 'iter']
+                            sym = ['x', 'y', 'z', 't', 'dt', 'iter']
                             for (name, val) in NotebookModel(self.case).getNotebookList():
                                 sym.append((name, 'value (notebook) = ' + str(val)))
 
