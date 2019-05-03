@@ -11,6 +11,8 @@ Default option changes:
 
 Bug fixes:
 
+- Coal combustion: fix XML reader for cases with no NOx formation.
+
 - Lagrangian module with deposition: fix use of wrong Eulerian
   fluid velocity in some terms.
 

@@ -1010,11 +1010,11 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
        QPR =  % of free nitrogen during devolatilization
             / % of density freed during devolatilization */
 
-    const char path_nox[] = "nox_formation";
-    cs_tree_node_t *tn_nox = cs_tree_get_node(tn, path_nox);
-
-    cs_gui_node_get_status_int(tn_sf, ieqnox);
+    cs_gui_node_get_child_status_int(tn_sf, "NOx_formation", ieqnox);
     if (*ieqnox) {
+
+      const char path_nox[] = "nox_formation";
+      cs_tree_node_t *tn_nox = cs_tree_get_node(tn, path_nox);
 
       if (tn_nox == NULL)
         bft_error(__FILE__, __LINE__, 0, _("Missing %s child for node %s."),
