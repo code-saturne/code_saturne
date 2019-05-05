@@ -139,6 +139,13 @@ Bug fixes:
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
 
+Numerics:
+
+- Change the way the dimensionless wall distance is computed (LES Smagorinsky
+  model) i.e. convection flux is a face gradient and is now computed using a
+  two point flux approximation (TPFA). Set solver precision to a lower value
+  since there is no need for a high precision (1e-8 to 1e-5).
+
 Architectural changes:
 
 - Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
