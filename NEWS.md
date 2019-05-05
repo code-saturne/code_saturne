@@ -146,7 +146,7 @@ Numerics:
 
 - Change the way the dimensionless wall distance is computed (LES Smagorinsky
   model) i.e. convection flux is a face gradient and is now computed using a
-  two point flux approximation (TPFA). Set solver precision to a lower value
+  two point flux approximation (TPFA). Set solver precision to a higher value
   since there is no need for a high precision (1e-8 to 1e-5).
 
 Architectural changes:
