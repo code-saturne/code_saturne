@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-09-26 17:57+0200\n"
+"POT-Creation-Date: 2019-05-06 15:56+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1266,6 +1266,9 @@ msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
 
+msgid "CGNS: unhandled NGON_n element in MIXED section\n"
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -1824,6 +1827,94 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on physical groups form \"numPhysicalNames\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of entity <%d> physical group was expected in the form "
+"\"dimension tag names\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"The end of the physical names specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on entities form \"numPoints numCurves numSurfaces numVolumes"
+"\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on entities does not seem to match the spec."
+msgstr ""
+
+#, c-format
+msgid ""
+"The end of the entities specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+"La fin de spécification de la liste des entités du fichier\n"
+"\"%s\" n'est pas présente à l'emplacement attendu.)"
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on node counts was expected in the form \"numEntityBlocks "
+"numNodes\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"L'information sur le nombre de noeuds était attendue sous la forme"
+"\"numEntityBlocks numNodes\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of entity <%d> points was expected in the form \"tagEntity "
+"dimEntity parametric numNodes\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"La description des points de l'entité <%d> était attendue sous la forme "
+"\"tagEntity dimEntity parametric numNodes\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The point <%ld> label was expected in the form \"label\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"On attendait le label du point <%ld> sous la forme \"label\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The point <%ld> coordinates were expected in the form \"x y z\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"On attendait les coordonnées du point <%ld> sous la forme \"x y z\"."
+
+#, c-format
+msgid ""
 "Error reading a Gmsh mesh file:\n"
 "at line %ld of file \"%s\".\n"
 "Type identifier <%d> for element <%ld> is not recognized."
@@ -1864,6 +1955,30 @@ msgid ""
 msgstr ""
 "La fin de spécification de la liste des éléments du fichier\n"
 "\"%s\" n'est pas présente à l'emplacement attendu.)"
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on element counts was expected in the form \"numEntityBlocks "
+"numElements\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"L'information sur le nombre d'éléments était attendue sous la forme "
+"\"numEntityBlocks numElements\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of entity <%d> elements was expected in the form \"tagEntity "
+"dimEntity typeEle numElements\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"La description des éléments de l'entité <%d> était attendue sous la forme "
+"\"tagEntity dimEntity typeEle numElements\"."
 
 #, c-format
 msgid ""
@@ -10663,6 +10778,25 @@ msgstr ""
 #, c-format
 msgid ""
 "cg_section_partial_write() failed to write tesselated elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_poly_elements_partial_write() failed to write elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"Associated range: [%llu, %llu]\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_poly_section_write() failed to write polygonal elements:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
 "Associated section name: \"%s\"\n"
