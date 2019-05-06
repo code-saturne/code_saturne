@@ -216,19 +216,19 @@ def find_c_comment_close(l, c_id, quotes):
 
 #---------------------------------------------------------------------------
 
-def separate_statements(lines):
+def separate_segments(lines):
     """
-    Separate statements based on expected statement separators.
-    This stage is not a parser, but simply splits lines into statements,
+    Separate segments based on expected separators.
+    This stage is not a parser, but simply splits lines into segments,
     separating comments (allowing for Python, C, and C++ style comments),
     and checking for quoting or escape characters.
-    Returns a list of tuples containing the statements, and matching
+    Returns a list of tuples containing the segments, and matching
     start line and column indexes in the original expression.
     """
 
     whitespace = (' ', '\t', '\n', '\l')
     separators = ('{', '}', ';')
-    statements = []
+    segments = []
 
     in_multiline_comment = False
     quotes = [' ']
@@ -247,7 +247,7 @@ def separate_statements(lines):
         while c_id < w:
 
             # Quoting (highest priority);
-            # left inside statements, but separators in quoted
+            # left inside segments, but separators in quoted
             # regions are not considered as separators.
 
             if l[c_id] == "\\": # use 'e' to represent escape character
@@ -270,7 +270,7 @@ def separate_statements(lines):
                 if quotes[0] == 'e' and l[c_id] in whitespace:
                     # escape character may be a line continuation character
                     # in this case; handle it like a separator
-                    statements.append(('\\', l_id, c_id))
+                    segments.append(('\\', l_id, c_id))
                     c_id += 1
                     s_id = c_id
                 continue
@@ -285,7 +285,7 @@ def separate_statements(lines):
                     in_multiline_comment = False
                 else:
                     j = w
-                statements.append(('# ' + l[c_id:j].strip(), l_id, c_id))
+                segments.append(('# ' + l[c_id:j].strip(), l_id, c_id))
                 c_id = j
                 s_id = c_id
 
@@ -304,30 +304,30 @@ def separate_statements(lines):
             elif l[c_id] == '#':
                 e = l[s_id:c_id].strip()
                 if len(e):
-                    statements.append((e, l_id, s_id))
-                statements.append((l[c_id:].strip(), l_id, c_id))
+                    segments.append((e, l_id, s_id))
+                segments.append((l[c_id:].strip(), l_id, c_id))
                 c_id = w
                 s_id = c_id
 
             elif l[c_id:c_id+2] in ('//', '/*'):
                 e = l[s_id:c_id].strip()
                 if len(e):
-                    statements.append((e, l_id, s_id))
+                    segments.append((e, l_id, s_id))
                 if l[c_id:c_id+2] == '//':
-                    statements.append(('# ' + l[c_id+2:].strip(),
-                                       l_id, c_id))
+                    segments.append(('# ' + l[c_id+2:].strip(),
+                                     l_id, c_id))
                     c_id = w
                     s_id = c_id
                 else:
                     j = find_c_comment_close(l, c_id+2, quotes)
                     if j >= 0: # on same line
-                        statements.append(('# ' + l[c_id+2:j].strip(),
-                                           l_id, c_id))
+                        segments.append(('# ' + l[c_id+2:j].strip(),
+                                         l_id, c_id))
                         j += 2
                     else:
                         j = w
-                        statements.append(('# ' + l[c_id+2:j].strip(),
-                                           l_id, c_id))
+                        segments.append(('# ' + l[c_id+2:j].strip(),
+                                         l_id, c_id))
                         in_multiline_comment = True
                     c_id = j
                     s_id = c_id
@@ -337,8 +337,8 @@ def separate_statements(lines):
                 if l[c_id] in separators:
                     e = l[s_id:c_id].strip()
                     if len(e):
-                        statements.append((e, l_id, s_id))
-                    statements.append((l[c_id:c_id+1], l_id, c_id))
+                        segments.append((e, l_id, s_id))
+                    segments.append((l[c_id:c_id+1], l_id, c_id))
                     c_id += 1
                     s_id = c_id
                 else:
@@ -349,11 +349,11 @@ def separate_statements(lines):
         if s_id < c_id:
             e = l[s_id:c_id].strip()
             if len(e):
-                statements.append((e, l_id, s_id))
+                segments.append((e, l_id, s_id))
 
         l_id += 1
 
-    return statements
+    return segments
 
 #---------------------------------------------------------------------------
 
@@ -378,49 +378,420 @@ def parse_parentheses(line):
 
 #---------------------------------------------------------------------------
 
-def search_and_replace_power(line):
+def get_start_lc(expr):
+    """
+    Return start line and column for a given expression
+    """
+    if isinstance(expr, (list,)):
+        return get_start_lc(expr[0])
 
-    symbs = ['+', '-', '*', '/', ' ', ';', '{', '}']
-    ps = [i for i, l in enumerate(line) if l == '^']
-
-    if ps == []:
-        return line
     else:
-        for pos in ps:
-            b1 = pos - 1
-            b2 = pos
+        return expr[1], expr[2]
 
-            p1 = pos+1
-            p2 = pos+1
+#---------------------------------------------------------------------------
 
-            if line[b1] != ')':
-                while b1 > 0 and line[b1-1] not in symbs:
-                    b1 -= 1
+def update_expressions_syntax(expressions):
+    """
+    Update legacy expressions, such as "mod"
+    """
+
+    new_exp = []
+    skip_to = 0
+
+    for i, e in enumerate(expressions):
+
+        if i < skip_to:
+            continue
+
+        if isinstance(e, (list,)):
+            a = update_expressions_syntax(e)
+            new_exp.append(update_expressions_syntax(e))
+
+        else:
+
+            # Translate "modulus" syntax
+            if e[0] == 'mod':
+                valid = True
+                sub_expr = None
+                ic = -1 # start of comma separating x and y,
+                iy = -1 # start of second argument
+                pc = -1 # position of closing parenthesis
+                try:
+                    sub_expr = expressions[i+1]
+                    po = sub_expr[0][0]
+                    if po != '(':
+                        valid = False
+                    # Check position of comma (if x is complex, might not be at i+3)
+                    j = 1
+                    while ic < 0:
+                        if isinstance(sub_expr[j], (list,)):
+                            j += 1
+                        elif sub_expr[j][0] != ',':
+                            j += 1
+                        else:
+                            ic = j
+                    iy = ic+1
+                    j = iy+1
+                    while pc < 0:
+                        if isinstance(sub_expr[j], (list,)):
+                            j += 1
+                        elif sub_expr[j][0] != ')':
+                            j += 1
+                        else:
+                            pc = j
+                    if pc+1 != len(sub_expr):
+                        valid = False
+                except Exception:
+                   valid = False
+
+                if valid:
+                    skip_to = i+2
+                    j = 1
+                    new_sub = []
+                    x = sub_expr[j]
+                    li, ci = get_start_lc(x)
+                    new_sub.append(('(', li, ci))
+                    if ic > 2:
+                        sub_sub = []
+                        sub_sub.append(('(', li, ci))
+                        while j < ic:
+                            x = sub_expr[j]
+                            sub_sub.append(x)
+                            j += 1
+                        li, ci = get_start_lc(x)
+                        sub_sub.append((')', li, ci))
+                        new_sub.append(sub_sub)
+                    else:
+                        new_sub.append(x)
+                    new_sub.append(('%', li, ci))
+                    j = ic+1
+                    x = sub_expr[j]
+                    if pc - j > 1:
+                        sub_sub = []
+                        li, ci = get_start_lc(x)
+                        sub_sub.append(('(', li, ci))
+                        while j < pc:
+                            x = sub_expr[j]
+                            sub_sub.append(x)
+                            j += 1
+                        li, ci = get_start_lc(x)
+                        sub_sub.append((')', li, ci))
+                        new_sub.append(sub_sub)
+                    else:
+                        new_sub.append(x)
+                    li, ci = get_start_lc(x)
+                    new_sub.append((')', li, ci))
+                    new_exp.append(new_sub)
+                else:
+                    new_exp.append(e)
+
             else:
-                dp = parse_parentheses(line)
-                for key in dp.keys():
-                    if dp[key] == b2-1:
-                        b1 = key
-                        break
+                new_exp.append(e)
 
-            if line[p2] != '(':
-                while p2 < len(line)-2 and line[p2] not in symbs:
-                    p2 += 1
+    return new_exp
+
+#---------------------------------------------------------------------------
+
+def recurse_expressions_syntax(expressions):
+    """
+    Recursively Update expressions
+    """
+
+    new_exp = []
+    skip_to = 0
+
+    for i, e in enumerate(expressions):
+
+        if i < skip_to:
+            continue
+
+        if isinstance(e, (list,)):
+            new_exp.append(recurse_expressions_syntax(e))
+
+        else:
+
+            # Translate "power" syntax
+            if e[0] in ('^', '**') and i > 0:
+                valid = True
+                x = new_exp.pop()
+                y = None
+                try:
+                    y = expressions[i+1]
+                except Exception:
+                    valid = False
+                    new_exp.append(x) # replace after pop() above
+                if valid:
+                    sub_exp = []
+                    li, ci = get_start_lc(x)
+                    sub_exp.append(('(', li, ci))
+                    sub_exp.append(x)
+                    if y[0] in ('2', '3', '4'):
+                        new_exp.append(('cs_math_pow'+y[0], li, ci))
+                    else:
+                        new_exp.append(('pow', li, ci))
+                        sub_exp.append((',', li, ci))
+                        li, ci = get_start_lc(x)
+                        sub_exp.append(y)
+                    sub_exp.append((')', li, ci))
+                    new_exp.append(sub_exp)
+                    skip_to = i+2
+
             else:
-                dp = parse_parentheses(line)
-                p2 = dp[p1] + 1
+                new_exp.append(e)
 
-    if b1 == b2:
-        b2 +=1
-    if p1 == p2:
-        p2 +=1
+    return new_exp
 
-    m1 = '%s^%s' % (line[b1:b2], line[p1:p2])
-    m2 = 'pow(%s, %s)' % (line[b1:b2], line[p1:p2])
+#---------------------------------------------------------------------------
 
-    new_line = line.replace(m1,m2)
+def rebuild_text(expressions, comments,
+                 level=0, s_line=0, s_col=0, t_prev=''):
+    """
+    Rebuild source code from expressions and comments.
+    Reinsert comments at recorderd lines in expressions.
+    Comments are never inserted before an active token on a given
+    line, event if this was the case in the original expression,
+    both for simplification and because it is not recommeneded.
+    """
 
-    return new_line
+    text = ''
+
+    new_exp = []
+
+    # operators adding spacing or not (minimalist prettyfier).
+    spacing_operators = ('+', '-', '*', '%', '/', '=', '>', '<',
+                         '==', '>=', '<=')
+    no_spacing_operators = ('^', '**')
+
+    for i, e in enumerate(expressions):
+
+        li, ci = get_start_lc(e)
+
+        # Restore comments from previous lines
+
+        # column info does not need to be fully updated here,
+        # as comments are always added at the end of a line,
+        # and new lines reset column info.
+
+        if comments:
+            line_ref = comments[0][1]
+            while comments:
+                if comments[0][1] >= li:
+                    break
+                c = comments.pop(0)
+                while s_line < c[1]:
+                    text += '\n'
+                    s_line += 1
+                    s_col = 0
+                if s_col > 0: # add space to nonempty column
+                    text += ' '
+                if s_col < c[2]:
+                    for j in range(c[2]):
+                        text += ' '
+                text += '//' + c[0][1:]
+
+        # Recursive handling of code
+
+        if isinstance(e, (list,)):
+            sub_text, comments, e_line, e_col \
+                = rebuild_text(e, comments, level+1,
+                               s_line, s_col, t_prev)
+            text += sub_text
+            t_prev = sub_text[-1:]
+            if e_line > s_line:
+                s_col = 0
+            else:
+                s_col = e_col
+            s_line = e_line
+
+        else:
+
+            if s_line < li:
+                text += '\n'
+                s_col = 0
+                for i in range(ci):
+                    text += ' '
+                    s_col += 1
+
+            else:      # Try to put spaces in recommended places
+                add_space = True
+                if t_prev in ('(', '[', '{', ''):
+                    add_space = False
+                elif e[0] in (';', ':', ',', ')', ']', '}') \
+                   or e[0] in no_spacing_operators:
+                    add_space = False
+                elif e[0] in ('(', '['):
+                    if t_prev not in spacing_operators:
+                        add_space = False
+                if add_space:
+                    text += ' '
+                    s_col += 1
+
+            # Add actual token
+
+            text += e[0]
+            t_prev = e[0]
+            s_line = li
+            s_col += len(e[0])
+
+    # Restore comments after code
+
+    """
+    if len(comments) > 0:
+        if comments[0][1]:
+        iwhile comments[0][1] < e[1]:
+            c = comments.pop(0)
+            line_cur = c[1]
+            while line_cur < line_ref:
+                text += '\n'
+                line_cur += 1
+                for j in range(c[2]):
+                    text += ' '
+                    text += c[0]
+                line_ref = line_cur
+            text += '\n\n'
+    """
+
+
+    return text, comments, s_line, s_col
+
+#---------------------------------------------------------------------------
+
+def tokenize(segments):
+    """
+    Tokenize segments and separate comments.
+    """
+
+    whitespace = (' ', '\t', '\n', '\l', '\r')
+    sep2 = ('<=', '>=', '!=', '||', '&&', '+=', '-=', '*=', '/=', '**')
+    sep1 = ('=', '(', ')', ';', ',', ':', '[', ']', '{', '}',
+            '+', '-', '*', '/', '<', '>',  '^', '%', '!', '?')
+
+    tokens = []
+    comments = []
+
+    for s in segments:
+
+        prv = ' '
+        s_id = 0
+        s0 = s[0]
+        if (s0[0] == '#'):
+            comments.append(s)
+            continue
+
+        for i, c in enumerate(s0):
+            if c in whitespace:
+                if (not prv in whitespace) and (s_id < i):
+                    tokens.append((s0[s_id:i], s[1], s[2]+s_id))
+                s_id = i+1
+            elif s0[i:i+2] in sep2:
+                if (not prv in whitespace) and (s_id < i):
+                    tokens.append((s0[s_id:i], s[1], s[2]+s_id))
+                tokens.append((s0[i:i+2], s[1], s[2]+i))
+                s_id = i+1
+            elif c in sep1:
+                if (not prv in whitespace) and (s_id < i):
+                    tokens.append((s0[s_id:i], s[1], s[2]+s_id))
+                tokens.append((s0[i:i+1], s[1], s[2]+i))
+                s_id = i+1
+            prv = s0[i]
+        r = s0[s_id:]
+        if len(r) > 0:
+            tokens.append((r, s[1], s[2]+s_id))
+
+    return tokens, comments
+
+#---------------------------------------------------------------------------
+
+def build_expressions(exp_lines, tokens):
+    """
+    Organize expressions as lists of subexpressions based on levels
+    """
+
+    # Now we have a fully tokenized expression, we can buid a list of assignments
+
+    opening_tokens = ('(', '{', '[')
+    closing_tokens = (')', '}', ']')
+    open_match = {')': '(',
+                  '}': '{',
+                  ']': '['}
+    close_match = {'(': ')',
+                  '{': '}',
+                  '[': ']'}
+
+    parent = []
+    current = []
+
+    rvalues = []
+    expression = []
+
+    previous = None
+    level_open = []
+
+    # Build levels based on parenthesis and braces (check consistency)
+
+    match_error = None
+
+    for t in tokens:
+
+        if t[0] in opening_tokens:
+            level_open.append(t)
+            parent.append(current)
+            current = []
+            current.append(t)
+        elif t[0] in closing_tokens:
+            match_open = False
+            if level_open:
+                t_open = level_open.pop()
+                if t_open[0] == open_match[t[0]]:
+                    match_open = True
+                    current.append(t)
+                    sub = current
+                    current = parent.pop()
+                    current.append(sub)
+            if not match_open:
+                match_error = (t[0], t[1], t[2], open_match[t[0]])
+                break
+        else:
+            current.append(t)
+
+    if level_open:
+        t = level_open.pop()
+        match_error = (t[0], t[1], t[2], close_match[t[0]])
+
+    if match_error:
+        err_msg = []
+        n_lines = 7
+        j = match_error[1]  # error line
+        for i in range(n_lines):
+            if i + j + 1 - n_lines > -1:
+                err_msg.append(exp_lines[i + j + 1 - n_lines])
+        c_line = ''
+        for k in range(match_error[2]):  # error column
+            c_line += ' '
+        c_line += '^'
+        err_msg.append(c_line)
+        fmt = "Error: '{0}' at line {1} and column {2} does not have a matching '{3}'"
+        err_msg.append(fmt.format(match_error[0], match_error[1],
+                                  match_error[2], match_error[3]))
+        err_msg.append('')
+        for i in range(n_lines):
+            if j+i < len(exp_lines):
+                err_msg.append(exp_lines[j-i])
+
+        """
+        msg = ''
+        for l in err_msg:
+            msg += l + '\n'
+
+        raise Exception(msg)
+        """
+        for l in err_msg:
+            print(l)
+
+        return None
+
+    return current
+
 
 #---------------------------------------------------------------------------
 
@@ -461,23 +832,48 @@ def parse_gui_expression(expression,
 
     # ------------------------------------
     # Parse the Mathematical expression and generate the C block code
+
     exp_lines = expression.split("\n")
-    statements = separate_statements(exp_lines)
+
+    segments = separate_segments(exp_lines)
+    tokens, comments = tokenize(segments)
+    expr_list = build_expressions(exp_lines, tokens)
+
+    # TODO: better handle parsing error (message printed in build_expressions)
+
+    if expr_list:
+        # Update expressions to new syntax (should be moved to back compatiility)
+        expr_list = update_expressions_syntax(expr_list)
+
+        # Translate expressions such as power functions
+        expr_list = recurse_expressions_syntax(expr_list)
+
+        # Rebuild source text
+        text, comments, s_line, s_col \
+            = rebuild_text(expr_list, comments)
+
+        # Return to previous stage
+        # (we should use the expressions list for more robust parsing
+        # also in the following stages in the future).
+
+        exp_lines = text.split("\n")
+        segments = separate_segments(exp_lines)
+
     s_idx = 0
-    s_end = len(statements)
+    s_end = len(segments)
     nreq = len(req)
 
     for lidx in range(len(exp_lines)):
 
-        # Rebuild line from statements, ignoring comments
-        # statements should be used to improve parsing in the future
+        # Rebuild line from segments, ignoring comments
+        # segments should be used to improve parsing in the future
         l = ""
         while s_idx < s_end:
-            s_l_idx = statements[s_idx][1]
+            s_l_idx = segments[s_idx][1]
             if s_l_idx > lidx:
                 break
             elif s_l_idx == lidx:
-                s = statements[s_idx][0]
+                s = segments[s_idx][0]
                 if s[0] != '#':
                     l += s + ' '
             s_idx += 1
@@ -529,11 +925,6 @@ def parse_gui_expression(expression,
                     l = new_v + ' = ' + lf[1]
 
             # ------------------------------------
-            # Check for power functions
-            if '^' in l:
-                l = search_and_replace_power(l)
-
-            # ------------------------------------
             # If loop :
             # 1 : Line starting with if
             if l[:2] == 'if':
@@ -577,9 +968,6 @@ def parse_gui_expression(expression,
             usr_code += '\n' + (ntabs+if_open)*tab + '}\n'
     else:
         usr_code += '\n'
-
-    # Change comments symbol from # to //
-    usr_code = usr_code.replace('#', '//')
 
     return usr_code, usr_defs
 
@@ -685,7 +1073,7 @@ class mei_to_c_interpreter:
             required = func_params['req']
 
         if len(required) > 1:
-            raise Exception("Recieved more than one argument in write_cell_block function")
+            raise Exception("Received more than one argument in write_cell_block function")
 
         zone, name = func_key.split('::')
         exp_lines_comp = func_params['lines']
