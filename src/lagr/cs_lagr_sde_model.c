@@ -164,6 +164,7 @@ _lagtmp(cs_lnum_t        npt,
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   cs_lnum_t nlayer = cs_glob_lagr_const_dim->nlayer;
+  cs_lnum_t l_id_max = nlayer - 1;
 
   cs_real_t delray[nlayer], radiusd[nlayer], rho[nlayer];
 
@@ -212,20 +213,13 @@ _lagtmp(cs_lnum_t        npt,
 
     /* Compute radii and radii deltas */
 
-    for (l_id = 0; l_id < nlayer; l_id++) {
-
-      if (l_id == nlayer)
-        radiusd[l_id]  = (radius[l_id - 1] + radius[l_id]) / 2.0;
-      else if (l_id == 0) {
-        radiusd[l_id]  = radius[l_id] / 2.0;
-        delray[l_id]  = radius[l_id + 1] / 2.0;
-      }
-      else {
-        radiusd[l_id]  = (radius[l_id - 1] + radius[l_id]) / 2.0;
-        delray[l_id]  = (radius[l_id + 1] - radius[l_id - 1]) / 2.0;
-      }
-
+    radiusd[0]  = radius[0] / 2.0;
+    delray[0]   = radius[1] / 2.0;
+    for (l_id = 1; l_id < l_id_max; l_id++) {
+      radiusd[l_id]  = (radius[l_id - 1] + radius[l_id]) / 2.0;
+      delray[l_id]  = (radius[l_id + 1] - radius[l_id - 1]) / 2.0;
     }
+    radiusd[l_id_max]  = (radius[l_id_max - 1] + radius[l_id_max]) / 2.0;
 
     /* Compute density of layers */
 
