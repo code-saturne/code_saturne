@@ -44,18 +44,22 @@ import SMESH
 import CFDSTUDYGUI_DataModel
 
 try:
-    from libvtkRenderingCorePython import *
-    from libvtkFiltersSourcesPython import *
+    from vtkmodules.libvtkRenderingCorePython import *
+    from vtkmodules.libvtkFiltersSourcesPython import *
 except:
     try:
-        from vtkRenderingCorePython import *
-        from vtkFiltersSourcesPython import *
+        from libvtkRenderingCorePython import *
+        from libvtkFiltersSourcesPython import *
     except:
-        # for compatibility with salome 6.6
         try:
-            from libvtkRenderingPython import *
+            from vtkRenderingCorePython import *
+            from vtkFiltersSourcesPython import *
         except:
-            from vtkRenderingPython import *
+            # for compatibility with salome 6.6
+            try:
+                from libvtkRenderingPython import *
+            except:
+                from vtkRenderingPython import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -586,6 +590,3 @@ class ProfilActors(Actors):
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
-
-
-
