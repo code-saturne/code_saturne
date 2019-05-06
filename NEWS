@@ -5,6 +5,8 @@ Release 5.2.2 (unreleased)
 Bug fixes
 ---------
 
+- Lagrangian module: fix crash in coal or biomass evolution model.
+
 - Lagrangian module with deposition: fix use of wrong Eulerian
   fluid velocity in some terms.
 
