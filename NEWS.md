@@ -1,5 +1,5 @@
-Release 5.3.3 - Unreleased
---------------------------
+Release 5.3.3 - May 7, 2019
+---------------------------
 
 Default option changes:
 
