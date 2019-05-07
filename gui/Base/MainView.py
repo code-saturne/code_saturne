@@ -889,7 +889,8 @@ class MainView(object):
             return
 
         fileEditor = QFileEditor(parent=self,
-                                 case_dir=self.case['case_path']+'/SRC')
+                                 case_dir=self.case['case_path']+'/SRC',
+                                 noOpen=True)
         fileEditor.show()
 
 
@@ -906,7 +907,8 @@ class MainView(object):
 
         fileViewer = QFileEditor(parent=self,
                                  case_dir=self.case['case_path']+'/RESU',
-                                 readOnly=True)
+                                 readOnly=True,
+                                 noOpen=True)
         fileViewer.show()
 
 
@@ -939,6 +941,8 @@ class MainView(object):
 
         if len(usr_files) > 0:
             from code_saturne import cs_compile
+            from code_saturne.Base.QFileEditor import QExpandingMessageBox
+            box = QExpandingMessageBox()
 
             out = open('comp.out', 'w')
             err = open('comp.err', 'w')
@@ -946,37 +950,39 @@ class MainView(object):
             state = cs_compile.compile_and_link(self.case['package'],
                                                 src_dir,
                                                 destdir=None,
-                                                opt_cflags='-w',
                                                 stdout=out,
                                                 stderr=err)
 
             out.close()
             err.close()
 
+            errors = open('comp.err', 'r').readlines()
+
             n_errors = 0
             if state == 0:
-                msg = "User functions compilation succeeded"
-                QMessageBox.information(self, self.tr(test_title), msg)
-
+                box.setIcon(QMessageBox.Information)
+                msg = "User functions compilation succeeded."
+                if len(errors) > 0:
+                    msg += '\n'
+                    msg += 'Warnings were found:'
+                    msg += '\n'
             else:
-                errors = open('comp.err', 'r').readlines()
-                msg = ''
-                for i in range(len(errors)):
-                    if 'error:' in errors[i]:
-                        msg += errors[i].split('error:')[-1].strip()+'\n'
-                        msg += errors[i+1].strip() + '\n'
-                        n_errors += 1
-                    elif 'erreur:' in errors[i]:
-                        msg += errors[i].split('erreur:')[-1].strip()+'\n'
-                        msg += errors[i+1].strip() + '\n'
-                        n_errors += 1
+                box.setIcon(QMessageBox.Critical)
+                msg = 'User functions compilation failed with the following errors:\n'
 
-                msg = msg.decode('utf-8').replace(u"\u2018", "'")
-                msg = msg.replace(u"\u2019", "'")
-                msg = 'Compilation failed with the following error:\n' + msg
-                log.debug(msg)
-                QMessageBox.critical(self, self.tr(test_title), msg)
+            box.setText(msg)
+            box.setWindowTitle(self.tr(test_title))
 
+            if len(errors) > 0:
+                warnings = ''
+                for line in errors:
+                    warnings += line
+                if sys.version_info[0] < 3:
+                    warnings = warnings.decode('utf-8').replace(u"\u2018", "'")
+                    warnings = warnings.replace(u"\u2019", "'")
+                box.setDetailedText(warnings)
+
+            box.exec_()
         else:
             msg = "There are no user files inside the SRC subfolder."
             QMessageBox.information(self, self.tr(test_title), msg)
