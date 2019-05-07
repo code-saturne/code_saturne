@@ -250,6 +250,45 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
 
 
 #-------------------------------------------------------------------------------
+# QMessageBox which expands
+#-------------------------------------------------------------------------------
+class QExpandingMessageBox(QtGui.QMessageBox):
+    """
+    A QMessageBox which expands.
+    """
+
+    def __init__(self, parent=None):
+        QtGui.QMessageBox.__init__(self,parent=parent)
+        self.setSizeGripEnabled(True)
+
+    def event(self, ev):
+
+        result = QtGui.QMessageBox.event(self, ev)
+
+        self.setMinimumHeight(10)
+        self.setMaximumHeight(16777215)
+        self.setMinimumWidth(10)
+        self.setMaximumWidth(16777215)
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding,
+                           QtGui.QSizePolicy.Expanding)
+
+        text = self.findChild(QtGui.QTextEdit)
+        if text != None:
+            self.setMinimumHeight(10)
+            self.setMaximumHeight(16777215)
+            self.setMinimumWidth(1050)
+            self.setMaximumWidth(16777215)
+
+            text.setMinimumHeight(10)
+            text.setMaximumHeight(16777215)
+            text.setMinimumWidth(1000)
+            text.setMaximumWidth(16777215)
+            text.setSizePolicy(QtGui.QSizePolicy.Expanding,
+                               QtGui.QSizePolicy.Expanding)
+
+        return result
+
+#-------------------------------------------------------------------------------
 # QFileEditor class
 #-------------------------------------------------------------------------------
 class FormWidget(QtWidgets.QWidget):
@@ -282,7 +321,7 @@ class QFileEditor(QtGui.QMainWindow):
     """
 
     # ---------------------------------------------------------------
-    def __init__(self, parent=None, case_dir=None, readOnly=False):
+    def __init__(self, parent=None, case_dir=None, readOnly=False, noOpen=False):
         super(QFileEditor, self).__init__(parent)
         self.setGeometry(50, 50, 500, 300)
 
@@ -296,8 +335,10 @@ class QFileEditor(QtGui.QMainWindow):
         self.last_dir = case_dir
 
         self.readOnly = readOnly
+        self.readerMode = readOnly
 
-        self.saved = True
+        self.opened = False
+        self.saved  = True
 
         self.dialog = QtGui.QFileDialog(self)
 
@@ -310,7 +351,7 @@ class QFileEditor(QtGui.QMainWindow):
         self.openFileAction = QtGui.QAction(icon_open, "Open", self)
         self.openFileAction.setShortcut("Ctrl+O")
         self.openFileAction.setStatusTip('Open File')
-        self.openFileAction.triggered.connect(self.openFile)
+        self.openFileAction.triggered.connect(self.openFileForAction)
 
         # New file action
         new_img_path = ":/icons/22x22/document-new.png"
@@ -372,7 +413,8 @@ class QFileEditor(QtGui.QMainWindow):
         self.toolbar = self.addToolBar("Options")
 
         self.toolbar.addAction(self.newFileAction)
-        self.toolbar.addAction(self.openFileAction)
+        if not noOpen:
+            self.toolbar.addAction(self.openFileAction)
         self.toolbar.addAction(self.saveFileAction)
         self.toolbar.addAction(self.saveFileAsAction)
         self.toolbar.addAction(self.closeFileAction)
@@ -383,7 +425,8 @@ class QFileEditor(QtGui.QMainWindow):
 
         self.fileMenu = self.mainMenu.addMenu('&File')
         self.fileMenu.addAction(self.newFileAction)
-        self.fileMenu.addAction(self.openFileAction)
+        if not noOpen:
+            self.fileMenu.addAction(self.openFileAction)
         self.fileMenu.addAction(self.saveFileAction)
         self.fileMenu.addAction(self.saveFileAsAction)
         self.fileMenu.addAction(self.closeFileAction)
@@ -574,7 +617,7 @@ class QFileEditor(QtGui.QMainWindow):
         """
 
         title = "Remove file"
-        question = "Remove %s from the SRC folder ?" % (self._currentSelection['filename'])
+        question = "Remove %s from the SRC folder (Stored in DRAFT) ?" % (self._currentSelection['filename'])
 
         choice = QtGui.QMessageBox.question(self,
                                             title,
@@ -586,7 +629,25 @@ class QFileEditor(QtGui.QMainWindow):
                               self._currentSelection['subpath'],
                               self._currentSelection['filename'])
 
-            os.remove(fn)
+
+            draft = os.path.join(self.case_dir,
+                               self._currentSelection['subpath'],
+                               'DRAFT')
+            if not os.path.exists(draft):
+                os.mkdir(draft)
+            fn2 = os.path.join(draft, self._currentSelection['filename'])
+
+            if os.path.exists(fn2):
+                q = 'A file named %s allready exists in DRAFT.\nDo you want to overwrite it?' % (self._currentSelection['filename'])
+                choice2 = QtGui.QMessageBox.question(self,
+                                                     '',
+                                                     q,
+                                                     QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+                if choice2 == QtGui.QMessageBox.No:
+                    return
+
+
+            shutil.move(fn, fn2)
         else:
             pass
     # ---------------------------------------------------------------
@@ -623,17 +684,17 @@ class QFileEditor(QtGui.QMainWindow):
                                   'filedir' :ps,
                                   'origdir' :pe}
 
-
         self._contextMenu = QtGui.QMenu()
         if pe == 'RESU':
             self._contextMenu.addAction(self._explorerActions['view'])
         elif pe == 'SRC':
-            if ps == 'SRC':
-                self._contextMenu.addAction(self._explorerActions['edit'])
-                self._contextMenu.addAction(self._explorerActions['remove'])
-            else:
-                self._contextMenu.addAction(self._explorerActions['view'])
-                self._contextMenu.addAction(self._explorerActions['copy'])
+            if not os.path.isdir(os.path.join(path2file, fname)):
+                if ps == 'SRC':
+                    self._contextMenu.addAction(self._explorerActions['edit'])
+                    self._contextMenu.addAction(self._explorerActions['remove'])
+                else:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['copy'])
 
         self._contextMenu.exec_(self.explorer.viewport().mapToGlobal(position))
     # ---------------------------------------------------------------
@@ -644,7 +705,7 @@ class QFileEditor(QtGui.QMainWindow):
         """
         Update file state (saved or not)
         """
-        self.saved = new_state
+        self.saved  = new_state
     # ---------------------------------------------------------------
 
 
@@ -666,7 +727,6 @@ class QFileEditor(QtGui.QMainWindow):
 
         self.textEdit.setReadOnly(self.readOnly)
         self.saveFileAction.setEnabled(not self.readOnly)
-        self.saveFileAsAction.setEnabled(not self.readOnly)
 
         if self.filename != None and self.filename != '':
             file = open(self.filename,'r')
@@ -676,6 +736,13 @@ class QFileEditor(QtGui.QMainWindow):
                 text = file.read()
                 self.textEdit.setText(text)
                 self.updateFileState(True)
+
+    def openFileForAction(self, fn = None):
+
+        if self.readOnly != self.readerMode:
+            self.readOnly = self.readerMode
+
+        self.openFile(fn)
     # ---------------------------------------------------------------
 
 
@@ -685,6 +752,7 @@ class QFileEditor(QtGui.QMainWindow):
         Create a new file (blank)
         """
 
+        self.opened = True
         self.updateFileState(False)
         hl = QtextHighlighter(self.textEdit)
         self.textEdit.show()
@@ -696,6 +764,8 @@ class QFileEditor(QtGui.QMainWindow):
         """
         Save file
         """
+        if not self.opened:
+            return
 
         if self.filename != None and self.filename != '':
             file = open(self.filename,'w')
@@ -715,6 +785,8 @@ class QFileEditor(QtGui.QMainWindow):
         """
         Save file as
         """
+        if not self.opened:
+            return
 
         self.filename = self.dialog.getSaveFileName(self, 'Save File')
         self.last_dir = os.path.split(self.filename)[0]
@@ -744,7 +816,9 @@ class QFileEditor(QtGui.QMainWindow):
             else:
                 pass
 
-        self.saved = True
+        self.saved  = True
+        self.opened = False
+
         self.filename = ''
         self.textEdit.setText('')
     # ---------------------------------------------------------------
