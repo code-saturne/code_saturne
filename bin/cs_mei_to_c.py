@@ -665,6 +665,7 @@ def tokenize(segments):
     sep2 = ('<=', '>=', '!=', '||', '&&', '+=', '-=', '*=', '/=', '**')
     sep1 = ('=', '(', ')', ';', ',', ':', '[', ']', '{', '}',
             '+', '-', '*', '/', '<', '>',  '^', '%', '!', '?')
+    digits = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
     tokens = []
     comments = []
@@ -689,10 +690,17 @@ def tokenize(segments):
                 tokens.append((s0[i:i+2], s[1], s[2]+i))
                 s_id = i+1
             elif c in sep1:
-                if (not prv in whitespace) and (s_id < i):
-                    tokens.append((s0[s_id:i], s[1], s[2]+s_id))
-                tokens.append((s0[i:i+1], s[1], s[2]+i))
-                s_id = i+1
+                # special case: e+ or e- might not be a sparator
+                is_exp = False
+                if c in ('+', '-'):
+                    if s0[i-1:i+1] in ('e+', 'e-'):
+                        if s0[i-2:i-1] in digits and s0[i+1:i+2] in digits:
+                            is_exp = True
+                if not is_exp:
+                    if (not prv in whitespace) and (s_id < i):
+                        tokens.append((s0[s_id:i], s[1], s[2]+s_id))
+                    tokens.append((s0[i:i+1], s[1], s[2]+i))
+                    s_id = i+1
             prv = s0[i]
         r = s0[s_id:]
         if len(r) > 0:
