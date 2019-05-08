@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -163,7 +163,7 @@ $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libsaturne_la_LDFLAGS = -no-undefined -version-info 5:3:0
+libsaturne_la_LDFLAGS = -no-undefined -release 5.3
 
 libcs_solver_la_SOURCES = cs_solver.c
 libcs_solver_la_LIBADD = libsaturne.la \
@@ -184,7 +184,7 @@ $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libcs_solver_la_LDFLAGS = -no-undefined -version-info 5:3:0
+libcs_solver_la_LDFLAGS = -no-undefined -release 5.3
 
 endif
 

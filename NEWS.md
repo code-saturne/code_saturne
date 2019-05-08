@@ -1,3 +1,11 @@
+Release 5.3.4 - Unreleased
+--------------------------
+
+Architectural changes:
+
+- Shared library numbering for libsaturne.so now set to 5.3 to avoid confusion
+  with other versions of the 5.x series.
+
 Release 5.3.3 - May 7, 2019
 ---------------------------
 
