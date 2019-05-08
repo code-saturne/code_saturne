@@ -1,6 +1,11 @@
 Release 5.3.4 - Unreleased
 --------------------------
 
+Bug fixes:
+
+- Run script: fix overwriting of preprocessing mesh orientation output
+  in case of multiple input meshes (Mantis issue #226).
+
 Architectural changes:
 
 - Shared library numbering for libsaturne.so now set to 5.3 to avoid confusion
