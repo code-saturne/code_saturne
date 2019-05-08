@@ -163,7 +163,7 @@ $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libsaturne_la_LDFLAGS = -no-undefined -version-info 6:0:0
+libsaturne_la_LDFLAGS = -no-undefined -release 6.0
 
 libcs_solver_la_SOURCES = cs_solver.c
 libcs_solver_la_LIBADD = libsaturne.la \
@@ -184,7 +184,7 @@ $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libcs_solver_la_LDFLAGS = -no-undefined -version-info 6:0:0
+libcs_solver_la_LDFLAGS = -no-undefined -release 6.0
 
 endif
 
