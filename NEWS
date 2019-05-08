@@ -1,3 +1,11 @@
+Release 5.0.11 (Unreleased)
+===========================
+
+Architectural changes
+---------------------
+
+- Shared library numbering for libsaturne.so now set to 5.0 to avoid confusion
+  with other versions of the 5.x series.
 
 Release 5.0.10 (May 6 2019)
 ===========================
