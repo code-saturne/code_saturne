@@ -866,7 +866,11 @@ class StandardItemModelWriter(QStandardItemModel):
             if self.dataWriter[row]['format'] != f_old:
                 self.mdl.setWriterFormat(writer_id,
                                          self.dataWriter[row]['format'])
-                self.mdl.setWriterOptions(writer_id, "")
+                options = self.mdl.getWriterOptions(writer_id)
+                new_options = ""
+                if 'separate_meshes' in options:
+                  new_options = "separate_meshes"
+                self.mdl.setWriterOptions(writer_id, new_options)
         elif col == 3:
             old_rep = self.dataWriter[row]['directory']
             new_rep = str(from_qvariant(value, to_text_string))
@@ -1849,6 +1853,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelTimeDependency.setItem(str_model=time_dependency)
             options = self.mdl.getWriterOptions(writer_id)
             self.__updateOptionsFormat(options, row)
+
 
     @pyqtSlot(str)
     def slotWriterFrequencyChoice(self, text):
