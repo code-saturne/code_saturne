@@ -86,11 +86,11 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         """
         Setup the widget.
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
-        self.__model = ElectricalModel(self.__case)
+        self.__model = ElectricalModel(self.case)
         self.species_list = []
-        self.notebook = NotebookModel(self.__case)
+        self.notebook = NotebookModel(self.case)
 
         self.lineEditValuePotElec.textChanged[str].connect(self.slotPotElec)
         self.lineEditValuePotElecIm.textChanged[str].connect(self.slotPotElecIm)
@@ -372,7 +372,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         if self.__model.getElectricalModel() != 'off':
             label = b.getLabel()
             nature = "joule_" + b.getNature()
-            self.__b = Boundary(nature, label, self.__case)
+            self.__b = Boundary(nature, label, self.case)
             self.__setBoundary(b)
 
             self.show()

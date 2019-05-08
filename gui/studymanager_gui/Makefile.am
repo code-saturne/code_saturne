@@ -44,8 +44,7 @@ ManageCasesView.py \
 ManagePlotterModel.py \
 ManagePlotterView.py \
 PathesView.py \
-Toolbox.py \
-XMLinitialize.py
+Toolbox.py
 
 #if HAVE_QT5
 #  PYFILES += qt5/QtCore.py qt5/QtGui.py qt5/QtWidgets.py

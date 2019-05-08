@@ -51,7 +51,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -104,7 +104,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
         self.__currentField = fieldId
 
@@ -115,7 +115,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         self.__boundary = boundary
 
-        turb_model =  TurbulenceModel(self.__case).getTurbulenceModel(self.__currentField)
+        turb_model =  TurbulenceModel(self.case).getTurbulenceModel(self.__currentField)
         self.__modelTurbulence.enableItem(0)
         self.__modelTurbulence.enableItem(1)
         if turb_model != "none" and turb_model != 'mixing_length' and turb_model != 'tchen' and turb_model != 'r2-r12-tchen':
@@ -217,12 +217,13 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         User formula for turbulence
         """
-        turb_model =  TurbulenceModel(self.__case).getTurbulenceModel(self.__currentField)
+        turb_model =  TurbulenceModel(self.case).getTurbulenceModel(self.__currentField)
 
         exp, req, sym = \
             self.__boundary.getTurbFormulaComponents(self.__currentField,
                                                      turb_model)
 
+        # Set model name and specific examples
         if turb_model in ('k-epsilon', 'k-epsilon_linear_production'):
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
@@ -252,18 +253,7 @@ kappa = 0.42;
 k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);"""
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(self.__currentField, result)
-                self.pushButtonTurb.setToolTip(result)
-                self.pushButtonTurb.setStyleSheet("background-color: green")
+            name = 'turbulence_ke_%s' % (self.__currentField)
 
         elif turb_model in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
             if not exp:
@@ -301,39 +291,18 @@ R12 = 0;
 R13 = 0;
 R23 = 0;
 """
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(self.__currentField, result)
-                self.pushButtonTurb.setToolTip(result)
-                self.pushButtonTurb.setStyleSheet("background-color: green")
+            name = 'turbulence_rije_%s' % (self.__currentField)
 
         elif turb_model in ('tchen', 'q2-q12'):
+            name = 'turbulence_tchen_%s' % (self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
 q2 = 5.e-05;
 q12 = 0.0001;"""
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(self.__currentField, result)
-                self.pushButtonTurb.setToolTip(result)
-                self.pushButtonTurb.setStyleSheet("background-color: green")
 
         elif turb_model in ('r2-q12'):
+            name = 'turbulence_r2q12_%s' % (self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
@@ -344,20 +313,9 @@ R12 = 5e-05;
 R13 = 5e-05;
 R23 = 5e-05;
 q12 = 0.0001;"""
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(self.__currentField, result)
-                self.pushButtonTurb.setToolTip(result)
-                self.pushButtonTurb.setStyleSheet("background-color: green")
 
         elif turb_model in ('r2-r12-tchen'):
+            name = 'turbulence_r2r12_%s' % (self.__currentField)
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
@@ -373,19 +331,24 @@ R12-33 = 5e-05;
 R12-12 = 5e-05;
 R12-13 = 5e-05;
 R12-23 = 5e-05;"""
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.__case['package'].get_check_syntax(),
-                                    expression = exp,
-                                    required   = req,
-                                    symbols    = sym,
-                                    examples   = exa)
-            if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotFormulaTurb -> %s" % str(result))
-                self.__boundary.setTurbFormula(self.__currentField, result)
-                self.pushButtonTurb.setToolTip(result)
-                self.pushButtonTurb.setStyleSheet("background-color: green")
 
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = "formula",
+                                examples      = exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaTurb -> %s" % str(result))
+            self.__boundary.setTurbFormula(self.__currentField, result)
+            self.pushButtonTurb.setToolTip(result)
+            self.pushButtonTurb.setStyleSheet("background-color: green")
 
     def tr(self, text):
         """

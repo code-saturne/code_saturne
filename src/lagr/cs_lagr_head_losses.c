@@ -53,6 +53,7 @@
 #include "bft_printf.h"
 
 #include "cs_field.h"
+#include "cs_field_operator.h"
 #include "cs_gradient.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"

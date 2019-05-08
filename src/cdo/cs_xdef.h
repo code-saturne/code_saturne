@@ -480,14 +480,16 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Output the settings related to a a cs_xdef_t structure
+ * \brief  Output the settings related to a cs_xdef_t structure
  *
- * \param[in] d    pointer to a cs_xdef_t structure
+ * \param[in] prefix    optional string
+ * \param[in] d         pointer to a cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(const cs_xdef_t     *d);
+cs_xdef_log(const char          *prefix,
+            const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 

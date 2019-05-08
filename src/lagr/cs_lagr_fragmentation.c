@@ -149,8 +149,8 @@ _insert_particles(cs_lnum_t   newpart,
   inserted_vel_f[1] = idx_vel_f[1];
   inserted_vel_f[2] = idx_vel_f[2];
 
-  cs_lnum_t iep = cs_lagr_particles_get_lnum(p_set, corr[idx], CS_LAGR_CELL_NUM);
-  cs_lagr_particles_set_lnum(p_set, inserted_parts-1, CS_LAGR_CELL_NUM, iep);
+  cs_lnum_t iep = cs_lagr_particles_get_lnum(p_set, corr[idx], CS_LAGR_CELL_ID);
+  cs_lagr_particles_set_lnum(p_set, inserted_parts-1, CS_LAGR_CELL_ID, iep);
   cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
                              CS_LAGR_PARTICLE_AGGREGATE,  newclass);
 }
@@ -487,10 +487,9 @@ cs_lagr_fragmentation(cs_real_t  dt,
 
   for (cs_lnum_t i = 0; i < lnum_particles; ++i) {
 
-    cs_lnum_t cell_num = cs_lagr_particles_get_lnum(p_set, corr[i], CS_LAGR_CELL_NUM);
-    if (cell_num < 0) {     /* deleted particule */
+    if (cs_lagr_particles_get_flag(p_set, corr[i], CS_LAGR_PART_TO_DELETE))
       continue;
-    }
+
     /* Generate the number of fragmentation events */
     cs_lnum_t vp = 0;
     cs_real_t rand;
@@ -597,8 +596,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
                                    CS_LAGR_PARTICLE_AGGREGATE, 0);
         cs_lagr_particles_set_real(p_set, part_idx,
                                    CS_LAGR_STAT_WEIGHT, 0);
-        cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_CELL_NUM, -2);
+        cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
         // CELL NUM TODO ask value to delete
       }
       continue;
@@ -657,8 +655,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
                                      CS_LAGR_PARTICLE_AGGREGATE, 0);
           cs_lagr_particles_set_real(p_set, part_idx,
                                      CS_LAGR_STAT_WEIGHT, 0);
-          cs_lagr_particles_set_lnum(p_set, part_idx,
-                                     CS_LAGR_CELL_NUM, -2);
+          cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
           // CELL NUM TODO ask value to delete
         }
       }
@@ -674,8 +671,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
                                    CS_LAGR_PARTICLE_AGGREGATE, 0);
         cs_lagr_particles_set_real(p_set, part_idx,
                                    CS_LAGR_STAT_WEIGHT, 0);
-        cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_CELL_NUM, -2);
+        cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
         //CELL NUM TODO ask value to delete
       }
     }

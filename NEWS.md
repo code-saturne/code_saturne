@@ -27,6 +27,21 @@ Release 6.0.0 (unreleased)
 
 User changes:
 
+- Lagrangian module: add particle event structure and associated statistics.
+  * This allow handling boundary statistics in a manner more consistent
+    with volume statistics.
+  * Additional boundary statistics may be defined by the user.
+  * The major boundary statistics are now handled through this system,
+    though some need to be updated in the future.
+  * This system could also be used to track volume events in the future.
+
+- GUI: improve global workflow by adding two new functions (buttons):
+  * A built-in text editor in the GUI, which allows editing of user routines
+    and/or functions inside the SRC folder, as well as opening log files
+    in a RESU folder.
+  * A compiling test for possible user functions. In case of a compiling error,
+    the message is transmitted to the GUI window for the user to analyse.
+
 - GUI: allow disabling paralel IO for MED output writer.
 
 - GUI: significant reorganization
@@ -71,6 +86,13 @@ Physical modelling:
 
 - Lagrangian module:
   * Add agglomeration and fragmentation algorithms.
+  * A global bit-mask based CS_LAGR_P_FLAG attribute is now always present;
+    It includes the features CS_LAGR_DEPOSITION_FLAG, and also includes a
+    CS_LAGR_PART_FIXED bit replacing the use of a negative particle cell number.
+  * Local zero-based particle cell id is now used instead of a
+    signed 1-based cell-number
+  * Advanced user functions are added for particle/face interaction, replacing
+    the (never implemented) JBORD codes.
 
 - Add a compressible two-phase homogeneous model
   * This model is solved using a fractional step method borrowing mass,
@@ -92,6 +114,14 @@ Physical modelling:
   displacement. To activate it use "cs_glob_ale = 2" in C or "iale = 2" in
   Fortran.
 
+Default option changes:
+
+- Disable CS_FACE_RECONSTRUCTION_CLIP bad cells correction by default
+  (clipping of face reconstruction distances |II'| and |JJ'|).
+  This reduces precision (consistancy loss) and can impair space convergence
+  on several verification test cases run on tetrahedral meshes
+  (INTERNAL_COUPLING, PERMEABILITY_GRADIENT, PLANE_COUETTE_FLOW).
+
 Bug fixes:
 
 - Compressible: fix density time scheme in transported passive scalar/vector
@@ -108,6 +138,13 @@ Bug fixes:
 
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
+
+Numerics:
+
+- Change the way the dimensionless wall distance is computed (LES Smagorinsky
+  model) i.e. convection flux is a face gradient and is now computed using a
+  two point flux approximation (TPFA). Set solver precision to a higher value
+  since there is no need for a high precision (1e-8 to 1e-5).
 
 Architectural changes:
 
@@ -169,6 +206,12 @@ Physical modelling:
 
 - Make particle tracking compatible with transient turbomachinery model.
 
+- Add a new continuous "all-y+" 2-scale wall model (iwallf=7) available
+  with the EB-RSM and set by default for this model:
+  * Ensure convergence towards standard EB-RSM when mesh is refined.
+  * Degenerate in a SSG-like model on high Reynolds meshes.
+  This was adapted from developpements done in J.F. Wald PhD.
+
 - Major modification for K-omega SST (iturb=60) boundary condition.
   * Switch from a Neumann boundary condition to a Dirichlet
     boundary condition on omega.
@@ -190,21 +233,23 @@ Numerics:
     A special care should be done for time averaged quantities.
 
 - Porous modelling: adapte the numerics to discontinous porosity.
-  * The velocity is interpolated at faces using mass conservation and the momentum is
-    corrected so that the steady state of Euler equations is retrieved.
-    This can be activated using iporos = 3, the improved hydrostatic treatment will then be activated.
+  * The velocity is interpolated at faces using mass conservation and the
+    momentum is corrected so that the steady state of Euler equations is
+    retrieved.
+    This can be activated using iporos = 3, the improved hydrostatic treatment
+    will then be activated.
     This was developped in the PhD of C. Colas.
 
 - Improvements in mesh quantity computations.
-  * Cell centers are now based on the actual center of gravity.
-  * The previous method based on face centers can be restored using
-    the cs_mesh_quantities_cell_cen_choice function.
   * Previous face center adjustment for volume removed. Adjustment
     used in versions 1.1 to 5.2 may be restored using
     the cs_mesh_quantities_face_cog_choice function.
   * A refinement of the face center computation (for warped faces)
     may be activated using the CS_FACE_CENTER_REFINE mesh quantities
     computation flag.
+  * An option to compute cell centers based on the actual center of gravity is
+    available. It can be enabled using the cs_mesh_quantities_cell_cen_choice
+    function. The method based on face centers is kept as default.
 
 - Added dispersion modeling option to DOM radiative model:
   * May be activated by setting
@@ -282,7 +327,7 @@ Default option changes:
 
 - Change default options for bad meshes:
   CS_BAD_CELLS_WARPED_CORRECTION, CS_FACE_DISTANCE_CLIP, CS_FACE_RECONSTRUCTION
-  are switch on by default.
+  are switched on by default.
 
 Bug fixes:
 

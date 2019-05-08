@@ -77,7 +77,9 @@
 
 #include "cs_lagr.h"
 #include "cs_lagr_deposition_model.h"
+#include "cs_lagr_event.h"
 #include "cs_lagr_particle.h"
+#include "cs_lagr_prototypes.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_clogging.h"
 #include "cs_lagr_roughness.h"
@@ -106,24 +108,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Enumeration definitions
  *============================================================================*/
-
-/* State where a particle can be.
-   (order is chosen so as to make tests simpler;
-   inside domain first, outside after) */
-
-typedef enum {
-  CS_LAGR_PART_TO_SYNC,
-  CS_LAGR_PART_TREATED,
-  CS_LAGR_PART_STUCK,
-  CS_LAGR_PART_MERGED,
-  CS_LAGR_PART_OUT,
-  CS_LAGR_PART_ERR
-} cs_lagr_tracking_state_t;
-
-enum {
-  CS_LAGR_PART_MOVE_OFF = 0,
-  CS_LAGR_PART_MOVE_ON  = 1
-};
 
 /* Tracking error types */
 
@@ -179,7 +163,7 @@ typedef struct {
 
   cs_lnum_t  *rank;           /* value between [0, n_c_domains-1]
                                  (cf. cs_halo.h) */
-  cs_lnum_t  *dist_cell_num;  /* local cell num. on distant ranks */
+  cs_lnum_t  *dist_cell_id;   /* local cell id on distant ranks */
   cs_lnum_t  *transform_id;   /* In case of periodicity, transformation
                                  associated to a given halo cell */
 
@@ -486,7 +470,7 @@ _create_lagr_halo(size_t  extents)
   cs_lnum_t  i, rank, tr_id, shift, start, end, n;
 
   cs_lnum_t  halo_cell_id = 0;
-  cs_lnum_t  *cell_num = NULL;
+  cs_lnum_t  *cell_id = NULL;
   cs_lagr_halo_t  *lagr_halo = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -575,23 +559,23 @@ _create_lagr_halo(size_t  extents)
 
   } /* End of periodicity handling */
 
-  /* Fill dist_cell_num */
+  /* Fill dist_cell_id */
 
-  BFT_MALLOC(lagr_halo->dist_cell_num, n_halo_cells, cs_lnum_t);
+  BFT_MALLOC(lagr_halo->dist_cell_id, n_halo_cells, cs_lnum_t);
 
-  BFT_MALLOC(cell_num, mesh->n_cells_with_ghosts, cs_lnum_t);
+  BFT_MALLOC(cell_id, mesh->n_cells_with_ghosts, cs_lnum_t);
 
   for (i = 0; i < mesh->n_cells_with_ghosts; i++)
-    cell_num[i] = i+1;
+    cell_id[i] = i;
 
-  cs_halo_sync_num(halo, CS_HALO_EXTENDED, cell_num);
+  cs_halo_sync_num(halo, CS_HALO_EXTENDED, cell_id);
 
   for (i = 0; i < n_halo_cells; i++)
-    lagr_halo->dist_cell_num[i] = cell_num[mesh->n_cells + i];
+    lagr_halo->dist_cell_id[i] = cell_id[mesh->n_cells + i];
 
   /* Free memory */
 
-  BFT_FREE(cell_num);
+  BFT_FREE(cell_id);
 
   return lagr_halo;
 }
@@ -612,7 +596,7 @@ _delete_lagr_halo(cs_lagr_halo_t   **halo)
 
     BFT_FREE(h->rank);
     BFT_FREE(h->transform_id);
-    BFT_FREE(h->dist_cell_num);
+    BFT_FREE(h->dist_cell_id);
 
     BFT_FREE(h->send_shift);
     BFT_FREE(h->send_count);
@@ -892,88 +876,47 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 }
 
 /*----------------------------------------------------------------------------
- * Compute the contribution of a particle to the boundary mass flux.
- *
- * Used for the deposition model.
- *
- * parameters:
- *   particle_set     <-- pointer to particle set structure
- *   particle_id      <-- pointer to particle id
- *   sign             <-- -1 to remove contribution, 1 to add it
- *   b_face_surf      <-- boundary face surface
- *   part_b_mass_flux <-> particle mass flux array
- *----------------------------------------------------------------------------*/
-
-static void
-_b_mass_contribution(const cs_lagr_particle_set_t   *particles,
-                     cs_lnum_t                       particle_id,
-                     const cs_real_t                 sign,
-                     const cs_real_t                 b_face_surf[],
-                     cs_real_t                       part_b_mass_flux[])
-{
-  const cs_lagr_attribute_map_t  *p_am = particles->p_am;
-  const unsigned char *particle
-    = particles->p_buffer + p_am->extents * particle_id;
-
-  cs_lnum_t depo_flag
-    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
-
-  if (   depo_flag == CS_LAGR_PART_ROLLING
-      || depo_flag == CS_LAGR_PART_DEPOSITED) {
-
-    cs_lnum_t neighbor_face_id
-      = cs_lagr_particle_get_lnum(particle, p_am,
-                                  CS_LAGR_NEIGHBOR_FACE_ID);
-
-    assert(neighbor_face_id > -1);
-
-    cs_real_t cur_stat_weight
-      = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
-    cs_real_t cur_mass
-      = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
-    cs_real_t face_area = b_face_surf[neighbor_face_id];
-
-    part_b_mass_flux[neighbor_face_id]
-      += sign * cur_stat_weight * cur_mass / face_area;
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Handle particles moving to internal deposition face
  *
  * parameters:
  *   particles       <-- pointer to particle set
- *   particle        <-> particle data for current particle
+ *   p_id            <-- particle id
  *   face_id         <-- index of the treated face
  *   t_intersect     <-- used to compute the intersection of the trajectory and
  *                       the face
- *   p_move_particle <-- particle moves?
  *
  * returns:
  *   particle state
  *----------------------------------------------------------------------------*/
 
-static cs_lnum_t
-_internal_treatment(cs_lagr_particle_set_t    *particles,
-                    void                      *particle,
-                    cs_lnum_t                  face_id,
-                    double                     t_intersect,
-                    int                       *p_move_particle)
+static cs_lagr_tracking_state_t
+_internal_treatment(cs_lagr_particle_set_t  *particles,
+                    cs_lnum_t                p_id,
+                    cs_lnum_t                face_id,
+                    double                   t_intersect)
 {
+  cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
+
+  cs_lagr_internal_condition_t *internal_conditions
+    = cs_glob_lagr_internal_conditions;
+
+  /* In most cases, we have nothing to do here */
+
+  if (internal_conditions == NULL)
+    return particle_state;
+  else if (internal_conditions->i_face_zone_id[face_id] < 0)
+    return particle_state;
+
+  /* Now, we know we have some specific interactions to handle */
+
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
   const double bc_epsilon = 1.e-2;
 
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
 
+  unsigned char *particle = particles->p_buffer + p_am->extents * p_id;
+
   cs_real_t  disp[3], face_normal[3], intersect_pt[3];
-
-  int move_particle = *p_move_particle;
-
-  cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
-
-  cs_lagr_internal_condition_t *internal_conditions
-    = cs_glob_lagr_internal_conditions;
 
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
@@ -1001,7 +944,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
                              face_normal[2]/face_area};
 
   cs_lnum_t  cell_id
-    = cs_lagr_particle_get_cell_id(particle, p_am);
+    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   for (int k = 0; k < 3; k++)
@@ -1014,10 +957,9 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
   for (int k = 0; k < 3; k++)
     intersect_pt[k] = disp[k]*t_intersect + p_info->start_coords[k];
 
-  if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_OUTLET
-   || internal_conditions->i_face_zone_id[face_id] == CS_LAGR_INLET ) {
+  if (   internal_conditions->i_face_zone_id[face_id] == CS_LAGR_OUTLET
+      || internal_conditions->i_face_zone_id[face_id] == CS_LAGR_INLET) {
 
-    move_particle = CS_LAGR_PART_MOVE_OFF;
     particle_state = CS_LAGR_PART_OUT;
 
     for (int k = 0; k < 3; k++)
@@ -1053,14 +995,11 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
         particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
         particle_velocity_seen[k] = 0.0;
       }
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cell_id +1);
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID,
                                 face_id);
       // The particle is not treated yet: the motion is now imposed
-      move_particle = CS_LAGR_PART_MOVE_OFF;
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_IMPOSED_MOTION);
+      cs_lagr_particles_set_flag(particles, p_id,
+                                 CS_LAGR_PART_IMPOSED_MOTION);
 
       /* Specific treatment in case of particle resuspension modeling */
 
@@ -1071,42 +1010,104 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
 
     }
   }
+  else if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_BC_USER)
+    cs_lagr_user_internal_interaction(particles,
+                                      p_id,
+                                      face_id,
+                                      face_norm,
+                                      intersect_pt,
+                                      t_intersect,
+                                      &particle_state);
+
   /* FIXME: JBORD* (user-defined boundary condition) not yet implemented
      nor defined by a macro */
-  else if (internal_conditions->i_face_zone_id[face_id] != -1)
+  else
     bft_error(__FILE__, __LINE__, 0,
               _(" Internal condition %d not recognized.\n"),
               internal_conditions->i_face_zone_id[face_id]);
 
-  /* Return pointer */
-
-  *p_move_particle = move_particle;
-
-  /* TODO internal statts ?... */
+  /* TODO internal face events ?... */
 
   return particle_state;
+}
+
+/*----------------------------------------------------------------------------
+ * Add event when particle rolls off an interior face
+ *
+ * parameters:
+ *   particles  <-- pointer to particle set
+ *   events     <-> events structure
+ *   p_id       <-- particle id
+ *   b_face_id  <-- associated boundary face id
+ *----------------------------------------------------------------------------*/
+
+static void
+_roll_off_event(cs_lagr_particle_set_t    *particles,
+                cs_lagr_event_set_t       *events,
+                cs_lnum_t                  p_id,
+                cs_lnum_t                  b_face_id)
+{
+  /* Get event id, flushing events if necessary */
+
+  cs_lnum_t event_id = events->n_events;
+  if (event_id >= events->n_events_max) {
+    cs_lagr_stat_update_event(events,
+                              CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+    events->n_events = 0;
+    event_id = 0;
+  }
+  events->n_events += 1;
+
+  /* Now set event values */
+
+  cs_lagr_event_init_from_particle(events, particles, event_id, p_id);
+
+  cs_lagr_events_set_lnum(events,
+                          event_id,
+                          CS_LAGR_E_FACE_ID,
+                          b_face_id);
+
+  cs_real_t *p_vel = cs_lagr_particles_attr(particles,
+                                            p_id,
+                                            CS_LAGR_VELOCITY);
+  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
+                                              event_id,
+                                              CS_LAGR_E_VELOCITY);
+  for (int k = 0; k < 3; k++)
+    e_vel_post[k] = p_vel[k];
+
+  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                          event_id,
+                                          CS_LAGR_E_FLAG);
+  *e_flag = *e_flag | CS_EVENT_ROLL_OFF;
 }
 
 /*----------------------------------------------------------------------------
  * Handle particles moving to boundary
  *
  * parameters:
- *   particles  <-- pointer to particle set
- *   particle   <-> particle data for current particle
- *   ...        <-> pointer to an error indicator
+ *   particles       <-- pointer to particle set
+ *   events          <-> events structure
+ *   p_id            <-- particle id
+ *   face_id         <-- boundary face id
+ *   face_norm       <-- unit face (or face subdivision) normal
+ *   t_intersect     <-- relative distance (in [0, 1]) of the intersection
+ *                       point with the face relative to the initial
+ *                       trajectory segment
+ *   b_z_id          <-- boundary zone id of the matching face
  *
  * returns:
  *   particle state
  *----------------------------------------------------------------------------*/
 
-static cs_lnum_t
+static cs_lagr_tracking_state_t
 _boundary_treatment(cs_lagr_particle_set_t    *particles,
-                    void                      *particle,
-                    cs_lnum_t                  face_num,
+                    cs_lagr_event_set_t       *events,
+                    cs_lnum_t                  p_id,
+                    cs_lnum_t                  face_id,
                     cs_real_t                 *face_norm,
                     double                     t_intersect,
-                    int                        boundary_zone,
-                    int                       *p_move_particle)
+                    int                        b_z_id)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const double pi = cs_math_pi;
@@ -1114,17 +1115,15 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
 
+  unsigned char *particle = particles->p_buffer + p_am->extents * p_id;
+
   cs_lnum_t n_b_faces = mesh->n_b_faces;
 
   cs_real_t  tmp;
-  cs_real_t  disp[3], face_normal[3], intersect_pt[3];
+  cs_real_t  disp[3], intersect_pt[3];
 
-  cs_real_t  compo_vel[3] = {0.0, 0.0, 0.0};
-  cs_real_t  norm_vel = 0.0;
+  cs_lnum_t  event_flag = 0;
 
-  int move_particle = *p_move_particle;
-
-  cs_lnum_t  face_id = face_num - 1;
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
   cs_lagr_zone_data_t  *bdy_conditions = cs_lagr_get_boundary_conditions();
@@ -1159,56 +1158,74 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   for (int k = 0; k < 3; k++)
     disp[k] = particle_coord[k] - p_info->start_coords[k];
 
-  for (int k = 0; k < 3; k++) {
-    face_normal[k] = fvq->b_face_normal[3*face_id+k];
-  }
-
   cs_real_t face_area  = fvq->b_face_surf[face_id];
 
-
   cs_lnum_t  cell_id
-    = cs_lagr_particle_get_cell_id(particle, p_am);
+    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   assert(! (fabs(disp[0]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
             fabs(disp[1]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
             fabs(disp[2]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15));
 
-  /* Save particle impacting velocity */
-  if (   cs_glob_lagr_boundary_interactions->iangbd > 0
-      || cs_glob_lagr_boundary_interactions->ivitbd > 0) {
-    norm_vel = cs_math_3_norm(particle_velocity);
-    for (int k = 0; k < 3; k++)
-      compo_vel[k] = particle_velocity[k];
-  }
-
   for (int k = 0; k < 3; k++)
     intersect_pt[k] = disp[k]*t_intersect + p_info->start_coords[k];
+
+  /* Cancel events for symmetry boundary, as it is not a "true" boundary */
+
+  if (b_type == CS_LAGR_SYM)
+    events = NULL;
+
+  /* Generate event */
+
+  int event_id = -1;
+
+  if (events != NULL) {
+
+    event_id = events->n_events;
+    if (event_id >= events->n_events_max) {
+      /* flush events */
+      cs_lagr_stat_update_event(events,
+                                CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+      events->n_events = 0;
+      event_id = 0;
+    }
+
+    cs_lagr_event_init_from_particle(events, particles, event_id, p_id);
+
+    cs_lagr_events_set_lnum(events,
+                            event_id,
+                            CS_LAGR_E_FACE_ID,
+                            face_id);
+
+    cs_real_t *e_coords = cs_lagr_events_attr(events,
+                                              event_id,
+                                              CS_LAGR_COORDS);
+    for (int k = 0; k < 3; k++)
+      e_coords[k] = intersect_pt[k];
+
+  }
 
   if (   b_type == CS_LAGR_OUTLET
       || b_type == CS_LAGR_INLET
       || b_type == CS_LAGR_DEPO1) {
 
-    move_particle = CS_LAGR_PART_MOVE_OFF;
     particle_state = CS_LAGR_PART_OUT;
 
     if (b_type == CS_LAGR_DEPO1) {
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
-      if (cs_glob_lagr_model->deposition == 1)
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                  CS_LAGR_PART_DEPOSITED);
+      cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
+      event_flag = event_flag | CS_EVENT_DEPOSITION;
     }
-
-    /* FIXME: For post-processing by trajectory purpose */
+    else
+      event_flag = event_flag | CS_EVENT_OUTFLOW;
 
     for (int k = 0; k < 3; k++)
       particle_coord[k] = intersect_pt[k];
   }
 
   else if (b_type == CS_LAGR_DEPO2) {
-
-    move_particle = CS_LAGR_PART_MOVE_OFF;
 
     cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
     cs_real_3_t vect_cen;
@@ -1223,30 +1240,22 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     /* Specific treatment in case of particle resuspension modeling */
 
-    cs_lnum_t *cell_num = cs_lagr_particle_attr(particle,
-                                                p_am,
-                                                CS_LAGR_CELL_NUM);
-
-    if (cs_glob_lagr_model->deposition == 1)
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_DEPOSITED);
+    cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
 
     if (cs_glob_lagr_model->resuspension == 0) {
-
-      *cell_num = - *cell_num;
 
       for (int k = 0; k < 3; k++)
         particle_velocity_seen[k] = 0.0;
 
+      cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_FIXED);
       particle_state = CS_LAGR_PART_STUCK;
 
-    } else {
-
-      *cell_num = cs_glob_mesh->b_face_cells[face_id] + 1;
-
-      particle_state = CS_LAGR_PART_TREATED;
-
     }
+    else {
+      particle_state = CS_LAGR_PART_TREATED;
+    }
+
+    event_flag = event_flag | CS_EVENT_DEPOSITION;
 
   }
 
@@ -1254,9 +1263,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     cs_real_t particle_diameter
       = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
-
-    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                              cs_glob_mesh->b_face_cells[face_id] + 1);
 
     cs_real_t uxn = particle_velocity[0] * face_norm[0];
     cs_real_t vyn = particle_velocity[1] * face_norm[1];
@@ -1320,29 +1326,18 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       /* The particle deposits*/
       if (!cs_glob_lagr_model->clogging && !cs_glob_lagr_model->resuspension) {
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                  CS_LAGR_PART_DEPOSITED);
-
-        move_particle = CS_LAGR_PART_MOVE_OFF;
-
-        /* Set negative value for current cell number */
-        cs_lagr_particle_set_lnum
-          (particle, p_am, CS_LAGR_CELL_NUM,
-           - cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM));
+        cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
 
         particles->n_part_dep += 1;
         particles->weight_dep += particle_stat_weight;
 
+        cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_FIXED);
         particle_state = CS_LAGR_PART_STUCK;
       }
 
       if (!cs_glob_lagr_model->clogging && cs_glob_lagr_model->resuspension > 0) {
 
-        move_particle = CS_LAGR_PART_MOVE_OFF;
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                  CS_LAGR_PART_DEPOSITED);
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                  cs_glob_mesh->b_face_cells[face_id] + 1);
+        cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
 
         /* The particle is replaced towards the cell center
          * (and not using the normal vector face_norm)
@@ -1396,12 +1391,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             particle_velocity_seen[k] = 0.0;
           }
 
-          move_particle = CS_LAGR_PART_MOVE_OFF;
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                    CS_LAGR_PART_DEPOSITED);
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                    cs_glob_mesh->b_face_cells[face_id] + 1);
-          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
+          cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID,
                                     face_id);
 
           particles->n_part_dep += 1;
@@ -1445,9 +1436,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
             cur_part = (void *)(particles->p_buffer + p_am->extents * i);
 
-            cs_lnum_t cur_part_depo
+            cs_lnum_t cur_part_flag
               = cs_lagr_particle_get_lnum(cur_part, p_am,
-                                          CS_LAGR_DEPOSITION_FLAG);
+                                          CS_LAGR_P_FLAG);
 
             cs_lnum_t cur_part_close_face_id
               = cs_lagr_particle_get_lnum(cur_part, p_am,
@@ -1459,9 +1450,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             cs_real_t cur_part_diameter
               = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_DIAMETER);
 
-            if (   (cur_part_depo == CS_LAGR_PART_DEPOSITED)
+            if (   (cur_part_flag & CS_LAGR_PART_DEPOSITED)
                 && (cur_part_close_face_id == face_id)) {
-              scov_cdf +=   (pi * pow(cur_part_diameter,2) / 4.)
+              scov_cdf +=   (pi * cs_math_pow2(cur_part_diameter) / 4.)
                           *  cur_part_stat_weight / face_area;
               if (scov_cdf >= scov_rand)
                 break;
@@ -1526,10 +1517,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
               * cur_part_stat_weight / face_area;
 
             cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_DIAMETER,
-                                      pow (  pow(cur_part_diameter,3)
-                                           + pow(particle_diameter,3)
-                                           * particle_stat_weight
-                                             / cur_part_stat_weight , 1./3.));
+                                      pow(  cs_math_pow3(cur_part_diameter)
+                                          + cs_math_pow3(particle_diameter)
+                                            * particle_stat_weight
+                                            / cur_part_stat_weight, 1./3.));
 
             cur_part_diameter = cs_lagr_particle_get_real(cur_part, p_am,
                                                           CS_LAGR_DIAMETER);
@@ -1548,7 +1539,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                     cur_part_cluster_nb_part+particle_cluster_nb_part
                                     * particle_stat_weight / cur_part_stat_weight);
 
-          move_particle = CS_LAGR_PART_MOVE_OFF;
           particle_state = CS_LAGR_PART_OUT;
           particles->n_part_dep += 1;
           particles->weight_dep += particle_stat_weight;
@@ -1565,18 +1555,16 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       }
 
+      event_flag = event_flag | CS_EVENT_DEPOSITION;
     }
     else {
 
       /*The particle does not deposit:
         It 'rebounds' on the energy barrier*/
 
-      move_particle = CS_LAGR_PART_MOVE_ON;
       particle_state = CS_LAGR_PART_TO_SYNC;
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cs_glob_mesh->b_face_cells[face_id] + 1);
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_IN_FLOW);
+      cs_lagr_particles_unset_flag(particles, p_id,
+                                   CS_LAGR_PART_DEPOSITION_FLAGS);
 
       cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
       cs_real_3_t vect_cen;
@@ -1606,15 +1594,14 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       for (int k = 0; k < 3; k++)
         particle_velocity_seen[k] -= tmp * face_norm[k];
+
+      event_flag = event_flag | CS_EVENT_REBOUND;
     }
   }
 
   else if (b_type == CS_LAGR_REBOUND || b_type == CS_LAGR_SYM) {
 
-    move_particle = CS_LAGR_PART_MOVE_ON;
     particle_state = CS_LAGR_PART_TO_SYNC;
-    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                              cs_glob_mesh->b_face_cells[face_id] + 1);
 
     cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
     cs_real_3_t vect_cen;
@@ -1645,6 +1632,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     for (int k = 0; k < 3; k++)
       particle_velocity_seen[k] -= tmp * face_norm[k];
 
+    event_flag = event_flag | CS_EVENT_REBOUND;
   }
 
   else if (b_type == CS_LAGR_FOULING) {
@@ -1700,7 +1688,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       if (   (viscp <= visref_icoal)
           || (viscp >= visref_icoal  &&  random >= trap)) {
 
-        move_particle = CS_LAGR_PART_MOVE_OFF;
+        event_flag = event_flag | CS_EVENT_FOULING;
+
         particle_state = CS_LAGR_PART_OUT;
 
         /* Recording for log/lagrangian.log */
@@ -1708,41 +1697,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         particles->weight_fou += particle_stat_weight;
 
         /* Recording for statistics */
-        if (cs_glob_lagr_boundary_interactions->iencnbbd > 0) {
-          bound_stat[  cs_glob_lagr_boundary_interactions->iencnb
-                     * n_b_faces + face_id]
-            += particle_stat_weight;
-        }
-        if (cs_glob_lagr_boundary_interactions->iencmabd > 0) {
-          bound_stat[  cs_glob_lagr_boundary_interactions->iencma
-                     * n_b_faces + face_id]
-            += particle_stat_weight * particle_mass / face_area;
-        }
-        if (cs_glob_lagr_boundary_interactions->iencdibd > 0) {
-          bound_stat[  cs_glob_lagr_boundary_interactions->iencdi
-                     * n_b_faces + face_id]
-            +=   particle_stat_weight
-               * cs_lagr_particle_get_real(particle, p_am,
-                                           CS_LAGR_SHRINKING_DIAMETER);
-        }
-        if (cs_glob_lagr_boundary_interactions->iencckbd > 0) {
-          if (particle_mass > 0) {
-            const cs_real_t *particle_coal_mass
-              = cs_lagr_particle_attr_const(particle, p_am,
-                                            CS_LAGR_COAL_MASS);
-            const cs_real_t *particle_coke_mass
-              = cs_lagr_particle_attr_const(particle, p_am,
-                                            CS_LAGR_COKE_MASS);
-            for (int k = 0; k < n_layers; k++) {
-              bound_stat[  cs_glob_lagr_boundary_interactions->iencck
-                         * n_b_faces + face_id]
-                +=   particle_stat_weight
-                   * (particle_coal_mass[k] + particle_coke_mass[k])
-                   / particle_mass;
-            }
-          }
-        }
-
         /* FIXME: For post-processing by trajectory purpose */
 
         for (int k = 0; k < 3; k++) {
@@ -1753,20 +1707,15 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       }
     }
 
-    /*--> if there is no fouling, then it is an elastic rebound*/
-    if (move_particle != CS_LAGR_PART_MOVE_OFF) {
+    /*--> if there is no fouling, then it is an elastic rebound */
+    if (particle_state == CS_LAGR_PART_TO_SYNC) {
 
-      move_particle = CS_LAGR_PART_MOVE_ON;
-      particle_state = CS_LAGR_PART_TO_SYNC;
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cs_glob_mesh->b_face_cells[face_id] + 1);
-
-    cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
-    cs_real_3_t vect_cen;
-    for (int k = 0; k < 3; k++) {
-      vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
-      p_info->start_coords[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
-    }
+      cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
+      cs_real_3_t vect_cen;
+      for (int k = 0; k < 3; k++) {
+        vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
+        p_info->start_coords[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
+      }
 
       /* Modify the ending point. */
 
@@ -1792,12 +1741,22 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         // particle_velocity_seen[k] = 0.0; //FIXME
       }
 
+      event_flag = event_flag | CS_EVENT_REBOUND;
     }
 
   }
 
-  /* FIXME: JBORD* (user-defined boundary condition) not yet implemented
-     nor defined by a macro */
+  else if (b_type == CS_LAGR_BC_USER)
+    cs_lagr_user_boundary_interaction(particles,
+                                      p_id,
+                                      face_id,
+                                      face_norm,
+                                      intersect_pt,
+                                      t_intersect,
+                                      b_z_id,
+                                      &event_flag,
+                                      &particle_state);
+
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Boundary condition %d not recognized.\n"),
@@ -1805,24 +1764,36 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   /* Ensure some fields are updated */
 
-  if (p_am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
+  if (p_am->size[CS_LAGR_NEIGHBOR_FACE_ID] > 0) {
 
-    cs_lnum_t depo_flag
-      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
-
-    if (   depo_flag == CS_LAGR_PART_ROLLING
-        || depo_flag == CS_LAGR_PART_DEPOSITED) {
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                cs_glob_mesh->b_face_cells[face_id] + 1);
-      cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
+    int depo_flag
+      = cs_lagr_particles_get_flag(particles, p_id,
+                                   CS_LAGR_PART_DEPOSITED | CS_LAGR_PART_ROLLING);
+    if (depo_flag) {
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID,
                                 face_id);
-    }
 
+      if (depo_flag & CS_LAGR_PART_ROLLING)
+        event_flag = event_flag | CS_EVENT_ROLL_ON;
+    }
   }
 
-  /* Return pointer */
+  if (events != NULL) {
+    cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                            event_id,
+                                            CS_LAGR_E_FLAG);
 
-  *p_move_particle = move_particle;
+    cs_real_t *e_vel_post = cs_lagr_events_attr(events,
+                                                event_id,
+                                                CS_LAGR_E_VELOCITY);
+
+    *e_flag = *e_flag | event_flag;
+
+    for (int k = 0; k < 3; k++)
+      e_vel_post[k] = particle_velocity[k];
+
+    events->n_events += 1;
+  }
 
   /* Update per-zone flow rate measure for exiting particles */
 
@@ -1832,19 +1803,16 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     cs_real_t fr =   particle_stat_weight
                    * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
 
-    bdy_conditions->particle_flow_rate[boundary_zone*n_stats] -= fr;
+    bdy_conditions->particle_flow_rate[b_z_id*n_stats] -= fr;
 
     if (n_stats > 1) {
       int class_id
         = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_STAT_CLASS);
       if (class_id > 0 && class_id < n_stats)
-        bdy_conditions->particle_flow_rate[  boundary_zone*n_stats
+        bdy_conditions->particle_flow_rate[  b_z_id*n_stats
                                            + class_id] -= fr;
     }
-
   }
-
-  /* FIXME: Post-treatment not yet implemented... */
 
   if  (   b_type == CS_LAGR_DEPO1
        || b_type == CS_LAGR_DEPO2
@@ -1857,22 +1825,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       bound_stat[cs_glob_lagr_boundary_interactions->inbr * n_b_faces + face_id]
         += particle_stat_weight;
 
-    /* Particle impact angle and velocity*/
-    if (cs_glob_lagr_boundary_interactions->iangbd > 0) {
-      cs_real_t imp_ang = acos(cs_math_3_dot_product(compo_vel, face_normal)
-                               / (face_area * norm_vel));
-      bound_stat[cs_glob_lagr_boundary_interactions->iang * n_b_faces + face_id]
-        += imp_ang * particle_stat_weight;
-    }
-
-    if (cs_glob_lagr_boundary_interactions->ivitbd > 0)
-      bound_stat[cs_glob_lagr_boundary_interactions->ivit * n_b_faces + face_id]
-        += norm_vel * particle_stat_weight;
-
-    /* User statistics management. By defaut, set to zero */
-    if (cs_glob_lagr_boundary_interactions->nusbor > 0)
-      for (int n1 = 0; n1 < cs_glob_lagr_boundary_interactions->nusbor; n1++)
-        bound_stat[cs_glob_lagr_boundary_interactions->iusb[n1] * n_b_faces + face_id] = 0.0;
   }
 
   return particle_state;
@@ -1882,8 +1834,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
  * Move a particle as far as possible while remaining on a given rank.
  *
  * parameters:
- *   particle                 <-> pointer to particle data
- *   p_am                     <-- particle attribute map
+ *   particles                <-> pointer to particle set
+ *   events                   <-> events structure
+ *   p_id                     <-- particle id
  *   displacement_step_id     <-- id of displacement step
  *   failsafe_mode            <-- with (0) / without (1) failure capability
  *   b_face_zone_id           <-- boundary face zone id
@@ -1895,8 +1848,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_local_propagation(void                           *particle,
-                   const cs_lagr_attribute_map_t  *p_am,
+_local_propagation(cs_lagr_particle_set_t         *particles,
+                   cs_lagr_event_set_t            *events,
+                   cs_lnum_t                       p_id,
                    int                             displacement_step_id,
                    int                             failsafe_mode,
                    const int                       b_face_zone_id[],
@@ -1905,12 +1859,7 @@ _local_propagation(void                           *particle,
 {
   cs_lnum_t  i;
   cs_real_t  disp[3];
-  cs_real_t  null_yplus;
 
-  cs_lnum_t  *neighbor_face_id;
-  cs_real_t  *particle_yplus;
-
-  int move_particle = CS_LAGR_PART_MOVE_ON;
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -1930,6 +1879,8 @@ _local_propagation(void                           *particle,
   cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
   cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
 
+  const cs_lagr_attribute_map_t  *p_am = particles->p_am;
+  unsigned char *particle = particles->p_buffer + p_am->extents * p_id;
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
   cs_real_t  *particle_coord
@@ -1942,42 +1893,42 @@ _local_propagation(void                           *particle,
   for (int k = 0; k < 3; k++)
     disp[k] = particle_coord[k] - prev_location[k];
 
-  cs_lnum_t  cell_id
-    = cs_lagr_particle_get_cell_id(particle, p_am);
+  cs_lnum_t  cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                 CS_LAGR_CELL_ID);
 
   const cs_real_3_t *vtx_coord
     = (const cs_real_3_t *)(cs_glob_mesh->vtx_coord);
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
-  /* Dimension less test: no movement? */
+  /* Dimension less test: no movement ? */
   cs_real_t inv_ref_length = 1./pow(cell_vol[cell_id], 1./3.);
-  if (fabs(disp[0] * inv_ref_length) < 1e-15 &&
-      fabs(disp[1] * inv_ref_length) < 1e-15 &&
-      fabs(disp[2] * inv_ref_length) < 1e-15 ) {
-    move_particle = CS_LAGR_PART_MOVE_OFF;
+  if (   fabs(disp[0] * inv_ref_length) < 1e-15
+      && fabs(disp[1] * inv_ref_length) < 1e-15
+      && fabs(disp[2] * inv_ref_length) < 1e-15) {
     particle_state = CS_LAGR_PART_TREATED;
   }
 
-  if (lagr_model->deposition > 0) {
+  /* Neighbor face id (allow tes even without attribute */
+  cs_lnum_t  null_face_id = -1;
+  cs_lnum_t  *neighbor_face_id = &null_face_id;
+  if (p_am->size[CS_LAGR_NEIGHBOR_FACE_ID] > 0)
     neighbor_face_id
       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+
+  /* Particle y+  (allow tes even without attribute */
+  cs_real_t  null_yplus = 0.;
+  cs_real_t  *particle_yplus = &null_yplus;
+  if (p_am->size[CS_LAGR_YPLUS] > 0)
     particle_yplus
       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
-  }
-  else {
-    neighbor_face_id = NULL;
-    null_yplus = 0;
-    particle_yplus = &null_yplus;  /* allow tests even without particle y+ */
-  }
 
   /*  particle_state is defined at the top of this file */
 
   for (int n_loops = displacement_step_id;
-       move_particle == CS_LAGR_PART_MOVE_ON;
+       particle_state == CS_LAGR_PART_TO_SYNC;
        n_loops++) {
 
-    cell_id
-      = cs_lagr_particle_get_cell_id(particle, p_am);
+    cell_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
     assert(cell_id < mesh->n_cells);
     assert(cell_id > -1);
@@ -1989,7 +1940,6 @@ _local_propagation(void                           *particle,
                     p_am,
                     CS_LAGR_TRACKING_ERR_MAX_LOOPS);
 
-      move_particle  = CS_LAGR_PART_MOVE_OFF;
       particle_state = CS_LAGR_PART_TREATED;
 
       cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
@@ -2061,7 +2011,7 @@ _local_propagation(void                           *particle,
 
     /* Loop on faces to see if the particle trajectory crosses it*/
     for (i = cell_face_idx[cell_id];
-         i < cell_face_idx[cell_id+1] && move_particle == CS_LAGR_PART_MOVE_ON;
+         i < cell_face_idx[cell_id+1] && particle_state == CS_LAGR_PART_TO_SYNC;
          i++) {
 
       cs_lnum_t face_id, vtx_start, vtx_end, n_vertices;
@@ -2143,7 +2093,7 @@ _local_propagation(void                           *particle,
     bool test_in = (n_in == 0 && n_out == 0);
 
     if ((n_in != n_out || test_in)
-        && (move_particle == CS_LAGR_PART_MOVE_ON)) {
+        && (particle_state == CS_LAGR_PART_TO_SYNC)) {
       cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
 
       for (int k = 0; k < 3; k++)
@@ -2161,17 +2111,25 @@ _local_propagation(void                           *particle,
                       p_am,
                       CS_LAGR_TRACKING_ERR_LOST_PIC);
 
-        move_particle  = CS_LAGR_PART_MOVE_OFF;
         particle_state = CS_LAGR_PART_TREATED;
         return particle_state;
       }
       goto reloop_cen;
     }
 
-    if (exit_face == 0) {
-      move_particle =  CS_LAGR_PART_MOVE_OFF;
-      particle_state = CS_LAGR_PART_TREATED;
+    /* Update boundary events when particle changes */
+
+    if (lagr_model->deposition && exit_face != 0) {
+      cs_lnum_t b_face_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                      CS_LAGR_NEIGHBOR_FACE_ID);
+      if (b_face_id > -1) {
+        if (cs_lagr_particles_get_flag(particles, p_id, CS_LAGR_PART_ROLLING))
+          _roll_off_event(particles, events, p_id, b_face_id);
+      }
     }
+
+    if (exit_face == 0)
+      particle_state = CS_LAGR_PART_TREATED;
 
     else if (exit_face > 0) { /* Particle moves to the neighbor cell
                                  through the current face "face_num" */
@@ -2183,10 +2141,15 @@ _local_propagation(void                           *particle,
 
       p_info->last_face_num = exit_face;
 
+      /* Neighbor face id needs update */
+
+      if (p_am->size[CS_LAGR_NEIGHBOR_FACE_ID] > 0)
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID, -1);
+
       /* Deposition on internal faces? */
 
       /* particle / internal condition interaction
-         1 - modify particle cell_num : 0 or boundary_cell_num
+         1 - modify particle cell_num: 0 or boundary_cell_num
          2 -
 
          O -->  *         *  <-- D
@@ -2196,46 +2159,35 @@ _local_propagation(void                           *particle,
          \ /
          ------------------      boundary condition
          K
-
-         3 - move_particle = 0: end of particle tracking
-         move_particle = 1: continue particle tracking
       */
 
       particle_state
         = _internal_treatment(cs_glob_lagr_particle_set,
-                              particle,
+                              p_id,
                               face_id,
-                              t_intersect,
-                              &move_particle);
+                              t_intersect);
 
-      if (move_particle != CS_LAGR_PART_MOVE_OFF) {
+      if (particle_state == CS_LAGR_PART_TO_SYNC) {
 
         /* Now update cell */
 
-        if (cell_id == c_id1) {
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                    c_id2 + 1);
+        if (cell_id == c_id1)
           cell_id = c_id2;
-        }
-
-        else {
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                    c_id1 + 1);
+        else
           cell_id = c_id1;
-        }
+
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, cell_id);
 
         /* Particle changes rank */
 
         if (cell_id >= mesh->n_cells) {
 
-          particle_state = CS_LAGR_PART_TO_SYNC;
-          move_particle = CS_LAGR_PART_MOVE_OFF;
+          particle_state = CS_LAGR_PART_TO_SYNC_NEXT;
 
           /* Specific treatment for the particle deposition model:
            * mark it so that it will be treated in the next iteration */
 
-          if (lagr_model->deposition > 0)
-            *particle_yplus = - 1.;
+          *particle_yplus = - 1.;
 
         } /* end of case where particle changes rank */
 
@@ -2290,25 +2242,19 @@ _local_propagation(void                           *particle,
          \ /
          ------------------      boundary condition
          K
-
-         3 - move_particle = 0: end of particle tracking
-         move_particle = 1: continue particle tracking
       */
 
       particle_state
-        = _boundary_treatment(cs_glob_lagr_particle_set,
-                              particle,
-                              face_num,
+        = _boundary_treatment(particles,
+                              events,
+                              p_id,
+                              face_num - 1,
                               face_norm,
                               t_intersect,
-                              b_face_zone_id[face_num-1],
-                              &move_particle);
+                              b_face_zone_id[face_num-1]);
 
       if (cs_glob_lagr_time_scheme->t_order == 2)
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, 0);
-
-      assert(   move_particle == CS_LAGR_PART_MOVE_ON
-             || move_particle == CS_LAGR_PART_MOVE_OFF);
 
       p_info->last_face_num = -face_num;
 
@@ -2316,8 +2262,7 @@ _local_propagation(void                           *particle,
 
   } /* End of while : local displacement */
 
-  assert(   move_particle != CS_LAGR_PART_MOVE_ON
-         || particle_state != CS_LAGR_PART_TO_SYNC);
+  assert(particle_state != CS_LAGR_PART_TO_SYNC);
 
   return particle_state;
 }
@@ -2518,12 +2463,14 @@ _exchange_particles(const cs_halo_t         *halo,
 
   for (cs_lnum_t i = 0; i < n_recv_particles; i++) {
 
+    cs_lnum_t j = particles->n_particles + i;
+
     cs_real_t cur_part_stat_weight
-      = cs_lagr_particles_get_real(particles,
-                                   particles->n_particles + i,
-                                   CS_LAGR_STAT_WEIGHT);
+      = cs_lagr_particles_get_real(particles, j, CS_LAGR_STAT_WEIGHT);
 
     tot_weight += cur_part_stat_weight;
+
+    _tracking_info(particles, j)->state = CS_LAGR_PART_TO_SYNC;
 
   }
 
@@ -2562,10 +2509,10 @@ _lagr_halo_count(const cs_mesh_t               *mesh,
 
   for (i = 0; i < particles->n_particles; i++) {
 
-    if (_get_tracking_info(particles, i)->state == CS_LAGR_PART_TO_SYNC) {
+    if (_get_tracking_info(particles, i)->state == CS_LAGR_PART_TO_SYNC_NEXT) {
 
-      ghost_id =   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM)
-                 - mesh->n_cells - 1;
+      ghost_id =   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_ID)
+                 - mesh->n_cells;
 
       assert(ghost_id >= 0);
       lag_halo->send_count[lag_halo->rank[ghost_id]] += 1;
@@ -2666,17 +2613,17 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
     /* Particle changes domain */
 
-    if (cur_part_state == CS_LAGR_PART_TO_SYNC) {
+    if (cur_part_state == CS_LAGR_PART_TO_SYNC_NEXT) {
 
       continue_displacement = 1;
 
-      ghost_id =   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM)
-                 - halo->n_local_elts - 1;
+      ghost_id =   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_ID)
+                 - halo->n_local_elts;
       rank = lag_halo->rank[ghost_id];
       tr_id = lag_halo->transform_id[ghost_id];
 
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_CELL_NUM,
-                                 lag_halo->dist_cell_num[ghost_id]);
+      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_CELL_ID,
+                                 lag_halo->dist_cell_id[ghost_id]);
 
       shift = lag_halo->send_shift[rank] + lag_halo->send_count[rank];
 
@@ -2867,20 +2814,16 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
  *
  * parameters:
  *   particles        <-> pointer to particle set structure
- *   part_b_mass_flux <-> particle mass flux array, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_initialize_displacement(cs_lagr_particle_set_t  *particles,
-                         cs_real_t                part_b_mass_flux[])
+_initialize_displacement(cs_lagr_particle_set_t  *particles)
 {
   cs_lnum_t  i;
 
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
   const cs_lagr_attribute_map_t  *am = particles->p_am;
-
-  const cs_real_t  *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   /* Initialize builder if needed */
 
@@ -2910,36 +2853,33 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
 
   for (i = 0; i < particles->n_particles; i++) {
 
-    cs_lnum_t cur_part_cell_num
-      = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM);
+    cs_lnum_t cur_part_cell_id
+      = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_ID);
     cs_real_t r_truncate
       = cs_lagr_particles_get_real(particles, i, CS_LAGR_TR_TRUNCATE);
 
-    if (am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
-      if (    cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
-           == CS_LAGR_PART_TO_DELETE) {
-        _tracking_info(particles, i)->state = CS_LAGR_PART_OUT;
-      }
+    int p_flag = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_P_FLAG);
+
+    if (p_flag & CS_LAGR_PART_TO_DELETE) {
+      _tracking_info(particles, i)->state = CS_LAGR_PART_OUT;
     }
 
-    if (cur_part_cell_num < 0) {
+    else if (p_flag & CS_LAGR_PART_FIXED) {
       cs_real_t particle_weight
         = cs_lagr_particles_get_real(particles, i, CS_LAGR_STAT_WEIGHT);
-      if (particle_weight <= 0.) {
+      if (particle_weight <= 0.) /* == 0, use <= to avoid warning */
         _tracking_info(particles, i)->state = CS_LAGR_PART_MERGED;
-      }
-      else {
+      else
         _tracking_info(particles, i)->state = CS_LAGR_PART_STUCK;
-      }
     }
+
     else if (r_truncate > 1.9) /* from previous displacement */
       _tracking_info(particles, i)->state = CS_LAGR_PART_ERR;
     else {
       _tracking_info(particles, i)->state = CS_LAGR_PART_TO_SYNC;
-      if (am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
-        if (    cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
-            == CS_LAGR_PART_DEPOSITED)
-          _tracking_info(particles, i)->state = CS_LAGR_PART_TREATED;
+      int depo_flag = p_flag & CS_LAGR_PART_DEPOSITION_FLAGS;
+      if (depo_flag == CS_LAGR_PART_DEPOSITED) { /* deposited, no other flag */
+        _tracking_info(particles, i)->state = CS_LAGR_PART_TREATED;
       }
     }
 
@@ -2955,8 +2895,7 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     _tracking_info(particles, i)->start_coords[2] = prv_part_coord[2];
 
     if (cell_rotor_num != NULL) {
-      cs_lnum_t  cell_id = CS_ABS(cur_part_cell_num) - 1;
-      int r_num = cell_rotor_num[cell_id];
+      int r_num = cell_rotor_num[cur_part_cell_id];
       if (r_num > 0) {
         _apply_vector_transfo((const cs_real_t (*)[4])rot_m[r_num],
                               _tracking_info(particles, i)->start_coords);
@@ -2983,22 +2922,6 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     cs_lagr_particles_set_real(particles, i, CS_LAGR_TR_TRUNCATE, 0);
     cs_lagr_particles_set_lnum(particles, i, CS_LAGR_TR_REPOSITION, 0);
 
-    /* Data needed if the deposition model is activated */
-    if (   lagr_model->deposition <= 0
-        && am->size[CS_LAGR_DEPOSITION_FLAG] > 0)
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG,
-                                 CS_LAGR_PART_IN_FLOW);
-
-    /* Remove contribution from deposited or rolling particles
-       to boundary mass flux at the beginning of their movement. */
-
-    else if (lagr_model->deposition > 0 && part_b_mass_flux != NULL)
-      _b_mass_contribution(particles,
-                           i,
-                           -1.0,
-                           b_face_surf,
-                           part_b_mass_flux);
-
   }
 
   BFT_FREE(rot_m);
@@ -3018,13 +2941,10 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
  *----------------------------------------------------------------------------*/
 
 static void
-_finalize_displacement(cs_lagr_particle_set_t  *particles,
-                       cs_real_t                part_b_mass_flux[])
+_finalize_displacement(cs_lagr_particle_set_t  *particles)
 {
-  const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
   const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;
-  const cs_real_t  *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_lnum_t n_particles = particles->n_particles;
 
@@ -3049,15 +2969,8 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles,
     assert(   cur_part_state < CS_LAGR_PART_OUT
            && cur_part_state != CS_LAGR_PART_TO_SYNC);
 
-    cs_lnum_t cell_num = cs_lagr_particles_get_lnum(particles, i,
-                                                    CS_LAGR_CELL_NUM);
-
-    assert(cell_num != 0);
-
-    if (cell_num < 0)
-      cell_num = - cell_num;
-
-    cs_lnum_t cell_id = cell_num - 1;
+    cs_lnum_t cell_id = cs_lagr_particles_get_lnum(particles, i,
+                                                   CS_LAGR_CELL_ID);
 
     memcpy(swap_buffer + p_am->extents*i,
            particles->p_buffer + p_am->extents*i,
@@ -3077,19 +2990,14 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles,
   /* Now copy particle data and update some statistics */
 
   const cs_lnum_t p_extents = particles->p_am->extents;
-  const cs_lnum_t cell_num_displ = particles->p_am->displ[0][CS_LAGR_CELL_NUM];
+  const cs_lnum_t cell_num_displ = particles->p_am->displ[0][CS_LAGR_CELL_ID];
 
   for (cs_lnum_t i = 0; i < n_particles; i++) {
 
-    cs_lnum_t cell_num
+    cs_lnum_t cell_id
       = *((const cs_lnum_t *)(swap_buffer + p_extents*i + cell_num_displ));
 
-    assert(cell_num != 0);
-
-    if (cell_num < 0)
-      cell_num = - cell_num;
-
-    cs_lnum_t cell_id = cell_num - 1;
+    assert(cell_id > -1);
 
     cs_lnum_t particle_id = cell_idx[cell_id];
 
@@ -3098,16 +3006,6 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles,
     memcpy(particles->p_buffer + p_am->extents*particle_id,
            swap_buffer + p_am->extents*i,
            p_am->extents);
-
-    /* Add contribution from deposited or rolling particles
-       to boundary mass flux at the end of their movement. */
-
-    if (lagr_model->deposition > 0 && part_b_mass_flux != NULL)
-      _b_mass_contribution(particles,
-                           particle_id,
-                           1.0,
-                           b_face_surf,
-                           part_b_mass_flux);
 
   }
 
@@ -3180,6 +3078,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
   int  continue_displacement = 1;
 
   cs_lagr_particle_set_t  *particles = cs_glob_lagr_particle_set;
+  cs_lagr_event_set_t     *events = NULL;
 
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
 
@@ -3192,24 +3091,23 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  cs_real_t *part_b_mass_flux = NULL;
-
   int t_stat_id = cs_timer_stats_id_by_name("particle_displacement_stage");
 
   int t_top_id = cs_timer_stats_switch(t_stat_id);
 
-  if (cs_glob_lagr_boundary_interactions->iflmbd) {
-    assert(cs_glob_lagr_boundary_interactions->iflm >= 0);
-    part_b_mass_flux = bound_stat
-      + (cs_glob_lagr_boundary_interactions->iflm * mesh->n_b_faces);
+  if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT)) {
+    events = cs_lagr_event_set_boundary_interaction();
+    /* Event set "expected" size: n boundary faces*2 */
+    cs_lnum_t events_min_size = mesh->n_b_faces * 2;
+    if (events->n_events_max < events_min_size)
+      cs_lagr_event_set_resize(events, events_min_size);
   }
 
   assert(particles != NULL);
 
   const int *b_face_zone_id = cs_boundary_zone_face_class_id();
 
-  _initialize_displacement(particles,
-                           part_b_mass_flux);
+  _initialize_displacement(particles);
 
   /* Main loop on particles: global propagation */
 
@@ -3218,8 +3116,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
     /* Local propagation */
 
     for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
-
-      unsigned char *particle = particles->p_buffer + p_am->extents * i;
 
       /* Local copies of the current and previous particles state vectors
          to be used in case of the first pass of _local_propagation fails */
@@ -3231,8 +3127,9 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
         /* Main particle displacement stage */
 
-        cur_part_state = _local_propagation(particle,
-                                            p_am,
+        cur_part_state = _local_propagation(particles,
+                                            events,
+                                            i,
                                             displacement_step_id,
                                             failsafe_mode,
                                             b_face_zone_id,
@@ -3280,12 +3177,14 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
       /* Modification of MARKO pointer */
       if (*particle_yplus > 100.0)
-        cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, CS_LAGR_COHERENCE_STRUCT_BULK);
+        cs_lagr_particles_set_lnum(particles, i,
+                                   CS_LAGR_MARKO_VALUE,
+                                   CS_LAGR_COHERENCE_STRUCT_BULK);
 
       else {
 
-        if (*particle_yplus <
-            cs_lagr_particles_get_real(particles, i, CS_LAGR_INTERF)) {
+        if (  *particle_yplus
+            < cs_lagr_particles_get_real(particles, i, CS_LAGR_INTERF)) {
 
           if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE) < 0)
             cs_lagr_particles_set_lnum(particles,
@@ -3325,14 +3224,16 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   /* Internal deposition: additional loop */
   if (cs_glob_porous_model == 3) {
+    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+    const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
     cs_real_t *covered_surface = NULL;
     BFT_MALLOC(covered_surface, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
 
     /* Initialization */
-    for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells_with_ghosts; cell_id++)
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
       covered_surface[cell_id] = 0.;
 
-    for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_i_faces ; face_id++) {
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces ; face_id++) {
       /* Internal face flagged as internal deposition */
       if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0) {
         for (cs_lnum_t j = 0; j < 3; j++)
@@ -3344,24 +3245,23 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
       for (cs_lnum_t ip = 0; ip < particles->n_particles; ip++) {
 
-        cs_lnum_t cell_num
-          = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_NUM);
+        if (cs_lagr_particles_get_flag(particles, ip,
+                                       CS_LAGR_PART_IMPOSED_MOTION)) {
 
-        if (   cell_num >=0
-            && (   cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_DEPOSITION_FLAG)
-              == CS_LAGR_PART_IMPOSED_MOTION)) {
+          cs_lnum_t cell_id
+            = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_ID);
 
-          cs_lnum_t cell_id = cell_num - 1;
+          cs_real_t diam = cs_lagr_particles_get_real(particles, ip,
+                                                      CS_LAGR_DIAMETER);
 
           covered_surface[cell_id] += cs_math_pi * 0.25
-            * pow(cs_lagr_particles_get_real(particles, ip, CS_LAGR_DIAMETER),2.)
+            * diam*diam
             * cs_lagr_particles_get_real(particles, ip, CS_LAGR_FOULING_INDEX)
             * cs_lagr_particles_get_real(particles, ip, CS_LAGR_STAT_WEIGHT);
 
           /* Loop over internal faces of the current particle faces
-           * NB: usefull for resuspension, the last face_id is stored.
-           * face_id is unique in many cases.
-           * */
+           * NB: useful for resuspension, the last face_id is stored.
+           * face_id is unique in many cases. */
           for (cs_lnum_t i = _particle_track_builder->cell_face_idx[cell_id];
               i < _particle_track_builder->cell_face_idx[cell_id+1] ;
               i++ ) {
@@ -3374,7 +3274,8 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
               /* Internal face flagged as internal deposition */
               if (cs_glob_lagr_internal_conditions->i_face_zone_id[face_id] >= 0)
-                cs_lagr_particles_set_lnum(particles, ip, CS_LAGR_NEIGHBOR_FACE_ID, face_id);
+                cs_lagr_particles_set_lnum(particles, ip,
+                                           CS_LAGR_NEIGHBOR_FACE_ID, face_id);
 
             }
           }
@@ -3386,7 +3287,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
     /* Synchronization */
     if (mesh->halo != NULL)
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, covered_surface);
-
 
     /* Compute fluid section and clip it to 0 if negative */
     for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_i_faces; face_id++) {
@@ -3407,20 +3307,22 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
         /* If S_fluid . S is negative, that means we removed too much surface
          * to fluid surface */
         for (cs_lnum_t j = 0; j < 3; j++)
-          temp += fvq->i_f_face_normal[3*face_id+j] * fvq->i_face_normal[3*face_id+j];
+          temp +=   fvq->i_f_face_normal[3*face_id+j]
+                  * fvq->i_face_normal[3*face_id+j];
 
         if (temp <= 0.) {
           for (cs_lnum_t j = 0; j < 3; j++)
             fvq->i_f_face_normal[3*face_id+j] = 0.;
         }
-        fvq->i_f_face_surf[face_id] = cs_math_3_norm(fvq->i_f_face_normal + 3*face_id);
+        fvq->i_f_face_surf[face_id]
+          = cs_math_3_norm(fvq->i_f_face_normal + 3*face_id);
       }
     }
     /* Free memory */
     BFT_FREE(covered_surface);
   }
 
-  _finalize_displacement(particles, part_b_mass_flux);
+  _finalize_displacement(particles);
 
   cs_timer_stats_switch(t_top_id);
 }
@@ -3436,6 +3338,10 @@ cs_lagr_tracking_finalize(void)
 {
   if (cs_glob_lagr_particle_set == NULL)
     return;
+
+  /* Destroy event structures */
+
+  cs_lagr_event_finalize();
 
   /* Destroy particle set */
 
@@ -3492,17 +3398,14 @@ cs_lagr_test_wall_cell(const void                     *particle,
                        cs_real_t                      *yplus,
                        cs_lnum_t                      *face_id)
 {
-  cs_lnum_t cell_num
-    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM);
+  cs_lnum_t cell_id
+    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
   *yplus = 10000;
   *face_id = -1;
 
-  if (cell_num < 0) return;
-
   cs_lnum_t  *cell_b_face_idx = cs_glob_mesh_adjacencies->cell_b_faces_idx;
   cs_lnum_t  *cell_b_faces = cs_glob_mesh_adjacencies->cell_b_faces;
-  cs_lnum_t cell_id = cell_num - 1;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_normal;
   const cs_real_3_t *restrict b_face_cog

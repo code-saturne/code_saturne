@@ -878,8 +878,13 @@ class batch_info:
         elif self.batch_type == 'SLURM':
             cmd = "squeue -h -j $SLURM_JOBID -o %L"
             # In case of job array, check on first line
-            rs = get_command_output(cmd).splitlines()[0]
-            rtime = cs_batch.parse_wall_time_slurm(rs)
+            rs = get_command_output(cmd)
+            if rs:
+                rtime = cs_batch.parse_wall_time_slurm(rs.splitlines()[0])
+            else:
+                msg = "Error: command\n  " + cmd + "\n\n"
+                msg += "returned no output\n"
+                msg += "unable to determine remaining time\n"
 
         return rtime
 

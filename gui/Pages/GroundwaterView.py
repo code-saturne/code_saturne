@@ -53,8 +53,6 @@ from code_saturne.Pages.GroundwaterForm  import Ui_GroundwaterForm
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 
-from code_saturne.Pages.QMeiEditorView   import QMeiEditorView
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

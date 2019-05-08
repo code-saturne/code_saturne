@@ -810,8 +810,6 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
 #   pragma omp parallel for
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      cs_real_t  dddij[3];
-
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
@@ -820,14 +818,13 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t udbfs = 1. / b_face_surf[face_id];
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+          cs_real_3_t normal;
+          /* Normal is vector 0 if the b_face_normal norm is too small */
+          cs_math_3_normalise(b_face_normal[face_id], normal);
 
           for (cs_lnum_t ll = 0; ll < 3; ll++) {
             for (cs_lnum_t mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
+              cocg[ii][ll][mm] += normal[ll] * normal[mm];
           }
 
         } /* face without internal coupling */
@@ -4196,7 +4193,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize cocg for lsq vector gradient.
+ * Initialize cocg for lsq vector and tensor gradient.
  *
  * parameters:
  *   cell_id          <-- cell id
@@ -4282,14 +4279,13 @@ _init_cocg_lsq(cs_lnum_t                     cell_id,
 
     cs_lnum_t face_id = cell_b_faces[i];
 
-    cs_real_t udbfs = 1. / fvq->b_face_surf[face_id];
-
-    for (int ii = 0; ii < 3; ii++)
-      dc[ii] = udbfs * b_face_normal[face_id][ii];
+    cs_real_3_t normal;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(b_face_normal[face_id], normal);
 
     for (int ii = 0; ii < 3; ii++) {
       for (int jj = 0; jj < 3; jj++)
-        cocg[ii][jj] += dc[ii]*dc[jj];
+        cocg[ii][jj] += normal[ii] * normal[jj];
     }
 
   }
@@ -4382,13 +4378,11 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
 
     /* build cocgb_v matrix */
 
-    cs_real_t udbfs = 1. / b_face_surf[face_id];
     const cs_real_t *restrict iipbf = diipb[face_id];
 
-    /* db = I'F / ||I'F|| */
-    cs_real_t  nb[3];
-    for (int ii = 0; ii < 3; ii++)
-      nb[ii] = udbfs * b_face_normal[face_id][ii];
+    cs_real_3_t nb;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(b_face_normal[face_id], nb);
 
     cs_real_t db = 1./b_dist[face_id];
     cs_real_t db2 = db*db;
@@ -4420,13 +4414,13 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
         int rr = _33_9_idx[pp][0];
         int ss = _33_9_idx[pp][1];
 
-        /* part from derivative of 1/2*|| B*t*IIp/db ||^2 */
+        /* part from derivative of 1/2*|| B*t*II'/db ||^2 */
         cs_real_t cocgv = 0.;
         for (int mm = 0; mm < 3; mm++)
           cocgv += bt[mm][kk]*bt[mm][rr];
         cocgb_v[ll_9+pp] += cocgv*(iipbf[qq]*iipbf[ss])*db2;
 
-        /* part from derivative of -< t*nb , B*t*IIp/db > */
+        /* part from derivative of -< t*nb , B*t*II'/db > */
         cocgb_v[ll_9+pp] -= (  nb[ss]*bt[rr][kk]*iipbf[qq]
                              + nb[qq]*bt[kk][rr]*iipbf[ss])
                              *db;
@@ -4439,7 +4433,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
       int pp = _33_9_idx[ll][0];
       int qq = _33_9_idx[ll][1];
 
-      /* part from derivative of < (B-1)*t*IIp/db , (A+(B-1)*v)/db > */
+      /* part from derivative of < (B-1)*t*II'/db , (A+(B-1)*v)/db > */
       cs_real_t rhsv = 0.;
       for (int rr = 0; rr < 3; rr++) {
         rhsv +=   bt[rr][pp]*diipb[face_id][qq]
@@ -4587,7 +4581,7 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     cell_id,
         cs_real_t cocgt = 0.;
         for (int mm = 0; mm < 6; mm++)
           cocgt += bt[mm][kk]*bt[mm][rr];
-        cocgb_t[ll_18+pp] += cocgt*(iipbf[qq]*iipbf[ss])*db2;
+        cocgb_t[ll_18+pp] += cocgt * (iipbf[qq]*iipbf[ss]) * db2;
 
         /* part from derivative of -< t*nb , B*t*IIp/db > */
         cocgb_t[ll_18+pp] -= (  nb[ss]*bt[rr][kk]*iipbf[qq]
@@ -4670,13 +4664,14 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;//FIXME for internal coupling, has to be recomputed
 
@@ -4808,7 +4803,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(cell_id1, i, j, pfac, dc, ddc)
+#   pragma omp parallel for private(cell_id1, i, j, pfac)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -4819,24 +4814,25 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
           cell_id1 = b_face_cells[face_id];
 
-          const cs_real_t *iipbf = &diipb[face_id][0];
+          cs_real_3_t n_d_dist;
+          /* Normal is vector 0 if the b_face_normal norm is too small */
+          cs_math_3_normalise(b_face_normal[face_id], n_d_dist);
 
-          /* db = I'F */
+          cs_real_t d_b_dist = 1. / b_dist[face_id];
+
+          /* Normal divided by b_dist */
           for (i = 0; i < 3; i++)
-            dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i]
-                   -iipbf[i];
-
-          ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+            n_d_dist[i] *= d_b_dist;
 
           for (i = 0; i < 3; i++) {
             pfac = (coefav[face_id][i]*inc
                  + ( coefbv[face_id][0][i] * pvar[cell_id1][0]
                    + coefbv[face_id][1][i] * pvar[cell_id1][1]
                    + coefbv[face_id][2][i] * pvar[cell_id1][2]
-                   -                         pvar[cell_id1][i])) * ddc;
+                   -                         pvar[cell_id1][i]));
 
             for (j = 0; j < 3; j++)
-              rhs[cell_id1][i][j] += dc[j] * pfac;
+              rhs[cell_id1][i][j] += n_d_dist[j] * pfac;
           }
         }
 
@@ -4975,14 +4971,15 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
   const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
   cs_real_63_t *rhs;
 
@@ -5095,25 +5092,23 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
 
         cs_lnum_t cell_id1 = b_face_cells[face_id];
 
-        const cs_real_t *iipbf = &diipb[face_id][0];
+        cs_real_3_t n_d_dist;
+        /* Normal is vector 0 if the b_face_normal norm is too small */
+        cs_math_3_normalise(b_face_normal[face_id], n_d_dist);
 
-        /* db = I'F */
-        cs_real_3_t dc;
+        cs_real_t d_b_dist = 1. / b_dist[face_id];
+
+        /* Normal divided by b_dist */
         for (int i = 0; i < 3; i++)
-          dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i]
-                 -iipbf[i];
-
-        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+          n_d_dist[i] *= d_b_dist;
 
         for (int i = 0; i < 6; i++) {
           cs_real_t pfac = coefat[face_id][i]*inc - pvar[cell_id1][i];
           for (int j = 0; j < 6; j++)
             pfac += coefbt[face_id][j][i] * pvar[cell_id1][j];
 
-          pfac = pfac*ddc;
-
           for (int j = 0; j < 3; j++)
-            rhs[cell_id1][i][j] += dc[j] * pfac;
+            rhs[cell_id1][i][j] += pfac * n_d_dist[j];
         }
 
       } /* loop on faces */

@@ -152,6 +152,8 @@ struct _cs_equation_assemble_t {
 static inline cs_equation_assembly_t *
 _set_scalar_assembly_func(void)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {  /* Parallel */
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
@@ -160,7 +162,10 @@ _set_scalar_assembly_func(void)
       return cs_equation_assemble_matrix_mpit;
 
   }
-  else {                      /* Sequential */
+
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks <= 1) { /* Sequential */
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
       return cs_equation_assemble_matrix_seqs;
@@ -184,6 +189,8 @@ _set_scalar_assembly_func(void)
 static inline cs_equation_assembly_t *
 _set_block33_assembly_func(void)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {  /* Parallel */
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
@@ -192,7 +199,10 @@ _set_block33_assembly_func(void)
       return cs_equation_assemble_eblock33_matrix_mpit;
 
   }
-  else {                      /* Sequential */
+
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks <= 1) {  /* Sequential */
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
       return cs_equation_assemble_eblock33_matrix_seqs;
@@ -216,6 +226,8 @@ _set_block33_assembly_func(void)
 static inline cs_equation_assembly_t *
 _set_block_assembly_func(void)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {  /* Parallel */
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
@@ -224,7 +236,10 @@ _set_block_assembly_func(void)
       return cs_equation_assemble_eblock_matrix_mpit;
 
   }
-  else {                      /* Sequential */
+
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks <= 1) {  /* Sequential */
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
       return cs_equation_assemble_eblock_matrix_seqs;
@@ -574,6 +589,8 @@ _assemble_row_scal_ld(const cs_matrix_assembler_t      *ma,
 
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add values to a matrix assembler values structure using global
@@ -642,6 +659,10 @@ _assemble_row_scal_dt(cs_matrix_assembler_values_t         *mav,
   }
 }
 
+#endif /* defined(HAVE_MPI) */
+
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add values to a matrix assembler values structure using global
@@ -706,6 +727,8 @@ _assemble_row_scal_ds(cs_matrix_assembler_values_t         *mav,
 
   }
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*============================================================================
  * Private function definitions
@@ -1272,6 +1295,8 @@ cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
   return NULL; /* Avoid a compilation warning */
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system
@@ -1382,6 +1407,8 @@ cs_equation_assemble_matrix_mpis(const cs_cell_sys_t              *csys,
   }
 
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1636,6 +1663,8 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_cell_sys_t           *csys,
   } /* Loop on row-wise blocks */
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system.
@@ -1808,6 +1837,8 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_cell_sys_t           *csys,
   } /* Loop on row-wise blocks */
 
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2064,6 +2095,8 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_cell_sys_t           *csys,
 
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system.
@@ -2246,6 +2279,8 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_cell_sys_t           *csys,
   } /* Loop on row-wise blocks */
 
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 

@@ -618,12 +618,12 @@ Alternatively, to copy less files and avoid changing the structure provided
 by CoolProp:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include/CoolProp.h
+\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include
+{\$INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name} \\
 \textbackslash \\
-{INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name} \\
-\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include/PlatFormDetermination.h
+\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/externals/fmtlib/fmt
 \textbackslash \\
-{INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}
+{\$INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}/include/
 }\end{minipage}}
 
 \sloppy
@@ -827,10 +827,9 @@ By default, on most architectures, \CS will be built with shared libraries.
 Shared libraries may be disabled (in which case static libraries
 are automatically enabled) by adding  {\tt --disable-shared} to the options
 passed to {\tt configure}.
-On some systems, such as BlueGene/Q, the build may default to static libraries
-instead.
+On some systems, the build may default to static libraries instead.
 
-It is possible to build both shared and static libraries by adding
+It is possible to build both shared and static libraries by not adding
 {\tt --disable-static} to the {\tt configure} options, but the
 executables will be linked with the shared version of the libraries,
 so this is rarely useful (the build process is also slower in this case, as
@@ -838,8 +837,8 @@ each file is compiled twice).
 
 In some cases, a shared build may fail due to some dependencies
 on static-only libraries. In this case, {\tt --disable-shared}
-will be necessary. Disabling shared libraries has also been seen
-to avoid issues with linking on Mac OSX systems.
+will be necessary. Disabling shared libraries is also necessary
+to avoid issues with linking user functions on Mac OSX systems.
 
 In any case, be careful if you switch from one option to the other: as
 linking will be done with shared libraries by default, a build

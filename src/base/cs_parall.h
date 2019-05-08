@@ -163,7 +163,7 @@ cs_parall_sum(int             n,
 
 #else
 
-#define cs_parall_sum(_n, _datatype, _val);
+#define cs_parall_sum(_n, _datatype, _val) { };
 
 #endif
 

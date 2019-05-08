@@ -2066,16 +2066,18 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
   cs_sdm_t  *hdg = cb->hdg;
   cs_sdm_square_init(cm->n_vc, hdg);
 
+  const int stride = cm->n_vc + 1;
   if (h_info.is_unity) {
 
     for (int v = 0; v < cm->n_vc; v++)
-      hdg->val[v*cm->n_vc+v] = cm->wvc[v] * cm->vol_c;
+      hdg->val[v*stride] = cm->wvc[v] * cm->vol_c;
 
   }
   else {
 
+    const cs_real_t  coef = cb->dpty_val * cm->vol_c;
     for (int v = 0; v < cm->n_vc; v++)
-      hdg->val[v*cm->n_vc+v] = cb->dpty_val * cm->wvc[v] * cm->vol_c;
+      hdg->val[v*stride] = coef * cm->wvc[v];
 
   }
 

@@ -425,8 +425,8 @@ cs_source_term_set_reduction(cs_xdef_t     *st,
       st->meta |= CS_FLAG_DUAL | CS_FLAG_CELL;
     else
       bft_error(__FILE__, __LINE__, 0,
-                " Stop modifying the source term flag.\n"
-                " This case is not handled.");
+                " %s: Stop modifying the source term flag.\n"
+                " This case is not handled.", __func__);
   }
   else if (flag & CS_FLAG_PRIMAL) {
     assert(save_meta & CS_FLAG_DUAL);
@@ -1352,7 +1352,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
       for (int k = 0; k < 3; k++)
         xg[0][k] = xfc[k] + 0.375*xv1[k] + 0.125*xv2[k];
 
-      /* xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
+      /* xg = 0.25(xv2 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
       for (int k = 0; k < 3; k++)
         xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
 

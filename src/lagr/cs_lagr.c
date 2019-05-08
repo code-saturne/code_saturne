@@ -299,30 +299,11 @@ cs_lagr_brownian_t *cs_glob_lagr_brownian = &_cs_glob_lagr_brownian;
 
 /* lagr boundary interactions structure and associated pointer */
 static cs_lagr_boundary_interactions_t _cs_glob_lagr_boundary_interactions
-  = {.nusbor = 0,
-     .npstf = 0,
+  = {.npstf = 0,
      .npstft = 0,
      .has_part_impact_nbr = 0,
-     .iflmbd = 0,
-     .iangbd= 0,
-     .ivitbd = 0,
      .iclgst = 0,
-     .iencnbbd = 0,
-     .iencmabd = 0,
-     .iencdibd = 0,
-     .iencckbd = 0,
      .inbr = -1,
-     .iflm = -1,
-     .iang = -1,
-     .ivit = -1,
-     .ires = -1,
-     .iflres = -1,
-     .iencnb = -1,
-     .iencma = -1,
-     .iencdi = -1,
-     .iencck = -1,
-     .iusb = NULL,
-     .imoybr = NULL,
      .inclg = -1,
      .inclgt = -1,
      .iclogt = -1,
@@ -971,15 +952,14 @@ _get_n_occupied_cells(const cs_lagr_particle_set_t  *p_set,
   /* Main loop to update the counter */
   if (end - start > 1) {
     counter_particle_cells = 1;
-    cs_lnum_t prev_cell_num
-      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_NUM);
-    cs_lnum_t curr_cell_num = prev_cell_num;
+    cs_lnum_t prev_cell_id
+      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_ID);
+    cs_lnum_t curr_cell_id = prev_cell_id;
     for (cs_lnum_t p = start + 1; p < end; ++p) {
-      curr_cell_num = cs_lagr_particles_get_lnum(p_set, p, CS_LAGR_CELL_NUM);
-      if (prev_cell_num != curr_cell_num) {
+      curr_cell_id = cs_lagr_particles_get_lnum(p_set, p, CS_LAGR_CELL_ID);
+      if (prev_cell_id != curr_cell_id)
         counter_particle_cells++;
-      }
-      prev_cell_num = curr_cell_num;
+      prev_cell_id = curr_cell_id;
     }
   }
   else if (p_set->n_particles == 1) {
@@ -1023,7 +1003,7 @@ _occupied_cells(cs_lagr_particle_set_t  *p_set,
   if (end - start >= 1) {
     /* Initialization */
     cs_lnum_t prev_cell_id
-      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_NUM) - 1;
+      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_ID);
     cs_lnum_t curr_cell_id = prev_cell_id;
     cs_lnum_t counter = 0;
     occupied_cell_ids[0] = curr_cell_id;
@@ -1034,7 +1014,7 @@ _occupied_cells(cs_lagr_particle_set_t  *p_set,
     /* Update lists */
     for (cs_lnum_t part = start + 1; part < end; ++part) {
       curr_cell_id
-        = cs_lagr_particles_get_lnum(p_set, part, CS_LAGR_CELL_NUM) - 1;
+        = cs_lagr_particles_get_lnum(p_set, part, CS_LAGR_CELL_ID);
       if (prev_cell_id != curr_cell_id) {
         occupied_cell_ids[counter] = curr_cell_id;
         particle_gaps[counter] = part;
@@ -1067,12 +1047,8 @@ _get_n_deleted(cs_lagr_particle_set_t  *p_set,
   cs_lnum_t res = 0;
 
   for (cs_lnum_t idx = start; idx < end; ++idx) {
-    cs_lnum_t cell_num = cs_lagr_particles_get_lnum(p_set, idx, CS_LAGR_CELL_NUM);
-
-    /* Check for negative cells (bin flag) */
-    if (cell_num < 0) {
+    if (cs_lagr_particles_get_flag(p_set, idx, CS_LAGR_PART_TO_DELETE))
       res++;
-    }
   }
   return res;
 }
@@ -1149,9 +1125,6 @@ cs_lagr_finalize(void)
   BFT_FREE(cs_glob_lagr_encrustation->visref);
 
   /* boundary interaction pointers */
-
-  BFT_FREE(cs_glob_lagr_boundary_interactions->iusb);
-  BFT_FREE(cs_glob_lagr_boundary_interactions->imoybr);
 
   for (int i = 0; i < cs_glob_lagr_dim->n_boundary_stats; i++)
     BFT_FREE(cs_glob_lagr_boundary_interactions->nombrd[i]);
@@ -1487,7 +1460,6 @@ cs_lagr_get_internal_conditions(void)
 
     for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
       cs_glob_lagr_internal_conditions->i_face_zone_id[i] = -1;
-
   }
 
   return cs_glob_lagr_internal_conditions;
@@ -1673,6 +1645,9 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
 
+  /* Read statistics restart data */
+
+  cs_lagr_stat_restart_read();
 }
 
 /*----------------------------------------------------------------------------
@@ -1727,6 +1702,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       vislen[ifac] = -cs_math_big_r;
   }
+
+  /* mask for for deposition-related states */
+
+  int deposition_mask =   CS_LAGR_PART_DEPOSITED | CS_LAGR_PART_ROLLING
+                        | CS_LAGR_PART_IMPOSED_MOTION;
 
   /* Initialization
      -------------- */
@@ -1783,7 +1763,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         ustarmoy = dtmp[1];
         surftot  = dtmp[2];
-
       }
 
       if (dtmp[0] > 0.0)
@@ -1802,6 +1781,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
     }
 
   }
+
+  /* Prepare statistics for this time step */
+
+  cs_lagr_stat_prepare();
 
   /* Update boundary condition types;
      in most cases, this should be useful only at the first iteration,
@@ -1974,7 +1957,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   part_c = cs_lagr_update_particle_counter();
 
-  /* GLobal number of particles > 0 */
+  /* Global number of particles > 0 */
   if (part_c->n_g_total > 0) {
 
   /* Record particle's starting cell and rank, and update rebound time id */
@@ -1982,8 +1965,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
       cs_lagr_particles_set_lnum_n
-        (p_set, ip, 1, CS_LAGR_CELL_NUM,
-         cs_lagr_particles_get_lnum(p_set, ip, CS_LAGR_CELL_NUM));
+        (p_set, ip, 1, CS_LAGR_CELL_ID,
+         cs_lagr_particles_get_lnum(p_set, ip, CS_LAGR_CELL_ID));
 
       cs_lagr_particles_set_lnum_n(p_set, ip, 1, CS_LAGR_RANK_ID,
                                    cs_glob_rank_id);
@@ -2123,10 +2106,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   (const cs_real_3_t *)piil,
                   (const cs_real_33_t *)bx,
                   tsfext,
-                  extra->grad_pr,
-                  extra->grad_vel,
+                  (const cs_real_3_t *)extra->grad_pr,
+                  (const cs_real_33_t *)extra->grad_vel,
                   terbru,
-                  vislen,
+                  (const cs_real_t *)vislen,
                   &nresnew);
 
       /* Save bx values associated with particles for next pass */
@@ -2246,7 +2229,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           cs_lnum_t local_size = end_part - start_part;
           cs_lnum_t deleted_parts = _get_n_deleted(p_set, start_part, end_part);
-          size_t swap_buffer_size = p_set->p_am->extents * (local_size - deleted_parts);
+          size_t swap_buffer_size =   p_set->p_am->extents
+                                    * (local_size - deleted_parts);
           size_t swap_buffer_deleted = p_set->p_am->extents * deleted_parts;
 
           /* Create buffers for deleted particles */
@@ -2256,19 +2240,17 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           /* Update buffer for existing particles */
           cs_lnum_t count_del = 0, count_swap = 0;
-          for (cs_lnum_t i = 0; i < local_size; ++i) {
-            cs_lnum_t c_id = cs_lagr_particles_get_lnum(p_set,
-                                                        i+start_part,
-                                                        CS_LAGR_CELL_NUM);
-            if (c_id < 0) {
+          for (cs_lnum_t i = start_part; i < end_part; ++i) {
+            if (cs_lagr_particles_get_flag(p_set, i,
+                                           CS_LAGR_PART_TO_DELETE)) {
               memcpy(deleted_buffer + p_set->p_am->extents * count_del,
-                     p_set->p_buffer + p_set->p_am->extents * (i+start_part),
+                     p_set->p_buffer + p_set->p_am->extents * i,
                      p_set->p_am->extents);
               count_del++;
             }
             else {
               memcpy(swap_buffer + p_set->p_am->extents * count_swap,
-                     p_set->p_buffer + p_set->p_am->extents * (i+start_part),
+                     p_set->p_buffer + p_set->p_am->extents * i,
                      p_set->p_am->extents);
               count_swap++;
             }
@@ -2387,7 +2369,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
-          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_CELL_NUM) - 1 >= 0) {
+          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_CELL_ID) >= 0) {
             cs_real_t res_time
               = cs_lagr_particles_get_real(p_set, npt,
                                            CS_LAGR_RESIDENCE_TIME)
@@ -2416,13 +2398,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
-          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) > 0) {
+          if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
 
             cs_real_t p_depo_time
               = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
             cs_real_t p_consol_height
               = CS_MIN(cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
-                       cs_glob_lagr_consolidation_model->rate_consol * p_depo_time );
+                       cs_glob_lagr_consolidation_model->rate_consol * p_depo_time);
             cs_lagr_particles_set_real(p_set, npt,
                                        CS_LAGR_CONSOL_HEIGHT, p_consol_height);
             cs_lagr_particles_set_real(p_set, npt, CS_LAGR_DEPO_TIME,
@@ -2449,16 +2431,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
         /* Height and time of deposit     */
 
         for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-
           bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
           bound_stat[lag_bdi->iclogh * n_b_faces + ifac] = 0.0;
           bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
-
         }
 
         for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
-          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) == 1) {
+          if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
 
             cs_lnum_t face_id = cs_lagr_particles_get_lnum
                                   (p_set, npt, CS_LAGR_NEIGHBOR_FACE_ID);

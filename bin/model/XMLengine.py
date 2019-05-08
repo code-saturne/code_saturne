@@ -305,7 +305,7 @@ class XMLElement:
     def xmlCreateAttribute(self, **kwargs):
         """
         Set attributes to a XMLElement node, only if these attributes
-        does not allready exist.
+        do not already exist.
         """
         if self.ca: self.ca.modified()
 
@@ -1326,13 +1326,16 @@ class Case(Dico, XMLDocument):
         return d.toString()
 
 
-    def xmlSaveDocument(self):
+    def xmlSaveDocument(self, prettyString=True):
         """
         This method writes the associated xml file.
         See saveCase and saveCaseAs methods in the Main module.
         """
         try:
-            d = XMLDocument().parseString(self.toPrettyString())
+            if prettyString:
+                d = XMLDocument().parseString(self.toPrettyString())
+            else:
+                d = self
             d.xmlCleanHighLevelBlank(d.root())
             s = d.toString()
             file = open(self['xmlfile'], 'w')

@@ -637,5 +637,76 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of the main domain settings
+ *
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_setup_log(const cs_domain_t   *domain)
+{
+  cs_log_printf(CS_LOG_SETUP, "\nSummary of the CDO domain settings\n");
+  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+
+  /* CDO main structure count */
+  cs_log_printf(CS_LOG_SETUP, "\n## CDO main structures\n");
+
+  int  n_equations, n_predef_equations, n_user_equations;
+  cs_equation_get_count(&n_equations, &n_predef_equations, &n_user_equations);
+
+  cs_log_printf(CS_LOG_SETUP, " **Number of equations**             %2d\n",
+                n_equations);
+  cs_log_printf(CS_LOG_SETUP, " **Number of predefined equations**  %2d\n",
+                n_predef_equations);
+  cs_log_printf(CS_LOG_SETUP, " **Number of user equations**        %2d\n",
+                n_user_equations);
+  cs_log_printf(CS_LOG_SETUP, " **Number of properties**            %2d\n",
+                cs_property_get_n_properties());
+  cs_log_printf(CS_LOG_SETUP, " **Number of advection fields**      %2d\n",
+                cs_advection_field_get_n_fields());
+
+
+
+  cs_cdo_connect_summary(domain->connect);
+  cs_cdo_quantities_summary(domain->cdo_quantities);
+
+  /* Boundaries of the domain */
+  cs_boundary_log_setup(domain->boundaries);
+
+  /* Time step summary */
+  cs_log_printf(CS_LOG_SETUP, "\n## Time step information\n");
+  if (domain->only_steady)
+    cs_log_printf(CS_LOG_SETUP, " * Steady-state computation\n");
+
+  else { /* Time information */
+
+    cs_log_printf(CS_LOG_SETUP, " * Unsteady computation\n");
+
+    if (domain->time_step->t_max > 0.)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
+                    " * Final simulation time:", domain->time_step->t_max);
+    if (domain->time_step->nt_max > 0)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %9d\n",
+                    " * Final time step:", domain->time_step->nt_max);
+
+    if (domain->time_options.idtvar == 0)
+      cs_log_printf(CS_LOG_SETUP, " * Time step **constant**\n\n");
+    else if (domain->time_options.idtvar == 1)
+      cs_log_printf(CS_LOG_SETUP, " * Time step **variable in time**\n\n");
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid idtvar value for the CDO module.\n"));
+
+    cs_xdef_log("        Time step definition", domain->time_step_def);
+    cs_log_printf(CS_LOG_SETUP, "\n");
+
+  }
+
+}
+
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -308,7 +308,8 @@ bin/studymanager/__init__.py \
 bin/studymanager/cs_studymanager_parser.py \
 bin/studymanager/cs_studymanager_study.py \
 bin/studymanager/cs_studymanager_texmaker.py \
-bin/studymanager/cs_studymanager_pathes_model.py
+bin/studymanager/cs_studymanager_pathes_model.py \
+bin/studymanager/cs_studymanager_xml_init.py
 
 modeldir = $(pkgpythondir)/model
 model_PYTHON = \
@@ -338,6 +339,7 @@ bin/model/GroundwaterLawModel.py \
 bin/model/GroundwaterModel.py \
 bin/model/HeadLossesModel.py \
 bin/model/IdentityAndPathesModel.py \
+bin/model/ImmersedBoundariesModel.py \
 bin/model/InitializationModel.py \
 bin/model/__init__.py \
 bin/model/InterfacialAreaModel.py \

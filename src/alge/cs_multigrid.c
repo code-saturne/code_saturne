@@ -316,12 +316,12 @@ struct _cs_multigrid_t {
   MPI_Comm comm;
   MPI_Comm caller_comm;
 
-  cs_gnum_t merge_mean_threshold;
-  cs_gnum_t merge_glob_threshold;
-  int       merge_stride;
-
 # endif
 
+  cs_gnum_t merge_mean_threshold;
+  cs_gnum_t merge_glob_threshold;
+
+  int      merge_stride;
   int      caller_n_ranks;
 
   /* Data available between "setup" and "solve" states */

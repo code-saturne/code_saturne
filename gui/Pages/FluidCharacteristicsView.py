@@ -137,7 +137,6 @@ from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
-from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -1075,15 +1074,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.density
 
-        mci = mei_to_c_interpreter(self.case, False)
-        mci.init_block('vol', 'all_cells', 'density',
-                       exp, req, symbols_rho, sca)
-        dialog = QMegEditorView(self,
-                                mei_to_c   = mci,
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_rho,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'density',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_rho,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -1113,15 +1113,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.molecular_viscosity
 
-        mci = mei_to_c_interpreter(self.case, False)
-        mci.init_block('vol', 'all_cells', 'molecular_viscosity',
-                       exp, req, symbols_mu, sca)
-        dialog = QMegEditorView(self,
-                                mei_to_c   = mci,
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_mu,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'molecular_viscosity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_mu,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
@@ -1139,15 +1140,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         exa = FluidCharacteristicsView.specific_heat
 
-        mci = mei_to_c_interpreter(self.case, False)
-        mci.init_block('vol', 'all_cells', 'specific_heat',
-                       exp, req, symbols_cp, sca)
-        dialog = QMegEditorView(self,
-                                mei_to_c   = mci,
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_cp,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'specific_heat',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_cp,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -1165,15 +1167,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         exa = FluidCharacteristicsView.volume_viscosity
 
-        mci = mei_to_c_interpreter(self.case, False)
-        mci.init_block('vol', 'all_cells', 'volume_viscosity',
-                       exp, req, symbols_viscv0, sca)
-        dialog = QMegEditorView(self,
-                                mei_to_c   = mci,
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_viscv0,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'volume_viscosity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_viscv0,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
@@ -1200,15 +1203,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.thermal_conductivity
 
-        mci = mei_to_c_interpreter(self.case, False)
-        mci.init_block('vol', 'all_cells', 'thermal_conductivity',
-                       exp, req, symbols_al, sca)
-        dialog = QMegEditorView(self,
-                                mei_to_c   = mci,
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_al,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'thermal_conductivity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_al,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
@@ -1227,16 +1231,17 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         exa = ''
 
         dname = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
-        mci = mei_to_c_interpreter(self.case, False)
-        mci.init_block('vol', 'all_cells', dname,
-                       exp, req, sym, sca)
 
-        dialog = QMegEditorView(self,
-                                mei_to_c   = mci,
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = dname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))

@@ -5181,11 +5181,11 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
   else {
     g->_matrix = cs_matrix_create_by_local_restrict(a);
     g->matrix = g->_matrix;
-    g->comm_id = -1;
 #if defined(HAVE_MPI)
+    g->comm_id = -1;
     g->comm_id = _get_reduced_comm_id(1);
-#endif
     g->n_ranks = 1;
+#endif
   }
 
   g->level = 0;

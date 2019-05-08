@@ -150,6 +150,8 @@ cs_equation_assembly_t *
 cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
                          int                        ma_id);
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system
@@ -185,6 +187,8 @@ cs_equation_assemble_matrix_mpis(const cs_cell_sys_t              *csys,
                                  const cs_range_set_t             *rset,
                                  cs_equation_assemble_t           *eqa,
                                  cs_matrix_assembler_values_t     *mav);
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -260,6 +264,8 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_cell_sys_t           *csys,
                                           cs_equation_assemble_t        *eqa,
                                           cs_matrix_assembler_values_t  *mav);
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system.
@@ -297,6 +303,8 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_cell_sys_t           *csys,
                                           const cs_range_set_t          *rset,
                                           cs_equation_assemble_t        *eqa,
                                           cs_matrix_assembler_values_t  *mav);
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -354,6 +362,8 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_cell_sys_t           *csys,
                                         cs_equation_assemble_t        *eqa,
                                         cs_matrix_assembler_values_t  *mav);
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system.
@@ -391,6 +401,8 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_cell_sys_t           *csys,
                                         const cs_range_set_t          *rset,
                                         cs_equation_assemble_t        *eqa,
                                         cs_matrix_assembler_values_t  *mav);
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 

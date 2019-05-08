@@ -89,7 +89,7 @@ class BoundaryConditionsInterfacialAreaView(QWidget, Ui_BoundaryConditionsInterf
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
         self.__currentField = fieldId
 
@@ -100,7 +100,7 @@ class BoundaryConditionsInterfacialAreaView(QWidget, Ui_BoundaryConditionsInterf
         """
         self.__boundary = boundary
 
-        if InterfacialAreaModel(self.__case).getAreaModel(self.__currentField) != "constant" :
+        if InterfacialAreaModel(self.case).getAreaModel(self.__currentField) != "constant" :
             self.lineEditDiameter.show()
             val = boundary.getDiameter(self.__currentField)
             self.lineEditDiameter.setText(str(val))

@@ -23,10 +23,10 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the XML data model.
+This module contains the XML file initialization class for studymanager.
 
 This module contains the following class:
-- XMLinit
+- smgr_xml_init
 """
 
 #-------------------------------------------------------------------------------
@@ -39,23 +39,18 @@ import sys, unittest, re
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.XMLvariables import Variables
+from code_saturne.model.XMLinitialize import BaseXmlInit
 
 #-------------------------------------------------------------------------------
-# class XMLinit
+# class smgr_xml_init
 #-------------------------------------------------------------------------------
 
-class XMLinit(Variables):
+class smgr_xml_init(BaseXmlInit):
     """
-    This class initializes the XML contents of the case.
+    This class initializes the content of a smgr xml parameter file.
     """
-    def __init__(self, case):
-        """
-        """
-        self.case = case
 
-
-    def initialize(self):
+    def initialize(self, reinit_indices = True):
         """
         Verify that all Headings exist only once in the XMLDocument and
         create the missing heading.
@@ -64,7 +59,10 @@ class XMLinit(Variables):
         if msg:
             return msg
 
-        self.__reinitIndices()
+        self._backwardCompatibility()
+
+        if reinit_indices:
+            self.__reinitIndices()
 
         return msg
 
@@ -80,24 +78,23 @@ class XMLinit(Variables):
             nodeList = self.case.root().xmlInitChildNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. " \
-                      "There is more than one occurence of the tag: \n\n" + tag +  \
-                      "\n\nThe application will finish. Sorry."
+                msg = "More than one occurence of the tag: \n\n" + tag \
+                      + "\n\nThe application will finish."
 
         for tag in tagList:
             nodeList = self.case.xmlInitNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error with the use of the initHeading method. " \
-                      "There is more than one occurence of the tag: \n\n" + tag +  \
-                      "\n\nThe application will finish. Sorry."
+                msg = "More than one occurence of the tag: \n\n" + tag \
+                      + "\n\nThe application will finish."
 
         return msg
 
 
     def __reinitIndices(self):
         """
-        Change XML in order to ensure backward compatibility.
+        Insert indices to make xml compatible with GUI
+        and reinitialize all indices.
         """
         for nn in self.case.xmlGetNodeList('study'):
             idx = 0
@@ -137,7 +134,7 @@ class XMLinit(Variables):
 
             idxx = 0
             for node in nn.xmlGetNodeList("plot"):
-                lst = node['fig']
+                lst = node['spids']
                 new_lst = ''
                 if lst:
                     for idl in lst.split(" "):
@@ -146,12 +143,40 @@ class XMLinit(Variables):
                                 new_lst = new_lst + " " + str(dico[idl])
                             else:
                                 new_lst = str(dico[idl])
-                    node['fig'] = new_lst
+                    node['spids'] = new_lst
                     if not node['id']:
                         node['id'] = idxx
                     idxx = idxx + 1
 
 
+    def _backwardCompatibilityOldVersion(self, from_vers):
+        """
+        Change XML in order to ensure backward compatibility for old version
+        """
+        if from_vers <= "-1.0":
+            self.__backwardCompatibilityBefore_6_0()
+
+
+    def __backwardCompatibilityBefore_6_0(self):
+        """
+        Change XML to ensure backward compatibility from before 6.0 to 6.0
+        """
+
+    def _backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        # rename some atrributes of plot markup
+        for o_attr in ['xfois', 'yfois', 'fig']:
+            for node in self.case.xmlGetNodeList('plot', o_attr):
+                val = node.xmlGetAttribute(o_attr)
+                node.xmlDelAttribute(o_attr)
+                if o_attr == "xfois":
+                    node.xmlSetAttribute(xscale = val)
+                elif o_attr == "yfois":
+                    node.xmlSetAttribute(yscale = val)
+                elif o_attr == "fig":
+                    node.xmlSetAttribute(spids = val)
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

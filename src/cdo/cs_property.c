@@ -1364,47 +1364,50 @@ cs_property_log_setup(void)
     return;
   assert(_properties != NULL);
 
-  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, "\tSummary of the definition of properties\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_properties             %d\n",
-                _n_properties);
+  cs_log_printf(CS_LOG_SETUP, "\nSummary of the definition of properties\n");
+  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+
+  char  prefix[256];
 
   for (int i = 0; i < _n_properties; i++) {
 
     bool  is_uniform = false, is_steady = true;
     const cs_property_t  *pty = _properties[i];
 
+    if (pty == NULL)
+      continue;
+    assert(strlen(pty->name) < 200); /* Check that prefix is large enough */
+
     if (pty->state_flag & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
     if (pty->state_flag & CS_FLAG_STATE_STEADY) is_steady = true;
 
-    cs_log_printf(CS_LOG_SETUP, "\n <pty> %s uniform [%s], steady [%s], ",
+    cs_log_printf(CS_LOG_SETUP, "\n  * %s | Uniform %s Steady %s\n",
                   pty->name,
                   cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
 
     switch(pty->type) {
     case CS_PROPERTY_ISO:
-      cs_log_printf(CS_LOG_SETUP, "type: isotropic\n");
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: isotropic\n", pty->name);
       break;
     case CS_PROPERTY_ORTHO:
-      cs_log_printf(CS_LOG_SETUP, "type: orthotropic\n");
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: orthotropic\n", pty->name);
       break;
     case CS_PROPERTY_ANISO:
-      cs_log_printf(CS_LOG_SETUP, "type: anisotropic\n");
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: anisotropic\n", pty->name);
       break;
     default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of property."));
+      bft_error(__FILE__, __LINE__, 0, _("%s: Invalid type of property."),
+                __func__);
       break;
     }
 
-    cs_log_printf(CS_LOG_SETUP, "       %s> n_subdomains    %d\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Number of definitions: %d\n\n",
                   pty->name, pty->n_definitions);
 
-    for (int j = 0; j < pty->n_definitions; j++)
-      cs_xdef_log(pty->defs[j]);
-
-    cs_log_printf(CS_LOG_SETUP, " </pty>\n");
+    for (int j = 0; j < pty->n_definitions; j++) {
+      sprintf(prefix, "        Definition %4d", j);
+      cs_xdef_log(prefix, pty->defs[j]);
+    }
 
   } /* Loop on properties */
 

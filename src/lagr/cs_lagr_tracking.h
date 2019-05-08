@@ -47,6 +47,20 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* State where a particle can be.
+   (order is chosen so as to make tests simpler;
+   inside domain first, outside after) */
+
+typedef enum {
+  CS_LAGR_PART_TO_SYNC,
+  CS_LAGR_PART_TO_SYNC_NEXT,
+  CS_LAGR_PART_TREATED,
+  CS_LAGR_PART_STUCK,
+  CS_LAGR_PART_MERGED,
+  CS_LAGR_PART_OUT,
+  CS_LAGR_PART_ERR
+} cs_lagr_tracking_state_t;
+
 /*=============================================================================
  * Global variables
  *============================================================================*/

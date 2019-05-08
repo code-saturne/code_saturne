@@ -165,6 +165,7 @@ _lagtmp(cs_lnum_t        npt,
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   cs_lnum_t nlayer = cs_glob_lagr_const_dim->nlayer;
+  cs_lnum_t l_id_max = nlayer - 1;
 
   cs_real_t delray[nlayer], radiusd[nlayer], rho[nlayer];
 
@@ -202,9 +203,8 @@ _lagtmp(cs_lnum_t        npt,
 
   cs_real_t dd2 = cs_math_sq(p_diam);
 
-  cs_lnum_t cell_id  = cs_lagr_particle_get_cell_id(particle, p_am);
-  cs_lnum_t co_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                              CS_LAGR_COAL_ID);
+  cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  cs_lnum_t co_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
 
   /* Multiple-layer resolution
      ------------------------- */
@@ -213,20 +213,13 @@ _lagtmp(cs_lnum_t        npt,
 
     /* Compute radii and radii deltas */
 
-    for (l_id = 0; l_id < nlayer; l_id++) {
-
-      if (l_id == nlayer)
-        radiusd[l_id]  = (radius[l_id - 1] + radius[l_id]) / 2.0;
-      else if (l_id == 0) {
-        radiusd[l_id]  = radius[l_id] / 2.0;
-        delray[l_id]  = radius[l_id + 1] / 2.0;
-      }
-      else {
-        radiusd[l_id]  = (radius[l_id - 1] + radius[l_id]) / 2.0;
-        delray[l_id]  = (radius[l_id + 1] - radius[l_id - 1]) / 2.0;
-      }
-
+    radiusd[0]  = radius[0] / 2.0;
+    delray[0]   = radius[1] / 2.0;
+    for (l_id = 1; l_id < l_id_max; l_id++) {
+      radiusd[l_id]  = (radius[l_id - 1] + radius[l_id]) / 2.0;
+      delray[l_id]  = (radius[l_id + 1] - radius[l_id - 1]) / 2.0;
     }
+    radiusd[l_id_max]  = (radius[l_id_max - 1] + radius[l_id_max]) / 2.0;
 
     /* Compute density of layers */
 
@@ -486,7 +479,7 @@ _lagsec(cs_lnum_t         npt,
     fwatsat[l_id] = 0.0;
   }
 
-  cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+  cs_lnum_t cell_id  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
   /* find layer */
 
@@ -694,7 +687,7 @@ _lagsec(cs_lnum_t         npt,
 }
 
 /*----------------------------------------------------------------------------
- * Integrate stochastic differential equations par particles mass.
+ * Integrate stochastic differential equations by particles mass.
  *----------------------------------------------------------------------------*/
 
 static void
@@ -703,25 +696,20 @@ _lagimp(void)
   /* Particles management */
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
   cs_real_t *tcarac, *pip;
 
   BFT_MALLOC(tcarac, p_set->n_particles, cs_real_t);
   BFT_MALLOC(pip,    p_set->n_particles, cs_real_t);
 
-  for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+    /* FIXME check this: a fixed particle's mass might still evolve */
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+      continue;
 
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
-
-    if (cell_id >= 0) {
-
-      tcarac[npt] = 1.0;
-      pip[npt]    = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
-
-    }
+    tcarac[ip] = 1.0;
+    pip[ip]    = cs_lagr_particles_get_real(p_set, ip, CS_LAGR_MASS);
 
   }
 
@@ -741,25 +729,20 @@ _lagidp(void)
   /* Particles management */
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
   cs_real_t *tcarac, *pip ;
 
   BFT_MALLOC(tcarac, p_set->n_particles, cs_real_t);
   BFT_MALLOC(pip,    p_set->n_particles, cs_real_t);
 
-  for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+    /* FIXME check this: a fixed particle's diameter might still evolve */
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+      continue;
 
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
-
-    if (cell_id >= 0) {
-
-      tcarac[npt] = 1.0;
-      pip[npt]    = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
-
-    }
+    tcarac[ip] = 1.0;
+    pip[ip]    = cs_lagr_particles_get_real(p_set, ip, CS_LAGR_DIAMETER);
 
   }
 
@@ -793,20 +776,16 @@ _lagitp(const cs_real_t  tempct[])
    * REMPLISSAGE DU TEMPS CARACTERISTIQUE ET DU "PSEUDO SECOND MEMBRE"
    *=========================================================================== */
 
-  for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+    /* FIXME check this: a fixed particle'ss temperature might still evolve */
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+      continue;
 
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+    tcarac[ip] = tempct[ip];
 
-    if (cell_id >= 0) {
-
-      tcarac[npt] = tempct[npt];
-
-      pip[npt] = cs_lagr_particle_get_real_n(particle, p_am, 2 - nor,
-                                             CS_LAGR_FLUID_TEMPERATURE);
-
-    }
+    pip[ip] = cs_lagr_particles_get_real_n(p_set, ip, 2 - nor,
+                                           CS_LAGR_FLUID_TEMPERATURE);
 
   }
 
@@ -816,42 +795,47 @@ _lagitp(const cs_real_t  tempct[])
 
   if (extra->radiative_model > 0) {
 
-    for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+      /* FIXME check this: a fixed particle might still radiate */
+      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
 
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-      if (cell_id >= 0) {
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
 
-        cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
-        cs_real_t p_cp   = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
-        cs_real_t p_eps  = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_EMISSIVITY);
+      cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+      cs_real_t p_cp   = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
+      cs_real_t p_eps  = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_EMISSIVITY);
 
-        if (nor == 1) {
+      if (nor == 1) {
 
-          cs_real_t prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am,
-                                                              1, CS_LAGR_DIAMETER);
-          cs_real_t prev_p_temp = cs_lagr_particle_get_real_n(particle, p_am,
-                                                              1, CS_LAGR_TEMPERATURE);
+        cs_real_t prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am,
+                                                            1, CS_LAGR_DIAMETER);
+        cs_real_t prev_p_temp = cs_lagr_particle_get_real_n(particle, p_am,
+                                                            1, CS_LAGR_TEMPERATURE);
 
-          cs_real_t srad =  cs_math_pi * pow(prev_p_diam, 2.0) * p_eps
-                          * (extra->luminance->val[cell_id] - 4.0 * _c_stephan * pow (prev_p_temp,4));
-          pip[npt] =  cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_FLUID_TEMPERATURE)
-                    + tcarac[npt] * srad / p_cp / p_mass;
+        cs_real_t srad =    cs_math_pi * pow(prev_p_diam, 2.0) * p_eps
+                          * (extra->luminance->val[cell_id]
+                        - 4.0 * _c_stephan * pow (prev_p_temp,4));
+        pip[ip] =   cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                 CS_LAGR_FLUID_TEMPERATURE)
+                   + tcarac[ip] * srad / p_cp / p_mass;
 
-        }
-        else {
+      }
+      else {
 
-          cs_real_t p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_DIAMETER);
-          cs_real_t p_temp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE);
+        cs_real_t p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_DIAMETER);
+        cs_real_t p_temp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE);
 
-          cs_real_t srad =  cs_math_pi * pow(p_diam, 2.0) * p_eps
-                          * (extra->luminance->val[cell_id] - 4.0 * _c_stephan *  pow(p_temp , 4));
-          pip[npt] =  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE)
-                    + tcarac[npt] * srad / p_cp /p_mass;
-
-        }
+        cs_real_t srad =    cs_math_pi * pow(p_diam, 2.0) * p_eps
+                          * (extra->luminance->val[cell_id]
+                        - 4.0 * _c_stephan *  pow(p_temp , 4));
+        pip[ip] =  cs_lagr_particle_get_real(particle, p_am,
+                                              CS_LAGR_FLUID_TEMPERATURE)
+                  + tcarac[ip] * srad / p_cp /p_mass;
 
       }
 
@@ -949,53 +933,54 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   /* Integration of the SDE over particles
    * ===================================== */
 
-  for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+    /* FIXME check this: a fixed particle's temperature might still evolve */
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+      continue;
 
-    if (cell_id >= 0) {
+    unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+    cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                  CS_LAGR_CELL_ID);
 
-      if (   extra->itytur == 2 || extra->itytur == 3
-          || extra->iturb == 50 || extra->iturb == 60) {
+    if (   extra->itytur == 2 || extra->itytur == 3
+        || extra->iturb == 50 || extra->iturb == 60) {
 
-        if (extra->itytur == 2 || extra->iturb == 50) {
+      if (extra->itytur == 2 || extra->iturb == 50) {
 
-          energ    = extra->cvar_k->val[cell_id];
-          dissip   = extra->cvar_ep->val[cell_id];
-
-        }
-        else if (extra->itytur == 3) {
-
-          if (extra->cvar_rij == NULL) {
-            energ    = 0.5 * (  extra->cvar_r11->val[cell_id]
-                              + extra->cvar_r22->val[cell_id]
-                              + extra->cvar_r33->val[cell_id]);
-          } else {
-            energ    = 0.5 * (  extra->cvar_rij->val[6*cell_id    ]
-                              + extra->cvar_rij->val[6*cell_id + 1]
-                              + extra->cvar_rij->val[6*cell_id + 2]);
-          }
-          dissip   = extra->cvar_ep->val[cell_id];
-
-        }
-        else if (extra->iturb == 60) {
-
-          energ    = extra->cvar_k->val[cell_id];
-          dissip   = extra->cmu * extra->cvar_k->val[cell_id]
-                                * extra->cvar_omg->val[cell_id];
-
-        }
-
-        auxl1[npt] = energ / (ct * dissip);
-        auxl1[npt] = CS_MAX(auxl1[npt], cs_math_epzero);
+        energ    = extra->cvar_k->val[cell_id];
+        dissip   = extra->cvar_ep->val[cell_id];
 
       }
-      else {
+      else if (extra->itytur == 3) {
 
-        auxl1[npt] = cs_math_epzero;
+        if (extra->cvar_rij == NULL) {
+          energ    = 0.5 * (  extra->cvar_r11->val[cell_id]
+                            + extra->cvar_r22->val[cell_id]
+                            + extra->cvar_r33->val[cell_id]);
+        } else {
+          energ    = 0.5 * (  extra->cvar_rij->val[6*cell_id    ]
+                            + extra->cvar_rij->val[6*cell_id + 1]
+                            + extra->cvar_rij->val[6*cell_id + 2]);
+        }
+        dissip   = extra->cvar_ep->val[cell_id];
 
       }
+      else if (extra->iturb == 60) {
+
+        energ    = extra->cvar_k->val[cell_id];
+        dissip   = extra->cmu * extra->cvar_k->val[cell_id]
+                              * extra->cvar_omg->val[cell_id];
+
+      }
+
+      auxl1[ip] = energ / (ct * dissip);
+      auxl1[ip] = CS_MAX(auxl1[ip], cs_math_epzero);
+
+    }
+    else {
+
+      auxl1[ip] = cs_math_epzero;
 
     }
 
@@ -1003,32 +988,33 @@ _lagitf(cs_lagr_attribute_t  *iattr)
 
   if (nor == 1) {
 
-    for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      /* FIXME check this: a fixed particle's temperature might still evolve */
+      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
 
-      if (cell_id >= 0) {
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
 
-        cs_real_t aux1 = -cs_glob_lagr_time_step->dtp / auxl1[npt];
-        cs_real_t aux2 = exp(aux1);
+      cs_real_t aux1 = -cs_glob_lagr_time_step->dtp / auxl1[ip];
+      cs_real_t aux2 = exp(aux1);
 
-        cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                     CS_LAGR_FLUID_TEMPERATURE) * aux2;
-        cs_real_t ter2 = tempf[cell_id] * (1.0 - aux2);
+      cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                   CS_LAGR_FLUID_TEMPERATURE) * aux2;
+      cs_real_t ter2 = tempf[cell_id] * (1.0 - aux2);
 
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE, ter1 + ter2);
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE, ter1 + ter2);
 
-        /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
-        if (ltsvar) {
+      /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
+      if (ltsvar) {
 
-          cs_real_t *part_ts_fluid_t
-            = cs_lagr_particles_source_terms(p_set, npt,
-                                             CS_LAGR_FLUID_TEMPERATURE);
-          *part_ts_fluid_t = 0.5 * ter1 + tempf[cell_id]
-                                 * (-aux2 + (aux2 - 1.0) / aux1);
-
-        }
+        cs_real_t *part_ts_fluid_t
+          = cs_lagr_particles_source_terms(p_set, ip,
+                                           CS_LAGR_FLUID_TEMPERATURE);
+        *part_ts_fluid_t = 0.5 * ter1 + tempf[cell_id]
+                               * (-aux2 + (aux2 - 1.0) / aux1);
 
       }
 
@@ -1037,22 +1023,26 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   }
   else if (nor == 2) {
 
-    for (cs_lnum_t npt = 0; p_set->n_particles; npt++) {
+    for (cs_lnum_t ip = 0; p_set->n_particles; ip++) {
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      /* FIXME check this: a fixed particle's temperature might still evolve */
+      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
 
-      if (   cell_id  >= 0
-          && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0 ) {
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-        cs_real_t aux1   = -cs_glob_lagr_time_step->dtp / auxl1[npt];
+      if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0 ) {
+
+        cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                      CS_LAGR_CELL_ID);
+        cs_real_t aux1   = -cs_glob_lagr_time_step->dtp / auxl1[ip];
         cs_real_t aux2   = exp(aux1);
         cs_real_t ter1
           = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
                                               CS_LAGR_FLUID_TEMPERATURE) * aux2;
         cs_real_t ter2   = tempf[cell_id] * (1.0 - (aux2 - 1.0) / aux1);
         cs_real_t *part_ts_fluid_t
-          = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_FLUID_TEMPERATURE);
+          = cs_lagr_particles_source_terms(p_set, ip, CS_LAGR_FLUID_TEMPERATURE);
 
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
                                   *part_ts_fluid_t + ter1 + ter2);
@@ -1063,7 +1053,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
 
   }
 
-  /* Free memory     */
+  /* Free memory */
   BFT_FREE(auxl1);
   BFT_FREE(tempf);
 }
@@ -1129,10 +1119,10 @@ _lagich(const cs_real_t   tempct[],
     coef = 1.0 / cs_glob_lagr_time_scheme->t_order;
 
     if (nor == 1) {
-      for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
-        cpgd1[npt] = 0.0;
-        cpgd2[npt] = 0.0;
-        cpght[npt] = 0.0;
+      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+        cpgd1[ip] = 0.0;
+        cpgd2[ip] = 0.0;
+        cpght[ip] = 0.0;
       }
     }
 
@@ -1144,14 +1134,16 @@ _lagich(const cs_real_t   tempct[],
   cs_lnum_t nlayer = cs_glob_lagr_const_dim->nlayer;
   cs_real_t f_nlayer = nlayer;
 
-  for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
-
-    if (cell_id < 0)
+    /* FIXME check this: a fixed particle's attributes might still evolve */
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
       continue;
+
+    unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+
+    cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                  CS_LAGR_CELL_ID);
 
     /* local variables*/
     cs_real_t aux1, aux2, aux3, aux4, aux5;
@@ -1250,7 +1242,7 @@ _lagich(const cs_real_t   tempct[],
     /* Vapor flux for particle */
 
     cs_real_t fwat[nlayer];
-    _lagsec(npt, layer_vol, mwat_max, sherw, radius, tempct, mlayer, mwater, fwat);
+    _lagsec(ip, layer_vol, mwat_max, sherw, radius, tempct, mlayer, mwater, fwat);
 
     /* Compute velocity constants SPK1 of SPK2 of the mass transfer by
        devolatilization with the Arrhenius laws */
@@ -1270,8 +1262,8 @@ _lagich(const cs_real_t   tempct[],
       /* Thermal return coupling */
 
       if (cs_glob_lagr_source_terms->ltsthe == 1) {
-        cpgd1[npt] = cpgd1[npt] + coef * aux1;
-        cpgd2[npt] = cpgd2[npt] + coef * aux2;
+        cpgd1[ip] = cpgd1[ip] + coef * aux1;
+        cpgd2[ip] = cpgd2[ip] + coef * aux2;
       }
 
     }
@@ -1339,7 +1331,7 @@ _lagich(const cs_real_t   tempct[],
 
     /* Thermal return coupling */
     if (cs_glob_lagr_source_terms->ltsthe == 1)
-      cpght[npt] = cpght[npt] + coef * gamhet;
+      cpght[ip] = cpght[ip] + coef * gamhet;
 
     /* Compute 0.5(MO2/MC)*(HO2(Tp)-HO2(TF))
      * ------------------------------------- */
@@ -1542,7 +1534,7 @@ _lagich(const cs_real_t   tempct[],
       phith[l_id] = (-fcoke[l_id] * deltah) - fwat[l_id] * lv;
 
     cs_real_t temp[nlayer];
-    _lagtmp(npt, layer_vol, tempct, radius, mlayer, phith, temp);
+    _lagtmp(ip, layer_vol, tempct, radius, mlayer, phith, temp);
 
     for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
       part_temp[l_id]  = temp[l_id];

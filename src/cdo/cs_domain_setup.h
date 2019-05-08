@@ -176,6 +176,17 @@ void
 cs_domain_initialize_systems(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of the main domain settings
+ *
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_setup_log(const cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

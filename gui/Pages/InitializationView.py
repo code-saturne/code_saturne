@@ -55,7 +55,7 @@ from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
 from code_saturne.model.InitializationModel import InitializationModel
 from code_saturne.model.CompressibleModel import CompressibleModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.NotebookModel import NotebookModel
 
@@ -276,12 +276,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getVelocityFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "velocity",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -300,12 +309,34 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getTurbFormulaComponents(self.zone, turb_model)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        if turb_model in ('k-epsilon', 'k-epsilon-PL'):
+            turb_vname = 'turbulence_ke'
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+            turb_vname = 'turbulence_rije'
+        elif turb_model == 'Rij-EBRSM':
+            turb_vname = 'turbulence_rij_ebrsm'
+        elif turb_model == 'v2f-BL-v2/k':
+            turb_vname = 'turbulence_v2f'
+        elif turb_model == 'k-omega-SST':
+            turb_vname = 'turbulence_kw'
+        elif turb_model == 'Spalart-Allmaras':
+            turb_vname = 'turbulence_spalart'
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = turb_vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
@@ -323,12 +354,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getThermalFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "thermal",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
@@ -347,12 +387,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
         name = DefineUserScalarsModel(self.case).getScalarName(self.scalar)
         exa = """#example: \n""" + str(name)+""" = 0;\n"""
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
@@ -370,12 +419,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getMeteoFormulaComponents(self.zone, self.scalar_meteo)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMeteo -> %s" % str(result))
@@ -541,12 +599,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getPressureFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "pressure",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
@@ -565,12 +632,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getHydraulicHeadFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "hydraulic_head",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
@@ -589,12 +665,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getDensityFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "density",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotDensityFormula -> %s" % str(result))
@@ -613,12 +698,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getTemperatureFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "temperature",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotTemperatureFormula -> %s" % str(result))
@@ -637,12 +731,21 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         exp, req, sym = self.init.getEnergyFormulaComponenets(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "energy",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotEnergyFormula -> %s" % str(result))

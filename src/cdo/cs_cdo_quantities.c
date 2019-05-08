@@ -931,9 +931,6 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
   switch (cs_cdo_quantities_cc_algo) {
 
   case CS_CDO_QUANTITIES_MEANV_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " -cdo- Cell.Center.Algo >> Vertices.MeanValue\n");
-
     /* Copy cell volumes */
     memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
 
@@ -942,17 +939,12 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
     break;
 
   case CS_CDO_QUANTITIES_BARYC_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " -cdo- Cell.Center.Algo >> Mirtich\n");
     /* Compute (real) the barycentric centers and cell volumes */
     _mirtich_algorithm(m, mq, topo, cdoq);
     break;
 
 
   case CS_CDO_QUANTITIES_SATURNE_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " -cdo- Cell.Center.Algo >> Original\n");
-
     /* Copy cell volumes and cell centers */
     memcpy(cdoq->cell_centers, mq->cell_cen, 3*n_cells*sizeof(cs_real_t));
     memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
@@ -960,7 +952,8 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Unkwown algorithm for cell center computation\n"));
+              _("%s: Unkwown algorithm for cell center computation\n"),
+              __func__);
 
   } /* switch according to cs_cdo_quantities_cc_algo */
 
@@ -1017,7 +1010,7 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
       BFT_FREE(order_couples);
       fvm_io_num_destroy(edge_io_num);
 
-    } // parallel run
+    } /* parallel run */
 
   }
   else /* Not used by the numerical scheme */
@@ -1138,6 +1131,27 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
 void
 cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 {
+  cs_log_printf(CS_LOG_SETUP, "\n## CDO quantities settings\n");
+
+  switch (cs_cdo_quantities_cc_algo) {
+
+  case CS_CDO_QUANTITIES_MEANV_CENTER:
+    cs_log_printf(CS_LOG_SETUP,
+                  " * Cell.Center.Algo: Vertices.MeanValue\n");
+    break;
+  case CS_CDO_QUANTITIES_BARYC_CENTER:
+    cs_log_printf(CS_LOG_SETUP,
+                  " * Cell.Center.Algo: Mirtich\n");
+    break;
+  case CS_CDO_QUANTITIES_SATURNE_CENTER:
+    cs_log_printf(CS_LOG_SETUP,
+                  " * Cell.Center.Algo: Original\n");
+    break;
+
+  default:
+    break;
+  } /* switch according to cs_cdo_quantities_cc_algo */
+
   cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
 
   /* Information about activated flags */

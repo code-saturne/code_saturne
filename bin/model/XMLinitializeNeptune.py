@@ -42,7 +42,7 @@ import sys, unittest, re
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import *
-from code_saturne.model.XMLvariables import Variables
+from code_saturne.model.XMLinitialize import BaseXmlInit
 from code_saturne.model.LocalizationModel import Zone, LocalizationModel
 from code_saturne.model.OutputControlModel import OutputControlModel
 
@@ -59,19 +59,13 @@ else :
    import eosAva
 
 #-------------------------------------------------------------------------------
-# class XMLinitNeptune
+# class XMLinitNeptune for NEPTUNE_CFD solver
 #-------------------------------------------------------------------------------
 
-class XMLinitNeptune(Variables):
+class XMLinitNeptune(BaseXmlInit):
     """
-    This class initializes the XML contents of the case.
+    This class initializes the XML parameter file for NEPTUNE_CFD solver.
     """
-    def __init__(self, case):
-        """
-        """
-        self.case = case
-
-
     def initialize(self, prepro = False):
         """
         Verify that all Headings exist only once in the XMLDocument and
@@ -85,7 +79,7 @@ class XMLinitNeptune(Variables):
         OutputControlModel(self.case).addDefaultMesh()
 
         if not prepro:
-            self.__backwardCompatibility()
+            self._backwardCompatibility()
 
             # Initialization (order is important)
 
@@ -166,36 +160,7 @@ class XMLinitNeptune(Variables):
         return msg
 
 
-    def __backwardCompatibility(self):
-        """
-        Change XML in order to ensure backward compatibility.
-        """
-
-        if self.case.root()["solver_version"]:
-            vers = self.case.root()["solver_version"]
-            history = vers.split(";")
-            cur_vers = history[len(history) - 1]
-            if history[len(history) - 1] == self.case['package'].version:
-                self.__backwardCompatibilityCurrentVersion()
-            else:
-                self.__backwardCompatibilityOldVersion(cur_vers)
-                self.__backwardCompatibilityCurrentVersion()
-                his = ""
-                for v in history:
-                    his = his + v + ";"
-                his = his + self.case['package'].version
-                self.case.root().xmlSetAttribute(solver_version = his)
-
-        else:
-            vers = self.case['package'].version
-            self.case.root().xmlSetAttribute(solver_version = vers)
-
-            # apply all backwardCompatibility we don't know when it was create
-            self.__backwardCompatibilityOldVersion("-1")
-            self.__backwardCompatibilityCurrentVersion()
-
-
-    def __backwardCompatibilityOldVersion(self, from_vers):
+    def _backwardCompatibilityOldVersion(self, from_vers):
         """
         Change XML in order to ensure backward compatibility for old version
         there is nothing to do for 2.1 to 2.2
@@ -573,7 +538,7 @@ class XMLinitNeptune(Variables):
 
 
 
-    def __backwardCompatibilityCurrentVersion(self):
+    def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """

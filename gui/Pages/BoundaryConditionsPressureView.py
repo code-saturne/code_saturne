@@ -80,10 +80,10 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         # Connections
         self.lineEditPressure.textChanged[str].connect(self.slotPressureValue)
@@ -94,7 +94,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         # Apply validators
         self.lineEditPressure.setValidator(validatorP)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -103,7 +103,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         """
         label = boundary.getLabel()
         self.nature  = boundary.getNature()
-        self.__boundary = Boundary(self.nature, label, self.__case)
+        self.__boundary = Boundary(self.nature, label, self.case)
         self.initialize()
 
 

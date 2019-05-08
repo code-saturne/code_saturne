@@ -92,7 +92,7 @@ class BoundaryConditionsWallView(QWidget, Ui_BoundaryConditionsWall) :
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
         self.__currentField = fieldId
 
@@ -103,7 +103,7 @@ class BoundaryConditionsWallView(QWidget, Ui_BoundaryConditionsWall) :
         """
         self.__boundary = boundary
 
-        if len(MainFieldsModel(self.__case).getSolidFieldIdList()) > 0:
+        if len(MainFieldsModel(self.case).getSolidFieldIdList()) > 0:
             mdl = boundary.getWallModel(self.__currentField)
             self.__WallModel.setItem(str_model = mdl)
             self.show()

@@ -515,11 +515,11 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   ter5x  = p21 * vagaus[0] + p22 * vagaus[1];
 
-  /* --> vu fluid integral     */
+  /* vu fluid integral */
   p11    = sqrt (gama2 * aux6);
   ter3f  = p11 * vagaus[0];
 
-  /* --> particles velocity Integral     */
+  /* particles velocity Integral */
   aux9   = 0.5 * *tlag2 * (1.0 - aux2 * aux2);
   aux10  = 0.5 * taup * (1.0 - aux1 * aux1);
   aux11  = taup * *tlag2 * (1.0 - aux1 * aux2) / (taup + *tlag2);
@@ -528,7 +528,9 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   gagam  = (aux9 - aux11) * (aux8 / aux3);
 
-  gaome  = ((*tlag2 - taup) * (aux5 - aa) - *tlag2 * aux9 - taup * aux10 + (*tlag2 + taup) * aux11) * aux8;
+  gaome  =    ((*tlag2 - taup) * (aux5 - aa)
+            - *tlag2 * aux9 - taup * aux10
+            + (*tlag2 + taup) * aux11) * aux8;
 
   if (p11 > cs_math_epzero)
     p31  = gagam / p11;
@@ -548,13 +550,13 @@ _dep_diffusion_phases(cs_real_t *dx,
    * 3. Writings finalization
    * ====================================================================*/
 
-  /* --> trajectory  */
+  /* trajectory */
   *dx = ter1x + ter2x + ter3x + ter4x + ter5x;
 
-  /* --> seen fluid velocity     */
+  /* seen fluid velocity */
   *vvue = ter1f + ter2f + ter3f;
 
-  /* --> particles velocity    */
+  /* particles velocity */
   *vpart = ter1p + ter2p + ter3p + ter4p + ter5p;
   yplusa = *yplus - *dx / lvisq;
 
@@ -571,7 +573,8 @@ _dep_diffusion_phases(cs_real_t *dx,
      * will not call */
     *indint = 1;
     *marko = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
-    *vvue  = sqrt ( cs_math_pow2((*kdifcl)) * *tlag2 / 2.0) * sqrt (2.0 * cs_math_pi) * 0.5;
+    *vvue  =   sqrt(cs_math_pow2((*kdifcl)) * *tlag2 / 2.0)
+             * sqrt(2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
     dxaux  = *dx;
     /* Warning, in the local referenceframe, the normal is outwaring */
@@ -710,7 +713,8 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
     argt = cs_math_pi * *yplus / 5.0;
     kaux = *kdifcl * 0.5 * (1.0 - cos (argt));
-    tci  = *piiln * *tlag2 -cs_math_pow2(*tlag2) * 0.5 * cs_math_pow2(*kdifcl) * cs_math_pi * sin (argt)
+    tci  = *piiln * *tlag2 -cs_math_pow2(*tlag2)
+           * 0.5 * cs_math_pow2(*kdifcl) * cs_math_pi * sin (argt)
            * (1.0 - cos (argt)) / (2.0 * 5.0) / lvisq;
 
   }
@@ -742,8 +746,8 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t tp2    = cs_math_pow2(taup);
   cs_real_t thet   = *tlag2 / tlmtp;
   cs_real_t the2   = cs_math_pow2(thet);
-  cs_real_t etl    = exp ( -dtstl);
-  cs_real_t etp    = exp ( -dtstp);
+  cs_real_t etl    = exp (-dtstl);
+  cs_real_t etp    = exp (-dtstp);
   cs_real_t l1l    = 1.0 - etl;
   cs_real_t l1p    = 1.0 - etp;
   cs_real_t l2l    = 1.0 - etl * etl;
@@ -763,7 +767,8 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
   cs_real_t xiubr  = 0.5 * cs_math_pow2((kdifbrtp * l1p));
   cs_real_t ucarbr = kdifbrtp * kdifbr * 0.5 * l2p;
-  cs_real_t xcarbr = cs_math_pow2(kdifbrtp) * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
+  cs_real_t xcarbr =   cs_math_pow2(kdifbrtp)
+                     * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
   cs_real_t ubr    = sqrt (CS_MAX(ucarbr, 0.0));
 
   /* ---------------------------------------------------
@@ -779,8 +784,9 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    * ---------------------------------------------------*/
 
   cs_real_t pgam2  = 0.5 * kaux2 * *tlag2 * l2l;
-  cs_real_t ggam2  = the2 * pgam2 + k2the2 * (  l3 * ( -2. * tltp / tlptp)
-                                              + l2p * (taup * 0.5));
+  cs_real_t ggam2  = the2 * pgam2
+                     + k2the2 * (  l3 * (-2. * tltp / tlptp)
+                                 + l2p * (taup * 0.5));
   cs_real_t ome2   = k2the2 * ( dtl * cs_math_pow2(tlmtp) + l2l * (tl2 * *tlag2 * 0.5)
                                + l2p * (tp2 * taup * 0.5)
                                + l1l * ( -2.0 * tl2 * tlmtp)
@@ -788,8 +794,8 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                                + l3 * ( -2.0 * (cs_math_pow2(tltp)) / tlptp));
 
   cs_real_t pgagga = thet * (pgam2 - kaux2 * tltp / tlptp * l3);
-  cs_real_t pgaome = thet * *tlag2 * ( -pgam2 + kaux2 * (  l1l * tlmtp
-                                                         + l3 * tp2 /  tlptp));
+  cs_real_t pgaome = thet * *tlag2 * (-pgam2 + kaux2 * (  l1l * tlmtp
+                                                        + l3 * tp2 /  tlptp));
   cs_real_t ggaome = k2the2 * (  tlmtp * ( *tlag2 * l1l + l1p * ( -taup))
                                + l2l * ( -tl2 * 0.5)
                                + l2p * ( -tp2 * 0.5) + l3 * tltp);
@@ -1089,7 +1095,8 @@ cs_lagr_deposition(cs_real_t  dtp,
      * Kdif is roughly equal to sqrt(k/(4*pi)) in the core flow (which is the
      * theoretical value of the standard Langevin model with a C0 = 2.1) such as:
      *    flux_langevin = sig / sqrt(2*pi)  = v' / sqrt(2*pi)
-     * and (v') = k * C0 /( 1 + 3*C0/2 ) = approx. k/2 (see Minier & Pozorski, 1999) */
+     * and (v') = k * C0 /( 1 + 3*C0/2 ) = approx. k/2
+     * (see Minier & Pozorski, 1999) */
 
   cs_real_t tt = (sqrt(cs_math_pi * rapkvp) * tstruc);
 
@@ -1114,13 +1121,13 @@ cs_lagr_deposition(cs_real_t  dtp,
 
   cs_lnum_t indint = 0;
 
-  /* ====================================================================   */
+  /* ==================================================================== */
   /* 2. Treatment of the 'degenerated' cases
    * (marko =
    *   CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF,
    *   CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP,
    *   CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION) */
-  /* ====================================================================   */
+  /* ==================================================================== */
 
   cs_real_t unif1;
   if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF) {
@@ -1191,8 +1198,8 @@ cs_lagr_deposition(cs_real_t  dtp,
                force_pn,
                piiln);
 
-  else if (*marko == CS_LAGR_COHERENCE_STRUCT_DIFFUSION
-      || *marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION)
+  else if (   *marko == CS_LAGR_COHERENCE_STRUCT_DIFFUSION
+           || *marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION)
     _dep_diffusion_phases(dx,
                           vvue,
                           vpart,

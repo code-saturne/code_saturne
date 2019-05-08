@@ -370,6 +370,10 @@ class MainView(object):
         self.fileCloseAction.triggered.connect(self.close)
         self.fileQuitAction.triggered.connect(self.fileQuit)
 
+        self.openTextEditorAction.triggered.connect(self.fileEditorOpen)
+        self.openResultsFileAction.triggered.connect(self.fileViewerOpen)
+        self.testUserCompilationAction.triggered.connect(self.testUserFilesCompilation)
+
         self.openXtermAction.triggered.connect(self.openXterm)
         self.displayCaseAction.triggered.connect(self.displayCase)
 
@@ -809,7 +813,7 @@ class MainView(object):
         if not datadir:
             datadir = os.getcwd()
         (casedir, data) = os.path.split(datadir)
-        if data != 'DATA': # inconsistent paramaters location.
+        if data != 'DATA': # inconsistent parameters location.
             casedir = ''
         case_name = os.path.basename(casedir)
 
@@ -871,6 +875,128 @@ class MainView(object):
             self.loadFile(file_name)
 
         self.statusbar.clearMessage()
+
+
+    def fileEditorOpen(self):
+        """
+        public
+        open a text file
+        """
+
+        from code_saturne.Base.QFileEditor import QFileEditor
+
+        if not hasattr(self, 'case'):
+            return
+
+        fileEditor = QFileEditor(parent=self,
+                                 case_dir=self.case['case_path']+'/SRC',
+                                 noOpen=True)
+        fileEditor.show()
+
+
+    def fileViewerOpen(self):
+        """
+        public
+        open a text file
+        """
+
+        from code_saturne.Base.QFileEditor import QFileEditor
+
+        if not hasattr(self, 'case'):
+            return
+
+        fileViewer = QFileEditor(parent=self,
+                                 case_dir=self.case['case_path']+'/RESU',
+                                 readOnly=True,
+                                 noOpen=True)
+        fileViewer.show()
+
+
+
+    def testUserFilesCompilation(self):
+        """
+        public slot
+        test the compilation for the files within the SRC sub-folder
+        """
+
+        if not hasattr(self, 'case'):
+            return
+
+        test_title = "Compilation test"
+
+        ori_dir = os.getcwd()
+        src_dir = self.case['case_path'] + '/SRC'
+
+        if not os.path.exists(src_dir):
+            msg  = "You are not in a CASE structure.\n"
+            msg += "Compilation aborted.\n"
+            QMessageBox.warning(self, self.tr(test_title), msg)
+            return
+
+        os.chdir(src_dir)
+
+        # Check if there are any user files within the SRC folder
+        from glob import glob
+        usr_files = glob("*.c") + glob("*.cxx") + glob("*.f90")
+
+        if len(usr_files) > 0:
+            from code_saturne import cs_compile
+            from code_saturne.Base.QFileEditor import QExpandingMessageBox
+            box = QExpandingMessageBox()
+
+            out = open('comp.out', 'w')
+            err = open('comp.err', 'w')
+
+            state = cs_compile.compile_and_link(self.case['package'],
+                                                src_dir,
+                                                destdir=None,
+                                                stdout=out,
+                                                stderr=err)
+
+            out.close()
+            err.close()
+
+            errors = open('comp.err', 'r').readlines()
+
+            n_errors = 0
+            if state == 0:
+                box.setIcon(QMessageBox.Information)
+                msg = "User functions compilation succeeded."
+                if len(errors) > 0:
+                    msg += '\n'
+                    msg += 'Warnings were found:'
+                    msg += '\n'
+            else:
+                box.setIcon(QMessageBox.Critical)
+                msg = 'User functions compilation failed with the following errors:\n'
+
+            box.setText(msg)
+            box.setWindowTitle(self.tr(test_title))
+
+            if len(errors) > 0:
+                warnings = ''
+                for line in errors:
+                    warnings += line
+                if sys.version_info[0] < 3:
+                    warnings = warnings.decode('utf-8').replace(u"\u2018", "'")
+                    warnings = warnings.replace(u"\u2019", "'")
+                box.setDetailedText(warnings)
+
+            box.exec_()
+        else:
+            msg = "There are no user files inside the SRC subfolder."
+            QMessageBox.information(self, self.tr(test_title), msg)
+
+
+        # Cleanup
+        if os.path.exists('comp.out'):
+            os.remove('comp.out')
+        if os.path.exists('comp.err'):
+            os.remove('comp.err')
+
+        os.chdir(ori_dir)
+
+        return
 
 
     def openXterm(self):

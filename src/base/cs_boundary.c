@@ -483,8 +483,12 @@ cs_boundary_log_setup(const cs_boundary_t     *bdy)
   if (bdy == NULL)
     return;
 
-  cs_log_printf(CS_LOG_SETUP, "\n  Domain boundary by default: %s\n",
+  cs_log_printf(CS_LOG_SETUP, "\n## Domain boundary settings\n");
+  cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Default: %s\n",
                 cs_boundary_get_name(bdy->default_type));
+  cs_log_printf(CS_LOG_SETUP,
+                " * Domain boundary | Number of definitions: %d\n",
+                bdy->n_boundaries);
 
   for (int i = 0; i < bdy->n_boundaries; i++) {
 
@@ -496,9 +500,11 @@ cs_boundary_log_setup(const cs_boundary_t     *bdy)
     if (cs_glob_n_ranks > 1)
       cs_parall_counter(&n_g_elts, 1);
 
-    cs_log_printf(CS_LOG_SETUP, " %s -- %s: %u boundary faces,",
-                  z->name, cs_boundary_get_name(bdy->types[i]),
-                  (unsigned int)n_g_elts);
+    cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Type: %s\n",
+                  z->name);
+    cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Number of faces: %9u |"
+                  " Zone: %s\n", (unsigned int)n_g_elts,
+                  cs_boundary_get_name(bdy->types[i]));
 
   } /* Loop on domain boundaries */
 

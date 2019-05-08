@@ -452,7 +452,7 @@ if (imode.eq.1) then
 7995 format(1x, i4, i5, 2i4, f10.2)
   write(nfecra, *) 'tmmet(itp):'
   write(nfecra, 7996) tmmet(itp)
-7996 format(1x, f10.2)
+7996 format(1x, e10.3)
   write(nfecra, *) 'zdmet, umet, vmet, ekmet, epmet:'
   do ii = 1, nbmetd
     write(nfecra, 7997)                                            &
@@ -836,5 +836,3 @@ quant = distrib-(booll*retrait)+jour
 
 return
 end subroutine comp_quantile
-
-

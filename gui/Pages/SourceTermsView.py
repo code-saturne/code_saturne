@@ -53,7 +53,7 @@ from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
 from code_saturne.model.SourceTermsModel import SourceTermsModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.NotebookModel import NotebookModel
@@ -289,12 +289,22 @@ dSudu = - rho / tau; # Jacobian of the source term"""
 
         exp, req, sym = self.mdl.getMomentumFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = "momentum",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'momentum_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -311,12 +321,22 @@ dSudu = - rho / tau; # Jacobian of the source term"""
 
         exp, req, sym = self.mdl.getSpeciesFormulaComponents(self.zone, self.scalar)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = self.scalar,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'scalar_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
@@ -334,12 +354,22 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         exp, req, sym = self.mdl.getGroundWaterSpeciesFormulaComponents(self.zone,
                                                                         self.scalar)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = self.scalar,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'scalar_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotSpeciesGroundWaterFormula -> %s" % str(result))
@@ -356,12 +386,22 @@ dSudu = - rho / tau; # Jacobian of the source term"""
 
         exp, req, sym = self.mdl.getRichardsFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = "richards",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'momentum_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotRichardsFormula -> %s" % str(result))
@@ -384,6 +424,10 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                 unit = "Kelvin"
             elif model == "enthalpy":
                 unit = "J/kg"
+            elif model == "potential_temperature":
+                unit = "Kelvin"
+            else:
+                unit = None
         else:
             th_sca_name = ''
             unit = None
@@ -403,12 +447,22 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone,
                                                              self.th_sca_name)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = self.th_sca_name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'thermal_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))

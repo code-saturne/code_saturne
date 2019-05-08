@@ -486,7 +486,6 @@ _vbs_apply_weak_bc(cs_real_t                      time_eval,
     /* Neumann boundary conditions */
     if (csys->has_nhmg_neumann) {
       for (short int v  = 0; v < cm->n_vc; v++) {
-        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[v]) == false)
           csys->rhs[v] += csys->neu_values[v];
       }
     }
@@ -1251,6 +1250,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_sourceterm(eqp)) {
     if (cs_equation_param_has_time(eqp)) {
+
       if (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
           eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO) {
 
@@ -1259,8 +1259,25 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
           eqc->source_terms[i] = 0;
 
-      }
-    }
+      } /* Theta scheme */
+
+      /* Check the coherency of the settings --> Display a warning if something
+         not consistent is found */
+      for (int st_id = 0; st_id < eqp->n_source_terms; st_id++) {
+
+        cs_xdef_t  *st = eqp->source_terms[st_id];
+
+        if ((eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) &&
+            (st->meta & CS_FLAG_DUAL)) {
+          cs_base_warn(__FILE__, __LINE__);
+          cs_log_printf(CS_LOG_DEFAULT,
+                        "%s: A better choice for the reduction of the source"
+                        " term is on primal entities.");
+        }
+
+      } /* Loop on the definitions of source terms */
+
+    } /* Time-dependent equation */
   } /* There is at least one source term */
 
   /* Pre-defined a cs_hodge_builder_t structure */
@@ -1268,10 +1285,22 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.is_iso   = true;
   eqc->hdg_mass.inv_pty  = false;
   eqc->hdg_mass.type = CS_PARAM_HODGE_TYPE_VPCD;
-  eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_WBS;
   eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
-  eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+  if (eqp->do_lumping ||
+      eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG ||
+      eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
+
+    eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    eqc->get_mass_matrix = cs_hodge_vpcd_voro_get;
+
+  }
+  else { /* WBS algorithm */
+
+    eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_WBS;
+    eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+
+  }
 
   /* Assembly process */
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
@@ -1450,6 +1479,9 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
    * step of an unsteady computation. */
   _vbs_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag,
              &dir_values, &forced_ids);
+
+  if (eqb->init_step)
+    eqb->init_step = false;
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1643,6 +1675,9 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   _vbs_setup(t_cur + dt_cur, mesh, eqp, eqb, eqc->vtx_bc_flag,
              &dir_values,  &forced_ids);
+
+  if (eqb->init_step)
+    eqb->init_step = false;
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1898,9 +1933,10 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Detect the first call (in this case, we compute the initial source term)*/
   _Bool  compute_initial_source = false;
-  if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0) {
+  if (eqb->init_step) {
 
     compute_initial_source = true;
+    eqb->init_step = false;
 
   }
   else { /* Add contribution of the previous computed source term */
@@ -1922,6 +1958,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
         }
 
       } /* Algebraic or penalized enforcement is set */
+
     } /* At least one source term is defined */
 
   }
@@ -1951,7 +1988,10 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
     int  t_id = 0;
 #endif
 
-    const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
+    /* Time_eval = (1-theta).t^n + theta.t^(n+1) = t^n + theta.dt
+     * since t^(n+1) = t^n + dt
+     */
+    const cs_real_t  time_eval = t_cur + eqp->theta*dt_cur;
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */

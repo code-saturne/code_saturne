@@ -332,26 +332,15 @@ do ifac = 1, nfabor
 
       else
 
-        ! If the velocity is zero, vector T is normal and random;
-        !   we need it for the reference change for Rij, and we cancel the velocity.
+        ! If the velocity is zero,
+        !  Tx, Ty, Tz is not used (we cancel the velocity), so we assign any
+        !  value (zero for example)
 
-        if(abs(rny).ge.epzero.or.abs(rnz).ge.epzero)then
-          rxnn = sqrt(rny**2+rnz**2)
-          tx  =  0.d0
-          ty  =  rnz/rxnn
-          tz  = -rny/rxnn
-        elseif(abs(rnx).ge.epzero.or.abs(rnz).ge.epzero)then
-          rxnn = sqrt(rnx**2+rnz**2)
-          tx  =  rnz/rxnn
-          ty  =  0.d0
-          tz  = -rnx/rxnn
-        else
-          write(nfecra,1000)ifac,rnx,rny,rnz
-          call csexit (1)
-        endif
+        tx  = 0.d0
+        ty  = 0.d0
+        tz  = 0.d0
 
       endif
-
 
       ! --> T2 = RN X T (where X is the cross product)
 

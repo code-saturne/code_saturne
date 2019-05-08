@@ -513,8 +513,7 @@ _vcb_apply_weak_bc(cs_real_t                      time_eval,
     /* Neumann boundary conditions */
     if (csys->has_nhmg_neumann) {
       for (short int v  = 0; v < cm->n_vc; v++)
-        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[v]) == false)
-          csys->rhs[v] += csys->neu_values[v];
+        csys->rhs[v] += csys->neu_values[v];
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
@@ -1303,7 +1302,10 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
    * step of an unsteady computation. */
   _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
-    /* Initialize the local system: matrix and rhs */
+  if (eqb->init_step)
+    eqb->init_step = false;
+
+  /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
@@ -1513,7 +1515,10 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
-    /* Initialize the local system: matrix and rhs */
+  if (eqb->init_step)
+    eqb->init_step = false;
+
+  /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
@@ -1759,9 +1764,13 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
   const cs_real_t  dt_cur = ts->dt[0];
-  const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
   const cs_real_t  inv_dtcur = 1/dt_cur;
   const cs_real_t  tcoef = 1 - eqp->theta;
+
+  /* Time_eval = (1-theta).t^n + theta.t^(n+1) = t^n + theta.dt
+   * since t^(n+1) = t^n + dt
+   */
+  const cs_real_t  time_eval = t_cur + eqp->theta*dt_cur;
 
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
@@ -1792,15 +1801,20 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Detect the first call (in this case, we compute the initial source term)*/
   bool  compute_initial_source = false;
-  if (cs_equation_param_has_sourceterm(eqp)) {
+  if (eqb->init_step) {
 
-    if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
+    eqb->init_step = false;
+    if (cs_equation_param_has_sourceterm(eqp))
       compute_initial_source = true; /* First iteration */
 
-    else { /* Add contribution of the previous computed source term */
+  }
+  else {
 
-      /* Only vertices (and not cells) since there is an assembly process
-         on vertices (and not on cells) */
+    if (cs_equation_param_has_sourceterm(eqp)) {
+
+      /* Add contribution of the previous computed source term
+       * Only vertices (and not cells) since there is an assembly process
+       * on vertices (and not on cells) */
       for (cs_lnum_t v = 0; v < n_vertices; v++)
         rhs[v] += tcoef * eqc->source_terms[v];
       memset(eqc->source_terms, 0, n_vertices * sizeof(cs_real_t));
@@ -1815,8 +1829,9 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
         }
 
       } /* Algebraic or penalized enforcement is set */
-    }   /* Not the first time step */
-  } /* At least one source term is defined */
+    } /* At least one source term is defined */
+
+  }   /* Not the first time step */
 
   /* ------------------------- */
   /* Main OpenMP block on cell */

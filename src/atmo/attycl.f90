@@ -312,7 +312,7 @@ do ifac = 1, nfabor
     ! ete  specifiee par utilisateur.
 
     if (iautom(ifac).ge.1) then
-      if (vs.gt.0) then
+      if (vs.gt.epzero) then
         itypfb(ifac) = isolib
       else
         if (itypfb(ifac).eq.0) itypfb(ifac) = ientre

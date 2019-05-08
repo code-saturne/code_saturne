@@ -2866,7 +2866,6 @@ void
 cs_ic_field_set_exchcoeff(const int         field_id,
                           const cs_real_t  *hbnd)
 {
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_field_t* f = cs_field_by_id(field_id);
@@ -2966,6 +2965,7 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
 void
 cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
 {
+  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2984,6 +2984,7 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
 void
 cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh)
 {
+  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -29,8 +29,6 @@
 
 #include "cs_defs.h"
 
-#include "cs_interface.h"
-
 #include "assert.h"
 
 /*----------------------------------------------------------------------------*/
@@ -41,6 +39,36 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*!
+ * Flags specifying general event attributes
+ */
+
+/*! particle will be deleted */
+#define CS_LAGR_PART_TO_DELETE         (1 << 0)
+
+/*! particle is fixed, no resuspension possible */
+#define CS_LAGR_PART_FIXED             (1 << 1)
+
+/*! particle is deposited */
+#define CS_LAGR_PART_DEPOSITED         (1 << 2)
+
+/*! particle is rolling */
+#define CS_LAGR_PART_ROLLING           (1 << 3)
+
+/*! particle motion is prescribed */
+#define CS_LAGR_PART_IMPOSED_MOTION    (1 << 4)
+
+/*! Flag sets (useful for cancelling nay flag of a set) */
+
+/*! particle is in flow */
+#define CS_LAGR_PART_DEPOSITION_FLAGS \
+  (  CS_LAGR_PART_TO_DELETE | CS_LAGR_PART_FIXED | CS_LAGR_PART_DEPOSITED \
+   | CS_LAGR_PART_ROLLING | CS_LAGR_PART_IMPOSED_MOTION)
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -50,7 +78,9 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_LAGR_CELL_NUM,            /*!< local cell number (1 to n) */
+  CS_LAGR_P_FLAG,             /*!< local metadata flag */
+
+  CS_LAGR_CELL_ID,             /*!< local cell id (0 to n-1) */
   CS_LAGR_RANK_ID,             /*!< local parallel rank id */
 
   CS_LAGR_REBOUND_ID,          /*!< number of time steps since rebound, or -1 */
@@ -85,7 +115,6 @@ typedef enum {
   CS_LAGR_INTERF,
   CS_LAGR_NEIGHBOR_FACE_ID,
   CS_LAGR_MARKO_VALUE,
-  CS_LAGR_DEPOSITION_FLAG,
   CS_LAGR_FOULING_INDEX,
 
   /* Resuspension model additional parameters */
@@ -455,6 +484,85 @@ cs_lagr_particles_attr_n_const(const cs_lagr_particle_set_t  *particle_set,
   return   particle_set->p_buffer
          + particle_set->p_am->extents*particle_id
          + particle_set->p_am->displ[time_id][attr];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get flag value with a selected mask for a given particle in a set.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  mask          requested attribute flag value
+ *
+ * \return  attribute value
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static int
+cs_lagr_particles_get_flag(const cs_lagr_particle_set_t  *particle_set,
+                           cs_lnum_t                      particle_id,
+                           int                            mask)
+{
+  int flag
+    = *((const cs_lnum_t *)(  particle_set->p_buffer
+                            + particle_set->p_am->extents*particle_id
+                            + particle_set->p_am->displ[0][CS_LAGR_P_FLAG]));
+
+  return (flag & mask);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set flag value with a selected mask for a given particle in a set.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  mask          attribute flag value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particles_set_flag(const cs_lagr_particle_set_t  *particle_set,
+                           cs_lnum_t                      particle_id,
+                           int                            mask)
+{
+  int flag
+    = *((const cs_lnum_t *)(  particle_set->p_buffer
+                            + particle_set->p_am->extents*particle_id
+                            + particle_set->p_am->displ[0][CS_LAGR_P_FLAG]));
+
+  flag = flag & mask;
+
+  *((cs_lnum_t *)(  particle_set->p_buffer
+                  + particle_set->p_am->extents*particle_id
+                  + particle_set->p_am->displ[0][CS_LAGR_P_FLAG])) = flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Unset flag value with a selected mask for a given particle in a set.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  mask          attribute flag value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particles_unset_flag(const cs_lagr_particle_set_t  *particle_set,
+                             cs_lnum_t                      particle_id,
+                             int                            mask)
+{
+  int flag
+    = *((const cs_lnum_t *)(  particle_set->p_buffer
+                            + particle_set->p_am->extents*particle_id
+                            + particle_set->p_am->displ[0][CS_LAGR_P_FLAG]));
+
+  flag = (flag | mask) - mask;
+
+  *((cs_lnum_t *)(  particle_set->p_buffer
+                  + particle_set->p_am->extents*particle_id
+                  + particle_set->p_am->displ[0][CS_LAGR_P_FLAG])) = flag;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -929,52 +1037,6 @@ cs_lagr_particle_get_lnum(const void                     *particle,
 
   return  *((const cs_lnum_t *)(  (const unsigned char *)particle
                                 + attr_map->displ[0][attr]));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get cell id of a given particle in a set
- *
- * \param[in]  particle  pointer to particle data
- * \param[in]  attr_map  pointer to attribute map
- *
- * \return cell id
- */
-/*----------------------------------------------------------------------------*/
-
-inline static cs_lnum_t
-cs_lagr_particle_get_cell_id(const void                     *particle,
-                             const cs_lagr_attribute_map_t  *attr_map)
-{
-  assert(attr_map->count[0][CS_LAGR_CELL_NUM] > 0);
-
-  const cs_lnum_t cell_num
-    = *((const cs_lnum_t *)(  (const unsigned char *)particle
-                            + attr_map->displ[0][CS_LAGR_CELL_NUM]));
-
-  return CS_ABS(cell_num) - 1;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set cell id of a given particle in a set
- *
- * \param[in]  particle  pointer to particle data
- * \param[in]  attr_map  pointer to attribute map
- * \param[in]  cell_id   containing cell (0-based)
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_lagr_particle_set_cell_id(void                           *particle,
-                             const cs_lagr_attribute_map_t  *attr_map,
-                             cs_lnum_t                       cell_id)
-{
-  assert(attr_map->count[0][CS_LAGR_CELL_NUM] > 0);
-
-  *((cs_lnum_t *)(  (unsigned char *)particle
-                  + attr_map->displ[0][CS_LAGR_CELL_NUM]))
-    = cell_id + 1;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -321,8 +321,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
   } /* Loop on selected cells */
 
   /* Handle parallelism */
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_DOUBLE, &volume_marked);
+  cs_parall_sum(1, CS_DOUBLE, &volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
   if (volume_marked > 0)

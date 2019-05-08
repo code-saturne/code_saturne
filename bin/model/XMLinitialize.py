@@ -61,12 +61,12 @@ from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
 
 #-------------------------------------------------------------------------------
-# class XMLinit
+# class BaseXmlInit
 #-------------------------------------------------------------------------------
 
-class XMLinit(Variables):
+class BaseXmlInit(Variables):
     """
-    This class initializes the XML contents of the case.
+    Base class to initialize XML parameter file.
     """
     def __init__(self, case):
         """
@@ -74,6 +74,109 @@ class XMLinit(Variables):
         self.case = case
 
 
+    def _renameSingle(self, parent_tag, old_tag, new_tag):
+        """
+        Rename some nodes in order to ensure backward compatibility.
+        """
+
+        # renames
+
+        node = self.case.xmlGetNode(parent_tag)
+        if node:
+            oldnode = node.xmlGetNode(old_tag)
+            if oldnode:
+                newnode = node.xmlInitNode(new_tag)
+                newnode.xmlChildsCopy(oldnode)
+                oldnode.xmlRemoveNode()
+
+    def __clean_version(self, vers):
+        """
+        Simplify version history number, replacing "alpha" or "beta"
+        version with previous version  to force ensuring of backward
+        compatibility.
+        """
+        known_versions = ["3.0", "3.1", "3.2", "3.3",
+                          "4.0", "4.1", "4.2", "4.3",
+                          "5.0", "5.1", "5.2", "5.3",
+                          "6.0"]
+        j = -2
+        for i in range(0, len(known_versions)):
+            if vers.find(known_versions[i]) == 0:
+                j = i
+                for e in ("-alpha", "-beta"):
+                    if vers.find(e) > -1:
+                        j = i-1
+                break
+        if j == -1:
+            if not vers:
+                vers = "-1.0"
+        elif j > 0:
+            vers = known_versions[j]
+        return vers
+
+
+    def _backwardCompatibility(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        cur_vers = self.case['package'].version
+
+        if self.case.root()["solver_version"]:
+            his_r = self.case.root()["solver_version"]
+            history = his_r.split(";")
+            last_vers = self.__clean_version(history[len(history) - 1])
+            if last_vers == cur_vers:
+                self._backwardCompatibilityCurrentVersion()
+            else:
+                self._backwardCompatibilityOldVersion(last_vers)
+                self._backwardCompatibilityCurrentVersion()
+            his = ""
+            vp = ""
+            for v in history:
+                vc = self.__clean_version(v)
+                if vc != vp:
+                    his += vc + ";"
+                    vp = vc
+            if cur_vers != vp:
+                his += cur_vers + ";"
+            his = his[:-1]
+            if his != his_r:
+                self.case.root().xmlSetAttribute(solver_version = his)
+
+        else:
+            vers = cur_vers
+            self.case.root().xmlSetAttribute(solver_version = vers)
+
+            # apply all backwardCompatibilities as we don't know
+            # when it was created
+            self._backwardCompatibilityOldVersion("-1")
+            self._backwardCompatibilityCurrentVersion()
+
+
+    def _backwardCompatibilityOldVersion(self, from_vers):
+        """
+        Change XML in order to ensure backward compatibility for old version.
+        Must be overriden in child classes.
+        """
+        raise NotImplementedError
+
+
+    def _backwardCompatibilityCurrentVersion(self, from_vers):
+        """
+        Change XML in order to ensure backward compatibility.
+        Must be overriden in child classes.
+        """
+        raise NotImplementedError
+
+
+#-------------------------------------------------------------------------------
+# class XMLinit for code_saturne solver
+#-------------------------------------------------------------------------------
+
+class XMLinit(BaseXmlInit):
+    """
+    This class initializes the XML parameter file for code_saturne solver.
+    """
     def initialize(self, prepro = False):
         """
         Verify that all Headings exist only once in the XMLDocument and
@@ -87,7 +190,7 @@ class XMLinit(Variables):
         OutputControlModel(self.case).addDefaultMesh()
 
         if not prepro:
-            self.__backwardCompatibility()
+            self._backwardCompatibility()
 
             # Initialization (order is important)
 
@@ -195,89 +298,9 @@ class XMLinit(Variables):
         return msg
 
 
-    def __renameSingle(self, parent_tag, old_tag, new_tag):
+    def _backwardCompatibilityOldVersion(self, from_vers):
         """
-        Rename some nodes in order to ensure backward compatibility.
-        """
-
-        # renames
-
-        node = self.case.xmlGetNode(parent_tag)
-        if node:
-            oldnode = node.xmlGetNode(old_tag)
-            if oldnode:
-                newnode = node.xmlInitNode(new_tag)
-                newnode.xmlChildsCopy(oldnode)
-                oldnode.xmlRemoveNode()
-
-
-    def __clean_version(self, vers):
-        """
-        Simplify version history number, replacing "alpha" or "beta"
-        version with previous version  to force ensuring of backward
-        compatibility.
-        """
-        known_versions = ["3.0", "3.1", "3.2", "3.3",
-                          "4.0", "4.1", "4.2", "4.3",
-                          "5.0", "5.1", "5.2", "5.3",
-                          "6.0"]
-        j = -2
-        for i in range(0, len(known_versions)):
-            if vers.find(known_versions[i]) == 0:
-                j = i
-                for e in ("-alpha", "-beta"):
-                    if vers.find(e) > -1:
-                        j = i-1
-                break
-        if j == -1:
-            if not vers:
-                vers = "-1.0"
-        elif j > 0:
-            vers = known_versions[j]
-        return vers
-
-
-    def __backwardCompatibility(self):
-        """
-        Change XML in order to ensure backward compatibility.
-        """
-        cur_vers = self.case['package'].version
-
-        if self.case.root()["solver_version"]:
-            his_r = self.case.root()["solver_version"]
-            history = his_r.split(";")
-            last_vers = self.__clean_version(history[len(history) - 1])
-            if last_vers == cur_vers:
-                self.__backwardCompatibilityCurrentVersion()
-            else:
-                self.__backwardCompatibilityOldVersion(last_vers)
-                self.__backwardCompatibilityCurrentVersion()
-            his = ""
-            vp = ""
-            for v in history:
-                vc = self.__clean_version(v)
-                if vc != vp:
-                    his += vc + ";"
-                    vp = vc
-            if cur_vers != vp:
-                his += cur_vers + ";"
-            his = his[:-1]
-            if his != his_r:
-                self.case.root().xmlSetAttribute(solver_version = his)
-
-        else:
-            vers = cur_vers
-            self.case.root().xmlSetAttribute(solver_version = vers)
-
-            # apply all backwardCompatibilities as we don't know
-            # when it was created
-            self.__backwardCompatibilityOldVersion("-1")
-            self.__backwardCompatibilityCurrentVersion()
-
-
-    def __backwardCompatibilityOldVersion(self, from_vers):
-        """
-        Change XML in order to ensure backward compatibility for old version
+        Change XML in order to ensure backward compatibility for old version.
         """
         if from_vers <= "-1.0":
             self.__backwardCompatibilityBefore_3_0()
@@ -1386,8 +1409,8 @@ class XMLinit(Variables):
 
         # renames
 
-        self.__renameSingle('thermophysical_models', 'heads_losses', 'head_losses')
-        self.__renameSingle('solution_domain', 'extrude_meshes', 'extrusion')
+        self._renameSingle('thermophysical_models', 'heads_losses', 'head_losses')
+        self._renameSingle('solution_domain', 'extrude_meshes', 'extrusion')
 
         # renumber boundary and volume zones if required
 
@@ -1621,7 +1644,7 @@ class XMLinit(Variables):
                             node.xmlRemoveNode()
 
 
-    def __backwardCompatibilityCurrentVersion(self):
+    def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -1663,121 +1686,6 @@ class XMLinit(Variables):
                     nodep['choice'] = 'user_law'
                 else:
                     nodep['choice'] = 'predefined_law'
-
-
-#-------------------------------------------------------------------------------
-# XMLinit test case
-#-------------------------------------------------------------------------------
-
-class XMLinitTestCase(unittest.TestCase):
-    """
-    """
-    def setUp(self):
-        """
-        This method is executed before all "check" methods.
-        """
-        from code_saturne.Base import XMLengine
-        GuiParam.lang = 'en'
-        self.doc = XMLengine.XMLDocument("")
-        self.case = XMLengine.Case(None)
-
-
-    def tearDown(self):
-        """
-        This method is executed after all "check" methods.
-        """
-        del self.case
-        del self.doc
-
-
-    def xmlNodeFromString(self, string):
-        """Private method to return a xml node from string"""
-        return self.doc.parseString(string).root()
-
-
-    def checkXMLinitInstantiation(self):
-        """
-        Check whether the Case class could be instantiated
-        """
-        xmldoc = None
-        xmldoc = XMLinit(self.case)
-        assert xmldoc != None, 'Could not instantiate XMLinit'
-
-
-    def checkInitHeading(self):
-        """
-        Check whether the headings markups could be initialized
-        """
-        doc = \
-        '<Code_Saturne_GUI case="" study="" version="1.0">'\
-        '<solution_domain/>'\
-        '<thermophysical_models>'\
-                '<velocity_pressure>'\
-                        '<variable label="Pressure" name="pressure"/>'\
-                        '<variable label="Velocity" name="velocity"/>'\
-                        '<property label="total_pressure" name="total_pressure"/>'\
-                '</velocity_pressure>'\
-                '<turbulence model="k-epsilon">'\
-                        '<variable label="TurbEner" name="turb_k"/>'\
-                        '<variable label="Dissip" name="turb_eps"/>'\
-                        '<property label="TurbVisc" name="turbulent_viscosity"/>'\
-                        '<initialization choice="reference_velocity">'\
-                                '<reference_velocity>1.0</reference_velocity>'\
-                        '</initialization>'\
-                '</turbulence>'\
-                '<initialization>'\
-                        '<zone name="1">0</zone>'\
-                '</initialization>'\
-                '<thermal_scalar model="off"/>'\
-                '<gas_combustion model="off"/>'\
-                '<solid_fuels model="off"/>'\
-                '<joule_effect model="off"/>'\
-                '<radiative_transfer model="off"/>'\
-        '</thermophysical_models>'\
-        '<numerical_parameters/>'\
-        '<physical_properties>'\
-                '<fluid_properties>'\
-                        '<property choice="constant" label="Density" name="density">'\
-                                '<initial_value>1.17862</initial_value>'\
-                        '</property>'\
-                        '<property choice="constant" label="LamVisc" name="molecular_viscosity">'\
-                                '<initial_value>1.83e-05</initial_value>'\
-                        '</property>'\
-                        '<property choice="constant" label="SpecHeat" name="specific_heat">'\
-                                '<initial_value>1017.24</initial_value>'\
-                        '</property>'\
-                        '<property choice="constant" label="ThermalCond" name="thermal_conductivity">'\
-                                '<initial_value>0.02495</initial_value>'\
-                        '</property>'\
-                '</fluid_properties>'\
-        '</physical_properties>'\
-        '<additional_scalars/>'\
-        '<boundary_conditions/>'\
-        '<analysis_control>'\
-                '<time_parameters>'\
-                        '<time_step_ref>0.1</time_step_ref>'\
-                        '<property label="CourantNb" name="courant_number">'\
-                        '<property label="FourierNb" name="fourier_number">'\
-                '</time_parameters>'\
-        '</analysis_control>'\
-        '<calculation_management/>'\
-        '</Code_Saturne_GUI>'
-
-        XMLinit(self.case).initialize()
-
-        assert self.case.root() == self.xmlNodeFromString(doc), \
-               'Could not use the constructor of the XMLinit class'
-
-
-def suite():
-    testSuite = unittest.makeSuite(XMLinitTestCase, "check")
-    return testSuite
-
-
-def runTest():
-    print("XMLinitTestCase to be completed...")
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
 
 
 #-------------------------------------------------------------------------------

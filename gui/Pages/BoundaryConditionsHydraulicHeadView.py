@@ -52,7 +52,7 @@ from code_saturne.Pages.BoundaryConditionsHydraulicHeadForm import \
      Ui_BoundaryConditionsHydraulicHeadForm
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -82,11 +82,11 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
-        self.notebook = NotebookModel(self.__case)
+        self.notebook = NotebookModel(self.case)
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         # Validators
         validatorHh   = DoubleValidator(self.lineEditValueHydraulicHead)
@@ -107,7 +107,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.pushButtonHydraulicHead.clicked.connect(self.slotHydraulicHeadFormula)
         self.comboBoxTypeHydraulicHead.activated[str].connect(self.slotHydraulicHeadChoice)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -116,7 +116,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         """
         label = boundary.getLabel()
         self.nature  = boundary.getNature()
-        self.__boundary = Boundary(self.nature, label, self.__case)
+        self.__boundary = Boundary(self.nature, label, self.case)
         self.initialize()
 
 
@@ -198,12 +198,16 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = 'hydraulic_head',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = 'dirichlet_formula',
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))

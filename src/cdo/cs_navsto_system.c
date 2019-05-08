@@ -1105,9 +1105,9 @@ cs_navsto_system_log_setup(void)
     return;
 
   cs_log_printf(CS_LOG_SETUP, "\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "%s", h1_sep);
   cs_log_printf(CS_LOG_SETUP, "\tSummary of the Navier-Stokes system\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "%s", h1_sep);
 
   /* Main set of numerical parameters */
   cs_navsto_param_log(ns->param);

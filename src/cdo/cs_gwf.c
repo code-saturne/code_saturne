@@ -705,41 +705,42 @@ cs_gwf_log_setup(void)
   if (gw == NULL)
     return;
 
-  cs_log_printf(CS_LOG_SETUP, "\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, "\tSummary of the groundwater module\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\nSummary of the groundwater module\n");
+  cs_log_printf(CS_LOG_SETUP, "%s", h1_sep);
 
   /* Tracers */
   cs_log_printf(CS_LOG_SETUP,
-                " <GWF/Tracer> n_tracer_equations %d\n", gw->n_tracers);
-
-  cs_log_printf(CS_LOG_SETUP, " <GWF/Darcy flux location> %s\n",
+                "  * GWF | Number of tracer equations: %d\n", gw->n_tracers);
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Darcy flux location: %s\n",
                 cs_flag_str_location(gw->flux_location));
 
   /* Display information on the general options */
   if (gw->flag & CS_GWF_GRAVITATION)
     cs_log_printf(CS_LOG_SETUP,
-                  " <GWF/Gravitation> true -- Axis = [%.2f %.2f %.2f]\n",
+                  "  * GWF | Gravitation: **True** [%.2f %.2f %.2f]\n",
                   gw->gravity[0], gw->gravity[1], gw->gravity[2]);
   else
-    cs_log_printf(CS_LOG_SETUP, " <GWF/Gravitation> false\n");
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Gravitation: **False**\n");
 
   if (gw->flag & CS_GWF_ENFORCE_DIVERGENCE_FREE)
-    cs_log_printf(CS_LOG_SETUP, " <GWF> Enforce the divergence-free constraint"
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * GWF | Enforce the divergence-free constraint"
                   " for the Darcy flux\n");
   if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
-    cs_log_printf(CS_LOG_SETUP, " <GWF> Force to solve Richards equation"
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * GWF | Force to solve Richards equation"
                   " at each time step\n");
   if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
-    cs_log_printf(CS_LOG_SETUP, " <GWF> Rescale head w.r.t zero mean value\n");
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * GWF | Rescale head w.r.t zero mean value\n");
 
   /* Display information on the post-processing options */
   _Bool  post_capacity = (gw->post_flag & CS_GWF_POST_CAPACITY) ? true : false;
   _Bool  post_moisture = (gw->post_flag & CS_GWF_POST_MOISTURE) ? true : false;
   _Bool  post_perm = (gw->post_flag & CS_GWF_POST_PERMEABILITY) ? true : false;
-  cs_log_printf(CS_LOG_SETUP, " <GWF/Post> Capacity: %s; Moisture: %s;"
-                " Permeability: %s\n",
+  cs_log_printf(CS_LOG_SETUP, "  * GWF | Post: Capacity %s Moisture %s"
+                " Permeability %s\n",
                 cs_base_strtf(post_capacity), cs_base_strtf(post_moisture),
                 cs_base_strtf(post_perm));
 
@@ -750,16 +751,16 @@ cs_gwf_log_setup(void)
   _Bool  post_boundary =
     (gw->post_flag & CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY) ? true : false;
   cs_log_printf(CS_LOG_SETUP,
-                " <GWF/Darcy_flux_post> Balance: %s; Divergence: %s;"
-                " At_boundary_faces: %s\n",
+                "  * GWF | Darcy Flux: Balance %s Divergence %s"
+                " At boundary faces: %s\n",
                 cs_base_strtf(do_balance), cs_base_strtf(do_divergence),
                 cs_base_strtf(post_boundary));
 
   /* Soils */
   if (gw->flag & CS_GWF_SOIL_ALL_SATURATED)
-    cs_log_printf(CS_LOG_SETUP, " <GWF> All soils are saturated\n");
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | All soils are saturated\n");
   if (gw->flag & CS_GWF_SOIL_PROPERTY_UNSTEADY)
-    cs_log_printf(CS_LOG_SETUP, " <GWF> Soil properties are unsteady\n");
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Unsteady soil properties\n");
 
   /* Detailed setup of the soil properties */
   cs_gwf_soil_log_setup();

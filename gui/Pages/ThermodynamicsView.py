@@ -73,7 +73,7 @@ from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.OutputFieldsModel import OutputFieldsModel
 from code_saturne.model.NonCondensableModel import NonCondensableModel
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -1041,12 +1041,16 @@ temperature = enthalpy / 1000;
 
         exa = ThermodynamicsView.density
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_rho,
-                                examples   = exa)
+        vname = "density_%s" % (str(fieldId))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_rho,
+                                known_fields  = sca,
+                                examples      = exa)
 
         if dialog.exec_():
             result = dialog.get_result()
@@ -1067,12 +1071,17 @@ temperature = enthalpy / 1000;
 
         exa = ThermodynamicsView.molecular_viscosity
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_mu,
-                                examples   = exa)
+        vname = "molecular_viscosity_%s" % (str(fieldId))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_mu,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
@@ -1092,12 +1101,17 @@ temperature = enthalpy / 1000;
 
         exa = ThermodynamicsView.specific_heat
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_cp,
-                                examples   = exa)
+        vname = "specific_heat_%s" % (str(fieldId))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_cp,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaCp -> %s" % str(result))
@@ -1117,12 +1131,17 @@ temperature = enthalpy / 1000;
 
         exa = ThermodynamicsView.thermal_conductivity
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_al,
-                                examples   = exa)
+        vname = "thermal_conductivity_%s" % (str(fieldId))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_al,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
@@ -1140,12 +1159,17 @@ temperature = enthalpy / 1000;
 
         exa = ThermodynamicsView.surface_tension
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_st,
-                                examples   = exa)
+        vname = "SurfaceTension"
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_st,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSt -> %s" % str(result))
@@ -1194,12 +1218,17 @@ temperature = enthalpy / 1000;
 
         exa = ThermodynamicsView.temperature
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
+        vname = "temperature_%s" % (str(fieldId))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTemperature -> %s" % str(result))
@@ -1218,12 +1247,17 @@ temperature = enthalpy / 1000;
 
         exa = "d_rho_d_P = 0.;"
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
+        vname = "d_rho_d_P_%s" % (str(fieldId))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladrodp -> %s" % str(result))
@@ -1242,12 +1276,17 @@ temperature = enthalpy / 1000;
 
         exa = "d_rho_d_h = 0.;"
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
+        vname = "d_rho_d_h_%s" % (str(fieldId))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladrodh -> %s" % str(result))
@@ -1275,12 +1314,16 @@ temperature = enthalpy / 1000;
             exp = label + " = 0.;"
         exa = label + " = 0.;"
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaHsat -> %s" % str(result))
@@ -1307,13 +1350,16 @@ temperature = enthalpy / 1000;
             exp = label + " = 0.;"
         exa = label + " = 0.;"
 
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladHsatdp -> %s" % str(result))
@@ -1335,13 +1381,17 @@ temperature = enthalpy / 1000;
             exp = label + " = 273.15;"
         exa = label + " = 273.15;"
 
+        name = 'SaturationTemperature'
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTsat -> %s" % str(result))
@@ -1361,12 +1411,17 @@ temperature = enthalpy / 1000;
             exp = label + " = 0.;"
         exa = label + " = 0.;"
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
+        name = 'd_Tsat_d_P'
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormuladTsatdp -> %s" % str(result))
@@ -1387,12 +1442,17 @@ temperature = enthalpy / 1000;
             exp = label + " = 0.;"
         exa = label + " = 0.;"
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols,
-                                examples   = exa)
+        name = 'LatentHeat'
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaHlat -> %s" % str(result))

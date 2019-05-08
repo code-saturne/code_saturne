@@ -189,19 +189,22 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
+  if (!cs_equation_needs_steady_state_solve())
+    return;
+
   bool  do_output = cs_domain_needs_log(domain);
 
   /* Output information */
   if (domain->only_steady) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
     cs_log_printf(CS_LOG_DEFAULT, "#      Solve steady-state problem(s)\n");
-    cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
   }
   else if (do_output) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "-ite- 0; >> Solve only steady-state equations if needed");
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", lsepline);
+                  "-ite- 0; >> Solve only requested steady-state equations");
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
   }
 
   /* Predefined equation for the computation of the wall distance */
@@ -227,7 +230,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   _compute_steady_user_equations(domain);
 
   /* Extra operations and post-processing of the computed solutions */
-  cs_domain_post(domain, true);
+  cs_domain_post(domain);
 
 }
 
@@ -253,11 +256,11 @@ _solve_domain(cs_domain_t  *domain)
     const double  t_cur = ts->t_cur;
     const double  dt_cur = ts->dt[0];
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
     cs_log_printf(CS_LOG_DEFAULT,
                   "-ite- %d >> Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
                   nt_cur, t_cur, t_cur + dt_cur, dt_cur);
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
 
   }
 
@@ -291,49 +294,13 @@ _log_setup(const cs_domain_t   *domain)
   if (domain == NULL)
     return;
 
-  cs_cdo_connect_summary(domain->connect);
-  cs_cdo_quantities_summary(domain->cdo_quantities);
-
-  /* Output information */
-  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, "\tSummary of domain settings\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-
-  /* Boundaries of the domain */
-  cs_boundary_log_setup(domain->boundaries);
-
-  /* Time step summary */
-  cs_log_printf(CS_LOG_SETUP, "\n  Time step information\n");
-  if (domain->only_steady)
-    cs_log_printf(CS_LOG_SETUP, "  >> Steady-state computation");
-
-  else { /* Time information */
-
-    cs_log_printf(CS_LOG_SETUP, "  >> Time step status:");
-    if (domain->time_options.idtvar == 0)
-      cs_log_printf(CS_LOG_SETUP, "  constant\n");
-    else if (domain->time_options.idtvar == 1)
-      cs_log_printf(CS_LOG_SETUP, "  variable in time\n");
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid idtvar value for the CDO module.\n"));
-
-    cs_xdef_log(domain->time_step_def);
-
-    if (domain->time_step->t_max > 0.)
-      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
-                    "  >> Final simulation time:", domain->time_step->t_max);
-    if (domain->time_step->nt_max > 0)
-      cs_log_printf(CS_LOG_SETUP, "%-30s %9d\n",
-                    "  >> Final time step:", domain->time_step->nt_max);
-
-  }
-  cs_log_printf(CS_LOG_SETUP, "\n");
+  /* Output domain settings */
+  cs_domain_setup_log(domain);
 
   /* Summary for each equation */
   cs_equation_log_setup();
 
-  if (domain->verbosity > 0) {
+  if (domain->verbosity > -1) {
 
     /* Properties */
     cs_property_log_setup();
@@ -444,9 +411,9 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   _log_setup(domain);
 
   /* Output information */
-  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
   cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
 
   /*  Build high-level structures and create algebraic systems
       Set the initial values of the fields and properties */
@@ -551,6 +518,9 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Read a restart file if needed */
   cs_domain_read_restart(domain);
 
+  /* Force the activation of writers for postprocessing */
+  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
+
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
@@ -576,7 +546,7 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_domain_increment_time(domain);
 
     /* Extra operations and post-processing of the computed solutions */
-    cs_domain_post(domain, false);
+    cs_domain_post(domain);
 
     /* Increment time */
     cs_domain_increment_time_step(domain);
@@ -603,9 +573,9 @@ cs_cdo_main(cs_domain_t   *domain)
 
   cs_timer_stats_stop(cs_cdo_ts_id);
   if (cs_glob_rank_id <= 0) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
     cs_log_printf(CS_LOG_DEFAULT, "#\tExit CDO core module\n");
-    cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+    cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
     cs_log_printf_flush(CS_LOG_DEFAULT);
   }
 

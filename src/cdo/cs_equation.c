@@ -1148,6 +1148,30 @@ cs_equation_destroy_all(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if a steady-state computation is requested according to the
+ *         setting
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_needs_steady_state_solve(void)
+{
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+
+    if (cs_equation_is_steady(eq))
+      return true;
+
+  } /* Loop on equations */
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Print a synthesis of the monitoring information in the performance
  *         file
  */
@@ -1174,6 +1198,26 @@ cs_equation_log_monitoring(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the count of equations of each macro type
+ *
+ * \param[out]  n_equations          total number of equations
+ * \param[out]  n_predef_equations   number of predefined equations
+ * \param[out]  n_user_equations     number of user equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_get_count(int      *n_equations,
+                      int      *n_predef_equations,
+                      int      *n_user_equations)
+{
+  *n_equations = _n_equations;
+  *n_predef_equations = _n_predef_equations;
+  *n_user_equations = _n_user_equations;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summarize all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
@@ -1181,15 +1225,8 @@ cs_equation_log_monitoring(void)
 void
 cs_equation_log_setup(void)
 {
-  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, "\tSettings for equations\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_cdo_equations          %d\n",
-                _n_equations);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_predefined_equations   %d\n",
-                _n_predef_equations);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_user_equations         %d\n",
-                _n_user_equations);
+  cs_log_printf(CS_LOG_SETUP, "\nSettings for equations\n");
+  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
 
   for (int  eq_id = 0; eq_id < _n_equations; eq_id++) {
 
@@ -1199,11 +1236,10 @@ cs_equation_log_setup(void)
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
 
-    cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
     cs_log_printf(CS_LOG_SETUP,
-                  "\tSummary of settings for %s eq. (variable %s)\n",
+                  "\nSummary of settings for %s eq. (variable %s)\n",
                   eq->param->name, eq->varname);
-    cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+    cs_log_printf(CS_LOG_SETUP, "%s", h2_sep);
 
     cs_equation_summary_param(eq->param);
 

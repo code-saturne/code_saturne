@@ -1437,15 +1437,16 @@ cs_parameters_check(void)
         || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS
         || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD
         || cs_glob_turb_model->itytur == 5) {
-      cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                                 _("while reading input data,\n"
-                                   "with k-epsilon LP (iturb=CS_TURB_K_EPSILON_LIN_PROD),"
-                                   "k-epsilon LS (iturb=CS_TURB_K_EPSILON_LS), "
-                                   "k-epislon quadratic (iturb=CS_TURB_K_EPSILON_QUAD)"
-                                   "or v2f model (iturb=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)"),
-                                 "cs_glob_turb_rans_model->ikecou",
-                                 cs_glob_turb_rans_model->ikecou,
-                                 0);
+      cs_parameters_is_equal_int
+        (CS_ABORT_DELAYED,
+         _("while reading input data,\n"
+           "with k-epsilon LP (iturb=CS_TURB_K_EPSILON_LIN_PROD),\n"
+           "k-epsilon LS (iturb=CS_TURB_K_EPSILON_LS),\n"
+           "k-epislon quadratic (iturb=CS_TURB_K_EPSILON_QUAD),\n"
+           "or v2f model (iturb=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)."),
+         "cs_glob_turb_rans_model->ikecou",
+         cs_glob_turb_rans_model->ikecou,
+         0);
     }
 
     /* En stationnaire on force IEKCOU a 0 */
@@ -1685,6 +1686,25 @@ cs_parameters_check(void)
                                 "cs_glob_stokes_model->iphydr",
                                 cs_glob_stokes_model->iphydr,
                                 0, 3);
+
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("while reading input data"),
+                                "cs_glob_porous_model",
+                                cs_glob_porous_model,
+                                0, 4);
+
+  if (cs_glob_porous_model == 3) { /* integral formulation */
+    cs_parameters_is_equal_int(CS_ABORT_DELAYED,
+                               _("while reading porous model,\n"
+                                 "integral formulation "
+                                 "(cs_glob_porous_model=3) "
+                                 "only compatible \n"
+                                 "with gradient calculation method: "
+                                 "iterative handling of non-orthogonalities"),
+                               "cs_glob_space_disc->imrgra",
+                               cs_glob_space_disc->imrgra,
+                               0);
+  }
 
   cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
   /* steady or variable time step time algorithm not compatible with theta

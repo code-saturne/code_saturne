@@ -108,12 +108,10 @@ static bool _compute_cocg_lsq = false;
 /* Flag (mask) to activate bad cells correction
  * CS_BAD_CELLS_WARPED_CORRECTION
  * CS_FACE_DISTANCE_CLIP
- * CS_FACE_RECONSTRUCTION_CLIP
  * are set as default options
  * */
 unsigned cs_glob_mesh_quantities_flag =
-  CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP
-  + CS_FACE_RECONSTRUCTION_CLIP;
+  CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP;
 
 /* Choice of the porous model */
 int cs_glob_porous_model = 0;
@@ -420,15 +418,13 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t udbfs = 1. / b_face_surf[face_id];
-
-          cs_real_t dddij[3];
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+          cs_real_3_t normal;
+          /* Normal is vector 0 if the b_face_normal norm is too small */
+          cs_math_3_normalise(b_face_normal[face_id], normal);
 
           for (cs_lnum_t ll = 0; ll < 3; ll++) {
             for (cs_lnum_t mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
+              cocg[ii][ll][mm] += normal[ll] * normal[mm];
           }
 
         } /* face without internal coupling */
@@ -2273,7 +2269,7 @@ _compute_face_vectors(int                dim,
 
   cs_real_t dipjp, psi, pond;
   cs_real_t surfnx, surfny, surfnz;
-  cs_real_t vecigx, vecigy, vecigz, vecijx, vecijy, vecijz;
+  cs_real_t vecijx, vecijy, vecijz;
 
   /* Interior faces */
 
@@ -2316,45 +2312,55 @@ _compute_face_vectors(int                dim,
          + (1. - pond)*cell_cen[cell_id2*dim + 2]);
   }
 
-  /* Border faces */
+  /* Boundary faces */
+  cs_gnum_t w_count = 0;
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
     cell_id = b_face_cells[face_id];
 
-    /* Normalized normal */
-    surfnx = b_face_normal[face_id*dim]     / b_face_surf[face_id];
-    surfny = b_face_normal[face_id*dim + 1] / b_face_surf[face_id];
-    surfnz = b_face_normal[face_id*dim + 2] / b_face_surf[face_id];
+    cs_real_3_t normal;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(&b_face_normal[face_id*dim], normal);
 
-    /* ---> IG */
-    vecigx = b_face_cog[face_id*dim]     - cell_cen[cell_id*dim];
-    vecigy = b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1];
-    vecigz = b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2];
+    /* ---> IF */
+    cs_real_t vec_if[3] = {
+      b_face_cog[face_id*dim]     - cell_cen[cell_id*dim],
+      b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1],
+      b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2]};
 
-    /* ---> PSI = IG.NIJ */
-    psi = vecigx*surfnx + vecigy*surfny + vecigz*surfnz;
-
-    /* ---> DIIPB = IG - (IG.NIJ)NIJ */
-    diipb[face_id*dim]     = vecigx - psi*surfnx;
-    diipb[face_id*dim + 1] = vecigy - psi*surfny;
-    diipb[face_id*dim + 2] = vecigz - psi*surfnz;
+    /* ---> diipb = IF - (IF.NIJ)NIJ */
+    cs_math_3_orthogonal_projection(normal, vec_if, &diipb[face_id*dim]);
 
     /* Limiter on boundary face reconstruction */
     if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
-      double iip = sqrt(   diipb[face_id*dim]     * diipb[face_id*dim]
-                         + diipb[face_id*dim + 1] * diipb[face_id*dim + 1]
-                         + diipb[face_id*dim + 2] * diipb[face_id*dim + 2]);
+      cs_real_t iip = cs_math_3_norm(&diipb[face_id*dim]);
 
+      bool is_clipped = false;
       cs_real_t corri = 1.;
-      if (iip > 0.5 * b_dist[face_id])
+
+      if (iip > 0.5 * b_dist[face_id]) {
+        is_clipped = true;
         corri = 0.5 * b_dist[face_id] / iip;
+      }
 
       diipb[face_id*dim]    *= corri;
       diipb[face_id*dim +1] *= corri;
       diipb[face_id*dim +2] *= corri;
+
+      if (is_clipped)
+        w_count++;
     }
   }
+
+  cs_parall_counter(&w_count, 1);
+
+  if (w_count > 0)
+    bft_printf(_("\n"
+                 "%llu boundary faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"),
+               (unsigned long long)w_count);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2501,8 +2507,9 @@ _compute_face_sup_vectors(const cs_lnum_t    n_cells,
 
   if (w_count > 0)
     bft_printf(_("\n"
-                 "%llu faces have a too large reconstruction distance.\n"
-                 "For these faces, reconstruction are limited.\n"),
+                 "%llu internal faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"
+                 "\n"),
                (unsigned long long)w_count);
 
 }

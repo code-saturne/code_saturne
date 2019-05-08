@@ -271,7 +271,8 @@ class NumericalParamEquationModel(Model):
                      self._getMeteoScalarsNodes(),
                      self._getElectricalScalarsNodes(),
                      self._getCompressibleScalarsNodes(),
-                     self._getAdditionalScalarNodes()):
+                     self._getAdditionalScalarNodes(),
+                     self._getAleVariablesNodes()):
             self.var_shem.append(part)
         return self.var_shem
 

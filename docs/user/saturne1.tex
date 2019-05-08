@@ -553,7 +553,7 @@ or \texttt{cs\_user\_combustion}
         \begin{list}{-}{}
             \item  \texttt{usati1} (in \texttt{cs\_user\_parameters.f90})
                    to manage the reading of the meteo file
-           \item  \texttt{usadtv}or \texttt{usatsoil} (in \texttt{cs\_user\_atmospheric\_model.f90})
+           \item  \texttt{usadtv} or \texttt{usatsoil} (in \texttt{cs\_user\_atmospheric\_model.f90})
                    to manage the options to the specific physics
 
         \end{list}
@@ -686,10 +686,8 @@ accumulate and may hinder the correct operation of the machine.\\
 As explained before, \CS is composed of two main modules, the Preprocessor and the
 Solver. The Preprocessor reads the meshes.
 The resulting data is transferred to the Solver through specific
-files, named \texttt{mesh\_input}, or placed in a directory of that name when multiple meshes are imported. In a standard calculation, the files
-are not copied from the temporary execution directory to the results directory,
-as they have no interest for data analysis, and are considered ``internal''
-files, whose format or contents is not guaranteed not to change between \CS versions.
+files, named \texttt{mesh\_input}, or placed in a directory of that name when
+multiple meshes are imported.
 
 Yet, the Preprocessor does not run in parallel and may require a
 large amount of memory. The launch scripts therefore allows specifically
@@ -706,7 +704,7 @@ be run. This is useful when only the mesh import stage is required.
 
 In a similar manner, the Solver accepts several command-line options relative to execution mode, notably \texttt{domain.solver\_args = '--preprocess'} or \texttt{'--quality'}, restricting the run to the preprocessing stages, or preprocessing stages augmented by mesh quality criteria computation. Whenever the preprocessing stages defined lead to an effective mesh modification, a \texttt{mesh\_output} file is produced, which can be used directly as an input for a successive calculation.
 
-The GUI presents the range of options in the form of four execution modes:
+The GUI presents the range of options in the form of four execution modes (under the ``Mesh`` page):
 
 \begin{list}{$\bullet$}{}
 
@@ -725,6 +723,7 @@ not to define any preprocessing operations, so as to skip the preprocessing stag
 
 It is encouraged to separate the preprocessing and calculation runs, as
 this not only speeds up calculations, but also ensures that the mesh is identical, regardless of the architecture or number of processors it is run on. Indeed, when running the same pre-processing stages such as mesh joining on a different machine or a different number of processors, very minor floating-point truncation errors may lead to very slightly different preprocessed meshes.
+The GUI option to ``Use unmodified checkpoint mesh in case of restart`` encourages this usage.
 
 Note also that mesh partitioning is done directly by the Solver.
 Depending on the partitioning algorithm used, a partition map
@@ -4845,7 +4844,7 @@ term to be applied (the arrays are initially set to 0 at each inlet in the subro
 \subsubsection{Head losses}
 %==================================
 
-Pressure drops can be defined in the Graphical User Interface (GUI) or in the subroutine \texttt{cs\_user\_head\_losses.f90} (called three times every time step). In the GUI, under the heading ``Volume conditions'', the item ``Volume regions definition'' allows to define areas where pressure drops occur, see an example in fig \ref{fig:hl1}. The item ``Head losses'' allows to specify the head loss coefficients, see \figurename~\ref{fig:hl2}. The tensor representing the pressure drops is supposed to be symmetric
+Pressure drops can be defined in the Graphical User Interface (GUI) or in the user sources. In the GUI, the page ``Volume zones'' allows to define areas where pressure drops are applied, see an example in fig \ref{fig:hl1}. The item ``Head losses'' allows to specify the head loss coefficients, see \figurename~\ref{fig:hl2}. The tensor representing the pressure drops is supposed to be symmetric
 and positive.
 
 \begin{figure}[!ht]
@@ -4867,52 +4866,18 @@ and positive.
 \end{center}
 \end{figure}
 
-If necessary, the pressure drops are written in the
-subroutine \texttt{cs\_user\_head\_losses.f90}.
+In the user sources, two files can be of use: \texttt{cs\_user\_zones.c} (called at the computation start) to define a volume zone and \texttt{cs\_user\_head\_losses.c} (called at each iteration) to specify the values of the head losses coefficients. Note that volume zones defined with the GUI are available in \texttt{cs\_user\_head\_losses.c}.
 
-\begin{list}{$\bullet$}{}
-\item During the first call, all the cells are checked to know the
-      number of cells in which a pressure drop is present.
-      This number is called \texttt{ncepdp\index{ncepdp}} in
-      \texttt{cs\_user\_head\_losses.f90} (and corresponds to
-      \texttt{ncepdc\index{ncepdc}}). It is used to lay out the arrays
-      related to the pressure drops. If there is no pressure drop,
-      \texttt{ncepdp} must be equal to zero (it is the default value, and the
-      rest of the subroutine is then useless).
-
-\item During the second call, all the cells are checked again to
-      complete the array \texttt{icepdp\index{icepdp}} whose size is
-      \texttt{ncepdp}. \mbox{\texttt{icepdc(ielpdc)}} is the number of the
-      \texttt{ielpdc}\raisebox{1ex}{\small th} cell containing pressure drops.
-
-\item During the third call, all the cells containing pressure drops
-      are checked in order to complete the array
-      containing the components of the tensor of pressure drops
-      \mbox{\texttt{ckupdc(ncepdp,6)}\index{ckupdc}}. This array is so that
-      the equation related to the velocity may be written:
-\begin{displaymath}
-\rho\frac{\partial}{\partial t}\vect{u}=\ldots -\rho\tens{K}\ind{pdc}\cdot\vect{u}
-\end{displaymath}
-The tensor components are given in the following order (in the general
-      reference frame): \texttt{k11}, \texttt{k22}, \texttt{k33}, \texttt{k12},
-      \texttt{k23}, \texttt{k13} with \texttt{k12}, \texttt{k23} and \texttt{k13}
-      being zero if the tensor is diagonal.
-
-\end{list}
-
-
-The three calls are made at every time step, so that variable pressure drop
-zones or values may be treated.
+See the associated \doxygenfile{cs_head_losses.html}{\texttt{doxygen}} documentation for examples.
 
 %==================================
 \subsubsection{Porosity}
 %==================================
 
-The management of the porosity is not yet available in the GUI. To define the porosity, the user
-must fill in the subroutine \texttt{usporo} and set the keyword \texttt{iporos} to $\texttt{1}$ in the
-\texttt{cs\_user\_parameters} file. This subroutine is called every time step.\\
-When using the subroutine \texttt{usporo}, the user is expected to fill in the array \texttt{porosi}
-for each cell in order to give the porosity.
+Porous zones can be set through the GUI in the ``Volume zones'' page. Alternatively, porous zones can be defined in the user source
+\texttt{cs\_user\_porosity.c} and the porous model shall be chosen by setting the keyword \texttt{iporos} in
+\texttt{cs\_user\_parameters} file. See the associated \doxygenfile{cs_porosity.html}{\texttt{doxygen}} documentation for examples.
+Porous zones are defined at the beginning of the computation once and for all.\\
 
 %==================================
 \subsection{Management of the mass sources}
@@ -6504,7 +6469,7 @@ In this section, some information is provided for a more advanced numerical set-
 %-------------------------------------------------
 
 \noindent
-An intervention in the \texttt{cs\_user\_lagr\_sded} function is required if
+An adaptation in the \texttt{cs\_user\_lagr\_sde} function is required if
 supplementary user variables are added to the particle state vector.
 This function is called at each Lagrangian sub-step.
 
@@ -7183,8 +7148,6 @@ constant and \texttt{k} the index of the structure.}
 {force vector of the structure, where \texttt{i} is the force vector and
 \texttt{k} the index of the structure.}
 \end{list}
-
-
 
 %===========================================================
 \subsection{Management of the atmospheric module}

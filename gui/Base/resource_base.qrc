@@ -1,11 +1,13 @@
 <RCC>
   <qresource prefix="/">
+    <file>icons/22x22/compiler-icon.png</file>
     <file>icons/22x22/document-new.png</file>
     <file>icons/22x22/document-open.png</file>
     <file>icons/22x22/document-save-as.png</file>
     <file>icons/22x22/document-save.png</file>
     <file>icons/22x22/edit-redo.png</file>
     <file>icons/22x22/edit-undo.png</file>
+    <file>icons/22x22/editor-icon.png</file>
     <file>icons/22x22/format-justify-fill.png</file>
     <file>icons/22x22/preferences-desktop-font.png</file>
     <file>icons/22x22/preferences-desktop-wallpaper.png</file>
@@ -28,5 +30,6 @@
     <file>icons/22x22/numerical_params.png</file>
     <file>icons/22x22/time_stepping.png</file>
     <file>icons/22x22/physical_properties.png</file>
+    <file>icons/22x22/viewer-icon.png</file>
   </qresource>
 </RCC>

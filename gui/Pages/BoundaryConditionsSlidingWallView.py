@@ -83,10 +83,10 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         self.groupBoxSliding.clicked[bool].connect(self.__slotSlidingWall)
 
@@ -102,14 +102,14 @@ class BoundaryConditionsSlidingWallView(QWidget, Ui_BoundaryConditionsSlidingWal
         self.lineEditSlideV.setValidator(validatorSlideV)
         self.lineEditSlideW.setValidator(validatorSlideW)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
         """
         Show the widget
         """
-        if MobileMeshModel(self.__case).getMethod() == "off":
+        if MobileMeshModel(self.case).getMethod() == "off":
             self.__boundary = boundary
             if self.__boundary.getVelocityChoice() == "on":
                 self.groupBoxSliding.setChecked(True)

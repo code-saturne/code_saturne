@@ -108,9 +108,9 @@ static inline const char *
 cs_base_strtf(bool  boolean)
 {
   if (boolean)
-    return "true";
+    return "**True**";
   else
-    return "false";
+    return "**False**";
 }
 
 /*----------------------------------------------------------------------------

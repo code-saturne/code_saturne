@@ -175,6 +175,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.CathareCouplingView as Page
         thisPage = Page.CathareCouplingView(root, case)
 
+    elif page_name == tr("Immersed Boundaries"):
+        import code_saturne.Pages.ImmersedBoundariesViewNeptune as Page
+        thisPage = Page.ImmersedBoundariesViewNeptune(root, case)
+
     elif page_name == tr("Boundary zones"):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.BoundaryLocalizationView(root, case, tree)

@@ -412,24 +412,44 @@ cs_gui_particles_model(void)
 
     if (boundary_stats) {
 
-      _get_stats_post(tn_bs, "Part_impact_number",
-                      &cs_glob_lagr_boundary_interactions->has_part_impact_nbr);
-      _get_stats_post(tn_bs, "Part_bndy_mass_flux",
-                      &cs_glob_lagr_boundary_interactions->iflmbd);
-      _get_stats_post(tn_bs, "Part_impact_angle",
-                      &cs_glob_lagr_boundary_interactions->iangbd);
-      _get_stats_post(tn_bs, "Part_impact_velocity",
-                      &cs_glob_lagr_boundary_interactions->ivitbd);
+      int flag = 0;
+      _get_stats_post(tn_bs, "Part_impact_number", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_E_CUMULATIVE_WEIGHT);
+
+      flag = 0;
+      _get_stats_post(tn_bs, "Part_bndy_mass_flux", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_MASS_FLUX);
+
+      flag = 0;
+      _get_stats_post(tn_bs, "Part_impact_angle", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_ANGLE);
+
+      flag = 0;
+      _get_stats_post(tn_bs, "Part_impact_velocity", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_VELOCITY);
 
       /* Coal fouling statistics*/
-      _get_stats_post(tn_bs, "Part_fouled_impact_number",
-                      &cs_glob_lagr_boundary_interactions->iencnbbd);
-      _get_stats_post(tn_bs, "Part_fouled_mass_flux",
-                      &cs_glob_lagr_boundary_interactions->iencmabd);
-      _get_stats_post(tn_bs, "Part_fouled_diam",
-                      &cs_glob_lagr_boundary_interactions->iencdibd);
-      _get_stats_post(tn_bs, "Part_fouled_Xck",
-                      &cs_glob_lagr_boundary_interactions->iencckbd);
+
+      flag = 0;
+      _get_stats_post(tn_bs, "Part_fouled_impact_number", &flag);
+      cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT);
+
+      flag = 0;
+      _get_stats_post(tn_bs, "Part_fouled_mass_flux", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_MASS_FLUX);
+
+      _get_stats_post(tn_bs, "Part_fouled_diam", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_DIAMETER);
+
+      _get_stats_post(tn_bs, "Part_fouled_Xck", &flag);
+      if (flag)
+        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_COKE_FRACTION);
 
     }
   }
@@ -491,12 +511,7 @@ cs_gui_particles_model(void)
   if (b_stats) {
     bft_printf("--has_part_impact_nbr   = %i\n",
                cs_glob_lagr_boundary_interactions->has_part_impact_nbr);
-    bft_printf("--iflmbd   = %i\n", cs_glob_lagr_boundary_interactions->iflmbd);
-    bft_printf("--iangbd   = %i\n", cs_glob_lagr_boundary_interactions->iangbd);
-    bft_printf("--ivitbd   = %i\n", cs_glob_lagr_boundary_interactions->ivitbd);
     bft_printf("--iencnbbd = %i\n", cs_glob_lagr_boundary_interactions->iencnbbd);
-    bft_printf("--iencmabd = %i\n", cs_glob_lagr_boundary_interactions->iencmabd);
-    bft_printf("--iencdibd = %i\n", cs_glob_lagr_boundary_interactions->iencdibd);
     bft_printf("--iencckbd = %i\n", cs_glob_lagr_boundary_interactions->iencckbd);
   }
 

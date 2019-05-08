@@ -4264,6 +4264,7 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
                           (const cs_lnum_t  *)(mesh->i_face_cells));
 
   cs_lnum_t l_s = 0, l_e = 0;
+  _Bool  boot = false;
 
   if (_cells_adjacent_to_halo_last) {
 
@@ -4288,7 +4289,7 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
         cs_lnum_t k = a->ids[j];
         if (cell_class[k] < cell_class_max) {
           cell_class[k] = cell_class_max;
-          keys[l_e*3] = a->idx[i+1]- a->idx[i];
+          keys[l_e*3] = a->idx[k+1]- a->idx[k];
           keys[l_e*3+1] = -l_e;
           keys[l_e*3+2] = k;
           l_e++;
@@ -4308,33 +4309,56 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
       }
     }
 
+    if (l_e == 0)
+      boot = true;
+
   }
   else {
-    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+
+    boot = true;
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+
+      int  count = 0;
+      for (cs_lnum_t j = a->idx[i]; j < a->idx[i+1]; j++)
+        if (a->ids[j] >= mesh->n_cells)
+          count++;
+
       cell_class[i] = 0;
+      if (count == (a->idx[i+1]-a->idx[i])) {
+        cell_class[i] = 2;
+        keys[l_e*3  ] = a->idx[i+1]- a->idx[i];
+        keys[l_e*3+1] = i;
+        keys[l_e*3+2] = i;
+        l_e += 1;
+      }
+
+    }
+
     for (cs_lnum_t i = mesh->n_cells; i < mesh->n_cells_with_ghosts; i++)
       cell_class[i] = 2;
+
   }
 
   /* If there are starting cells, search for cell of highest degree */
 
-  if (l_e < 1) {
+  if (boot) {
 
-    cs_lnum_t id_min = 0, nn_min = a->idx[1] - a->idx[0];
+    cs_lnum_t  id_min = mesh->n_cells, nn_min = mesh->n_cells;
 
-    for (cs_lnum_t i = 1; i < mesh->n_cells; i++) {
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
       cs_lnum_t nn = a->idx[i+1] - a->idx[i];
-      if (nn <= nn_min) {
+      if (nn <= nn_min && cell_class[i] == 0) {
         id_min = i;
         nn_min = nn;
       }
     }
+    assert(id_min < mesh->n_cells);
 
     cell_class[id_min] = 2;
-    keys[0] = a->idx[id_min+1]- a->idx[id_min];
-    keys[1] = id_min;
-    keys[2] = id_min;
-    l_e = 1;
+    keys[l_e*3  ] = a->idx[id_min+1]- a->idx[id_min];
+    keys[l_e*3+1] = id_min;
+    keys[l_e*3+2] = id_min;
+    l_e += 1;
 
   }
 
@@ -4342,6 +4366,11 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
 
   cs_lnum_t *rl;
   BFT_MALLOC(rl, mesh->n_cells, cs_lnum_t);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+    rl[i] = -1;
+#endif
 
   int level = -1;
 
@@ -4359,21 +4388,18 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
     }
 
     /* Generate next set */
-
-    if (l_e >= mesh->n_cells)
+    if (l_e >= mesh->n_cells || l_e == l_s)
       break;
 
     cs_lnum_t n = 0;
-
     for (cs_lnum_t l_id = l_s; l_id < l_e; l_id++) {
       cs_lnum_t i = rl[l_id];
-      assert(i >= 0);
-      assert(i < mesh->n_cells);
+      assert(i >= 0 && i < mesh->n_cells);
       for (cs_lnum_t j = a->idx[i+1]-1; j >= a->idx[i]; j--) {
         cs_lnum_t k = a->ids[j];
         if (cell_class[k] == 0) {
           cell_class[k] = level;
-          keys[n*3] = a->idx[i+1]- a->idx[i];
+          keys[n*3] = a->idx[k+1] - a->idx[k];
           keys[n*3+1] = -n;
           keys[n*3+2] = k;
           n++;
@@ -4397,6 +4423,7 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
 #if defined(DEBUG) && !defined(NDEBUG)
   for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
     new_to_old[i] = -1;
+
 #endif
 
   for (cs_lnum_t i = 0; i < mesh->n_cells; i++)

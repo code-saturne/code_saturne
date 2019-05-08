@@ -31,6 +31,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.NonCondensableModel import NonCondensableModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 
 class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
@@ -102,9 +103,13 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
 
         exp = self.getFormulaPressure(zone)
         req = [('pressure', 'pressure')]
+
         sym = [('x', "X cell's gravity center"),
                ('y', "Y cell's gravity center"),
                ('z', "Z cell's gravity center")]
+
+        for (name, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
 
         return exp, req, sym
 
@@ -163,6 +168,9 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
                    ('y', "Y cell's gravity center"),
                    ('z', "Z cell's gravity center")]
 
+        for (name, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
+
         return exp, req, sym
 
 
@@ -203,6 +211,9 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
                ('y', "Y cell's gravity center"),
                ('z', "Z cell's gravity center")]
 
+        for (name, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
+
         return exp, req, sym
 
     @Variables.undoLocal
@@ -241,6 +252,9 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
         sym = [('x', "X cell's gravity center"),
                ('y', "Y cell's gravity center"),
                ('z', "Z cell's gravity center")]
+
+        for (name, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
 
         return exp, req, sym
 

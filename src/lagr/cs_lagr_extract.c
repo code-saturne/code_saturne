@@ -216,10 +216,9 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
     /* Check for filter cell */
 
     if (cell_flag != NULL) {
-      cs_lnum_t cur_cell_num
-        = cs_lagr_particles_get_lnum(p_set, i, CS_LAGR_CELL_NUM);
-      cs_lnum_t  cell_id = CS_ABS(cur_cell_num) - 1;
-      if (cell_flag[cell_id] == false)
+      cs_lnum_t cur_cell_id
+        = cs_lagr_particles_get_lnum(p_set, i, CS_LAGR_CELL_ID);
+      if (cell_flag[cur_cell_id] == false)
         continue;
     }
 
