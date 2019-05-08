@@ -796,6 +796,7 @@ class domain(base_domain):
                 cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
                 cmd = cmd + ['--out', os.path.join('mesh_input',
                                                    'mesh_%02d' % (mesh_id))]
+                cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
             else:
                 cmd = cmd + ['--log']
                 cmd = cmd + ['--out', 'mesh_input']
