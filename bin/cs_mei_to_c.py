@@ -693,7 +693,7 @@ def tokenize(segments):
                 # special case: e+ or e- might not be a sparator
                 is_exp = False
                 if c in ('+', '-'):
-                    if s0[i-1:i+1] in ('e+', 'e-'):
+                    if s0[i-1:i+1] in ('e+', 'e-', 'E+', 'E-'):
                         if s0[i-2:i-1] in digits and s0[i+1:i+2] in digits:
                             is_exp = True
                 if not is_exp:
