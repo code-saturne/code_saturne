@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>787</width>
-    <height>594</height>
+    <height>613</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -225,7 +225,7 @@
          <item>
           <widget class="QTableView" name="tableViewWriter">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define new postprocessing writers or modify existing ones. Writers are objects managing results output. Each writer has the following properties:&lt;br/&gt;- A name,&lt;br/&gt;- An ID: a negative ID indicates that the writer cannot be destroyed, whereas a positive ID denotes a user writer.&lt;br/&gt;- A Format, which can be Ensight, MED...&lt;br/&gt;- A directory where the output files will be written.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define new postprocessing writers or modify existing ones. Writers are objects managing results output. Each writer has the following properties:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Name&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Id&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: a negative ID indicates that the writer cannot be destroyed, whereas a positive ID denotes a user writer.&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Format&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;, which can be Ensight, MED CGNS, ... based on the available formats; note that formats indicated in red are not available on the local build, but are allowed in case they are available on a distant build.&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Directory&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where the output files will be written.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -641,7 +641,7 @@
          <item>
           <widget class="QTableView" name="tableViewMesh">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create mesh parts and associate them with previously defined writers. A mesh part has the following properties:&lt;br/&gt;- A name,&lt;br/&gt;- An ID: a negative ID indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part.&lt;br/&gt;- A type: cells, interior faces or boundary faces,&lt;br/&gt;- A selection criteria: similar to the selection criteria of the boundary conditions definition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create mesh parts and associate them with previously defined writers. A mesh part has the following properties:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Name&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Id&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: a negative id indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part.&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Type&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: cells, interior faces or boundary faces,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Selection criteria&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: similar to the selection criteria of the boundary and volume conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -914,7 +914,7 @@
          <item>
           <widget class="QTableView" name="tableViewLagrangianMesh">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create particle mesh parts and associate them with previously defined writers. A particle mesh part has the following properties:&lt;br/&gt;- A name,&lt;br/&gt;- An ID: a negative ID indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part.&lt;br/&gt;- A type: cells, interior faces or boundary faces,&lt;br/&gt;- A selection criteria: similar to the selection criteria of the boundary conditions definition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create particle mesh parts and associate them with previously defined writers. A particle mesh part has the following properties:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Name&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Id&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: a negative id indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Type&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: particles or trajectories; note that the type should match the associated writer type&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Density&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: if &amp;lt; 1, the amount of output particles is multiplied by this amount. This allows reducing the size of the output, and is based on selecting only particles whose associated random number (following a uniform law) is lower than the given density&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Selection criteria&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: only particles in cells within the selected volume criteria are output&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
