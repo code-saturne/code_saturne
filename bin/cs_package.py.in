@@ -51,7 +51,7 @@ class package:
         self.version = "@cs_version@"
         self.version_full = "@cs_version_full@"
         self.version_short = "@cs_version_short@"
-        self.revision = "@cs_src_revision@"
+        self.revision = "@cs_revision@"
 
         self.code_name = "Code_Saturne"
 

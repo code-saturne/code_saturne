@@ -71,6 +71,8 @@ $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
+EXTRA_DIST = cs_version.h.in
+
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \

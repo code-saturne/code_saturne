@@ -68,6 +68,7 @@
 #include "cs_fp_exception.h"
 #include "cs_log.h"
 #include "cs_timer.h"
+#include "cs_version.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

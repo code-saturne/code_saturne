@@ -246,6 +246,63 @@ def build_version_string(major, minor, release, extra, revision = None):
     return version
 
 #-------------------------------------------------------------------------------
+
+def replace_in_file(src, dest, major, minor, release, extra, revision, modified):
+    """
+    Replace expressions in file based on version numbers.
+    """
+
+    f = open(src, 'r')
+    lines = f.readlines()
+    f.close()
+
+    cs_version = build_version_string(major, minor, release, extra)
+    cs_version_full = build_version_string(major, minor, release, extra,
+                                           revision)
+    cs_version_short = build_version_string(major, minor, '', extra)
+
+    if modified:
+        cs_version_full += '-m'
+    cs_revision = revision[1:]
+    if modified:
+        revision += '-m'
+
+    for i, l in enumerate(lines):
+        l = l.replace("@cs_version@", cs_version)
+        l = l.replace("@cs_version_full@", cs_version_full)
+        l = l.replace("@cs_version_short@", cs_version_short)
+        l = l.replace("@cs_revision@", cs_revision)
+        lines[i] = l
+
+    if not dest:
+        for l in lines:
+            sys.stdout.write(l)
+
+    else:
+        changed = True
+
+        cmp_lines = []
+        if os.path.isfile(dest):
+            f = open(dest, 'r')
+            cmp_lines = f.readlines()
+            f.close()
+            changed = False
+
+        if len(cmp_lines) != len(lines):
+            changed = True
+        else:
+            for i, l in enumerate(lines):
+                if l != cmp_lines[i]:
+                    changed = True
+                    break
+
+        if changed:
+            f = open(dest, 'w')
+            for l in lines:
+                f.write(l)
+            f.close()
+
+#-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
 
@@ -257,7 +314,9 @@ if __name__ == '__main__':
 
     # Default command: return simple string based on local information
 
-    if len(sys.argv) == 1:
+    n_args = len(sys.argv) - 1
+
+    if n_args == 0:
         major, minor, release, extra = version_from_news(srcdir)
         sys.stdout.write(build_version_string(major, minor, release, extra))
 
@@ -267,7 +326,8 @@ if __name__ == '__main__':
 
     # Call tools
 
-    elif sys.argv[1] in ['--full', '--revision-only', '--verbose']:
+    elif sys.argv[1] in ['--full', '--revision-only', '--verbose',
+                         '--replace']:
 
         defaults = version_from_news(srcdir)
         release = ''
@@ -323,6 +383,13 @@ if __name__ == '__main__':
             print('extra:    ' + extra)
             print('revision: ' + revision[1:])
             print('modified: ' + str(modified))
+        elif sys.argv[1] == '--replace' and n_args in (2, 3):
+            src = sys.argv[2]
+            dest = None
+            if n_args == 3:
+                dest = sys.argv[3]
+            replace_in_file(src, dest, major, minor, release,
+                            extra, revision, modified)
 
     else:
         usage = \
@@ -331,10 +398,13 @@ if __name__ == '__main__':
 Default:              print version string
 
 Options:
-  --full              print full version string with available version control info
-  --short             print short version string with major, minor, and extras
-  --revision-only     print version string with version control info only
-  --verbose           print fields on different lines
+  --full                      print full version string with available
+                              version control info
+  --short                     print short version string with major, minor,
+                              and extras
+  --revision-only             print version string with version control info only
+  --update <template> [path]  build or rebuild output file from template
+  --verbose                   print fields on different lines
 
 Options:
   -h, --help  show this help message and exit"""
