@@ -333,11 +333,33 @@ class ImmersedBoundariesModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getObjectEqPosition(self, num):
+    def getObjectInitVel(self, num):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_vel = node.xmlGetChildNode('initial_velocity')
 
         return node_vel['vx'], node_vel['vy'], node_vel['vz']
+    # ----------------------------------
+
+    # ----------------------------------
+    @Variables.undoLocal
+    def setObjectInitAcc(self, num, ax=None, ay=None, az=None):
+
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_vel = node.xmlInitNode('initial_acceleration')
+        if ax:
+            node_vel['ax'] = ax
+        if ay:
+            node_vel['ay'] = ay
+        if az:
+            node_vel['az'] = az
+
+
+    @Variables.noUndo
+    def getObjectInitAcc(self, num):
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
+        node_vel = node.xmlGetChildNode('initial_velocity')
+
+        return node_vel['ax'], node_vel['ay'], node_vel['az']
     # ----------------------------------
 
 #-------------------------------------------------------------------------------
