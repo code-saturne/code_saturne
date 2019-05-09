@@ -665,7 +665,7 @@ def tokenize(segments):
     sep2 = ('<=', '>=', '!=', '||', '&&', '+=', '-=', '*=', '/=', '**')
     sep1 = ('=', '(', ')', ';', ',', ':', '[', ']', '{', '}',
             '+', '-', '*', '/', '<', '>',  '^', '%', '!', '?')
-    digits = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+    digits_p = ('.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
     tokens = []
     comments = []
@@ -694,7 +694,7 @@ def tokenize(segments):
                 is_exp = False
                 if c in ('+', '-'):
                     if s0[i-1:i+1] in ('e+', 'e-', 'E+', 'E-'):
-                        if s0[i-2:i-1] in digits and s0[i+1:i+2] in digits:
+                        if s0[i-2:i-1] in digits_p and s0[i+1:i+2] in digits_p:
                             is_exp = True
                 if not is_exp:
                     if (not prv in whitespace) and (s_id < i):
