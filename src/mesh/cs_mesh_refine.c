@@ -793,10 +793,12 @@ _cell_r_type(const cs_mesh_t              *m,
 
   cs_mesh_refine_type_t  _f_r_flag[6]; /* local flags */
 
-  for (cs_lnum_t i = s_id; i < e_id; i++) {
-    cs_lnum_t l_id = i - s_id;
-    cs_lnum_t f_id = c2f->ids[i];
-    _f_r_flag[l_id] = f_r_flag[f_id];
+  if (n_cell_faces <= 6) {
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      cs_lnum_t l_id = i - s_id;
+      cs_lnum_t f_id = c2f->ids[i];
+      _f_r_flag[l_id] = f_r_flag[f_id];
+    }
   }
 
   switch (n_cell_faces) {
