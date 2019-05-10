@@ -2444,11 +2444,11 @@ cs_join_mesh_destroy_edges(cs_join_edges_t  **edges)
 
       BFT_FREE(e->gnum);
       BFT_FREE(e->def);
-
-      BFT_FREE(e->vtx_idx);
-      BFT_FREE(e->adj_vtx_lst);
-      BFT_FREE(e->edge_lst);
     }
+
+    BFT_FREE(e->vtx_idx);
+    BFT_FREE(e->adj_vtx_lst);
+    BFT_FREE(e->edge_lst);
 
     BFT_FREE(*edges);
   }
