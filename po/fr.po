@@ -9802,18 +9802,6 @@ msgid ""
 " Undefined type of scheme to solve for eq. %s. Please check your settings."
 msgstr ""
 
-#, c-format
-msgid ""
-" %s: Invalid type of definition.\n"
-" Stop computing the Dirichlet value.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid type of reduction.\n"
-" Stop computing the Dirichlet value.\n"
-msgstr ""
-
 msgid ""
 " Invalid type of definition.\n"
 " Stop computing the Neumann value.\n"
