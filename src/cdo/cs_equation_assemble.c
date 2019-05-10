@@ -1290,8 +1290,6 @@ cs_equation_assemble_matrix_mpit(const cs_cell_sys_t              *csys,
                                  cs_equation_assemble_t           *eqa,
                                  cs_matrix_assembler_values_t     *mav)
 {
-  assert((eqa->ddim == eqa->edim) && (eqa->ddim == 1));
-
   const cs_sdm_t  *const m = csys->mat;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
@@ -1348,8 +1346,6 @@ cs_equation_assemble_matrix_mpis(const cs_cell_sys_t              *csys,
                                  cs_equation_assemble_t           *eqa,
                                  cs_matrix_assembler_values_t     *mav)
 {
-  assert((eqa->ddim == eqa->edim) && (eqa->ddim == 1));
-
   const cs_sdm_t  *const m = csys->mat;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
@@ -1401,8 +1397,6 @@ cs_equation_assemble_matrix_seqt(const cs_cell_sys_t             *csys,
                                  cs_equation_assemble_t          *eqa,
                                  cs_matrix_assembler_values_t    *mav)
 {
-  assert((eqa->ddim == eqa->edim) && (eqa->ddim == 1));
-
   const cs_sdm_t  *const m = csys->mat;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
@@ -1452,8 +1446,6 @@ cs_equation_assemble_matrix_seqs(const cs_cell_sys_t              *csys,
                                  cs_equation_assemble_t           *eqa,
                                  cs_matrix_assembler_values_t     *mav)
 {
-  assert((eqa->ddim == eqa->edim) && (eqa->ddim == 1));
-
   const cs_sdm_t  *const m = csys->mat;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
@@ -1509,7 +1501,7 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_cell_sys_t           *csys,
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim == 3);
+  assert(eqa->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -1585,7 +1577,7 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_cell_sys_t           *csys,
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim == 3);
+  assert(eqa->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -1665,7 +1657,7 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_cell_sys_t           *csys,
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim == 3);
+  assert(eqa->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -1749,7 +1741,7 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_cell_sys_t           *csys,
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim == 3);
+  assert(eqa->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -1807,96 +1799,6 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_cell_sys_t           *csys,
 
   } /* Loop on row-wise blocks */
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system into the global algebraic system.
- *         Case of a block 3x3 entries.
- *
- * \param[in]      csys     cellwise view of the algebraic system
- * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
- * \param[in, out] mav      pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_block33_matrix(const cs_cell_sys_t              *csys,
-                                    const cs_range_set_t             *rset,
-                                    cs_equation_assemble_t           *eqa,
-                                    cs_matrix_assembler_values_t     *mav)
-{
-  CS_UNUSED(eqa);
-
-  const cs_lnum_t  *dof_ids = csys->dof_ids;
-  const cs_sdm_t  *m = csys->mat;
-  const cs_sdm_block_t  *bd = m->block_desc;
-
-  /* Sanity checks */
-  assert(m->flag & CS_SDM_BY_BLOCK);
-  assert(m->block_desc != NULL);
-  assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim == 3);
-
-  cs_gnum_t  *grow, *gcol;
-  cs_real_t  *vals;
-  BFT_MALLOC(grow, csys->n_dofs*csys->n_dofs, cs_gnum_t);
-  BFT_MALLOC(gcol, csys->n_dofs*csys->n_dofs, cs_gnum_t);
-  BFT_MALLOC(vals, csys->n_dofs*csys->n_dofs, cs_real_t);
-
-  /* Assemble the matrix related to the advection/diffusion/reaction terms
-     If advection is activated, the resulting system is not symmetric
-     Otherwise, the system is symmetric with extra-diagonal terms. */
-  /* TODO: Add a symmetric version for optimization */
-
-  int  mval_shift = 0, bufsize = 0;
-  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
-
-    /* dof_ids is an interlaced array (get access to the next 3 values */
-    const cs_lnum_t  *i_dofs = dof_ids + 3*bi;
-    const cs_gnum_t  bi_gids[3] = {rset->g_id[i_dofs[0]],
-                                   rset->g_id[i_dofs[1]],
-                                   rset->g_id[i_dofs[2]]};
-
-    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-
-      const cs_lnum_t  *j_dofs = dof_ids + 3*bj;
-      const cs_gnum_t  bj_gids[3] = {rset->g_id[j_dofs[0]],
-                                     rset->g_id[j_dofs[1]],
-                                     rset->g_id[j_dofs[2]]};
-
-      /* mIJ is a small square matrix of size 3 */
-      const cs_real_t  *const mvals = m->val + mval_shift;
-
-      cs_gnum_t  *gi = grow + bufsize;
-      cs_gnum_t  *gj = gcol + bufsize;
-      cs_real_t  *va = vals + bufsize;
-
-      /* Add entries */
-      gi[0] = gi[1] = gi[2] = bi_gids[0];
-      gi[3] = gi[4] = gi[5] = bi_gids[1];
-      gi[6] = gi[7] = gi[8] = bi_gids[2];
-
-      gj[0] = gj[3] = gj[6] = bj_gids[0];
-      gj[1] = gj[4] = gj[7] = bj_gids[1];
-      gj[2] = gj[5] = gj[8] = bj_gids[2];
-
-      memcpy(va, mvals, 9*sizeof(cs_real_t));
-      bufsize += 9;
-      mval_shift += 9;
-
-    } /* Loop on column blocks */
-  } /* Loop on row blocks */
-
-  assert(mval_shift = 9*bd->n_row_blocks*bd->n_row_blocks);
-
-  if (bufsize > 0)
-    cs_matrix_assembler_values_add_g(mav, bufsize, grow, gcol, vals);
-
-  BFT_FREE(gcol);
-  BFT_FREE(grow);
-  BFT_FREE(vals);
 }
 
 /*----------------------------------------------------------------------------*/
