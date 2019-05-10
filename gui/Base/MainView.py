@@ -908,7 +908,8 @@ class MainView(object):
         fileViewer = QFileEditor(parent=self,
                                  case_dir=self.case['case_path']+'/RESU',
                                  readOnly=True,
-                                 noOpen=True)
+                                 noOpen=True,
+                                 useHighlight=False)
         fileViewer.show()
 
 
