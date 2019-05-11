@@ -734,7 +734,8 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file")
+        QMessageBox.about(self, self.package.code_name + ' convergence plot',
+                          cs_info.licence_text)
 
 
     def displayConfig(self):
