@@ -48,7 +48,6 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
 from code_saturne.Base.QtPage import ComboModel
-from code_saturne.Base.QtPage import PYQT_API_1
 from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
