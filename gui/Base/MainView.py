@@ -1357,7 +1357,8 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name, "see COPYING file") # TODO
+        QMessageBox.about(self, self.package.code_name,
+                          cs_info.licence_text)
 
 
     def displayConfig(self):
