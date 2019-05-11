@@ -3,6 +3,8 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix possible memory corruption in mesh refinement.
+
 - Run script: fix overwriting of preprocessing mesh orientation output
   in case of multiple input meshes (Mantis issue #226).
 
