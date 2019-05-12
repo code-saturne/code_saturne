@@ -159,6 +159,7 @@ integer          ifac, iel, isou, ii, jj, kk
 integer          iscal, clsyme
 integer          modntl
 integer          iuntur, iuiptn, f_id, iustar
+integer          kdflim
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -201,6 +202,9 @@ double precision, dimension(:), pointer :: cvara_nusa
 
 double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
 double precision, dimension(:), pointer :: cpro_rugt
+double precision, dimension(:), pointer :: cpro_diff_lim_k
+double precision, dimension(:), pointer :: cpro_diff_lim_eps
+double precision, dimension(:), pointer :: cpro_diff_lim_rij
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -301,6 +305,9 @@ if (iyplbr.ge.0) then
 endif
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
+! Diffusion limiter
+call field_get_key_id("diffusion_limiter_id", kdflim)
+
 ! --- Store wall friction velocity
 
 call field_get_id_try('ustar', iustar)
@@ -323,6 +330,14 @@ if (ik.gt.0) then
   call field_get_coefb_s(ivarfl(ik), coefb_k)
   call field_get_coefaf_s(ivarfl(ik), coefaf_k)
   call field_get_coefbf_s(ivarfl(ik), coefbf_k)
+
+  ! Diffuion limiter
+  call field_get_key_int(ivarfl(ik), kdflim, f_id)
+  if (f_id.ge.0) then
+    call field_get_val_s(f_id, cpro_diff_lim_k)
+  else
+    cpro_diff_lim_k => null()
+  endif
 else
   coefa_k => null()
   coefb_k => null()
@@ -335,6 +350,13 @@ if (iep.gt.0) then
   call field_get_coefb_s(ivarfl(iep), coefb_ep)
   call field_get_coefaf_s(ivarfl(iep), coefaf_ep)
   call field_get_coefbf_s(ivarfl(iep), coefbf_ep)
+  ! Diffuion limiter
+  call field_get_key_int(ivarfl(iep), kdflim, f_id)
+  if (f_id.ge.0) then
+    call field_get_val_s(f_id, cpro_diff_lim_eps)
+  else
+    cpro_diff_lim_eps => null()
+  endif
 else
   coefa_ep => null()
   coefb_ep => null()
@@ -394,6 +416,13 @@ if (itytur.eq.3) then! Also have boundary conditions for the momentum equation
     coefbf_r23 => null()
     coefad_r23 => null()
     coefbd_r23 => null()
+    ! Diffuion limiter
+    call field_get_key_int(ivarfl(irij), kdflim, f_id)
+    if (f_id.ge.0) then
+      call field_get_val_s(f_id, cpro_diff_lim_rij)
+    else
+      cpro_diff_lim_rij => null()
+    endif
 
   else
 
@@ -995,6 +1024,9 @@ do ifac = 1, nfabor
            pimp         , hint          , rinfin )
 
 
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_k)) cpro_diff_lim_k(ifac) = 0.d0
+
       ! Neumann Boundary Condition on epsilon
       !--------------------------------------
 
@@ -1008,6 +1040,9 @@ do ifac = 1, nfabor
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
+
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
 
     !===========================================================================
     ! 5. Boundary conditions on Rij-epsilon
@@ -1194,6 +1229,9 @@ do ifac = 1, nfabor
         enddo
       endif
 
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_rij)) cpro_diff_lim_rij(ifac) = 0.d0
+
       ! ---> Epsilon
 
       ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
@@ -1258,6 +1296,9 @@ do ifac = 1, nfabor
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
+
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
 
     !===========================================================================
     ! 6a.Boundary conditions on k, epsilon, f_bar and phi in the phi_Fbar model
