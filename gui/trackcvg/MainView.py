@@ -1037,9 +1037,11 @@ class MainView(object):
         ficIn= open(name, 'r')
         typ = 0 # O time / 1 iteration
         for line in ficIn.readlines():
-            line = line.strip('\n')
+            e_id = line.find('\n')
+            if e_id < 0:
+                continue
             if comp > 0:
-                content = line.split(',')
+                content = line[:e_id].split(',')
 
                 if comp == 1:
                     if type(content[0]) == int:
@@ -1094,7 +1096,10 @@ class MainView(object):
         for line in ficIn.readlines():
             if not line.startswith("#"):
                 comp = comp + 1
-                line = line.lstrip()
+                e_id = line.find('\n')
+                if e_id < 0:
+                    continue
+                line = line[:e_id].lstrip()
                 content = line.split()
 
                 if comp == 1:
