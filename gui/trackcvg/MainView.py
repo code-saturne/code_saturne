@@ -1049,15 +1049,11 @@ class MainView(object):
 
                 if typ == 0:
                     for el in content:
-                        el = el.lstrip()
-                        el = el.rstrip()
-                        data.append(el)
+                        data.append(float(el))
                 else:
                     data.append(float(content[0]))
                     for el in content[1:]:
-                        el = el.lstrip()
-                        el = el.rstrip()
-                        data.append(el)
+                        data.append(float(el))
             comp = comp + 1
         ficIn.close()
         A = numpy.array(data)
@@ -1108,11 +1104,11 @@ class MainView(object):
 
                 if typ == 0:
                     for el in content:
-                        data.append(el)
+                        data.append(float(el))
                 else:
                     data.append(float(content[0]))
                     for el in content[1:]:
-                        data.append(el)
+                        data.append(float(el))
         ficIn.close()
         A = numpy.array(data)
         n = A.shape[0]
