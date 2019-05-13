@@ -27,6 +27,7 @@ import os
 import re
 
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.SolutionDomainModel import getRunType
 
 #===============================================================================
 # Code block templates
@@ -2285,10 +2286,11 @@ class mei_to_c_interpreter:
 
         retcode = False
 
-        for func_type in self.funcs.keys():
-            if len(self.funcs[func_type].keys()) > 0:
-                retcode = True
-                break
+        if getRunType(self.case) == 'standard':
+            for func_type in self.funcs.keys():
+                if len(self.funcs[func_type].keys()) > 0:
+                    retcode = True
+                    break
 
         return retcode
 
@@ -2340,6 +2342,10 @@ class mei_to_c_interpreter:
         # Delete previous existing file
         file2write = _function_names[func_type]
         self.delete_file(file2write)
+
+        # Check if it is a standard computation
+        if getRunType(self.case) != 'standard':
+            return 0
 
         # Generate the functions code if needed
         code_to_write = ''
