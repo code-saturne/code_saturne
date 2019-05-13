@@ -6017,7 +6017,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                 / (      weight[face_id]  * c_weight[cell_id1]
                   + (1.0-weight[face_id]) * c_weight[cell_id2]);
 
-            fexd[0] = 0.5 * (f_ext[cell_id1][0] + f_ext[cell_id2][0]);//TODO add porous contrib, check sign changed by Erwan for VOF...
+            // TODO add porous contribution
+            fexd[0] = 0.5 * (f_ext[cell_id1][0] + f_ext[cell_id2][0]);
             fexd[1] = 0.5 * (f_ext[cell_id1][1] + f_ext[cell_id2][1]);
             fexd[2] = 0.5 * (f_ext[cell_id1][2] + f_ext[cell_id2][2]);
 
