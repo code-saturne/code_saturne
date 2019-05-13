@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -44,24 +44,28 @@ import SMESH
 import CFDSTUDYGUI_DataModel
 
 try:
-    from libvtkRenderingCorePython import *
-    from libvtkFiltersSourcesPython import *
+    from vtkmodules.libvtkRenderingCorePython import *
+    from vtkmodules.libvtkFiltersSourcesPython import *
 except:
     try:
-        from vtkRenderingCorePython import *
-        from vtkFiltersSourcesPython import *
+        from libvtkRenderingCorePython import *
+        from libvtkFiltersSourcesPython import *
     except:
-        # for compatibility with salome 6.6
         try:
-            from libvtkRenderingPython import *
+            from vtkRenderingCorePython import *
+            from vtkFiltersSourcesPython import *
         except:
-            from vtkRenderingPython import *
+            # for compatibility with salome 6.6
+            try:
+                from libvtkRenderingPython import *
+            except:
+                from vtkRenderingPython import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 
 #-------------------------------------------------------------------------------
 # log config
@@ -586,6 +590,3 @@ class ProfilActors(Actors):
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
-
-
-

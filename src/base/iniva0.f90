@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -81,8 +81,9 @@ integer          iclip , ii    , jj    , idim, f_dim
 integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
-integer          f_type
+integer          f_type, idftnp
 integer          keyvar
+integer          f_id, kdflim
 
 logical          have_previous
 
@@ -94,7 +95,7 @@ double precision, dimension(:), pointer :: cofbcp
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: porosf
 double precision, dimension(:), pointer :: field_s_v
-
+double precision, dimension(:), pointer :: cpro_diff_lim
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
@@ -103,9 +104,11 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
-double precision, dimension(:), pointer :: cproa_viscl, cproa_cp, cpro_visma_s
+double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:), pointer :: mix_mol_mas
 double precision, dimension(:,:), pointer :: cpro_visma_v
+
+type(var_cal_opt) :: vcopt_uma
 
 !===============================================================================
 ! Interfaces
@@ -175,47 +178,28 @@ enddo
 
 ! Note: for VOF or dilatable algorithms, density at twice previous time step is
 ! also stored and written here with "current to previous" function
-if (ivofmt.ge.0.or.idilat.ge.1.or.ipredfl.eq.0) then
-  call field_current_to_previous(icrom)
-  call field_current_to_previous(icrom)
-  if (iroext.gt.0.or.idilat.gt.1) then
-    call field_current_to_previous(ibrom)
-    call field_current_to_previous(ibrom)
-  endif
-else if (iroext.gt.0.or.icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
-  call field_current_to_previous(icrom)
-  if (iroext.gt.0) then
-    call field_current_to_previous(ibrom)
-  endif
-endif
+call field_current_to_previous(icrom)
+call field_current_to_previous(icrom)
+call field_current_to_previous(ibrom)
+call field_current_to_previous(ibrom)
 
-!     Viscosite moleculaire
+! Moleacular viscosity
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
 
-!     Viscosite moleculaire aux cellules (et au pdt precedent si ordre2)
+! Molecular viscosity at cells (and eventual previous value)
 do iel = 1, ncel
   viscl(iel) = viscl0
 enddo
-if(iviext.gt.0) then
-  call field_get_val_prev_s(iviscl, cproa_viscl)
-  do iel = 1, ncel
-    cproa_viscl(iel) = viscl(iel)
-  enddo
-endif
+call field_current_to_previous(iviscl)
 
-!     Chaleur massique aux cellules (et au pdt precedent si ordre2)
+! Specific heat at cells (and eventual previous value)
 if(icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
   do iel = 1, ncel
     cpro_cp(iel) = cp0
   enddo
-  if(icpext.gt.0) then
-    call field_get_val_prev_s(icp, cproa_cp)
-    do iel = 1, ncel
-      cproa_cp(iel) = cpro_cp(iel)
-    enddo
-  endif
+  call field_current_to_previous(icp)
 endif
 
 ! La pression totale sera initialisee a P0 + rho.g.r dans INIVAR
@@ -278,16 +262,20 @@ do iscal = 1, nscal
 enddo
 
 ! Mesh viscosity for ALE
-if (iale.eq.1) then
+if (iale.ge.1) then
 
-  if (iortvm.eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt_uma)
+  idftnp = vcopt_uma%idften
+
+  if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     call field_get_val_v(ivisma, cpro_visma_v)
     do iel = 1, ncel
       do ii = 1, 3
-        cpro_visma_v(ii,iel) = 1.d0
+        cpro_visma_v(ii  ,iel) = 1.d0
+        cpro_visma_v(ii+3,iel) = 0.d0
       enddo
     enddo
-  else
+  else if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
     do iel = 1, ncel
       cpro_visma_s(iel) = 1.d0
@@ -408,8 +396,7 @@ elseif(itytur.eq.3) then
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
   if (irijco.eq.1) then
-      call field_get_val_v(ivarfl(irij), cvar_rij)
-
+    call field_get_val_v(ivarfl(irij), cvar_rij)
 
     if (uref.ge.0.d0) then
 
@@ -443,12 +430,12 @@ elseif(itytur.eq.3) then
 
     endif
   else
-      call field_get_val_s(ivarfl(ir11), cvar_r11)
-      call field_get_val_s(ivarfl(ir22), cvar_r22)
-      call field_get_val_s(ivarfl(ir33), cvar_r33)
-      call field_get_val_s(ivarfl(ir12), cvar_r12)
-      call field_get_val_s(ivarfl(ir23), cvar_r23)
-      call field_get_val_s(ivarfl(ir13), cvar_r13)
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
 
     if (uref.ge.0.d0) then
 
@@ -613,18 +600,21 @@ ifmaip = -1
 bfmaip = -1
 
 do iflid = 0, nfld - 1
+  call field_get_type(iflid, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
+    call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 
-  call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
-  call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
+    if (iflmas.ge.0 .and. iflmas.ne.ifmaip) then
+      call field_current_to_previous(iflid)
+      ifmaip = iflmas
+    endif
 
-  if (iflmas.ge.0 .and. iflmas.ne.ifmaip) then
-    call field_current_to_previous(iflid)
-    ifmaip = iflmas
-  endif
-
-  if (iflmab.ge.0 .and. iflmab.ne.bfmaip) then
-    call field_current_to_previous(iflid)
-    bfmaip = iflmab
+    if (iflmab.ge.0 .and. iflmab.ne.bfmaip) then
+      call field_current_to_previous(iflid)
+      bfmaip = iflmab
+    endif
   endif
 
 enddo
@@ -633,13 +623,13 @@ enddo
 ! 8.  INITIALISATIONS EN ALE
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   do ii = 1, nnod
     impale(ii) = 0
   enddo
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   do ii = 1, nnod
     do idim = 1, 3
       xyzno0(idim,ii) = xyznod(idim,ii)
@@ -656,6 +646,31 @@ do iflid = 0, nfld - 1
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_current_to_previous(iflid)
+  endif
+enddo
+
+
+! Diffusion limiter initialization
+call field_get_key_id("diffusion_limiter_id", kdflim)
+
+do f_id = 0, nfld - 1
+
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+
+    call field_get_key_int(f_id, kdflim, iflid)
+
+    if (iflid.ne.-1) then
+
+      call field_get_val_s(iflid, cpro_diff_lim)
+
+      do iel = 1, ncelet
+        cpro_diff_lim(iel) = 1.d0
+      enddo
+
+    endif
   endif
 enddo
 

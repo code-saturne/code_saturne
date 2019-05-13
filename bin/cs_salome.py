@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -83,8 +83,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
         sys.stderr.write("SALOME is not available in this installation.\n")
         sys.exit(1)
 
-    # Skipped modules: YACS,JOBMANAGER,HOMARD,OPENTURNS
-    default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS"
+    default_modules = "GEOM,SHAPER,SMESH,FIELDS,CFDSTUDY,PARAVIS,YACS,JOBMANAGER,HOMARD,OPENTURNS"
 
     run_cmd = pkg.config.salome_run
     if not run_cmd:

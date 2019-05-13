@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -86,8 +86,18 @@
 using namespace MEDCoupling;
 
 /*=============================================================================
- * Local Macro Definitions
+ * Private global variables
  *============================================================================*/
+
+static int                          _n_paramed_couplers = 0;
+static cs_paramedmem_coupling_t   **_paramed_couplers = NULL;
+
+const int cs_medcpl_cell_field = 0;
+const int cs_medcpl_vertex_field = 1;
+
+const int cs_medcpl_no_time = 0;
+const int cs_medcpl_one_time = 1;
+const int cs_medcpl_linear_time = 2;
 
 /*=============================================================================
  * Local Structure Definitions
@@ -159,6 +169,9 @@ struct _cs_paramedmem_coupling_t {
 
   InterpKernelDEC           *send_dec;       /* Send data exchange channel */
   InterpKernelDEC           *recv_dec;       /* Receive data exchange channel */
+
+  int                       send_synced;
+  int                       recv_synced;
 };
 
 /*----------------------------------------------------------------------------
@@ -186,7 +199,7 @@ _init_mesh_coupling(cs_paramedmem_coupling_t  *coupling,
   assert(mesh != NULL);
 
   /* Building the MED representation of the internal mesh */
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, mesh->mesh);
+  cs_medcoupling_mesh_copy_from_base(parent_mesh, mesh->mesh, 0);
 
   /* Linking the pointers in order to simplify the calls*/
   mesh->sel_criteria = mesh->mesh->sel_criteria;
@@ -331,13 +344,23 @@ cs_paramedmem_create(const char       *name,
  *   pointer to new coupling object
  *----------------------------------------------------------------------------*/
 
-cs_paramedmem_coupling_t *
-cs_paramedmem_interpkernel_create(const char  *name,
-                                  int         *grp1_global_ranks,
-                                  int          grp1_size,
-                                  int         *grp2_global_ranks,
-                                  int          grp2_size)
+static void
+_add_paramedmem_interpkernel(const char  *name,
+                             int         *grp1_global_ranks,
+                             int          grp1_size,
+                             int         *grp2_global_ranks,
+                             int          grp2_size)
 {
+
+  if (_paramed_couplers == NULL)
+    BFT_MALLOC(_paramed_couplers,
+               1,
+               cs_paramedmem_coupling_t *);
+  else
+    BFT_REALLOC(_paramed_couplers,
+                _n_paramed_couplers + 1,
+                cs_paramedmem_coupling_t *);
+
   cs_paramedmem_coupling_t *c = NULL;
 
   /* Add corresponding coupling to temporary ICoCo couplings array */
@@ -352,6 +375,9 @@ cs_paramedmem_interpkernel_create(const char  *name,
 
   c->n_fields = 0;
   c->fields = NULL;
+
+  c->send_synced = 0;
+  c->recv_synced = 0;
 
   bool is_in_grp1 = false;
   int my_rank;
@@ -385,6 +411,37 @@ cs_paramedmem_interpkernel_create(const char  *name,
                                                         grp1_global_ranks,
                                                         grp1_size);
   }
+
+  _paramed_couplers[_n_paramed_couplers] = c;
+
+  _n_paramed_couplers++;
+
+}
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_by_id(int  pc_id)
+{
+
+  cs_paramedmem_coupling_t * c = _paramed_couplers[pc_id];
+
+  return c;
+
+}
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_interpkernel_create(const char  *name,
+                                  int         *grp1_global_ranks,
+                                  int          grp1_size,
+                                  int         *grp2_global_ranks,
+                                  int          grp2_size)
+{
+  _add_paramedmem_interpkernel(name,
+                              grp1_global_ranks,
+                              grp1_size,
+                              grp2_global_ranks,
+                              grp2_size);
+
+  cs_paramedmem_coupling_t *c = _paramed_couplers[_n_paramed_couplers-1];
 
   return c;
 }
@@ -614,14 +671,28 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                         const char                *name,
                         int                        mesh_id,
                         int                        dim,
-                        TypeOfField                type,
-                        TypeOfTimeDiscretization   td,
+                        int                        medcpl_field_type,
+                        int                        medcpl_time_discr,
                         int                        dirflag)
 {
   int f_id = -1;
   _paramedmem_mesh_t *mesh = coupling->meshes[mesh_id];
 
   /* Prepare coupling structure */
+  TypeOfField type = ON_CELLS;
+  if (medcpl_field_type == cs_medcpl_cell_field)
+    type = ON_CELLS;
+  else if (medcpl_field_type == cs_medcpl_vertex_field)
+    type = ON_NODES;
+
+  TypeOfTimeDiscretization td = NO_TIME;
+  if (medcpl_time_discr == cs_medcpl_no_time)
+    td = NO_TIME;
+  else if (medcpl_time_discr == cs_medcpl_one_time)
+    td = ONE_TIME;
+  else if (medcpl_time_discr == cs_medcpl_linear_time)
+    td = LINEAR_TIME;
+
 
   f_id = coupling->n_fields;
 
@@ -733,29 +804,6 @@ cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
 }
 
 /*----------------------------------------------------------------------------
- * Return ParaMEDMEM::ParaFIELD object associated with a given field id.
- *
- * parameters:
- *   coupling  <-- pointer to associated coupling
- *   field_id  <-- id of associated field structure
- *
- * returns:
- *   pointer to ParaFIELD to which values were assigned
- *----------------------------------------------------------------------------*/
-
-MEDCoupling::ParaFIELD *
-cs_paramedmem_field_get(cs_paramedmem_coupling_t  *coupling,
-                        int                        field_id)
-{
-  ParaFIELD *pf = NULL;
-
-  if (field_id >= 0)
-    pf = coupling->fields[field_id]->pf;
-
-  return pf;
-}
-
-/*----------------------------------------------------------------------------
  * Write field associated with a mesh to MEDCoupling.
  *
  * Assigning a negative value to the time step indicates a time-independent
@@ -837,8 +885,11 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *coupling,
   /*-----------------------*/
 
   if (! on_parent) {
-    for (cs_lnum_t i = 0; i < dim*mesh->n_elts; i++)
-      field_values[i] = val_ptr[i];
+    for (cs_lnum_t i = 0; i < mesh->n_elts; i++)
+      for (int j = 0; j < dim; j++) {
+        cs_lnum_t c_id = mesh->new_to_old[i];
+        field_values[dim*c_id+j] = val_ptr[i*dim + j];
+      }
   }
   else {
     for (cs_lnum_t i = 0; i < mesh->n_elts; i++) {
@@ -864,9 +915,13 @@ cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *coupling,
                        int                        dec_to_sync)
 {
   if (dec_to_sync == 1) {
-    coupling->send_dec->synchronize();
-  } else {
+    if (coupling->send_synced == 0) {
+      coupling->send_dec->synchronize();
+      coupling->send_synced = 1;
+    }
+  } else if (coupling->recv_synced == 0) {
     coupling->recv_dec->synchronize();
+    coupling->recv_synced = 1;
   }
 }
 

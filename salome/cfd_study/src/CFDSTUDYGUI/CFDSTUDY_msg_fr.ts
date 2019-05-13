@@ -563,8 +563,8 @@
             <translation>Le répertoire d'étude que vous voulez créer existe déjà.</translation>
         </message>
         <message>
-            <source>NOT_A_STUDY_DIRECTORY</source>
-            <translation>Le répertoire d'étude : %s, n'est ni une étude %s ni une étude couplée avec %s.</translation>
+            <source>NOT_A_STUDY_OR_CASE_DIRECTORY</source>
+            <translation>Le répertoire d'étude ou cas : %s, n'est ni une étude ou un cas %s ni une étude couplée avec %s.</translation>
         </message>
         <message>
             <source>OPEN_SYRTHES-CASE_FILE_ACTION_TEXT</source>
@@ -609,24 +609,24 @@
     <context>
         <name>SetTreeLocationDialog</name>
         <message>
-            <source>CFD study localization or creation</source>
-            <translation>Localisation ou création d'une étude CFD</translation>
+            <source>CFD study/case localization or study creation</source>
+            <translation>Localisation d'une étude ou d'un cas CFD ou création d'étude</translation>
         </message>
         <message>
-            <source>Load existing study</source>
-            <translation>Chargement d'une étude existante</translation>
+            <source>Load existing study or case</source>
+            <translation>Chargement d'une étude ou d'un cas existant</translation>
         </message>
         <message>
             <source>Create study</source>
             <translation>Création d'une étude</translation>
         </message>
         <message>
-            <source>Study location</source>
-            <translation>Localisation de l'étude</translation>
+            <source>Study/Case location</source>
+            <translation>Localisation de l'étude/cas</translation>
         </message>
         <message>
-            <source>Study name</source>
-            <translation>Nom de l'étude</translation>
+            <source>Study/Case name</source>
+            <translation>Nom de l'étude/cas</translation>
         </message>
         <message>
             <source>Cases</source>

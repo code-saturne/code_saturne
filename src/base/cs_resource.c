@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -359,7 +359,7 @@ cs_resource_get_max_timestep(int   ts_cur,
              "===========================================================\n"),
            *ts_max);
 
-        FILE *_f = fopen("status.exceeded_time_limit", "w");
+        FILE *_f = fopen("run_status.exceeded_time_limit", "w");
         if (_f != NULL) {
           fprintf(_f, "%d\n", ts_cur);
           fclose(_f);

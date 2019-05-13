@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -61,6 +61,8 @@ typedef struct {
   int     iwarni;
   int     iconv;
   int     istat;
+  int     idircl;
+  int     ndircl;
   int     idiff;
   int     idifft;
   int     idften;
@@ -144,6 +146,24 @@ enum {
   CS_FREE_INLET = 14,
   CS_FREE_SURFACE = 15,
   CS_CONVECTIVE_INLET = 16
+};
+
+/*----------------------------------------------------------------------------
+ * flag for computing the drift mass flux:
+ * (for coal classes for instance, only the first
+ *  scalar of a class compute the drift flux of the class
+ *  and the other scalars use it without recomputing it)
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_DRIFT_SCALAR_ON = (1 << 0),
+  CS_DRIFT_SCALAR_ADD_DRIFT_FLUX = (1 << 1),
+  CS_DRIFT_SCALAR_THERMOPHORESIS = (1 << 2),
+  CS_DRIFT_SCALAR_TURBOPHORESIS = (1 << 3),
+  CS_DRIFT_SCALAR_ELECTROPHORESIS = (1 << 4),
+  CS_DRIFT_SCALAR_CENTRIFUGALFORCE = (1 << 5),
+  CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX = (1 << 6),
+  CS_DRIFT_SCALAR_ZERO_BNDY_FLUX = (1 << 7)
 };
 
 /*----------------------------------------------------------------------------

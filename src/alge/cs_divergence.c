@@ -4,7 +4,7 @@
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -435,7 +435,7 @@ cs_mass_flux(const cs_mesh_t          *m,
     is_p = 1;
   }
   else {
-    i_f_face_factor = _i_f_face_factor;
+    i_f_face_factor = &_i_f_face_factor;
     b_f_face_factor = &_b_f_face_factor;
   }
 
@@ -1276,7 +1276,7 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
     BFT_MALLOC(c_grad_mvar, n_cells_ext, cs_real_63_t);
 
     /* Computation of c_mass_var gradient
-       (vectorial gradient, the periodicity has already been treated) */
+       (tensor gradient, the periodicity has already been treated) */
 
     cs_gradient_tensor(var_name,
                        gradient_type,
@@ -1987,11 +1987,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
   } else {
 
-    cs_real_6_t *viscce;
-    cs_real_6_t *w2;
-
-    viscce = NULL;
-    w2 = NULL;
+    cs_real_6_t *viscce = NULL;
+    cs_real_6_t *w2 = NULL;
 
     /* Without porosity */
     if (porosi == NULL) {
@@ -2122,6 +2119,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                             * cs_math_3_dot_product(frcxt[ii], normal);
 
     }
+
+    BFT_FREE(w2);
   }
 
 }

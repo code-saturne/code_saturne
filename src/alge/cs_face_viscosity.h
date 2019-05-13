@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -122,7 +122,7 @@ void CS_PROCF (vitens, VITENS)
 
 void
 cs_face_viscosity(const cs_mesh_t               *m,
-                  cs_mesh_quantities_t          *fvq,
+                  const cs_mesh_quantities_t    *fvq,
                   const int                      visc_mean_type,
                   cs_real_t            *restrict c_visc,
                   cs_real_t            *restrict i_visc,
@@ -147,12 +147,12 @@ cs_face_viscosity(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
-                                     cs_mesh_quantities_t          *fvq,
-                                     const int                      visc_mean_type,
-                                     cs_real_6_t          *restrict c_visc,
-                                     cs_real_33_t         *restrict i_visc,
-                                     cs_real_t            *restrict b_visc);
+cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
+                                     const cs_mesh_quantities_t  *fvq,
+                                     const int                    visc_mean_type,
+                                     cs_real_6_t        *restrict c_visc,
+                                     cs_real_33_t       *restrict i_visc,
+                                     cs_real_t          *restrict b_visc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -181,7 +181,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
 
 void
 cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
-                                     cs_mesh_quantities_t          *fvq,
+                                     const cs_mesh_quantities_t    *fvq,
                                      cs_real_6_t          *restrict c_visc,
                                      const int                      iwarnp,
                                      cs_real_2_t          *restrict weighf,

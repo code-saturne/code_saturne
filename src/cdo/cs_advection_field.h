@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 /*!  1: Perform the computation and post-processing of the Courant number */
 #define CS_ADVECTION_FIELD_POST_COURANT (1 << 0)
 /*!  2: Advection-field is steady-state */
-#define CS_ADVECTION_FIELD_STEADY       (1 << 1)  // steady-state field
+#define CS_ADVECTION_FIELD_STEADY       (1 << 1)  /* steady-state field */
 
 /*! @} */
 
@@ -71,6 +71,11 @@ BEGIN_C_DECLS
  *
  * \var CS_ADVKEY_DEFINE_AT_VERTICES
  * Define a field structure related to the advection field at vertices
+ * Post-processing and log operations are automatically activated.
+ *
+ * \var CS_ADVKEY_DEFINE_AT_BOUNDARY_FACES
+ * Define a field structure related to the advection field at boundary faces
+ * Post-processing and log operations are automatically activated.
  *
  * \var CS_ADVKEY_POST_COURANT
  * Perform the computation (and post-process) of the Courant number
@@ -82,13 +87,14 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_ADVKEY_DEFINE_AT_VERTICES,
+  CS_ADVKEY_DEFINE_AT_BOUNDARY_FACES,
   CS_ADVKEY_POST_COURANT,
   CS_ADVKEY_STATE_STEADY,
   CS_ADVKEY_N_KEYS
 
 } cs_advection_field_key_t;
 
-/*! \enum cs_advection_field_type_t
+/*! \enum cs_advection_field_status_t
  *  \brief Type of advection field
  *
  * \var CS_ADVECTION_FIELD_NAVSTO
@@ -107,6 +113,26 @@ typedef enum {
   CS_ADVECTION_FIELD_NAVSTO,
   CS_ADVECTION_FIELD_GWF,
   CS_ADVECTION_FIELD_USER,
+  CS_N_ADVECTION_FIELD_STATUS
+
+} cs_advection_field_status_t;
+
+/*! \enum cs_advection_field_type_t
+ *  \brief Status of the advection field. The advection field stands for what.
+ *
+ * \var CS_ADVECTION_FIELD_STATUS_VELOCITY
+ * The advection field stands for a velocity.
+ * This is described by a vector-valued array or function.
+ *
+ * \var CS_ADVECTION_FIELD_STATUS_FLUX
+ * The advection field stands for a flux.
+ * This is described by a scalar-valued array or function.
+ */
+
+typedef enum {
+
+  CS_ADVECTION_FIELD_TYPE_VELOCITY,
+  CS_ADVECTION_FIELD_TYPE_FLUX,
   CS_N_ADVECTION_FIELD_TYPES
 
 } cs_advection_field_type_t;
@@ -125,7 +151,10 @@ typedef struct {
    * name of the advection field
    *
    * \var type
-   * type of advection field
+   * type of advection field (velocity, flux..)
+   *
+   * \var status
+   * status of the advection field (user, gwf...)
    *
    * \var flag
    * short descriptor dedicated to postprocessing
@@ -154,23 +183,24 @@ typedef struct {
    * Array of pointers to the definitions of the jormal flux at the boundary
    */
 
-  int                         id;
-  char              *restrict name;
-  cs_advection_field_type_t   type;
+  int                           id;
+  char                *restrict name;
+  cs_advection_field_status_t   status;
+  cs_advection_field_type_t     type;
+  cs_flag_t                     flag;
 
-  cs_flag_t                   flag;
-  int                         vtx_field_id;
-  int                         cell_field_id;
-  int                         bdy_field_id;
+  int                           vtx_field_id;
+  int                           cell_field_id;
+  int                           bdy_field_id;
 
   /* We assume that there is only one definition associated to an advection
      field inside the computational domain */
-  cs_xdef_t                  *definition;
+  cs_xdef_t                    *definition;
 
   /* Optional: Definition(s) for the boundary flux */
-  int                         n_bdy_flux_defs;
-  cs_xdef_t                 **bdy_flux_defs;
-  short int                  *bdy_def_ids;
+  int                           n_bdy_flux_defs;
+  cs_xdef_t                   **bdy_flux_defs;
+  short int                    *bdy_def_ids;
 
 } cs_adv_field_t;
 
@@ -181,6 +211,113 @@ typedef struct {
 /*============================================================================
  * Inline public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the type of advection field for the given structure
+ *
+ * \param[in, out] adv      pointer to an advection field structure
+ * \param[in]      type     type to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_advection_field_set_type(cs_adv_field_t              *adv,
+                            cs_advection_field_type_t    type)
+{
+  if (adv == NULL)
+    return;
+
+  adv->type = type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the advection field is uniform, otherwise false
+ *
+ * \param[in]    adv    pointer to an advection field to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline _Bool
+cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
+{
+  if (adv == NULL)
+    return false;
+
+  if (adv->definition->state & CS_FLAG_STATE_UNIFORM)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the advection field is uniform in each cell
+ *         otherwise false
+ *
+ * \param[in]    adv    pointer to an advection field to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline _Bool
+cs_advection_field_is_cellwise(const cs_adv_field_t   *adv)
+{
+  if (adv == NULL)
+    return false;
+
+  cs_flag_t  state = adv->definition->state;
+
+  if (state & CS_FLAG_STATE_UNIFORM)
+    return true;
+  if (state & CS_FLAG_STATE_CELLWISE)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the name of an advection field
+ *
+ * \param[in]    adv    pointer to an advection field structure
+ *
+ * \return  the name of the related advection field
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline const char *
+cs_advection_field_get_name(const cs_adv_field_t   *adv)
+{
+  if (adv == NULL)
+    return NULL;
+
+  return adv->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the type of definition used to set the current advection
+ *         field structure
+ *
+ * \param[in]    adv    pointer to an advection field structure
+ *
+ * \return  the type of definition
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_xdef_type_t
+cs_advection_field_get_deftype(const cs_adv_field_t   *adv)
+{
+  if (adv == NULL)
+    return CS_N_XDEF_TYPES;
+
+  return cs_xdef_get_type(adv->definition);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -204,24 +341,31 @@ cs_advection_field_get_field(const cs_adv_field_t       *adv,
 
   switch (ml_type) {
   case CS_MESH_LOCATION_BOUNDARY_FACES:
-    assert(adv->bdy_field_id > -1);
-    f = cs_field_by_id(adv->bdy_field_id);
+    if (adv->bdy_field_id > -1)
+      f = cs_field_by_id(adv->bdy_field_id);
+    else
+      f = NULL;
     break;
 
   case CS_MESH_LOCATION_CELLS:
-    assert(adv->cell_field_id > -1);
-    f = cs_field_by_id(adv->cell_field_id);
+    if (adv->cell_field_id > -1)
+      f = cs_field_by_id(adv->cell_field_id);
+    else
+      f = NULL;
     break;
 
   case CS_MESH_LOCATION_VERTICES:
-    assert(adv->vtx_field_id > -1);
-    f = cs_field_by_id(adv->vtx_field_id);
+    if (adv->vtx_field_id > -1)
+      f = cs_field_by_id(adv->vtx_field_id);
+    else
+      f = NULL;
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid mesh location type. Stop retrieving the field.\n",
-              __func__);
+              " %s: Invalid mesh location type %d.\n"
+              " Stop retrieving the advection field.\n",
+              __func__, ml_type);
   }
 
   return f;
@@ -301,15 +445,15 @@ cs_advection_field_add_user(const char  *name);
  * \brief  Add and initialize a new advection field structure
  *
  * \param[in]  name        name of the advection field
- * \param[in]  type        type of advection field
+ * \param[in]  status      status of the advection field to create
  *
  * \return a pointer to the new allocated cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_adv_field_t *
-cs_advection_field_add(const char                  *name,
-                       cs_advection_field_type_t    type);
+cs_advection_field_add(const char                    *name,
+                       cs_advection_field_status_t    status);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -333,63 +477,9 @@ cs_advection_field_destroy_all(void);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_advection_field_check_name(const cs_adv_field_t   *adv,
                               const char             *ref_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  returns true if the advection field is uniform, otherwise false
- *
- * \param[in]    adv    pointer to a property to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_advection_field_is_uniform(const cs_adv_field_t   *adv);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  returns true if the advection field is uniform in each cell
- *         otherwise false
- *
- * \param[in]    adv    pointer to a property to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_advection_field_is_cellwise(const cs_adv_field_t   *adv);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of an advection field
- *
- * \param[in]    adv    pointer to an advection field structure
- *
- * \return  the name of the related advection field
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_advection_field_get_name(const cs_adv_field_t   *adv);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the type of definition used to set the current advection
- *         field structure
- *
- * \param[in]    adv    pointer to an advection field structure
- *
- * \return  the type of definition
- */
-/*----------------------------------------------------------------------------*/
-
-cs_xdef_type_t
-cs_advection_field_get_deftype(const cs_adv_field_t   *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -448,6 +538,8 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  */
 /*----------------------------------------------------------------------------*/
@@ -456,6 +548,7 @@ void
 cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                 cs_flag_t          loc,
                                 cs_real_t         *array,
+                                _Bool              is_owner,
                                 cs_lnum_t         *index);
 
 /*----------------------------------------------------------------------------*/
@@ -514,6 +607,8 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
  * \param[in]       zname     name of the boundary zone to consider
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  */
 /*----------------------------------------------------------------------------*/
@@ -523,6 +618,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               const char        *zname,
                                               cs_flag_t          loc,
                                               cs_real_t         *array,
+                                              _Bool              is_owner,
                                               cs_lnum_t         *index);
 
 /*----------------------------------------------------------------------------*/
@@ -562,6 +658,26 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the value of the advection field at a specific location
+ *         inside a cell
+ *
+ * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      xyz          location where to perform the evaluation
+ * \param[in]      time_eval    physical time at which one evaluates the term
+ * \param[in, out] eval         pointer to a cs_nvec3_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
+                                  const cs_cell_mesh_t  *cm,
+                                  const cs_real_3_t      xyz,
+                                  cs_real_t              time_eval,
+                                  cs_nvec3_t            *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mean-value of the advection field inside each cell
  *
  * \param[in]      adv           pointer to a cs_adv_field_t structure
@@ -592,26 +708,6 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the advection field at a specific location
- *         inside a cell
- *
- * \param[in]      adv          pointer to a cs_adv_field_t structure
- * \param[in]      cm           pointer to a cs_cell_mesh_t structure
- * \param[in]      xyz          location where to perform the evaluation
- * \param[in]      time_eval    physical time at which one evaluates the term
- * \param[in, out] eval         pointer to a cs_nvec3_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_advection_field_eval_at_xyz(const cs_adv_field_t  *adv,
-                               const cs_cell_mesh_t  *cm,
-                               const cs_real_3_t      xyz,
-                               cs_real_t              time_eval,
-                               cs_nvec3_t            *eval);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the value of the normal flux of the advection field
  *         across the boundary faces
  *
@@ -628,8 +724,9 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the flux of the advection field across the
- *         the closure of the dual cell related to each vertex
+ * \brief  Compute the value of the normal flux of the advection field across
+ *         the closure of the dual cell related to each vertex belonging to the
+ *         boundary face f
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      adv        pointer to a cs_adv_field_t structure
@@ -640,11 +737,31 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
-                                         const cs_adv_field_t   *adv,
-                                         short int               f,
-                                         cs_real_t               time_eval,
-                                         cs_real_t              *fluxes);
+cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
+                                        const cs_adv_field_t   *adv,
+                                        short int               f,
+                                        cs_real_t               time_eval,
+                                        cs_real_t              *fluxes);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the normal flux of the advection field across
+ *         a boundary face f (cellwise version)
+ *
+ * \param[in] time_eval   physical time at which one evaluates the term
+ * \param[in] f           face id in the cellwise numbering
+ * \param[in] cm          pointer to a cs_cell_mesh_t structure
+ * \param[in] adv         pointer to a cs_adv_field_t structure
+ *
+ * \return  the normal boundary flux for the face f
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
+                                         const short int          f,
+                                         const cs_cell_mesh_t    *cm,
+                                         const cs_adv_field_t    *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -659,10 +776,10 @@ cs_advection_field_get_f2v_boundary_flux(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
-                                    const cs_adv_field_t       *adv,
-                                    cs_real_t                   time_eval,
-                                    cs_real_t                  *fluxes);
+cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
+                                const cs_adv_field_t       *adv,
+                                cs_real_t                   time_eval,
+                                cs_real_t                  *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -677,10 +794,10 @@ cs_advection_field_get_cw_face_flux(const cs_cell_mesh_t       *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
-                                     const cs_adv_field_t     *adv,
-                                     cs_real_t                 time_eval,
-                                     cs_real_t                *fluxes);
+cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
+                                 const cs_adv_field_t     *adv,
+                                 cs_real_t                 time_eval,
+                                 cs_real_t                *fluxes);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -694,7 +811,7 @@ cs_advection_field_get_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
 void
 cs_advection_field_update(cs_real_t    t_eval,
-                          bool         cur2prev);
+                          _Bool        cur2prev);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +34,6 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_cdovb_priv.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
@@ -50,13 +49,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Macro definitions
  *============================================================================*/
-
-/*============================================================================
- * Type definitions
- *============================================================================*/
-
-/* Algebraic system for CDO vertex-based discretization */
-typedef struct _cs_cdovb_t cs_cdovb_scaleq_t;
 
 /*============================================================================
  * Public function prototypes
@@ -151,44 +143,26 @@ cs_cdovb_scaleq_free_context(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         builder structure
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of scalar-valued CDO-Vb schemes.
  *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdovb_scaleq_t structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_initialize_system(const cs_equation_param_t  *eqp,
-                                  cs_equation_builder_t      *eqb,
-                                  void                       *data,
-                                  cs_matrix_t               **system_matrix,
-                                  cs_real_t                 **system_rhs);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the boundary conditions known from the settings when the fields
- *         stem from a scalar CDO vertex-based scheme.
- *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval      time at which one evaluates BCs
- * \param[in, out] field_val   pointer to the values of the variable field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
-                           const cs_equation_param_t    *eqp,
-                           cs_equation_builder_t        *eqb,
-                           cs_real_t                     t_eval,
-                           cs_real_t                     field_val[]);
+cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
+                            const int                     field_id,
+                            const cs_mesh_t              *mesh,
+                            const cs_equation_param_t    *eqp,
+                            cs_equation_builder_t        *eqb,
+                            void                         *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -196,7 +170,6 @@ cs_cdovb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
  *         convection/diffusion/reaction equation with a CDO-Vb scheme
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -206,8 +179,7 @@ cs_cdovb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_steady_state(double                       dt_cur,
-                                   const cs_mesh_t             *mesh,
+cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t             *mesh,
                                    const int                    field_id,
                                    const cs_equation_param_t   *eqp,
                                    cs_equation_builder_t       *eqb,
@@ -220,7 +192,6 @@ cs_cdovb_scaleq_solve_steady_state(double                       dt_cur,
  *         Implicit time scheme is used to progress in time.
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -230,8 +201,7 @@ cs_cdovb_scaleq_solve_steady_state(double                       dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
-                               const cs_mesh_t            *mesh,
+cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -244,7 +214,6 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
  *         Theta time scheme is used to progress in time.
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -254,61 +223,11 @@ cs_cdovb_scaleq_solve_implicit(double                      dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_theta(double                      dt_cur,
-                            const cs_mesh_t            *mesh,
+cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
                             void                       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO vertex-based scheme.
- *         One works cellwise and then process to the assembly
- *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the vertex field
- * \param[in]      dt_cur     current value of the time step
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_scaleq_build_system(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             double                      dt_cur,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *context,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Store solution(s) of the linear system into a field structure
- *         Update extra-field values if required (for hybrid discretization)
- *
- * \param[in]      solu       solution array
- * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovb_scaleq_t structure
- * \param[in, out] field_val  pointer to the current value of the field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_scaleq_update_field(const cs_real_t            *solu,
-                             const cs_real_t            *rhs,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -352,7 +271,6 @@ cs_cdovb_scaleq_get_cell_values(void      *context);
  * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] context  pointer to a scheme builder structure
- * \param[in]      dt_cur   current value of the time step
  *
  * \return a pointer to a \ref cs_equation_balance_t structure
  */
@@ -361,56 +279,102 @@ cs_cdovb_scaleq_get_cell_values(void      *context);
 cs_equation_balance_t *
 cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
-                        void                          *context,
-                        cs_real_t                      dt_cur);
+                        void                          *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute for each vertex of a boundary face, the portion of diffusive
+ *         flux across the boundary face. The surface attached to each vertex
+ *         corresponds to the intersection of its dual cell (associated to
+ *         a vertex of the face) with the face.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]       t_eval     time at which one performs the evaluation
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in]       pdi        pointer to an array of field values
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  vf_flux    pointer to the values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
+                                   const cs_equation_param_t   *eqp,
+                                   const cs_real_t             *pdi,
+                                   cs_equation_builder_t       *eqb,
+                                   cs_real_t                   *vf_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the diffusive and convective flux across a list of faces
+ *         Case of scalar-valued CDO-Vb schemes
  *
  * \param[in]       normal     indicate in which direction flux is > 0
  * \param[in]       pdi        pointer to an array of field values
- * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to data specific for this scheme
+ * \param[in, out]  context    pointer to data specific for this scheme
  * \param[in, out]  d_flux     pointer to the value of the diffusive flux
  * \param[in, out]  c_flux     pointer to the value of the convective flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t             normal[],
-                                          const cs_real_t            *pdi,
-                                          int                         ml_id,
-                                          const cs_equation_param_t  *eqp,
-                                          cs_equation_builder_t      *eqb,
-                                          void                       *data,
-                                          double                     *d_flux,
-                                          double                     *c_flux);
+cs_cdovb_scaleq_flux_across_plane(const cs_real_t             normal[],
+                                  const cs_real_t            *pdi,
+                                  const cs_equation_param_t  *eqp,
+                                  int                         ml_id,
+                                  cs_equation_builder_t      *eqb,
+                                  void                       *context,
+                                  double                     *d_flux,
+                                  double                     *c_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux
+ * \brief  Cellwise computation of an approximation of a constant diffusive
+ *         flux (a vector) in each cell.
+ *         Case of scalar-valued CDO-Vb schemes
  *
  * \param[in]       values      discrete values for the potential
  * \param[in]       eqp         pointer to a cs_equation_param_t structure
  * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to cs_cdovb_scaleq_t structure
- * \param[in, out]  location    where the flux is defined
+ * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
+cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
                                    const cs_equation_param_t   *eqp,
                                    cs_real_t                    t_eval,
                                    cs_equation_builder_t       *eqb,
-                                   void                        *data,
-                                   cs_flag_t                    location,
+                                   void                        *context,
                                    cs_real_t                   *diff_flux);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Cellwise computation of the diffusive flux accross dual faces
+ *         (a scalar) in each cell.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]       values      discrete values for the potential
+ * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in]       t_eval      time at which one performs the evaluation
+ * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  diff_flux   value of the diffusive flux
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
+                                 const cs_equation_param_t   *eqp,
+                                 cs_real_t                    t_eval,
+                                 cs_equation_builder_t       *eqb,
+                                 void                        *context,
+                                 cs_real_t                   *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

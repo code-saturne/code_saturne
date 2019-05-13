@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -77,7 +77,7 @@ module entsor
   !> field key for logging \n
   !> For every quantity (variable, physical or numerical property ...),
   !> indicator concerning the writing in the execution report file
-  !>    - 1: writing in the execution listing.
+  !>    - 1: writing in the execution log.
   !>    - 0: no writing.
   !> always useful
   integer, save :: keylog = -1
@@ -182,9 +182,9 @@ module entsor
 
   !> \}
 
-  !> \defgroup listing Output listing
+  !> \defgroup log Output log
 
-  !> \addtogroup listing
+  !> \addtogroup log
   !> \{
 
   !> temporary variable name for some algebraic operations
@@ -225,14 +225,6 @@ module entsor
   !> post-processed property: Nusselt
   integer    ipstnu
   parameter (ipstfo=1, ipstyp=2, ipsttp= 3, ipstft=4, ipstnu=5)
-
-  !> margin in seconds on the remaining CPU time which is necessary to allow
-  !> the calculation to stop automatically and write all the required results
-  !> (for the machines having a queue manager).
-  !>   - -1: calculated automatically,
-  !>   - 0: margin defined by the user.
-  !> Always useful, but the default value should not be changed.
-  double precision, save :: tmarus
   !> \}
   !> \}
 

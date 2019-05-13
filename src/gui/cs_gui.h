@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -34,8 +34,6 @@
 #include "cs_base.h"
 #include "cs_volume_zone.h"
 
-#include "mei_evaluate.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -58,20 +56,20 @@ BEGIN_C_DECLS
  *
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF (csther, CSTHER) (void);
 
 /*----------------------------------------------------------------------------
- * Turbulence model.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSTURB
- * *****************
- *
+ * Turbulence model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csturb, CSTURB) (void);
+void cs_gui_turb_model(void);
+
+/*----------------------------------------------------------------------------
+ * Define reference length and reference velocity for the initialization of
+ * the turbulence variables
+ *----------------------------------------------------------------------------*/
+
+void cs_gui_turb_ref_values(void);
 
 /*----------------------------------------------------------------------------
  * Specific heat variable or constant indicator.
@@ -246,19 +244,6 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0);
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (cstini, CSTINI) (void);
-
-/*----------------------------------------------------------------------------
- * Solver taking a scalar porosity into account
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIIPSU
- * *****************
- *
- * INTEGER          IPOROS     -->   porosity
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiipsu, UIIPSU) (int *iporos);
 
 /*----------------------------------------------------------------------------
  * Define porosity.
@@ -455,7 +440,7 @@ cs_gui_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_add_notebook_variables(mei_tree_t  *ev_law);
+cs_gui_add_notebook_variables(void  *ev_law);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -464,14 +449,16 @@ cs_gui_add_notebook_variables(mei_tree_t  *ev_law);
  * Head loss tensor coefficients for each cell are organized as follows:
  * cku11, cku22, cku33, cku12, cku13, cku23.
  *
- * \param[in]       zone  pointer to zone structure
- * \param[in, out]  cku   head loss coefficients
+ * \param[in]       zone       pointer to zone structure
+ * \param[in]       cvara_vel  pointer to the velocity values of the previous time step
+ * \param[in, out]  cku        head loss coefficients
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_head_losses(const cs_zone_t  *zone,
-                   cs_real_t         cku[][6]);
+cs_gui_head_losses(const cs_zone_t   *zone,
+                   const cs_real_3_t *cvara_vel,
+                   cs_real_t          cku[][6]);
 
 /*-----------------------------------------------------------------------------
  * Selection of linear solvers.
@@ -495,6 +482,13 @@ void
 cs_gui_partition(void);
 
 /*----------------------------------------------------------------------------
+ * Determine porosity model type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_porous_model(void);
+
+/*----------------------------------------------------------------------------
  * 1D profile postprocessing
  *----------------------------------------------------------------------------*/
 
@@ -514,7 +508,7 @@ cs_gui_properties_value(const char  *property_name,
                         double      *value);
 
 /*-----------------------------------------------------------------------------
- * Initialization choice of the reference variables parameters.
+ * Get value of reference fluid properties parameter.
  *
  * parameters:
  *   name            <--   parameter name
@@ -522,8 +516,8 @@ cs_gui_properties_value(const char  *property_name,
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_reference_initialization(const char  *param,
-                                double      *value);
+cs_gui_fluid_properties_value(const char  *param,
+                              double      *value);
 
 /*----------------------------------------------------------------------------
  * Get thermal scalar model.
@@ -569,6 +563,13 @@ cs_gui_usage_log(void);
 
 void
 cs_gui_user_variables(void);
+
+/*----------------------------------------------------------------------------
+ * Define user arrays through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_user_arrays(void);
 
 /*----------------------------------------------------------------------------
  * Define balance by zone through the GUI.

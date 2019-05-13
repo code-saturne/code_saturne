@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -90,7 +90,6 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
                                 int           *len
                                 CS_ARGF_SUPP_CHAINE);
 
-
 /*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics
@@ -171,7 +170,6 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
                                int           *len      /* --> String Length  */
                                CS_ARGF_SUPP_CHAINE);
 
-
 /*----------------------------------------------------------------------------
  * groundwater model : read parameters
  *
@@ -198,13 +196,10 @@ void CS_PROCF (uidai1, UIDAI1) (int    *permeability,
 
 /*-----------------------------------------------------------------------------
  * Activate specific physical models based on XML settings.
- *
- * parameters:
- *   ieos    --> compressible
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_physical_model_select(cs_int_t  *ieos);
+cs_gui_physical_model_select(void);
 
 /*----------------------------------------------------------------------------
  * Electrical model: read parameters

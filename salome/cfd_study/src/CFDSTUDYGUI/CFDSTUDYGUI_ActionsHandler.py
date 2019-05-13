@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -31,7 +31,7 @@ Creates menu, actions, and separators for the SALOME Desktop.
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, string, shutil
+import os, shutil
 import subprocess
 import re
 import logging
@@ -137,8 +137,6 @@ SolverSaveAsAction             = 102
 SolverCloseAction              = 103
 SolverUndoAction               = 104
 SolverRedoAction               = 105
-SolverPreproModeAction         = 106
-SolverCalculationModeAction    = 107
 SolverOpenTurnsModeAction      = 108
 
 SolverToolsMenu                = 110
@@ -619,24 +617,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._SolverActionIdMap[SolverRedoAction] = action_id
         action.triggered.connect(self.slotRedo)
 
-        # Preprocessing Mode action
-        action = sgPyQt.createAction(-1, "Preprocessing Mode", "Preprocessing Mode", "Preprocessing Mode", \
-                                      ObjectTR.tr("PREPRO_MODE_CFD_GUI_ACTION_ICON"))
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverPreproModeAction] = action_id
-        action.triggered.connect(self.slotPreproMode)
-
-        # Calculation Mode action
-        action = sgPyQt.createAction(-1, "Calculation Mode", "Calculation Mode", "Calculation Mode", \
-                                      ObjectTR.tr("CALCULATION_MODE_CFD_GUI_ACTION_ICON"))
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverCalculationModeAction] = action_id
-        action.triggered.connect(self.slotCalculationMode)
-
         # OpenTurns Study Mode action
         action = sgPyQt.createAction(-1, \
                                      "OpenTurns Study Mode", \
@@ -880,7 +860,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
 
     def updateActionsXmlFile(self, XMLSobj) :
-
+        log.debug("updateActionsXmlFile")
         if XMLSobj != None:
             if CFDSTUDYGUI_DataModel.checkType(XMLSobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
                 self.solverAction(SolverCloseAction).setEnabled(False)
@@ -888,8 +868,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.solverAction(SolverSaveAsAction).setEnabled(False)
                 self.solverAction(SolverUndoAction).setEnabled(False)
                 self.solverAction(SolverRedoAction).setEnabled(False)
-                self.solverAction(SolverPreproModeAction).setEnabled(False)
-                self.solverAction(SolverCalculationModeAction).setEnabled(False)
 
                 case   = CFDSTUDYGUI_DataModel.GetCase(XMLSobj)
                 study  = CFDSTUDYGUI_DataModel.GetStudyByObj(XMLSobj)
@@ -902,8 +880,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                         self.solverAction(SolverSaveAsAction).setEnabled(True)
                         self.solverAction(SolverUndoAction).setEnabled(True)
                         self.solverAction(SolverRedoAction).setEnabled(True)
-                        self.solverAction(SolverPreproModeAction).setEnabled(True)
-                        self.solverAction(SolverCalculationModeAction).setEnabled(True)
 
     def customPopup(self, id, popup):
         """
@@ -1006,7 +982,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DESFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["CGNSFile"] \
-             or id == CFDSTUDYGUI_DataModel.dict_object["GeomFile"] \
+             or id == CFDSTUDYGUI_DataModel.dict_object["CcmFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["CaseFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["NeuFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["MSHFile"] \
@@ -1083,26 +1059,38 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         dialog = self.DialogCollector.SetTreeLocationDialog
         dialog.__init__()
         dialog.exec_()
-        if not self.DialogCollector.SetTreeLocationDialog.result() == QDialog.Accepted:
-            return
-        cursor = QCursor(Qt.BusyCursor)
-        QApplication.setOverrideCursor(cursor)
+        if self.DialogCollector.SetTreeLocationDialog.result() == QDialog.Accepted:
+            cursor = QCursor(Qt.BusyCursor)
+            QApplication.setOverrideCursor(cursor)
+            iok = True
+            _SetCFDCode(dialog.code)
+            if os.path.exists(dialog.StudyPath):
+                boo = CFDSTUDYGUI_Commons.isaCFDCase(dialog.StudyPath)
+                if boo :
+                    iok = CFDSTUDYGUI_DataModel._SetCaseLocation(dialog.StudyPath)
+                else:
+                    iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = dialog.StudyPath,
+                                                          theCaseNames   = dialog.CaseNames,
+                                                          theCreateOpt   = dialog.CreateOption,
+                                                          theCopyOpt     = dialog.CopyFromOption,
+                                                          theNameRef     = dialog.CaseRefName,
+                                                          theSyrthesOpt  = dialog.CouplingSaturneSyrthes,
+                                                          theSyrthesCase = dialog.SyrthesCase,
+                                                          theNprocs      = dialog.Nprocs)
+            else:
+                iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = dialog.StudyPath,
+                                                          theCaseNames   = dialog.CaseNames,
+                                                          theCreateOpt   = dialog.CreateOption,
+                                                          theCopyOpt     = dialog.CopyFromOption,
+                                                          theNameRef     = dialog.CaseRefName,
+                                                          theSyrthesOpt  = dialog.CouplingSaturneSyrthes,
+                                                          theSyrthesCase = dialog.SyrthesCase,
+                                                          theNprocs      = dialog.Nprocs)
+            if iok:
+                sg.updateObjBrowser()
+                self.updateActions()
+            QApplication.restoreOverrideCursor()
 
-        _SetCFDCode(dialog.code)
-        iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = dialog.StudyPath,
-                                                      theCaseNames   = dialog.CaseNames,
-                                                      theCreateOpt   = dialog.CreateOption,
-                                                      theCopyOpt     = dialog.CopyFromOption,
-                                                      theNameRef     = dialog.CaseRefName,
-                                                      theSyrthesOpt  = dialog.CouplingSaturneSyrthes,
-                                                      theSyrthesCase = dialog.SyrthesCase,
-                                                      theNprocs      = dialog.Nprocs)
-        if iok:
-            studyId = sgPyQt.getStudyId()
-            sgPyQt.updateObjBrowser(studyId, 1)
-            self.updateActions()
-        QApplication.restoreOverrideCursor()
-        return
 
     def slotAddCase(self):
         """
@@ -1134,7 +1122,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 #Get existing case name list of a CFD study
         ExistingCaseNameList = CFDSTUDYGUI_DataModel.GetCaseNameList(studyObj)
         if dialog.CaseNames != "" :
-            newCaseList = string.split(string.strip(dialog.CaseNames)," ")
+            newCaseList = str(dialog.CaseNames).strip().split()
             for i in newCaseList:
                 if i in ExistingCaseNameList:
                     mess = cfdstudyMess.trMessage(self.tr("CASE_ALREADY_EXISTS"),[i,CFDSTUDYGUI_DataModel._GetPath(studyObj)])
@@ -1148,7 +1136,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                                                   theSyrthesOpt  = False,
                                                                   theSyrthesCase = "",
                                                                   theNprocs      = "")
-        if string.strip(dialog.CaseNames) == "" :
+        if str(dialog.CaseNames).strip() == "" :
             if "CASE1" in ExistingCaseNameList:
                 mess = cfdstudyMess.trMessage(self.tr("DEFAULT_CASE_ALREADY_EXISTS"),["CASE1",CFDSTUDYGUI_DataModel._GetPath(studyObj)])
                 cfdstudyMess.aboutMessage(mess)
@@ -1360,7 +1348,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         sobj = self._singleSelectedObject()
         if sobj != None:
-            studyId = sgPyQt.getStudyId()
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
             study = CFDSTUDYGUI_DataModel._getStudy()
             builder = study.NewBuilder()
@@ -1399,9 +1386,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                         parentPath = CFDSTUDYGUI_DataModel._GetPath(parent)
                         destPath = os.path.join(parentPath, sobj.GetName())
                         if parentName == "EXAMPLES" and '-' in sobj.GetName() :
-                            a,b = string.split(sobj.GetName(),'-')
-                            c = string.split(b,'.')[-1]
-                            newName = string.join([a,c],'.')
+                            a,b = sobj.GetName().split('-')
+                            c = b.split('.')[-1]
+                            newName = '.'.join([a,c])
                             destPath = os.path.join(parentPath,newName)
                         if os.path.exists(destPath):
                             mess = cfdstudyMess.trMessage(self.tr("OVERWRITE_CONFIRM_MESS"),[])
@@ -1500,8 +1487,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 # show data in view
                 coord_Display = pvsimple.Show(coord_path, spreadSheetView1)
 
-            if salome.sg.hasDesktop():
-                salome.sg.updateObjBrowser(1)
+            if sg.hasDesktop():
+                sg.updateObjBrowser()
         QApplication.restoreOverrideCursor()
 
 
@@ -1525,9 +1512,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sobj = self._singleSelectedObject()
         if not sobj == None:
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            studyId = salome.sg.getActiveStudyId()
             if smeshBuilder and re.match(".*\.med$", sobj.GetName()):
-                smesh = smeshBuilder.New(salome.myStudy)
+                smesh = smeshBuilder.New()
                 aMeshes, aStatus = smesh.CreateMeshesFromMED(path)
                 if not aStatus:
                     QApplication.restoreOverrideCursor()
@@ -1540,7 +1526,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     aMeshDC.SetAutoColor(1)
                     mesh = aMeshDC.GetMesh()
 
-            sgPyQt.updateObjBrowser(studyId, 1)
+            sg.updateObjBrowser()
 
         QApplication.restoreOverrideCursor()
 
@@ -1558,8 +1544,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             cfdstudyMess.warningMessage(mess)
             return
         smeshgui = salome.ImportComponentGUI("SMESH")
-        studyId = salome.sg.getActiveStudyId()
-        smeshgui.Init(studyId)
 
         log.debug("slotDisplayMESH -> self._multipleSelectedObject()[0].GetName()= %s" % self._multipleSelectedObject()[0].GetName())
         for  sobj in self._multipleSelectedObject():
@@ -1572,10 +1556,10 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     return
                 #Displaying Mesh
                 if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj):
-                    smeshgui.CreateAndDisplayActor(entry)
-                    sgPyQt.updateObjBrowser(studyId,1)
-                    salome.sg.UpdateView()
-                    salome.sg.FitAll()
+                    smeshgui.display(entry)
+                    sg.updateObjBrowser()
+                    sg.UpdateView()
+                    sg.FitAll()
             else:
                 mess = cfdstudyMess.trMessage(self.tr("MESH_NO_ENTRY_ID_MESH"),[sobj.GetName()])
                 cfdstudyMess.warningMessage(mess)
@@ -1600,12 +1584,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if sobj_group != None:
                 meshgroup,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj_group)
                 if meshgroup:
-                    smeshgui.CreateAndDisplayActor(sobj_group.GetID())
+                    smeshgui.display(sobj_group.GetID())
             else:
                 mess = cfdstudyMess.trMessage(self.tr("MESH_GROUP_NO_GROUP_WITH_FATHER"),[sobj_group.GetName(),sobj_group.GetFatherComponent().GetName()])
                 cfdstudyMess.warningMessage(mess)
-        salome.sg.UpdateView()
-        salome.sg.FitAll()
+        sg.UpdateView()
+        sg.FitAll()
 
         QApplication.restoreOverrideCursor()
 
@@ -1619,15 +1603,15 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sobj = self._singleSelectedObject()
         id = sobj.GetID()
         if id:
-            salome.sg.EraseAll()
-            #salome.sg.Display(entryIdGroup)#Only(entryIdGroup)
+            sg.EraseAll()
+            #sg.Display(entryIdGroup)#Only(entryIdGroup)
             smeshgui = salome.ImportComponentGUI("SMESH")
-            smeshgui.CreateAndDisplayActor(id)
+            smeshgui.display(id)
         else:
             mess = cfdstudyMess.trMessage(self.tr("MESH_GROUP_NO_ENTRY_ID"),[sobj.GetName(),sobj.GetFatherComponent().GetName()])
             cfdstudyMess.warningMessage(mess)
-        salome.sg.UpdateView()
-        salome.sg.FitAll()
+        sg.UpdateView()
+        sg.FitAll()
 
         QApplication.restoreOverrideCursor()
 
@@ -1648,12 +1632,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if id:
                 meshgroup,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj)
                 if meshgroup:
-                    salome.sg.Erase(id)
+                    sg.Erase(id)
             else:
                 mess = cfdstudyMess.trMessage(self.tr("MESH_GROUP_NO_ENTRY_ID"),[sobj.GetName(),sobj.GetFatherComponent().GetName()])
                 cfdstudyMess.warningMessage(mess)
-        salome.sg.UpdateView()
-        salome.sg.FitAll()
+        sg.UpdateView()
+        sg.FitAll()
 
         QApplication.restoreOverrideCursor()
 
@@ -1674,12 +1658,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             id = sobj.GetID()
             if id:
                 if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj):
-                    salome.sg.Erase(id)
+                    sg.Erase(id)
             else:
                 mess = cfdstudyMess.trMessage(self.tr("MESH_NO_ENTRY_ID_MESH"),[sobj.GetName()])
                 cfdstudyMess.warningMessage(mess)
-        salome.sg.UpdateView()
-        salome.sg.FitAll()
+        sg.UpdateView()
+        sg.FitAll()
 
         QApplication.restoreOverrideCursor()
 
@@ -1758,14 +1742,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         boo,StudyPath,CasePath = self.checkCFDCaseDir(xmlfileName)
         if boo and StudyPath != "" and CasePath != "" :
             CaseName = os.path.basename(CasePath)
-            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = StudyPath,
-                                                          theCaseNames   = CasePath,
-                                                          theCreateOpt   = False,
-                                                          theCopyOpt     = False,
-                                                          theNameRef     = "",
-                                                          theSyrthesOpt  = False,
-                                                          theSyrthesCase = "",
-                                                          theNprocs      = "")
+            iok = CFDSTUDYGUI_DataModel._SetCaseLocation(CasePath)
             studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(StudyPath)
             caseObj  = CFDSTUDYGUI_DataModel.getSObject(studyObj,CaseName)
             DATAObj  = CFDSTUDYGUI_DataModel.getSObject(caseObj,"DATA")
@@ -1802,9 +1779,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         repDATA = os.path.dirname(filepath)
         if os.path.isdir(repDATA) and os.path.basename(repDATA) == "DATA":
             CasePath = os.path.dirname(repDATA)
-            repListe = os.listdir(CasePath)
-            for i in ['SRC', 'RESU', 'DATA', 'SCRIPTS'] :
-                boo = boo and os.path.isdir(os.path.join(CasePath,i))
+            boo = CFDSTUDYGUI_Commons.isaCFDCase(CasePath)
             if not boo :
                 mess = cfdstudyMess.trMessage(self.tr("ENV_DLG_CASE_FILE"),[filepath,CasePath])
                 cfdstudyMess.aboutMessage(mess)
@@ -1865,12 +1840,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
     def slotRedo(self):
         self._SolverGUI.onRedo()
-
-    def slotPreproMode(self):
-        self._SolverGUI.onPreproMode()
-
-    def slotCalculationMode(self):
-        self._SolverGUI.onCalculationMode()
 
     def slotOTStudyMode(self):
         self._SolverGUI.onOTStudyMode()
@@ -1948,7 +1917,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if sobj == None:
             return
 
-        studyId = sgPyQt.getStudyId()
         casePath = CFDSTUDYGUI_DataModel._GetPath(sobj)
 
         aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
@@ -2016,15 +1984,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 return
 
         aStudyObj = CFDSTUDYGUI_DataModel.GetStudyByObj(aFirtsObj)
-        aChList = CFDSTUDYGUI_DataModel.ScanChildren(aStudyObj, "MESH")
-        if not len(aChList) == 1:
-            mess = cfdstudyMess.trMessage(self.tr("DIR_MESH_NOT_EXIST"),[])
-            cfdstudyMess.criticalMessage(mess)
-            return
 
-        aMeshFold = aChList[0]
+        aMeshFold = aFirtsObj.GetFather()
         thePath = CFDSTUDYGUI_DataModel._GetPath(aMeshFold)
-
         log.debug("slotMeshConvertToMed -> thePath = %s" % thePath)
         args = ""
 
@@ -2127,6 +2089,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self.updateGui(oldXmlFilePath,xmlFilePath)
 
     def updateGui(self,oldXmlFilePath,xmlFilePath):
+        log.debug("updateGui")
         if oldXmlFilePath == xmlFilePath :
             return
         if xmlFilePath == None :
@@ -2247,8 +2210,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 widget.OpeningFile(path)
                 widget.show()
 
-            if salome.sg.hasDesktop():
-                salome.sg.updateObjBrowser(1)
+            if sg.hasDesktop():
+                sg.updateObjBrowser()
         QApplication.restoreOverrideCursor()
 
 
@@ -2263,9 +2226,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if sobj is None:
             return
         path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-        studyId = salome.sg.getActiveStudyId()
         if smeshBuilder :
-            smesh = smeshBuilder.New(salome.myStudy)
+            smesh = smeshBuilder.New()
             study = CFDSTUDYGUI_DataModel._getStudy()
             builder = study.NewBuilder()
             meshcomponent = study.FindComponent( "SMESH" )
@@ -2314,7 +2276,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                    for aMeshDC in aMeshes:
                        aMeshDC.SetAutoColor(1)
                        mesh = aMeshDC.GetMesh()
-            sgPyQt.updateObjBrowser(studyId, 1)
+            sg.updateObjBrowser()
 
         QApplication.restoreOverrideCursor()
 

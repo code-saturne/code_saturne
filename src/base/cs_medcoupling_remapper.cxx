@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -85,8 +85,10 @@
 
 using namespace MEDCoupling;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*----------------------------------------------------------------------------
- * ParaMEDMED field structure
+ * Remapper structure
  *----------------------------------------------------------------------------*/
 
 struct _cs_medcoupling_remapper_t {
@@ -116,30 +118,36 @@ struct _cs_medcoupling_remapper_t {
 static int                          _n_remappers = 0;
 static cs_medcoupling_remapper_t  **_remapper = NULL;
 
-/*----------------------------------------------------------------------------
- * Read a MEDCoupling field (float or double) from a MEDFile and convert it to
- * MEDCouplingFieldDouble * object
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Read a MEDCoupling field from a MEDFile and convert it to
+ *          MEDCouplingFieldDouble
  *
- * parameters:
- *   medfile_path   <-- path to med file
- *   field_name     <-- field name
- *   iteration      <-- associated iteration
- *   order          <-- associated iteration order
- *----------------------------------------------------------------------------*/
+ * \param[in] medfile_path  path to the med file
+ * \param[in] field_name    name of the field to load
+ * \param[in] iteration     associated time iteration
+ * \param[in] order         associated time order
+ *
+ * \return  pointer to the new MEDCouplingFieldDouble struct
+ */
+/*----------------------------------------------------------------------------*/
 
 static MEDCouplingFieldDouble *
-_cs_medcoupling_read_field_real(const char *medfile_path,
-                                const char *field_name,
-                                int         iteration,
-                                int         order)
+_cs_medcoupling_read_field_real(const char  *medfile_path,
+                                const char  *field_name,
+                                int          iteration,
+                                int          order)
 {
-
-  MCAuto<MEDFileAnyTypeField1TS> f(MEDFileAnyTypeField1TS::New(medfile_path,field_name,iteration,order));
+  MCAuto<MEDFileAnyTypeField1TS> f(MEDFileAnyTypeField1TS::New(medfile_path,
+                                                               field_name,
+                                                               iteration,
+                                                               order));
   MCAuto<MEDFileMesh> mesh(MEDFileMesh::New(medfile_path,f->getMeshName()));
 
   /* Case 1: Field is a allready a double */
   {
-    MCAuto<MEDFileField1TS> f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,MEDFileField1TS>(f));
+    MCAuto<MEDFileField1TS> f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,
+                                                        MEDFileField1TS>(f));
     if(f1.isNotNull()) {
       MEDCouplingFieldDouble *dble_field(f1->field(mesh));
       return dble_field;
@@ -148,42 +156,43 @@ _cs_medcoupling_read_field_real(const char *medfile_path,
 
   /* Case 2: Field is a float, and we convert it to double */
   {
-    MCAuto<MEDFileFloatField1TS> f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,MEDFileFloatField1TS>(f));
+    MCAuto<MEDFileFloatField1TS> f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,
+                                                             MEDFileFloatField1TS>(f));
     if(f1.isNotNull()) {
       MEDCouplingFieldFloat *float_field(f1->field(mesh));
       MEDCouplingFieldDouble *dble_field = float_field->convertToDblField();
       return dble_field;
     }
   }
-
 }
 
-/*----------------------------------------------------------------------------
- * Create a new cs_medcoupling_remapper_t * object.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Creates a new cs_medcoupling_remapper_t struct
  *
- * parameters:
- *   name            <-- new object name
- *   elt_dim         <-- element dimension
- *   select_criteria <-- selection criteria
- *   medfile_path    <-- path of associated MED file
- *   n_fields        <-- number of fields
- *   field_names     <-- associated field names
- *   iteration       <-- associated iteration
- *   iteration_order <-- associated iteration order
+ * \param[in] name             name of the new remapper
+ * \param[in] elt_dim          element dimension
+ * \param[in] select_criteria  selection criteria for the elements
+ * \param[in] medfile_path     path to the med file
+ * \param[in] n_fields         number of fields to load
+ * \param[in] field_names      names of the fields to load
+ * \param[in] iteration        time iteration to load
+ * \param[in] order            iteration order to load
  *
- * return:
- *   new remapper object
- *----------------------------------------------------------------------------*/
+ * \return  pointer to the new cs_medcoupling_remapper_t struct
+ *
+ */
+/*----------------------------------------------------------------------------*/
 
 static cs_medcoupling_remapper_t *
-_cs_paramedmem_create_remapper(const char   *name,
-                               int           elt_dim,
-                               const char   *select_criteria,
-                               const char   *medfile_path,
-                               int           n_fields,
-                               const char  **field_names,
-                               int           iteration,
-                               int           iteration_order)
+_create_remapper(const char   *name,
+                 int           elt_dim,
+                 const char   *select_criteria,
+                 const char   *medfile_path,
+                 int           n_fields,
+                 const char  **field_names,
+                 int           iteration,
+                 int           order)
 {
   cs_medcoupling_remapper_t *r = NULL;
   BFT_MALLOC(r, 1, cs_medcoupling_remapper_t);
@@ -205,15 +214,12 @@ _cs_paramedmem_create_remapper(const char   *name,
   }
 
   // New MEDCoupling UMesh linked to Code_Saturne mesh
-
   cs_medcoupling_mesh_t *new_mesh = cs_medcoupling_mesh_create(name,
                                                                select_criteria,
                                                                elt_dim);
 
   cs_mesh_t *parent_mesh = cs_glob_mesh;
-
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, new_mesh);
-
+  cs_medcoupling_mesh_copy_from_base(parent_mesh, new_mesh, 1);
   r->target_mesh = new_mesh;
 
   // MEDCoupling remapper (sequential interpolation)
@@ -229,7 +235,7 @@ _cs_paramedmem_create_remapper(const char   *name,
     r->source_fields[ii] = _cs_medcoupling_read_field_real(medfile_path,
                                                            field_names[ii],
                                                            iteration,
-                                                           iteration_order);
+                                                           order);
 
   }
 
@@ -251,29 +257,31 @@ _cs_paramedmem_create_remapper(const char   *name,
   return r;
 }
 
-/*----------------------------------------------------------------------------
- * Add a new remapper.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add a new remapper to the list
  *
- * parameters:
- *   name            <-- new remapper name
- *   elt_dim         <-- element dimension
- *   select_criteria <-- selection criteria
- *   medfile_path    <-- path of associated MED file
- *   n_fields        <-- number of fields
- *   field_names     <-- associated field names
- *   iteration       <-- associated iteration
- *   iteration_order <-- associated iteration order
- *----------------------------------------------------------------------------*/
+ * \param[in] name             name of the new remapper
+ * \param[in] elt_dim          element dimension
+ * \param[in] select_criteria  selection criteria for the elements
+ * \param[in] medfile_path     path to the med file
+ * \param[in] n_fields         number of fields to load
+ * \param[in] field_names      names of the fields to load
+ * \param[in] iteration        time iteration to load
+ * \param[in] order            iteration order to load
+ *
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
-_cs_paramedmem_add_remapper(const char   *name,
-                            int           elt_dim,
-                            const char   *select_criteria,
-                            const char   *medfile_path,
-                            int           n_fields,
-                            const char  **field_names,
-                            int           iteration,
-                            int           iteration_order)
+_add_remapper(const char   *name,
+              int           elt_dim,
+              const char   *select_criteria,
+              const char   *medfile_path,
+              int           n_fields,
+              const char  **field_names,
+              int           iteration,
+              int           order)
 {
   // Allocate or reallocate if needed
 
@@ -284,38 +292,36 @@ _cs_paramedmem_add_remapper(const char   *name,
 
   // Initialize new remapper, and update number of remappers
 
-  _remapper[_n_remappers] = _cs_paramedmem_create_remapper(name,
-                                                           elt_dim,
-                                                           select_criteria,
-                                                           medfile_path,
-                                                           n_fields,
-                                                           field_names,
-                                                           iteration,
-                                                           iteration_order);
+  _remapper[_n_remappers] = _create_remapper(name,
+                                             elt_dim,
+                                             select_criteria,
+                                             medfile_path,
+                                             n_fields,
+                                             field_names,
+                                             iteration,
+                                             order);
 
   _n_remappers++;
 }
 
-/*----------------------------------------------------------------------------
- * Copy interpolated values to a new array when no bbox is available.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Interpolate values for a given field without using the reduced bbox
  *
- * The caller is responsible for freeing the returned array.
+ * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
+ * \param[in] field_id     id of the field to interpolate (in the list given before)
+ * \param[in] default_val  value to apply for elements not intersected by
+ *                         source mesh
  *
- * parameters:
- *   field_id        <-- id of given field
- *   r               <-- pointer to remapper object
- *   default_val     <-- default value
- *
- * return:
- *   pointer to allocated values array
- *----------------------------------------------------------------------------*/
+ * \return  pointer to cs_real_t array containing new values
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
-_cs_medcoupling_remapper_copy_values_no_bbox(cs_medcoupling_remapper_t *r,
-                                             int                        field_id,
-                                             double                     default_val)
+_copy_values_no_bbox(cs_medcoupling_remapper_t  *r,
+                     int                         field_id,
+                     double                      default_val)
 {
-
   cs_lnum_t n_elts = r->target_mesh->n_elts;
 
   cs_real_t *new_vals;
@@ -344,26 +350,24 @@ _cs_medcoupling_remapper_copy_values_no_bbox(cs_medcoupling_remapper_t *r,
   return new_vals;
 }
 
-/*----------------------------------------------------------------------------
- * Copy interpolated values to a new array when a bbox is available.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Interpolate values for a given field using the reduced bbox
  *
- * The caller is responsible for freeing the returned array.
+ * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
+ * \param[in] field_id     id of the field to interpolate (in list given before)
+ * \param[in] default_val  value to apply for elements not intersected by
+ *                         source mesh
  *
- * parameters:
- *   field_id        <-- id of given field
- *   r               <-- pointer to remapper object
- *   default_val     <-- default value
- *
- * return:
- *   pointer to allocated values array
- *----------------------------------------------------------------------------*/
+ * \return  pointer to cs_real_t array containing new values
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
-_cs_medcoupling_remapper_copy_values_with_bbox(cs_medcoupling_remapper_t *r,
-                                               int                        field_id,
-                                               double                     default_val)
+_copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
+                       int                         field_id,
+                       double                      default_val)
 {
-
   cs_lnum_t n_elts = r->target_mesh->n_elts;
   cs_lnum_t n_elts_loc = cs_glob_mesh->n_cells;
 
@@ -378,9 +382,9 @@ _cs_medcoupling_remapper_copy_values_with_bbox(cs_medcoupling_remapper_t *r,
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
     const DataArrayInt *subcells
-      = r->bbox_source_mesh->getCellsInBoundingBox(rbbox,
-                                                     1.1);
-      // Construct the subfields based on the subcells list
+      = r->bbox_source_mesh->getCellsInBoundingBox(rbbox,  1.1);
+
+    // Construct the subfields based on the subcells list
     MEDCouplingFieldDouble *source_field
       = r->source_fields[field_id]->buildSubPart(subcells);
 
@@ -413,24 +417,19 @@ _cs_medcoupling_remapper_copy_values_with_bbox(cs_medcoupling_remapper_t *r,
   }
 
   return new_vals;
-
 }
 
-/*----------------------------------------------------------------------------
- * Internal function: Creating the interpolation matrix when no bbox is available.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief update the interpolation matrix without using the reduced bbox
  *
- * This step is separated from the interpolation step since it only needs
- * to be done once per mesh, while interpolation can be done for several
- * fields.
- *
- * parameters:
- *   r               <-- remapper object
- *----------------------------------------------------------------------------*/
+ * \param[in] r  pointer to the cs_medcoupling_remapper_t struct
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-_cs_medcoupling_remapper_setup_no_bbox(cs_medcoupling_remapper_t *r)
+_setup_no_bbox(cs_medcoupling_remapper_t *r)
 {
-
   cs_lnum_t n_elts = r->target_mesh->n_elts;
 
   if (n_elts > 0) {
@@ -446,22 +445,19 @@ _cs_medcoupling_remapper_setup_no_bbox(cs_medcoupling_remapper_t *r)
                          r->target_mesh->med_mesh,
                          r->interp_method);
   }
-
 }
 
-/*----------------------------------------------------------------------------
- * Internal function: Creating the interpolation matrix when a bbox is available.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief update the interpolation matrix using the reduced bbox
  *
- * This step is separated from the interpolation step since it only needs
- * to be done once per mesh, while interpolation can be done for several
- * fields.
+ * \param[in] r  pointer to the cs_medcoupling_remapper_t struct
  *
- * parameters:
- *   r               <-- remapper object
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-_cs_medcoupling_remapper_setup_with_bbox(cs_medcoupling_remapper_t  *r)
+_setup_with_bbox(cs_medcoupling_remapper_t  *r)
 {
   cs_lnum_t n_elts = r->target_mesh->n_elts;
 
@@ -470,10 +466,9 @@ _cs_medcoupling_remapper_setup_with_bbox(cs_medcoupling_remapper_t  *r)
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
     const DataArrayInt *subcells
-      = r->bbox_source_mesh->getCellsInBoundingBox(rbbox,
-                                                     1.1);
+      = r->bbox_source_mesh->getCellsInBoundingBox(rbbox, 1.1);
 
-      // Construction of a subfield and the submesh associated with it.
+    // Construction of a subfield and the submesh associated with it.
     MEDCouplingFieldDouble *source_field
       = r->source_fields[0]->buildSubPart(subcells);
 
@@ -489,37 +484,47 @@ _cs_medcoupling_remapper_setup_with_bbox(cs_medcoupling_remapper_t  *r)
                          r->interp_method);
   }
 }
+
 /*----------------------------------------------------------------------------*/
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------
- * Return remapper associated with a given id
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief get a remapper by its id
  *
- * parameters:
- *   id <-- remapper id
+ * \param[in] r_id  id of the remapper
  *
- * return:
- *   pointer to remapper
- *----------------------------------------------------------------------------*/
+ * \return  pointer to cs_medcoupling_remapper_t struct
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_id(int  r_id)
 {
-  cs_medcoupling_remapper_t *r = _remapper[r_id];
-
-  return r;
+  if (r_id < _n_remappers) {
+    cs_medcoupling_remapper_t *r = _remapper[r_id];
+    return r;
+  } else {
+    return NULL;
+  }
 }
 
-/*----------------------------------------------------------------------------
- * Return remapper associated with a given name
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief get a remapper by its name
  *
- * parameters:
- *   name <-- remapper name
+ * \param[in] name  name of the remapper
  *
- * return:
- *   pointer to remapper, or NULL
- *----------------------------------------------------------------------------*/
+ * \return  pointer to cs_medcoupling_remapper_t struct
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_name_try(const char  *name)
@@ -537,23 +542,22 @@ cs_medcoupling_remapper_by_name_try(const char  *name)
   return NULL;
 }
 
-/*----------------------------------------------------------------------------
- * Create or update update the list of remappers in the case where
- * several remappers may be needed.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief initialize a remapper based on a set of given arguments
  *
- * parameters:
- *   name            <-- new remapper name
- *   elt_dim         <-- element dimension
- *   select_criteria <-- selection criteria
- *   medfile_path    <-- path of associated MED file
- *   n_fields        <-- number of fields
- *   field_names     <-- associated field names
- *   iteration       <-- associated iteration
- *   iteration_order <-- associated iteration order
+ * \param[in] name             name of the new remapper
+ * \param[in] elt_dim          element dimension
+ * \param[in] select_criteria  selection criteria for the elements
+ * \param[in] medfile_path     path to the med file
+ * \param[in] n_fields         number of fields to load
+ * \param[in] field_names      names of the fields to load
+ * \param[in] iteration        time iteration to load
+ * \param[in] order            iteration order to load
  *
- * return:
- *   id of the newly added remapper within the list
- *----------------------------------------------------------------------------*/
+ * \return  id of the new remapper
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_medcoupling_remapper_initialize(const char   *name,
@@ -563,54 +567,52 @@ cs_medcoupling_remapper_initialize(const char   *name,
                                    int           n_fields,
                                    const char  **field_names,
                                    int           iteration,
-                                   int           iteration_order)
+                                   int           order)
 {
-  _cs_paramedmem_add_remapper(name,
-                              elt_dim,
-                              select_criteria,
-                              medfile_path,
-                              n_fields,
-                              field_names,
-                              iteration,
-                              iteration_order);
+  _add_remapper(name,
+                elt_dim,
+                select_criteria,
+                medfile_path,
+                n_fields,
+                field_names,
+                iteration,
+                order);
 
   int r_id = _n_remappers - 1;
 
   return r_id;
 }
 
-/*----------------------------------------------------------------------------
- * Update field values (if several time steps are available in the MED file).
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief set and load a given time iteration from the MED file
  *
- * parameters:
- *   r               <-- remapper object
- *   iteration       <-- associated iteration
- *   iteration_order <-- associated iteration order
- *----------------------------------------------------------------------------*/
+ * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
+ * \param[in] iteration    time iteration to load
+ * \param[in] order        iteration order to load
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
                                       int                         iteration,
-                                      int                         iteration_order)
+                                      int                         order)
 {
   for (int i = 0; i < r->n_fields; i++) {
     r->source_fields[i] = _cs_medcoupling_read_field_real(r->medfile_path,
                                                           r->field_names[i],
                                                           iteration,
-                                                          iteration_order);
+                                                          order);
   }
 }
 
-/*----------------------------------------------------------------------------
- * Create the interpolation matrix.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief update the interpolation matrix of the remapper
  *
- * This step is separated from the interpolation step since it only needs
- * to be done once per mesh, while interpolation can be done for several
- * fields.
- *
- * parameters:
- *   r               <-- remapper object
- *----------------------------------------------------------------------------*/
+ * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
@@ -622,28 +624,27 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
     if (rbbox == NULL) {
-      _cs_medcoupling_remapper_setup_no_bbox(r);
+      _setup_no_bbox(r);
 
     } else {
-      _cs_medcoupling_remapper_setup_with_bbox(r);
+      _setup_with_bbox(r);
     }
 
   }
 }
 
-/*----------------------------------------------------------------------------
- * Copy interpolated values to a new array.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Interpolate values for a given field
  *
- * The caller is responsible for freeing the returned array.
+ * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
+ * \param[in] field_id     id of the field to interpolate (in the list given before)
+ * \param[in] default_val  value to apply for elements not intersected by
+ *                         source mesh
  *
- * parameters:
- *   field_id        <-- id of given field
- *   r               <-- pointer to remapper object
- *   default_val     <-- default value
- *
- * return:
- *   pointer to allocated values array
- *----------------------------------------------------------------------------*/
+ * \return  pointer to cs_real_t array containing the new values
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
 cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
@@ -654,26 +655,22 @@ cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
   cs_real_t *new_vals = NULL;
 
   if (r->target_mesh->elt_dim == 2) {
-    new_vals
-      = _cs_medcoupling_remapper_copy_values_no_bbox(r, field_id, default_val);
+    new_vals = _copy_values_no_bbox(r, field_id, default_val);
   } else if (r->target_mesh->elt_dim == 3) {
-    new_vals
-      = _cs_medcoupling_remapper_copy_values_with_bbox(r, field_id, default_val);
+    new_vals = _copy_values_with_bbox(r, field_id, default_val);
   }
 
   return new_vals;
 }
 
-/*----------------------------------------------------------------------------
- * Translate the mapped source mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief translate the mesh using a given vector
  *
- * Caution: cs_medcoupling_remapper_prepare() must to be called after this
- * function in order to update the interpolation matrix.
- *
- * parameters:
- *   r           <-- pointer to remapper object
- *   translation <-- translation vector
- *----------------------------------------------------------------------------*/
+ * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
+ * \param[in] translation  translation vector
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
@@ -684,18 +681,16 @@ cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Rotate the mapped source mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Rotate the mesh using a center point, axis and angle
  *
- * Caution: cs_medcoupling_remapper_prepare() must to be called after this
- * function in order to update the interpolation matrix.
- *
- * parameters:
- *   r         <-- pointer to remapper object
- *   invariant <-- coordinates of invariant point
- *   axis      <-- rotation axis vector
- *   angle     <-- rotation angle in radians
- *----------------------------------------------------------------------------*/
+ * \param[in] r          pointer to the cs_medcoupling_remapper_t struct
+ * \param[in] invariant  coordinates of the invariant point
+ * \param[in] axis       rotation axis vector
+ * \param[in] angle      rotation angle in radians
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -979,14 +979,14 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_t *c_visc = NULL;
   BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
   const int kivisl
-    = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
+    = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
   if (kivisl != -1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
   }
   else {
     const double visls0
-      = cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
+      = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       c_visc[c_id] = visls0;
     }
@@ -1472,7 +1472,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
  * \brief Compute and log the different terms of the balance of a given scalar,
  *        on a volumic zone defined by selection criteria.
  *        The different contributions to the balance are printed in the
- *        listing.
+ *        run_solver.log.
  *
  * This function computes the balance relative to a given scalar
  * on a selected zone of the mesh.
@@ -1609,7 +1609,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   const cs_real_t *rho = CS_F_(rho)->val;
   const cs_field_t *f_pres = CS_F_(p);
   const cs_real_t *pressure = f_pres->val;
-  const cs_field_t *f_vel = CS_F_(u);
+  const cs_field_t *f_vel = CS_F_(vel);
   const cs_real_3_t *velocity =  (const cs_real_3_t *)f_vel->val;
   cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
                          cs_glob_physical_constants->gravity[1],
@@ -2109,7 +2109,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
 /*!
  * \brief Computes one term of the head loss balance (pressure drop) on a
  * volumic zone defined by the criterion also given as argument.
- * The different contributions are printed in the listing.
+ * The different contributions are printed in the run_solver.log.
  *
  * \param[in]     selection_crit      zone selection criterion
  */
@@ -2453,14 +2453,14 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_real_t *c_visc = NULL;
   BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
   const int kivisl
-    = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
+    = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
   if (kivisl != -1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
   }
   else {
     const double visls0
-      = cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
+      = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       c_visc[c_id] = visls0;
     }

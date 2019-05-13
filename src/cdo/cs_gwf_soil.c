@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -127,10 +127,10 @@ _free_saturated_soil(void       *input)
  *         a soil with a saturated.
  *         Case of an isotropic permeability and an unsteady Richards eq.
  *
+ * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
  * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
@@ -138,10 +138,10 @@ _free_saturated_soil(void       *input)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_update_saturated_iso_soil(const cs_mesh_t             *mesh,
+_update_saturated_iso_soil(const cs_real_t              t_eval,
+                           const cs_mesh_t             *mesh,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
-                           const cs_time_step_t        *ts,
                            const cs_real_t             *head_values,
                            const cs_zone_t             *zone,
                            void                        *input)
@@ -149,7 +149,7 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
+  CS_UNUSED(t_eval);
   CS_UNUSED(head_values);
 
   /* Retrieve field values associated to properties to update */
@@ -186,10 +186,10 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
  *         a soil with a saturated.
  *         Case of an anisotropic permeability and an unsteady Richards eq.
  *
+ * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
  * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
@@ -197,18 +197,18 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_update_saturated_aniso_soil(const cs_mesh_t             *mesh,
+_update_saturated_aniso_soil(const cs_real_t              t_eval,
+                             const cs_mesh_t             *mesh,
                              const cs_cdo_connect_t      *connect,
                              const cs_cdo_quantities_t   *quant,
-                             const cs_time_step_t        *ts,
                              const cs_real_t             *head_values,
                              const cs_zone_t             *zone,
                              void                        *input)
 {
+  CS_UNUSED(t_eval);
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
   CS_UNUSED(head_values);
 
   /* Retrieve field values associated to properties to update */
@@ -262,10 +262,10 @@ _free_genuchten_soil(void          *input)
  *         a soil with a Van Genuchten-Mualen.
  *         Case of an isotropic permeability and an unsteady Richards eq.
  *
+ * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_values  array of values for head used in law
  * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
@@ -273,18 +273,18 @@ _free_genuchten_soil(void          *input)
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_update_genuchten_iso_soil(const cs_mesh_t             *mesh,
+_update_genuchten_iso_soil(const cs_real_t              t_eval,
+                           const cs_mesh_t             *mesh,
                            const cs_cdo_connect_t      *connect,
                            const cs_cdo_quantities_t   *quant,
-                           const cs_time_step_t        *ts,
                            const cs_real_t             *head_values,
                            const cs_zone_t             *zone,
                            void                        *input)
 {
+  CS_UNUSED(t_eval);
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
-  CS_UNUSED(ts);
 
   /* Sanity checks */
   assert(head_values != NULL);
@@ -815,8 +815,8 @@ cs_gwf_soil_set_all_saturated(cs_property_t         *permeability,
 
     if (soil->model != CS_GWF_SOIL_SATURATED)
       bft_error(__FILE__, __LINE__, 0,
-                " Invalid way of setting soil parameter.\n"
-                " All soils are not considered as saturated.");
+                " %s: Invalid way of setting soil parameter.\n"
+                " All soils are not considered as saturated.", __func__);
 
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
@@ -969,15 +969,18 @@ cs_gwf_soil_set_by_field(cs_property_t     *permeability,
 void
 cs_gwf_soil_log_setup(void)
 {
-  const char  *meta = "  <GWF/Hydraulic Model>";
-  cs_log_printf(CS_LOG_SETUP, "  <GWF/Soils>  n_soils %d", _n_soils);
+  cs_log_printf(CS_LOG_SETUP, "  * GWF | Number of soils: %d\n", _n_soils);
 
+  char  meta[64];
   for (int i = 0; i < _n_soils; i++) {
 
     const cs_gwf_soil_t  *soil = _soils[i];
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
-    cs_log_printf(CS_LOG_SETUP, "\n  <GWF/Soil %d> %s\n", soil->id, z->name);
+    cs_log_printf(CS_LOG_SETUP, "\n        Soil.%d | Zone: %s\n",
+                  soil->id, z->name);
+    sprintf(meta, "        Soil.%d | Model |", soil->id);
+
     switch (soil->model) {
 
     case CS_GWF_SOIL_GENUCHTEN:
@@ -986,23 +989,24 @@ cs_gwf_soil_log_setup(void)
           (cs_gwf_soil_genuchten_param_t *)soil->input;
 
         cs_log_printf(CS_LOG_SETUP, "%s VanGenuchten-Mualen\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil parameters>");
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", meta);
         cs_log_printf(CS_LOG_SETUP,
                       " residual_moisture %5.3e", si->residual_moisture);
         cs_log_printf(CS_LOG_SETUP,
                       " saturated_moisture %5.3e\n", si->saturated_moisture);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil parameters> n= %f, scale= %f,"
-                      "tortuosity= %f\n", si->n, si->scale, si->tortuosity);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil saturated permeability>");
-        cs_log_printf(CS_LOG_SETUP,
-                      " [%-4.2e %4.2e %4.2e; %-4.2e %4.2e %4.2e;"
-                      " %-4.2e %4.2e %4.2e]",
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", meta);
+        cs_log_printf(CS_LOG_SETUP, " n= %f, scale= %f, tortuosity= %f\n",
+                      si->n, si->scale, si->tortuosity);
+        cs_log_printf(CS_LOG_SETUP, "%s Saturated permeability\n", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s [%-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[0][0],
                       si->saturated_permeability[0][1],
-                      si->saturated_permeability[0][2],
+                      si->saturated_permeability[0][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[1][0],
                       si->saturated_permeability[1][1],
-                      si->saturated_permeability[1][2],
+                      si->saturated_permeability[1][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e]\n", meta,
                       si->saturated_permeability[2][0],
                       si->saturated_permeability[2][1],
                       si->saturated_permeability[2][2]);
@@ -1014,20 +1018,20 @@ cs_gwf_soil_log_setup(void)
         const cs_gwf_soil_saturated_param_t  *si =
           (cs_gwf_soil_saturated_param_t *)soil->input;
 
-        cs_log_printf(CS_LOG_SETUP, "%s saturated\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil parameters>");
+        cs_log_printf(CS_LOG_SETUP, "%s Saturated\n", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters", meta);
         cs_log_printf(CS_LOG_SETUP,
                       " saturated_moisture %5.3e\n", si->saturated_moisture);
-        cs_log_printf(CS_LOG_SETUP, "    <Soil saturated permeability>");
-        cs_log_printf(CS_LOG_SETUP,
-                      " [%-4.2e %4.2e %4.2e; %-4.2e %4.2e %4.2e;"
-                      " %-4.2e %4.2e %4.2e]",
+        cs_log_printf(CS_LOG_SETUP, "%s Saturated permeability\n", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s [%-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[0][0],
                       si->saturated_permeability[0][1],
-                      si->saturated_permeability[0][2],
+                      si->saturated_permeability[0][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e;\n", meta,
                       si->saturated_permeability[1][0],
                       si->saturated_permeability[1][1],
-                      si->saturated_permeability[1][2],
+                      si->saturated_permeability[1][2]);
+        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e]\n", meta,
                       si->saturated_permeability[2][0],
                       si->saturated_permeability[2][1],
                       si->saturated_permeability[2][2]);
@@ -1035,7 +1039,7 @@ cs_gwf_soil_log_setup(void)
       break;
 
     case CS_GWF_SOIL_USER:
-      cs_log_printf(CS_LOG_SETUP, "%s user-defined\n", meta);
+      cs_log_printf(CS_LOG_SETUP, "%s **User-defined**\n", meta);
       break;
 
     default:

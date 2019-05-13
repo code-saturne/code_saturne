@@ -11,7 +11,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,7 @@ BEGIN_C_DECLS
  *   private_comm        use private MPI communicator (default: false)
  *   names=<fmt>         use same naming rules as <fmt> format
  *                       (default: ensight)
+ *   input_name=<name>   define input name (default: writer name)
  *
  * parameters:
  *   name           <-- base output case name.

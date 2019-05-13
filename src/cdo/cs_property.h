@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -116,8 +116,8 @@ typedef struct {
   int                  n_definitions;  /* Current number of definitions used */
   cs_xdef_t          **defs;           /* List of definitions */
 
-  /* Store the definition id for each cell, NULL is only one
-     definition is set */
+  /* Store the definition id for each cell, NULL if there is only one
+     definition set */
   short int           *def_ids;
 
   /* Function pointers to handle generic tasks related to a property. There
@@ -395,6 +395,27 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
+cs_property_def_by_time_func(cs_property_t      *pty,
+                             const char         *zname,
+                             cs_time_func_t     *func,
+                             void               *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_property_t structure thanks to an analytic function in
+ *         a subdomain attached to the mesh location named ml_name
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       func     pointer to a cs_analytic_func_t function
+ * \param[in]       input    NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
                             const char           *zname,
                             cs_analytic_func_t   *func,
@@ -431,6 +452,8 @@ cs_property_def_by_func(cs_property_t         *pty,
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  *
  * \return a pointer to the resulting cs_xdef_t structure
@@ -441,6 +464,7 @@ cs_xdef_t *
 cs_property_def_by_array(cs_property_t    *pty,
                          cs_flag_t         loc,
                          cs_real_t        *array,
+                         _Bool             is_owner,
                          cs_lnum_t        *index);
 
 /*----------------------------------------------------------------------------*/

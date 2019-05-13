@@ -1,7 +1,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -90,6 +90,7 @@ BEGIN_C_DECLS
 
 static void *
 _get_dl_function_pointer(void        *handle,
+                         const char  *lib_path,
                          const char  *name,
                          bool         errors_are_fatal)
 {
@@ -115,7 +116,10 @@ _get_dl_function_pointer(void        *handle,
 
   if (error != NULL && errors_are_fatal)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error calling dlsym: %s\n"), dlerror());
+              _("Error while trying to find symbol %s in lib %s: %s\n"),
+              name,
+              lib_path,
+              dlerror());
 
   return retval;
 }
@@ -169,10 +173,15 @@ void CS_PROCF(plug_aerosol, PLUG_AEROSOL)
                             cs_int_t*, cs_real_t*, cs_real_t*, cs_real_t*);
 
   void *handle;
+  const char lib_path[] = "libsiream.so";
 
-  handle = dlopen("libsiream.so", RTLD_LAZY);
+  handle = dlopen(lib_path, RTLD_LAZY);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error loading %s: %s."), lib_path, dlerror());
 
   aerosol_t aerosol = (aerosol_t) _get_dl_function_pointer(handle,
+                                                           lib_path,
                                                            "aerosol",
                                                            true);
 
@@ -213,13 +222,18 @@ void CS_PROCF(plug_compute_coagulation_coefficient,
                                                     cs_int_t*, cs_int_t*,
                                                     cs_int_t*, cs_real_t*);
   void *handle;
+  const char lib_path[] = "libsiream.so";
 
-  handle = dlopen("libsiream.so", RTLD_LAZY);
+  handle = dlopen(lib_path, RTLD_LAZY);
+
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error loading %s: %s."), lib_path, dlerror());
 
   compute_coagulation_coefficient_t compute_coagulation_coefficient =
   (compute_coagulation_coefficient_t) _get_dl_function_pointer(handle,
+                                                               lib_path,
                                       "compute_coagulation_coefficient",
-                                      true);
+                                                               true);
 
   compute_coagulation_coefficient(nbin_aer, bin_bound, couple, first_index,
                                   second_index, partition_coefficient);

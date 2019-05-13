@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -108,12 +108,10 @@ static bool _compute_cocg_lsq = false;
 /* Flag (mask) to activate bad cells correction
  * CS_BAD_CELLS_WARPED_CORRECTION
  * CS_FACE_DISTANCE_CLIP
- * CS_FACE_RECONSTRUCTION_CLIP
  * are set as default options
  * */
 unsigned cs_glob_mesh_quantities_flag =
-  CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP
-  + CS_FACE_RECONSTRUCTION_CLIP;
+  CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP;
 
 /* Choice of the porous model */
 int cs_glob_porous_model = 0;
@@ -121,6 +119,17 @@ int cs_glob_porous_model = 0;
 /* Number of computation updates */
 
 static int _n_computations = 0;
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_mesh_quantities_get_pointers(int   **iporos);
+
+void
+cs_f_mesh_quantities_fluid_vol_reductions(void);
 
 /*=============================================================================
  * Private function definitions
@@ -409,15 +418,13 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t udbfs = 1. / b_face_surf[face_id];
-
-          cs_real_t dddij[3];
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+          cs_real_3_t normal;
+          /* Normal is vector 0 if the b_face_normal norm is too small */
+          cs_math_3_normalise(b_face_normal[face_id], normal);
 
           for (cs_lnum_t ll = 0; ll < 3; ll++) {
             for (cs_lnum_t mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
+              cocg[ii][ll][mm] += normal[ll] * normal[mm];
           }
 
         } /* face without internal coupling */
@@ -2066,6 +2073,7 @@ _cell_volume_reductions(const cs_mesh_t  *mesh,
  *   i_face_cog     <--  center of gravity of interior faces
  *   b_face_cog     <--  center of gravity of border faces
  *   cell_cen       <--  cell center
+ *   cell_vol       <--  cell volume
  *   i_dist         -->  distance IJ.Nij for interior faces
  *   b_dist         -->  likewise for border faces
  *   weight         -->  weighting factor (Aij=pond Ai+(1-pond)Aj)
@@ -2081,6 +2089,7 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                         const cs_real_t    i_face_cog[][3],
                         const cs_real_t    b_face_cog[][3],
                         const cs_real_t    cell_cen[][3],
+                        const cs_real_t    cell_vol[],
                         cs_real_t          i_dist[],
                         cs_real_t          b_dist[],
                         cs_real_t          weight[])
@@ -2116,19 +2125,29 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
     else {
       weight[face_id] = 0.5;
     }
-    double distmax = cs_math_3_distance(cell_cen[cell_id1],
-                                        cell_cen[cell_id2]);
 
     /* Clipping of cell cell distances */
     if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
-      if (i_dist[face_id] < 0.2 * distmax) {
+
+      /* Min value between IJ and
+       * (Omega_i+Omega_j)/S_ij which is exactly the distance for tetras */
+      cs_real_t distmax
+        = cs_math_fmin(cs_math_3_distance(cell_cen[cell_id1],
+                                          cell_cen[cell_id2]),
+                       (  (cell_vol[cell_id1] + cell_vol[cell_id2])
+                        / cs_math_3_norm(face_nomal)));
+
+      /* Previous value of 0.2 sometimes leads to computation divergence */
+      /* 0.01 seems better and safer for the moment */
+      double critmin = 0.01;
+      if (i_dist[face_id] < critmin * distmax) {
         w_count++;
-        i_dist[face_id] = CS_MAX(i_dist[face_id], 0.2 * distmax);
+        i_dist[face_id] = cs_math_fmax(i_dist[face_id], critmin * distmax);
       }
 
       /* Clipping of weighting */
-      weight[face_id] = CS_MAX(weight[face_id], 0.001);
-      weight[face_id] = CS_MIN(weight[face_id], 0.999);
+      weight[face_id] = cs_math_fmax(weight[face_id], 0.001);
+      weight[face_id] = cs_math_fmin(weight[face_id], 0.999);
     }
   }
 
@@ -2140,7 +2159,7 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                  "For these faces, the weight may be clipped.\n"),
                (unsigned long long)w_count);
 
-  /* Border faces */
+  /* Boundary faces */
 
   w_count = 0;
 
@@ -2159,11 +2178,17 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
                                                      normal);
     /* Clipping of cell boundary distances */
     if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
-      cs_real_t distmax = cs_math_3_distance(cell_cen[cell_id],
-                                             b_face_cog[face_id]);
-      if (b_dist[face_id] < 0.2 * distmax) {
+
+      /* Min value between IF and
+       * (Omega_i)/S which is exactly the distance for tetras */
+      double distmax = CS_MIN(
+          cs_math_3_distance(cell_cen[cell_id], b_face_cog[face_id]),
+          cell_vol[cell_id]/cs_math_3_norm(face_nomal));
+
+      double critmin = 0.01;
+      if (b_dist[face_id] < critmin * distmax) {
         w_count++;
-        b_dist[face_id] = CS_MAX(b_dist[face_id], 0.2 * distmax);
+        b_dist[face_id] = CS_MAX(b_dist[face_id], critmin * distmax);
       }
 
     }
@@ -2244,7 +2269,7 @@ _compute_face_vectors(int                dim,
 
   cs_real_t dipjp, psi, pond;
   cs_real_t surfnx, surfny, surfnz;
-  cs_real_t vecigx, vecigy, vecigz, vecijx, vecijy, vecijz;
+  cs_real_t vecijx, vecijy, vecijz;
 
   /* Interior faces */
 
@@ -2287,45 +2312,55 @@ _compute_face_vectors(int                dim,
          + (1. - pond)*cell_cen[cell_id2*dim + 2]);
   }
 
-  /* Border faces */
+  /* Boundary faces */
+  cs_gnum_t w_count = 0;
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
     cell_id = b_face_cells[face_id];
 
-    /* Normalized normal */
-    surfnx = b_face_normal[face_id*dim]     / b_face_surf[face_id];
-    surfny = b_face_normal[face_id*dim + 1] / b_face_surf[face_id];
-    surfnz = b_face_normal[face_id*dim + 2] / b_face_surf[face_id];
+    cs_real_3_t normal;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(&b_face_normal[face_id*dim], normal);
 
-    /* ---> IG */
-    vecigx = b_face_cog[face_id*dim]     - cell_cen[cell_id*dim];
-    vecigy = b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1];
-    vecigz = b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2];
+    /* ---> IF */
+    cs_real_t vec_if[3] = {
+      b_face_cog[face_id*dim]     - cell_cen[cell_id*dim],
+      b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1],
+      b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2]};
 
-    /* ---> PSI = IG.NIJ */
-    psi = vecigx*surfnx + vecigy*surfny + vecigz*surfnz;
-
-    /* ---> DIIPB = IG - (IG.NIJ)NIJ */
-    diipb[face_id*dim]     = vecigx - psi*surfnx;
-    diipb[face_id*dim + 1] = vecigy - psi*surfny;
-    diipb[face_id*dim + 2] = vecigz - psi*surfnz;
+    /* ---> diipb = IF - (IF.NIJ)NIJ */
+    cs_math_3_orthogonal_projection(normal, vec_if, &diipb[face_id*dim]);
 
     /* Limiter on boundary face reconstruction */
     if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
-      double iip = sqrt(   diipb[face_id*dim]     * diipb[face_id*dim]
-                         + diipb[face_id*dim + 1] * diipb[face_id*dim + 1]
-                         + diipb[face_id*dim + 2] * diipb[face_id*dim + 2]);
+      cs_real_t iip = cs_math_3_norm(&diipb[face_id*dim]);
 
+      bool is_clipped = false;
       cs_real_t corri = 1.;
-      if (iip > 0.5 * b_dist[face_id])
+
+      if (iip > 0.5 * b_dist[face_id]) {
+        is_clipped = true;
         corri = 0.5 * b_dist[face_id] / iip;
+      }
 
       diipb[face_id*dim]    *= corri;
       diipb[face_id*dim +1] *= corri;
       diipb[face_id*dim +2] *= corri;
+
+      if (is_clipped)
+        w_count++;
     }
   }
+
+  cs_parall_counter(&w_count, 1);
+
+  if (w_count > 0)
+    bft_printf(_("\n"
+                 "%llu boundary faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"),
+               (unsigned long long)w_count);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2351,7 +2386,7 @@ _compute_face_vectors(int                dim,
  *   JJ' = JF - (JF.Nij)Nij
  *
  * parameters:
- *   dim            <--  dimension
+ *   n_cells        <--  number of cells
  *   n_i_faces      <--  number of interior faces
  *   i_face_cells   <--  interior "faces -> cells" connectivity
  *   i_face_norm    <--  surface normal of interior faces
@@ -2365,7 +2400,8 @@ _compute_face_vectors(int                dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
+_compute_face_sup_vectors(const cs_lnum_t    n_cells,
+                          const cs_lnum_t    n_i_faces,
                           const cs_lnum_2_t  i_face_cells[],
                           const cs_real_t    i_face_normal[][3],
                           const cs_real_t    i_face_cog[][3],
@@ -2375,7 +2411,6 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
                           cs_real_t          diipf[][3],
                           cs_real_t          djjpf[][3])
 {
-
   cs_gnum_t w_count = 0;
 
   /* Interior faces */
@@ -2458,7 +2493,7 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
         corrj = 0.9 * cell_vol[cell_id2] / (surfn * jjp);
       }
 
-      if (is_clipped)
+      if (is_clipped && cell_id1 < n_cells)
         w_count++;
 
       djjpf[face_id][0] *= corrj;
@@ -2472,8 +2507,9 @@ _compute_face_sup_vectors(const cs_lnum_t    n_i_faces,
 
   if (w_count > 0)
     bft_printf(_("\n"
-                 "%llu faces have a too large reconstruction distance.\n"
-                 "For these faces, reconstruction are limited.\n"),
+                 "%llu internal faces have a too large reconstruction distance.\n"
+                 "For these faces, reconstruction are limited.\n"
+                 "\n"),
                (unsigned long long)w_count);
 
 }
@@ -2535,22 +2571,43 @@ CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra)
   cs_mesh_quantities_set_cocg_options(*imrgra);
 }
 
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*----------------------------------------------------------------------------
- * Set porous model
+ * Get pointers to global variables.
  *
- * Fortran interface :
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
  *
- * subroutine compor (iporos)
- * *****************
- *
- * integer          iporos        : <-- : porous model
+ * parameters:
+ *   iporos  --> pointer to cs_glob_porous_model
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos)
+cs_f_mesh_quantities_get_pointers(int   **iporos)
 {
-  cs_mesh_quantities_set_porous_model(*iporos);
+  *iporos = &(cs_glob_porous_model);
 }
+
+/*----------------------------------------------------------------------------
+ * Compute the total, min, and max fluid volumes of cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_mesh_quantities_fluid_vol_reductions(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_mesh_quantities_fluid_vol_reductions(m,
+                                          mq);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions
@@ -2658,7 +2715,7 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
  * cell volumes and surfaces.
  *
  * parameters:
- *   porous_model <-- gradient option (Fortran iporos)
+ *   porous_model <-- porous model option (> 0 for porosity)
  *----------------------------------------------------------------------------*/
 
 void
@@ -3091,6 +3148,10 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   else {
     mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
 
+    mesh_quantities->min_f_vol = mesh_quantities->min_vol;
+    mesh_quantities->max_f_vol = mesh_quantities->max_vol;
+    mesh_quantities->tot_f_vol = mesh_quantities->tot_vol;
+
     if (mesh_quantities->c_solid_flag == NULL) {
       BFT_MALLOC(mesh_quantities->c_solid_flag, 1, cs_int_t);
       mesh_quantities->c_solid_flag[0] = 0;
@@ -3149,6 +3210,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                           (const cs_real_3_t *)(mesh_quantities->i_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->b_face_cog),
                           (const cs_real_3_t *)(mesh_quantities->cell_cen),
+                          (const cs_real_t *)(mesh_quantities->cell_vol),
                           mesh_quantities->i_dist,
                           mesh_quantities->b_dist,
                           mesh_quantities->weight);
@@ -3176,7 +3238,8 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   /* Compute additional vectors relative to faces to handle non-orthogonalities */
 
   _compute_face_sup_vectors
-    (mesh->n_i_faces,
+    (mesh->n_cells,
+     mesh->n_i_faces,
      (const cs_lnum_2_t *)(mesh->i_face_cells),
      (const cs_real_3_t *)(mesh_quantities->i_face_normal),
      (const cs_real_3_t *)(mesh_quantities->i_face_cog),
@@ -3225,7 +3288,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Compute fluid mesh quantities
+ * Compute min, max, and total
  *
  * parameters:
  *   mesh            <-- pointer to a cs_mesh_t structure
@@ -3238,6 +3301,46 @@ cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
 {
   CS_UNUSED(mesh);
   CS_UNUSED(mesh_quantities);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the total, min, and max fluid volumes of cells
+ *
+ * parameters:
+ *   mesh            <-- pointer to mesh structure
+ *   mesh_quantities <-> pointer to a mesh quantities structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_fluid_vol_reductions(const cs_mesh_t       *mesh,
+                                        cs_mesh_quantities_t  *mesh_quantities)
+{
+  _cell_volume_reductions(mesh,
+                          mesh_quantities->cell_f_vol,
+                          &(mesh_quantities->min_f_vol),
+                          &(mesh_quantities->max_f_vol),
+                          &(mesh_quantities->tot_f_vol));
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  _min_f_vol, _max_f_vol, _tot_f_vol;
+
+    MPI_Allreduce(&(mesh_quantities->min_f_vol), &_min_f_vol, 1, CS_MPI_REAL,
+                  MPI_MIN, cs_glob_mpi_comm);
+
+    MPI_Allreduce(&(mesh_quantities->max_f_vol), &_max_f_vol, 1, CS_MPI_REAL,
+                  MPI_MAX, cs_glob_mpi_comm);
+
+    MPI_Allreduce(&(mesh_quantities->tot_f_vol), &_tot_f_vol, 1, CS_MPI_REAL,
+                  MPI_SUM, cs_glob_mpi_comm);
+
+    mesh_quantities->min_f_vol = _min_f_vol;
+    mesh_quantities->max_f_vol = _max_f_vol;
+    mesh_quantities->tot_f_vol = _tot_f_vol;
+
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -3308,7 +3411,8 @@ cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
     BFT_MALLOC(mesh_quantities->djjpf, n_i_faces*dim, cs_real_t);
 
   _compute_face_sup_vectors
-    (mesh->n_i_faces,
+    (mesh->n_cells,
+     mesh->n_i_faces,
      (const cs_lnum_2_t *)(mesh->i_face_cells),
      (const cs_real_3_t *)(mesh_quantities->i_face_normal),
      (const cs_real_3_t *)(mesh_quantities->i_face_cog),
@@ -3854,9 +3958,9 @@ cs_mesh_quantities_log_setup(void)
   if (cs_glob_mesh_quantities_flag != 0) {
 
     const char *correction_name[] = {"CS_BAD_CELLS_WARPED_CORRECTION",
-                                     "CS_BAD_CELLS_WARPED_REGULARISATION",
+                                     "CS_BAD_CELLS_REGULARISATION",
                                      "CS_CELL_FACE_CENTER_CORRECTION",
-                                     "CS_CELL_FACE_CENTER_CORRECTION",
+                                     "CS_CELL_CENTER_CORRECTION",
                                      "CS_FACE_DISTANCE_CLIP",
                                      "CS_FACE_RECONSTRUCTION_CLIP",
                                      "CS_CELL_VOLUME_RATIO_CORRECTION",

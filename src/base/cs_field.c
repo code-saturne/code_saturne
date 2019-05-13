@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -217,10 +217,9 @@ static cs_field_key_val_t  *_key_vals = NULL;
 
 /* Names for logging */
 
-static const int _n_type_flags = 7;
+static const int _n_type_flags = 6;
 static const int _type_flag_mask[] = {CS_FIELD_INTENSIVE,
                                       CS_FIELD_EXTENSIVE,
-                                      CS_FIELD_STEADY,
                                       CS_FIELD_VARIABLE,
                                       CS_FIELD_PROPERTY,
                                       CS_FIELD_POSTPROCESS,
@@ -228,7 +227,6 @@ static const int _type_flag_mask[] = {CS_FIELD_INTENSIVE,
                                       CS_FIELD_USER};
 static const char *_type_flag_name[] = {N_("intensive"),
                                         N_("extensive"),
-                                        N_("steady"),
                                         N_("variable"),
                                         N_("property"),
                                         N_("postprocess"),
@@ -294,6 +292,10 @@ cs_f_field_have_previous(int   id);
 void
 cs_f_field_set_n_previous(int  id,
                           int  n_previous);
+
+void
+cs_f_field_get_n_previous(int  id,
+                          int  n_previous[1]);
 
 void
 cs_f_field_var_ptr_by_id(int          id,
@@ -861,7 +863,7 @@ cs_f_field_get_name(int           id,
  *
  * parameters:
  *   id  <-- field id
- *   dim <-- field dimension
+ *   dim --> field dimension
  *----------------------------------------------------------------------------*/
 
 void
@@ -871,6 +873,25 @@ cs_f_field_get_dimension(int  id,
   const cs_field_t *f = cs_field_by_id(id);
 
   dim[0] = f->dim;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the number of previous values of a field.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id  <-- field id
+ *   dim --> field dimension
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_n_previous(int  id,
+                          int  n_previous[1])
+{
+  const cs_field_t *f = cs_field_by_id(id);
+
+  n_previous[0] = f->n_time_vals - 1;
 }
 
 /*----------------------------------------------------------------------------
@@ -1760,6 +1781,8 @@ cs_field_map_values(cs_field_t   *f,
  *                                are added
  * \param[in]       have_conv_bc  if true, convection BC coefficients (ac and bc)
  *                                are added
+ * \param[in]       have_exch_bc  if true, exchange boundary coefficients (hint
+ *                                and hext) are added
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1767,7 +1790,8 @@ void
 cs_field_allocate_bc_coeffs(cs_field_t  *f,
                             bool         have_flux_bc,
                             bool         have_mom_bc,
-                            bool         have_conv_bc)
+                            bool         have_conv_bc,
+                            bool         have_exch_bc)
 {
   /* Add boundary condition coefficients if required */
 
@@ -1802,8 +1826,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       BFT_MALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
 
       if (have_flux_bc) {
-        BFT_MALLOC(f->bc_coeffs->af,  n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bf,  n_elts[0]*b_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         f->bc_coeffs->af = NULL;
@@ -1811,8 +1835,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        BFT_MALLOC(f->bc_coeffs->ad,  n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bd,  n_elts[0]*b_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         f->bc_coeffs->ad = NULL;
@@ -1820,12 +1844,21 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        BFT_MALLOC(f->bc_coeffs->ac,  n_elts[0]*a_mult, cs_real_t);
-        BFT_MALLOC(f->bc_coeffs->bc,  n_elts[0]*b_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         f->bc_coeffs->ac = NULL;
         f->bc_coeffs->bc = NULL;
+      }
+
+      if (have_exch_bc) {
+        BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->hext, n_elts[0], cs_real_t);
+      }
+      else {
+        f->bc_coeffs->hint = NULL;
+        f->bc_coeffs->hext = NULL;
       }
 
     }
@@ -1836,8 +1869,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       BFT_REALLOC(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t);
 
       if (have_flux_bc) {
-        BFT_REALLOC(f->bc_coeffs->af,  n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bf,  n_elts[0]*b_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         BFT_FREE(f->bc_coeffs->af);
@@ -1845,8 +1878,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        BFT_REALLOC(f->bc_coeffs->ad,  n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bd,  n_elts[0]*b_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         BFT_FREE(f->bc_coeffs->ad);
@@ -1854,18 +1887,25 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        BFT_REALLOC(f->bc_coeffs->ac,  n_elts[0]*a_mult, cs_real_t);
-        BFT_REALLOC(f->bc_coeffs->bc,  n_elts[0]*b_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t);
+        BFT_REALLOC(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t);
       }
       else {
         BFT_FREE(f->bc_coeffs->ac);
         BFT_FREE(f->bc_coeffs->bc);
       }
 
+      if (have_exch_bc) {
+        BFT_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
+        BFT_MALLOC(f->bc_coeffs->hext, n_elts[0], cs_real_t);
+      }
+      else {
+        BFT_FREE(f->bc_coeffs->hint);
+        BFT_FREE(f->bc_coeffs->hext);
+      }
+
     }
 
-    f->bc_coeffs->hint = NULL;
-    f->bc_coeffs->hext = NULL;
   }
 
   else
@@ -2058,6 +2098,20 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         }
       }
     }
+
+    if (f->bc_coeffs->hint != NULL) {
+      for (ifac = 0; ifac < n_elts[0]; ifac++) {
+        f->bc_coeffs->hint[ifac] = 0.;
+        f->bc_coeffs->hext[ifac] = 0.;
+      }
+    }
+
+    if (f->bc_coeffs->hext != NULL) {
+      for (ifac = 0; ifac < n_elts[0]; ifac++) {
+        f->bc_coeffs->hext[ifac] = 0.;
+      }
+    }
+
   }
 
   else
@@ -2224,14 +2278,14 @@ cs_field_allocate_or_map_all(void)
   for (i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
     if (f->is_owner)
-      cs_field_allocate_values(f);
-    else
+        cs_field_allocate_values(f);
+    else {
       if (f->val == NULL)
         bft_error(__FILE__, __LINE__, 0,
                   _("Field \"%s\"\n"
                     " requires mapped values which have not been set."),
                   f->name);
-
+    }
   }
 }
 
@@ -3180,7 +3234,7 @@ cs_field_set_key_str(cs_field_t  *f,
       if (kv->is_locked)
         retval = CS_FIELD_LOCKED;
       else {
-        if (kv->is_set == false)
+        if (kv->is_set == 0)
           kv->val.v_p = NULL;
         BFT_REALLOC(kv->val.v_p, strlen(str) + 1, char);
         strcpy(kv->val.v_p, str);
@@ -3297,7 +3351,7 @@ cs_field_set_key_struct(cs_field_t  *f,
       if (kv->is_locked)
         retval = CS_FIELD_LOCKED;
       else {
-        if (kv->is_set == false)
+        if (kv->is_set == 0)
           BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
         memcpy(kv->val.v_p, s, kd->type_size);
         kv->is_set = 1;
@@ -3418,7 +3472,7 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
       if (kv->is_locked)
         errcode = CS_FIELD_LOCKED;
       else {
-        if (kv->is_set == false) {
+        if (kv->is_set == 0) {
           BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
           cs_field_get_key_struct(f, key_id, kv->val.v_p);
         }
@@ -3537,8 +3591,8 @@ cs_field_log_defs(void)
 
   int n_cat_fields = 0;
 
-  int mask_id_start = 3; /* _type_flag_*[CS_FIELD_VARIABLE] */
-  int mask_id_end = 7;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
+  int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
   int mask_prev = 0;
 
   if (_n_fields == 0)
@@ -4023,8 +4077,8 @@ cs_field_log_key_vals(int   key_id,
   int i, cat_id;
   cs_field_key_def_t *kd;
 
-  int mask_id_start = 3; /* _type_flag_*[CS_FIELD_VARIABLE] */
-  int mask_id_end = 7;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
+  int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
   int mask_prev = 0;
   const char null_str[] = "(null)";
 

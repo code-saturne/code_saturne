@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -39,9 +39,8 @@ import os, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import *
-import code_saturne.Base.Toolbox as Tool
-from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.model.Common import *
+from code_saturne.model.XMLvariables import Model, Variables
 
 #-------------------------------------------------------------------------------
 # Model class

@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -537,13 +537,10 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
     # Start building command to run
 
     if debugger_ui in ['terminal', 'cgdb']:
-        if rank_id < 0 and not target:
-            cmd = [str(debugger)] + cmd
-        else:
-            cmd_string = str(debugger)
-            for c in cmd:
-                cmd_string += ' ' + enquote_arg(str(c))
-            cmd = [term, '-e', cmd_string]
+        cmd_string = str(debugger)
+        for c in cmd:
+            cmd_string += ' ' + enquote_arg(str(c))
+        cmd = [term, '-e', cmd_string]
 
     elif debugger_ui == 'gdbgui':
         cmd.insert(0, debugger)
@@ -567,7 +564,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
         else:
             cmd_string += ' -i=mi'   # emacs 24 and newer
         for c in cmd:
-            cmd_string += ' ' + enquote_arg(str(c))
+            if cmd != gdb:
+                cmd_string += ' ' + enquote_arg(str(c))
         cmd_string += r'\")"'
         cmd = [debugger, '--eval', cmd_string]
 

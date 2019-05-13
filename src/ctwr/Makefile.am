@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -64,7 +64,8 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_ctwr_air_props.h \
-cs_ctwr.h
+cs_ctwr.h \
+cs_ctwr_headers.h
 
 # Library source files
 

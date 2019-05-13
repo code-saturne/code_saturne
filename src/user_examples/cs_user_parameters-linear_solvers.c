@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -58,41 +58,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_ctwr.h"
-#include "cs_equation_param.h"
-#include "cs_fan.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_gui_util.h"
-#include "cs_grid.h"
-#include "cs_internal_coupling.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_multigrid.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_post.h"
-#include "cs_post_util.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_sles.h"
-#include "cs_sles_it.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_selector.h"
-#include "cs_rad_transfer.h"
+#include "cs_headers.h"
 
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
@@ -267,21 +233,25 @@ _petsc_p_setup_hook_view(const void  *context,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
+ *   a       <-> PETSc matrix context
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
+                        Mat                 a,
                         KSP                 ksp)
 {
+  CS_UNUSED(a);
+
   /*! [sles_petsc_cdo_hook] */
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
 
   if (cs_equation_param_has_name(eqp, "Name_Of_The_Equation")) {
 
     /* Assume a PETSc version greater or equal to 3.7.0 */
-    if (eqp->itsol_info.precond == CS_PARAM_PRECOND_AMG) {
-      if (eqp->itsol_info.amg_type == CS_PARAM_AMG_BOOMER) {
+    if (eqp->sles_param.precond == CS_PARAM_PRECOND_AMG) {
+      if (eqp->sles_param.amg_type == CS_PARAM_AMG_BOOMER) {
 
         PetscOptionsSetValue(NULL,
                              "-pc_hypre_boomeramg_strong_threshold", "0.7");
@@ -367,7 +337,7 @@ cs_user_linear_solvers(void)
     cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
     cs_sles_set_post_output(sles_p, CS_POST_WRITER_DEFAULT);
 
-    cs_sles_t *sles_u = cs_sles_find_or_add(CS_F_(u)->id, NULL);
+    cs_sles_t *sles_u = cs_sles_find_or_add(CS_F_(vel)->id, NULL);
     cs_sles_set_post_output(sles_u, CS_POST_WRITER_DEFAULT);
   }
   /*! [sles_viz_1] */
@@ -408,15 +378,20 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_mgp_1] */
 
-
   /* Set parallel grid merging options for all multigrid solvers */
   /*-------------------------------------------------------------*/
 
   /*! [sles_mg_parall] */
-  cs_grid_set_merge_options(4,   /* # of ranks merged at a time */
-                            300, /* mean # of cells under which we merge */
-                            500, /* global # of cells under which we merge */
-                            1);  /* # of ranks under which we do not merge */
+  {
+    cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id,
+                                             NULL,
+                                             CS_MULTIGRID_V_CYCLE);
+
+    cs_multigrid_set_merge_options(mg,
+                                   4,    /* # of ranks merged at a time */
+                                   300,  /* mean # of cells under which we merge */
+                                   500); /* global # of cells under which we merge */
+  }
   /*! [sles_mg_parall] */
 
   /* Example: conjugate gradient preconditioned by multigrid for pressure */
@@ -454,7 +429,6 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_mgp_2] */
 
-
   /* Set a non-default linear solver for DOM radiation. */
   /*----------------------------------------------------*/
 
@@ -479,7 +453,6 @@ cs_user_linear_solvers(void)
 
   /* Example: activate convergence plot for pressure */
   /*-------------------------------------------------*/
-
 
   /*! [sles_plot_1] */
   {

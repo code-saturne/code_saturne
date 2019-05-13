@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -222,17 +222,19 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 /*!
  * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
  *
- * \param[in]  n_loc_cells   number of cells
- * \param[in]  cell_ids      list of cells (0 to n-1)
- * \param[out] rst           Reynolds stresses stored as vector
- *                           [r11,r22,r33,r12,r23,r13]
+ * \param[in]  n_cells     number of cells
+ * \param[in]  cell_ids    list of cells (0 to n-1) containing given coordinates
+ * \param[in]  coords      coordinates
+ * \param[out] rst         Reynolds stresses stored as vector
+ *                         [r11,r22,r33,r12,r23,r13]
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
-                              const cs_lnum_t  cell_ids[],
-                              cs_real_6_t      rst[]);
+cs_post_evm_reynolds_stresses(cs_lnum_t          n_cells,
+                              const cs_lnum_t    cell_ids[],
+                              const cs_real_3_t *coords,
+                              cs_real_6_t       *rst);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -51,7 +51,6 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
-#include "cs_domain_boundary.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
@@ -84,7 +83,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 cs_domain_t  *cs_glob_domain = NULL; /* Pointer to the main computational
-                                        domain used in CDO/HHO schemes */
+                                        domain */
 
 /*============================================================================
  * Local structure definitions
@@ -153,7 +152,6 @@ _create_cdo_context(int     cdo_mode)
 cs_domain_t *
 cs_domain_create(void)
 {
-  cs_real_t  default_time_step = -1e13;
   cs_domain_t  *domain = NULL;
 
   BFT_MALLOC(domain, 1, cs_domain_t);
@@ -167,24 +165,10 @@ cs_domain_create(void)
   /* Default initialization of the time step */
   domain->only_steady = true;
   domain->is_last_iter = false;
-  domain->dt_cur = default_time_step;
   domain->time_step_def = NULL;
 
   /* Global structure for time step management */
   domain->time_step = cs_get_glob_time_step();
-
-  /* Time options () */
-  domain->time_options.inpdt0 = 0; /* standard calculation */
-  domain->time_options.iptlro = 0;
-  domain->time_options.idtvar = 0; /* constant time step by default */
-  domain->time_options.coumax = 1.;
-  domain->time_options.cflmmx = 0.99;
-  domain->time_options.foumax = 10.;
-  domain->time_options.varrdt = 0.1;
-  domain->time_options.dtref = default_time_step;
-  domain->time_options.dtmin = default_time_step;
-  domain->time_options.dtmax = default_time_step;
-  domain->time_options.relxst = 0.7; /* Not useful in CDO schemes */
 
   /* Other options */
   domain->restart_nt = 0;
@@ -195,7 +179,9 @@ cs_domain_create(void)
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
 
   /* By default a wall is defined for the whole boundary of the domain */
-  cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_WALL);
+  cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_WALL);
+  domain->boundaries = cs_glob_boundaries;
+  domain->ale_boundaries = cs_boundary_create(CS_BOUNDARY_ALE_FIXED);
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
@@ -236,7 +222,8 @@ cs_domain_free(cs_domain_t   **p_domain)
     BFT_FREE(domain->cdo_context);
 
   /* Free arrays related to the domain boundary */
-  cs_domain_boundary_free();
+  cs_boundary_free(&(domain->boundaries));
+  cs_boundary_free(&(domain->ale_boundaries));
 
   /* Free CDO structures related to geometric quantities and connectivity */
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
@@ -374,50 +361,54 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
   if (domain->only_steady)
     return;
 
-  const cs_time_step_t  *ts = domain->time_step;
-  const double  t_cur = ts->t_cur;
-  const int  nt_cur = ts->nt_cur;
-
+  cs_time_step_t  *ts = domain->time_step;
   cs_xdef_t  *ts_def = domain->time_step_def;
 
   if (ts_def == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " Please check your settings: Unsteady computation but no"
-              " current time step defined.\n");
+              " %s: Please check your settings: Unsteady computation but no"
+              " current time step defined.\n", __func__);
+
+  const double  t_cur = ts->t_cur;
+  const int  nt_cur = ts->nt_cur;
 
   if (ts_def->type != CS_XDEF_BY_VALUE) { /* dt_cur may change */
+
+    ts->dt[2] = ts->dt[1];
+    ts->dt[1] = ts->dt[0];
 
     if (ts_def->type == CS_XDEF_BY_TIME_FUNCTION) {
 
       /* Compute current time step */
-      cs_xdef_timestep_input_t  *param =
-        (cs_xdef_timestep_input_t *)ts_def->input;
-      domain->dt_cur = param->func(nt_cur, t_cur, param->input);
+      cs_xdef_time_func_input_t  *param
+        = (cs_xdef_time_func_input_t *)ts_def->input;
+      param->func(nt_cur, t_cur, param->input, &(ts->dt[0]));
 
       /* Update time_options */
-      double  dtmin = CS_MIN(domain->time_options.dtmin, domain->dt_cur);
-      double  dtmax = CS_MAX(domain->time_options.dtmax, domain->dt_cur);
+      double  dtmin = CS_MIN(domain->time_options.dtmin, ts->dt[0]);
+      double  dtmax = CS_MAX(domain->time_options.dtmax, ts->dt[0]);
 
       domain->time_options.dtmin = dtmin;
       domain->time_options.dtmax = dtmax;
-      // TODO: Check how the following value is set in FORTRAN
-      // domain->time_options.dtref = 0.5*(dtmin + dtmax);
-      if (domain->time_options.dtref < 0) // Should be the initial val.
-        domain->time_options.dtref = domain->dt_cur;
+
+      /* TODO: Check how the following value is set in FORTRAN
+       * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
+      if (domain->time_step->dt_ref < 0) /* Should be the initial val. */
+        domain->time_step->dt_ref = ts->dt[0];
 
     }
     else
       bft_error(__FILE__, __LINE__, 0,
-                " Invalid way of defining the current time step.\n"
-                " Please modify your settings.");
+                " %s: Invalid way of defining the current time step.\n"
+                " Please modify your settings.", __func__);
 
   }
 
   /* Check if this is the last iteration */
-  if (ts->t_max > 0) // t_max has been set
-    if (t_cur + domain->dt_cur > ts->t_max)
+  if (ts->t_max > 0) /* t_max has been set */
+    if (t_cur + ts->dt[0] > ts->t_max)
       domain->is_last_iter = true;
-  if (ts->nt_max > 0) // nt_max has been set
+  if (ts->nt_max > 0) /* nt_max has been set */
     if (nt_cur + 1 > ts->nt_max)
       domain->is_last_iter = true;
 }
@@ -435,33 +426,12 @@ cs_domain_increment_time(cs_domain_t  *domain)
 {
   cs_time_step_t  *ts = domain->time_step;
 
-  /* Increment time iteration */
-  ts->t_prev = ts->t_cur;
-
   /* Use Kahan's trick to limit the truncation error */
-  double  z = domain->dt_cur - cs_domain_kahan_time_compensation;
+  double  z = ts->dt[0] - cs_domain_kahan_time_compensation;
   double  t = ts->t_cur + z;
 
   cs_domain_kahan_time_compensation = (t - ts->t_cur) - z;
   ts->t_cur = t;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the time step after one temporal iteration
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_increment_time_step(cs_domain_t  *domain)
-{
-  cs_time_step_t  *ts = domain->time_step;
-
-  /* Increment time iteration */
-  ts->nt_prev = ts->nt_cur;
-  ts->nt_cur++;
 }
 
 /*----------------------------------------------------------------------------*/

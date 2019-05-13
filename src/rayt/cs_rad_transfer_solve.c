@@ -4,7 +4,7 @@
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -49,6 +49,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_blas.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
 #include "cs_field.h"
@@ -60,14 +61,15 @@
 #include "cs_parameters.h"
 #include "cs_parameters_check.h"
 #include "cs_thermal_model.h"
-#include "cs_prototypes.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_gradient.h"
 #include "cs_face_viscosity.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_prototypes.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_time_step.h"
 
 #include "cs_gui_radiative_transfer.h"
 #include "cs_rad_transfer.h"
@@ -419,6 +421,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
   vcopt.iwarni =  cs_glob_rad_transfer_params->iimlum;
   vcopt.iconv  =  1; /* Pure convection */
   vcopt.istat  = -1;
+  vcopt.ndircl = 1;/* There are Dirichlet BCs */
   vcopt.idiff  =  0; /* no face diffusion */
   vcopt.idifft = -1;
   vcopt.isstpc =  0;
@@ -432,12 +435,6 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
     vcopt.nswrgr = 20;
     vcopt.nswrsm =  2;
   }
-
-  int iescap = 0;
-  int imucpp = 0;
-
-  /* There are Dirichlet BCs */
-  int ndirc1 = 1;
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -464,7 +461,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
             aa /= b_face_surf[face_id];
-            f_snplus->val[face_id] += 0.5 * ( -aa + CS_ABS(aa)) * domegat;
+            f_snplus->val[face_id] += 0.5 * (-aa + CS_ABS(aa)) * domegat;
           }
         }
 
@@ -623,16 +620,13 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
           /* In case of a theta-scheme, set theta = 1;
              no relaxation in steady case either */
 
-          /* All boundary convective fluxes with upwind */
-          int icvflb = 0;
-
           cs_equation_iterative_solve_scalar(0,   /* idtvar */
                                              1,   /* external sub-iteration */
                                              -1,  /* f_id */
                                              cnom,
-                                             ndirc1,
-                                             iescap,
-                                             imucpp,
+                                             0,   /* iescap */
+                                             0,   /* imucpp */
+                                             -1,  /* normp */
                                              &vcopt,
                                              radiance_prev,
                                              radiance,
@@ -649,7 +643,7 @@ _cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
                                              NULL,
                                              NULL,
                                              NULL,
-                                             icvflb,
+                                             0, /* icvflb (upwind) */
                                              NULL,
                                              rovsdt,
                                              rhs,
@@ -1026,16 +1020,17 @@ cs_rad_transfer_solve(int               bc_type[],
   cs_real_t *cpro_lumin = CS_F_(rad_lumin)->val;
   cs_real_3_t *cpro_q     = (cs_real_3_t *)(CS_F_(rad_q)->val);
 
-  /* -> Working arrays    */
+  /* Work arrays */
+
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     /* Radiation coefficient k of the gas phase */
     cpro_cak0[cell_id]  = 0.0;
 
-    /* TS implicit due to emission    */
+    /* Implicit ST due to emission */
     cpro_ri_st0[cell_id] = 0.0;
 
-    /* TS explicit due to emission and absorption    */
+    /* Explicit ST due to emission and absorption */
     cpro_re_st0[cell_id] = 0.0;
 
     /* Absortion: Sum, i((kg, i+kp) * Integral(Ii)dOmega) */
@@ -1044,7 +1039,7 @@ cs_rad_transfer_solve(int               bc_type[],
     /* Emission: Sum, i((kg, i+kp) * c_stefan * T^4 *agi)   */
     cpro_emi0[cell_id]  = 0.0;
 
-    /* radiative flux vector     */
+    /* radiative flux vector */
     cpro_q[cell_id][0] = 0.0;
     cpro_q[cell_id][1] = 0.0;
     cpro_q[cell_id][2] = 0.0;
@@ -1110,8 +1105,12 @@ cs_rad_transfer_solve(int               bc_type[],
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
     /* val index to access, necessary for compatibility with neptune */
-    int tval_id = CS_F_(t)->n_time_vals - 1;
-    cs_real_t *cvara_scalt = CS_F_(t)->vals[tval_id];
+    cs_field_t *temp_field = cs_field_by_name_try("temperature");
+    cs_real_t *cvara_scalt;
+    if (temp_field != NULL)
+      cvara_scalt = temp_field->vals[1];
+    else
+      cvara_scalt = CS_FI_(t,0)->val;
 
     /* temperature is in Celsius */
     if (cs_glob_thermal_model->itpscl == 2) {
@@ -1249,7 +1248,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   }
 
-  /* --> Check of a transparent case     */
+  /* Check for transparent case */
   int idverl = rt_params->idiver;
 
   /* Solving the ETR.
@@ -1273,13 +1272,12 @@ cs_rad_transfer_solve(int               bc_type[],
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         aa = CS_MAX(aa, cpro_cak0[cell_id]);
 
-      if (cs_glob_rank_id >= 0)
-        cs_parall_max(1, CS_DOUBLE, &aa);
+      cs_parall_max(1, CS_REAL_TYPE, &aa);
 
       if (aa <= cs_math_epzero) {
         cs_log_printf(CS_LOG_DEFAULT,
                       _("      Radiative transfer with transparent medium."));
-        idverl     =  -1;
+        idverl = -1;
       }
 
     }
@@ -1293,9 +1291,9 @@ cs_rad_transfer_solve(int               bc_type[],
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         rhs[cell_id] =  3.0 * cpro_cak0[cell_id]
-                              * pow(tempk[cell_id], 4.0)
-                              * agi[cell_id + n_cells * gg_id]
-                              * cell_vol[cell_id];
+                            * pow(tempk[cell_id], 4.0)
+                            * agi[cell_id + n_cells * gg_id]
+                            * cell_vol[cell_id];
 
       /* Solid phase/coal particles:
          Explicit source term in the transport eqn. of theta4 */
@@ -1310,9 +1308,9 @@ cs_rad_transfer_solve(int               bc_type[],
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
             rhs[cell_id] +=  3.0 * f_x2->val[cell_id] * cpro_cak[cell_id]
-                                   * pow(tempk[cell_id + n_cells * ipcla], 4.0)
-                                   * agi[cell_id + n_cells * gg_id]
-                                   * cell_vol[cell_id];
+                                 * cs_math_pow4(tempk[cell_id + n_cells * ipcla])
+                                 * agi[cell_id + n_cells * gg_id]
+                                 * cell_vol[cell_id];
 
         }
 
@@ -1329,9 +1327,9 @@ cs_rad_transfer_solve(int               bc_type[],
 
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
             rhs[cell_id] +=  3.0 * f_yfol->val[cell_id] * cpro_cak[cell_id]
-                                   * pow (tempk[cell_id + n_cells * ipcla], 4.0)
-                                   * agi[cell_id + n_cells * gg_id]
-                                   * cell_vol[cell_id];
+                                 * cs_math_pow4(tempk[cell_id + n_cells * ipcla])
+                                 * agi[cell_id + n_cells * gg_id]
+                                 * cell_vol[cell_id];
 
         }
 
@@ -1429,7 +1427,7 @@ cs_rad_transfer_solve(int               bc_type[],
              __func__);
       }
 
-      /* Update Boundary condition coefficients   */
+      /* Update Boundary condition coefficients */
       cs_rad_transfer_bc_coeffs(bc_type,
                                 NULL, /* No specific direction */
                                 coefap, coefbp,
@@ -1437,7 +1435,7 @@ cs_rad_transfer_solve(int               bc_type[],
                                 ckmel,
                                 w_gg,   gg_id);
 
-      /* Solving    */
+      /* Solving */
       cs_rad_transfer_pun(bc_type,
                           coefap, coefbp,
                           cofafp, cofbfp,
@@ -1541,7 +1539,7 @@ cs_rad_transfer_solve(int               bc_type[],
         }
 
       }
-      /* Fuel droplets: Implicit source term of the ETR     */
+      /* Fuel droplets: Implicit source term of the ETR */
       else if (cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
 
         for (int icla = 0; icla < nclafu; icla++) {
@@ -1569,7 +1567,7 @@ cs_rad_transfer_solve(int               bc_type[],
                                 ckmel,
                                 w_gg  , gg_id);
 
-      /* Solving    */
+      /* Solving */
       _cs_rad_transfer_sol(tempk,
                            bc_type,
                            coefap, coefbp,
@@ -1877,19 +1875,16 @@ cs_rad_transfer_solve(int               bc_type[],
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 
   /* -> Integration de la densite de flux net aux frontieres */
-  cs_real_t aa = 0.0;
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-    aa += f_fnet->val[ifac] * b_face_surf[ifac];
+  cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
 
-  if (cs_glob_rank_id >= 0)
-    cs_parall_sum(1, CS_REAL_TYPE, &aa);
+  cs_parall_sum(1, CS_REAL_TYPE, &aa);
 
   cs_log_printf
     (CS_LOG_DEFAULT,
      _("Net radiative flux on all boundaries:      Fnet = %11.4e Watt\n"),
      aa);
 
-  /*Semi-analitical radiative source terms */
+  /* Semi-analitical radiative source terms */
 
   if (idverl >= 0) {
 
@@ -1918,15 +1913,15 @@ cs_rad_transfer_solve(int               bc_type[],
 
     }
 
-    /* Emission + Absorption of gas and particles --> TSexplicit    */
+    /* Emission + Absorption of gas and particles --> explicit ST */
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       cpro_re_st0[cell_id] = cpro_abso0[cell_id] + cpro_emi0[cell_id];
 
-    /* TSimplicit of the gas phase    */
+    /* Implicit ST of the gas phase */
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       cpro_ri_st0[cell_id] = iemgim[cell_id];
 
-    /* TSimplicit of the solid phase is added to stri1    */
+    /* Implicit ST of the solid phase is added to stri1 */
     if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
         || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -1934,7 +1929,7 @@ cs_rad_transfer_solve(int               bc_type[],
     }
 
     /* In order to determine the source terms of the particle enthalpy
-       tranport equation, we have to copie the approriate determined above
+       tranport equation, we have to copy the approriate determined above
        into the corressponding tables. */
 
     if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
@@ -1964,10 +1959,10 @@ cs_rad_transfer_solve(int               bc_type[],
   else {
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cpro_abso0[cell_id]   = 0.0;
-      cpro_emi0[cell_id]    = 0.0;
-      cpro_re_st0[cell_id]   = 0.0;
-      cpro_ri_st0[cell_id]   = 0.0;
+      cpro_abso0[cell_id]  = 0.0;
+      cpro_emi0[cell_id]   = 0.0;
+      cpro_re_st0[cell_id] = 0.0;
+      cpro_ri_st0[cell_id] = 0.0;
     }
 
   }
@@ -1990,8 +1985,8 @@ cs_rad_transfer_solve(int               bc_type[],
     }
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      for (int isou = 0; isou < 3; isou++) {
-        for (int jsou = 0; jsou < 3; jsou++)
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
           coefbq[ifac][jsou][isou] = 0.;
       }
     }
@@ -2045,8 +2040,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
     cs_real_t s[2] = {0, 0};
 
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      s[0] += cpro_re_st0[cell_id] * cell_vol[cell_id];
+    s[0] = cs_dot(n_cells, cpro_re_st0, cell_vol);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       s[1] +=   (cpro_abso0[cell_id] + cpro_emi0[cell_id])
@@ -2077,8 +2071,7 @@ cs_rad_transfer_solve(int               bc_type[],
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       aa += cpro_re_st0[cell_id] * cell_vol[cell_id];
 
-    if (cs_glob_rank_id >= 0)
-      cs_parall_sum(1, CS_REAL_TYPE, &aa);
+    cs_parall_sum(1, CS_REAL_TYPE, &aa);
 
     cs_log_printf
       (CS_LOG_DEFAULT,

@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 if [ ! -d sbin ]; then
   echo "$0 must be called from top directory (../$0)"

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -64,6 +64,9 @@ BEGIN_C_DECLS
  *                                     reduced below this; < 0 to ignore
  * \param[in]       interior_gc        if true, maintain group classes of
  *                                     interior faces previously on boundary
+ * \param[in]       n_fixed_vertices   local number of fixed vertices
+ * \param[in]       fixed_vertex_ids   ids of vertices which should be fixed,
+ *                                     or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -71,7 +74,9 @@ void
 cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                               cs_mesh_extrude_vectors_t  *e,
                               cs_real_t                   min_volume_factor,
-                              bool                        interior_gc);
+                              bool                        interior_gc,
+                              cs_lnum_t                   n_fixed_vertices,
+                              const cs_lnum_t            *fixed_vertex_ids);
 
 /*----------------------------------------------------------------------------*/
 

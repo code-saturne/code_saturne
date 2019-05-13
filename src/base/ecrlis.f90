@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -20,35 +20,33 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file ecrlis.f90
+!>
+!> \brief This subroutine writes log information on equation convergence.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncel          total number of cells
+!> \param[in]     ncelet        total number of cells including halo
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     cell_f_vol    (fluid) cell volume
+!_______________________________________________________________________________
+
+
 subroutine ecrlis &
 !================
 
  ( ncelet , ncel   ,                                     &
-   dt     , volume )
-
-!===============================================================================
-!  FONCTION  :
-!  ---------
-
-! ROUTINE D'ECRITURE DES INFOS LISTING
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! dt   (ncelet)    ! tr ! <-- ! valeur du pas de temps                         !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet)         !    !     !                                                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+   dt     , cell_f_vol )
 
 !===============================================================================
 ! Module files
@@ -74,7 +72,7 @@ use cs_c_bindings
 implicit none
 
 integer          ncelet, ncel
-double precision dt(ncelet), volume(ncelet)
+double precision dt(ncelet), cell_f_vol(ncelet)
 
 ! Local variables
 
@@ -83,7 +81,7 @@ integer          kval, nfld, f_type
 integer          length, max_name_width, max_line_width, i
 character(len=400) :: chain, chainc, flabel,fname, line, title
 
-double precision dervar(9)
+double precision dervar(9), dervars
 double precision varres(9), varnrm(9)
 
 double precision, allocatable, dimension(:) :: w1, w2
@@ -159,8 +157,6 @@ do f_id = 0, nfld - 1
     ic = 4
 
     call field_get_location(f_id, f_loc)
-    if (f_loc .ne. 1) cycle
-
     call field_get_dim (f_id, f_dim)
     call field_get_label(f_id, flabel)
     call field_get_name(f_id, fname)
@@ -185,123 +181,121 @@ do f_id = 0, nfld - 1
     ! Compute the time drift
     !-----------------------
 
-    ! Scalar time drift (except pressure)
-    if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
-      call field_get_val_s(f_id, field_s_v)
-      call field_get_val_prev_s(f_id, field_s_vp)
-      dervar(1) = 0.d0
-      do icel = 1, ncel
-        dervar(1) = dervar(1)                                            &
-                  + (field_s_v(icel) - field_s_vp(icel))**2              &
-                  *  volume(icel)/dt(icel)
-      enddo
-      if (irangp.ge.0) call parsom (dervar(1))
-      dervar(1) = dervar(1) / voltot
-
-    ! Pressure time drift (computed in resopv.f90)
-    else if (f_dim.eq.1) then
+    ! Cell based variables
+    if (f_loc.eq.1) then
+      ! Pressure time drift (computed in resopv.f90)
       dervar(1) = sinfo%dervar
 
-    ! Vector or tensor time drift (total time drift)
-    else
-      call field_get_val_v(f_id, field_v_v)
-      call field_get_val_prev_v(f_id, field_v_vp)
+      ! Scalar time drift for cell based variables (except pressure)
+      if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
+        call field_get_val_s(f_id, field_s_v)
+        call field_get_val_prev_s(f_id, field_s_vp)
 
-      ! Compute the derive
-      dervar(1) = 0.d0
+        do icel = 1, ncel
+          w1(icel) = (field_s_v(icel)-field_s_vp(icel))/sqrt(dt(icel))
+        enddo
 
-      do icel = 1, ncel
+        dervar(1) = cs_gres(ncel,cell_f_vol,w1,w1)
+
+      ! Vector or tensor time drift (total time drift)
+      else if (f_dim.ne.1) then
+        dervar(1) = sinfo%dervar
+
+        call field_get_val_v(f_id, field_v_v)
+        call field_get_val_prev_v(f_id, field_v_vp)
 
         ! Loop over the components
         do c_id = 1, f_dim
-          dervar(1) = dervar(1)                                         &
-                    + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2 &
-                    *  volume(icel)/dt(icel)
+
+          do icel = 1, ncel
+            w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/sqrt(dt(icel))
+          enddo
+
+          dervar(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
+
         enddo
-      enddo
 
-      if (irangp.ge.0) call parsom (dervar(1))
-      dervar(1) = dervar(1) / voltot
+        ! Saving the first component value
+        dervars = dervar(1)
 
-    endif
+        do c_id = 2, f_dim
+          dervar(1) = dervar(1) + dervar(c_id)
+        enddo
 
-    write(chain,3000) dervar(1)
-    chainc(ic:ic+12) = chain(1:12)
-    ic=ic+12
+      endif
 
-    ! L2 time normalized residual
-    !----------------------------
-    if (f_dim.eq.1) then
-      call field_get_val_s(f_id, field_s_v)
-      call field_get_val_prev_s(f_id, field_s_vp)
-      do icel = 1, ncel
-        w1(icel) = volume(icel)*(field_s_v(icel)-field_s_vp(icel))/dt(icel)
-        w2(icel) = volume(icel)*field_s_v(icel)
-      enddo
+      write(chain,3000) dervar(1)
+      chainc(ic:ic+12) = chain(1:12)
+      ic=ic+12
 
-      ! L2 error, square root
-
-      varres(1) = sqrt(cs_gres(ncel,volume,w1,w1))
-      varnrm(1) = sqrt(cs_gres(ncel,volume,w2,w2))
-
-      if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
-      sinfo%l2residual = varres(1)
-
-    ! Vector or tensor time drift (total L2 time residual)
-    else
-      call field_get_val_v(f_id, field_v_v)
-      call field_get_val_prev_v(f_id, field_v_vp)
-
-      ! Loop over the components
-      do c_id = 1, f_dim
-
+      ! L2 time normalized residual
+      !----------------------------
+      if (f_dim.eq.1) then
+        call field_get_val_s(f_id, field_s_v)
+        call field_get_val_prev_s(f_id, field_s_vp)
         do icel = 1, ncel
-          w1(icel) = volume(icel) &
-                   * (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/dt(icel)
-          w2(icel) = volume(icel)*field_v_v(c_id, icel)
+          w1(icel) = (field_s_v(icel)-field_s_vp(icel))/dt(icel)
+          w2(icel) = field_s_v(icel)
         enddo
 
-        ! L2 error, NO square root
+        ! L2 error, square root
+        ! (abs because in ALE the volume might become negative)
 
-        varres(c_id) = cs_gres(ncel,volume,w1,w1)
-        varnrm(c_id) = cs_gres(ncel,volume,w2,w2)
+        varres(1) = sqrt(abs(cs_gres(ncel,cell_f_vol,w1,w1)))
+        varnrm(1) = sqrt(abs(cs_gres(ncel,cell_f_vol,w2,w2)))
 
-        if (c_id.gt.1) then
-          varres(1) = varres(1) + varres(c_id)
-          varnrm(1) = varnrm(1) + varnrm(c_id)
-        endif
+        if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
+        sinfo%l2residual = varres(1)
 
-      enddo
+      ! Vector or tensor time drift (total L2 time residual)
+      else
+        call field_get_val_v(f_id, field_v_v)
+        call field_get_val_prev_v(f_id, field_v_vp)
 
-      if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
-      sinfo%l2residual = sqrt(varres(1))
+        ! Loop over the components
+        do c_id = 1, f_dim
 
-    endif
+          do icel = 1, ncel
+            w1(icel) = (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/dt(icel)
+            w2(icel) = field_v_v(c_id, icel)
+          enddo
 
-    write(chain,3000) sinfo%l2residual
-    chainc(ic:ic+12) = chain(1:12)
-    ic=ic+12
+          ! L2 error, NO square root
+
+          varres(c_id) = cs_gres(ncel,cell_f_vol,w1,w1)
+          varnrm(c_id) = cs_gres(ncel,cell_f_vol,w2,w2)
+
+          if (c_id.gt.1) then
+            varres(1) = varres(1) + varres(c_id)
+            varnrm(1) = varnrm(1) + varnrm(c_id)
+          endif
+
+        enddo
+
+        if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
+        ! (abs because in ALE the volume might become negative)
+        sinfo%l2residual = sqrt(abs(varres(1)))
+
+      endif
+
+      write(chain,3000) sinfo%l2residual
+      chainc(ic:ic+12) = chain(1:12)
+      ic=ic+12
+
+    endif ! End cell based variable
 
     ! Finalize the log of the line
     if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
 
     ! Vector or tensor time drift (by component)
-    if (f_dim.gt.1) then
+    if (f_dim.gt.1.and.f_loc.eq.1) then
       call field_get_val_v(f_id, field_v_v)
       call field_get_val_prev_v(f_id, field_v_vp)
 
+      dervar(1) = dervars
+
       ! Loop over the components
       do c_id = 1, f_dim
-
-        ! Compute the time drift
-        dervar(c_id) = 0.d0
-        do icel = 1, ncel
-          dervar(c_id) = dervar(c_id)                                      &
-                       + (field_v_v(c_id,icel) - field_v_vp(c_id,icel))**2 &
-                       *  volume(icel)/dt(icel)
-        enddo
-        if (irangp.ge.0) call parsom (dervar(c_id))
-        dervar(c_id) = dervar(c_id) / voltot
 
         chainc = 'c'
         chain = ' '

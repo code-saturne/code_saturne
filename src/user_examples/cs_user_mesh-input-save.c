@@ -10,7 +10,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,27 +46,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
-#include "fvm_defs.h"
-#include "fvm_selector.h"
-
-#include "cs_base.h"
-#include "cs_mesh_boundary.h"
-#include "cs_join.h"
-#include "cs_join_perio.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells.h"
-#include "cs_mesh_extrude.h"
-#include "cs_mesh_smoother.h"
-#include "cs_mesh_warping.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_preprocessor_data.h"
-#include "cs_selector.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -144,10 +124,10 @@ cs_user_mesh_save(cs_mesh_t  *mesh)
 {
   /*! [mesh_save] */
   {
-    /* Mark mesh as not modified (0) to disable saving;
-       Mark it as modified (> 0) to force saving */
+    /* Disable saving of modified mesh by setting flag to 0;
+       Force saving of unmodified mesh by setting it to 2. */
 
-    mesh->modified = 0;
+    mesh->save_if_modified = 0;
 
   }
   /*! [mesh_save] */

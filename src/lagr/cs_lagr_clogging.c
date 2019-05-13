@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -55,7 +55,6 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
-#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_search.h"
 #include "cs_halo.h"

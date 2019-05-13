@@ -3,7 +3,7 @@
 #
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -53,6 +53,7 @@ class cfd_openturns_local_launcher:
         self.paramfile    = self.cfg.get('study_parameters', 'xmlfile')
 
         self.nprocs       = self.cfg.get('batch_parameters', 'nprocs')
+        self.results_file    = self.cfg.get('study_parameters', 'results_file')
 #        self.study_path   = os.path.split(case_dir)[0]
 
         self.run_prefix = None
@@ -103,12 +104,10 @@ class cfd_openturns_local_launcher:
             self.run_id = self.run_prefix + '{:0>4}'.format(idx + 1)
 
         else:
-            from code_saturne.cs_script import master_script
+            from code_saturne.cs_run import run as get_run_id
             id_args = ['run', '--suggest-id']
-            ms = master_script(id_args, self.pkg)
-            retcode = ms.execute()
 
-            self.run_id = retcode[0]
+            self.run_id = get_run_id(id_args, self.pkg)[1]
 
     # --------------------------------------------------------------------------
 

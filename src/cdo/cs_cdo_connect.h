@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -86,6 +86,8 @@ typedef struct {
   cs_adjacency_t    *f2e;         /* face --> edges connectivity */
   cs_adjacency_t    *bf2v;        /* border face --> vertices connectivity
                                      (map from cs_mesh_t) */
+  cs_adjacency_t    *if2v;        /* interior face --> vertices connectivity
+                                     (map from cs_mesh_t) */
 
   /* Cell-related members */
   fvm_element_t     *cell_type;   /* type of cell */
@@ -107,6 +109,10 @@ typedef struct {
   int  n_max_vbyf;   /* max. number of vertices in a face */
   int  n_max_v2fc;   /* max. number of faces connected to a vertex in a cell */
   int  n_max_v2ec;   /* max. number of edges connected to a vertex in a cell */
+
+  /* Adjacency related to most of the linear systems */
+  cs_adjacency_t       *v2v;    /* vertex to vertices through cells */
+  cs_adjacency_t       *f2f;    /* face to faces through cells */
 
   /* Structures to handle parallelism/assembler */
   cs_range_set_t       *range_sets[CS_CDO_CONNECT_N_CASES];

@@ -3,7 +3,7 @@
 #
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -175,7 +175,7 @@ class cfd_openturns_study:
     # ---------------------------------------
 
     # ---------------------------------------
-    def code2study(self):
+    def code2study(self, n_values=1):
         """
         Opens the results file specified by the user.
         Returns a tuple of all the required values (needed by OpenTurns)
@@ -190,15 +190,16 @@ class cfd_openturns_study:
                              self.cs_launcher.run_id,
                              resfile)
 
-        r = open(rspth, 'r').readlines()
-        d = r[-1].split()
-
-        if len(d) > 1:
-            results = ()
+        results = ()
+        if os.path.exists(rspth):
+            r = open(rspth, 'r').readlines()
+            d = r[-1].split()
             for ed in d:
                 results += (float(ed),)
-        else:
-            results = float(d[0])
+
+        if len(results) == 0:
+            results = (float('nan'),)*n_values
+
 
         return results;
     # ---------------------------------------
@@ -249,7 +250,7 @@ class cfd_openturns_study:
         Creating the case for a given evaluation based on the user defined
         reference case
         """
-        from code_saturne.Pages.NotebookModel import NotebookModel
+        from code_saturne.model.NotebookModel import NotebookModel
 
         # Creating the case from the ref case
         from code_saturne.cs_script import master_script
@@ -274,8 +275,7 @@ class cfd_openturns_study:
         data
         """
 
-        from code_saturne.Base.XMLengine import Case
-        from code_saturne.Base.XMLinitialize import XMLinit
+        from code_saturne.model.XMLengine import Case
 
         paramfile = self.cfg.get('study_parameters', 'xmlfile')
         fp = os.path.join(self.study_path, self.case_id, 'DATA', paramfile)
@@ -287,6 +287,10 @@ class cfd_openturns_study:
         self.case = Case(package=self.pkg, file_name=fp)
         self.case['xmlfile'] = fp
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
+        if self.case['package'].name == 'code_saturne':
+            from code_saturne.model.XMLinitialize import XMLinit
+        else:
+            from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
         XMLinit(self.case).initialize()
 
 
@@ -300,19 +304,12 @@ class cfd_openturns_study:
         """
 
         # Update xml file
-        from code_saturne.Pages.NotebookModel import NotebookModel
+        from code_saturne.model.NotebookModel import NotebookModel
         nb = NotebookModel(self.case)
-        nb_ids = nb.getVarList()
-        nb_names = nb.getVarNameList()
         for key in self.vars_dico.keys():
-            try:
-                ix = nb_names.index(key)
-            except:
-                ix = -1
-
-            if ix != -1:
-                idx = nb_ids[ix]
-                nb.setVariableValue(idx=idx, val=str(self.vars_dico[key]))
+            if key in nb.getVarNameList():
+                nb.setVariableValue(val=str(self.vars_dico[key]),
+                                    var=key)
 
         self.case.xmlSaveDocument()
     # ---------------------------------------
@@ -323,7 +320,7 @@ class cfd_openturns_study:
         This method sets the restart path in the code xml input file
         """
 
-        from code_saturne.Pages.StartRestartModel import StartRestartModel
+        from code_saturne.model.StartRestartModel import StartRestartModel
 
         rs = StartRestartModel(self.case)
 

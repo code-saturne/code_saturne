@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -115,6 +115,10 @@ typedef struct _cs_gradient_info_t {
 
   unsigned             n_calls;            /* Number of times system solved */
 
+  int                  n_iter_min;         /* Minimum number of iterations */
+  int                  n_iter_max;         /* Minimum number of iterations */
+  unsigned long        n_iter_tot;         /* Total number of iterations */
+
   cs_timer_counter_t   t_tot;              /* Total time used */
 
 } cs_gradient_info_t;
@@ -141,6 +145,7 @@ const char *cs_gradient_type_name[]
 
 /* Timer statistics */
 
+static cs_timer_counter_t   _gradient_t_tot;     /* Total time in gradients */
 static int _gradient_stat_id = -1;
 
 /*============================================================================
@@ -279,6 +284,9 @@ _gradient_info_create(const char          *name,
   new_info->type = type;
 
   new_info->n_calls = 0;
+  new_info->n_iter_min = 0;
+  new_info->n_iter_max = 0;
+  new_info->n_iter_tot = 0;
 
   CS_TIMER_COUNTER_INIT(new_info->t_tot);
 
@@ -302,6 +310,30 @@ _gradient_info_destroy(cs_gradient_info_t  **this_info)
 }
 
 /*----------------------------------------------------------------------------
+ * Update the number of sweeps for gradient information
+ *
+ * parameters:
+ *   this_info <-> pointer to linear system info structure
+ *   n_iter    <-- number of iterations
+ *----------------------------------------------------------------------------*/
+
+static void
+_gradient_info_update_iter(cs_gradient_info_t  *this_info,
+                           int                  n_iter)
+{
+  if (n_iter > this_info->n_iter_max) {
+    this_info->n_iter_max = n_iter;
+    /* for first pass: */
+    if (this_info->n_calls == 0)
+      this_info->n_iter_min = n_iter;
+  }
+  else if (n_iter < this_info->n_iter_min)
+    this_info->n_iter_min = n_iter;
+
+  this_info->n_iter_tot += n_iter;
+}
+
+/*----------------------------------------------------------------------------
  * Output information regarding gradient computation.
  *
  * parameters:
@@ -315,11 +347,19 @@ _gradient_info_dump(cs_gradient_info_t *this_info)
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
-                  "Summary of gradient computations pour \"%s\" (%s):\n\n"
-                  "  Number of calls:     %12d\n"
-                  "  Total elapsed time:  %12.3f\n"),
+                  "Summary of gradient computations for \"%s\" (%s):\n\n"
+                  "  Number of calls:       %d\n"),
                 this_info->name, cs_gradient_type_name[this_info->type],
-                n_calls, this_info->t_tot.wall_nsec*1e-9);
+                n_calls);
+  if (this_info->n_iter_tot > 0)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Number of iterations:  %d mean, %d min., %d max.\n"),
+                  (int)(this_info->n_iter_tot / (unsigned long)n_calls),
+                  this_info->n_iter_min,
+                  this_info->n_iter_max);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  Total elapsed time:    %.3f\n"),
+                this_info->t_tot.wall_nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------
@@ -362,7 +402,6 @@ _find_or_add_system(const char          *name,
   /* If found, return */
 
   if (cmp_ret == 0)
-
     return cs_glob_gradient_systems[mid_id];
 
   /* Reallocate global array if necessary */
@@ -630,8 +669,8 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
                                   cs_real_33_t                 *cocgb,
                                   cs_real_33_t                 *cocg)
 {
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -771,8 +810,6 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
 #   pragma omp parallel for
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      cs_real_t  dddij[3];
-
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            face_id++) {
@@ -781,14 +818,13 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t udbfs = 1. / b_face_surf[face_id];
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            dddij[ll] =   udbfs * b_face_normal[face_id][ll];
+          cs_real_3_t normal;
+          /* Normal is vector 0 if the b_face_normal norm is too small */
+          cs_math_3_normalise(b_face_normal[face_id], normal);
 
           for (cs_lnum_t ll = 0; ll < 3; ll++) {
             for (cs_lnum_t mm = 0; mm < 3; mm++)
-              cocg[ii][ll][mm] += dddij[ll]*dddij[mm];
+              cocg[ii][ll][mm] += normal[ll] * normal[mm];
           }
 
         } /* face without internal coupling */
@@ -1977,6 +2013,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   var_name       <-- variable name
+ *   gradient_info  <-- pointer to performance logging structure, or NULL
  *   recompute_cocg <-- flag to recompute cocg
  *   nswrgp         <-- number of sweeps for gradient reconstruction
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
@@ -2000,6 +2037,7 @@ static void
 _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                                cs_mesh_quantities_t        *fvq,
                                const char                  *var_name,
+                               cs_gradient_info_t          *gradient_info,
                                bool                         recompute_cocg,
                                int                          nswrgp,
                                int                          idimtr,
@@ -2061,7 +2099,11 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   int n_sweeps = 0;
   cs_real_t residue = 0.;
 
-  if (nswrgp <  1) return;
+  if (nswrgp <  1) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
+    return;
+  }
 
   /* Reconstruct gradients for non-orthogonal meshes */
   /*-------------------------------------------------*/
@@ -2120,8 +2162,11 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   if (fvq->max_vol > 1)
     rnorm /= fvq->max_vol;
 
-  if (rnorm <= cs_math_epzero)
+  if (rnorm <= cs_math_epzero) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
     return;
+  }
 
   /* Vector OijFij is computed in CLDijP */
 
@@ -2382,6 +2427,9 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                __func__, var_name, n_sweeps,
                (int)(strlen(__func__)), " ", residue/rnorm, rnorm);
   }
+
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, n_sweeps);
 }
 
 /*----------------------------------------------------------------------------
@@ -3734,8 +3782,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
         grad[cell_id][i][j] = grad[cell_id][i][j] * cell_f_vol[cell_id];
     }
   }
@@ -3866,6 +3914,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
  *   var_name       <-- variable's name
+ *   gradient_info  <-- pointer to performance logging structure, or NULL
  *   halo_type      <-- halo type (extended or not)
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   n_r_sweeps     --> >1: with reconstruction
@@ -3883,6 +3932,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_mesh_quantities_t   *fvq,
                            const cs_internal_coupling_t *cpl,
                            const char                   *var_name,
+                           cs_gradient_info_t           *gradient_info,
                            cs_halo_type_t                halo_type,
                            int                           inc,
                            int                           n_r_sweeps,
@@ -3894,7 +3944,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_real_t              *c_weight,
                            cs_real_33_t        *restrict grad)
 {
-  int isweep, g_id, t_id;
+  int isweep = 0;
+  int g_id, t_id;
   cs_lnum_t face_id;
   cs_real_t l2_norm, l2_residual, vecfac, pond;
 
@@ -4132,13 +4183,17 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                    (int)(strlen(__func__)), " ", l2_residual/l2_norm, l2_norm);
       }
     }
+
   }
+
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, isweep);
 
   BFT_FREE(rhs);
 }
 
 /*----------------------------------------------------------------------------
- * Initialize cocg for lsq vector gradient.
+ * Initialize cocg for lsq vector and tensor gradient.
  *
  * parameters:
  *   cell_id          <-- cell id
@@ -4146,6 +4201,11 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
  *   fvq              <-- pointer to associated finite volume quantities
  *   cocg             --> cocg
  *----------------------------------------------------------------------------*/
+
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 2 /* Bug with O3 or above with icc 18.0.1 20171018
+                                at least on Xeon(R) Gold 6140 */
+#endif
 
 static void
 _init_cocg_lsq(cs_lnum_t                     cell_id,
@@ -4219,14 +4279,13 @@ _init_cocg_lsq(cs_lnum_t                     cell_id,
 
     cs_lnum_t face_id = cell_b_faces[i];
 
-    cs_real_t udbfs = 1. / fvq->b_face_surf[face_id];
-
-    for (int ii = 0; ii < 3; ii++)
-      dc[ii] = udbfs * b_face_normal[face_id][ii];
+    cs_real_3_t normal;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(b_face_normal[face_id], normal);
 
     for (int ii = 0; ii < 3; ii++) {
       for (int jj = 0; jj < 3; jj++)
-        cocg[ii][jj] += dc[ii]*dc[jj];
+        cocg[ii][jj] += normal[ii] * normal[jj];
     }
 
   }
@@ -4319,13 +4378,11 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
 
     /* build cocgb_v matrix */
 
-    cs_real_t udbfs = 1. / b_face_surf[face_id];
     const cs_real_t *restrict iipbf = diipb[face_id];
 
-    /* db = I'F / ||I'F|| */
-    cs_real_t  nb[3];
-    for (int ii = 0; ii < 3; ii++)
-      nb[ii] = udbfs * b_face_normal[face_id][ii];
+    cs_real_3_t nb;
+    /* Normal is vector 0 if the b_face_normal norm is too small */
+    cs_math_3_normalise(b_face_normal[face_id], nb);
 
     cs_real_t db = 1./b_dist[face_id];
     cs_real_t db2 = db*db;
@@ -4357,13 +4414,13 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
         int rr = _33_9_idx[pp][0];
         int ss = _33_9_idx[pp][1];
 
-        /* part from derivative of 1/2*|| B*t*IIp/db ||^2 */
+        /* part from derivative of 1/2*|| B*t*II'/db ||^2 */
         cs_real_t cocgv = 0.;
         for (int mm = 0; mm < 3; mm++)
           cocgv += bt[mm][kk]*bt[mm][rr];
         cocgb_v[ll_9+pp] += cocgv*(iipbf[qq]*iipbf[ss])*db2;
 
-        /* part from derivative of -< t*nb , B*t*IIp/db > */
+        /* part from derivative of -< t*nb , B*t*II'/db > */
         cocgb_v[ll_9+pp] -= (  nb[ss]*bt[rr][kk]*iipbf[qq]
                              + nb[qq]*bt[kk][rr]*iipbf[ss])
                              *db;
@@ -4376,7 +4433,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
       int pp = _33_9_idx[ll][0];
       int qq = _33_9_idx[ll][1];
 
-      /* part from derivative of < (B-1)*t*IIp/db , (A+(B-1)*v)/db > */
+      /* part from derivative of < (B-1)*t*II'/db , (A+(B-1)*v)/db > */
       cs_real_t rhsv = 0.;
       for (int rr = 0; rr < 3; rr++) {
         rhsv +=   bt[rr][pp]*diipb[face_id][qq]
@@ -4524,7 +4581,7 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     cell_id,
         cs_real_t cocgt = 0.;
         for (int mm = 0; mm < 6; mm++)
           cocgt += bt[mm][kk]*bt[mm][rr];
-        cocgb_t[ll_18+pp] += cocgt*(iipbf[qq]*iipbf[ss])*db2;
+        cocgb_t[ll_18+pp] += cocgt * (iipbf[qq]*iipbf[ss]) * db2;
 
         /* part from derivative of -< t*nb , B*t*IIp/db > */
         cocgb_t[ll_18+pp] -= (  nb[ss]*bt[rr][kk]*iipbf[qq]
@@ -4607,13 +4664,14 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;//FIXME for internal coupling, has to be recomputed
 
@@ -4745,7 +4803,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(cell_id1, i, j, pfac, dc, ddc)
+#   pragma omp parallel for private(cell_id1, i, j, pfac)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -4756,24 +4814,25 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
           cell_id1 = b_face_cells[face_id];
 
-          const cs_real_t *iipbf = &diipb[face_id][0];
+          cs_real_3_t n_d_dist;
+          /* Normal is vector 0 if the b_face_normal norm is too small */
+          cs_math_3_normalise(b_face_normal[face_id], n_d_dist);
 
-          /* db = I'F */
+          cs_real_t d_b_dist = 1. / b_dist[face_id];
+
+          /* Normal divided by b_dist */
           for (i = 0; i < 3; i++)
-            dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i]
-                   -iipbf[i];
-
-          ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+            n_d_dist[i] *= d_b_dist;
 
           for (i = 0; i < 3; i++) {
             pfac = (coefav[face_id][i]*inc
                  + ( coefbv[face_id][0][i] * pvar[cell_id1][0]
                    + coefbv[face_id][1][i] * pvar[cell_id1][1]
                    + coefbv[face_id][2][i] * pvar[cell_id1][2]
-                   -                         pvar[cell_id1][i])) * ddc;
+                   -                         pvar[cell_id1][i]));
 
             for (j = 0; j < 3; j++)
-              rhs[cell_id1][i][j] += dc[j] * pfac;
+              rhs[cell_id1][i][j] += n_d_dist[j] * pfac;
           }
         }
 
@@ -4912,14 +4971,15 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict cell_cells_lst
     = (const cs_lnum_t *restrict)m->cell_cells_lst;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
   const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
   cs_real_63_t *rhs;
 
@@ -5032,25 +5092,23 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
 
         cs_lnum_t cell_id1 = b_face_cells[face_id];
 
-        const cs_real_t *iipbf = &diipb[face_id][0];
+        cs_real_3_t n_d_dist;
+        /* Normal is vector 0 if the b_face_normal norm is too small */
+        cs_math_3_normalise(b_face_normal[face_id], n_d_dist);
 
-        /* db = I'F */
-        cs_real_3_t dc;
+        cs_real_t d_b_dist = 1. / b_dist[face_id];
+
+        /* Normal divided by b_dist */
         for (int i = 0; i < 3; i++)
-          dc[i] = b_face_cog[face_id][i] - cell_cen[cell_id1][i]
-                 -iipbf[i];
-
-        cs_real_t ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+          n_d_dist[i] *= d_b_dist;
 
         for (int i = 0; i < 6; i++) {
           cs_real_t pfac = coefat[face_id][i]*inc - pvar[cell_id1][i];
           for (int j = 0; j < 6; j++)
             pfac += coefbt[face_id][j][i] * pvar[cell_id1][j];
 
-          pfac = pfac*ddc;
-
           for (int j = 0; j < 3; j++)
-            rhs[cell_id1][i][j] += dc[j] * pfac;
+            rhs[cell_id1][i][j] += pfac * n_d_dist[j];
         }
 
       } /* loop on faces */
@@ -5325,6 +5383,7 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   var_name       <-- variable's name
+ *   gradient_info  <-- pointer to performance logging structure, or NULL
  *   halo_type      <-- halo type (extended or not)
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   n_r_sweeps     --> >1: with reconstruction
@@ -5340,6 +5399,7 @@ static void
 _iterative_tensor_gradient(const cs_mesh_t              *m,
                            const cs_mesh_quantities_t   *fvq,
                            const char                   *var_name,
+                           cs_gradient_info_t           *gradient_info,
                            cs_halo_type_t                halo_type,
                            int                           inc,
                            int                           n_r_sweeps,
@@ -5350,7 +5410,8 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                            const cs_real_6_t   *restrict pvar,
                            cs_real_63_t        *restrict grad)
 {
-  int isweep, g_id, t_id;
+  int isweep = 0;
+  int g_id, t_id;
   cs_lnum_t face_id;
   cs_real_t l2_norm, l2_residual, vecfac, pond;
 
@@ -5570,7 +5631,11 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                    (int)(strlen(__func__)), " ", l2_residual/l2_norm, l2_norm);
       }
     }
+
   }
+
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, isweep);
 
   BFT_FREE(rhs);
 }
@@ -5869,6 +5934,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
  *   fvq             <-- pointer to associated finite volume quantities
  *   cpl             <-- structure associated with internal coupling, or NULL
  *   var_name        <-- variable name
+ *   gradient_info   <-- pointer to performance logging structure, or NULL
  *   nswrgp          <-- number of sweeps for gradient reconstruction
  *   idimtr          <-- 0 if ivar does not match a vector or tensor
  *                         or there is no periodicity of rotation
@@ -5891,6 +5957,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                            cs_mesh_quantities_t           *fvq,
                            const cs_internal_coupling_t   *cpl,
                            const char                     *var_name,
+                           cs_gradient_info_t             *gradient_info,
                            int                             nswrgp,
                            int                             idimtr,
                            int                             hyd_p_flag,
@@ -5952,7 +6019,11 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   int n_sweeps = 0;
   cs_real_t l2_residual = 0.;
 
-  if (nswrgp < 1) return;
+  if (nswrgp < 1) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
+    return;
+  }
 
   bool  *coupled_faces = (cpl == NULL) ?
     NULL : (bool *)cpl->coupled_faces;
@@ -5966,8 +6037,11 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
   rnorm = _l2_norm_1(3*n_cells, (cs_real_t *)grad);
 
-  if (rnorm <= cs_math_epzero)
+  if (rnorm <= cs_math_epzero) {
+    if (gradient_info != NULL)
+      _gradient_info_update_iter(gradient_info, 0);
     return;
+  }
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_3_t);
 
@@ -6012,7 +6086,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                 / (      weight[face_id]  * c_weight[cell_id1]
                   + (1.0-weight[face_id]) * c_weight[cell_id2]);
 
-            fexd[0] = 0.5 * (f_ext[cell_id1][0] + f_ext[cell_id2][0]);//TODO add porous contrib, check sign changed by Erwan for VOF...
+            // TODO add porous contribution, check sign changed by Erwan for VOF...
+            fexd[0] = 0.5 * (f_ext[cell_id1][0] + f_ext[cell_id2][0]);
             fexd[1] = 0.5 * (f_ext[cell_id1][1] + f_ext[cell_id2][1]);
             fexd[2] = 0.5 * (f_ext[cell_id1][2] + f_ext[cell_id2][2]);
 
@@ -6266,6 +6341,9 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                (int)(strlen(__func__)), " ", l2_residual/rnorm, rnorm);
   }
 
+  if (gradient_info != NULL)
+    _gradient_info_update_iter(gradient_info, n_sweeps);
+
   BFT_FREE(rhs);
 }
 
@@ -6279,6 +6357,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
  * have already been synchronized.
  *
  * \param[in]       var_name        variable name
+ * \param[in]       gradient_info   performance logging structure, or NULL
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
@@ -6308,6 +6387,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
 static void
 _gradient_scalar(const char                    *var_name,
+                 cs_gradient_info_t            *gradient_info,
                  cs_gradient_type_t             gradient_type,
                  cs_halo_type_t                 halo_type,
                  int                            inc,
@@ -6334,6 +6414,7 @@ _gradient_scalar(const char                    *var_name,
 
   cs_real_4_t  *restrict rhsv;
 
+  cs_lnum_t n_b_faces = mesh->n_b_faces;
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   static int last_fvm_count = 0;
@@ -6343,6 +6424,24 @@ _gradient_scalar(const char                    *var_name,
     last_fvm_count = cs_mesh_quantities_compute_count();
     if (last_fvm_count != prev_fvq_count)
       recompute_cocg = true;
+  }
+
+  /* Use Neumann BC's as default if not provided */
+
+  cs_real_t *_bc_coeff_a = NULL;
+  cs_real_t *_bc_coeff_b = NULL;
+
+  if (bc_coeff_a == NULL) {
+    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      _bc_coeff_a[i] = 0;
+    bc_coeff_a = _bc_coeff_a;
+  }
+  if (bc_coeff_b == NULL) {
+    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      _bc_coeff_b[i] = 1;
+    bc_coeff_b = _bc_coeff_b;
   }
 
   /* Allocate work arrays */
@@ -6370,6 +6469,7 @@ _gradient_scalar(const char                    *var_name,
                                fvq,
                                cpl,
                                var_name,
+                               gradient_info,
                                n_r_sweeps,
                                tr_dim,
                                hyd_p_flag,
@@ -6401,6 +6501,7 @@ _gradient_scalar(const char                    *var_name,
     _iterative_scalar_gradient_old(mesh,
                                    fvq,
                                    var_name,
+                                   gradient_info,
                                    recompute_cocg,
                                    n_r_sweeps,
                                    tr_dim,
@@ -6499,6 +6600,9 @@ _gradient_scalar(const char                    *var_name,
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
     cs_bad_cells_regularisation_vector(grad, 0);
 
+  BFT_FREE(_bc_coeff_a);
+  BFT_FREE(_bc_coeff_b);
+
   BFT_FREE(rhsv);
 }
 
@@ -6507,6 +6611,7 @@ _gradient_scalar(const char                    *var_name,
  * \brief  Compute cell gradient of vector field.
  *
  * \param[in]       var_name        variable name
+ * \param[in]       gradient_info   performance logging structure, or NULL
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
@@ -6529,6 +6634,7 @@ _gradient_scalar(const char                    *var_name,
 
 static void
 _gradient_vector(const char                    *var_name,
+                 cs_gradient_info_t            *gradient_info,
                  cs_gradient_type_t             gradient_type,
                  cs_halo_type_t                 halo_type,
                  int                            inc,
@@ -6548,6 +6654,31 @@ _gradient_vector(const char                    *var_name,
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+
+  /* Use Neumann BC's as default if not provided */
+
+  cs_real_3_t *_bc_coeff_a = NULL;
+  cs_real_33_t *_bc_coeff_b = NULL;
+
+  if (bc_coeff_a == NULL) {
+    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_3_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        _bc_coeff_a[i][j] = 0;
+    }
+    bc_coeff_a = (const cs_real_3_t *)_bc_coeff_a;
+  }
+  if (bc_coeff_b == NULL) {
+    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_33_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          _bc_coeff_b[i][j][j] = 1;
+      }
+    }
+    bc_coeff_b = (const cs_real_33_t *)_bc_coeff_b;
+  }
 
   /* Compute gradient */
 
@@ -6572,6 +6703,7 @@ _gradient_vector(const char                    *var_name,
                                  fvq,
                                  cpl,
                                  var_name,
+                                 gradient_info,
                                  halo_type,
                                  inc,
                                  n_r_sweeps,
@@ -6660,8 +6792,10 @@ _gradient_vector(const char                    *var_name,
                             grad);
 
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
-    cs_bad_cells_regularisation_tensor(grad, 0);
+    cs_bad_cells_regularisation_tensor((cs_real_9_t *)grad, 0);
 
+  BFT_FREE(_bc_coeff_a);
+  BFT_FREE(_bc_coeff_b);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6669,6 +6803,7 @@ _gradient_vector(const char                    *var_name,
  * \brief  Compute cell gradient of tensor.
  *
  * \param[in]       var_name        variable name
+ * \param[in]       gradient_info   performance logging structure, or NULL
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
@@ -6680,13 +6815,14 @@ _gradient_vector(const char                    *var_name,
  * \param[in]       bc_coeff_a      boundary condition term a
  * \param[in]       bc_coeff_b      boundary condition term b
  * \param[in]       var             gradient's base variable
- * \param[out]      grad           gradient
-                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ * \param[out]      grad            gradient
+                                      (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _gradient_tensor(const char                *var_name,
+                 cs_gradient_info_t        *gradient_info,
                  cs_gradient_type_t         gradient_type,
                  cs_halo_type_t             halo_type,
                  int                        inc,
@@ -6702,6 +6838,32 @@ _gradient_tensor(const char                *var_name,
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+
+  /* Use Neumann BC's as default if not provided */
+
+  cs_real_6_t *_bc_coeff_a = NULL;
+  cs_real_66_t *_bc_coeff_b = NULL;
+
+  if (bc_coeff_a == NULL) {
+    BFT_MALLOC(_bc_coeff_a, n_b_faces, cs_real_6_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 6; j++)
+        _bc_coeff_a[i][j] = 0;
+    }
+    bc_coeff_a = (const cs_real_6_t *)_bc_coeff_a;
+  }
+  if (bc_coeff_b == NULL) {
+    BFT_MALLOC(_bc_coeff_b, n_b_faces, cs_real_66_t);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 6; j++) {
+        for (cs_lnum_t k = 0; k < 6; k++)
+          _bc_coeff_b[i][j][j] = 1;
+      }
+    }
+    bc_coeff_b = (const cs_real_66_t *)_bc_coeff_b;
+  }
 
   /* Compute gradient */
 
@@ -6723,6 +6885,7 @@ _gradient_tensor(const char                *var_name,
       _iterative_tensor_gradient(mesh,
                                  fvq,
                                  var_name,
+                                 gradient_info,
                                  halo_type,
                                  inc,
                                  n_r_sweeps,
@@ -6762,6 +6925,9 @@ _gradient_tensor(const char                *var_name,
                            grad);
 
   }
+
+  BFT_FREE(_bc_coeff_a);
+  BFT_FREE(_bc_coeff_b);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -6780,7 +6946,6 @@ void CS_PROCF (grdpor, GRDPOR)
  const cs_int_t   *const inc          /* <-- 0 or 1: increment or not         */
 )
 {
-
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
   const cs_halo_t  *halo = m->halo;
@@ -6810,22 +6975,29 @@ void CS_PROCF (grdpor, GRDPOR)
   const cs_int_t *restrict c_solid_flag = mq->c_solid_flag;
   int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
 
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
   if (f_i_poro_duq_0 == NULL)
     return;
-  cs_real_t *i_poro_duq_0;
 
-  i_poro_duq_0 = f_i_poro_duq_0->val;
+  cs_real_t *i_poro_duq_0 = f_i_poro_duq_0->val;
   cs_real_t *i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
   cs_real_t *b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  cs_real_3_t *c_poro_div_duq =
-    (cs_real_3_t *restrict)cs_field_by_name("poro_div_duq")->val;
+  cs_real_3_t *c_poro_div_duq
+    = (cs_real_3_t *restrict)cs_field_by_name("poro_div_duq")->val;
 
-
+# pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
       c_poro_div_duq[cell_id][i] = 0.;
@@ -6834,73 +7006,96 @@ void CS_PROCF (grdpor, GRDPOR)
   if (*inc == 1) {
 
     /* Inner faces corrections */
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-      cs_real_3_t normal;
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      cs_math_3_normalise(i_face_normal[face_id], normal);
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
-      cs_real_t *vel_j = &(CS_F_(u)->val_pre[3*jj]);
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_real_t veli_dot_n = (1. - i_f_face_factor[face_id][0])
-        * cs_math_3_dot_product(vel_i, normal);
-      cs_real_t velj_dot_n = (1. - i_f_face_factor[face_id][1])
-        * cs_math_3_dot_product(vel_j, normal);
+          cs_real_3_t normal;
 
-      cs_real_t d_f_surf = 0.;
-      if (  c_solid_flag[is_p * ii] == 0
-          &&c_solid_flag[is_p * jj] == 0)
-        d_f_surf = 1.
-          / CS_MAX(i_f_face_surf[face_id], cs_math_epzero * i_face_surf[face_id]);
+          cs_math_3_normalise(i_face_normal[face_id], normal);
 
-      i_poro_duq_0[face_id] = veli_dot_n * i_massflux[face_id] * d_f_surf;
-      i_poro_duq_1[face_id] = velj_dot_n * i_massflux[face_id] * d_f_surf;
+          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
+          cs_real_t *vel_j = &(CS_F_(vel)->val_pre[3*jj]);
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        c_poro_div_duq[ii][i] += i_poro_duq_0[face_id] * i_f_face_normal[face_id][i];
-        c_poro_div_duq[jj][i] -= i_poro_duq_1[face_id] * i_f_face_normal[face_id][i];
+          cs_real_t veli_dot_n =    (1. - i_f_face_factor[face_id][0])
+                                  * cs_math_3_dot_product(vel_i, normal);
+          cs_real_t velj_dot_n =    (1. - i_f_face_factor[face_id][1])
+                                  * cs_math_3_dot_product(vel_j, normal);
+
+          cs_real_t d_f_surf = 0.;
+          if (  c_solid_flag[is_p * ii] == 0
+              &&c_solid_flag[is_p * jj] == 0)
+            d_f_surf = 1. / CS_MAX(i_f_face_surf[face_id],
+                                   cs_math_epzero * i_face_surf[face_id]);
+
+          i_poro_duq_0[face_id] = veli_dot_n * i_massflux[face_id] * d_f_surf;
+          i_poro_duq_1[face_id] = velj_dot_n * i_massflux[face_id] * d_f_surf;
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            c_poro_div_duq[ii][i] +=   i_poro_duq_0[face_id]
+                                     * i_f_face_normal[face_id][i];
+            c_poro_div_duq[jj][i] -=   i_poro_duq_1[face_id]
+                                    * i_f_face_normal[face_id][i];
+          }
+        }
       }
 
     }
 
     /* Boundary faces corrections */
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-      cs_lnum_t ii = b_face_cells[face_id];
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-      cs_real_3_t normal;
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      cs_math_3_normalise(b_face_normal[face_id], normal);
+        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             face_id++) {
 
-      cs_real_t *vel_i = &(CS_F_(u)->val_pre[3*ii]);
+          cs_lnum_t ii = b_face_cells[face_id];
 
-      cs_real_t veli_dot_n = (1. - b_f_face_factor[face_id])
-        * cs_math_3_dot_product(vel_i, normal);
+          cs_real_3_t normal;
 
-      cs_real_t d_f_surf = 0.;
-      if (c_solid_flag[is_p * ii] == 0)
-        d_f_surf = 1.
-          / CS_MAX(b_f_face_surf[face_id], cs_math_epzero * b_face_surf[face_id]);
+          cs_math_3_normalise(b_face_normal[face_id], normal);
 
-      b_poro_duq[face_id] = veli_dot_n * b_massflux[face_id] * d_f_surf;
+          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        c_poro_div_duq[ii][i] += b_poro_duq[face_id] * b_f_face_normal[face_id][i];
+          cs_real_t veli_dot_n =   (1. - b_f_face_factor[face_id])
+                                 * cs_math_3_dot_product(vel_i, normal);
 
+          cs_real_t d_f_surf = 0.;
+          if (c_solid_flag[is_p * ii] == 0)
+            d_f_surf = 1. / CS_MAX(b_f_face_surf[face_id],
+                                   cs_math_epzero * b_face_surf[face_id]);
+
+          b_poro_duq[face_id] = veli_dot_n * b_massflux[face_id] * d_f_surf;
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            c_poro_div_duq[ii][i] +=   b_poro_duq[face_id]
+                                     * b_f_face_normal[face_id][i];
+        }
+
+        /* Finalisation of cell terms */
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+          /* Is the cell fully solid? */
+          cs_real_t dvol = 0.;
+          if (c_solid_flag[is_p * cell_id] == 0)
+            dvol = 1. / cell_f_vol[cell_id];
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            c_poro_div_duq[cell_id][i] *= dvol;
+        }
+      }
     }
 
-    /* Finalisation of cell terms */
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      /* Is the cell fully solid? */
-      cs_real_t dvol = 0.;
-      if (c_solid_flag[is_p * cell_id] == 0)
-        dvol = 1. / cell_f_vol[cell_id];
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        c_poro_div_duq[cell_id][i] *= dvol;
-    }
     /* Handle parallelism and periodicity */
     if (halo != NULL)
       cs_halo_sync_var_strided(halo,
@@ -6908,14 +7103,15 @@ void CS_PROCF (grdpor, GRDPOR)
                                (cs_real_t *)c_poro_div_duq,
                                3);
 
-  } else {
+  }
+  else {
+#   pragma omp parallel for
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       i_poro_duq_0[face_id] = 0.;
       i_poro_duq_1[face_id] = 0.;
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -7142,6 +7338,8 @@ cs_gradient_initialize(void)
 {
   assert(cs_glob_mesh != NULL);
 
+  CS_TIMER_COUNTER_INIT(_gradient_t_tot);
+
   int stats_root = cs_timer_stats_id_by_name("operations");
   if (stats_root > -1) {
     _gradient_stat_id = cs_timer_stats_create("operations",
@@ -7160,6 +7358,11 @@ void
 cs_gradient_finalize(void)
 {
   int ii;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Total elapsed time for all gradient computations:  %.3f s\n"),
+                _gradient_t_tot.wall_nsec*1e-9);
 
   /* Free system info */
 
@@ -7271,6 +7474,7 @@ cs_gradient_scalar(const char                *var_name,
   }
 
   _gradient_scalar(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7294,6 +7498,8 @@ cs_gradient_scalar(const char                *var_name,
 
   t1 = cs_timer_time();
 
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
@@ -7301,6 +7507,7 @@ cs_gradient_scalar(const char                *var_name,
 
   if (_gradient_stat_id > -1)
     cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7352,8 +7559,9 @@ cs_gradient_vector(const char                *var_name,
 
   bool update_stats = true;
 
+  t0 = cs_timer_time();
+
   if (update_stats == true) {
-    t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -7374,6 +7582,7 @@ cs_gradient_vector(const char                *var_name,
   /* Compute gradient */
 
   _gradient_vector(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7389,11 +7598,17 @@ cs_gradient_vector(const char                *var_name,
                    cpl,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7439,8 +7654,9 @@ cs_gradient_tensor(const char                *var_name,
 
   bool update_stats = true;
 
+  t0 = cs_timer_time();
+
   if (update_stats == true) {
-    t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
@@ -7456,6 +7672,7 @@ cs_gradient_tensor(const char                *var_name,
   /* Compute gradient */
 
   _gradient_tensor(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7469,11 +7686,17 @@ cs_gradient_tensor(const char                *var_name,
                    (const cs_real_6_t *)var,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7557,6 +7780,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
     gradient_info = _find_or_add_system(var_name, gradient_type);
 
   _gradient_scalar(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7579,6 +7803,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                    grad);
 
   t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;
@@ -7640,14 +7866,15 @@ cs_gradient_vector_synced_input(const char                *var_name,
 
   bool update_stats = true;
 
-  if (update_stats == true) {
-    t0 = cs_timer_time();
+  t0 = cs_timer_time();
+
+  if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
-  }
 
   /* Compute gradient */
 
   _gradient_vector(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7663,11 +7890,17 @@ cs_gradient_vector_synced_input(const char                *var_name,
                    cpl,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7711,14 +7944,15 @@ cs_gradient_tensor_synced_input(const char                *var_name,
 
   bool update_stats = true;
 
-  if (update_stats == true) {
-    t0 = cs_timer_time();
+  t0 = cs_timer_time();
+
+  if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
-  }
 
   /* Compute gradient */
 
   _gradient_tensor(var_name,
+                   gradient_info,
                    gradient_type,
                    halo_type,
                    inc,
@@ -7732,11 +7966,17 @@ cs_gradient_tensor_synced_input(const char                *var_name,
                    var,
                    grad);
 
+  t1 = cs_timer_time();
+
+  cs_timer_counter_add_diff(&_gradient_t_tot, &t0, &t1);
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------

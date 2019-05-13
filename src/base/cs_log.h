@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -125,6 +125,19 @@ cs_log_strpadl(char        *dest,
                const char  *src,
                size_t       width,
                size_t       destsize);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Pretty-print int-32 based bit field to string
+ *
+ * \param[in]   code  value to print
+ * \param[out]  buf   output buffer (must be at least 33 bytes).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_binary_pp_int32(int32_t     code,
+                       char     buf[33]);
 
 /*----------------------------------------------------------------------------*/
 /*!

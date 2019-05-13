@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -139,6 +139,8 @@ integer          ivar_r(3,3)
 integer          icvflb
 integer          init
 integer          ivoid(1)
+integer          key_t_ext_id
+integer          iroext
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -153,6 +155,7 @@ double precision pij, phiij1, phiij2, epsij
 double precision phiijw, epsijw
 double precision ccorio
 double precision rctse
+double precision normp
 
 double precision rvoid(1)
 
@@ -186,6 +189,11 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
@@ -778,7 +786,7 @@ endif
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -799,6 +807,7 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
@@ -810,7 +819,7 @@ call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &

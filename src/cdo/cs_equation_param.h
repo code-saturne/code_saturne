@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -29,10 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_advection_field.h"
 #include "cs_param.h"
 #include "cs_param_cdo.h"
 #include "cs_property.h"
-#include "cs_advection_field.h"
 #include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
@@ -96,11 +96,15 @@ BEGIN_C_DECLS
  * \def CS_EQUATION_POST_UPWIND_COEF
  * \brief Postprocess the value of the upwinding coefficient
  *
+ * \def CS_EQUATION_POST_NORMAL_FLUX
+ * \brief Postprocess the value of the normal flux across the boundary faces
+ *
  */
 
 #define CS_EQUATION_POST_BALANCE     (1 << 0) /* 1 */
 #define CS_EQUATION_POST_PECLET      (1 << 1) /* 2 */
 #define CS_EQUATION_POST_UPWIND_COEF (1 << 2) /* 4 */
+#define CS_EQUATION_POST_NORMAL_FLUX (1 << 3) /* 8 */
 
 /*! @} */
 
@@ -114,42 +118,27 @@ BEGIN_C_DECLS
  * \var CS_EQUATION_TYPE_USER
  * User-defined equation
  *
- * \var CS_EQUATION_TYPE_GROUNDWATER,
+ * \var CS_EQUATION_TYPE_GROUNDWATER
  * Equation related to the groundwater flow module
+ *
+ * \var CS_EQUATION_TYPE_NAVSTO
+ * Equation related to the resolution of the Navier-Stokes system
+ * - Example: momentum, prediction, correction, energy...
  *
  * \var CS_EQUATION_TYPE_PREDEFINED
  * Predefined equation (most part of the setting is already done)
- * - Example: equation for the wall distance
+ * - Example: equation for the wall distance or ALE
  */
 
 typedef enum {
 
   CS_EQUATION_TYPE_USER,
   CS_EQUATION_TYPE_GROUNDWATER,
+  CS_EQUATION_TYPE_NAVSTO,
   CS_EQUATION_TYPE_PREDEFINED,
   CS_EQUATION_N_TYPES
 
 } cs_equation_type_t;
-
-/*! \enum cs_equation_solver_class_t
- *  \brief Class of iterative solvers to consider for solver the linear system
- *
- * \var CS_EQUATION_SOLVER_CLASS_CS
- * Iterative solvers available in Code_Saturne
- *
- * \var CS_EQUATION_SOLVER_CLASS_PETSC
- * Solvers available in Code_Saturne
- *
- * \var CS_EQUATION_N_SOLVER_CLASSES
- */
-
-typedef enum {
-
-  CS_EQUATION_SOLVER_CLASS_CS,
-  CS_EQUATION_SOLVER_CLASS_PETSC,
-  CS_EQUATION_N_SOLVER_CLASSES
-
-} cs_equation_solver_class_t;
 
 /*! \struct cs_equation_param_t
  *  \brief Set of parameters to handle an unsteady convection-diffusion-reaction
@@ -166,7 +155,6 @@ typedef struct {
   cs_equation_type_t   type;           /*!< type of equation: predefined... */
   int                  dim;            /*!< Dimension of the unknown */
   int                  verbosity;      /*!< Level of detail for output */
-  int                  sles_verbosity; /*!< Level of detail for SLES output */
 
   /*! \var flag
    *  Flag to know if unsteady or diffusion or convection or reaction
@@ -199,76 +187,38 @@ typedef struct {
    * - \ref CS_PARAM_BC_HMG_NEUMANN
    * - \ref CS_PARAM_BC_HMG_DIRICHLET
    *
-   * \var enforcement
-   * Type of enforcement for the Dirichlet boundary conditions.
-   * See \ref cs_param_bc_enforce_t for more details.
-   *
-   * \var bc_penalization_coeff
-   * Value of penalization coefficient used to enforce the Dirichlet boundary
-   * conditions (useful if the technique used to enforce the Dirichlet boundary
-   * condition is \ref CS_PARAM_BC_ENFORCE_PENALIZED,
-   * \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE or \ref CS_PARAM_BC_ENFORCE_WEAK_SYM)
-   * See \ref CS_EQKEY_BC_PENA_COEFF for more details.
-   *
    * \var n_bc_defs
    * Number of boundary conditions which are defined for this equation
    *
    * \var bc_defs
    * Pointers to the definitions of the boundary conditions
+   *
+   * \var default_enforcement
+   * Type of strategy to enforce an essential boundary conditions (Dirichlet for
+   * instance) when no predefined strategy is prescribed.  See \ref
+   * cs_param_bc_enforce_t for more details.
+   *
+   * \var strong_pena_bc_coeff
+   * Value of the penalization coefficient used to enforce the Dirichlet
+   * boundary conditions when \ref CS_PARAM_BC_ENFORCE_PENALIZED is set. This
+   * value should be sufficiently large in order to neglect off-diagonal terms.
+   *
+   * \var weak_pena_bc_coeff
+   * Value of the penalization coefficient used to enforce the Dirichlet
+   * boundary condition when \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE or \ref
+   * CS_PARAM_BC_ENFORCE_WEAK_SYM is set. This two latter strategies have a
+   * lesser influence on the conditioning number of the linear system than the
+   * choice \ref CS_PARAM_BC_ENFORCE_PENALIZED
+   *
    */
 
   cs_param_bc_type_t            default_bc;
-  cs_param_bc_enforce_t         enforcement;
-  cs_real_t                     bc_penalization_coeff;
   int                           n_bc_defs;
   cs_xdef_t                   **bc_defs;
 
-  /*!
-   * @}
-   * @name Settings related to the resolution of the algebraic system
-   * @{
-   *
-   * \var solver_class
-   * Class of solver available to solve the algebraic system
-   *
-   * \var itsol_info
-   * Set of parameters to specify how to to solve the algebraic
-   * - iterative solver
-   * - preconditionner
-   * - tolerance...
-   */
-
-  cs_equation_solver_class_t    solver_class;
-  cs_param_itsol_t              itsol_info;
-
-  /*!
-   * @}
-   * @name Numerical settings for the time-dependent parameters
-   * @{
-   *
-   * \var time_hodge
-   * Set of parameters for the discrete Hodge operator related to the unsteady
-   * term
-   *
-   * \var time_property
-   * Pointer to the \ref cs_property_t structure related to the unsteady term
-   *
-   * \var time_scheme
-   * Type of numerical scheme used for the time discretization
-   *
-   * \var theta
-   * Value of the coefficient for a theta scheme (between 0 and 1)
-   *
-   * \var do_lumping
-   * Perform a mass lumping on the matrix related to the time discretization.
-   * - true or false
-   */
-
-  cs_param_hodge_t              time_hodge;
-  cs_property_t                *time_property;
-  cs_param_time_scheme_t        time_scheme;
-  cs_real_t                     theta;
-  bool                          do_lumping;
+  cs_param_bc_enforce_t         default_enforcement;
+  cs_real_t                     strong_pena_bc_coeff;
+  cs_real_t                     weak_pena_bc_coeff;
 
   /*!
    * @}
@@ -284,6 +234,41 @@ typedef struct {
 
   int                           n_ic_defs;
   cs_xdef_t                   **ic_defs;
+
+  /*!
+   * @}
+   * @name Numerical settings for the time-dependent parameters
+   * @{
+   *
+   * \var do_lumping
+   * Set to true or false. Activate several actions:
+   * Perform a mass lumping of the matrices related to the time and reaction
+   * discretization. All source terms are evaluated using a barycentric
+   * quadrature.
+   */
+
+  bool                          do_lumping;
+
+  /*!
+   * \var time_hodge
+   * Set of parameters for the discrete Hodge operator related to the unsteady
+   * term
+   *
+   * \var time_property
+   * Pointer to the \ref cs_property_t structure related to the unsteady term
+   *
+   * \var time_scheme
+   * Type of numerical scheme used for the time discretization
+   *
+   * \var theta
+   * Value of the coefficient for a theta scheme (between 0 and 1)
+   *
+   */
+
+  cs_param_hodge_t              time_hodge;
+  cs_property_t                *time_property;
+  cs_param_time_scheme_t        time_scheme;
+  cs_real_t                     theta;
 
   /*!
    * @}
@@ -367,8 +352,6 @@ typedef struct {
   int                           n_source_terms;
   cs_xdef_t                   **source_terms;
 
-  /*! @} */
-
   /*!
    * @}
    * @name Enforcement of values in the computational domain
@@ -391,208 +374,37 @@ typedef struct {
   cs_lnum_t                  *enforced_dof_ids;
   cs_real_t                  *enforced_dof_values;
 
+  /*!
+   * @}
+   * @name Settings related to the resolution of the algebraic system
+   * @{
+   *
+   * \var sles_param
+   * Set of parameters to specify how to to solve the algebraic
+   * - iterative solver
+   * - preconditionner
+   * - tolerance...
+   */
+
+  cs_param_sles_t              sles_param;
+
+  /*!
+   * @}
+   * @name Settings related to the optimization of the performance
+   * @{
+   *
+   * \var omp_assembly_choice
+   * When OpenMP is active, choice of parallel reduction for the assembly
+   */
+
+  cs_param_assemble_omp_strategy_t     omp_assembly_choice;
+
   /*! @} */
 
 } cs_equation_param_t;
 
 /*! \enum cs_equation_key_t
  *  \brief List of available keys for setting the parameters of an equation
- *
- * \var CS_EQKEY_SPACE_SCHEME
- * Set the space discretization scheme. Available choices are:
- * - "cdo_vb"  for CDO vertex-based scheme
- * - "cdo_vcb" for CDO vertex+cell-based scheme
- * - "cdo_fb"  for CDO face-based scheme
- * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
- * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
- *
- * \var CS_EQKEY_DOF_REDUCTION
- * Set how is defined each degree of freedom (DoF).
- * - "de_rham" (default): Evaluation at vertices for potentials, integral
- *   along a line for circulations, integral across the normal component of a
- *   face for fluxes and integral inside a cell for densities
- * - "average": DoF are defined as the average on the element
- *
- * \var CS_EQKEY_VERBOSITY
- * Set the level of details written by the code for an equation.
- * The higher the more detailed information is displayed.
- * - "0" (default)
- * - "1" detailed setup resume and coarse grain timer stats
- * - "2" fine grain for timer stats
- *
- * \var CS_EQKEY_HODGE_DIFF_ALGO
- * Set the algorithm used for building the discrete Hodge operator used
- * in the diffusion term. Available choices are:
- * - "voronoi" --> leads to a diagonal discrete Hodge operator but is not
- *   consistent for all meshes. Require an "orthogonal" (or admissible) mesh;
- * - "cost" --> (default for diffusion) is more robust (i.e. it handles more
- *   general meshes but is is less efficient)
- * - "wbs" --> is robust and accurate but is limited to the reconstruction of
- *   potential-like degrees of freedom and needs a correct computation of the
- *   cell barycenter
- *
- * \var CS_EQKEY_HODGE_TIME_ALGO
- * Set the algorithm used for building the discrete Hodge operator used
- * in the unsteady term. Available choices are:
- * - "voronoi" --> (default) leads to diagonal discrete Hodge operator. It acts
- *   as a mass lumping.
- * - "wbs" is robust and accurate but is less efficient. It needs a correct
- *   computation of the cell barycenter
- *
- * \var CS_EQKEY_HODGE_REAC_ALGO
- * Set the algorithm used for building the discrete Hodge operator used
- * in the reaction term. Available choices are:
- * - "voronoi" --> leads to diagonal discrete Hodge operator but is not
- *   consistent for all meshes.  Require an "orthogonal" (or admissible) mesh;
- * - "wbs" --> (default) is robust and accurate but is limited to the
- *   reconstruction of potential-like degrees of freedom and needs a correct
- *   computation of the cell barycenter
- *
- * \var CS_EQKEY_HODGE_DIFF_COEF
- * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
- * "cost".
- * keyval is either a name or a value:
- * - "dga" corresponds to the value \f$ 1./3. \f$
- * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
- * - "gcr"  corresponds to the value \f$1\f$.
- * - or "1.5", "9" for instance
- *
- * \var CS_EQKEY_HODGE_TIME_COEF
- * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
- * "cost".
- * keyval is either a name or a value:
- * - "dga" corresponds to the value \f$ 1./3. \f$
- * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
- * - "gcr"  corresponds to the value \f$1\f$.
- * - or "1.5", "9" for instance
- *
- * \var CS_EQKEY_HODGE_REAC_COEF
- * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
- * "cost".
- * keyval is either a name or a value:
- * - "dga" corresponds to the value \f$ 1./3. \f$
- * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
- * - "gcr"  corresponds to the value \f$1\f$.
- * - or "1.5", "9" for instance
- *
- * \var CS_EQKEY_SOLVER_FAMILY
- * Specify which class of solver are possible. Available choices are:
- * - "none" --> (default) List of possible iterative solvers are those of
- *   Code_Saturne,
- * - "petsc" --> List of possible iterative solvers are those of the PETSc
- *   library. WARNING: one needs to install Code_Saturne with PETSc in this case
- *
- * \var CS_EQKEY_AMG_TYPE
- * Specify which type of algebraic multigrid (AMG) to choose.
- * Available choices are:
- * - "none" --> (default) No predefined AMG solver
- * - "boomer" --> Boomer AMG multigrid from the Hypre library
- * - "gamg" --> GAMG multigrid from the PETSc library
- * - "v_cycle" --> Code_Saturne's in house multigrid with a V-cycle strategy
- * - "k_cycle" --> Code_Saturne's in house multigrid with a K-cycle strategy
- * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
- * PETSc in this case
- *
- * \var CS_EQKEY_ITSOL
- * Specify the iterative solver for solving the linear system related to an
- * equation. Avalaible choices are:
- * - "jacobi" --> simpliest algorithm
- * - "gauss_seidel" --> Gauss-Seidel algorithm
- * - "sym_gauss_seidel" --> Symmetric version of Gauss-Seidel algorithm;
- *                          one backward and forward sweep
- * - "cg" --> (default) the standard conjuguate gradient algorithm
- * - "fcg" --> flexible version of the conjuguate gradient algorithm used
- *             when the preconditioner can change iteration by iteration
- * - "bicg" --> Bi-CG algorithm (for non-symmetric linear systems)
- * - "bicgstab2" --> BiCG-Stab2 algorithm (for non-symmetric linear systems)
- * - "cr3" --> a 3-layer conjugate residual solver (when "cs" is chosen as the
- *    solver family)
- * - "gmres" --> a robust iterative solver but slower as previous one if the
- *   system is not difficult to solve
- * - "amg" --> an algebraic multigrid iterative solver. Good choice for a
- * symmetric positive definite system.
- *
- * \var CS_EQKEY_PRECOND
- * Specify the preconditionner associated to an iterative solver. Available
- * choices are:
- * - "jacobi" --> diagonal preconditoner
- * - "block_jacobi" --> Only with PETSc
- * - "poly1" --> Neumann polynomial of order 1 (only with Code_Saturne)
- * - "poly2" --> Neumann polynomial of order 2 (only with Code_Saturne)
- * - "ssor" --> symmetric successive over-relaxation (only with PETSC)
- * - "ilu0" --> incomplete LU factorization (only with PETSc)
- * - "icc0" --> incomplete Cholesky factorization (for symmetric matrices and
- *   only with PETSc)
- * - "amg" --> algebraic multigrid
- *
- * \var CS_EQKEY_ITSOL_EPS
- * Tolerance factor for stopping the iterative processus for solving the
- * linear system related to an equation
- * - Example: "1e-10"
- *
- * \var CS_EQKEY_ITSOL_MAX_ITER
- * Maximum number of iterations for solving the linear system
- * - Example: "2000"
- *
- * \var CS_EQKEY_ITSOL_RESNORM
- * Normalized or not the residual before testing if one continues iterating
- * for solving the linear system. Available choices are:
- * - "true" or "false"
- *
- * \var CS_EQKEY_SLES_VERBOSITY
- * Level of details written by the code for the resolution of the linear system
- * - Examples: "0", "1", "2" or higher
- *
- * \var CS_EQKEY_BC_ENFORCEMENT
- * Set the type of enforcement of the boundary conditions.
- * Available choices are:
- * - "algebraic": Modify the linear system so as to add the contribution of the
- * Dirichlet in the right-hand side and replace the line associated to a
- * Dirichlet BC by identity. This is a good choice for pure diffusinon or pure
- * convection problem.
- * - "penalization": Add a huge penalization coefficient on the diagonal term
- * of the line related to DoFs associated a Dirichlet BC. The right-hand side is
- * also modified to take into account this penalization. Be aware that it may
- * worsen the matrix conditioning.
- * - "weak": weak enforcement using the Nitsche method (there is also
- * penalization term but the scaling is such that a moderate value (1-100) of
- * the penalization coefficient is sufficient). This a good choice for
- * convection/diffusion problem.
- * - "weak_sym": Same as the "weak" option but with a modification so as to
- * add a symmetric contribution to the system. If the problem yields a symmetric
- * matrix. This choice is more relevant than "weak". This a good choice for a
- * diffusion problem.
- *
- * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
- * technique is available up to now.
- *
- * \var CS_EQKEY_BC_PENA_COEFF
- * Set the value of the penalization coefficient either when "penalization" is
- * activated or when "weak"/"weak_sym" is activated. In the former case, the
- * default is about 1e12 and in the latter case, the default value is about 100.
- *
- * \var CS_EQKEY_BC_QUADRATURE
- * Set the quadrature algorithm used for evaluating integral quantities on
- * faces or volumes. Available choices are:
- * - "bary"    used the barycenter approximation
- * - "higher"  used 4 Gauss points for approximating the integral
- * - "highest" used 5 Gauss points for approximating the integral
- *
- * Remark: "higher" and "highest" implies automatically a subdivision into
- * tetrahedra of each cell.
- *
- * \var CS_EQKEY_TIME_SCHEME
- * Set the scheme for the temporal discretization. Available choices are:
- * - "implicit": first-order in time (inconditionnally stable)
- * - "explicit":
- * - "crank_nicolson": second_order in time
- * - "theta_scheme": generic time scheme. One recovers "implicit" with theta
- *   equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
- *
- * \var CS_EQKEY_TIME_THETA
- * Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to
- * "theta_scheme"
- * - Example: "0.75" (keyval must be between 0 and 1)
  *
  * \var CS_EQKEY_ADV_FORMULATION
  * Kind of formulation of the advective term. Available choices are:
@@ -617,10 +429,206 @@ typedef struct {
  * Value between 0 and 1 specifying the portion of upwind added to a centered
  * discretization.
  *
+ * \var CS_EQKEY_AMG_TYPE
+ * Specify which type of algebraic multigrid (AMG) to choose.
+ * Available choices are:
+ * - "none" --> (default) No predefined AMG solver
+ * - "boomer" --> Boomer AMG multigrid from the Hypre library
+ * - "gamg" --> GAMG multigrid from the PETSc library
+ * - "v_cycle" --> Code_Saturne's in house multigrid with a V-cycle strategy
+ * - "k_cycle" --> Code_Saturne's in house multigrid with a K-cycle strategy
+ * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
+ * PETSc in this case
+ *
+ * \var CS_EQKEY_BC_ENFORCEMENT
+ * Set the type of enforcement of the boundary conditions.
+ * Available choices are:
+ * - "algebraic": Modify the linear system so as to add the contribution of the
+ * Dirichlet in the right-hand side and replace the line associated to a
+ * Dirichlet BC by identity. This is a good choice for pure diffusinon or pure
+ * convection problem.
+ * - "penalization": Add a huge penalization coefficient on the diagonal term
+ * of the line related to DoFs associated a Dirichlet BC. The right-hand side is
+ * also modified to take into account this penalization. Be aware that it may
+ * worsen the matrix conditioning.
+ * - "weak": weak enforcement using the Nitsche method (there is also
+ * penalization term but the scaling is such that a moderate value (1-100) of
+ * the penalization coefficient is sufficient). This a good choice for
+ * convection/diffusion problem.
+ * - "weak_sym": Same as the "weak" option but with a modification so as to
+ * add a symmetric contribution to the system. If the problem yields a symmetric
+ * matrix. This choice is more relevant than "weak". This a good choice for a
+ * diffusion problem.
+ *
+ * For HHO and CDO-Face based schemes, only the "penalization" and "algebraic"
+ * technique is available up to now.
+ *
+ * \var CS_EQKEY_BC_QUADRATURE
+ * Set the quadrature algorithm used for evaluating integral quantities on
+ * faces or volumes. Available choices are:
+ * - "bary"    used the barycenter approximation
+ * - "higher"  used 4 Gauss points for approximating the integral
+ * - "highest" used 5 Gauss points for approximating the integral
+ *
+ * Remark: "higher" and "highest" implies automatically a subdivision into
+ * tetrahedra of each cell.
+ *
+ * \var CS_EQKEY_BC_STRONG_PENA_COEFF
+ * Set the value of the penalization coefficient when "penalization" is
+ * activated The default value is 1e12.
+ * cf. \ref CS_PARAM_BC_ENFORCE_PENALIZED
+ *
+ * \var CS_EQKEY_BC_WEAK_PENA_COEFF
+ * Set the value of the penalization coefficient when "weak" or "weak_sym" is
+ * activated. The default value is 100.
+ * cf. \ref CS_PARAM_BC_ENFORCE_WEAK_NITSCHE
+ * or  \ref CS_PARAM_BC_ENFORCE_WEAK_SYM
+ *
+ * \var CS_EQKEY_DOF_REDUCTION
+ * Set how is defined each degree of freedom (DoF).
+ * - "de_rham" (default): Evaluation at vertices for potentials, integral
+ *   along a line for circulations, integral across the normal component of a
+ *   face for fluxes and integral inside a cell for densities
+ * - "average": DoF are defined as the average on the element
+ *
  * \var CS_EQKEY_EXTRA_OP
  * Set the additional post-processing to perform. Available choices are:
- * - "peclet" --> post-process an estimation of the Peclet number in each cell
- * - "upwind_coef" --> post-process an estimation of the upwinding coefficient
+ * - "balance"  post-process the balance result in each control volume for
+ *              each main term of an equation (diffusion, convection, time...)
+ * - "peclet"  post-process an estimation of the Peclet number in each cell
+ * - "upwind_coef"  post-process an estimation of the upwinding coefficient
+ * - "normal_flux"  post-process the normal flux across boundary faces
+ *
+ * \var CS_EQKEY_HODGE_DIFF_ALGO
+ * Set the algorithm used for building the discrete Hodge operator used
+ * in the diffusion term. Available choices are:
+ * - "voronoi" --> leads to a diagonal discrete Hodge operator but is not
+ *   consistent for all meshes. Require an "orthogonal" (or admissible) mesh;
+ * - "cost" --> (default for diffusion) is more robust (i.e. it handles more
+ *   general meshes but is is less efficient)
+ * - "wbs" --> is robust and accurate but is limited to the reconstruction of
+ *   potential-like degrees of freedom and needs a correct computation of the
+ *   cell barycenter
+ *
+ * \var CS_EQKEY_HODGE_DIFF_COEF
+ * This key is only useful if CS_EQKEY_HODGE_{TIME, DIFF, REAC}_ALGO is set to
+ * "cost".
+ * keyval is either a name or a value:
+ * - "dga" corresponds to the value \f$ 1./3. \f$
+ * - "sushi" corresponds to the value \f$1./\sqrt(3.)\f$
+ * - "gcr"  corresponds to the value \f$1\f$.
+ * - or "1.5", "9" for instance
+ *
+ * \var CS_EQKEY_HODGE_TIME_ALGO
+ * Set the algorithm used for building the discrete Hodge operator used
+ * in the unsteady term. Available choices are:
+ * - "voronoi" --> (default) leads to diagonal discrete Hodge operator. It acts
+ *   as a mass lumping.
+ * - "wbs" is robust and accurate but is less efficient. It needs a correct
+ *   computation of the cell barycenter
+ *
+ * \var CS_EQKEY_HODGE_REAC_ALGO
+ * Set the algorithm used for building the discrete Hodge operator used in the
+ * reaction term. Available choices are:
+ * - "voronoi" --> leads to diagonal discrete Hodge operator (similar to a
+ * lumping).
+ * - "wbs" --> (default) is robust and accurate but is limited to the
+ * reconstruction of potential-like degrees of freedom and needs a correct
+ * computation of the cell barycenter
+ *
+ * \var CS_EQKEY_ITSOL
+ * Specify the iterative solver for solving the linear system related to an
+ * equation. Avalaible choices are:
+ * - "jacobi" --> simpliest algorithm
+ * - "gauss_seidel" --> Gauss-Seidel algorithm
+ * - "sym_gauss_seidel" --> Symmetric version of Gauss-Seidel algorithm;
+ *                          one backward and forward sweep
+ * - "cg" --> (default) the standard conjuguate gradient algorithm
+ * - "fcg" --> flexible version of the conjuguate gradient algorithm used
+ *             when the preconditioner can change iteration by iteration
+ * - "bicg" --> Bi-CG algorithm (for non-symmetric linear systems)
+ * - "bicgstab2" --> BiCG-Stab2 algorithm (for non-symmetric linear systems)
+ * - "cr3" --> a 3-layer conjugate residual solver (when "cs" is chosen as the
+ *    solver family)
+ * - "gmres" --> a robust iterative solver but slower as previous one if the
+ *   system is not difficult to solve
+ * - "amg" --> an algebraic multigrid iterative solver. Good choice for a
+ * symmetric positive definite system.
+ *
+ * \var CS_EQKEY_ITSOL_EPS
+ * Tolerance factor for stopping the iterative processus for solving the
+ * linear system related to an equation
+ * - Example: "1e-10"
+ *
+ * \var CS_EQKEY_ITSOL_MAX_ITER
+ * Maximum number of iterations for solving the linear system
+ * - Example: "2000"
+ *
+ * \var CS_EQKEY_ITSOL_RESNORM_TYPE
+ * Normalized or not the residual before testing if one continues iterating
+ * for solving the linear system. This normalization is performed before
+ * applying the boundary conditions to avoid handling the penalization of
+ * Dirichlet boundary conditions. If the RHS norm is equal to zero, then
+ * the "vol_tot" option is used for rescaling the residual.
+ *
+ * Available choices are:
+ * "false" or "none"
+ * "vol_tot"
+ * "weighted_rhs" (default)
+ * "matrix_diag"
+ *
+ * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
+ * Choice of the way to perform the assembly when OpenMP is active
+ * Available choices are:
+ * - "atomic" or "critical"
+ *
+ * \var CS_EQKEY_PRECOND
+ * Specify the preconditionner associated to an iterative solver. Available
+ * choices are:
+ * - "jacobi" --> diagonal preconditoner
+ * - "block_jacobi" --> Only with PETSc
+ * - "poly1" --> Neumann polynomial of order 1 (only with Code_Saturne)
+ * - "poly2" --> Neumann polynomial of order 2 (only with Code_Saturne)
+ * - "ssor" --> symmetric successive over-relaxation (only with PETSC)
+ * - "ilu0" --> incomplete LU factorization (only with PETSc)
+ * - "icc0" --> incomplete Cholesky factorization (for symmetric matrices and
+ *   only with PETSc)
+ * - "amg" --> algebraic multigrid
+ * - "amg_block" --> algebraic multigrid by block (useful for vector-valued
+ *                   equations)
+ *
+ * \var CS_EQKEY_SLES_VERBOSITY
+ * Level of details written by the code for the resolution of the linear system
+ * - Examples: "0", "1", "2" or higher
+ *
+ * \var CS_EQKEY_SPACE_SCHEME
+ * Set the space discretization scheme. Available choices are:
+ * - "cdo_vb"  for CDO vertex-based scheme
+ * - "cdo_vcb" for CDO vertex+cell-based scheme
+ * - "cdo_fb"  for CDO face-based scheme
+ * - "hho_p1"  for HHO schemes with \f$\mathbb{P}_1\f$ polynomial approximation
+ * - "hho_p2"  for HHO schemes with \f$\mathbb{P}_2\f$ polynomial approximation
+ *
+ * \var CS_EQKEY_TIME_SCHEME
+ * Set the scheme for the temporal discretization. Available choices are:
+ * - "euler_implicit": first-order in time (inconditionnally stable)
+ * - "euler_explicit":
+ * - "crank_nicolson": second_order in time
+ * - "theta_scheme": generic time scheme. One recovers "euler_implicit" with
+ *   theta equal to "1", "explicit" with "0", "crank_nicolson" with "0.5"
+ *
+ * \var CS_EQKEY_TIME_THETA
+ * Set the value of theta. Only useful if CS_EQKEY_TIME_SCHEME is set to
+ * "theta_scheme"
+ * - Example: "0.75" (keyval must be between 0 and 1)
+ *
+ * \var CS_EQKEY_VERBOSITY
+ * Set the level of details written by the code for an equation.
+ * The higher the more detailed information is displayed.
+ * - "0" (default)
+ * - "1" detailed setup resume and coarse grain timer stats
+ * - "2" fine grain for timer stats
+ *
  */
 
 typedef enum {
@@ -630,20 +638,21 @@ typedef enum {
   CS_EQKEY_ADV_UPWIND_PORTION,
   CS_EQKEY_AMG_TYPE,
   CS_EQKEY_BC_ENFORCEMENT,
-  CS_EQKEY_BC_PENA_COEFF,
   CS_EQKEY_BC_QUADRATURE,
+  CS_EQKEY_BC_STRONG_PENA_COEFF,
+  CS_EQKEY_BC_WEAK_PENA_COEFF,
+  CS_EQKEY_DO_LUMPING,
   CS_EQKEY_DOF_REDUCTION,
   CS_EQKEY_EXTRA_OP,
   CS_EQKEY_HODGE_DIFF_ALGO,
   CS_EQKEY_HODGE_DIFF_COEF,
   CS_EQKEY_HODGE_TIME_ALGO,
-  CS_EQKEY_HODGE_TIME_COEF,
   CS_EQKEY_HODGE_REAC_ALGO,
-  CS_EQKEY_HODGE_REAC_COEF,
   CS_EQKEY_ITSOL,
   CS_EQKEY_ITSOL_EPS,
   CS_EQKEY_ITSOL_MAX_ITER,
-  CS_EQKEY_ITSOL_RESNORM,
+  CS_EQKEY_ITSOL_RESNORM_TYPE,
+  CS_EQKEY_OMP_ASSEMBLY_STRATEGY,
   CS_EQKEY_PRECOND,
   CS_EQKEY_SLES_VERBOSITY,
   CS_EQKEY_SOLVER_FAMILY,
@@ -833,6 +842,20 @@ cs_equation_create_param(const char            *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Copy the settings from one \ref cs_equation_param_t structure to
+ *         another one
+ *
+ * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_update_from(const cs_equation_param_t   *ref,
+                              cs_equation_param_t         *dst);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a \ref cs_equation_param_t
  *
  * \param[in] eqp          pointer to a \ref cs_equation_param_t
@@ -874,6 +897,18 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 void
 cs_equation_param_set_sles(cs_equation_param_t     *eqp,
                            int                      field_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last modification of the cs_equation_param_t structure before
+ *         launching the computation
+ *
+ * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_last_stage(cs_equation_param_t   *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -956,6 +991,21 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a boundary condition from an existing \ref cs_xdef_t structure
+ *         The lifecycle of the cs_xdef_t structure is now managed by the
+ *         current \ref cs_equation_param_t structure.
+ *
+ * \param[in, out] eqp    pointer to a cs_equation_param_t structure
+ * \param[in]      xdef   pointer to the \ref cs_xdef_t structure to transfer
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_xdef_bc(cs_equation_param_t        *eqp,
+                        cs_xdef_t                  *xdef);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_zone_t
@@ -986,9 +1036,11 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  * \param[in]       z_name    name of the related boundary zone
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  *
- * \return a pointer to the new \ref cs_xdef_t structure
+ * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -998,6 +1050,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             const char                 *z_name,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
+                            _Bool                       is_owner,
                             cs_lnum_t                  *index);
 
 /*----------------------------------------------------------------------------*/
@@ -1023,6 +1076,21 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                                const char                 *z_name,
                                cs_analytic_func_t         *analytic,
                                void                       *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a sliding boundary
+ *         condition related to the given equation structure
+ *         z_name corresponds to the name of a pre-existing cs_zone_t
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the related boundary zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
+                                  const char              *z_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1130,6 +1198,8 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
  *                           all cells are considered)
  * \param[in]      loc       information to know where are located values
  * \param[in]      array     pointer to an array
+ * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                           (true or false)
  * \param[in]      index     optional pointer to the array index
  *
  * \return a pointer to the new cs_source_term_t structure
@@ -1141,6 +1211,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      const char             *z_name,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
+                                     _Bool                   is_owner,
                                      cs_lnum_t              *index);
 
 /*----------------------------------------------------------------------------*/

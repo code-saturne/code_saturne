@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -103,7 +103,7 @@ endif
 !===============================================================================
 
 !===============================================================================
-!     1.a Stockage Min et Max pour listing
+!     1.a Stockage Min et Max pour log
 !===============================================================================
 
 vmin(1) =  grand
@@ -160,7 +160,7 @@ call log_iteration_clipping_field(ivarfl(iphi), nclpmn(1), 0, vmin, vmax,nclpmn(
 if (iturb.eq.51) then
 
 !===============================================================================
-!     2.a Stockage Min et Max pour listing
+!     2.a Stockage Min et Max pour log
 !===============================================================================
 
   vmin(1) =  grand

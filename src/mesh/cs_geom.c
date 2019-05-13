@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -213,7 +213,7 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  * \param[in]      sx1            segment end coordinates
  * \param[out]     n_crossings    number sub_face crossings
  *                                 [0: in; 1: out]
- * \param[in, out] face_norm      local face unite noraml of the crossed sub
+ * \param[in, out] face_norm      local face unit normal of the crossed sub
  *                                 triangle (if entering with something
  *                                 different from NULL)
  *
@@ -225,14 +225,14 @@ cs_geom_closest_point(cs_lnum_t         n_points,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_geom_segment_intersect_face(int              orient,
-                               cs_lnum_t        n_vertices,
-                               const cs_lnum_t  vertex_ids[],
-                               const cs_real_t  vtx_coord[][3],
-                               const cs_real_t  face_cog[3],
-                               const cs_real_t  sx0[3],
-                               const cs_real_t  sx1[3],
-                               int              n_crossings[2],
+cs_geom_segment_intersect_face(int               orient,
+                               cs_lnum_t         n_vertices,
+                               const cs_lnum_t   vertex_ids[],
+                               const cs_real_t   vtx_coord[][3],
+                               const cs_real_t   face_cog[3],
+                               const cs_real_t   sx0[3],
+                               const cs_real_t   sx1[3],
+                               int               n_crossings[2],
                                cs_real_t        *face_norm)
 {
   const double epsilon = 1.e-15;
@@ -314,7 +314,7 @@ cs_geom_segment_intersect_face(int              orient,
 
     double od_p = cs_math_3_dot_product(disp, pvec);
 
-    /* This sign is absolute (ie same result is obtained if the face is seen i
+    /* This sign is absolute (ie same result is obtained if the face is seen
      * from the other neighbooring cell).
      */
     int sign_od_p = (od_p > 0 ? 1 : -1);

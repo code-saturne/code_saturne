@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -37,7 +37,8 @@ bft_backtrace.h \
 bft_error.h \
 bft_mem.h \
 bft_mem_usage.h \
-bft_printf.h
+bft_printf.h \
+cs_bft_headers.h
 
 # Library source files
 

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -244,6 +244,7 @@ double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: imasfl_prev, bmasfl_prev
+double precision, dimension(:), pointer :: cpro_beta, cvar_t
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -276,24 +277,25 @@ else
 endif
 
 ! Density at time (n-1) if needed
-if ((ivofmt.ge.0 .or. idilat.gt.1 .or. ipredfl.eq.0).and.irovar.eq.1) then
+if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
   call field_get_val_prev2_s(icrom, cromaa)
 endif
 
-! Density for the unsteady term (at time n-1)
+! Density for the unsteady term (at time n)
 ! Compressible algorithm (mass equation is already solved)
-if (ippmod(icompf).ge.0) then
+! or Low Mach compressible algos with mass flux prediction
+if (ippmod(icompf).ge.0.or.(idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1)) then
   pcrom => croma
 
-  ! VOF algorithm and Low Mach compressible Algos: density at time n-1
-else if ((idilat.gt.1.or.ivofmt.ge.0.or.ipredfl.eq.0).and.irovar.eq.1) then
+! VOF algorithm and Low Mach compressible Algos: density at time n-1
+else if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
   if (iterns.eq.1) then
     pcrom => cromaa
   else
     pcrom => croma
   endif
 
-  ! Deprecated algo or constant density
+! Deprecated algo or constant density
 else
   pcrom => crom_eos
 endif
@@ -324,20 +326,25 @@ if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1) then
   call field_get_val_prev_s(iflmas, imasfl_prev)
   call field_get_val_prev_s(iflmab, bmasfl_prev)
 
-  ! remap the density pointer: n-1/2
-  do iel = 1, ncelet
-    cproa_rho_tc(iel) = vcopt_u%thetav * croma(iel) + (1.d0 - vcopt_u%thetav) * cromaa(iel)
-  enddo
-  pcrom => cproa_rho_tc
+  if (irovar.eq.1) then
+    ! remap the density pointer: n-1/2
+    do iel = 1, ncelet
+      cproa_rho_tc(iel) =  vcopt_u%thetav * croma(iel)              &
+                         + (1.d0 - vcopt_u%thetav) * cromaa(iel)
+    enddo
+    pcrom => cproa_rho_tc
+  endif
 
   ! Inner mass flux interpolation: n-1/2->n+1/2
   do ifac = 1, nfac
-    imasfl(ifac) = vcopt_u%thetav * imasfl(ifac) + (1.d0 - vcopt_u%thetav) * imasfl_prev(ifac)
+    imasfl(ifac) =  vcopt_u%thetav * imasfl(ifac)                   &
+                  + (1.d0 - vcopt_u%thetav) * imasfl_prev(ifac)
   enddo
 
   ! Boundary mass flux interpolation: n-1/2->n+1/2
   do ifac = 1, nfabor
-    bmasfl(ifac) = vcopt_u%thetav * bmasfl(ifac) + (1.d0 - vcopt_u%thetav) * bmasfl_prev(ifac)
+    bmasfl(ifac) =  vcopt_u%thetav * bmasfl(ifac)                   &
+                  + (1.d0 - vcopt_u%thetav) * bmasfl_prev(ifac)
   enddo
 
 endif
@@ -589,6 +596,21 @@ else if (ippmod(icompf).ge.0) then
     trav(2,iel) = trav(2,iel)+(rom*gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
     trav(3,iel) = trav(3,iel)+(rom*gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
   enddo
+  ! Boussinesq approximation
+else if (idilat.eq.0) then
+
+  !FIXME make it dependant on the scalar and use is_buoyant field
+  call field_get_val_s(ibeta, cpro_beta)
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+
+  ! Delta rho = - rho_0 beta Delta T
+  do iel = 1, ncel
+    drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0)
+    trav(1,iel) = trav(1,iel) + (drom * gx - cpro_gradp(1,iel)) * cell_f_vol(iel)
+    trav(2,iel) = trav(2,iel) + (drom * gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
+    trav(3,iel) = trav(3,iel) + (drom * gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
+  enddo
+
 else
   do iel = 1, ncel
     drom = (crom(iel)-ro0)
@@ -798,22 +820,24 @@ if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
   !   est faite directement dans coditv.
   if (iterns.eq.1) then
 
-    allocate(hl_exp(3, ncelet))
+    allocate(hl_exp(3, ncepdp))
 
     call tspdcv(ncepdp, icepdc, vela, ckupdc, hl_exp)
 
     ! If PISO-like sub-iterations, we use trava, otherwise trav
     if(nterup.gt.1) then
-      do iel = 1, ncel
-        trava(1,iel) = trava(1,iel) + hl_exp(1,iel)
-        trava(2,iel) = trava(2,iel) + hl_exp(2,iel)
-        trava(3,iel) = trava(3,iel) + hl_exp(3,iel)
+      do ielpdc = 1, ncepdp
+        iel    = icepdc(ielpdc)
+        trava(1,iel) = trava(1,iel) + hl_exp(1,ielpdc)
+        trava(2,iel) = trava(2,iel) + hl_exp(2,ielpdc)
+        trava(3,iel) = trava(3,iel) + hl_exp(3,ielpdc)
       enddo
     else
-      do iel = 1, ncel
-        trav(1,iel) = trav(1,iel) + hl_exp(1,iel)
-        trav(2,iel) = trav(2,iel) + hl_exp(2,iel)
-        trav(3,iel) = trav(3,iel) + hl_exp(3,iel)
+      do ielpdc = 1, ncepdp
+        iel    = icepdc(ielpdc)
+        trav(1,iel) = trav(1,iel) + hl_exp(1,ielpdc)
+        trav(2,iel) = trav(2,iel) + hl_exp(2,ielpdc)
+        trav(3,iel) = trav(3,iel) + hl_exp(3,ielpdc)
       enddo
     endif
 
@@ -927,93 +951,120 @@ endif
 
 !-------------------------------------------------------------------------------
 ! ---> - Divergence of tensor Rij
+! ---> - Non linear part of Rij for non-liear Eddy Viscosity Models
 
-if(itytur.eq.3.and.iterns.eq.1) then
+if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
 
   allocate(rij(6,ncelet))
-  if(irijco.eq.1) then !TODO change index of rij
-    do iel = 1, ncelet
-      rij(1,iel) = cvara_rij(1,iel)
-      rij(2,iel) = cvara_rij(2,iel)
-      rij(3,iel) = cvara_rij(3,iel)
-      rij(4,iel) = cvara_rij(4,iel)
-      rij(5,iel) = cvara_rij(5,iel)
-      rij(6,iel) = cvara_rij(6,iel)
-    enddo
-  else
-    do iel = 1, ncelet
-      rij(1,iel) = cvara_r11(iel)
-      rij(2,iel) = cvara_r22(iel)
-      rij(3,iel) = cvara_r33(iel)
-      rij(4,iel) = cvara_r12(iel)
-      rij(5,iel) = cvara_r23(iel)
-      rij(6,iel) = cvara_r13(iel)
-    enddo
-  endif
-! --- Boundary conditions on the components of the tensor Rij
-
   allocate(coefat(6,nfabor))
-  if(irijco.eq.1) then
-    call field_get_coefad_v(ivarfl(irij),coefap)
-    coefat = coefap
-  else
-    call field_get_coefad_s(ivarfl(ir11),coef1)
-    call field_get_coefad_s(ivarfl(ir22),coef2)
-    call field_get_coefad_s(ivarfl(ir33),coef3)
-    call field_get_coefad_s(ivarfl(ir12),coef4)
-    call field_get_coefad_s(ivarfl(ir23),coef5)
-    call field_get_coefad_s(ivarfl(ir13),coef6)
-    do ifac = 1, nfabor
-      coefat(1,ifac) = coef1(ifac)
-      coefat(2,ifac) = coef2(ifac)
-      coefat(3,ifac) = coef3(ifac)
-      coefat(4,ifac) = coef4(ifac)
-      coefat(5,ifac) = coef5(ifac)
-      coefat(6,ifac) = coef6(ifac)
-    enddo
-  endif
-
   allocate(coefbt(6,6,nfabor))
-  do ifac = 1, nfabor
-    do ii = 1, 6
-      do jj = 1, 6
-        coefbt(jj,ii,ifac) = 0.d0
+
+  ! Reynolds Stress Models
+  if(itytur.eq.3) then
+
+    if(irijco.eq.1) then !TODO change index of rij
+      do iel = 1, ncelet
+        rij(1,iel) = cvara_rij(1,iel)
+        rij(2,iel) = cvara_rij(2,iel)
+        rij(3,iel) = cvara_rij(3,iel)
+        rij(4,iel) = cvara_rij(4,iel)
+        rij(5,iel) = cvara_rij(5,iel)
+        rij(6,iel) = cvara_rij(6,iel)
+      enddo
+    else
+      do iel = 1, ncelet
+        rij(1,iel) = cvara_r11(iel)
+        rij(2,iel) = cvara_r22(iel)
+        rij(3,iel) = cvara_r33(iel)
+        rij(4,iel) = cvara_r12(iel)
+        rij(5,iel) = cvara_r23(iel)
+        rij(6,iel) = cvara_r13(iel)
+      enddo
+    endif
+    ! --- Boundary conditions on the components of the tensor Rij
+
+    if(irijco.eq.1) then
+      call field_get_coefad_v(ivarfl(irij),coefap)
+      coefat = coefap
+    else
+      call field_get_coefad_s(ivarfl(ir11),coef1)
+      call field_get_coefad_s(ivarfl(ir22),coef2)
+      call field_get_coefad_s(ivarfl(ir33),coef3)
+      call field_get_coefad_s(ivarfl(ir12),coef4)
+      call field_get_coefad_s(ivarfl(ir23),coef5)
+      call field_get_coefad_s(ivarfl(ir13),coef6)
+      do ifac = 1, nfabor
+        coefat(1,ifac) = coef1(ifac)
+        coefat(2,ifac) = coef2(ifac)
+        coefat(3,ifac) = coef3(ifac)
+        coefat(4,ifac) = coef4(ifac)
+        coefat(5,ifac) = coef5(ifac)
+        coefat(6,ifac) = coef6(ifac)
+      enddo
+    endif
+
+    do ifac = 1, nfabor
+      do ii = 1, 6
+        do jj = 1, 6
+          coefbt(jj,ii,ifac) = 0.d0
+        enddo
       enddo
     enddo
-  enddo
 
-  if(irijco.eq.1) then
-    call field_get_coefbd_v(ivarfl(irij),coefbp)
-    coefbt = coefbp
-  else
-    call field_get_coefbd_s(ivarfl(ir11),coef1)
-    call field_get_coefbd_s(ivarfl(ir22),coef2)
-    call field_get_coefbd_s(ivarfl(ir33),coef3)
-    call field_get_coefbd_s(ivarfl(ir12),coef4)
-    call field_get_coefbd_s(ivarfl(ir23),coef5)
-    call field_get_coefbd_s(ivarfl(ir13),coef6)
+    if(irijco.eq.1) then
+      call field_get_coefbd_v(ivarfl(irij),coefbp)
+      coefbt = coefbp
+    else
+      call field_get_coefbd_s(ivarfl(ir11),coef1)
+      call field_get_coefbd_s(ivarfl(ir22),coef2)
+      call field_get_coefbd_s(ivarfl(ir33),coef3)
+      call field_get_coefbd_s(ivarfl(ir12),coef4)
+      call field_get_coefbd_s(ivarfl(ir23),coef5)
+      call field_get_coefbd_s(ivarfl(ir13),coef6)
+      do ifac = 1, nfabor
+        coefbt(1,1,ifac) = coef1(ifac)
+        coefbt(2,2,ifac) = coef2(ifac)
+        coefbt(3,3,ifac) = coef3(ifac)
+        coefbt(4,4,ifac) = coef4(ifac)
+        coefbt(5,5,ifac) = coef5(ifac)
+        coefbt(6,6,ifac) = coef6(ifac)
+      enddo
+    endif
+
+  ! Baglietto et al. quadratic k-epislon model
+  else if(iturb.eq.23) then
+
+    ! --- Compute the non linear part of Rij
+    call cnlevm (rij)
+
+    ! --- Boundary conditions : Homogeneous Neumann
     do ifac = 1, nfabor
-      coefbt(1,1,ifac) = coef1(ifac)
-      coefbt(2,2,ifac) = coef2(ifac)
-      coefbt(3,3,ifac) = coef3(ifac)
-      coefbt(4,4,ifac) = coef4(ifac)
-      coefbt(5,5,ifac) = coef5(ifac)
-      coefbt(6,6,ifac) = coef6(ifac)
+      do ii = 1, 6
+        coefat(ii,ifac) = 0.d0
+        do jj = 1, 6
+          coefbt(jj,ii,ifac) = 1.d0
+        enddo
+      enddo
     enddo
-  endif
+
+  end if
 
   ! Flux computation options
   f_id = -1
-  init = 1;
-  inc  = 1;
-  iflmb0 = 0;
-  call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
-  nswrgp = vcopt%nswrgr;
-  imligp = vcopt%imligr;
-  iwarnp = vcopt%iwarni;
-  epsrgp = vcopt%epsrgr;
-  climgp = vcopt%climgr;
-  itypfl = 1;
+  init = 1
+  inc  = 1
+  iflmb0 = 0
+  if(itytur.eq.3) then
+    call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
+  else
+    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+  end if
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+  itypfl = 1
 
   allocate(tflmas(3,nfac))
   allocate(tflmab(3,nfabor))
@@ -1080,7 +1131,6 @@ if(itytur.eq.3.and.iterns.eq.1) then
   endif
 
 endif
-
 
 !-------------------------------------------------------------------------------
 ! ---> Face diffusivity for the velocity
@@ -1197,15 +1247,33 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   !     NB: frcxt was used in typecl, and will be updated
   !         at the end of navstv
 
-  do iel = 1, ncel
+  ! External force variation between time step n and n+1
+  ! (used in the correction step)
+  !-----------------------------
 
-    ! External force variation between time step n and n+1
-    ! (used in the correction step)
-    drom = (crom(iel)-ro0)
-    dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
-    dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
-    dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
-  enddo
+  ! Boussinesq approximation
+  if (idilat.eq.0) then
+
+    !FIXME make it dependant on the scalar and use is_buoyant field
+    call field_get_val_s(ibeta, cpro_beta)
+    call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+
+    ! Delta rho = - rho_0 beta Delta T
+    do iel = 1, ncel
+      drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0)
+      dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
+      dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
+      dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
+    enddo
+
+  else
+    do iel = 1, ncel
+      drom = (crom(iel)-ro0)
+      dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
+      dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
+      dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
+    enddo
+  endif
 
   ! Add head losses
   if (ncepdp.gt.0) then
@@ -1529,7 +1597,7 @@ endif
 ! Solver parameters
 iconvp = vcopt_u%iconv
 idiffp = vcopt_u%idiff
-ndircp = ndircl(iu)
+ndircp = vcopt_u%ndircl
 nswrsp = vcopt_u%nswrsm
 nswrgp = vcopt_u%nswrgr
 imligp = vcopt_u%imligr

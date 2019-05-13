@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -83,11 +83,12 @@ cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light = NULL;
  * Local static variables
  *============================================================================*/
 
+static const int  n_robin_parameters = 3;
 static int  cs_cdo_local_n_structures = 0;
 
 /* Store predefined flags */
 static const cs_flag_t  cs_cdo_local_flag_v =
-  CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV;
+  CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FV;
 static const cs_flag_t  cs_cdo_local_flag_e =
   CS_CDO_LOCAL_PE | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
   CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF  | CS_CDO_LOCAL_EFQ;
@@ -95,7 +96,8 @@ static const cs_flag_t  cs_cdo_local_flag_peq =
   CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ;
 static const cs_flag_t  cs_cdo_local_flag_f =
   CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FE |
-  CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_HFQ;
+  CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_HFQ |
+  CS_CDO_LOCAL_FV;
 static const cs_flag_t  cs_cdo_local_flag_pfq =
   CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ;
 static const cs_flag_t  cs_cdo_local_flag_deq =
@@ -230,17 +232,18 @@ cs_cdo_local_finalize(void)
  * \param[in]   n_max_dofbyc    max number of entries
  * \param[in]   n_max_fbyc      max number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
- * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
+ * \param[in]   block_sizes     size of each block or NULL.
+ *                              Specific treatment n_blocks = 1.
  *
  * \return a pointer to a new allocated \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int          n_max_dofbyc,
-                   int          n_max_fbyc,
-                   short int    n_blocks,
-                   short int   *block_sizes)
+cs_cell_sys_create(int      n_max_dofbyc,
+                   int      n_max_fbyc,
+                   int      n_blocks,
+                   int     *block_sizes)
 {
   cs_cell_sys_t  *csys = NULL;
 
@@ -272,12 +275,17 @@ cs_cell_sys_create(int          n_max_dofbyc,
   csys->_f_ids = NULL;
   csys->bf_ids = NULL;
   csys->bf_flag = NULL;
+
   csys->has_dirichlet = false;
-  csys->has_nhmg_neumann = false;
-  csys->has_robin = false;
   csys->dir_values = NULL;
+
+  csys->has_nhmg_neumann = false;
   csys->neu_values = NULL;
+
+  csys->has_robin = false;
   csys->rob_values = NULL;
+
+  csys->has_sliding = false;
 
   if (n_max_fbyc > 0) {
 
@@ -300,30 +308,46 @@ cs_cell_sys_create(int          n_max_dofbyc,
     BFT_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
     memset(csys->dof_ids, 0, sizeof(cs_lnum_t)*n_max_dofbyc);
 
-    if (n_blocks == 1)
+    if (block_sizes == NULL)
       csys->mat = cs_sdm_square_create(n_max_dofbyc);
+
+    else if (n_blocks == 1) {
+
+      assert(block_sizes != NULL);
+      if (block_sizes[0] == 3) {
+        int  n_row_blocks = n_max_dofbyc/3;
+        assert(n_max_dofbyc % 3 == 0);
+        csys->mat = cs_sdm_block33_create(n_row_blocks, n_row_blocks);
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid initialization of the cellwise block matrix\n",
+                  __func__);
+
+    }
     else
       csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
                                       block_sizes,
                                       block_sizes);
 
-    BFT_MALLOC(csys->rhs, n_max_dofbyc, double);
-    BFT_MALLOC(csys->source, n_max_dofbyc, double);
-    BFT_MALLOC(csys->val_n, n_max_dofbyc, double);
+    BFT_MALLOC(csys->rhs       , n_max_dofbyc, double);
+    BFT_MALLOC(csys->source    , n_max_dofbyc, double);
+    BFT_MALLOC(csys->val_n     , n_max_dofbyc, double);
     BFT_MALLOC(csys->dir_values, n_max_dofbyc, double);
     BFT_MALLOC(csys->neu_values, n_max_dofbyc, double);
-    BFT_MALLOC(csys->rob_values, 2*n_max_dofbyc, double);
 
     const size_t  s = n_max_dofbyc * sizeof(double);
 
-    memset(csys->rhs, 0, s);
-    memset(csys->source, 0, s);
-    memset(csys->val_n, 0, s);
+    memset(csys->rhs       , 0, s);
+    memset(csys->source    , 0, s);
+    memset(csys->val_n     , 0, s);
     memset(csys->dir_values, 0, s);
     memset(csys->neu_values, 0, s);
-    memset(csys->rob_values, 0, 2*s);
-
   }
+
+  int  n_rob_size = n_robin_parameters*CS_MAX(n_max_dofbyc, n_max_fbyc);
+  BFT_MALLOC(csys->rob_values, n_rob_size, double);
+  memset(csys->rob_values, 0, n_rob_size*sizeof(cs_real_t));
 
   return csys;
 }
@@ -342,7 +366,7 @@ void
 cs_cell_sys_reset(int              n_fbyc,
                   cs_cell_sys_t   *csys)
 {
-  if (n_fbyc == 0 || csys->n_dofs == 0)
+  if (n_fbyc < 1 || csys->n_dofs < 1)
     return;
 
   const size_t  s = csys->n_dofs * sizeof(double);
@@ -350,26 +374,39 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->rhs, 0, s);
   memset(csys->source, 0, s);
 
+  csys->n_bc_faces = 0;
+  csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
+
   csys->has_internal_enforcement = false;
   for (int i = 0; i < csys->n_dofs; i++)
     csys->intern_forced_ids[i] = -1; /* Not selected */
 
-  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
+#if defined(DEBUG) && !defined(NDEBUG)
+  memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
+  memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
+  memset(csys->bf_ids  , 0, sizeof(cs_lnum_t)*n_fbyc);
+  memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
 
-    csys->n_bc_faces = 0;
-    csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
+  memset(csys->dir_values, 0, s);
+  memset(csys->neu_values, 0, s);
+  memset(csys->rob_values, 0,
+         CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
+#else
+  if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
+      (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)) {
 
-    memset(csys->bf_flag, 0, sizeof(cs_flag_t)*n_fbyc);
-    memset(csys->_f_ids, 0, sizeof(short int)*n_fbyc);
-    memset(csys->bf_ids, 0, sizeof(cs_lnum_t)*n_fbyc);
+    memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
+    memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
+    memset(csys->bf_ids  , 0, sizeof(cs_lnum_t)*n_fbyc);
     memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
 
     memset(csys->dir_values, 0, s);
     memset(csys->neu_values, 0, s);
-    memset(csys->rob_values, 0, 2*s);
+    memset(csys->rob_values, 0,
+           CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
 
   } /* Boundary cell -> reset BC-related members */
-
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -427,18 +464,38 @@ cs_cell_sys_dump(const char             msg[],
   {
     cs_log_printf(CS_LOG_DEFAULT, "%s\n", msg);
 
+    if (csys->cell_flag > 0) {
+      cs_log_printf(CS_LOG_DEFAULT,
+                    ">> dirichlet: %s, nhmg_neumann: %s, robin: %s,"
+                    " sliding: %s\n",
+                    cs_base_strtf(csys->has_dirichlet),
+                    cs_base_strtf(csys->has_nhmg_neumann),
+                    cs_base_strtf(csys->has_robin),
+                    cs_base_strtf(csys->has_sliding));
+      cs_log_printf(CS_LOG_DEFAULT, ">> Boundary faces\n"
+                    ">> %-8s | %-8s | %-6s\n", "_ID", "ID", "FLAG");
+      for (int i = 0; i < csys->n_bc_faces; i++) {
+        short int f = csys->_f_ids[i];
+        cs_log_printf(CS_LOG_DEFAULT, ">> %8d | %8d | %6d\n",
+                      f, csys->bf_ids[f], csys->bf_flag[f]);
+      }
+    }
+
     if (csys->mat->flag & CS_SDM_BY_BLOCK)
       cs_sdm_block_dump(csys->c_id, csys->mat);
     else
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
 
-    cs_log_printf(CS_LOG_DEFAULT, ">> %-10s | %-10s | %-10s | %-10s | %-10s\n",
-                  "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED");
+    cs_log_printf(CS_LOG_DEFAULT, ">> %-8s | %-10s | %-10s | %-10s | %-8s |"
+                  " %-6s | %-10s\n",
+                  "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED", "FLAG",
+                  "DIR_VALS");
     for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % -.3e | % -.3e | % -.3e |"
-                    " %10d\n",
+      cs_log_printf(CS_LOG_DEFAULT, ">> %8d | % -.3e | % -.3e | % -.3e |"
+                    " %8d | %6d | % -.3e\n",
                     csys->dof_ids[i], csys->rhs[i], csys->source[i],
-                    csys->val_n[i], csys->intern_forced_ids[i]);
+                    csys->val_n[i], csys->intern_forced_ids[i],
+                    csys->dof_flag[i], csys->dir_values[i]);
   }
 }
 
@@ -458,8 +515,9 @@ cs_cell_builder_create(void)
   /* Common part to all discretization */
   BFT_MALLOC(cb, 1, cs_cell_builder_t);
 
-  cb->eig_ratio = -DBL_MAX;
-  cb->eig_max = -DBL_MAX;
+  /* Consider a unitary diffusion property by default */
+  cb->eig_ratio = 1;
+  cb->eig_max = 1;
 
   cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1;
   cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
@@ -467,6 +525,7 @@ cs_cell_builder_create(void)
   cb->dpty_val = 1;
   cb->tpty_val = 1;
   cb->rpty_val = 1;
+
   for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
 
   cb->adv_fluxes = NULL;
@@ -555,6 +614,10 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
   BFT_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
 
+  /* face --> vertices connectivity */
+  BFT_MALLOC(cm->f2v_idx, cm->n_max_fbyc + 1, short int);
+  BFT_MALLOC(cm->f2v_ids, 2*cm->n_max_ebyc, short int);
+
   /* face --> edges connectivity */
   BFT_MALLOC(cm->f2e_idx, cm->n_max_fbyc + 1, short int);
   BFT_MALLOC(cm->f2e_ids, 2*cm->n_max_ebyc, short int);
@@ -588,7 +651,14 @@ cs_cdo_local_get_cell_mesh(int    mesh_id)
   if (mesh_id < 0 || mesh_id >= cs_glob_n_threads)
     return NULL;
 
-  return cs_cdo_local_cell_meshes[mesh_id];
+  cs_cell_mesh_t  *cm = cs_cdo_local_cell_meshes[mesh_id];
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  /* This is to check that the mesh flag is correctly set */
+  cs_cell_mesh_reset(cm);
+#endif
+
+  return cm;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -602,26 +672,26 @@ cs_cdo_local_get_cell_mesh(int    mesh_id)
 void
 cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
 {
-  cm->n_vc = SHRT_MAX;
-  cm->n_ec = SHRT_MAX;
-  cm->n_fc = SHRT_MAX;
+  cm->n_vc = -1;
+  cm->n_ec = -1;
+  cm->n_fc = -1;
 
   /* Cell information */
-  cm->c_id = SHRT_MIN;
+  cm->c_id = -1;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = -DBL_MAX;
   cm->vol_c = -DBL_MAX;
   cm->diam_c = -DBL_MAX;
 
   /* Vertex information */
   for (short int v = 0; v < cm->n_max_vbyc; v++) {
-    cm->v_ids[v] = SHRT_MIN;
+    cm->v_ids[v] = -1;
     cm->wvc[v] = -DBL_MAX;
     cm->xv[3*v] = cm->xv[3*v+1] = cm->xv[3*v+2] = -DBL_MAX;
   }
 
   /* Edge information */
   for (short int e = 0; e < cm->n_max_ebyc; e++) {
-    cm->e_ids[e] = SHRT_MIN;
+    cm->e_ids[e] = -1;
     cm->e2v_sgn[e] = 0;
     cm->edge[e].meas = cm->dface[e].meas = -DBL_MAX;
     cm->edge[e].unitv[0] = cm->dface[e].unitv[0] = -DBL_MAX;
@@ -634,7 +704,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
 
   /* Face information */
   for (short int f = 0; f < cm->n_max_fbyc; f++) {
-    cm->f_ids[f] = SHRT_MIN;
+    cm->f_ids[f] = -1;
     cm->f_sgn[f] = 0;
     cm->f_diam[f] = -DBL_MAX;
     cm->hfc[f] = -DBL_MAX;
@@ -650,10 +720,10 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
 
   /* face --> edges connectivity */
   for (short int f = 0; f < cm->n_max_fbyc + 1; f++)
-    cm->f2e_idx[f] = SHRT_MIN;
+    cm->f2e_idx[f] = cm->f2v_idx[f] = -1;
 
   for (int i = 0; i < 2*cm->n_max_ebyc; i++) {
-    cm->e2v_ids[i] = cm->e2f_ids[i] = cm->f2e_ids[i] = SHRT_MIN;
+    cm->e2v_ids[i] = cm->e2f_ids[i] = cm->f2e_ids[i] = cm->f2v_ids[i] = -1;
     cm->tef[i] = cm->sefc[i].meas = -DBL_MAX;
     cm->sefc[i].unitv[0]=cm->sefc[i].unitv[1]=cm->sefc[i].unitv[2] = -DBL_MAX;
   }
@@ -677,7 +747,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   }
 
   cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p; %s; flag: %d\n"
-                " c_id:%d; vol: %9.6e; xc (% .5e % .5e % .5e); diam: % .5e\n",
+                " c_id:%d; vol: %9.6e; xc (% .4e % .4e % .4e); diam: % .4e\n",
                 (const void *)cm, fvm_element_type_name[cm->type], cm->flag,
                 cm->c_id, cm->vol_c, cm->xc[0], cm->xc[1], cm->xc[2],
                 cm->diam_c);
@@ -685,10 +755,10 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   /* Information related to primal vertices */
   if (cm->flag & cs_cdo_local_flag_v) {
 
-    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-38s %-9s\n",
+    cs_log_printf(CS_LOG_DEFAULT, " %s | %6s | %35s | %10s\n",
                   "v", "id", "coord", "wvc");
     for (short int v = 0; v < cm->n_vc; v++)
-      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |% .5e % .5e % .5e| %.5e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "%2d | %6d | % .4e % .4e % .4e | %.4e\n",
                     v, cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1], cm->xv[3*v+2],
                     cm->wvc[v]);
 
@@ -697,49 +767,48 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   /* Information related to primal edges */
   if (cm->flag & cs_cdo_local_flag_e) {
 
-    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-38s %-38s %-11s %-38s\n",
-                  "e", "id", "length", "unit", "coords", "df.meas", "df.unit");
+    cs_log_printf(CS_LOG_DEFAULT, " %s | %6s | %3s | %2s | %2s | %9s |"
+                  " %35s | %35s | %10s | %35s\n",
+                  "e", "id", "sgn", "v1", "v2", "length", "unit", "coords",
+                  "df.meas", "df.unit");
     for (short int e = 0; e < cm->n_ec; e++) {
+
       cs_quant_t  peq = cm->edge[e];
       cs_nvec3_t  dfq = cm->dface[e];
-      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |%.3e|% .5e % .5e % .5e|"
-                    "% .5e % .5e % .5e|%.5e|% .5e % .5e % .5e\n",
-                    e, cm->e_ids[e], peq.meas, peq.unitv[0], peq.unitv[1],
+      cs_log_printf(CS_LOG_DEFAULT, "%2d | %6d | %3d | %2d | %2d | %.3e |"
+                    " % .4e % .4e % .4e | % .4e % .4e % .4e | %.4e |"
+                    " % .4e % .4e % .4e\n",
+                    e, cm->e_ids[e], cm->e2v_sgn[e], cm->e2v_ids[2*e],
+                    cm->e2v_ids[2*e+1], peq.meas, peq.unitv[0], peq.unitv[1],
                     peq.unitv[2], peq.center[0], peq.center[1], peq.center[2],
                     dfq.meas, dfq.unitv[0], dfq.unitv[1], dfq.unitv[2]);
-    }
+
+    } /* Loop on edges */
 
   } /* Edge quantities */
 
   /* Information related to primal faces */
   if (cm->flag & cs_cdo_local_flag_f) {
 
-    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-9s %-4s %-38s %-38s %-11s"
-                  "%-11s %-11s %-38s\n",
-                  "f", "id", "diam", "surf", "sgn", "unit", "coords", "hfc",
-                  "pfc", "dlen", "dunitv");
+    cs_log_printf(CS_LOG_DEFAULT, " %s | %6s | %9s | %3s | %35s | %35s |"
+                  " %10s | %35s | %11s  %11s  %11s\n",
+                  "f", "id", "surf", "sgn", "unit", "coords", "dlen", "dunitv",
+                  "pfc",  "hfc", "diam");
     for (short int f = 0; f < cm->n_fc; f++) {
-      cs_quant_t  fq = cm->face[f];
-      cs_nvec3_t  eq = cm->dedge[f];
+      cs_quant_t  pfq = cm->face[f];
+      cs_nvec3_t  deq = cm->dedge[f];
       cs_log_printf(CS_LOG_DEFAULT,
-                    "%2d |%8d |%.3e|%.3e| %2d|% .5e % .5e % .5e|"
-                    "% .5e % .5e % .5e|%.5e|%.5e|%.5e||% .5e % .5e % .5e\n",
-                    f, cm->f_ids[f], cm->f_diam[f], fq.meas, cm->f_sgn[f],
-                    fq.unitv[0], fq.unitv[1], fq.unitv[2], fq.center[0],
-                    fq.center[1], fq.center[2], cm->hfc[f], cm->pfc[f], eq.meas,
-                    eq.unitv[0], eq.unitv[1], eq.unitv[2]);
+                    "%2d | %6d | %.3e | %3d | % .4e % .4e % .4e |"
+                    " % .4e % .4e % .4e | %.4e | % .4e % .4e % .4e | %.3e |"
+                    " %.3e | %.3e\n",
+                    f, cm->f_ids[f], pfq.meas, cm->f_sgn[f],
+                    pfq.unitv[0], pfq.unitv[1], pfq.unitv[2], pfq.center[0],
+                    pfq.center[1], pfq.center[2], deq.meas, deq.unitv[0],
+                    deq.unitv[1], deq.unitv[2], cm->pfc[f], cm->hfc[f],
+                    cm->f_diam[f]);
     }
 
   } /* Face quantities */
-
-  if (cm->flag & CS_CDO_LOCAL_EV) {
-
-    cs_log_printf(CS_LOG_DEFAULT, "%-2s (v1, v2) sgn\n", "e");
-    for (short int e = 0; e < cm->n_ec; e++)
-      cs_log_printf(CS_LOG_DEFAULT, "%2d (%2d, %2d) %2d\n",
-                    e, cm->e2v_ids[2*e], cm->e2v_ids[2*e+1], cm->e2v_sgn[e]);
-
-  }
 
   if (cm->flag & cs_cdo_local_flag_fe) {
 
@@ -748,7 +817,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
       cs_log_printf(CS_LOG_DEFAULT, " %4d |",
                     cm->f2e_idx[f+1] - cm->f2e_idx[f]);
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
-        cs_log_printf(CS_LOG_DEFAULT, " %2d:%.5e|", cm->f2e_ids[i], cm->tef[i]);
+        cs_log_printf(CS_LOG_DEFAULT, " %2d:%.4e|", cm->f2e_ids[i], cm->tef[i]);
       cs_log_printf(CS_LOG_DEFAULT, "\n");
     }
 
@@ -760,8 +829,8 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
                   "e", "sef0c: meas, unitv", "sef1c: meas, unitv");
     for (short int e = 0; e < cm->n_ec; e++)
       cs_log_printf(CS_LOG_DEFAULT,
-                    " %3d | %2d | % .5e (% .5e % .5e % .5e) |"
-                    " %2d | % .5e (% .5e % .5e % .5e)\n",
+                    " %3d | %2d | % .4e (% .4e % .4e % .4e) |"
+                    " %2d | % .4e (% .4e % .4e % .4e)\n",
                     e, cm->e2f_ids[2*e], cm->sefc[2*e].meas,
                     cm->sefc[2*e].unitv[0], cm->sefc[2*e].unitv[1],
                     cm->sefc[2*e].unitv[2], cm->e2f_ids[2*e+1],
@@ -807,6 +876,9 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
   BFT_FREE(cm->e2v_ids);
   BFT_FREE(cm->e2v_sgn);
 
+  BFT_FREE(cm->f2v_idx);
+  BFT_FREE(cm->f2v_ids);
+
   BFT_FREE(cm->f2e_idx);
   BFT_FREE(cm->f2e_ids);
   BFT_FREE(cm->tef);
@@ -850,12 +922,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++)
     cm->xc[k] = quant->cell_centers[3*c_id+k];
 
-  const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
-  const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
+  /* Store the number of cell faces (useful to allocated boundary quantities) */
   const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
 
-  cm->n_vc = c2v_idx[1] - c2v_idx[0];
-  cm->n_ec = c2e_idx[1] - c2e_idx[0];
   cm->n_fc = c2f_idx[1] - c2f_idx[0];
 
   if (build_flag == 0)
@@ -864,7 +933,10 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal vertices */
   if (build_flag & cs_cdo_local_flag_v) {
 
+    const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
     const cs_lnum_t  *c2v_ids = connect->c2v->ids + c2v_idx[0];
+
+    cm->n_vc = c2v_idx[1] - c2v_idx[0];
 
     for (short int v = 0; v < cm->n_vc; v++) {
       const cs_lnum_t  v_id = c2v_ids[v];
@@ -883,12 +955,15 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     }
 
-  } // vertices
+  } /* vertices */
 
   /* Information related to primal edges */
   if (build_flag & cs_cdo_local_flag_e) {
 
+    const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
     const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
+
+    cm->n_ec = c2e_idx[1] - c2e_idx[0];
 
     for (short int e = 0; e < cm->n_ec; e++)
       cm->e_ids[e] = c2e_ids[e];
@@ -915,7 +990,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       }
 
-    } // Primal edge quantities
+    } /* Primal edge quantities */
 
     /* Dual face quantities related to each edge */
     if (build_flag & CS_CDO_LOCAL_DFQ) {
@@ -938,42 +1013,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       }
 
-    } // Dual face quantities
+    } /* Dual face quantities */
 
-  } // Edges
-
-  if (build_flag & CS_CDO_LOCAL_EV) {
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int t_id = omp_get_thread_num();
-    assert(t_id < cs_glob_n_threads);
-#else
-    int t_id = 0;
-#endif /* openMP */
-
-    short int  *kbuf = cs_cdo_local_kbuf[t_id];
-
-    /* Store in compact way: mesh --> cell mesh ids for vertices */
-    cs_lnum_t  shift = cm->v_ids[0];
-    for (short int v = 1; v < cm->n_vc; v++)
-      if (cm->v_ids[v] < shift)
-        shift = cm->v_ids[v];
-    for (short int v = 0; v < cm->n_vc; v++)
-      kbuf[cm->v_ids[v]-shift] = v;
-
-    for (short int e = 0; e < cm->n_ec; e++) {
-
-      const cs_lnum_t  e_id = cm->e_ids[e];
-
-      /* Store only the sign related to the first vertex since the sign
-         related to the second one is minus the first one */
-      cm->e2v_sgn[e] = connect->e2v->sgn[2*e_id];
-      cm->e2v_ids[2*e]   = kbuf[connect->e2v->ids[2*e_id] - shift];
-      cm->e2v_ids[2*e+1] = kbuf[connect->e2v->ids[2*e_id+1] - shift];
-
-    } // Loop on cell edges
-
-  } // edge-vertices information
+  } /* Edge-related quantities */
 
   /* Information related to primal faces */
   if (build_flag & cs_cdo_local_flag_f) {
@@ -984,7 +1026,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     for (short int f = 0; f < cm->n_fc; f++) {
       cm->f_ids[f] = c2f_lst[f];
       cm->f_sgn[f] = c2f_sgn[f];
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
     /* Face related quantities */
     if (build_flag & cs_cdo_local_flag_pfq) {
@@ -1034,13 +1076,98 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 #endif
 
         /* Volume of the pyramid of base f and apex x_c */
-        cm->pfc[f] = cs_math_onethird * cm->hfc[f] * cm->face[f].meas;
+        cm->pfc[f] = cs_math_1ov3 * cm->hfc[f] * cm->face[f].meas;
 
       } /* Loop on cell faces */
 
     } /* Quantities related to the pyramid of base f */
 
   } /* Face information */
+
+  if (build_flag & CS_CDO_LOCAL_EV ||
+      build_flag & CS_CDO_LOCAL_FV) {
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+#else
+    int t_id = 0;
+#endif /* openMP */
+
+    short int  *kbuf = cs_cdo_local_kbuf[t_id];
+
+    /* Store in a compact way ids for vertices: mesh --> cell mesh */
+    cs_lnum_t  v_shift = cm->v_ids[0];
+    for (short int v = 1; v < cm->n_vc; v++)
+      if (cm->v_ids[v] < v_shift)
+        v_shift = cm->v_ids[v];
+    for (short int v = 0; v < cm->n_vc; v++)
+      kbuf[cm->v_ids[v]-v_shift] = v;
+
+    if (build_flag & CS_CDO_LOCAL_EV) {
+      for (short int e = 0; e < cm->n_ec; e++) {
+
+        const cs_lnum_t  e_id = cm->e_ids[e];
+
+        /* Store only the sign related to the first vertex since the sign
+           related to the second one is minus the first one */
+        cm->e2v_sgn[e] = connect->e2v->sgn[2*e_id];
+        cm->e2v_ids[2*e]   = kbuf[connect->e2v->ids[2*e_id] - v_shift];
+        cm->e2v_ids[2*e+1] = kbuf[connect->e2v->ids[2*e_id+1] - v_shift];
+
+      } /* Loop on cell edges */
+    } /* edge-vertices information */
+
+    if (build_flag & CS_CDO_LOCAL_FV) {
+
+      const cs_adjacency_t  *if2v = connect->if2v;
+      const cs_adjacency_t  *bf2v = connect->bf2v;
+
+      /* Build the index */
+      cm->f2v_idx[0] = 0;
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+
+        int  n_vf = 0;
+        if (bf_id > -1) /* Boundary face */
+          n_vf = bf2v->idx[bf_id+1] - bf2v->idx[bf_id];
+        else
+          n_vf = if2v->idx[cm->f_ids[f]+1] - if2v->idx[cm->f_ids[f]];
+
+        cm->f2v_idx[f+1] = cm->f2v_idx[f] + n_vf;
+
+      } /* Loop on cell faces */
+
+      assert(cm->f2v_idx[cm->n_fc] == 2*cm->n_ec);
+
+      /* Fill the list of vertices */
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+
+        short int  *_ids = cm->f2v_ids + cm->f2v_idx[f];
+
+        if (bf_id > -1) { /* Boundary face */
+
+          const cs_lnum_t  *v_ids = bf2v->ids + bf2v->idx[bf_id];
+          for (short int i = 0; i < cm->f2v_idx[f+1]-cm->f2v_idx[f]; i++)
+            _ids[i] = kbuf[v_ids[i] - v_shift];
+
+        }
+        else { /* Interior face */
+
+          const cs_lnum_t  *v_ids = if2v->ids + if2v->idx[cm->f_ids[f]];
+          for (short int i = 0; i < cm->f2v_idx[f+1]-cm->f2v_idx[f]; i++)
+            _ids[i] = kbuf[v_ids[i] - v_shift];
+
+        }
+
+      } /* Loop on cell faces */
+
+    } /* face --> vertices connectivity */
+
+  } /* EV or FV flag */
 
   if (build_flag & cs_cdo_local_flag_fe) {
 
@@ -1080,7 +1207,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
         cm->f2e_ids[shift_idx++] = kbuf[f2e_ids[i] - shift];
       cm->f2e_idx[f+1] = shift_idx;
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
     /* Sanity check */
     assert(cm->f2e_idx[cm->n_fc] == 2*cm->n_ec);
@@ -1093,9 +1220,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
                                                    cm->face[f].center);
       }
 
-    } // face --> edges quantities
+    } /* face --> edges quantities */
 
-  } // face --> edges connectivity
+  } /* face --> edges connectivity */
 
   if (build_flag & cs_cdo_local_flag_ef) {
 
@@ -1114,11 +1241,12 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
         }
 
       } /* Loop on face edges */
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
     if (build_flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
 
       cs_nvec3_t  nv;
+      const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
 
       for (short int e = 0; e < cm->n_ec; e++) {
 
@@ -1355,7 +1483,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     }
   }
 
-  if (_f == n_fc) // Sanity check
+  if (_f == n_fc) /* Sanity check */
     bft_error(__FILE__, __LINE__, 0,
               _(" Face %d not found.\n Stop build a face mesh."), f_id);
 
@@ -1376,7 +1504,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     fm->edge[e].meas = e_nvect.meas;
     for (int k = 0; k < 3; k++)
       fm->edge[e].unitv[k] = e_nvect.unitv[k];
-    // Still to handle the edge barycenter
+    /* Still to handle the edge barycenter */
 
     const cs_lnum_t  *e2v_ids = connect->e2v->ids + 2*e_id;
     short int  v1 = -1, v2 = -1;
@@ -1388,9 +1516,9 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     }
 
     /* Add vertices if not already identified */
-    if (v1 == -1) // Not found -> Add v1
+    if (v1 == -1) /* Not found -> Add v1 */
       fm->v_ids[nv] = e2v_ids[0], v1 = nv++;
-    if (v2 == -1) // Not found -> Add v2
+    if (v2 == -1) /* Not found -> Add v2 */
       fm->v_ids[nv] = e2v_ids[1], v2 = nv++;
 
     /* Update e2v_ids */
@@ -1398,9 +1526,9 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     fm->e2v_ids[_eshft]   = v1;
     fm->e2v_ids[_eshft+1] = v2;
 
-  } // Loop on face edges
+  } /* Loop on face edges */
 
-  assert(nv == fm->n_vf); // Sanity check
+  assert(nv == fm->n_vf); /* Sanity check */
 
   /* Update vertex coordinates */
   int  shift = 0;
@@ -1432,7 +1560,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     fm->wvf[v2] += tef;
     fm->tef[e] = tef;
 
-  } // Loop on face edges
+  } /* Loop on face edges */
 
   const double  invf = 0.5/pfq.meas;
   for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;
@@ -1518,9 +1646,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     }
 
     /* Add vertices if not already identified */
-    if (v1 == -1) // Not found -> Add v1
+    if (v1 == -1) /* Not found -> Add v1 */
       fm->v_ids[nv] = v1c_id, v1 = nv++;
-    if (v2 == -1) // Not found -> Add v2
+    if (v2 == -1) /* Not found -> Add v2 */
       fm->v_ids[nv] = v2c_id, v2 = nv++;
 
     /* Update e2v_ids */
@@ -1528,9 +1656,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     fm->e2v_ids[_eshft]   = v1;
     fm->e2v_ids[_eshft+1] = v2;
 
-  } // Loop on face edges
+  } /* Loop on face edges */
 
-  assert(nv == fm->n_vf); // Sanity check
+  assert(nv == fm->n_vf); /* Sanity check */
 
   /* Update vertex coordinates */
   int  shift = 0;
@@ -1707,7 +1835,7 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
     }
   }
 
-  assert(nv == fm->n_vf); // Sanity check
+  assert(nv == fm->n_vf); /* Sanity check */
   const double  invf = 0.5/cm->face[f].meas;
   for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;
 }

@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_halo.h"
 #include "cs_log.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
@@ -117,7 +118,7 @@ cs_user_head_losses(const  cs_zone_t  *zone,
                     cs_real_t          cku[][6])
 {
   /*! [map_field_arrays] */
-  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(u)->val_pre);
+  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(vel)->val_pre);
   /*! [map_field_arrays] */
 
   /* Note that in the following examples, we check the zone name, so we

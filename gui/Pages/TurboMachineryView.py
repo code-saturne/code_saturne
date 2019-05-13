@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -44,11 +44,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, RegExpValidator, DoubleValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import to_text_string
 from code_saturne.Pages.TurboMachineryForm import Ui_TurboMachineryForm
-from code_saturne.Pages.TurboMachineryModel import TurboMachineryModel
+from code_saturne.model.TurboMachineryModel import TurboMachineryModel
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = editor.text()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ class VelocityDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -145,20 +145,20 @@ class StandardItemModelRotor(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
 
         if role == Qt.DisplayRole:
             data = self._data[index.row()][index.column()]
             if index.column() in (0, 1):
                 if data:
-                    return to_qvariant(data)
+                    return data
                 else:
-                    return to_qvariant()
+                    return None
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -169,8 +169,8 @@ class StandardItemModelRotor(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -235,14 +235,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.case.undoStopGlobal()
         self.mdl = TurboMachineryModel(self.case)
 
-        # Combo model
-        self.modelTurboMachineryType = ComboModel(self.comboBoxTurboMachineryType, 3, 1)
-        self.modelTurboMachineryType.addItem(self.tr("None"), "off")
-        self.modelTurboMachineryType.addItem(self.tr("Full transient simulation"), "transient")
-        self.modelTurboMachineryType.addItem(self.tr("Transient with explicit coupling"), "transient_coupled")
-        self.modelTurboMachineryType.addItem(self.tr("Frozen rotor model"), "frozen")
-        self.modelTurboMachineryType.addItem(self.tr("Frozen rotor with explicit coupling"), "frozen_coupled")
-
         # Set up validators
         self.lineEditDX.setValidator(DoubleValidator(self.lineEditDX))
         self.lineEditDY.setValidator(DoubleValidator(self.lineEditDY))
@@ -278,7 +270,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.widgetFacesJoin.tableView.setModel(model)
 
         # Connections
-        self.comboBoxTurboMachineryType.activated[str].connect(self.slotTurboModel)
         self.rotorModel.dataChanged.connect(self.dataChanged)
         self.tableViewTurboMachinery.clicked[QModelIndex].connect(self.slotChangeSelection)
 
@@ -324,7 +315,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         Update view
         """
         mdl = self.mdl.getTurboMachineryModel()
-        self.modelTurboMachineryType.setItem(str_model = mdl)
         rotor_id = self.tableViewTurboMachinery.currentIndex().row()
 
         if mdl != "off":
@@ -375,24 +365,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         detect change selection to update constant properties
         """
-        self.updateView()
-
-
-    @pyqtSlot(str)
-    def slotTurboModel(self, text):
-        """
-        Input turbomachinery model.
-        """
-        for nb in range(self.rotorModel.rowCount()):
-            self.rotorModel.delItem(0)
-
-        mdl = self.modelTurboMachineryType.dicoV2M[str(text)]
-        self.mdl.setTurboMachineryModel(mdl)
-
-        if len(self.mdl.getRotorList()) > 0:
-            for i in range(len(self.mdl.getRotorList())):
-                self.rotorModel.addItem(i)
-
         self.updateView()
 
 

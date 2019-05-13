@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -129,6 +129,8 @@ BEGIN_C_DECLS
         \f$>\f$ 0 and the calculation is a restart.
   \var  cs_stokes_model_t::idilat
         algorithm to take into account the density variation in time
+        - 0: Boussinesq approximation (rho constant expect in the buoyant
+             term where \f$\Delta \rho \vect{g} = - \rho \beta \Delta T \vect{g} \f$
         - 1: dilatable steady algorithm (default)
         - 2: dilatable unsteady algorithm
         - 3: low-Mach algorithm
@@ -268,10 +270,6 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **irecmf);
 
 /*============================================================================
- * Private function definitions
- *============================================================================*/
-
-/*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
@@ -333,6 +331,10 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *irecmf = &(_stokes_model.irecmf);
 }
 
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -392,7 +394,8 @@ cs_stokes_model_log_setup(void)
      _("\n"
        "Stokes model\n"
        "------------\n\n"
-       "    idilat:      %14d (1: without unsteady term\n"
+       "    idilat:      %14d (0: Boussines approximation\n"
+       "                                 1: without unsteady term\n"
        "                                    in the continuity equation\n"
        "                                 2: with unsteady term in\n"
        "                                    the continuity equation\n"
@@ -407,7 +410,7 @@ cs_stokes_model_log_setup(void)
        "    iporos:      %14d (0: without porous media\n"
        "                                 1: with porous media \n"
        "                                 2: with tensorial porous media\n"
-       "                                 3: with intergal formulation\n"
+       "                                 3: with integral formulation\n"
        "                                    including fluid volumes and\n"
        "                                    fluid surfaces)\n"
        "    iphydr:      %14d (1: account for explicit\n"
@@ -415,7 +418,7 @@ cs_stokes_model_log_setup(void)
        "                                    gradient, gravity source\n"
        "                                    terms, and head losses\n"
        "                                  2: compute a hydrostatic\n"
-       "                                     pressure which is balance\n"
+       "                                     pressure which is\n"
        "                                     in balance with buoyancy)\n"
        "    icalhy:      %14d (1: compute hydrostatic\n"
        "                                    pressure for dirichlet\n"
@@ -448,7 +451,7 @@ cs_stokes_model_log_setup(void)
          "    arak:        %14.5e (Arakawa factor)\n"),
        var_cal_opt.relaxv, f_pot_label, cs_glob_stokes_model->arak);
   } else {
-    cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+    cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
     cs_log_printf
       (CS_LOG_SETUP,
        _("    arak:        %14.5e (Arakawa factor)\n"),

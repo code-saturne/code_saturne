@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -80,6 +80,11 @@ BEGIN_C_DECLS
 #define CS_POST_MESH_PARTICLES        -3       /* particle output */
 #define CS_POST_MESH_TRAJECTORIES     -4       /* particle output */
 #define CS_POST_MESH_PROBES           -5       /* probes output */
+
+/* Additional categories (no associated default mesh */
+
+#define CS_POST_MESH_SURFACE         -12       /* surface (boundary and/or
+                                                  interior) mesh */
 
 /*============================================================================
  * Local type definitions

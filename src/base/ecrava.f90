@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -97,6 +97,8 @@ integer          ngbstr(2)
 integer          ifac, istr
 integer          iz, kk
 integer          ival(1)
+integer          key_t_ext_id, icpext
+integer          iviext
 double precision rval(1), tmpstr(27)
 
 type(c_ptr) :: rp
@@ -124,6 +126,13 @@ type(var_cal_opt) :: vcopt
 
 !        Ceci est par exemple utilise pour relier les flux de masse aux
 !        variables
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1. VERIFICATIONS DE BASE ET CODAGE DES CHAINES DE CARACTERES
@@ -424,25 +433,29 @@ if (iecaux.eq.1) then
   !       Une exception : on ecrit egalement Cp en effet joule pour
   !         pouvoir calculer la temperature H/Cp en debut de calcul
 
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0.or.ivofmt.ge.0) then
-    !  Viscosite moleculaire - cellules (si variable ou cavitation)
+    ! Molecular viscosity
     if (ivivar.eq.1.or.ivofmt.ge.0) then
       call restart_write_field_vals(rp, iviscl, 0)
     endif
+  endif
 
-    if (iviext.gt.0) then
-      ! Viscosite turbulente ou de sous-maille - cellules
-      call restart_write_field_vals(rp, ivisct, 0)
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    ! Turbulent viscosity
+    call restart_write_field_vals(rp, ivisct, 0)
+  endif
+
+  if (icp.ge.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0.or.ippmod(ieljou).ge.1)  then
+      ! Specific heat
+      call restart_write_field_vals(rp, icp, 0)
     endif
   endif
 
-  if ((icpext.gt.0.and.icp.ge.0).or.              &
-       (ippmod(ieljou).ge.1.and.icp.ge.0))  then
-    !  Chaleur massique - cellules
-    call restart_write_field_vals(rp, icp, 0)
-  endif
-
-  call restart_write_linked_fields(rp, "scalar_diffusivity_id", iecr)
+  call restart_write_linked_fields(rp, "diffusivity_id", iecr)
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des proprietes physiques          '
@@ -598,7 +611,7 @@ if (iecaux.eq.1) then
 
 ! ---> Methode ALE
 
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     itysup = 4
     nbval  = 3

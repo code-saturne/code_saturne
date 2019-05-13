@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -148,6 +148,29 @@ cs_hho_scaleq_free_context(void   *data);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of scalar-valued HHO schemes.
+ *
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_scaleq_init_values(cs_real_t                     t_eval,
+                          const int                     field_id,
+                          const cs_mesh_t              *mesh,
+                          const cs_equation_param_t    *eqp,
+                          cs_equation_builder_t        *eqb,
+                          void                         *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         data structure
@@ -175,7 +198,6 @@ cs_hho_scaleq_initialize_system(const cs_equation_param_t  *eqp,
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out] data       pointer to cs_hho_scaleq_t structure
@@ -187,7 +209,6 @@ cs_hho_scaleq_initialize_system(const cs_equation_param_t  *eqp,
 void
 cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                            const cs_real_t            *field_val,
-                           double                      dt_cur,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
                            void                       *data,

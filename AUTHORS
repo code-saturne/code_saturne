@@ -4,7 +4,7 @@ in the project, and does not necessarily correspond to his or her
 present affiliation.
 
 
-Code_Saturne is copyright (C) 1998-2018 EDF S.A., France
+Code_Saturne is copyright (C) 1998-2019 EDF S.A., France
 
 
 Major contributions to Code_Saturne have been provided by
@@ -24,6 +24,7 @@ Jacques Fontaine         (EDF, Chatou, France)
 Yvan Fournier            (EDF, Chatou, France)
 Valérie Guimet           (CS-SI, Le Plessis Robinson, France)
 Mathieu Guingo           (EDF, Chatou, France)
+Chaï Koren               (EDF, Chatou, France)
 Jérôme Lavieville        (EDF, Chatou, France)
 Erwan Le Coupanec        (EDF, Chatou, France)
 Namane Mechitoua         (EDF, Chatou, France)
@@ -45,33 +46,38 @@ Other contributors to Code_Saturne include
 Pierre Cantin            (EDF, Chatou, France)
 Bertrand Carissimo       (EDF, Chatou, France)
 Céline Caruyer           (EDF, Chatou, France)
-Christophe Henry         (IMP Gdańsk)
+Clément Colas            (EDF, Chatou, France)
+Christophe Henry         (INRIA, Nice, France)
 Arnaud Cordier           (AREVA NP, Lyon, France)
 Frederic Cordier         (Ecole Centrale Paris, France)
 Alexandre Davroux        (EDF, Chatou, France)
 Benoît de Laage de Meux  (EDF, Chatou, France)
 Clarisse Delalondre      (EDF, Chatou, France)
+Frédéric Dehoux          (EDF, Chatou, France)
+Josselin Demont          (EDF, Chatou, France)
 Bruno Delhom             (INCKA, Boulogne-Billancourt, France)
 Brigitte Gest            (EDF, Chatou, France)
 Richard Howard           (EDF, Chatou, France)
 Fabien Huvelin           (EDF, Chatou, France)
 François Jusserand       (EDF, Chatou, France)
-Chaï Koren               (EDF, Chatou, France)
+Gaspard Kemlin           (EDF, Saclay, France)
 Sylvestre Ledru          (INRIA, Rocquencourt, France)
 Emmanuel Lemoine         (INCKA, Boulogne-Billancourt, France)
 Louis Le Tarnec          (EDF, Chatou, France)
 Vincent Loizeau          (EDF, Chatou, France)
 Jérôme Lucas             (INCKA, Boulogne-Billancourt, France)
+Laurent Makke            (EDF, Chatou, France)
+Riccardo Milani          (EDF, Chatou, France)
 Maya Milliez             (EDF, Chatou, France)
 Thibaut Moy              (BERTIN TECHNOLOGIES, Montigny-le-Bretonneux, France)
 Vincent Robin            (ENSMA, Poitiers, France)
-Isabelle Rupp            (EDF, Chatou, France)
 Bertrand Sapa            (EDF, Chatou, France)
 Ugo Schuck               (EDF, Chatou, France)
 Vincent Stobiac          (EDF, Chatou, France)
 Michaël Tartar           (INCKA, Boulogne-Billancourt, France)
 Augustin Tibere-Inglesse (EDF, Chatou, France)
 Juan Uribe               (University of Manchester, United Kingdom)
+Pascal Vezolle           (IBM, Montpellier, France)
 
 
 Code_Saturne may contain code by Wes Petersen
@@ -92,23 +98,37 @@ with the Code_Saturne development team by providing fresh
 ideas on theoretical or programming topics or major feedback on
 the code.
 
+Samuel Antao             (IBM, Daresbury, UK)
 Loïc Balestre            (Xanth Informatique, Issy les Moulineaux, France)
 Sophie Bournaud          (EDF, Chatou, France)
+Daniel Castanon          (University of Montpellier, France)
 Sandro Dal Secco         (EDF, Chatou, France)
 Étienne Decossin         (EDF, Chatou, France)
+Charles Demay            (EDF, Chatou, France)
+Alexandre Ern            (Ecole des Ponts, France)
+Luciano Garelli          (CIMEC, Santa Fe, Argentina)
+Marie-Charlotte Gauffre  (EDF, Chatou, France)
+Anthony Geay             (EDF, Saclay, France)
 Matthieu Guillaud        (INCKA, Boulogne-Billancourt, France)
 Jean-Marc Hérard         (EDF, Chatou, France)
 Frank Hülsemann          (EDF, Saclay, France)
 Nicolas Jamet            (INCKA, Boulogne-Billancourt, France)
 Nicolas Jarrin           (University of Manchester, United Kingdom)
+Raphaël Lamouroux        (EDF, Chatou, France)
 Dominique Laurence       (EDF, Chatou, France)
 Matthieu Leclair         (EDF, Chatou, France)
 Élisabeth Longatte Lacazedieu (EDF, Chatou, France)
 Ludovic Maas             (INCKA, Boulogne-Billancourt, France)
 Jean-Daniel Mattei       (EDF, Chatou, France)
 Jean-Pierre Minier       (EDF, Chatou, France)
+Charles Moulinec         (STFC, United Kingdom)
+Christophe Péniguel      (EDF, Chatou, France)
+Alejandro Ribes          (EDF, Saclay, France)
 Jean-Benoît Ritz         (EDF, Chatou, France)
+Mario Storti             (CIMEC, Santa Fe, Argentina)
+Nicolas Tonello          (RENUDA, London, UK)
 Dominique Thai-Van       (EDF, Chatou, France)
+Guillaume Vialaneix      (EDF, Chatou, France)
 Christelle Vurpillot     (EDF, Chatou, France)
 
 
@@ -143,6 +163,7 @@ Cyril Baudry             (EDF, Chatou, France)
 Sophie Bosse             (EDF, Chatou, France)
 Alexandre Douce          (EDF, Chatou, France)
 Olivier Gaça             (INCKA, Boulogne-Billancourt, France)
+Chaï Koren               (EDF, Chatou, France)
 Nicole Picard            (EDF, Chatou, France)
 Éric Quémerais           (INCKA, Boulogne-Billancourt, France)
 Jean-Luc Rousset         (EDF, Chatou, France)
@@ -151,6 +172,7 @@ Michael Tartar           (INCKA, Boulogne-Billancourt, France)
 Other contributors to the Code_Saturne GUI include
 
 Yvan Fournier            (EDF, Chatou, France)
+Erwan Le Coupanec        (EDF, Chatou, France)
 Carole Vit               (INCKA, Boulogne-Billancourt, France)
 
 
@@ -170,4 +192,3 @@ Yvan Fournier            (EDF, Chatou, France)
 Nicolas Geimer           (Open Cascade, Clamart, France)
 David Monfort            (EDF, Chatou, France)
 Jean Rahuel              (Open Cascade, Guyancourt, France)
-

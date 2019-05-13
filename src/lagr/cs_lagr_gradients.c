@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -94,15 +94,15 @@ BEGIN_C_DECLS
  *  - velocity gradient
  *
  * \param[in]   time_id   0: current time, 1: previous
- * \param[out]  gradpr    pressure gradient
- * \param[out]  gradvf    velocity gradient
+ * \param[out]  grad_pr   pressure gradient
+ * \param[out]  grad_vel  velocity gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_gradients(int            time_id,
-                  cs_real_3_t   *gradpr,
-                  cs_real_33_t  *gradvf)
+                  cs_real_3_t   *grad_pr,
+                  cs_real_33_t  *grad_vel)
 {
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -217,7 +217,7 @@ cs_lagr_gradients(int            time_id,
                      wpres,
                      weight,
                      cpl,
-                     gradpr);
+                     grad_pr);
 
   if (wpres != solved_pres)
     BFT_FREE(wpres);
@@ -225,7 +225,7 @@ cs_lagr_gradients(int            time_id,
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
       for (cs_lnum_t id = 0; id < 3; id++)
-        gradpr[iel][id] += ro0 * grav[id];
+        grad_pr[iel][id] += ro0 * grav[id];
     }
   }
 
@@ -238,7 +238,7 @@ cs_lagr_gradients(int            time_id,
     cs_field_gradient_vector(extra->vel,
                              time_id,
                              inc,
-                             gradvf);
+                             grad_vel);
   }
 }
 

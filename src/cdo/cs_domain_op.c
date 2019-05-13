@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -126,7 +126,7 @@ _needs_adimensional_numbers(void)
  *         at cells (scalar-valued)
  *
  * \param[in]  cdoq       pointer to a cs_cdo_quantities_t struct.
- * \param[in]  basename   label for output in the listing
+ * \param[in]  basename   label for output in the log
  * \param[in]  array      pointer to the array to analyze
  */
 /*----------------------------------------------------------------------------*/
@@ -157,8 +157,9 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
   else
     min = _min, max = _max, sum = _sum;
 
+
   cs_log_printf(CS_LOG_DEFAULT, "s- %20s  % -6.4e % -6.4e % -6.4e\n",
-                basename, min, max, sum/cdoq->n_cells);
+                basename, min, max, sum/cdoq->n_g_cells);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -168,15 +169,13 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
  * \param[in]  adv         pointer to a cs_adv_field_t structure
  * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_step   pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _post_courant_number(const cs_adv_field_t       *adv,
                      const cs_cdo_quantities_t  *cdoq,
-                     const cs_time_step_t       *time_step,
-                     double                      dt_cur)
+                     const cs_time_step_t       *time_step)
 {
   if (adv == NULL)
     return;
@@ -190,9 +189,9 @@ _post_courant_number(const cs_adv_field_t       *adv,
 
   cs_real_t  *courant = cs_equation_get_tmpbuf();
 
-  cs_advection_get_courant(adv, dt_cur, courant);
+  cs_advection_get_courant(adv, time_step->dt[0], courant);
 
-  /* Brief output for the listing */
+  /* Brief output for the log */
   _analyze_cell_array(cdoq, label, courant);
 
   /* Postprocessing */
@@ -242,7 +241,7 @@ _post_peclet_number(const cs_equation_t        *eq,
   cs_real_t  *peclet = cs_equation_get_tmpbuf();
   cs_equation_compute_peclet(eq, time_step, peclet);
 
-  /* Brief output for the listing */
+  /* Brief output for the log */
   _analyze_cell_array(cdoq, label, peclet);
 
   /* Postprocessing */
@@ -267,15 +266,13 @@ _post_peclet_number(const cs_equation_t        *eq,
  * \param[in]  pty         pointer to a cs_property_t structure
  * \param[in]  cdoq        pointer to a cs_cdo_quantities_t struct.
  * \param[in]  time_step   pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _post_fourier_number(const cs_property_t        *pty,
                      const cs_cdo_quantities_t  *cdoq,
-                     const cs_time_step_t       *time_step,
-                     double                      dt_cur)
+                     const cs_time_step_t       *time_step)
 {
   if (pty == NULL)
     return;
@@ -284,14 +281,14 @@ _post_fourier_number(const cs_property_t        *pty,
 
   cs_real_t  *fourier = cs_equation_get_tmpbuf();
 
-  cs_property_get_fourier(pty, time_step->t_cur, dt_cur, fourier);
+  cs_property_get_fourier(pty, time_step->t_cur, time_step->dt[0], fourier);
 
   int  len = strlen(pty->name) + 8 + 1;
   char  *label = NULL;
   BFT_MALLOC(label, len, char);
   sprintf(label, "%s.Fourier", pty->name);
 
-  /* Brief output for the listing */
+  /* Brief output for the log */
   _analyze_cell_array(cdoq, label, fourier);
 
   /* Postprocessing */
@@ -392,9 +389,9 @@ cs_domain_post_init(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Process the computational domain after the resolution
+ * \brief  Post-processing of the computational domain after a resolution
  *
- * \param[in]  domain     pointer to a cs_domain_t structure
+ * \param[in]  domain            pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -402,9 +399,6 @@ void
 cs_domain_post(cs_domain_t  *domain)
 {
   cs_timer_t  t0 = cs_timer_time();
-
-  /* Pre-stage for post-processing for the current time step */
-  cs_post_time_step_begin(domain->time_step);
 
   /* Extra-operations */
   /* ================ */
@@ -415,8 +409,11 @@ cs_domain_post(cs_domain_t  *domain)
   if (domain->cdo_context->force_advfield_update)
     cs_advection_field_update(domain->time_step->t_cur, true);
 
+  /* Pre-stage for post-processing for the current time step */
+  cs_post_time_step_begin(domain->time_step);
+
   /* User-defined extra operations */
-  cs_user_cdo_extra_op(domain);
+  cs_user_extra_operations(domain);
 
   /* Log output */
   if (cs_domain_needs_log(domain)) {
@@ -430,8 +427,9 @@ cs_domain_post(cs_domain_t  *domain)
     /* Post-processing of adimensional numbers */
     if (_needs_adimensional_numbers()) {
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " ------------------------------------------------------------\n");
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         " ------------------------------------------------------------\n");
       cs_log_printf(CS_LOG_DEFAULT, "s- %20s %10s %10s %10s\n",
                     "Adim. number", "min", "max", "mean");
 
@@ -440,8 +438,7 @@ cs_domain_post(cs_domain_t  *domain)
       for (int adv_id = 0; adv_id < n_adv_fields; adv_id++)
         _post_courant_number(cs_advection_field_by_id(adv_id),
                              domain->cdo_quantities,
-                             domain->time_step,
-                             domain->dt_cur);
+                             domain->time_step);
 
       /* 2. Peclet numbers */
       int n_equations = cs_equation_get_n_equations();
@@ -455,11 +452,11 @@ cs_domain_post(cs_domain_t  *domain)
       for (int i = 0; i < n_properties; i++)
         _post_fourier_number(cs_property_by_id(i),
                              domain->cdo_quantities,
-                             domain->time_step,
-                             domain->dt_cur);
+                             domain->time_step);
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    " ------------------------------------------------------------\n");
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         " ------------------------------------------------------------\n");
 
     } /* Needs to compute adimensional numbers */
 
@@ -467,8 +464,15 @@ cs_domain_post(cs_domain_t  *domain)
     cs_equation_post_balance(domain->mesh,
                              domain->connect,
                              domain->cdo_quantities,
-                             domain->time_step,
-                             domain->dt_cur);
+                             domain->time_step);
+
+    /* 5. Specific operations for the GWF module */
+    if (cs_gwf_is_activated())
+      cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
+
+    /* 5. Specific operations for the GWF module */
+    if (cs_navsto_system_is_activated())
+      cs_navsto_system_extra_op(domain->connect, domain->cdo_quantities);
 
   } /* Needs a new log */
 

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -36,6 +36,7 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
+!> \param[in]     init          partial treatment (before time loop) if true
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet
@@ -72,7 +73,7 @@
 
 
 subroutine pptycl &
- ( nvar   ,                                                       &
+ ( nvar   , init   ,                                              &
    icodcl , itypfb , izfppp ,                                     &
    dt     ,                                                       &
    rcodcl )
@@ -109,6 +110,7 @@ implicit none
 ! Arguments
 
 integer          nvar
+logical          init
 
 integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor)
@@ -124,62 +126,126 @@ integer          ifac, iok, ifvu, ii, izone, izonem
 !===============================================================================
 
 !===============================================================================
-! 1.  LISTE DES ZONES (pour n'importe quel modele)
+! 1. Zones list (for some models)
 !===============================================================================
 
-! --> Faces appartiennent toutes a une zone frontiere
+if (ippmod(icompf).lt.0) then
+  ! --> faces all belong to a boundary zone
+  iok = 0
 
-iok = 0
-
-do ifac = 1, nfabor
-  if(izfppp(ifac).le.0.or.izfppp(ifac).gt.nozppm) then
-    iok = iok + 1
-    izfppp(ifac) = min(0, izfppp(ifac))
-  endif
-enddo
-
-if (irangp.ge.0) call parcmx(iok)
-
-if (iok.gt.0) then
-  write(nfecra,1000) nozppm
-  call boundary_conditions_error(izfppp)
-endif
-
-! --> On construit une liste des numeros des zones frontieres.
-!           (liste locale au processeur, en parallele)
-nzfppp = 0
-do ifac = 1, nfabor
-  ifvu = 0
-  do ii = 1, nzfppp
-    if (ilzppp(ii).eq.izfppp(ifac)) then
-      ifvu = 1
+  do ifac = 1, nfabor
+    if(izfppp(ifac).le.0.or.izfppp(ifac).gt.nozppm) then
+      iok = iok + 1
+      izfppp(ifac) = min(0, izfppp(ifac))
     endif
   enddo
-  if(ifvu.eq.0) then
-    nzfppp = nzfppp + 1
-    if(nzfppp.le.nbzppm) then
-      ilzppp(nzfppp) = izfppp(ifac)
-    else
-      write(nfecra,1001) nbzppm
-      write(nfecra,1002)(ilzppp(ii),ii=1,nbzppm)
-      call csexit (1)
-      !==========
-    endif
+
+  if (irangp.ge.0) call parcmx(iok)
+
+  if (iok.gt.0) then
+    write(nfecra,1000) nozppm
+    call boundary_conditions_error(izfppp)
   endif
-enddo
 
-! ---> Plus grand numero de zone
+  ! a list gathering numbers of boundary zones is built
+  ! (list is local to a sub-domain in parallel)
+  nzfppp = 0
+  do ifac = 1, nfabor
+    ifvu = 0
+    do ii = 1, nzfppp
+      if (ilzppp(ii).eq.izfppp(ifac)) then
+        ifvu = 1
+      endif
+    enddo
+    if(ifvu.eq.0) then
+      nzfppp = nzfppp + 1
+      if(nzfppp.le.nbzppm) then
+        ilzppp(nzfppp) = izfppp(ifac)
+      else
+        write(nfecra,1001) nbzppm
+        write(nfecra,1002)(ilzppp(ii),ii=1,nbzppm)
+        call csexit (1)
+      endif
+    endif
+  enddo
 
-izonem = 0
-do ii = 1, nzfppp
-  izone = ilzppp(ii)
-  izonem = max(izonem,izone)
-enddo
-if(irangp.ge.0) then
-  call parcmx(izonem)
-  !==========
+  ! maximum zone number
+
+  izonem = 0
+  do ii = 1, nzfppp
+    izone = ilzppp(ii)
+    izonem = max(izonem,izone)
+  enddo
+  if (irangp.ge.0) then
+    call parcmx(izonem)
+  endif
+  nozapm = izonem
 endif
-nozapm = izonem
+
+!===============================================================================
+! 2. Call to boundary conditions computations, model by model.
+!    Computations should not be called under initialization for most
+!    models; those for which it should be called are tested first.
+!===============================================================================
+
+! Atmospheric flows
+if (ippmod(iatmos).ge.0) then
+  call attycl(itypfb, izfppp, icodcl, rcodcl)
+
+! Cooling towers
+elseif (ippmod(iaeros).ge.0) then
+  call cs_ctwr_bcond(itypfb, izfppp, icodcl, rcodcl)
+
+! Compressible
+
+elseif (ippmod(icompf).ge.0) then
+  call cfxtcl                                                     &
+ ( nvar   ,                                                       &
+   icodcl , itypfb ,                                              &
+   dt     ,                                                       &
+   rcodcl )
+
+endif
+
+if (init .eqv. .true.) return
+
+! ---> Chimie 3 points : USD3PC
+
+if (ippmod(icod3p).ge.0) then
+  call d3ptcl(itypfb, izfppp, icodcl, rcodcl)
+
+! ---> Combustion gaz USEBUC
+!      Flamme de premelange modele EBU
+
+elseif (ippmod(icoebu).ge.0) then
+  call ebutcl(itypfb, izfppp, rcodcl)
+
+! ---> Combustion gaz USLWCC
+!      Flamme de premelange modele LWC
+
+elseif (ippmod(icolwc).ge.0) then
+  call lwctcl(itypfb, izfppp, rcodcl)
+
+! ---> Combustion charbon pulverise
+
+elseif (ippmod(iccoal).ge.0) then
+  call cs_coal_bcond(itypfb, izfppp, icodcl, rcodcl)
+
+! ---> Combustion charbon pulverise couple Lagrangien USCPLC
+
+elseif (ippmod(icpl3c).ge.0) then
+  call cpltcl(itypfb, izfppp, rcodcl)
+
+! ---> Combustion fuel
+
+elseif (ippmod(icfuel).ge.0) then
+  call cs_fuel_bcond(itypfb, izfppp, icodcl, rcodcl)
+
+endif
+
+!--------
+! Formats
+!--------
 
  1000 format(                                                           &
 '@'                                                            ,/,&
@@ -224,93 +290,6 @@ nozapm = izonem
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  1002 format(i10)
-
-
-
-!===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
-!                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LES SCALAIRES
-!    (selon le modele)
-!===============================================================================
-
-
-! ---> Chimie 3 points : USD3PC
-
-if (ippmod(icod3p).ge.0) then
-
-  call d3ptcl(itypfb, izfppp, icodcl, rcodcl)
-  !==========
-
-! ---> Combustion gaz USEBUC
-!      Flamme de premelange modele EBU
-
-elseif (ippmod(icoebu).ge.0) then
-
-  call ebutcl(itypfb, izfppp, rcodcl)
-  !==========
-
-! ---> Combustion gaz USLWCC
-!      Flamme de premelange modele LWC
-
-elseif (ippmod(icolwc).ge.0) then
-
-  call lwctcl(itypfb, izfppp, rcodcl)
-  !==========
-
-! ---> Combustion charbon pulverise
-
-elseif (ippmod(iccoal).ge.0) then
-
-  call cs_coal_bcond(itypfb, izfppp, icodcl, rcodcl)
-  !=================
-
-! ---> Combustion charbon pulverise couple Lagrangien USCPLC
-
-elseif (ippmod(icpl3c).ge.0) then
-
-  call cpltcl(itypfb, izfppp, rcodcl)
-  !==========
-
-! ---> Combustion fuel
-
-elseif (ippmod(icfuel).ge.0) then
-
-  call cs_fuel_bcond(itypfb, izfppp, icodcl, rcodcl)
-  !=================
-
-! ---> Compressible
-
-elseif (ippmod(icompf).ge.0) then
-
-  call cfxtcl                                                     &
-  !==========
- ( nvar   ,                                                       &
-   icodcl , itypfb ,                                              &
-   dt     ,                                                       &
-   rcodcl )
-
-! ---> Ecoulements atmospheriques
-
-elseif (ippmod(iatmos).ge.0) then
-
-  call attycl(itypfb, izfppp, icodcl, rcodcl)
-  !==========
-
-! ---> Cooling towers
-
-elseif (ippmod(iaeros).ge.0) then
-
-  call cs_ctwr_bcond(itypfb, izfppp, icodcl, rcodcl)
-
-endif
-
-!--------
-! Formats
-!--------
 
 !----
 ! End

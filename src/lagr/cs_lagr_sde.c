@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -55,6 +55,7 @@
 #include "cs_lagr.h"
 #include "cs_lagr_adh.h"
 #include "cs_lagr_deposition_model.h"
+#include "cs_lagr_event.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_prototypes.h"
@@ -89,16 +90,69 @@ static const double _k_boltz = 1.38e-23;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/* \brief Integration of SDEs by 1st order scheme
+/*!
+ * \brief Add a resulspension event
  *
- * \param[in]  taup      temps caracteristique dynamique
- * \param[in]  tlag      temps caracteristique fluide
- * \param[in]  piil      terme dans l'integration des eds up
+ * TODO add additional info to events.
+ *
+ * \param[in]  events             pointer to events set
+ * \param[in]  particles          pointer to particle set
+ * \param[in]  p_id               particle id
+ * \param[in]  face_id            associated face id
+ * \param[in]  particle_velocity  velocity after event
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_resuspension_event(cs_lagr_event_set_t     *events,
+                        cs_lagr_particle_set_t  *particles,
+                        cs_lnum_t                p_id,
+                        cs_lnum_t                face_id,
+                        const cs_real_t          particle_velocity[3])
+{
+  cs_lnum_t event_id = events->n_events;
+  if (event_id >= events->n_events_max) {
+    /* flush events */
+    cs_lagr_stat_update_event(events,
+                              CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+    events->n_events = 0;
+    event_id = 0;
+  }
+
+  cs_lagr_event_init_from_particle(events, particles, event_id, p_id);
+
+  cs_lagr_events_set_lnum(events,
+                          event_id,
+                          CS_LAGR_E_FACE_ID,
+                          face_id);
+
+  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                          event_id,
+                                          CS_LAGR_E_FLAG);
+
+  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
+                                              event_id,
+                                              CS_LAGR_E_VELOCITY);
+
+  *e_flag = *e_flag | CS_EVENT_RESUSPENSION;
+
+  for (int k = 0; k < 3; k++)
+    e_vel_post[k] = particle_velocity[k];
+
+  events->n_events += 1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Integration of SDEs by 1st order time scheme
+ *
+ * \param[in]  dtp       time step
+ * \param[in]  taup      dynamic characteristic time
+ * \param[in]  tlag      lagrangian fluid characteristic time
+ * \param[in]  piil      term in integration of UP SDEs
  * \param[in]  bx        caracteristiques de la turbulence
- * \param[in]  vagaus    variables aleatoires gaussiennes
- * \param[in]  gradpr    pressure gradient
- * \param[in]  romp      masse volumique des particules
- * \param[in]  fextla    champ de forces exterieur utilisateur (m/s2)
+ * \param[in]  vagaus    gaussian random variables
+ * \param[in]  brgaus    gaussian random variables
+ * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
  */
 /*------------------------------------------------------------------------------*/
@@ -110,11 +164,9 @@ _lages1(cs_real_t           dtp,
         const cs_real_3_t   piil[],
         const cs_real_33_t  bx[],
         const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
-        const cs_real_t     romp[],
         const cs_real_t     brgaus[],
-        cs_real_t          *terbru,
-        cs_real_3_t        *fextla)
+        const cs_real_3_t   force_p[],
+        cs_real_t          *terbru)
 {
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
@@ -124,9 +176,7 @@ _lages1(cs_real_t           dtp,
 
   /* Initialisations*/
 
-  const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
-
-  cs_real_t tkelvi =  273.15;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   cs_real_t vitf = 0.0;
 
@@ -141,7 +191,9 @@ _lages1(cs_real_t           dtp,
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
-  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
+  const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
+  const cs_real_3_t *cvar_vel
+    = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
   /* Integrate SDE's over particles */
 
@@ -149,7 +201,11 @@ _lages1(cs_real_t           dtp,
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
+
+    cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                  CS_LAGR_CELL_ID);
 
     if (cell_id >= 0) {
 
@@ -166,30 +222,16 @@ _lages1(cs_real_t           dtp,
       cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_COORDS);
 
-      cs_real_t rom = extra->cromf->val[cell_id];
-
       for (cs_lnum_t id = 0; id < 3; id++) {
 
-        vitf = extra->vel->vals[1][cell_id * 3 + id];
+        vitf = cvar_vel[cell_id][id];
 
         /* --> (2.1) Calcul preliminaires :    */
         /* ----------------------------   */
         /* calcul de II*TL+<u> et [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
 
         cs_real_t tci = piil[ip][id] * tlag[ip][id] + vitf;
-        cs_real_t force = 0.0;
-
-        if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-          force = (- gradpr[cell_id][id] / romp[ip]
-                   + grav[id] + fextla[ip][id]) * taup[ip];
-
-        /* Added-mass term?     */
-        else
-          force =   (- gradpr[cell_id][id] / romp[ip]
-                     * (1.0 + 0.5 * added_mass_const)
-                  / (1.0 + 0.5 * added_mass_const * rom / romp[ip])
-                  + grav[id] + fextla[ip][id]) * taup[ip];
-
+        cs_real_t force = force_p[ip][id];
 
         /* --> (2.2) Calcul des coefficients/termes deterministes */
         /* ----------------------------------------------------    */
@@ -199,9 +241,9 @@ _lages1(cs_real_t           dtp,
         aux3 = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
         aux4 = tlag[ip][id] / (tlag[ip][id] + taup[ip]);
         aux5 = tlag[ip][id] * (1.0 - aux2);
-        aux6 = pow(bx[ip][id][nor-1],2.0) * tlag[ip][id];
+        aux6 = cs_math_pow2(bx[ip][id][nor-1]) * tlag[ip][id];
         aux7 = tlag[ip][id] - taup[ip];
-        aux8 = pow(bx[ip][id][nor-1],2.0) * pow(aux3, 2);
+        aux8 = cs_math_pow2(bx[ip][id][nor-1]) * cs_math_pow2(aux3);
 
         /* --> trajectory terms */
         cs_real_t aa = taup[ip] * (1.0 - aux1);
@@ -244,7 +286,7 @@ _lages1(cs_real_t           dtp,
         if (CS_ABS(p11) > cs_math_epzero) {
 
           p21 = gagam / p11;
-          p22 = grga2 - pow(p21, 2);
+          p22 = grga2 - cs_math_pow2(p21);
           p22 = sqrt(CS_MAX(0.0, p22));
 
         }
@@ -266,7 +308,7 @@ _lages1(cs_real_t           dtp,
                 * aux8;
         omegam = aux3 * ( (tlag[ip][id] - taup[ip]) * (1.0 - aux2)
                           - 0.5 * tlag[ip][id] * (1.0 - aux2 * aux2)
-                          + pow(taup[ip],2) / (tlag[ip][id] + taup[ip]) * (1.0 - aux1 * aux2)
+                          + cs_math_pow2(taup[ip]) / (tlag[ip][id] + taup[ip]) * (1.0 - aux1 * aux2)
                           ) * aux6;
         omega2 =   aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
                  + 0.5 * tlag[ip][id] * tlag [ip][id] * aux5 * (1.0 + aux2)
@@ -284,7 +326,7 @@ _lages1(cs_real_t           dtp,
         else
           p32 = 0.0;
 
-        p33 = omega2 - pow(p31, 2) - pow(p32, 2);
+        p33 = omega2 - cs_math_pow2(p31) - cs_math_pow2(p32);
         p33 = sqrt(CS_MAX(0.0, p33));
         ter5x = p31 * vagaus[ip][id][0] + p32 * vagaus[ip][id][1] + p33 * vagaus[ip][id][2];
 
@@ -316,10 +358,10 @@ _lages1(cs_real_t           dtp,
                               CS_TEMPERATURE_SCALE_KELVIN)
             tempf = extra->scal_t->val[cell_id];
 
-          else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
+          else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
             cs_lnum_t mode  = 1;
-            CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
+            CS_PROCF(usthht, USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
 
             tempf = tempf + tkelvi;
 
@@ -332,10 +374,12 @@ _lages1(cs_real_t           dtp,
 
           cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup[ip]));
 
-          cs_real_t tix2 = pow((taup[ip] * ddbr), 2) * (dtp - taup[ip] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
-          cs_real_t tiu2 = ddbr * ddbr * taup[ip] * (1.0 - exp( -2.0 * dtp / taup[ip])) / 2.0;
+          cs_real_t tix2 =   cs_math_pow2((taup[ip] * ddbr))
+                           * (dtp - taup[ip] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
+          cs_real_t tiu2 =   ddbr * ddbr * taup[ip]
+                           * (1.0 - exp(-2.0 * dtp / taup[ip])) / 2.0;
 
-          cs_real_t tixiu  = pow((ddbr * taup[ip] * (1.0 - aux1)), 2) / 2.0;
+          cs_real_t tixiu  = cs_math_pow2((ddbr * taup[ip] * (1.0 - aux1))) / 2.0;
 
           tbrix2 = tix2 - (tixiu * tixiu) / tiu2;
 
@@ -392,7 +436,7 @@ _lages1(cs_real_t           dtp,
 }
 
 /*----------------------------------------------------------------------------*/
-/* \brief Integration of SDEs by 2nd order scheme
+/*! \brief Integration of SDEs by 2nd order scheme
  *
  * When there has beed interaction with a boundary face, the velocity and
  * velocity seen computations are forced to 1st order.
@@ -403,11 +447,10 @@ _lages1(cs_real_t           dtp,
  * \param[in]  bx        caracteristiques de la turbulence
  * \param[in]  tsfext    infos pour couplage retour dynamique
  * \param[in]  vagaus    variables aleatoires gaussiennes
- * \param[in]  gradpr    pressure gradient
- * \param[in]  romp      masse volumique des particules
  * \param[in]  brgaus    gaussian variable for brownian movement
+ * \param[in]  romp      masse volumique des particules
+ * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[out] terbru
- * \param[in]  fextla    champ de forces exterieur utilisateur (m/s2)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -419,11 +462,9 @@ _lages2(cs_real_t           dtp,
         const cs_real_33_t  bx[],
         cs_real_t           tsfext[],
         const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
-        const cs_real_t     romp[],
         const cs_real_t     brgaus[],
-        cs_real_t          *terbru,
-        cs_real_3_t        *fextla)
+        const cs_real_3_t   force_p[],
+        cs_real_t          *terbru)
 {
   cs_real_t  aux0, aux1, aux2, aux3, aux4, aux5, aux6, aux7, aux8, aux9;
   cs_real_t  aux10, aux11, aux12, aux17, aux18, aux19;
@@ -441,60 +482,41 @@ _lages2(cs_real_t           dtp,
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* ==============================================================================*/
-  /* 1. INITIALISATIONS                                                            */
+  /* 1. Initialisations                                                            */
   /* ==============================================================================*/
 
-  const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
-
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
-
-  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
 
   cs_real_t *auxl;
   BFT_MALLOC(auxl, p_set->n_particles*6, cs_real_t);
 
   /* =============================================================================
-   * 2. INTEGRATION DES EDS SUR LES PARTICULES
+   * 2. Integration of the SDE on partilces
    * =============================================================================*/
 
   /* =============================================================================
    * 2.1 CALCUL A CHAQUE SOUS PAS DE TEMPS
    * ==============================================================================*/
-  /* --> Calcul de tau_p*A_p et de II*TL+<u> :
+  /* --> Compute tau_p*A_p and II*TL+<u> :
    *     -------------------------------------*/
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
 
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+    cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, ip, CS_LAGR_CELL_ID);
 
-    if (cell_id >= 0) {
+    for (cs_lnum_t id = 0; id < 3; id++) {
 
-      for (cs_lnum_t id = 0; id < 3; id++) {
+      auxl[ip * 6 + id] = force_p[ip][id];
 
-        cs_real_t rom   = extra->cromf->val[cell_id];
-
-        if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-          auxl[ip * 6 + id] = (- gradpr[cell_id][id] / romp[ip]
-                               + grav[id] + fextla[ip][id]) * taup[ip];
-
-        /* Added-mass term?     */
-        else
-          auxl[ip * 6 + id] =   ( - gradpr[cell_id][id] / romp[ip]
-                                  * (1.0 + 0.5 * added_mass_const)
-                                  / (1.0 + 0.5 * added_mass_const * rom / romp[ip])
-                                  + grav[id] + fextla[ip][id] )
-                              * taup[ip];
-
-        if (nor == 1)
-          auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id]
-                                  + extra->vel->vals[1][cell_id * 3 + id];
-        else
-          auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id]
-                                  + extra->vel->vals[0][cell_id * 3 + id];
-
-      }
+      if (nor == 1)
+        auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id]
+                                + extra->vel->vals[1][cell_id * 3 + id];
+      else
+        auxl[ip * 6 + id + 3] =   piil[ip][id] * tlag[ip][id]
+                                + extra->vel->vals[0][cell_id * 3 + id];
 
     }
 
@@ -509,73 +531,70 @@ _lages2(cs_real_t           dtp,
     /* --> Sauvegarde de tau_p^n */
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
 
-      if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM) >= 0)
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TAUP_AUX, taup[ip]);
+      cs_lagr_particles_set_real(p_set, ip, CS_LAGR_TAUP_AUX, taup[ip]);
 
     }
 
     /* --> Sauvegarde couplage   */
-    if (cs_glob_lagr_time_scheme->iilagr == 2) {
+    if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
       for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-        if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM) >= 0) {
+        if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+          continue;
 
-          aux0     = -dtp / taup[ip];
-          aux1     =  exp(aux0);
-          tsfext[ip]      =   taup[ip]
-                            * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
-                            * (-aux1 + (aux1 - 1.0) / aux0);
-
-        }
+        aux0     = -dtp / taup[ip];
+        aux1     =  exp(aux0);
+        tsfext[ip] =   taup[ip]
+                     * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
+                     * (-aux1 + (aux1 - 1.0) / aux0);
 
       }
 
     }
 
-    /* --> Chargement des termes a t = t_n :    */
+    /* Load terms at t = t_n : */
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
 
-      if (cell_id >= 0) {
+      cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am,
+                                                             1, CS_LAGR_VELOCITY);
+      cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am,
+                                                             1, CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *pred_part_vel_seen = cs_lagr_particle_attr(particle, p_am,
+                                                            CS_LAGR_PRED_VELOCITY_SEEN);
+      cs_real_t *pred_part_vel = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_PRED_VELOCITY);
 
-        cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am,
-                                                               1, CS_LAGR_VELOCITY);
-        cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am,
-                                                               1, CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *pred_part_vel_seen = cs_lagr_particle_attr(particle, p_am,
-                                                              CS_LAGR_PRED_VELOCITY_SEEN);
-        cs_real_t *pred_part_vel = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_PRED_VELOCITY);
+      for (cs_lnum_t id = 0; id < 3; id++) {
 
-        for (cs_lnum_t id = 0; id < 3; id++) {
+        aux0    =  -dtp / taup[ip];
+        aux1    =  -dtp / tlag[ip][id];
+        aux2    = exp(aux0);
+        aux3    = exp(aux1);
+        aux4    = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
+        aux5    = aux3 - aux2;
 
-          aux0    =  -dtp / taup[ip];
-          aux1    =  -dtp / tlag[ip][id];
-          aux2    = exp(aux0);
-          aux3    = exp(aux1);
-          aux4    = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
-          aux5    = aux3 - aux2;
+        pred_part_vel_seen[id] =   0.5 * old_part_vel_seen[id]
+                                 * aux3 + auxl[ip * 6 + id + 3]
+                                 * (-aux3 + (aux3 - 1.0) / aux1);
 
-          pred_part_vel_seen[id] =   0.5 * old_part_vel_seen[id]
-                                   * aux3 + auxl[ip * 6 + id + 3]
-                                   * (-aux3 + (aux3 - 1.0) / aux1);
-
-          ter1    = 0.5 * old_part_vel[id] * aux2;
-          ter2    = 0.5 * old_part_vel_seen[id] * aux4 * aux5;
-          ter3    = auxl[ip * 6 + id + 3] * (-aux2 + ((tlag[ip][id] + taup[ip]) / dtp) * (1.0 - aux2)
-                                             - (1.0 + tlag[ip][id] / dtp) * aux4 * aux5);
-          ter4    = auxl[ip * 6 + id] * (-aux2 + (aux2 - 1.0) / aux0);
-          pred_part_vel[id] = ter1 + ter2 + ter3 + ter4;
-
-        }
+        ter1    = 0.5 * old_part_vel[id] * aux2;
+        ter2    = 0.5 * old_part_vel_seen[id] * aux4 * aux5;
+        ter3    =   auxl[ip * 6 + id + 3]
+                  * (  -aux2 + ((tlag[ip][id] + taup[ip]) / dtp) * (1.0 - aux2)
+                     - (1.0 + tlag[ip][id] / dtp) * aux4 * aux5);
+        ter4    = auxl[ip * 6 + id] * (-aux2 + (aux2 - 1.0) / aux0);
+        pred_part_vel[id] = ter1 + ter2 + ter3 + ter4;
 
       }
 
@@ -589,11 +608,9 @@ _lages2(cs_real_t           dtp,
             piil,
             bx,
             vagaus,
-            gradpr,
-            romp,
             brgaus,
-            terbru,
-            fextla);
+            force_p,
+            terbru);
   }
 
   else {
@@ -607,102 +624,97 @@ _lages2(cs_real_t           dtp,
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      if (   cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED)
+          || cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0)
+        continue;
 
-      if (    cell_id >= 0
-           && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0) {
+      cs_real_t *part_vel
+        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+      cs_real_t *part_vel_seen
+        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *old_part_vel
+        = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY);
+      cs_real_t *old_part_vel_seen
+        = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *pred_part_vel_seen
+        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_PRED_VELOCITY_SEEN);
+      cs_real_t *pred_part_vel
+        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_PRED_VELOCITY);
 
-        cs_real_t *part_vel
-          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
-        cs_real_t *part_vel_seen
-          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *old_part_vel
-          = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY);
-        cs_real_t *old_part_vel_seen
-          = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *pred_part_vel_seen
-          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_PRED_VELOCITY_SEEN);
-        cs_real_t *pred_part_vel
-          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_PRED_VELOCITY);
+      for (cs_lnum_t id = 0; id < 3; id++) {
 
-        for (cs_lnum_t id = 0; id < 3; id++) {
+        aux0    =  -dtp / taup[ip];
+        aux1    =  -dtp / tlag[ip][id];
+        aux2    = exp(aux0);
+        aux3    = exp(aux1);
+        aux4    = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
+        aux5    = aux3 - aux2;
+        aux6    = aux3 * aux3;
 
-          aux0    =  -dtp / taup[ip];
-          aux1    =  -dtp / tlag[ip][id];
-          aux2    = exp(aux0);
-          aux3    = exp(aux1);
-          aux4    = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
-          aux5    = aux3 - aux2;
-          aux6    = aux3 * aux3;
+        ter1    = 0.5 * old_part_vel_seen[id] * aux3;
+        ter2    = auxl[ip * 6 + id + 3] * (1.0 - (aux3 - 1.0) / aux1);
+        ter3    =  -aux6 + (aux6 - 1.0) / (2.0 * aux1);
+        ter4    = 1.0 - (aux6 - 1.0) / (2.0 * aux1);
 
-          ter1    = 0.5 * old_part_vel_seen[id] * aux3;
-          ter2    = auxl[ip * 6 + id + 3] * (1.0 - (aux3 - 1.0) / aux1);
-          ter3    =  -aux6 + (aux6 - 1.0) / (2.0 * aux1);
-          ter4    = 1.0 - (aux6 - 1.0) / (2.0 * aux1);
+        sige    =   (  ter3 * bx[ip][id][0]
+                     + ter4 * bx[ip][id][1] )
+                  * (1.0 / (1.0 - aux6));
 
-          sige    =   (  ter3 * bx[ip][id][0]
-                       + ter4 * bx[ip][id][1] )
-                    * (1.0 / (1.0 - aux6));
+        ter5    = 0.5 * tlag[ip][id] * (1.0 - aux6);
 
-          ter5    = 0.5 * tlag[ip][id] * (1.0 - aux6);
+        part_vel_seen[id] =   pred_part_vel_seen[id] + ter1 + ter2
+                            + sige * sqrt(ter5) * vagaus[ip][id][0];
 
-          part_vel_seen[id] = pred_part_vel_seen[id] + ter1 + ter2 + sige * sqrt(ter5) * vagaus[ip][id][0];
+        /* compute Up */
+        ter1    = 0.5 * old_part_vel[id] * aux2;
+        ter2    = 0.5 * old_part_vel_seen[id] * aux4 * aux5;
+        ter3    =   auxl[ip * 6 + id + 3]
+                  * (   1.0 - ((tlag[ip][id] + taup[ip]) / dtp) * (1.0 - aux2)
+                     + (tlag[ip][id] / dtp) * aux4 * aux5)
+          + auxl[ip * 6 + id] * (1.0 - (aux2 - 1.0) / aux0);
 
-          /* --> Calcul de Up :   */
-          ter1    = 0.5 * old_part_vel[id] * aux2;
-          ter2    = 0.5 * old_part_vel_seen[id] * aux4 * aux5;
-          ter3    = auxl[ip * 6 + id + 3]
-            * (1.0 - ((tlag[ip][id] + taup[ip]) / dtp) * (1.0 - aux2) + (tlag[ip][id] / dtp) * aux4 * aux5)
-            + auxl[ip * 6 + id] * (1.0 - (aux2 - 1.0) / aux0);
+        tapn    = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_TAUP_AUX);
 
-          tapn    = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_TAUP_AUX);
+        aux7    = exp(-dtp / tapn);
+        aux8    = 1.0 - aux3 * aux7;
+        aux9    = 1.0 - aux6;
+        aux10   = 1.0 - aux7 * aux7;
+        aux11   = tapn / (tlag[ip][id] + tapn);
+        aux12   = tlag[ip][id] / (tlag[ip][id] - tapn);
+        aux17   = sige * sige * aux12 * aux12;
+        aux18   = 0.5 * tlag[ip][id] * aux9;
+        aux19   = 0.5 * tapn * aux10;
+        aux20   = tlag[ip][id] * aux11 * aux8;
 
-          aux7    = exp(-dtp / tapn);
-          aux8    = 1.0 - aux3 * aux7;
-          aux9    = 1.0 - aux6;
-          aux10   = 1.0 - aux7 * aux7;
-          aux11   = tapn / (tlag[ip][id] + tapn);
-          aux12   = tlag[ip][id] / (tlag[ip][id] - tapn);
-          aux17   = sige * sige * aux12 * aux12;
-          aux18   = 0.5 * tlag[ip][id] * aux9;
-          aux19   = 0.5 * tapn * aux10;
-          aux20   = tlag[ip][id] * aux11 * aux8;
+        /* compute correlation matrix */
+        gamma2  = sige * sige * aux18;
+        grgam2  = aux17 * (aux18 - 2.0 * aux20 + aux19);
+        gagam   = sige * sige * aux12 * (aux18 - aux20);
 
-          /* ---> calcul de la matrice de correlation */
-          gamma2  = sige * sige * aux18;
-          grgam2  = aux17 * (aux18 - 2.0 * aux20 + aux19);
-          gagam   = sige * sige * aux12 * (aux18 - aux20);
+        /* Gaussian vector simulation */
 
-          /* ---> simulation du vecteur Gaussien */
-
-          p11     = sqrt(CS_MAX(0.0, gamma2));
-          if (p11 > cs_math_epzero) {
-
-            p21  = gagam / p11;
-            p22  = grgam2 - p21 * p21;
-            p22  = sqrt(CS_MAX(0.0, p22));
-
-          }
-          else {
-
-            p21  = 0.0;
-            p22  = 0.0;
-
-          }
-
-          ter4    = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
-
-          /* ---> Calcul des Termes dans le cas du mouvement Brownien     */
-          if (cs_glob_lagr_brownian->lamvbr == 1)
-            tbriu = terbru[ip] * brgaus[ip * 6 + id + 3];
-          else
-            tbriu = 0.0;
-
-          /* ---> finalisation de l'ecriture     */
-
-          part_vel[id] = pred_part_vel[id] + ter1 + ter2 + ter3 + ter4 + tbriu;
-
+        p11  = sqrt(CS_MAX(0.0, gamma2));
+        if (p11 > cs_math_epzero) {
+          p21  = gagam / p11;
+          p22  = grgam2 - p21 * p21;
+          p22  = sqrt(CS_MAX(0.0, p22));
         }
+        else {
+          p21  = 0.0;
+          p22  = 0.0;
+        }
+
+        ter4    = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
+
+        /* Compute terms in Brownian movement */
+        if (cs_glob_lagr_brownian->lamvbr == 1)
+          tbriu = terbru[ip] * brgaus[ip * 6 + id + 3];
+        else
+          tbriu = 0.0;
+
+        /* finalise writing */
+
+        part_vel[id] = pred_part_vel[id] + ter1 + ter2 + ter3 + ter4 + tbriu;
 
       }
 
@@ -729,26 +741,28 @@ _lages2(cs_real_t           dtp,
  * \param[in]  tlag      fluid characteristic time
  * \param[in]  piil      term in integration of UP SDEs
  * \param[in]  vagaus    gaussian random variables
- * \param[in]  gradpr    pressure gradient
  * \param[in]  romp      particles associated density
+ * \param[in]  force_p   taup times forces on particles (m/s)
  * \param[in]  tempf     temperature of the fluid (K)
  * \param[in]  vislen    FIXME
+ * \param[in]  events    associated events set
  * \param[in]  depint    interface location near-wall/core-flow
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_lagesd(cs_real_t           dtp,
-        cs_lnum_t           ip,
-        const cs_real_t     taup[],
-        const cs_real_3_t   piil[],
-        const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
-        cs_real_t           romp,
-        cs_real_t           tempf,
-        const cs_real_t     vislen[],
-        cs_real_t          *depint,
-        cs_lnum_t          *nresnew)
+_lagesd(cs_real_t             dtp,
+        cs_lnum_t             ip,
+        const cs_real_t       taup[],
+        const cs_real_3_t     piil[],
+        const cs_real_33_t    vagaus[],
+        const cs_real_t       romp[],
+        const cs_real_3_t     force_p[],
+        cs_real_t             tempf,
+        const cs_real_t       vislen[],
+        cs_lagr_event_set_t  *events,
+        cs_real_t            *depint,
+        cs_lnum_t            *nresnew)
 {
   /* mesh and mesh quantities */
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -774,8 +788,10 @@ _lagesd(cs_real_t           dtp,
   /* Adhesion force and torque on a deposited particle   */
   cs_real_t adhes_torque[3];
 
-  /* Map field arrays     */
-  cs_real_t *vela = extra->vel->vals[1];
+  /* Map field arrays */
+  const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
+  const cs_real_3_t *cvar_vel
+    = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
   /* ===========================================================================
    * 1. INITIALISATIONS
@@ -793,12 +809,14 @@ _lagesd(cs_real_t           dtp,
   cs_real_t p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                  CS_LAGR_STAT_WEIGHT);
 
-  cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
   cs_lnum_t face_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                 CS_LAGR_NEIGHBOR_FACE_ID);
 
-  cs_real_t ustar = extra->uetbor[face_id];
+  assert(face_id > -1);
+
+  cs_real_t ustar = extra->ustar->val[face_id];
   cs_real_t lvisq = vislen[face_id];
 
   cs_real_t tvisq;
@@ -806,11 +824,6 @@ _lagesd(cs_real_t           dtp,
     tvisq = lvisq / ustar;
   else
     tvisq = cs_math_big_r;
-
-  /* Friction velocity    */
-
-  face_id  = cs_lagr_particle_get_lnum(particle, p_am,
-                                       CS_LAGR_NEIGHBOR_FACE_ID);
 
   /* Constants for the calculation of bxp and tlp  */
   cs_real_t c0 = 2.1;
@@ -828,23 +841,23 @@ _lagesd(cs_real_t           dtp,
   cs_real_t energi, dissip;
   if (yplus <= 5.0) {
 
-    energi = 0.1 * cs_math_sq(yplus) * cs_math_sq(ustar);
-    dissip = 0.2 * pow(ustar, 4) / visccf;
+    energi = 0.1 * cs_math_pow2(yplus) * cs_math_pow2(ustar);
+    dissip = 0.2 * cs_math_pow4(ustar) / visccf;
 
   }
 
   else if (yplus <= 30.0) {
 
-    energi = cs_math_sq(ustar) / sqrt(0.09);
-    dissip = 0.2 * pow(ustar, 4) / visccf;
+    energi = cs_math_pow2(ustar) / sqrt(0.09);
+    dissip = 0.2 * cs_math_pow4(ustar) / visccf;
 
   }
   else {
 
     assert(yplus <= 100.0); /* should not arrive here otherwise */
 
-    energi   = cs_math_sq(ustar) / sqrt(0.09);
-    dissip   = pow(ustar, 4) / (0.41 * yplus * visccf);
+    energi   = cs_math_pow2(ustar) / sqrt(0.09);
+    dissip   = cs_math_pow4(ustar) / (0.41 * yplus * visccf);
 
   }
 
@@ -885,9 +898,10 @@ _lagesd(cs_real_t           dtp,
 
   cs_real_t vflui[3];
 
-  cs_math_33_3_product(rot_m, vela, vflui);
+  cs_math_33_3_product(rot_m, cvar_vel[cell_id], vflui);
 
-  cs_real_t norm = sqrt(pow(vflui[1],2)+pow(vflui[2],2));
+  cs_real_t norm = sqrt(cs_math_pow2(vflui[1]) + cs_math_pow2(vflui[2]));
+  cs_real_t inv_norm = ((norm > cs_math_zero_threshold) ?  1. / norm : 0);
 
   /* Velocity norm w.r.t y+ */
   cs_real_t norm_vit;
@@ -903,20 +917,14 @@ _lagesd(cs_real_t           dtp,
     norm_vit = (2.5 * log (yplus) + 5.5) * ustar;
   }
 
-  if (norm_vit > 0.) {
-    vflui[1] = norm_vit * vflui[1] / norm;
-    vflui[2] = norm_vit * vflui[2] / norm;
-  }
-  else {
-    vflui[1] = 0.;
-    vflui[2] = 0.;
-  }
+  vflui[1] = norm_vit * vflui[1] * inv_norm;
+  vflui[2] = norm_vit * vflui[2] * inv_norm;
 
-  /* 2.5 - pressure gradient   */
+  /* 2.5 Particle force: - pressure gradient/romp + external force + g   */
 
-  cs_real_t gdpr[3];
+  cs_real_t force_pn[3];
 
-  cs_math_33_3_product(rot_m, gradpr[cell_id], gdpr);
+  cs_math_33_3_product(rot_m, force_p[ip], force_pn);
 
   /* 2.6 - "piil" term    */
 
@@ -927,7 +935,7 @@ _lagesd(cs_real_t           dtp,
   /* 2.7 - tlag */
 
   cs_real_t tlp = cs_math_epzero;
-  if (energi > 0.0) {
+  if (dissip > cs_math_zero_threshold) {
 
     tlp = cl * energi / dissip;
     tlp = CS_MAX(tlp, cs_math_epzero);
@@ -972,35 +980,60 @@ _lagesd(cs_real_t           dtp,
                      vvue,
                      depl,
                      &p_diam,
-                     romp,
+                     romp[ip],
                      taup[ip],
                      &yplus,
                      &interf,
                      &enertur,
                      ggp,
                      vflui,
-                     gdpr,
+                     force_pn,
                      piilp,
                      depint);
 
   cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, marko);
 
-  if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-      != CS_LAGR_PART_IN_FLOW) {
+  if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS)) {
+
     depl[0]  = 0.0;
     vpart[0] = 0.0;
-  }
 
-  /* Integration in the 2 other directions */
-  if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-      == CS_LAGR_PART_IN_FLOW) {
+    /* Integration in the 2 other directions */
 
     for (cs_lnum_t id = 1; id < 3; id++) {
 
       cs_lnum_t i0 = id-1;
 
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
-      cs_real_t force = (- gdpr[id] / romp + ggp[id]) * taup[ip];
+      cs_real_t aux2  = exp(-dtp / tlp);
+      cs_real_t aux6  = bxp * bxp * tlp;
+
+      /* --> Terms for the flow-seen velocity     */
+      cs_real_t ter1f = vvue[id] * aux2;
+      cs_real_t ter2f = tci * (1.0 - aux2);
+
+      /* --> (2.3) Coefficients computation for the stochastic integrals:  */
+      cs_real_t gama2 = 0.5 * (1.0 - aux2 * aux2);
+
+      /* --> Integral for the flow-seen velocity  */
+      cs_real_t p11   = sqrt (gama2 * aux6);
+      cs_real_t ter3f = p11 * vagaus[ip][i0][0];
+
+      /* --> flow-seen velocity    */
+      vvue[id] = ter1f + ter2f + ter3f;
+
+    }
+
+  }
+
+  else { /* Particle in flow */
+
+    for (cs_lnum_t id = 1; id < 3; id++) {
+
+      cs_lnum_t i0 = id-1; //FIXME strange
+
+      cs_real_t tci   = piilp[id] * tlp + vflui[id];
+      cs_real_t force = force_pn[id];
       cs_real_t aux1  = exp(-dtp / taup[ip]);
       cs_real_t aux2  = exp(-dtp / tlp);
       cs_real_t aux3  = tlp / (tlp - taup[ip]);
@@ -1008,7 +1041,7 @@ _lagesd(cs_real_t           dtp,
       cs_real_t aux5  = tlp * (1.0 - aux2);
       cs_real_t aux6  = bxp * bxp * tlp;
       cs_real_t aux7  = tlp - taup[ip];
-      cs_real_t aux8  = bxp * bxp * pow(aux3, 2);
+      cs_real_t aux8  = bxp * bxp * cs_math_pow2(aux3);
 
       /* --> Terms for the trajectory   */
       cs_real_t aa    = taup[ip] * (1.0 - aux1);
@@ -1035,14 +1068,14 @@ _lagesd(cs_real_t           dtp,
       cs_real_t gama2  = 0.5 * (1.0 - aux2 * aux2);
       cs_real_t omegam = aux3 * ( (tlp - taup[ip]) * (1.0 - aux2)
                                   - 0.5 * tlp * (1.0 - aux2 * aux2)
-                                  + pow(taup[ip],2) / (tlp + taup[ip])
+                                  + cs_math_pow2(taup[ip]) / (tlp + taup[ip])
                                   * (1.0 - aux1 * aux2)
                                   ) * aux6;
       cs_real_t omega2 =   aux7
                          * (aux7 * dtp - 2.0 * (tlp * aux5 - taup[ip] * aa))
                          + 0.5 * tlp * tlp * aux5 * (1.0 + aux2)
-                         + 0.5 * pow(taup[ip], 2.0) * aa * (1.0 + aux1)
-                         - 2.0 * aux4 * tlp * pow(taup[ip],2.0) * (1.0 - aux1 * aux2);
+                         + 0.5 * cs_math_pow2(taup[ip]) * aa * (1.0 + aux1)
+                         - 2.0 * aux4 * tlp * cs_math_pow2(taup[ip]) * (1.0 - aux1 * aux2);
       omega2 *= aux8 ;
 
       cs_real_t  p11, p21, p22, p31, p32, p33;
@@ -1050,7 +1083,7 @@ _lagesd(cs_real_t           dtp,
       if (CS_ABS(gama2) >cs_math_epzero) {
 
         p21    = omegam / sqrt (gama2);
-        p22    = omega2 - pow(p21, 2);
+        p22    = omega2 - cs_math_pow2(p21);
         p22    = sqrt(CS_MAX(0.0, p22));
 
       }
@@ -1092,7 +1125,7 @@ _lagesd(cs_real_t           dtp,
       else
         p32 = 0.0;
 
-      p33 = grga2 - pow(p31, 2) - pow(p32, 2);
+      p33 = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
       p33 = sqrt (CS_MAX(0.0, p33));
 
       cs_real_t ter5p =   p31 * vagaus[ip][i0][0]
@@ -1111,43 +1144,15 @@ _lagesd(cs_real_t           dtp,
     }
 
   }
-  else {
 
-    for (cs_lnum_t id = 1; id < 3; id++) {
-
-      cs_lnum_t i0 = id-1;
-
-      cs_real_t tci   = piilp[id] * tlp + vflui[id];
-      cs_real_t aux2  = exp(-dtp / tlp);
-      cs_real_t aux6  = bxp * bxp * tlp;
-
-      /* --> Terms for the flow-seen velocity     */
-      cs_real_t ter1f = vvue[id] * aux2;
-      cs_real_t ter2f = tci * (1.0 - aux2);
-
-      /* --> (2.3) Coefficients computation for the stochastic integrals:  */
-      cs_real_t gama2 = 0.5 * (1.0 - aux2 * aux2);
-
-      /* --> Integral for the flow-seen velocity  */
-      cs_real_t p11   = sqrt (gama2 * aux6);
-      cs_real_t ter3f = p11 * vagaus[ip][i0][0];
-
-      /* --> flow-seen velocity    */
-      vvue[id] = ter1f + ter2f + ter3f;
-
-    }
-
-  }
-
-  if (cs_glob_lagr_reentrained_model->ireent == 1) {
+  if (cs_glob_lagr_model->resuspension == 1) {
 
     cs_real_t p_height = cs_lagr_particle_get_real(particle, p_am,
                                                    CS_LAGR_HEIGHT);
 
     cs_lnum_t iresusp = 0;
 
-    if (cs_lagr_particle_get_lnum(particle, p_am,
-                                  CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS)) {
 
       cs_lnum_t n_f_id
         = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
@@ -1160,8 +1165,11 @@ _lagesd(cs_real_t           dtp,
        * (another possibility is to use the jamming limit...) */
       cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;
 
-      if (bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] <
-          diam_mean && iresusp == 0) {
+      if (   (cs_glob_lagr_model->clogging == 0 && iresusp == 0)
+          || (   cs_glob_lagr_model->clogging == 1
+              &&   bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
+                 < diam_mean && iresusp == 0)) {
+
         /* Monolayer resuspension */
 
         /* Calculation of the hydrodynamic drag and torque
@@ -1180,19 +1188,20 @@ _lagesd(cs_real_t           dtp,
         }
 
         /* Calculation of lift force and torque */
-        lift_force[0] = - 20.0 * pow(visccf,2) * romf *
+        lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
           pow(ustar * p_diam * 0.5 / visccf, 2.31);
 
         for (cs_lnum_t id = 1; id < 3; id++) {
 
           lift_torque[id] = -lift_force[0] * p_diam * 0.5
-            * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
         }
 
         /* Calculation of gravity force and torque */
-        for (cs_lnum_t id = 1; id < 3; id++) {
-          grav_force[id] = p_diam * ggp[id];
+        for (cs_lnum_t id = 0; id < 3; id++) {
+          grav_force[id] = 4./3. * cs_math_pi * cs_math_pow3(p_diam/2)
+                                 * romp[ip] * ggp[id];
         }
 
         for (cs_lnum_t id = 1; id < 3; id++) {
@@ -1210,7 +1219,7 @@ _lagesd(cs_real_t           dtp,
           grav_torque[id] = (-grav_force[0] +
                               grav_force[1]*sign11 +
                               grav_force[2]*sign22 ) * p_diam * 0.5
-            * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2));
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
 
         }
 
@@ -1238,35 +1247,31 @@ _lagesd(cs_real_t           dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires]
-              += p_stat_w;
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflres]
-              += p_stat_w + (p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflm]
-              += - (p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
+          if (events != NULL) {
+            const cs_real_t *part_vel
+              = cs_lagr_particles_attr_const(p_set, ip, CS_LAGR_VELOCITY);
+            _add_resuspension_event(events,
+                                    p_set,
+                                    ip,
+                                    face_id,
+                                    part_vel);
           }
 
           /* Update of surface covered and deposit height
            * (for non-rolling particles) */
-          if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-              == CS_LAGR_PART_DEPOSITED ) {
+          if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITED)) {
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc]
-              -=   cs_math_pi * pow(p_diam, 2) * p_stat_w
+              -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
                  * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
-              -=   cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+              -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
                  * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
-              -=   pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                 * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+              -=   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                 * 0.25 / mq->b_f_face_surf[n_f_id]);
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg]
               -= p_stat_w;
@@ -1275,23 +1280,23 @@ _lagesd(cs_real_t           dtp,
 
           /* The particle is resuspended  */
           vpart[0] = CS_MIN(-1.0 / p_mass * dtp
-                            * CS_ABS(-lift_force[0] - drag_force[0]
-                                     - adhes_force -grav_force[0] ),
+                            * CS_ABS(drag_force[0] - adhes_force),
                             0.001);
-          if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-              == CS_LAGR_PART_DEPOSITED ){
+          if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITED)) {
             vpart[1] = 0.0;
             vpart[2] = 0.0;
           }
 
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+          cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
 
-          if (CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
-            cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
+          if (cs_glob_lagr_model->clogging == 1) {
+            if (CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
+              cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
+              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
+              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
+            }
           }
 
           if (p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
@@ -1318,14 +1323,14 @@ _lagesd(cs_real_t           dtp,
 
             adhes_torque[id]  = - cs_lagr_particle_get_real(particle, p_am,
                                                             CS_LAGR_ADHESION_TORQUE)
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) ) ;
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) ) ;
           }
 
-          cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow((p_diam * 0.5), 2);
+          cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
           cs_real_t cst_1, cst_4;
           cst_4 =   6 * cs_math_pi * visccf
             * romf * 1.7 * 1.4
-            * pow(p_diam * 0.5, 2);
+            * cs_math_pow2(p_diam * 0.5);
           cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
           for (cs_lnum_t id = 1; id < 3; id++) {
@@ -1349,28 +1354,27 @@ _lagesd(cs_real_t           dtp,
             /* If the particle stars rolling:
              * update of the surface covered and deposit height */
 
-            if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-                == CS_LAGR_PART_DEPOSITED ) {
+            if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITED)) {
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc]
-                -=   cs_math_pi * pow(p_diam, 2) * p_stat_w
+                -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
                    * 0.25 / mq->b_f_face_surf[n_f_id];
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
-                -=   cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
                    * 0.25 / mq->b_f_face_surf[n_f_id];
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
-                -=   pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+                -=   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                   * 0.25 / mq->b_f_face_surf[n_f_id]);
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg]
                 -= p_stat_w;
 
             }
 
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                      CS_LAGR_PART_ROLLING);
+            cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
+            cs_lagr_particles_set_flag(p_set, ip, CS_LAGR_PART_ROLLING);
 
             vpart[0] = 0.0;
 
@@ -1399,15 +1403,12 @@ _lagesd(cs_real_t           dtp,
 
             /* Simplified treatment:
              * no update of iscovc, ihdepm for particles that stop */
-            if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-                == CS_LAGR_PART_ROLLING)
+            if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_ROLLING))
               iresusp = 1;
 
             for (cs_lnum_t id = 1; id < 3; id++) {
-
               depl[id]     = 0.0;
               vpart[id]    = 0.0;
-
             }
 
           } /* if (scalax..)   */
@@ -1416,8 +1417,11 @@ _lagesd(cs_real_t           dtp,
 
       } /* End of monolayer resuspension*/
 
-      else if (bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
-               >= diam_mean && iresusp ==0) {
+      else if (   cs_glob_lagr_model->clogging == 1
+               &&    bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
+                  >= diam_mean
+               && iresusp == 0) {
+
         /* Multilayer resuspension model */
 
         cs_real_t mean_depo_height
@@ -1427,8 +1431,7 @@ _lagesd(cs_real_t           dtp,
          * Principle: drag>0 for protruding clusters, 0 otherwise */
 
         if (   p_height > mean_depo_height
-            &&    cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-               == CS_LAGR_PART_DEPOSITED) {
+            && cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITED)) {
 
           /* Calculation of drag force and torque*/
           drag_force[0] =   3.0 * cs_math_pi * (p_height - mean_depo_height)
@@ -1444,13 +1447,13 @@ _lagesd(cs_real_t           dtp,
           }
 
           /* Calculation of lift force and torque */
-          lift_force[0] = - 20.0 * pow(visccf,2) * romf *
+          lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
             pow(ustar * (p_height - mean_depo_height) * 0.5 / visccf, 2.31);
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
             lift_torque[id] = -lift_force[0] * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
@@ -1475,15 +1478,14 @@ _lagesd(cs_real_t           dtp,
             grav_torque[id] = (-grav_force[0] +
                                 grav_force[1]*sign11 +
                                 grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
         }
         else if (   p_height <= mean_depo_height
-                 &&    cs_lagr_particle_get_lnum(particle, p_am,
-                                                 CS_LAGR_DEPOSITION_FLAG)
-                    == CS_LAGR_PART_DEPOSITED ) {
+                 && cs_lagr_particles_get_flag(p_set, ip,
+                                               CS_LAGR_PART_DEPOSITED)) {
 
           /* Calculation of drag force and torque*/
           for (cs_lnum_t id = 0; id < 3; id++) {
@@ -1518,13 +1520,12 @@ _lagesd(cs_real_t           dtp,
             grav_torque[id] = (-grav_force[0] +
                                 grav_force[1]*sign11 +
                                 grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
         }
-        else if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-                 == CS_LAGR_PART_ROLLING ) {
+        else if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_ROLLING)) {
 
           /* Calculation of drag force and torque*/
           drag_force[0] =  3.0 * cs_math_pi * p_diam
@@ -1540,13 +1541,13 @@ _lagesd(cs_real_t           dtp,
           }
 
           /* Calculation of lift force and torque */
-          lift_force[0] = - 20.0 * pow(visccf,2) * romf *
+          lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
             pow(ustar * p_diam * 0.5 / visccf, 2.31);
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
             lift_torque[id] = -lift_force[0] * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
 
@@ -1570,7 +1571,7 @@ _lagesd(cs_real_t           dtp,
             grav_torque[id] = (-grav_force[0] +
                                 grav_force[1]*sign11 +
                                 grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
 
           }
         }
@@ -1579,14 +1580,15 @@ _lagesd(cs_real_t           dtp,
          * equal to adhesion force between single particles
          * times the number of particle-particle contacts  */
 
-        cs_real_t adhes_energ, adhes_force, adhes_force_ps;
+        cs_real_t adhes_energ, adhes_force;
         cs_lagr_adh_pp(p_diam, tempf, &adhes_energ, &adhes_force);
         /* Average number of contact in a cluster */
-        cs_real_t ncont_pp = pow(p_diam/diam_mean, 2);
+        cs_real_t ncont_pp = cs_math_pow2(p_diam/diam_mean);
 
         /* Case with consolidation */
-        if (cs_glob_lagr_consolidation_model->iconsol > 0 &&
-            cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 1) {
+        if (   cs_glob_lagr_consolidation_model->iconsol > 0
+            && cs_lagr_particles_get_flag(p_set, ip,
+                                          CS_LAGR_PART_DEPOSITED)) {
 
           const cs_real_t consol_height
             = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT);
@@ -1596,11 +1598,9 @@ _lagesd(cs_real_t           dtp,
               (adhes_force - cs_glob_lagr_consolidation_model->force_consol) * 0.5
             * (1.0 + tanh((mean_depo_height - consol_height)
                           /(0.1 * consol_height)));
-            adhes_force_ps = cs_glob_lagr_consolidation_model->force_consol;
           }
           else {
             adhes_force *= ncont_pp;
-            adhes_force_ps = adhes_force;
           }
           cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_N_SMALL_ASPERITIES,
                                     ncont_pp);
@@ -1637,7 +1637,6 @@ _lagesd(cs_real_t           dtp,
           adhes_force *= ncont ;
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE,
                                     adhes_force);
-          adhes_force_ps = adhes_force;
 
           cs_real_t adhes_tor = adhes_force * p_diam * 0.5;
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE,
@@ -1648,7 +1647,7 @@ _lagesd(cs_real_t           dtp,
         for (cs_lnum_t id = 1; id < 3; id++) {
           adhes_torque[id] =
             - cs_lagr_particle_get_real(particle, p_am, CS_LAGR_ADHESION_TORQUE)
-            * vvue[id] / sqrt(pow(vvue[1], 2) + pow(vvue[2], 2) );
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
         }
 
 
@@ -1660,34 +1659,31 @@ _lagesd(cs_real_t           dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (cs_glob_lagr_boundary_interactions->iflmbd == 1) {
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ires]
-              += p_stat_w;
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflres]
-              += p_stat_w + ( p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
-            bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iflm]
-              += - ( p_stat_w * p_mass / mq->b_f_face_surf[n_f_id]);
-
+          if (events != NULL) {
+            const cs_real_t *part_vel
+              = cs_lagr_particles_attr_const(p_set, ip, CS_LAGR_VELOCITY);
+            _add_resuspension_event(events,
+                                    p_set,
+                                    ip,
+                                    face_id,
+                                    part_vel);
           }
 
           /* Update of surface covered and deposit height
            * (for non-rolling particles) */
-          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) ==1 ) {
+          if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITED)) {
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
-              cs_math_pi * pow(p_diam, 2) * p_stat_w
+              cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
               * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
-              cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+              cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
               * 0.25 / mq->b_f_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
-              pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+              cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                   * 0.25 / mq->b_f_face_surf[n_f_id]);
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
               p_stat_w;
@@ -1699,17 +1695,17 @@ _lagesd(cs_real_t           dtp,
                             * CS_ABS(-lift_force[0] - drag_force[0]
                                      - adhes_force -grav_force[0] ),
                             0.001);
-          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 1 ){
+          if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_DEPOSITED)) {
             vpart[1] = 0.0;
             vpart[2] = 0.0;
           }
 
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 0);
+          cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
 
           if (CS_ABS(p_height-p_diam)/p_diam > 1.0e-6) {
-            cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+            cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
           }
@@ -1735,21 +1731,21 @@ _lagesd(cs_real_t           dtp,
           /* Calculation of the norm of the hydrodynamic
            * torque and drag (tangential) */
 
-          cs_real_t drag_tor_norm  = sqrt (pow(drag_torque[1], 2) + pow(drag_torque[2], 2));
-          cs_real_t lift_tor_norm  = sqrt (pow(lift_torque[1], 2) + pow(lift_torque[2], 2));
-          cs_real_t grav_tor_norm  = sqrt (pow(grav_torque[1], 2) + pow(grav_torque[2], 2));
+          cs_real_t drag_tor_norm  = sqrt (cs_math_pow2(drag_torque[1]) + cs_math_pow2(drag_torque[2]));
+          cs_real_t lift_tor_norm  = sqrt (cs_math_pow2(lift_torque[1]) + cs_math_pow2(lift_torque[2]));
+          cs_real_t grav_tor_norm  = sqrt (cs_math_pow2(grav_torque[1]) + cs_math_pow2(grav_torque[2]));
 
           /* Differentiation between two cases:
            *  a) Already rolling clusters
            *  b) Deposited clusters being broken */
 
-          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG) == 2 ) {
+          if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_ROLLING)) {
 
-            cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow((p_diam * 0.5), 2);
+            cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
             cs_real_t cst_1, cst_4;
             cst_4 =   6 * cs_math_pi * visccf
               * romf * 1.7 * 1.4
-              * pow(p_diam * 0.5, 2);
+              * cs_math_pow2(p_diam * 0.5);
             cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
             for (cs_lnum_t id = 1; id < 3; id++) {
@@ -1806,9 +1802,10 @@ _lagesd(cs_real_t           dtp,
             } /* if (scalax..)   */
 
           }
-          else if (cs_lagr_particle_get_lnum(particle, p_am,
-                                             CS_LAGR_DEPOSITION_FLAG) == 1 &&
-                   iresusp == 0 ) {
+
+          else if (   cs_lagr_particles_get_flag(p_set, ip,
+                                                 CS_LAGR_PART_DEPOSITED)
+                   && iresusp == 0 ) {
             /* Cluster being broken:
              * we first check if there is resuspension */
             cs_real_t cond_resusp[2];
@@ -1819,7 +1816,6 @@ _lagesd(cs_real_t           dtp,
 
             if (cond_resusp[0] > 0.0 || cond_resusp[1] > 0.0) {
               iresusp = 1;
-              cs_real_t clust_resusp_height;
               cs_real_t clust_consol_height;
               cs_real_t height_reent;
               cs_real_t random;
@@ -1827,7 +1823,6 @@ _lagesd(cs_real_t           dtp,
               if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT)
                   < diam_mean) {
                 cs_random_uniform(1, &random);
-                clust_resusp_height = random * p_height;
                 clust_consol_height = 0.0;
               }
               else {
@@ -1866,41 +1861,43 @@ _lagesd(cs_real_t           dtp,
               else if ((cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART)
                          -nb_part_reent) < 1.0 && itreated == 0) {
                 /* The whole cluster starts rolling*/
-                cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 2);
+                cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
+                cs_lagr_particles_set_flag(p_set, ip, CS_LAGR_PART_ROLLING);
 
                 /* Update of surface covered and deposit height */
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
-                  cs_math_pi * pow(p_diam, 2) * p_stat_w
+                  cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
                   * 0.25 / mq->b_f_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
-                  cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
+                  cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
                   * 0.25 / mq->b_f_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
-                  pow(cs_math_pi * p_height * pow(p_diam, 2) * p_stat_w
-                       * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+                  cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                       * 0.25 / mq->b_f_face_surf[n_f_id]);
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
                   p_stat_w;
 
                 itreated = 1;
-                cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+                cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, d_resusp);
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_resusp);
 
                 /* Treatment of cluster motion */
-                cs_real_t iner_tor = (7.0 / 5.0) * p_mass * pow((p_diam * 0.5), 2);
+                cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
                 cs_real_t cst_1, cst_4;
                 cst_4 =   6 * cs_math_pi * visccf
                   * romf * 1.7 * 1.4
-                  * pow(p_diam * 0.5, 2);
+                  * cs_math_pow2(p_diam * 0.5);
                 cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
                 for (cs_lnum_t id = 1; id < 3; id++) {
                   vpart0[id] = vpart[id];
                   vpart[id]  =  vpart0[id] * exp(-cst_1 * dtp)
-                    + (vvue[id] + (adhes_torque[id] + lift_torque[id] + grav_torque[id]) / cst_4)
+                    + (vvue[id] + (  adhes_torque[id] + lift_torque[id]
+                                   + grav_torque[id]) / cst_4)
                     * (1.0 - exp(-cst_1 * dtp) );
                 }
 
@@ -1933,11 +1930,12 @@ _lagesd(cs_real_t           dtp,
                   * cs_lagr_particle_get_real(new_part, p_am, CS_LAGR_CLUSTER_NB_PART)
                   / cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART) ;
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_MASS, m_resusp);
-                cs_real_t d_resusp = pow(0.75 * pow(p_diam,2) * p_height, 1.0/3.0);
+                cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_DIAMETER, d_resusp);
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_HEIGHT, d_resusp);
 
-                cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG, 1);
+                cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
+                cs_lagr_particles_set_flag(p_set, ip, CS_LAGR_PART_DEPOSITED);
                 vpart[0] = 0.0;
                 for (cs_lnum_t id = 1; id < 3; id++) {
                   vpart[id] = 0.0;
@@ -1949,12 +1947,12 @@ _lagesd(cs_real_t           dtp,
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, d_stay);
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
-                  cs_math_pi * height_reent * pow(p_diam, 2) * p_stat_w
+                  cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
                   * 0.25 / mq->b_f_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
-                  pow(cs_math_pi * height_reent * pow(p_diam, 2) * p_stat_w
-                       * 0.25 / mq->b_f_face_surf[n_f_id], 2);
+                  cs_math_pow2(cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
+                       * 0.25 / mq->b_f_face_surf[n_f_id]);
 
                 cs_real_t nb_stay =
                   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART) -
@@ -1965,7 +1963,8 @@ _lagesd(cs_real_t           dtp,
                 cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mp_stay);
 
                 /* The new particle starts rolling */
-                cs_lagr_particle_set_lnum(new_part, p_am, CS_LAGR_DEPOSITION_FLAG, 2);
+                cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
+                cs_lagr_particles_set_flag(p_set, ip, CS_LAGR_PART_ROLLING);
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_ADHESION_FORCE, adhes_force);
                 cs_lagr_particle_set_lnum(new_part, p_am, CS_LAGR_N_SMALL_ASPERITIES, CS_MAX(1,ncont_pp));
                 cs_lagr_particle_set_real(new_part, p_am, CS_LAGR_ADHESION_TORQUE, adhes_force * d_resusp * 0.5);
@@ -1998,15 +1997,13 @@ _lagesd(cs_real_t           dtp,
   /* if ireent.eq.0 --> Motionless deposited particle   */
   else {
 
-    if (cs_lagr_particle_get_lnum(particle, p_am,
-                                  CS_LAGR_DEPOSITION_FLAG) != CS_LAGR_PART_IN_FLOW) {
+    if (cs_lagr_particles_get_flag(p_set, ip,
+                                   CS_LAGR_PART_DEPOSITION_FLAGS)) {
 
       for (cs_lnum_t id = 1; id < 3; id++) {
-
         vpart[id] = 0.0;
         vvue[id]  = 0.0;
         depl[id]  = 0.0;
-
       }
 
     }
@@ -2017,6 +2014,7 @@ _lagesd(cs_real_t           dtp,
    * 3. Reference frame change:
    * --------------------------
    * local reference frame for the boundary face --> global reference frame
+   * NB: Inverse transformation: transpose of rot_m
    * ======================================================================== */
 
   /* 3.1 - Displacement   */
@@ -2052,8 +2050,8 @@ _lagesd(cs_real_t           dtp,
 /*----------------------------------------------------------------------------*/
 /*! \brief Deposition submodel
  *
- *    Main subroutine of the submodel
- *    1/ Calculation of the normalized wall-normal distance of
+ *  Main subroutine of the submodel
+ *   1/ Calculation of the normalized wall-normal distance of
  *           the boundary-cell particles
  *   2/ Sorting of the particles with respect to their normalized
  *           wall-normal distance
@@ -2066,9 +2064,8 @@ _lagesd(cs_real_t           dtp,
  * \param[in] piil      term in integration of UP SDEs
  * \param[in] bx        turbulence characteristics
  * \param[in] vagaus    gaussian random variables
- * \param[in] gradpr    pressure gradient
  * \param[in] romp      particles associated density
- * \param[in] fextla    external user forces (m/s2)
+ * \param[in] force_p   taup times forces on particles (m/s)
  * \param[in] vislen    FIXME
  */
 /*----------------------------------------------------------------------------*/
@@ -2080,9 +2077,8 @@ _lagdep(cs_real_t           dtp,
         const cs_real_3_t   piil[],
         const cs_real_33_t  bx[],
         const cs_real_33_t  vagaus[],
-        const cs_real_3_t   gradpr[],
         const cs_real_t     romp[],
-        cs_real_3_t        *fextla,
+        const cs_real_3_t   force_p[],
         const cs_real_t     vislen[],
         cs_lnum_t          *nresnew)
 {
@@ -2093,12 +2089,8 @@ _lagdep(cs_real_t           dtp,
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* Initialisations*/
-  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
-                         cs_glob_physical_constants->gravity[1],
-                         cs_glob_physical_constants->gravity[2]};
 
-
-  cs_real_t tkelvi =  273.15;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   cs_real_t vitf = 0.0;
 
@@ -2112,23 +2104,38 @@ _lagdep(cs_real_t           dtp,
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
-  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
+  const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
+  const cs_real_3_t *cvar_vel
+    = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
-  /* Interface location between near-wall region   */
-  /* and core of the flow (normalized units)  */
+  /* Interface location between near-wall region */
+  /* and core of the flow (normalized units) */
 
   cs_real_t depint      = 100.0;
 
+  /* Tracking events if requested */
+
+  cs_lagr_event_set_t  *events = NULL;
+
+  if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT))
+    events = cs_lagr_event_set_boundary_interaction();
+
   /* loop on the particles  */
+
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-    cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+    if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+      continue;
 
-    if (cell_id >= 0 &&
-        cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-        != CS_LAGR_PART_IMPOSED_MOTION) {
+    int imposed_motion = cs_lagr_particles_get_flag(p_set, ip,
+                                                    CS_LAGR_PART_IMPOSED_MOTION);
+
+    if (! imposed_motion) {
+
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
 
       cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_VELOCITY);
@@ -2142,8 +2149,6 @@ _lagdep(cs_real_t           dtp,
                                                            CS_LAGR_COORDS);
       cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                              CS_LAGR_COORDS);
-
-      cs_real_t romf = extra->cromf->val[cell_id];
 
       /* Fluid temperature computation depending on the type of flow  */
       cs_real_t tempf;
@@ -2167,7 +2172,7 @@ _lagdep(cs_real_t           dtp,
                && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
         tempf = extra->scal_t->val[cell_id];
 
-      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
+      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
         cs_lnum_t mode  = 1;
         CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
@@ -2183,34 +2188,32 @@ _lagdep(cs_real_t           dtp,
          the standard model is applied
          ============================================== */
 
-      if (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_YPLUS) > depint &&
-          cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-          == CS_LAGR_PART_IN_FLOW) {
+      cs_lnum_t face_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_NEIGHBOR_FACE_ID);
+      cs_real_t yplus = cs_lagr_particle_get_real(particle, p_am,
+                                                   CS_LAGR_YPLUS);
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, -1);
+      int deposition_flags
+        = cs_lagr_particles_get_flag(p_set, ip,
+                                     CS_LAGR_PART_DEPOSITION_FLAGS);
+
+      if (face_id < 0 || (yplus > depint && deposition_flags == 0)) {
+
+        cs_lagr_particle_set_lnum(particle,
+                                  p_am,
+                                  CS_LAGR_MARKO_VALUE,
+                                  CS_LAGR_COHERENCE_STRUCT_BULK);
 
         for (cs_lnum_t id = 0; id < 3; id++) {
 
-          vitf = extra->vel->vals[1][cell_id * 3 + id];
+          vitf = cvar_vel[cell_id][id];
 
           /* --> (2.1) Calcul preliminaires :    */
           /* ----------------------------   */
-          /* calcul de II*TL+<u> et [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
+          /* compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
 
           cs_real_t tci = piil[ip][id] * tlag[ip][id] + vitf;
-          cs_real_t force = 0.0;
-
-          if (cs_glob_lagr_time_scheme->iadded_mass == 0)
-            force = (- gradpr[cell_id][id] / romp[ip]
-                     + grav[id] + fextla[ip][id]) * taup[ip];
-
-          /* Added-mass term?     */
-          else
-            force =   (- gradpr[cell_id][id] / romp[ip]
-                  * (1.0 + 0.5 * added_mass_const)
-                  / (1.0 + 0.5 * added_mass_const * romf / romp[ip])
-                  + grav[id] + fextla[ip][id])* taup[ip];
-
+          cs_real_t force = force_p[ip][id];
 
           /* --> (2.2) Calcul des coefficients/termes deterministes */
           /* ----------------------------------------------------    */
@@ -2220,9 +2223,9 @@ _lagdep(cs_real_t           dtp,
           aux3 = tlag[ip][id] / (tlag[ip][id] - taup[ip]);
           aux4 = tlag[ip][id] / (tlag[ip][id] + taup[ip]);
           aux5 = tlag[ip][id] * (1.0 - aux2);
-          aux6 = pow(bx[ip][id][nor-1], 2.0) * tlag[ip][id];
+          aux6 = cs_math_pow2(bx[ip][id][nor-1]) * tlag[ip][id];
           aux7 = tlag[ip][id] - taup[ip];
-          aux8 = pow(bx[ip][id][nor-1], 2.0) * pow(aux3, 2);
+          aux8 = cs_math_pow2(bx[ip][id][nor-1]) * cs_math_pow2(aux3);
 
           /* --> trajectory terms */
           cs_real_t aa = taup[ip] * (1.0 - aux1);
@@ -2252,7 +2255,7 @@ _lagdep(cs_real_t           dtp,
           gama2  = 0.5 * (1.0 - aux2 * aux2);
           omegam = aux3 * ( (tlag[ip][id] - taup[ip]) * (1.0 - aux2)
                                   - 0.5 * tlag[ip][id] * (1.0 - aux2 * aux2)
-                                  + pow(taup[ip],2) / (tlag[ip][id] + taup[ip])
+                                  + cs_math_pow2(taup[ip]) / (tlag[ip][id] + taup[ip])
                                   * (1.0 - aux1 * aux2)
                                   ) * aux6;
           omega2 =  aux7 * (aux7 * dtp - 2.0 * (tlag[ip][id] * aux5 - taup[ip] * aa))
@@ -2264,7 +2267,7 @@ _lagdep(cs_real_t           dtp,
           if (CS_ABS(gama2) > cs_math_epzero) {
 
             p21 = omegam / sqrt(gama2);
-            p22 = omega2 - pow(p21, 2);
+            p22 = omega2 - cs_math_pow2(p21);
             p22 = sqrt(CS_MAX(0.0, p22));
 
           }
@@ -2306,13 +2309,13 @@ _lagdep(cs_real_t           dtp,
           else
             p32 = 0.0;
 
-          p33 = grga2 - cs_math_sq(p31) - cs_math_sq(p32);
+          p33 = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
           p33 = sqrt(CS_MAX(0.0, p33));
           ter5p =   p31 * vagaus[ip][id][0]
                   + p32 * vagaus[ip][id][1]
                   + p33 * vagaus[ip][id][2];
 
-          /*  Update of the particle state-vector     */
+          /* Update of the particle state-vector */
 
           part_coords[id] =   old_part_coords[id]
                             + ter1x + ter2x + ter3x + ter4x + ter5x;
@@ -2328,27 +2331,29 @@ _lagdep(cs_real_t           dtp,
       /* Otherwise, the deposition submodel is applied
        * ============================================= */
 
-      else if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-          != CS_LAGR_PART_TO_DELETE) {
+      else if (! deposition_flags & CS_LAGR_PART_TO_DELETE) {
 
-        if (  cs_lagr_particle_get_real(particle, p_am,
-                                        CS_LAGR_YPLUS)
-            < cs_lagr_particle_get_real(particle, p_am,
-                                        CS_LAGR_INTERF) ) {
+        cs_lnum_t *marko_value
+          = (cs_lnum_t *)cs_lagr_particle_attr(particle,
+                                               p_am,
+                                               CS_LAGR_MARKO_VALUE);
 
-          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_MARKO_VALUE) < 0)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 10);
+        if (yplus< cs_lagr_particle_get_real(particle, p_am,
+                                             CS_LAGR_INTERF)) {
+
+          if (*marko_value < 0)
+            *marko_value = CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF;
           else
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 0);
+            *marko_value = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
 
         }
         else {
 
-          if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_MARKO_VALUE) < 0)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 20);
+          if (*marko_value < 0)
+            *marko_value = CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP;
 
-          else if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_MARKO_VALUE) == 0)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 30);
+          else if (*marko_value == CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF)
+            *marko_value = CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION;
 
         }
 
@@ -2357,10 +2362,11 @@ _lagdep(cs_real_t           dtp,
                 taup,
                 piil,
                 vagaus,
-                gradpr,
-                romp[ip],
+                romp,
+                force_p,
                 tempf,
                 vislen,
+                events,
                 &depint,
                 nresnew);
 
@@ -2368,9 +2374,10 @@ _lagdep(cs_real_t           dtp,
 
     }
 
-    /* Specific treatment for particles with
-     * DEPOSITION_FLAG == CS_LAGR_PART_IMPOSED_MOTION */
-    else if (cell_id >= 0) {
+    /* Specific treatment for particles with imposed motion */
+
+    else if (imposed_motion) {
+
       cs_real_t disp[3] = {0., 0., 0.};
 
       cs_real_t *old_part_coords = cs_lagr_particle_attr_n(particle, p_am, 1,
@@ -2504,28 +2511,22 @@ cs_lagr_sde(cs_real_t           dt_p,
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-    if (cs_lagr_particle_get_cell_id(particle, p_am) >= 0) {
-
-      cs_real_t d3 = pow(cs_lagr_particle_get_real(particle, p_am,
-                                                   CS_LAGR_DIAMETER),3.0);
-      romp[ip] = aa * cs_lagr_particle_get_real(particle, p_am,
-                                                CS_LAGR_MASS) / d3;
-
-    }
+    cs_real_t d3 = cs_math_pow3(cs_lagr_particles_get_real(p_set, ip,
+                                                          CS_LAGR_DIAMETER));
+    romp[ip] = aa * cs_lagr_particles_get_real(p_set, ip, CS_LAGR_MASS) / d3;
 
   }
 
   /* Management of user external force fields
      ---------------------------------------- */
 
-  cs_real_3_t *fextla;
-  BFT_MALLOC(fextla, p_set->n_particles, cs_real_3_t);
+  cs_real_3_t *force_p;
+  BFT_MALLOC(force_p, p_set->n_particles, cs_real_3_t);
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-    fextla[ip][0] = 0.0;
-    fextla[ip][1] = 0.0;
-    fextla[ip][2] = 0.0;
+    force_p[ip][0] = 0.0;
+    force_p[ip][1] = 0.0;
+    force_p[ip][2] = 0.0;
   }
 
   cs_user_lagr_ef(dt_p,
@@ -2538,7 +2539,44 @@ cs_lagr_sde(cs_real_t           dt_p,
                   (const cs_real_3_t *)gradpr,
                   (const cs_real_33_t *)gradvf,
                   romp,
-                  fextla);
+                  force_p);
+
+  const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
+  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  cs_real_t added_mass_const = cs_glob_lagr_time_scheme->added_mass_const;
+
+  /* Finalize forces on particles:
+   *
+   *  (- pressure gradient /romp +ext forces + g) . taup
+   *
+   * */
+  if (cs_glob_lagr_time_scheme->iadded_mass == 0) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
+      for (int id = 0; id < 3; id++) {
+        force_p[ip][id] = (- gradpr[cell_id][id] / romp[ip]
+          + grav[id] + force_p[ip][id]) * taup[ip];
+
+      }
+    }
+  }
+  /* Added-mass term?     */
+  else {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
+      cs_real_t romf = extra->cromf->val[cell_id];
+      for (int id = 0; id < 3; id++) {
+        force_p[ip][id] = (- gradpr[cell_id][id] / romp[ip]
+          * (1.0 + 0.5 * added_mass_const)
+          / (1.0 + 0.5 * added_mass_const * romf / romp[ip])
+          + grav[id] + force_p[ip][id]) * taup[ip];
+      }
+    }
+  }
 
   /* First order
      ----------- */
@@ -2555,11 +2593,9 @@ cs_lagr_sde(cs_real_t           dt_p,
               piil,
               bx,
               (const cs_real_33_t *)vagaus,
-              gradpr,
-              romp,
               brgaus,
-              terbru,
-              fextla);
+              force_p,
+              terbru);
 
     /* Management of the deposition submodel */
 
@@ -2570,9 +2606,8 @@ cs_lagr_sde(cs_real_t           dt_p,
               piil,
               bx,
               (const cs_real_33_t *)vagaus,
-              gradpr,
               romp,
-              fextla,
+              force_p,
               vislen,
               nresnew);
 
@@ -2590,14 +2625,11 @@ cs_lagr_sde(cs_real_t           dt_p,
             bx,
             tsfext,
             (const cs_real_33_t *)vagaus,
-            gradpr,
-            romp,
             brgaus,
-            terbru,
-            fextla);
+            force_p,
+            terbru);
 
-    /* Save Gaussian variable i needed */
-
+    /* Save Gaussian variable if needed */
     if (cs_glob_lagr_time_step->nor == 1) {
 
       for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
@@ -2622,7 +2654,7 @@ cs_lagr_sde(cs_real_t           dt_p,
 
   }
 
-  BFT_FREE(fextla);
+  BFT_FREE(force_p);
 
   BFT_FREE(brgaus);
   BFT_FREE(vagaus);
@@ -2673,32 +2705,31 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-      if (cs_lagr_particle_get_cell_id(particle, p_am) >= 0) {
+      if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
+        continue;
 
-        if (tcarac[ip] <= 0.0)
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("The characteristic time for the stochastic differential equation\n"
-               "of variable %d should be > 0.\n\n"
-               "Here, for particle %d, its value is %e11.4."),
-             attr, ip, tcarac[ip]);
+      if (tcarac[ip] <= 0.0)
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("The characteristic time for the stochastic differential equation\n"
+             "of variable %d should be > 0.\n\n"
+             "Here, for particle %d, its value is %e11.4."),
+           attr, ip, tcarac[ip]);
 
-        cs_real_t aux1 = cs_glob_lagr_time_step->dtp/tcarac[ip];
-        cs_real_t aux2 = exp(-aux1);
-        cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1, attr)*aux2;
-        cs_real_t ter2 = pip[ip] * (1.0 - aux2);
+      cs_real_t aux1 = cs_glob_lagr_time_step->dtp/tcarac[ip];
+      cs_real_t aux2 = exp(-aux1);
+      cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1, attr)*aux2;
+      cs_real_t ter2 = pip[ip] * (1.0 - aux2);
 
-        /* Pour le cas NORDRE= 1 ou s'il y a rebond,     */
-        /* le ETTP suivant est le resultat final    */
-        cs_lagr_particle_set_real(particle, p_am, attr, ter1 + ter2);
+      /* Pour le cas NORDRE= 1 ou s'il y a rebond,     */
+      /* le ETTP suivant est le resultat final    */
+      cs_lagr_particle_set_real(particle, p_am, attr, ter1 + ter2);
 
-        /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
-        if (ltsvar) {
-          cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(p_set, ip, attr);
-          cs_real_t ter3 = (-aux2 + (1.0 - aux2) / aux1) * pip[ip];
-          *part_ptsvar = 0.5 * ter1 + ter3;
-
-        }
+      /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
+      if (ltsvar) {
+        cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(p_set, ip, attr);
+        cs_real_t ter3 = (-aux2 + (1.0 - aux2) / aux1) * pip[ip];
+        *part_ptsvar = 0.5 * ter1 + ter3;
 
       }
 
@@ -2709,31 +2740,30 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
+      if (   cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED)
+          || cs_lagr_particle_get_lnum(p_set, ip, CS_LAGR_REBOUND_ID) > 0)
+      continue;
+
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-      if (   cs_lagr_particle_get_cell_id(particle, p_am) >= 0
-          && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0) {
+      if (tcarac [ip] <= 0.0)
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("The characteristic time for the stochastic differential equation\n"
+             "of variable %d should be > 0.\n\n"
+             "Here, for particle %d, its value is %e11.4."),
+           attr, ip, tcarac[ip]);
 
-        if (tcarac [ip] <= 0.0)
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("The characteristic time for the stochastic differential equation\n"
-               "of variable %d should be > 0.\n\n"
-               "Here, for particle %d, its value is %e11.4."),
-             attr, ip, tcarac[ip]);
+      cs_real_t aux1   = cs_glob_lagr_time_step->dtp / tcarac [ip];
+      cs_real_t aux2   = exp(-aux1);
+      cs_real_t ter1   = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                           attr) * aux2;
+      cs_real_t ter2   = pip [ip] * (1.0 - (1.0 - aux2) / aux1);
 
-        cs_real_t aux1   = cs_glob_lagr_time_step->dtp / tcarac [ip];
-        cs_real_t aux2   = exp(-aux1);
-        cs_real_t ter1   = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                             attr) * aux2;
-        cs_real_t ter2   = pip [ip] * (1.0 - (1.0 - aux2) / aux1);
-
-        /* Pour le cas NORDRE= 2, le ETTP suivant est le resultat final */
-        cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(p_set, ip, attr);
-        cs_lagr_particle_set_real(particle, p_am, attr,
-                                  *part_ptsvar + ter1 + ter2 );
-
-      }
+      /* Pour le cas NORDRE= 2, le ETTP suivant est le resultat final */
+      cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(p_set, ip, attr);
+      cs_lagr_particle_set_real(particle, p_am, attr,
+                                *part_ptsvar + ter1 + ter2);
 
     }
 

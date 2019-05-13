@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -62,8 +62,6 @@ typedef struct {
 
   int           ixyzp0;       /* indicator for filling of reference point for
                                  total pressure */
-  int           ieos;         /* indicator of equation of state for the
-                                 compressible module */
   int           icp;          /* property index of the isobaric specific heat */
   int           icv;          /* property index of the isochoric specific
                                  heat */
@@ -82,10 +80,6 @@ typedef struct {
   double        cv0;          /* reference specific heat */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
                                  (if ieos=1) */
-  double        psginf;       /* stiffened gas (ieos=2) limit pressure (zero in
-                                 perfect gas) (Pa) */
-  double        gammasg;      /* stiffened gas (ieos=2) polytropic coefficient,
-                                 (dimensionless) */
   int           ipthrm;       /* Uniform variable thermodynamic pressure for the
                                  low-Mach algorithm */
   double        pther;        /* uniform thermodynamic pressure for the low-Mach

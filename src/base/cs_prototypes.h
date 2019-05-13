@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -298,22 +298,61 @@ cs_user_boundary_conditions(int         nvar,
                             int         bc_type[],
                             cs_real_t   rcodcl[]);
 
-/*----------------------------------------------------------------------------
- * This function is called at the end of each time step.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize variables.
+ *
+ * This function is called at beginning of the computation
+ * (restart or not) before the time step loop.
+ *
+ * This is intended to initialize or modify (when restarted)
+ * variable and time step values.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_initialize(cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of each time step.
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
- *----------------------------------------------------------------------------*/
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void);
+cs_user_extra_operations(cs_domain_t     *domain);
 
-/*----------------------------------------------------------------------------
- * This function is called one time step to initialize problem.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of the calculation.
+ *
+ * It has a very general purpose, although it is recommended to handle
+ * mainly postprocessing or data-extraction type operations.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_initialization(void);
+cs_user_extra_operations_finalize(cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called one time step to initialize problem.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_initialization(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -369,11 +408,13 @@ cs_user_physical_properties(const cs_mesh_t             *mesh,
  *        (iporos greater than 1 in cs_user_parameters.f90).
  *
  * This function is called at the begin of the simulation only.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(void);
+cs_user_porosity(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------
  * Define mesh joinings.
@@ -395,11 +436,13 @@ cs_user_linear_solvers(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define or modify output user parameters.
+ * For CDO schemes, specify the elements such as properties, advection fields,
+ * user-defined equations and modules which have been previously added.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_output(void);
+cs_user_finalize_setup(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------
  * Tag bad cells within the mesh based on geometric criteria.
@@ -503,12 +546,12 @@ cs_user_matrix_tuning(void);
  * Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
- * and other fields have been defined, so speciic settings related to those
+ * and other fields have been defined, so specific settings related to those
  * fields may be set here.
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(void);
+cs_user_parameters(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------
  * User function for input of radiative transfer module options.
@@ -690,59 +733,23 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
                      cs_real_t                   *dt);
 
+/*----------------------------------------------------------------------------
+ * Computation of the relaxation time-scale to equilibrium in the frame of
+ * the homogeneous two-phase model.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
+                              const cs_real_t *alpha_eq,
+                              const cs_real_t *y_eq,
+                              const cs_real_t *z_eq,
+                              const cs_real_t *ei,
+                              const cs_real_t *v,
+                              cs_real_t       *relax_tau);
+
 /*============================================================================
  *  CDO User function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  After the first step: cs_user_cdo_init_setup(), this second step
- *         concludes the setup of properties, equations, source terms...
- *         At this step, mesh quantities and connectivities are build as well
- *         as the field arrays.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initial step for user-defined operations on results provided by the
- *         CDO kernel.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_start_extra_op(cs_domain_t     *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Additional user-defined operations on results provided by the CDO
- *         kernel. Define advanced post-processing and analysis for example.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_extra_op(cs_domain_t     *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Final step for user-defined operations on results provided by the
- *         CDO kernel.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_end_extra_op(cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -756,6 +763,81 @@ cs_user_cdo_end_extra_op(cs_domain_t     *domain);
 
 void
 cs_user_gwf_setup(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+
+/*============================================================================
+ *  MEG function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_meg_boundary_function.c
+ *
+ * \brief This function is used to compute user defined values for fields over a
+ * given boundary zone
+ *
+ * \param[in]  field_name   name of the field (const char *)
+ * \param[in]  condition    condition type (const char *)
+ * \param[in]  bz           pointer to cs_zone_t structure related to boundary
+ *
+ * \return a pointer to an array of cs_real_t values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_meg_boundary_function(const char       *field_name,
+                         const char       *condition,
+                         const cs_zone_t  *bz);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to compute user defined values for fields over a
+ *        given volume zone
+ *
+ * \param[in, out]  f   pointer to cs_field_t
+ * \param[in]       vz  pointer to cs_zone_t structure related to a volume
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_volume_function(cs_field_t         *f,
+                       const cs_zone_t    *vz);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate GUI defined mathematical expressions over volume zones for
+ *         initialization.
+ *
+ * \param[in]   f   char pointer: variable name
+ * \param[in]   vz  pointer to a cs_volume_zone_t structure
+ *
+*/
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_meg_initialization(const char      *field_name,
+                      const cs_zone_t *vz);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_meg_source_terms.c
+ *
+ * \brief This function is used to compute source terms over a volume zone
+ *
+ * \param[in]       vz           pointer to cs_volume_zone_t
+ * \param[in]       name         char pointer: variable name
+ * \param[in]       source_type  char pointer: source term type
+ *
+ * \returns new_vals: a cs_real_t pointer containing the values
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_meg_source_terms(const cs_zone_t  *vz,
+                    const char       *name,
+                    const char       *source_type);
 
 /*----------------------------------------------------------------------------*/
 

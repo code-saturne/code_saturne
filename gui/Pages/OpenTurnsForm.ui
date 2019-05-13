@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="groupBoxOpenTurns">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Include conjugate heat transfers by coupling Code_Saturne and SYRTHES. The zones where the coupling occurs be must defined and a projection axis can be specified in case of 2D coupling.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string/>
      </property>
      <property name="title">
       <string>OpenTurns Study</string>

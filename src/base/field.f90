@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -32,7 +32,7 @@ module field
 
   !=============================================================================
 
-  integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE, FIELD_STEADY
+  integer :: FIELD_INTENSIVE, FIELD_EXTENSIVE
   integer :: FIELD_VARIABLE, FIELD_PROPERTY
   integer :: FIELD_POSTPROCESS, FIELD_ACCUMULATOR, FIELD_USER
 
@@ -41,12 +41,11 @@ module field
 
   parameter (FIELD_INTENSIVE=1)
   parameter (FIELD_EXTENSIVE=2)
-  parameter (FIELD_STEADY=4)
-  parameter (FIELD_VARIABLE=8)
-  parameter (FIELD_PROPERTY=16)
-  parameter (FIELD_POSTPROCESS=32)
-  parameter (FIELD_ACCUMULATOR=64)
-  parameter (FIELD_USER=128)
+  parameter (FIELD_VARIABLE=4)
+  parameter (FIELD_PROPERTY=8)
+  parameter (FIELD_POSTPROCESS=16)
+  parameter (FIELD_ACCUMULATOR=32)
+  parameter (FIELD_USER=64)
 
   parameter (FIELD_OK=0)
   parameter (FIELD_INVALID_KEY_NAME=1)
@@ -325,6 +324,19 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function to get the number of previous values
+
+    subroutine cs_f_field_get_n_previous(f_id, n_previous)  &
+      bind(C, name='cs_f_field_get_n_previous')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      integer(c_int), dimension(1), intent(out) :: n_previous
+    end subroutine cs_f_field_get_n_previous
+
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function allocating field values
 
     subroutine cs_field_allocate_values(f)  &
@@ -336,22 +348,10 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function mapping field values
-
-    subroutine cs_field_map_values(f, var, var_prev)  &
-      bind(C, name='cs_field_map_values')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: f
-      real(kind=c_double), dimension(*) :: var, var_prev
-    end subroutine cs_field_map_values
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function allocating boundary condition coefficients
 
     subroutine cs_field_allocate_bc_coeffs(f, have_flux_bc, have_mom_bc,  &
-                                           have_conv_bc)                  &
+                                           have_conv_bc, have_exch_bc)    &
       bind(C, name='cs_field_allocate_bc_coeffs')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -359,6 +359,7 @@ module field
       logical(c_bool), value       :: have_flux_bc
       logical(c_bool), value       :: have_mom_bc
       logical(c_bool), value       :: have_conv_bc
+      logical(c_bool), value       :: have_exch_bc
     end subroutine cs_field_allocate_bc_coeffs
 
     !---------------------------------------------------------------------------
@@ -1056,6 +1057,38 @@ contains
 
   !=============================================================================
 
+  !> \brief Return a given field's number of previous values.
+
+  !> \param[in]   f_id   field id
+  !> \param[out]  f_n    number of previous values
+
+  subroutine field_get_n_previous(f_id, f_n)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)  :: f_id
+    integer, intent(out) :: f_n
+
+    ! Local variables
+
+    integer(c_int) :: c_f_id
+    integer(c_int), dimension(1) :: c_n
+
+    c_f_id = f_id
+
+    call cs_f_field_get_n_previous(c_f_id, c_n)
+
+    f_n = c_n(1)
+
+    return
+
+  end subroutine field_get_n_previous
+
+  !=============================================================================
+
   !> \brief Allocate field's value arrays.
 
   !> \param[in]  id  field id
@@ -1085,39 +1118,6 @@ contains
 
   !=============================================================================
 
-  !> \brief  Map existing value arrays to field descriptor.
-
-  !> \param[in]  id       field id
-  !> \param[in]  val      pointer to array of values
-  !> \param[in]  val_pre  pointer to array of previous values (ignored if
-  !>                      field was defined with have_previous = .false.)
-
-  subroutine field_map_values(id, val, val_pre)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer, intent(in)                        :: id
-    double precision, intent(in), dimension(*) :: val, val_pre
-
-    ! Local variables
-
-    integer(c_int) :: c_id
-    type(c_ptr)    :: f
-
-    c_id = id
-
-    f = cs_field_by_id(c_id)
-    call cs_field_map_values(f, val, val_pre)
-
-    return
-
-  end subroutine field_map_values
-
-  !=============================================================================
-
   !> \brief Allocate boundary condition coefficient arrays if applicable.
 
   !> \param[in]  id            field id
@@ -1125,10 +1125,13 @@ contains
   !>                           (coefaf and coefbf) are added
   !> \param[in]  have_mom_bc   if .true., BC coefficients used in divergence
   !>                           term (coefad and coefbd) are added
-  !> \param[in]  have_conv_bc   if .true., BC coefficients used in convection
+  !> \param[in]  have_conv_bc  if .true., BC coefficients used in convection
+  !>                           term (coefac and coefbc) are added
+  !> \param[in]  have_conv_bc  if .true., BC coefficients used in convection
   !>                           term (coefac and coefbc) are added
 
-  subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc, have_conv_bc)
+  subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc,           &
+                                          have_conv_bc, have_exch_bc)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1139,6 +1142,7 @@ contains
     logical, intent(in) :: have_flux_bc
     logical, intent(in) :: have_mom_bc
     logical, intent(in) :: have_conv_bc
+    logical, intent(in) :: have_exch_bc
 
     ! Local variables
 
@@ -1146,6 +1150,7 @@ contains
     logical(c_bool) :: c_have_flux_bc
     logical(c_bool) :: c_have_mom_bc
     logical(c_bool) :: c_have_conv_bc
+    logical(c_bool) :: c_have_exch_bc
     type(c_ptr)     :: f
 
     c_id = id
@@ -1154,7 +1159,9 @@ contains
     c_have_flux_bc = have_flux_bc
     c_have_mom_bc = have_mom_bc
     c_have_conv_bc = have_conv_bc
-    call cs_field_allocate_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, c_have_conv_bc)
+    c_have_exch_bc = have_exch_bc
+    call cs_field_allocate_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, &
+                                        c_have_conv_bc, c_have_exch_bc)
 
     return
 

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -286,21 +286,24 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 !===============================================================================
 
   ! Test if a deviation velocity of particles class exists
-  write(fname,'(a,i2.2)')'vd_p_' ,icla
-  call field_get_id_try(fname, id_vdp_i)
 
-  if (icla.ge.1.and.id_vdp_i.ne.-1) then
+  if (icla.ge.1) then
 
-    call field_get_val_v(id_vdp_i, vdp_i)
+    write(fname,'(a,i2.2)')'vd_p_' ,icla
+    call field_get_id_try(fname, id_vdp_i)
 
-    do iel = 1, ncel
+    if (id_vdp_i.ne.-1) then
+      call field_get_val_v(id_vdp_i, vdp_i)
 
-      rho = crom(iel)
-      cpro_drift(1, iel) = rho*vdp_i(1, iel)
-      cpro_drift(2, iel) = rho*vdp_i(2, iel)
-      cpro_drift(3, iel) = rho*vdp_i(3, iel)
+      do iel = 1, ncel
 
-    enddo
+        rho = crom(iel)
+        cpro_drift(1, iel) = rho*vdp_i(1, iel)
+        cpro_drift(2, iel) = rho*vdp_i(2, iel)
+        cpro_drift(3, iel) = rho*vdp_i(3, iel)
+
+      enddo
+    endif
 
   else if (icla.ge.0.and.id_pro.ne.-1.and.id_drift.ne.-1) then
 
@@ -538,17 +541,27 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
   ! And for those whom mass flux is imposed elsewhere
   if (icla.ge.0.and.(.not.btest(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX))) then
 
-    ! Zero additional flux at the boundary
-    do ifac = 1, nfabor
-
-      do isou = 1, 3
-        coefa1(isou, ifac) = 0.d0
-        do jsou = 1, 3
-          coefb1(isou, jsou, ifac) = 0.d0
+    ! Homogeneous Neumann at the boundary
+    if (btest(iscdri, DRIFT_SCALAR_ZERO_BNDY_FLUX)) then
+      do ifac = 1, nfabor
+        do isou = 1, 3
+          coefa1(isou, ifac) = 0.d0
+          do jsou = 1, 3
+            coefb1(isou, jsou, ifac) = 0.d0
+          enddo
         enddo
       enddo
-
-    enddo
+    else
+      do ifac = 1, nfabor
+        do isou = 1, 3
+          coefa1(isou, ifac) = 0.d0
+          do jsou = 1, 3
+            coefb1(isou, jsou, ifac) = 0.d0
+          enddo
+          coefb1(isou, isou, ifac) = 1.d0
+        enddo
+      enddo
+    endif
 
     init   = 0
     inc    = 1

@@ -1,13 +1,13 @@
 # translation of fr.po to
 # French translations for code_saturne package.
-# Copyright (C) 2008-2018 EDF S.A.
+# Copyright (C) 2008-2019 EDF S.A.
 # This file is distributed under the same license as Code_Saturne.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2018-10-15 16:26+0200\n"
+"POT-Creation-Date: 2019-05-02 04:23+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1266,6 +1266,9 @@ msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
 
+msgid "CGNS: unhandled NGON_n element in MIXED section\n"
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -1826,6 +1829,50 @@ msgstr ""
 msgid ""
 "Error decoding line %ld of file\n"
 "\"%s\" :\n"
+"The information on physical groups form \"numPhysicalNames\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of entity <%d> physical group was expected in the form "
+"\"dimension tag names\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"The end of the physical names specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on entities form \"numPoints numCurves numSurfaces numVolumes"
+"\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The information on entities does not seem to match the spec."
+msgstr ""
+
+#, c-format
+msgid ""
+"The end of the entities specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+"La fin de spécification de la liste des entités du fichier\n"
+"\"%s\" n'est pas présente à l'emplacement attendu.)"
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
 "The information on node counts was expected in the form \"numEntityBlocks "
 "numNodes\"."
 msgstr ""
@@ -1845,6 +1892,26 @@ msgstr ""
 "\"%s\" :\n"
 "La description des points de l'entité <%d> était attendue sous la forme "
 "\"tagEntity dimEntity parametric numNodes\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The point <%ld> label was expected in the form \"label\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"On attendait le label du point <%ld> sous la forme \"label\"."
+
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The point <%ld> coordinates were expected in the form \"x y z\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"On attendait les coordonnées du point <%ld> sous la forme \"x y z\"."
 
 #, c-format
 msgid ""
@@ -3170,16 +3237,22 @@ msgstr "Itérative (ancienne)"
 #, c-format
 msgid ""
 "\n"
-"Summary of gradient computations pour \"%s\" (%s):\n"
+"Summary of gradient computations for \"%s\" (%s):\n"
 "\n"
-"  Number of calls:     %12d\n"
-"  Total elapsed time:  %12.3f\n"
+"  Number of calls:       %d\n"
 msgstr ""
 "\n"
 "Bilan des calculs de gradient pour \"%s\" (%s) :\n"
 "\n"
-"  Nombre d'appels :      %12d\n"
-"  Temps écoulé cumulé :  %12.3f\n"
+"  Nombre d'appels :      %d\n"
+
+#, c-format
+msgid "  Number of iterations:  %d mean, %d min., %d max.\n"
+msgstr "  Nombre d'itérations :  %d moyen, %d min., %d max.\n"
+
+#, c-format
+msgid "  Total elapsed time:    %.3f\n"
+msgstr "  Temps total écoulé :   %.3f\n"
 
 #, c-format
 msgid ""
@@ -3220,6 +3293,14 @@ msgstr ""
 #, c-format
 msgid " %s: isweep = %d, normed residual: %e, norm: %e, var: %s\n"
 msgstr " %s: isweep = %d, norme du résidu : %e, norme : %e, var = %s\n"
+
+#, c-format
+msgid ""
+"\n"
+"Total elapsed time for all gradient computations:  %.3f s\n"
+msgstr ""
+"\n"
+"Temps total écoulé pour l'ensemble des calculs de gradients :  %.3f s\n"
 
 msgid "default"
 msgstr "défaut"
@@ -3280,22 +3361,6 @@ msgstr ""
 "\n"
 "Réglage pour matrices grossières de niveau %d et type : %s\n"
 "================================\n"
-
-#, c-format
-msgid ""
-"\n"
-"Multigrid rank merge parameters:\n"
-"  merge rank stride:                 %d\n"
-"  mean  coarse rows merge threshold: %d\n"
-"  total coarse rows merge threshold: %llu\n"
-"  minimum active ranks:              %d\n"
-msgstr ""
-"\n"
-"Paramètres multigrille de regroupement de rangs:\n"
-"  nombre de rangs par regroupement:           %d\n"
-"  nombre moyen limite de cellules grossières: %d\n"
-"  nombre total limite de cellules grossières: %llu\n"
-"  nombre minimum de rangs actifs:             %d\n"
 
 #, c-format
 msgid "    minimum count =         %10d\n"
@@ -3597,6 +3662,12 @@ msgstr ""
 msgid "K-cycle"
 msgstr ""
 
+msgid "K-cycle, HPC variant"
+msgstr ""
+
+msgid "K-cycle, HPC coarse level"
+msgstr "K-cycle, niveau grossier HPC :"
+
 msgid "  Solver type:                       multigrid\n"
 msgstr "  Type de solveur :                  multigrille\n"
 
@@ -3620,6 +3691,20 @@ msgstr ""
 "  Nombre maximum de cycles :         %d\n"
 
 #, c-format
+msgid ""
+"\n"
+"  Rank merge parameters:\n"
+"    merge rank stride:               %d\n"
+"    mean  coarse rows threshold:    %d\n"
+"    total coarse rows threshold:    %llu\n"
+msgstr ""
+"\n"
+"  Paramètres de regroupement de rangs:\n"
+"    nombre de rangs par regroupement:           %d\n"
+"    nombre moyen limite de cellules grossières: %d\n"
+"    nombre total limite de cellules grossières: %llu\n"
+
+#, c-format
 msgid "  Cycle type:                        %s\n"
 msgstr "  Type de cycle :                    %s\n"
 
@@ -3636,6 +3721,9 @@ msgstr "    Preconditionnement :             "
 
 msgid "Jacobi\n"
 msgstr "Jacobi\n"
+
+msgid "None\n"
+msgstr ""
 
 #, c-format
 msgid "polynomial, degree %d\n"
@@ -3714,8 +3802,8 @@ msgstr "minimum"
 msgid "maximum"
 msgstr "maximum"
 
-msgid "Number of coarse levels:"
-msgstr "Nombre de niveaux grossiers :"
+msgid "Number of levels:"
+msgstr "Nombre de niveaux :"
 
 msgid "Number of cycles:"
 msgstr "Nombre de cycles :"
@@ -3746,13 +3834,13 @@ msgstr "Nombre local moyen col. + halos :"
 msgid "Mean local entries:"
 msgstr "Nombre local moyen d'entrées :"
 
-msgid "Rows unbalance:"
+msgid "Rows imbalance:"
 msgstr "Déséquilibre lignes :"
 
-msgid "Columns + ghosts unbalance:"
+msgid "Columns + ghosts imbalance:"
 msgstr "Déséquilibre colonnes + halos :"
 
-msgid "entries unbalance"
+msgid "entries imbalance"
 msgstr "Déséquilibre entrées :"
 
 msgid "Iterations for solving:"
@@ -3767,6 +3855,70 @@ msgstr "Itérations lisseur de montée :"
 #, c-format
 msgid "  Grid level %d:\n"
 msgstr "  Grille niveau %d :\n"
+
+msgid "coarse level descent smoother"
+msgstr "lisseur descendant de niveau grossier"
+
+msgid "coarse level ascent smoother"
+msgstr "lisseur montant de niveau grossier"
+
+msgid "bottom level solver"
+msgstr "solveur de niveaux inférieur"
+
+#, c-format
+msgid ""
+"\n"
+"  Nested %s:\n"
+msgstr ""
+"\n"
+"  %s imbriqué :\n"
+
+msgid "Multigrid"
+msgstr "Multigrille"
+
+#, c-format
+msgid ""
+"\n"
+"   building level %2u grid\n"
+msgstr ""
+"\n"
+"   construction de la grille de niveau %2u\n"
+
+#, c-format
+msgid ""
+"                                  total       min        max\n"
+"     number of rows:      %12llu %10d %10d\n"
+"     number of entries:                %10d %10d\n"
+msgstr ""
+"                                  total       min        max\n"
+"     nombre de lignes :   %12llu %10d %10d\n"
+"     nombre de faces :                 %10d %10d\n"
+
+#, c-format
+msgid ""
+"     number of rows:      %10d\n"
+"     number of entries:   %10d\n"
+msgstr ""
+"     nombre de lignes :   %10d\n"
+"     nombre d'entrées :   %10d\n"
+
+#, c-format
+msgid ""
+"   number of grid levels:           %u\n"
+"   number of rows in coarsest grid: %llu\n"
+"\n"
+msgstr ""
+"   nombre de niveaux de grille :                       %u\n"
+"   nombre de lignes dans la grille la plus grossière : %llu\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+" Construction of grid hierarchy for \"%s\"\n"
+msgstr ""
+"\n"
+" Construction de la hiérarchie de grilles pour \"%s\"\n"
 
 msgid ""
 "  ---------------------------------------------------\n"
@@ -3802,53 +3954,6 @@ msgstr ""
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
 
-msgid "Multigrid"
-msgstr "Multigrille"
-
-#, c-format
-msgid ""
-"\n"
-" Construction of grid hierarchy for \"%s\"\n"
-msgstr ""
-"\n"
-" Construction de la hiérarchie de grilles pour \"%s\"\n"
-
-#, c-format
-msgid ""
-"\n"
-"   building level %2d grid\n"
-msgstr ""
-"\n"
-"   construction de la grille de niveau %2d\n"
-
-#, c-format
-msgid ""
-"                                  total       min        max\n"
-"     number of rows:      %12llu %10d %10d\n"
-"     number of entries:                %10d %10d\n"
-msgstr ""
-"                                  total       min        max\n"
-"     nombre de lignes :   %12llu %10d %10d\n"
-"     nombre de faces :                 %10d %10d\n"
-
-#, c-format
-msgid ""
-"     number of rows:      %10d\n"
-"     number of entries:   %10d\n"
-msgstr ""
-"     nombre de lignes :   %10d\n"
-"     nombre d'entrées :   %10d\n"
-
-#, c-format
-msgid ""
-"   number of coarse grids:          %d\n"
-"   number of rows in coarsest grid: %llu\n"
-"\n"
-msgstr ""
-"   nombre de maillages grossiers :                        %d\n"
-"   nombre de lignes dans le maillage le plus grossier : %llu\n"
-"\n"
-
 #, c-format
 msgid "Multigrid [%s]:\n"
 msgstr "Multigrille [%s]:\n"
@@ -3879,11 +3984,54 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Symmetric Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+"matrix using %s (%s) storage."
+msgstr ""
+
+#, c-format
+msgid ""
+"Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+"matrix using %s (%s) storage."
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Setup of solver for linear system \"%s\"\n"
+msgstr ""
+"\n"
+" Préparation du solveur pour le système linéaire \"%s\"\n"
+
+#, c-format
+msgid ""
+" %s: Setup of linear equation on \"%s\"\n"
+"with smoother type %d, which is not allowed or available)."
+msgstr ""
+
+#, c-format
+msgid ""
+" RHS norm:          %11.4e\n"
+"\n"
+msgstr ""
+" Norme du second-membre : %11.4e\n"
+"\n"
+
+#, c-format
+msgid ""
 "[%s]:\n"
 "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"
 msgstr ""
 "[%s]:\n"
 "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
+
+#, c-format
+msgid ""
+"\n"
+"Total elapsed time for linear equation system solvers:  %.3f s\n"
+msgstr ""
+"\n"
+"Temps total écoulé pour traiter les systèmes d'équations linéaires :  %.3f "
+"s\n"
 
 msgid "Linear solver options modified during run (previous values)"
 msgstr ""
@@ -3955,7 +4103,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"cs_slesh_push() only allows a stack of depth 1:\n"
+"cs_sles_push() only allows a stack of depth 1:\n"
 "  it  may not be called multiple times for a given field (id %d)\n"
 "  without calling cs_sles_pop between those calls."
 msgstr ""
@@ -4015,18 +4163,25 @@ msgstr "Gauss-Seidel"
 msgid "Symmetric Gauss-Seidel"
 msgstr "Gauss-Seidel symmétrique"
 
+msgid "3-layer conjugate residual"
+msgstr "Résidu conjugué à 3 couches"
+
+msgid "None"
+msgstr ""
+
 msgid "Truncated forward Gauss-Seidel"
 msgstr "Gauss-Seidel tronqué avant"
 
 msgid "Truncated backwards Gauss-Seidel"
 msgstr "Gauss-Seidel tronqué arrière"
 
-msgid "3-layer conjugate residual"
-msgstr "Résidu conjugué à 3 couches"
-
 #, c-format
-msgid "  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e\n"
-msgstr "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e, norme : %11.4e\n"
+msgid ""
+"  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e, res_init: "
+"%11.4e\n"
+msgstr ""
+"  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e, norme : %11.4e, "
+"res_init : %11.4e\n"
 
 #, c-format
 msgid "  n_iter : %5d, res_abs : %11.4e\n"
@@ -4070,18 +4225,6 @@ msgstr ""
 #, c-format
 msgid "  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"
 msgstr "  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"
-
-#, c-format
-msgid ""
-"Symmetric Gauss-Seidel Jacobi hybrid solver only supported with a\n"
-"matrix using %s (%s) storage."
-msgstr ""
-
-#, c-format
-msgid ""
-"Gauss-Seidel Jacobi hybrid solver only supported with a\n"
-"matrix using %s (%s) storage."
-msgstr ""
 
 #, c-format
 msgid "  Solver type:                       %s\n"
@@ -4148,14 +4291,6 @@ msgstr ""
 "  Temps total de résolution :    %12.3f\n"
 
 #, c-format
-msgid ""
-"\n"
-" Setup of solver for linear system \"%s\"\n"
-msgstr ""
-"\n"
-" Préparation du solveur pour le système linéaire \"%s\"\n"
-
-#, c-format
 msgid "GMRES not supported with block_size > 1 (%s)."
 msgstr ""
 
@@ -4164,14 +4299,6 @@ msgid ""
 "Setup of linear equation on \"%s\"\n"
 "with solver type %d, which is not defined)."
 msgstr ""
-
-#, c-format
-msgid ""
-" RHS norm:          %11.4e\n"
-"\n"
-msgstr ""
-" Norme du second-membre : %11.4e\n"
-"\n"
 
 #, c-format
 msgid ""
@@ -4543,6 +4670,10 @@ msgid "Optimal interpolation \"%s\" is not defined."
 msgstr "L'interpolation optimale \"%s\" n'est pas définie."
 
 #, c-format
+msgid "Error while trying to find symbol %s in lib %s: %s\n"
+msgstr ""
+
+#, c-format
 msgid ""
 "Shared library support not available.\n"
 "Unable to load: %s\n"
@@ -4746,6 +4877,10 @@ msgstr ""
 "Arrêt à l'ouverture en écriture du fichier de reprise de calcul\n"
 "du module thermique 1D en paroi.\n"
 "Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
+
+#, c-format
+msgid " %s: Boundary for ALE not allowed  %s."
+msgstr ""
 
 msgid "MPI_Alltoall and MPI_Alltoallv"
 msgstr "MPI_Alltoall et MPI_Alltoallv"
@@ -4996,6 +5131,14 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Error opening log file:\n"
+"%s"
+msgstr ""
+"Erreur à l'ouverture du fichier journal :\n"
+"%s"
+
+#, c-format
+msgid ""
 "\n"
 "\n"
 "Code_Saturne: %s:%d: Warning\n"
@@ -5070,6 +5213,57 @@ msgstr ""
 msgid ""
 "inconsistent sizes computed for a block to partition distributor\n"
 "(%llu expected, %llu determined)."
+msgstr ""
+
+msgid "wall"
+msgstr ""
+
+msgid "sliding wall"
+msgstr ""
+
+msgid "inlet"
+msgstr "entrée"
+
+msgid "outlet"
+msgstr "sortie"
+
+msgid "imposed pressure (inlet/outlet)"
+msgstr ""
+
+msgid "symmetry"
+msgstr "symmétrie"
+
+msgid "ALE fixed surface"
+msgstr ""
+
+msgid "ALE sliding surface"
+msgstr ""
+
+msgid "ALE imposed velocity"
+msgstr ""
+
+msgid "ALE imposed displacement"
+msgstr ""
+
+msgid "ALE internal coupling"
+msgstr ""
+
+msgid "ALE external coupling"
+msgstr ""
+
+msgid "ALE free surface"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid type of default boundary.\n"
+" A valid choice is either \"CS_BOUNDARY_WALL\" or \"CS_BOUNDARY_SYMMETRY\"."
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid zone name %s.\n"
+" This zone is not already defined.\n"
 msgstr ""
 
 msgid "boundary condition type"
@@ -5565,9 +5759,6 @@ msgstr "intensif"
 
 msgid "extensive"
 msgstr "extensif"
-
-msgid "steady"
-msgstr "stationnaire"
 
 msgid "variable"
 msgstr "variable"
@@ -6422,12 +6613,12 @@ msgstr "champ"
 #, c-format
 msgid ""
 "\n"
-"  ** Computed fields on %s\n"
-"     -------------------%.*s\n"
+"  ** Field values on %s\n"
+"     ----------------%.*s\n"
 msgstr ""
 "\n"
-"  ** Champs calculés sur %s\n"
-"     --------------------%.*s\n"
+"  ** Valeurs des champs sur %s\n"
+"     -----------------------%.*s\n"
 
 msgid "set mean"
 msgstr "moy. ensemble"
@@ -6691,32 +6882,16 @@ msgstr ""
 "                   pour des bibliothèques MPI inconnues)\n"
 
 #, c-format
-msgid ""
-" --log             output redirection for rank -1 or 0:\n"
-"                     0: standard output\n"
-"                     1: output in \"listing\" (default)\n"
-msgstr ""
-" --log             redirection des sorties de rang -1 ou 0 :\n"
-"                     0 : sortie standard\n"
-"                     1 : sorties dans \"listing\" (défaut)\n"
+msgid " --trace           trace progress in standard output\n"
+msgstr " --trace           trace de la progression en sortie standard\n"
 
 #, c-format
 msgid ""
-" --logp            output redirection for rank > 0:\n"
-"                    -1: remove output (default)\n"
-"                     0: no redirection (if independant\n"
-"                        terminals, debugger type)\n"
-"                     1: output in \"listing_n<rank>\"\n"
+" --logp            output redirection for ranks > 0\n"
+"                   to \"run_solver_n<rank>.log\"\n"
 msgstr ""
-" --logp            redirection des sorties de rang > 0 :\n"
-"                    -1 : sorties supprimées (défaut)\n"
-"                     0 : aucune redirection (si terminaux\n"
-"                         indépendants, type deboggeur)\n"
-"                     1 : sorties dans \"listing_n<rang>\"\n"
-
-#, c-format
-msgid " -p, --param       <file_name> parameter file\n"
-msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
+" --logp            redirection des sorties des rangs > O\n"
+"                   vers \"run_solver_n<rang>.log\"\n"
 
 #, c-format
 msgid " --preprocess      mesh preprocessing mode\n"
@@ -7236,10 +7411,16 @@ msgstr ""
 
 msgid ""
 "while reading input data,\n"
-"with k-epsilon LP (iturb=21) or v2f model (iturb=50/51)"
+"with k-epsilon LP (iturb=CS_TURB_K_EPSILON_LIN_PROD),\n"
+"k-epsilon LS (iturb=CS_TURB_K_EPSILON_LS),\n"
+"k-epislon quadratic (iturb=CS_TURB_K_EPSILON_QUAD),\n"
+"or v2f model (iturb=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)."
 msgstr ""
 "lors de la lecture des données d'entrée,\n"
-"avec les modèles k-epsilon LP (iturb=21) ou v2f (iturb=50/51)"
+"avec le modèle k-epsilon LP (iturb=CS_TURB_K_EPSILON_LIN_PROD),\n"
+"k-epsilon LS (iturb=CS_TURB_K_EPSILON_LS),\n"
+"k-epislon quadratic (iturb=CS_TURB_K_EPSILON_QUAD),\n"
+"ou modèle v2f (iturb=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)."
 
 msgid ""
 "while reading input data,\n"
@@ -7247,35 +7428,6 @@ msgid ""
 msgstr ""
 "lors de la lecture des données d'entrée,\n"
 "avec un algorithme stationnaire"
-
-msgid ""
-"while reading input data,\n"
-"modifications of relaxation coefficients for turbulence variables k and "
-"omega will be ignored"
-msgstr ""
-"lors de la lecture des données d'entrée,\n"
-"les modifications des coefficients de relaxation pour les variables "
-"turbulentes k et omega seront ignorées"
-
-msgid "while reading input data for turbulent variable k"
-msgstr "lors de la lecture des données d'entrée pour la variable turbulente k"
-
-msgid "while reading input data for turbulent variable omega"
-msgstr ""
-"lors de la lecture des données d'entrée pour la variable turbulente omega"
-
-msgid ""
-"while reading input data,\n"
-"modifications of relaxation coefficients for turbulence variables k and "
-"epsilon will be ignored"
-msgstr ""
-"lors de la lecture des données d'entrée,\n"
-"les modifications des coefficients de relaxation pour les variables "
-"turbulentes k et epsilon seront ignorées"
-
-msgid "while reading input data for turbulent variable epsilon"
-msgstr ""
-"lors de la lecture des données d'entrée pour la variable turbulente epsilon"
 
 msgid ""
 "while reading input data,\n"
@@ -7392,6 +7544,9 @@ msgstr ""
 
 msgid "LES dynamic model constant"
 msgstr "Constante du modèle de LES dynamique"
+
+msgid "flag for ALE method"
+msgstr ""
 
 msgid "flag for consideration of rotation"
 msgstr "indicateur de prise en compte de la rotation"
@@ -7768,7 +7923,7 @@ msgstr ""
 #, c-format
 msgid ""
 " Invalid key for probe options %s.\n"
-" Please read listing for more details and modify your settings."
+" Please read run_solver.log for more details and modify your settings."
 msgstr ""
 
 #, c-format
@@ -7852,6 +8007,9 @@ msgstr "cellules adjacentes"
 
 msgid "no shared cell across threads"
 msgstr "pas de cellule partagée entre fils"
+
+msgid "adjacent faces"
+msgstr "faces adjacentes"
 
 msgid "    no value\n"
 msgstr "    aucune valeur\n"
@@ -7972,6 +8130,9 @@ msgstr "faces intérieures"
 msgid "boundary faces"
 msgstr "faces de bord"
 
+msgid "vertices"
+msgstr "sommets"
+
 msgid ""
 "\n"
 "Checking interior faces renumbering...\n"
@@ -8058,6 +8219,16 @@ msgstr ""
 "   renumérotation des faces de bord :\n"
 "     numérotation :                                %s\n"
 
+#, c-format
+msgid ""
+"\n"
+"   renumbering for vertices:\n"
+"     numbering:                           %s\n"
+msgstr ""
+"\n"
+"   renumérotation des sommets :\n"
+"     numérotation :                                %s\n"
+
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -8119,43 +8290,6 @@ msgid "  %s: section \"%s\" not present.\n"
 msgstr ""
 
 #, c-format
-msgid "The %s directory cannot be created"
-msgstr "Le répertoire %s ne peut être créé"
-
-#, c-format
-msgid "The %s directory cannot be found"
-msgstr "Le répertoire %s ne peut pas être trouvé"
-
-#, c-format
-msgid ""
-"The size of location \"%s\" associated with\n"
-"the restart file \"%s\" is %llu and does not\n"
-"correspond to that of the current mesh (%llu).\n"
-msgstr ""
-"La taille du support \"%s\" associé au fichier de reprise de calcul\n"
-"\"%s\" vaut %llu et ne correspond pas\n"
-"à celle du maillage en cours (%llu).\n"
-
-#, c-format
-msgid ""
-"The restart file \"%s\" references no\n"
-"location named \"%s\"."
-msgstr ""
-"\"Le fichier de reprise de calcul \\\"%s\\\" ne contient \\n\"\n"
-"\" aucun support de nom \\\"%s\\\".\""
-
-#, c-format
-msgid ""
-"  Location: %s\n"
-"    (number: %03d, n_glob_ents: %llu)\n"
-msgstr ""
-"  Support : %s\n"
-"    (numéro : %03d, n_glob_ents : %llu)\n"
-
-msgid "  General information associated with the restart file:\n"
-msgstr "  Informations générales associées au fichier de reprise de calcul :\n"
-
-#, c-format
 msgid "  %s: location id %d for \"%s\" does not exist.\n"
 msgstr ""
 
@@ -8192,6 +8326,57 @@ msgid "  %s: section \"%s\" is not of floating-point type.\n"
 msgstr ""
 
 #, c-format
+msgid "The %s directory cannot be created"
+msgstr "Le répertoire %s ne peut être créé"
+
+#, c-format
+msgid ""
+"Failure moving %s to %s:\n"
+"%s\n"
+msgstr ""
+"Échec au déplacement de %s vers %s :\n"
+"%s\n"
+
+#, c-format
+msgid ""
+"Failure hard-linking %s to %s:\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid "The %s directory cannot be found"
+msgstr "Le répertoire %s ne peut pas être trouvé"
+
+#, c-format
+msgid ""
+"The size of location \"%s\" associated with\n"
+"the restart file \"%s\" is %llu and does not\n"
+"correspond to that of the current mesh (%llu).\n"
+msgstr ""
+"La taille du support \"%s\" associé au fichier de reprise de calcul\n"
+"\"%s\" vaut %llu et ne correspond pas\n"
+"à celle du maillage en cours (%llu).\n"
+
+#, c-format
+msgid ""
+"The restart file \"%s\" references no\n"
+"location named \"%s\"."
+msgstr ""
+"\"Le fichier de reprise de calcul \\\"%s\\\" ne contient \\n\"\n"
+"\" aucun support de nom \\\"%s\\\".\""
+
+#, c-format
+msgid ""
+"  Location: %s\n"
+"    (number: %03d, n_glob_ents: %llu)\n"
+msgstr ""
+"  Support : %s\n"
+"    (numéro : %03d, n_glob_ents : %llu)\n"
+
+msgid "  General information associated with the restart file:\n"
+msgstr "  Informations générales associées au fichier de reprise de calcul :\n"
+
+#, c-format
 msgid ""
 "\n"
 "Checkpoint / restart files summary:\n"
@@ -8210,6 +8395,9 @@ msgstr ""
 "\n"
 "  Temps écoulé pour la lecture :    %12.3f\n"
 "  Temps écoulé pour l'écriture :    %12.3f\n"
+
+msgid "Remark: restarting based on a NEPTUNE_CFD computation.\n"
+msgstr ""
 
 #, c-format
 msgid "Error reading variable information in restart file \"%s\"."
@@ -8542,7 +8730,8 @@ msgid ""
 "Stokes model\n"
 "------------\n"
 "\n"
-"    idilat:      %14d (1: without unsteady term\n"
+"    idilat:      %14d (0: Boussines approximation\n"
+"                                 1: without unsteady term\n"
 "                                    in the continuity equation\n"
 "                                 2: with unsteady term in\n"
 "                                    the continuity equation\n"
@@ -8556,7 +8745,7 @@ msgid ""
 "    iporos:      %14d (0: without porous media\n"
 "                                 1: with porous media \n"
 "                                 2: with tensorial porous media\n"
-"                                 3: with intergal formulation\n"
+"                                 3: with integral formulation\n"
 "                                    including fluid volumes and\n"
 "                                    fluid surfaces)\n"
 "    iphydr:      %14d (1: account for explicit\n"
@@ -8564,7 +8753,7 @@ msgid ""
 "                                    gradient, gravity source\n"
 "                                    terms, and head losses\n"
 "                                  2: compute a hydrostatic\n"
-"                                     pressure which is balance\n"
+"                                     pressure which is\n"
 "                                     in balance with buoyancy)\n"
 "    icalhy:      %14d (1: compute hydrostatic\n"
 "                                    pressure for dirichlet\n"
@@ -8579,7 +8768,9 @@ msgstr ""
 "Modèle de Stokes\n"
 "------------\n"
 "\n"
-"    idilat:      %14d (1: sans prise en compte du terme instationnaire\n"
+"    idilat:      %14d (0: approximation de Boussinesq\n"
+"                                 1: sans prise en compte du terme "
+"instationnaire\n"
 "                                    dans l'équation de continuité\n"
 "                                 2: avec terme instationnaire\n"
 "                                    dans l'équation de continuité\n"
@@ -8591,12 +8782,18 @@ msgstr ""
 "                                    dans l'équation de continuité\n"
 "                                 5: pour la modélisation incendie\n"
 "    iporos:      %14d (0: sans modélisation poreuse\n"
-"                                 1: avec modélisation poreuse)\n"
+"                                 1: avec modélisation poreuse\n"
+"                                 2: avec modélisation poreuse tensorielle\n"
+"                                 1: avec formulation intégrale\n"
+"                                    incluant les volumes et surfaces "
+"fluides)\n"
 "    iphydr:      %14d (1: prise en compte explicite\n"
 "                                    de l'équilibre entre grad\n"
 "                                    de pression et termes\n"
 "                                    sources de gravite et de\n"
-"                                    pertes de charge)\n"
+"                                    pertes de charge\n"
+"                                 2: calcul d'une pression hydrostatique\n"
+"                                    en équilibre avec la floattabilité)\n"
 "    icalhy:      %14d (1: calcul de la pression\n"
 "                                    hydrostatique pour les\n"
 "                                    conditions de Dirichlet en\n"
@@ -9584,9 +9781,22 @@ msgstr ""
 msgid " Key not implemented for setting an advection field."
 msgstr ""
 
+#, c-format
 msgid ""
-" Incompatible type of boundary condition by default.\n"
+" %s: Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid type of reduction.\n"
+" Stop computing the Dirichlet value.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid type of definition.\n"
+" Stop computing the Dirichlet value.\n"
 msgstr ""
 
 #, c-format
@@ -9597,8 +9807,13 @@ msgstr " %s : réduction incompatible pour le champ %s.\n"
 msgid " %s: Incompatible way to initialize the field %s.\n"
 msgstr " %s : réduction incompatible pour le champ %s.\n"
 
-msgid " Convection term is not handled yet.\n"
-msgstr ""
+#, c-format
+msgid " %s: Incompatible reduction for the pressure field\n"
+msgstr " %s : réduction incompatible pour le champ de pression.\n"
+
+#, c-format
+msgid " %s: Incompatible way to initialize the pressure field.\n"
+msgstr " %s : initialisation incompatible pour le champ de pression.\n"
 
 msgid "interior_faces"
 msgstr "faces intérieures"
@@ -9606,19 +9821,14 @@ msgstr "faces intérieures"
 msgid "boundary_faces"
 msgstr "faces de bord"
 
-msgid " Unsteady terms are not handled yet.\n"
-msgstr ""
-
 #, c-format
 msgid ""
 " Face %d not found.\n"
 " Stop build a face mesh."
 msgstr ""
 
-msgid " Invalid idtvar value for the CDO module.\n"
-msgstr ""
-
-msgid "Unkwown algorithm for cell center computation\n"
+#, c-format
+msgid "%s: Unkwown algorithm for cell center computation\n"
 msgstr ""
 
 msgid ""
@@ -9633,33 +9843,6 @@ msgid ""
 " Computing the flux across all interior or border faces is not managed yet."
 msgstr ""
 
-msgid "wall"
-msgstr ""
-
-msgid "sliding wall"
-msgstr ""
-
-msgid "inlet"
-msgstr "entrée"
-
-msgid "outlet"
-msgstr "sortie"
-
-msgid "symmetry"
-msgstr "symmétrie"
-
-#, c-format
-msgid ""
-" %s: Invalid type of boundary by default.\n"
-" A valid choice is CS_DOMAIN_BOUNDARY_WALL or CS_DOMAIN_BOUNDARY_SYMMETRY."
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid zone name %s.\n"
-" This zone is not already defined.\n"
-msgstr ""
-
 #, c-format
 msgid ""
 "Restart mismatch for: %s\n"
@@ -9669,19 +9852,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Undefined type of schme to solve for eq. %s. Please check your settings."
+" Undefined type of scheme to solve for eq. %s. Please check your settings."
 msgstr ""
 
-#, c-format
-msgid ""
-" %s: Invalid type of definition.\n"
-" Stop computing the Dirichlet value.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid type of reduction.\n"
-" Stop computing the Dirichlet value.\n"
+msgid " Invalid idtvar value for the CDO module.\n"
 msgstr ""
 
 msgid ""
@@ -9696,39 +9870,26 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "%s: Incompatible type of variable for the equation %s."
-msgstr "%s : type de variable incompatible pour l'équation %s."
-
-#, c-format
-msgid "%s: Invalid space scheme for the equation %s."
-msgstr ""
-
-#, c-format
-msgid " Incompatible reduction for equation %s.\n"
-msgstr " Réduction incompatible pour l'équation %s.\n"
-
-#, c-format
-msgid " %s: Invalid way to initialize equation %s.\n"
-msgstr ""
-
 msgid ""
-" No variable name associated to an equation structure.\n"
-" Check your initialization."
-msgstr ""
-
-msgid ""
-" No equation name associated to an equation structure.\n"
+" %s: No variable name associated to an equation structure.\n"
 " Check your initialization."
 msgstr ""
 
 #, c-format
 msgid ""
-" Stop adding a new equation.\n"
+" %s No equation name associated to an equation structure.\n"
+" Check your initialization."
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Stop adding a new equation.\n"
 " Equation name %s is already defined."
 msgstr ""
 
+#, c-format
 msgid ""
-" Invalid type of boundary condition by default.\n"
+" %s: Invalid type of boundary condition by default.\n"
 " Valid choices are CS_PARAM_BC_HMG_DIRICHLET or CS_PARAM_BC_HMG_NEUMANN"
 msgstr ""
 
@@ -9746,38 +9907,20 @@ msgstr ""
 msgid " Invalid mesh location id (= -1) for the current field\n"
 msgstr ""
 
-#, c-format
-msgid ""
-" %s: Computation of the diffusive and convective flux across\n"
-" a plane is not available for equation %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid mesh location name %s.\n"
-" This mesh location is not already defined.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Cellwise computation of the diffusive flux is not\n"
-" available for equation %s\n"
-msgstr ""
-
 msgid ""
 " Stop setting an empty cs_equation_param_t structure.\n"
 " Please check your settings.\n"
 msgstr ""
 
 #, c-format
+msgid " %s: Invalid key for setting the equation %s."
+msgstr "%s : type de clé invalide pour l'équation %s."
+
+#, c-format
 msgid ""
 " %s: Equation %s is not modifiable anymore.\n"
 " Please check your settings."
 msgstr ""
-
-#, c-format
-msgid " %s: Invalid key for setting the equation %s."
-msgstr "%s : type de clé invalide pour l'équation %s."
 
 #, c-format
 msgid ""
@@ -9814,9 +9957,6 @@ msgstr ""
 msgid " Groundwater module is activated but no soil is defined."
 msgstr ""
 
-msgid " Richards eq. is only available for vertex-based schemes."
-msgstr ""
-
 msgid " Unknown cell-type.\n"
 msgstr "type de cellule inconnu.\n"
 
@@ -9831,6 +9971,12 @@ msgid ""
 msgstr ""
 
 msgid "Invalid space scheme."
+msgstr ""
+
+msgid " Convection term is not handled yet.\n"
+msgstr ""
+
+msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
 
 msgid "Stokes velocity-pressure system"
@@ -9854,17 +10000,20 @@ msgstr ""
 msgid "Fully unsteady"
 msgstr "Instationnaire"
 
-msgid "Uzawa-Augmented Lagrangian coupling"
-msgstr ""
-
 msgid "Artificial compressibility algorithm"
 msgstr ""
 
 msgid "Artificial compressibility solved with the VPP_eps algorithm"
 msgstr ""
 
+msgid "Monolithic"
+msgstr ""
+
 msgid "Incremental projection algorithm"
 msgstr "algorithme de projection incrémental"
+
+msgid "Uzawa-Augmented Lagrangian coupling"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9880,6 +10029,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
+" Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
+" Choice between hho_{p0, p1, p2} or cdo_fb"
+msgstr ""
+
+#, c-format
+msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_SPACE_SCHEME\n"
 " Choice between hho_{p0, p1, p2} or cdo_fb"
 msgstr ""
@@ -9887,14 +10048,8 @@ msgstr ""
 #, c-format
 msgid ""
 " %s: Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
-" Valid choices are \"implicit\", \"explicit\", \"crank_nicolson\", and "
-"\"theta_scheme\"."
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid value \"%s\" for key CS_NSKEY_QUADRATURE\n"
-" Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
+" Valid choices are \"euler_implicit\", \"euler_explicit\", \"crank_nicolson"
+"\", and \"theta_scheme\"."
 msgstr ""
 
 #, c-format
@@ -9950,6 +10105,9 @@ msgid "Neumann"
 msgstr ""
 
 msgid "Robin"
+msgstr ""
+
+msgid "Sliding"
 msgstr ""
 
 msgid "weak using an algebraic manipulation"
@@ -10019,7 +10177,8 @@ msgid ""
 " This case is not handled. Please check your settings.\n"
 msgstr ""
 
-msgid " Invalid type of property."
+#, c-format
+msgid "%s: Invalid type of property."
 msgstr ""
 
 msgid "barycentric"
@@ -10034,11 +10193,6 @@ msgstr ""
 msgid "highest"
 msgstr ""
 
-msgid ""
-" Cannot build diagonal index. Pattern is shared.\n"
-" Stop execution.\n"
-msgstr ""
-
 msgid " Invalid numerical scheme to set a source term."
 msgstr ""
 
@@ -10048,11 +10202,9 @@ msgstr ""
 msgid " Invalid case. Not able to compute the source term.\n"
 msgstr ""
 
-msgid " Invalid type of description."
-msgstr ""
-
-msgid "vertices"
-msgstr "sommets"
+#, c-format
+msgid "%s: Invalid type of description."
+msgstr "%s : Type de description invalide."
 
 #, c-format
 msgid ""
@@ -10089,6 +10241,72 @@ msgid ""
 "with imposed total pressure and total enthalpy failed at\n"
 "boundary face %i. The direction vector given by the user\n"
 "can't be null."
+msgstr ""
+
+msgid ""
+"Input of mix pressure computation with respect to specific entropy and "
+"specific volume:\n"
+" mix specific volume v < 0\n"
+msgstr ""
+
+msgid ""
+"While computing mix pressure with respect to specific entropy and specific "
+"volume:\n"
+" mix internal energy e < 0\n"
+msgstr ""
+
+msgid "In _mix_pressure_sv : 1/temperature NAN\n"
+msgstr ""
+
+msgid ""
+"While computing mix pressure with respect to specific entropy and specific "
+"volume:\n"
+" mix temperature T < 0\n"
+msgstr ""
+
+msgid "Unknown form for equilibrium function.\n"
+msgstr ""
+
+msgid "While performing dichotomy search on equilibrium function\n"
+msgstr ""
+
+msgid ""
+"Input of mix pressure and temperature computation with respect to specific "
+"energy and specific volume:\n"
+"specific volume <= 0\n"
+msgstr ""
+
+msgid ""
+"Input of mix pressure and temperature computation with respect to specific "
+"energy and specific volume:\n"
+"specific energy <= 0\n"
+msgstr ""
+
+msgid "Single-phase regime - phase 2: temperature < 0\n"
+msgstr ""
+
+msgid "Single-phase regime - phase 1: temperature < 0\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_pt() : 1.0/temperature NAN  (two-phase)\n"
+msgstr ""
+
+msgid "Two-phase regime: mixture temperature < 0\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_pt() : temperature NAN\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_pt() : pressure NAN\n"
+msgstr ""
+
+msgid "cs_hgn_thermo_c2() : NAN\n"
+msgstr ""
+
+msgid "Negative sound speed - hyperbolicity problem\n"
+msgstr ""
+
+msgid "Negative specific internal energy e < 0\n"
 msgstr ""
 
 msgid ""
@@ -10632,6 +10850,9 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
+msgid "All Catalyst writers must use the same MPI communicator"
+msgstr ""
+
 #, c-format
 msgid ""
 "Error initializing pipeline from \"%s\":\n"
@@ -10865,6 +11086,25 @@ msgstr ""
 #, c-format
 msgid ""
 "cg_section_partial_write() failed to write tesselated elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_poly_elements_partial_write() failed to write elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"Associated range: [%llu, %llu]\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_poly_section_write() failed to write polygonal elements:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
 "Associated section name: \"%s\"\n"
@@ -11239,14 +11479,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Error: can not interpret expression: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Error: can not find the required symbol: %s\n"
-msgstr ""
-
-#, c-format
 msgid "Invalid number of coal: %i xml: %i\n"
 msgstr ""
 
@@ -11285,12 +11517,6 @@ msgstr ""
 msgid ""
 "Error in the boundary conditions: the normal direction is of norm 0.\n"
 " "
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not interpret expression: %s\n"
-" %i"
 msgstr ""
 
 #, c-format
@@ -11348,7 +11574,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Error: can not use evaluate property: %s\n"
+msgid "Error: can not evaluate property: %s using a thermal law\n"
 msgstr ""
 
 #, c-format
@@ -11389,16 +11615,18 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Error: can not find the required symbol: %s\n"
-" %s\n"
+"Error: can not interpret expression: %s\n"
+" %i"
 msgstr ""
 
 #, c-format
 msgid ""
 "Error: can not find the required symbol: %s\n"
-"%s\n"
-"%s\n"
-"%s\n"
+" %s\n"
+msgstr ""
+
+#, c-format
+msgid "Error: can not find the required symbol: %s\n"
 msgstr ""
 
 #, c-format
@@ -11447,6 +11675,10 @@ msgstr ""
 #, c-format
 msgid "Periodicity mode \"%s\" unknown."
 msgstr "Mode de périodicité \"%s\" inconnu."
+
+#, c-format
+msgid "Error: can not interpret expression: %s\n"
+msgstr ""
 
 #, c-format
 msgid "Boundary nature formula is null for %s."
@@ -11694,22 +11926,19 @@ msgid ""
 " Here IDIRLA = %d\n"
 msgstr ""
 
-msgid "Couplage thermique non-fonctionnel en multi-layer"
+msgid "Thermal coupling not implemented in multi-layer case"
+msgstr ""
+
+#, c-format
+msgid "Out-of range attribute type: %d"
+msgstr ""
+
+msgid "in Lagrangian module"
 msgstr ""
 
 msgid ""
-"@\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@\n"
-"@ @@ ERROR:\n"
-"@    ======\n"
-"@   TO BE COMPATIBLE WITH THE LAGRANGIAN DEPOSITION MODEL,\n"
-"@     HEAD LOSS ZONES MUST COVER THE WHOLE MESH\n"
-"@ Head loss coefficients may be locally zero.\n"
-"@ Check your case setup.\n"
-"@\n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@"
+"The number of cells in the head loss zones must cover\n"
+"the whole mesh (though the local head loss may be zero).\n"
 msgstr ""
 
 #, c-format
@@ -11732,6 +11961,14 @@ msgid ""
 "Lagrangian module: \n"
 "  number of clusters = %d is either not defined (negative)\n"
 "  or > to the number of statistical classes %d\n"
+"  for zone %d and set %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian module: \n"
+"  number of particles = %d is either not defined (negative)\n"
+"  or smaller than 1 than \n"
 "  for zone %d and set %d."
 msgstr ""
 
@@ -11885,11 +12122,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Abort while opening the lagrangian module restart file: %s\n"
-"Error reading section: %s"
-msgstr ""
-
-msgid "in Lagrangian module"
+"The following information is not available in restart file: %s\n"
+"so the computation cannot be run:\n"
+"  %s\n"
 msgstr ""
 
 #, c-format
@@ -11914,6 +12149,83 @@ msgid ""
 "boundary face data will be reinitialized.\n"
 msgstr ""
 
+#, c-format
+msgid ""
+"Statistics from the previous computation are not available.\n"
+"\n"
+"Steady/unsteady computation of volume statistics\n"
+"is reset to unsteady or steady initialization mode:\n"
+" isttio = %d\n"
+" idstnt = %d\n"
+" restart iteration = %d\n"
+msgstr ""
+
+msgid ""
+"Volume statistics from the previous computation are\n"
+"not available or usable."
+msgstr ""
+
+#, c-format
+msgid ""
+"Options are changed relative to the previous computation.\n"
+"\n"
+" isttio = %d previous, %d current\n"
+" idstnt = %d previous, %d current\n"
+" nstist = %d previous, %d current\n"
+msgstr ""
+
+msgid ""
+"Statistics from the previous computation are compatible with\n"
+"current statistics computation options (in steady mode).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Statistics from the previous computation are not available.\n"
+"\n"
+"Steady/unsteady computation of boundary statistics\n"
+"is reset to unsteady or steady initialization mode:\n"
+" isttio = %d\n"
+" idstnt = %d\n"
+" restart iteration = %d\n"
+msgstr ""
+
+msgid ""
+"Boundary statistics from the previous computation are\n"
+"not available or usable."
+msgstr ""
+
+#, c-format
+msgid ""
+"Options are changed relative to the previous computation.\n"
+"\n"
+" isttio = %d previous, %d current\n"
+" nstbor = %d previous, %d current\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The following information is not available in restart file: %s\n"
+"and is set to default or user settings:\n"
+"  %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Source terms from the previous computation are not available.\n"
+"\n"
+"Start of time averaging of statistics for return coupling\n"
+"is reset to current time step:\n"
+" isttio = %d\n"
+" idstnt = %d\n"
+" restart iteration = %d\n"
+msgstr ""
+
+msgid ""
+"Source terms from the previous computation are\n"
+"not available or usable."
+msgstr ""
+
 msgid "      Fin   de la lecture\n"
 msgstr ""
 
@@ -11927,6 +12239,24 @@ msgid ""
 "      -------------------------------------\n"
 "    Lecture d'un fichier suite\n"
 "    sur les variables liees aux particules\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The number of additional user variables in restart file: %s\n"
+"is modified:\n"
+"  previous: %d\n"
+"  current:  %d\n"
+"Excess previous user variables are removed.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The number of additional user variables in restart file: %s\n"
+"is modified:\n"
+"  previous: %d\n"
+"  current:  %d\n"
+"New user variables are initialized with zero.\n"
 msgstr ""
 
 msgid "    End reading particle data restart file\n"
@@ -12170,10 +12500,6 @@ msgid ""
 "  Statistics for particles/boundary interaction:\n"
 msgstr ""
 
-#, c-format
-msgid "    number of additional user statistics: %d\n"
-msgstr "    nombre de statistiques utilisateur supplémentaires : %10d\n"
-
 msgid ""
 "\n"
 "Lagrangian statistics\n"
@@ -12240,14 +12566,17 @@ msgstr ""
 msgid "rebound"
 msgstr "rebond"
 
+msgid "deposition and elimination"
+msgstr ""
+
 msgid "deposition"
 msgstr "déposition"
 
 msgid "fouling"
 msgstr "encrassement"
 
-msgid "dlvo conditions"
-msgstr "conditions dlvo"
+msgid "DLVO conditions"
+msgstr "conditions DLVO"
 
 msgid "   Boundary statistics :\n"
 msgstr ""
@@ -12257,7 +12586,7 @@ msgid "Number of iterations in steady-state statistics: %10d\n"
 msgstr ""
 
 #, c-format
-msgid "Start of steady-state statistics from time step nÂ°: %8d\n"
+msgid "Start of steady-state statistics from time step n°: %8d\n"
 msgstr ""
 
 #, c-format
@@ -12320,8 +12649,8 @@ msgid ""
 "is activated, but the return coupling of the dispersed phase\n"
 "on the continuous phase is not activated:\n"
 "  cs_glob_lagr_time_scheme->iilagr = %d\n"
-"The return coupling must be acivated for this model:\n"
-"  cs_glob_lagr_time_scheme->iilagr = 2\n"
+"The return coupling must be activated for this model:\n"
+"  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"
 msgstr ""
 
 #, c-format
@@ -12337,10 +12666,6 @@ msgid ""
 msgstr ""
 "L'attribut %s a %d composantes\n"
 "mais la composante %d est demandée."
-
-#, c-format
-msgid "Out-of range attribute type: %d"
-msgstr ""
 
 msgid "   ** RESOLUTION POUR LA VARIABLE Pressure correction"
 msgstr ""
@@ -12358,12 +12683,6 @@ msgstr "%s ne devrait pas être appelée après %s."
 
 msgid "Error reading main particle restart data."
 msgstr "Erreur à la lecture des données de reprise particulaires."
-
-#, c-format
-msgid ""
-" Error in %s: inclg < 0 \n"
-"Face number: %d, Particle number %d \n"
-msgstr ""
 
 #, c-format
 msgid ""
@@ -12391,6 +12710,17 @@ msgid "VARIANCE"
 msgstr ""
 
 #, c-format
+msgid "    start time: %g"
+msgstr "    temps de début : %g"
+
+#, c-format
+msgid "    start time step: %d"
+msgstr "    pas de temps de début : %d"
+
+msgid " (reset allowed)\n"
+msgstr " (remise à zéro autorisée)\n"
+
+#, c-format
 msgid "Out-of range statistics type: %d"
 msgstr ""
 
@@ -12401,12 +12731,22 @@ msgid ""
 " (previously \"%s\") does not match.\n"
 "  previous values:\n"
 "    weight accumulator location_id: %d\n"
-"    moment_type:                           %d\n"
+"    moment_type:                    %d\n"
 "    location_id:                    %d\n"
 "    dimension:                      %d\n"
 "    start time step:                %d\n"
 "    start time:                     %12.5e\n"
 msgstr ""
+"\n"
+"Les donées de reprise pour les statistques Lagrangiennes \"%s\"\n"
+" (anciennement \"%s\") ne correspondent pas.\n"
+"  valeurs précédentes:\n"
+"    id support accumulateur poids : %d\n"
+"    type de moment:                 %d\n"
+"    id support                      %d\n"
+"    dimension:                      %d\n"
+"    pas de temps de départ :        %d\n"
+"    temps de départ :               %12.5e\n"
 
 #, c-format
 msgid ""
@@ -12439,6 +12779,96 @@ msgid ""
 "Lagrangian statistics definition for \"%s\" is inconsistent:\n"
 " either starting time step or physical time must be >= 0."
 msgstr ""
+
+#, c-format
+msgid "The '%s' argument to %s must not be NULL."
+msgstr ""
+
+msgid ""
+"\n"
+"  Mesh-based statistics\n"
+"  ---------------------\n"
+msgstr ""
+"\n"
+"  Statistiques basées sur le maillage\n"
+"  -----------------------------------\n"
+
+#, c-format
+msgid ""
+"\n"
+"  statistic %d\n"
+"    group: %s\n"
+"    class: %d\n"
+msgstr ""
+
+#, c-format
+msgid "    field: \"%s\" (%d)\n"
+msgstr "    champ : \"%s\" (%d)\n"
+
+#, c-format
+msgid "    location: %s\n"
+msgstr "    support : %s\n"
+
+msgid "    mesh-based data function\n"
+msgstr ""
+
+msgid ""
+"\n"
+"  Lagrangian moment accumulators\n"
+"  ------------------------------\n"
+msgstr ""
+"\n"
+"  Accumulateurs pour moments Lagrangiens\n"
+"  --------------------------------------\n"
+
+#, c-format
+msgid ""
+"\n"
+"  accumulator %d\n"
+"    group: %s\n"
+"    class: %d\n"
+msgstr ""
+"\n"
+"  accumulateur : %d\n"
+"    groupe : %s\n"
+"    classe : %d\n"
+
+msgid "    particle-based data function\n"
+msgstr "    fonction de données basée sur les particules\n"
+
+msgid "    event-based data function\n"
+msgstr "    fonction de données basée sur les événements\n"
+
+msgid ""
+"\n"
+"  Lagrangian moments\n"
+"  ------------------\n"
+msgstr ""
+"\n"
+"  Moments statistiques Lagrangiens\n"
+"  --------------------------------\n"
+
+#, c-format
+msgid ""
+"\n"
+"  moment %d\n"
+"    accumulator id: %d\n"
+"    class: %d\n"
+"    moment type: %s\n"
+msgstr ""
+"\n"
+"  moment %d\n"
+"    id accumulateur : %d\n"
+"    classe : %d\n"
+"    type de moment : %s\n"
+
+#, c-format
+msgid "    predefined stat type: %d\n"
+msgstr "    type de statistique prédéfine : %d\n"
+
+#, c-format
+msgid "    component id: %d\n"
+msgstr "    id de composante : %d\n"
 
 msgid ""
 "\n"
@@ -13947,8 +14377,16 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"%llu faces have a too large reconstruction distance.\n"
+"%llu boundary faces have a too large reconstruction distance.\n"
 "For these faces, reconstruction are limited.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"%llu internal faces have a too large reconstruction distance.\n"
+"For these faces, reconstruction are limited.\n"
+"\n"
 msgstr ""
 
 #, c-format
@@ -14008,6 +14446,28 @@ msgstr ""
 
 #, c-format
 msgid "Unhandled cell refinement type: %d"
+msgstr ""
+
+msgid "Mesh before refinement"
+msgstr "Maillage avant raffinement"
+
+msgid "Mesh after refinement"
+msgstr "Maillage après raffinement"
+
+#, c-format
+msgid ""
+"\n"
+"Mesh refinement:\n"
+"\n"
+"  Pre and post update of mesh structure:        %.3g\n"
+"  Edge and face indexing:                       %.3g\n"
+"  Cell-faces indexing and type identification:  %.3g\n"
+"  Build new vertices:                           %.3g\n"
+"  Build sub-face face indexing:                 %.3g\n"
+"  Update face connectivity:                     %.3g\n"
+"  Subdivide cells                               %.3g\n"
+"\n"
+"  Total:                                        %.3g\n"
 msgstr ""
 
 msgid ""
@@ -14635,13 +15095,24 @@ msgstr ""
 msgid "    End of output to restart file\n"
 msgstr ""
 
-msgid ""
-"   ** INFORMATIONS SUR LE MODULE DE RAYONNEMENT\n"
-"      ------------------------------------------  \n"
-"    Lecture d''un fichier suite\n"
-msgstr ""
+msgid "    Reading radiative module restart file\n"
+msgstr "    Lecture du fichier suite rayonnement\n"
 
 msgid "\n"
+msgstr ""
+
+msgid "while reading radiative restart data"
+msgstr "Erreur à la lecture des données de reprise rayonnement"
+
+#, c-format
+msgid "\"%s\" does not seem to be a radiative checkpoint/restart file."
+msgstr ""
+"Le fichier \"%s\" ne semble pas être un fichier de reprise de rayonnement."
+
+msgid "The number of cells does not match the current mesh."
+msgstr ""
+
+msgid "The number of boundary faces does not match the current mesh."
 msgstr ""
 
 msgid "    Finished reading radiative restart file.\n"
@@ -15085,22 +15556,22 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Mixing length       (iturb = 10)\n"
+"   Mixing length       (iturb = CS_TURB_MIXING_LENGTH)\n"
 "    xlomlg:      %14.5e (Characteristic length)\n"
 msgstr ""
-"   Longueur de mélange (iturb = 10)\n"
+"   Longueur de mélange (iturb = CS_TURB_MIXING_LENGTH)\n"
 "    xlomlg:      %14.5e (Longueur caractéristique)\n"
 
 #, c-format
 msgid ""
-"   k-epsilon           (iturb = 20)\n"
+"   k-epsilon           (iturb = CS_TURB_K_EPSILON)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    iclkep:      %14d (k-epsilon clipping model)\n"
 "    ikecou:      %14d (k-epsilon coupling mode)\n"
 "    igrake:      %14d (Account for gravity)\n"
 msgstr ""
-"   k-epsilon           (iturb = 20)\n"
+"   k-epsilon           (iturb = CS_TURB_K_EPSILON)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    iclkep:      %14d (Mode de clipping k-epsilon)\n"
@@ -15117,14 +15588,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Linear production k-epsilon (iturb = 21)\n"
+"   Linear production k-epsilon (iturb = CS_TURB_K_EPSILON_LIN_PROD)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    iclkep:      %14d (k-epsilon clipping model)\n"
 "    ikecou:      %14d (k-epsilon coupling mode)\n"
 "    igrake:      %14d (Account for gravity)\n"
 msgstr ""
-"   k-epsilon production linéaire (iturb = 21)\n"
+"   k-epsilon production linéaire (iturb = CS_TURB_K_EPSILON_LIN_PROD)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    iclkep:      %14d (Mode de clipping k-epsilon)\n"
@@ -15133,7 +15604,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Rij-epsilon LRR     (iturb = 30)\n"
+"   Rij-epsilon LRR     (iturb = CS_TURB_RIJ_EPSILON_LRR)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    irijco:      %14d (Coupled resolution)\n"
@@ -15145,7 +15616,7 @@ msgid ""
 "    iclsyr:      %14d (Symmetry implicitation)\n"
 "    iclptr:      %14d (Wall implicitation)\n"
 msgstr ""
-"   Rij-epsilon         (iturb = 30)\n"
+"   Rij-epsilon         (iturb = CS_TURB_RIJ_EPSILON_LRR)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    irijco:      %14d (Résolution couplée)\n"
@@ -15159,7 +15630,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Rij-epsilon SSG    (iturb = 31)\n"
+"   Rij-epsilon SSG    (iturb = CS_TURB_RIJ_EPSILON_SSG)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    irijco:      %14d (Coupled resolution)\n"
@@ -15169,7 +15640,7 @@ msgid ""
 "    iclsyr:      %14d (Symmetry implicitation)\n"
 "    iclptr:      %14d (Wall implicitation)\n"
 msgstr ""
-"   SSG Rij-epsilon     (iturb = 31)\n"
+"   SSG Rij-epsilon     (iturb = CS_TURB_RIJ_EPSILON_SSG)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    irijco:      %14d (Résolution couplée)\n"
@@ -15181,7 +15652,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Rij-epsilon EBRSM     (iturb = 32)\n"
+"   Rij-epsilon EBRSM     (iturb = CS_TURB_RIJ_EPSILON_EBRSM)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    reinit_                      (Reinitialization of the\n"
@@ -15193,7 +15664,7 @@ msgid ""
 "    iclsyr:      %14d (Symmetry implicitation)\n"
 "    iclptr:      %14d (Wall implicitation)\n"
 msgstr ""
-"   Rij-epsilon EBRSM     (iturb = 32)\n"
+"   Rij-epsilon EBRSM     (iturb = CS_TURB_RIJ_EPSILON_EBRSM)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    reinit_                      (Réinitialisation de la\n"
@@ -15207,7 +15678,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   LES                 (iturb = 40, 41, 42)\n"
+"   LES                 (iturb = CS_TURB_LES_SMAGO_CONST,\n"
+"                                CS_TURB_LES_SMAGO_DYN,\n"
+"                                CS_TURB_LES_WALE)\n"
 "                            (Sub-grid scale model)\n"
 "                            (40 Smagorinsky model)\n"
 "                            (41 Dynamic model)\n"
@@ -15226,7 +15699,9 @@ msgid ""
 "                                (dynamic model case)\n"
 "    ivrtex:      %14d (Use of the vortex method)\n"
 msgstr ""
-"   LES                 (iturb = 40, 41, 42)\n"
+"   LES                 (iturb = CS_TURB_LES_SMAGO_CONST,\n"
+"                                CS_TURB_LES_SMAGO_DYN,\n"
+"                                CS_TURB_LES_WALE)\n"
 "                            (Modèle de sous-maille)\n"
 "                            (40 Modèle de Smagorinsky)\n"
 "                            (41 Modèle dynamique)\n"
@@ -15247,14 +15722,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   v2f phi-model       (iturb = 50)\n"
+"   v2f phi-model       (iturb = CS_TURB_V2F_PHI)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    iclkep:      %14d (k-epsilon clipping model)\n"
 "    ikecou:      %14d (k-epsilon coupling mode)\n"
 "    igrake:      %14d (Account for gravity)\n"
 msgstr ""
-"   v2f phi-model       (iturb = 50)\n"
+"   v2f phi-model       (iturb = CS_TURB_V2F_PHI)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    iclkep:      %14d (Mode de clipping k-epsilon)\n"
@@ -15263,14 +15738,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   v2f BL-v2/k         (iturb = 51)\n"
+"   v2f BL-v2/k         (iturb = CS_TURB_V2F_BL_V2K)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    iclkep:      %14d (k-epsilon clipping model)\n"
 "    ikecou:      %14d (k-epsilon coupling mode)\n"
 "    igrake:      %14d (Account for gravity)\n"
 msgstr ""
-"   v2f BL-v2/k         (iturb = 51)\n"
+"   v2f BL-v2/k         (iturb = CS_TURB_V2F_BL_V2K)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    iclkep:      %14d (Mode de clipping k-epsilon)\n"
@@ -15279,14 +15754,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   k-omega SST         (iturb = 60)\n"
+"   k-omega SST         (iturb = CS_TURB_K_OMEGA)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    ikecou:      %14d (k-epsilon coupling mode)\n"
 "    iddes :      %14d (1: DDES mode)\n"
 "    igrake:      %14d (Account for gravity)\n"
 msgstr ""
-"   k-omega SST         (iturb = 60)\n"
+"   k-omega SST         (iturb = CS_TURB_K_OMEGA)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    ikecou:      %14d (Mode de couplage k-epsilon)\n"
@@ -15303,12 +15778,12 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Spalart-Allmaras    (iturb = 70)\n"
+"   Spalart-Allmaras    (iturb = CS_TURB_SPALART_ALLMARAS)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    relaxv:      %14.5e for nu (Relaxation)\n"
 msgstr ""
-"   Spalart-Allmaras    (iturb = 70)\n"
+"   Spalart-Allmaras    (iturb = CS_TURB_SPALART_ALLMARAS)\n"
 "    almax:       %14.5e (Longueur caractéristique)\n"
 "    uref:        %14.5e (Vitesse caractéristique)\n"
 "    relaxv:      %14.5e pour nu (Relaxation)\n"
@@ -15443,7 +15918,7 @@ msgid ""
 "    cebmr4:      %14.5e (Cr4 coeff.)\n"
 "    cebmr5:      %14.5e (Cr5 coeff.)\n"
 "    csrij:       %14.5e (Rij Cs diffusion coeff.)\n"
-"    cebmr6:      %14.5e (Gravity term coeff.)\n"
+"    crij3:       %14.5e (Gravity term coeff.)\n"
 "    cebme2:      %14.5e (Coef Ceps2)\n"
 "    ce1:         %14.5e (Coef Ceps1)\n"
 "    sigmae:      %14.5e (Coef sigma_eps)\n"
@@ -15460,7 +15935,7 @@ msgstr ""
 "    cebmr4:      %14.5e (Coef. Cr4)\n"
 "    cebmr5:      %14.5e (Coef. Cr5)\n"
 "    csrij:       %14.5e (Coef. Cs diffusion de Rij)\n"
-"    cebmr6:      %14.5e (Coef. terme de gravité)\n"
+"    crij3:       %14.5e (Coef. terme de gravité)\n"
 "    cebme2:      %14.5e (Coef. Ceps2)\n"
 "    ce1:         %14.5e (Coef. Ceps1)\n"
 "    sigmae:      %14.5e (Coef. sigma_eps)\n"
@@ -15604,3 +16079,6 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid "    number of additional user statistics: %d\n"
+#~ msgstr "    nombre de statistiques utilisateur supplémentaires : %10d\n"

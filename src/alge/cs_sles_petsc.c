@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -189,6 +189,93 @@ static PetscLogStage _log_stage[2];
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Export the linear system using PETSc Viewer mechanism
+ *
+ * parameters:
+ *   name <-- name of the related linear system
+ *   ksp  <-- Pointer to PETSc KSP structure
+ *   rhs  <-- PETSc vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_export_petsc_system(const char   *name,
+                     KSP           ksp,
+                     Vec           b)
+{
+  const char *p = getenv("CS_PETSC_SYSTEM_VIEWER");
+
+  if (p == NULL)
+    return;
+
+  /* Get system and preconditioner matrixes */
+
+  Mat a, pa;
+  KSPGetOperators(ksp, &a, &pa);
+
+  char  *filename = NULL;
+  int len = strlen(name) + strlen("_matrix.dat") + 1;
+  BFT_MALLOC(filename, len, char);
+
+  if (strcmp(p, "BINARY") == 0) {
+
+    PetscViewer viewer;
+
+    /* Matrix */
+    sprintf(filename, "%s_matrix.dat", name);
+    PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename, FILE_MODE_WRITE, &viewer);
+    MatView(a, viewer);
+    PetscViewerDestroy(&viewer);
+
+    /* Right-hand side */
+    sprintf(filename, "%s_rhs.dat", name);
+    PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename, FILE_MODE_WRITE, &viewer);
+    VecView(b, viewer);
+    PetscViewerDestroy(&viewer);
+
+  }
+  else if (strcmp(p, "ASCII") == 0) {
+
+    PetscViewer viewer;
+
+    /* Matrix */
+    sprintf(filename, "%s_matrix.txt", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    MatView(a, viewer);
+    PetscViewerDestroy(&viewer);
+
+    /* Right-hand side */
+    sprintf(filename, "%s_rhs.txt", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    VecView(b, viewer);
+    PetscViewerDestroy(&viewer);
+
+  }
+  else if (strcmp(p, "MATLAB") == 0) {
+
+    PetscViewer viewer;
+
+    /* Matrix */
+    sprintf(filename, "%s_matrix.m", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+    MatView(a, viewer);
+    PetscViewerPopFormat(viewer);
+    PetscViewerDestroy(&viewer);
+
+    /* Right-hand side */
+    sprintf(filename, "%s_rhs.m", name);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, &viewer);
+    PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+    VecView(b, viewer);
+    PetscViewerPopFormat(viewer);
+    PetscViewerDestroy(&viewer);
+
+  }
+
+  BFT_FREE(filename);
+}
+
+/*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with shell matrix.
  *
  * parameters:
@@ -265,6 +352,8 @@ _shell_get_row(Mat                 a,
                const PetscInt     *cols[],
                const PetscScalar  *vals[])
 {
+  CS_UNUSED(nnz);
+
   _mat_shell_t *sh;
 
   MatShellGetContext(a, &sh);
@@ -292,6 +381,8 @@ _shell_mat_duplicate(Mat                  a,
                      MatDuplicateOption   op,
                      Mat                 *m)
 {
+  CS_UNUSED(op);
+
   _mat_shell_t *sh;
 
   MatShellGetContext(a, &sh);
@@ -329,6 +420,8 @@ _shell_mat_destroy(Mat                  a,
                    MatDuplicateOption   op,
                    Mat                 *m)
 {
+  CS_UNUSED(m);
+
   _mat_shell_t *sh;
 
   MatShellGetContext(a, &sh);
@@ -379,7 +472,7 @@ _cs_ksp_converged(KSP                  ksp,
  * This function is called the end of the setup stage for a KSP solver.
  *
  * Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
- * this also allows setting furthur function pointers for pre and post-solve
+ * this also allows setting further function pointers for pre and post-solve
  * operations (see the PETSc documentation).
  *
  * Note: if the context pointer is non-NULL, it must point to valid data
@@ -388,14 +481,17 @@ _cs_ksp_converged(KSP                  ksp,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ *   a       <-> PETSc matrix context
+ *   ksp     <-> PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
+                        Mat                 a,
                         KSP                 ksp)
 {
   CS_UNUSED(context);
+  CS_UNUSED(a);
   CS_UNUSED(ksp);
 }
 
@@ -1132,7 +1228,7 @@ cs_sles_petsc_setup(void               *context,
                         NULL);
 
   if (c->setup_hook != NULL)
-    c->setup_hook(c->hook_context, sd->ksp);
+    c->setup_hook(c->hook_context, sd->a, sd->ksp);
 
   /* KSPSetup could be called here for better separation of setup/solve
      logging, but calling it systematically seems to cause issues
@@ -1215,6 +1311,9 @@ cs_sles_petsc_solve(void                *context,
                     size_t               aux_size,
                     void                *aux_vectors)
 {
+  CS_UNUSED(aux_size);
+  CS_UNUSED(aux_vectors);
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_timer_t t0;
@@ -1305,6 +1404,9 @@ cs_sles_petsc_solve(void                *context,
   /* Resolution */
 
   KSPSolve(sd->ksp, b, x);
+
+  if (getenv("CS_PETSC_SYSTEM_VIEWER") != NULL)
+    _export_petsc_system(name, sd->ksp, b);
 
   VecDestroy(&x);
   VecDestroy(&b);
@@ -1421,6 +1523,11 @@ cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
                                    const cs_real_t              *rhs,
                                    cs_real_t                    *vx)
 {
+  CS_UNUSED(a);
+  CS_UNUSED(rotation_mode);
+  CS_UNUSED(rhs);
+  CS_UNUSED(vx);
+
   if (state >= CS_SLES_BREAKDOWN)
     return false;
 

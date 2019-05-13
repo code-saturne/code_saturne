@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -186,15 +186,17 @@ module cs_cf_bindings
     !---------------------------------------------------------------------------
 
     ! Interface to C function computing pressure and temperature from
-    ! from density and total energy.
+    ! density and total energy.
 
     subroutine cs_cf_thermo_pt_from_de(cp, cv, dens, ener, pres, temp, vel, &
+                                       fracv, fracm, frace,                 &
                                        l_size) &
       bind(C, name='cs_cf_thermo_pt_from_de')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
       real(kind=c_double), dimension(*) :: cp, cv, dens, ener, pres, temp
+      real(kind=c_double), dimension(*) :: fracv, fracm, frace
       real(kind=c_double), dimension(3, *) :: vel
     end subroutine cs_cf_thermo_pt_from_de
 
@@ -202,12 +204,15 @@ module cs_cf_bindings
 
     ! Interface to C function computing the sound velocity square
 
-    subroutine cs_cf_thermo_c_square(cp, cv, pres, dens, c2, l_size) &
+    subroutine cs_cf_thermo_c_square(cp, cv, pres, dens,                    &
+                                     fracv, fracm, frace,                   &
+                                     c2, l_size) &
       bind(C, name='cs_cf_thermo_c_square')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
       real(kind=c_double), dimension(*) :: cp, cv, pres, dens, c2
+      real(kind=c_double), dimension(*) :: fracv, fracm, frace
     end subroutine cs_cf_thermo_c_square
 
     !---------------------------------------------------------------------------
@@ -298,6 +303,18 @@ module cs_cf_bindings
       integer(c_int), value :: l_size
       real(kind=c_double), dimension(*) :: dens, eps_sup
     end subroutine cs_cf_thermo_eps_sup
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function performing return to equilibrium source term
+    ! computation for volume, mass, energy fractions in two-phase homogeneous
+    ! model
+
+    subroutine cs_cf_hgn_source_terms_step() &
+      bind(C, name='cs_f_hgn_source_terms_step')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_cf_hgn_source_terms_step
 
   end interface
 

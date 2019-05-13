@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -104,7 +104,7 @@ double precision prdv2f(ncelet)
 
 character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
-integer          f_id0 , iiun
+integer          f_id0 , iiun  , f_id
 integer          iclip
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
@@ -114,11 +114,15 @@ integer          iwarnp
 integer          istprv, f_oi_id
 integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
+integer          key_t_ext_id
+integer          iroext
+integer          iviext
+integer          ii, jj, kk
 
 integer          icvflb, imasac
 integer          ivoid(1)
 
-double precision rnorm , d2s3, d1s3, divp23
+double precision rnorm , d2s3, d1s3, divp23, d1s2
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
 double precision prdtur, xk, xeps, xphi, xnu, xnut, ttke, ttmin, tt
@@ -132,6 +136,14 @@ double precision hint
 double precision turb_schmidt
 double precision xnoral, xnal(3)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0,alpha
+double precision normp
+
+double precision xstrai(3,3), xrotac(3,3)
+double precision sikskjsji, wikskjsji, skiwjksji, wikwjksji
+double precision sijsij, wijwij
+double precision xqc1, xqc2, xqc3
+double precision xpk, xpkp, xttke, xcmu, xss
+double precision xdist, xrey
 
 double precision rvoid(1)
 
@@ -145,10 +157,16 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8, usimpe
 double precision, allocatable, dimension(:) :: w10, w11, w12
-double precision, allocatable, dimension(:) :: ce2rc
+double precision, allocatable, dimension(:) :: ce1rc, ce2rc
 double precision, allocatable, dimension(:,:) :: grad
-double precision, dimension(:,:,:), allocatable :: gradv
+double precision, allocatable, dimension(:) :: sqrt_k, sqrt_strain
+double precision, allocatable, dimension(:) :: coefa_sqk, coefb_sqk
+double precision, allocatable, dimension(:) :: coefa_sqs, coefb_sqs
+double precision, allocatable, dimension(:,:) :: grad_sqk, grad_sqs
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: grad_dot_g
+
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, bromo, cromo
 double precision, dimension(:,:), pointer :: coefau
@@ -162,6 +180,8 @@ double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_eps_p
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_al
+double precision, dimension(:), pointer :: cpro_beta
+double precision, dimension(:), pointer :: w_dist
 
 type(var_cal_opt) :: vcopt_k, vcopt_e
 
@@ -170,6 +190,9 @@ type(var_cal_opt) :: vcopt_k, vcopt_e
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -185,6 +208,11 @@ allocate(dpvar(ncelet))
 
 if (iturb.eq.20) then
   allocate(prdtke(ncelet), prdeps(ncelet))
+else if (iturb.eq.22) then
+  allocate(sqrt_k(ncelet)    , sqrt_strain(ncelet))
+  allocate(grad_sqk(3,ncelet), grad_sqs(3,ncelet))
+  allocate(coefa_sqk(nfabor), coefb_sqk(nfabor))
+  allocate(coefa_sqs(nfabor), coefb_sqs(nfabor))
 endif
 
 if (iturb.eq.51) then
@@ -210,6 +238,11 @@ call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.eq.50.or.iturb.eq.51) call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
 if (iturb.eq.51) call field_get_val_prev_s(ivarfl(ial), cvara_al)
 
+if (iturb.eq.23) then
+  call field_get_id("wall_distance", f_id)
+  call field_get_val_s(f_id, w_dist)
+end if
+
 thets  = thetst
 
 call field_get_key_int(ivarfl(ik), kstprv, istprv)
@@ -229,13 +262,18 @@ call field_get_val_s(ibrom, bromo)
 call field_get_val_s(ivisct, cpro_pcvto)
 call field_get_val_s(iviscl, cpro_pcvlo)
 if (istprv.ge.0) then
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_prev_s(iviscl, cpro_pcvlo)
+  endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cpro_pcvto)
-    call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
 endif
 
@@ -247,6 +285,8 @@ if (vcopt_k%iwarni.ge.1) then
     write(nfecra,1000)
   else if (iturb.eq.21) then
     write(nfecra,1001)
+  else if(iturb.eq.22) then
+    write(nfecra,1003)
   else
     write(nfecra,1002)
   endif
@@ -257,6 +297,7 @@ sqrcmu = sqrt(cmu)
 
 d2s3 = 2.d0/3.d0
 d1s3 = 1.d0/3.d0
+d1s2 = 1.d0/2.d0
 
 !===============================================================================
 ! 1.1 Advanced reinit
@@ -275,6 +316,15 @@ d1s3 = 1.d0/3.d0
 !TODO FIXME: Are the BC uncompatible?
 if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
 
+  call field_get_val_s(ivarfl(ial), cvar_al)
+  do iel = 1, ncel
+    ! y+ is bounded by 400, because in the Reichard profile,
+    ! it corresponds to saturation (u>uref)
+    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))),0.d0)
+  enddo
+
+  call field_current_to_previous(ivarfl(ial))
+
   allocate(grad(3,ncelet))
 
   ! Compute the gradient of Alpha
@@ -287,7 +337,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
                              grad)
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
-  call field_get_val_s(ivarfl(ial), cvar_al)
   call field_get_val_v(ivarfl(iu), vel)
 
   utaurf = 0.05d0*uref
@@ -297,12 +346,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
     ! Compute the velocity magnitude
     xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
     xunorm = sqrt(xunorm)
-
-    ! y+ is bounded by 400, because in the Reichard profile,
-    ! it corresponds to saturation (u>uref)
-    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))),0.d0)
-
-    call field_current_to_previous(ivarfl(ial))
 
     ! Compute the magnitude of the alpha gradient
     xnoral = ( grad(1,iel)*grad(1,iel)          &
@@ -396,8 +439,14 @@ do iel = 1, ncel
 
 enddo
 
-! Free memory
-deallocate(gradv)
+! Compute the square root of the strain and the turbulent
+! kinetic energy for Launder-Sharma k-epsilon source terms
+if (iturb.eq.22) then
+  do iel = 1, ncel
+    sqrt_strain(iel) = abs(strain(iel))**.5d0
+    sqrt_k(iel)      = abs(cvar_k(iel))**.5d0
+  enddo
+end if
 
 !===============================================================================
 ! 3. Unsteady terms (stored in tinstk and tinste)
@@ -428,6 +477,84 @@ if (iturb.eq.21) then
     smbrk(iel) = rho*cmueta*xs*cvara_k(iel)
     smbre(iel) = smbrk(iel)
   enddo
+! Compute turbulent production for the quadratic Baglietto
+! k-epsilon model (iturb =23).
+else if (iturb.eq.23) then
+
+  do iel = 1,ncel
+
+    visct = cpro_pcvto(iel)
+    rho   = crom(iel)
+    xeps  = cvar_ep(iel)
+    xk    = cvar_k(iel)
+    xttke = xk/xeps
+
+    ! Sij
+    xstrai(1,1) = gradv(1, 1, iel)
+    xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
+    xstrai(1,3) = d1s2*(gradv(3, 1, iel)+gradv(1, 3, iel))
+    xstrai(2,1) = xstrai(1,2)
+    xstrai(2,2) = gradv(2, 2, iel)
+    xstrai(2,3) = d1s2*(gradv(3, 2, iel)+gradv(2, 3, iel))
+    xstrai(3,1) = xstrai(1,3)
+    xstrai(3,2) = xstrai(2,3)
+    xstrai(3,3) = gradv(3, 3, iel)
+    ! omegaij
+    xrotac(1,1) = 0.d0
+    xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
+    xrotac(1,3) = d1s2*(gradv(3, 1, iel)-gradv(1, 3, iel))
+    xrotac(2,1) = -xrotac(1,2)
+    xrotac(2,2) = 0.d0
+    xrotac(2,3) = d1s2*(gradv(3, 2, iel)-gradv(2, 3, iel))
+    xrotac(3,1) = -xrotac(1,3)
+    xrotac(3,2) = -xrotac(2,3)
+    xrotac(3,3) = 0.d0
+
+    sikskjsji = 0.d0
+    wikskjsji = 0.d0
+    skiwjksji = 0.d0
+    wikwjksji = 0.d0
+    sijsij    = 0.d0
+    wijwij    = 0.d0
+
+    do ii = 1,3
+      do jj = 1,3
+        sijsij = sijsij + xstrai(ii,jj)*xstrai(ii,jj)
+        wijwij = wijwij + xrotac(ii,jj)*xrotac(ii,jj)
+
+        do kk = 1,3
+          sikskjsji = sikskjsji                                    &
+                    + xstrai(ii,kk)*xstrai(kk,jj)*xstrai(jj,ii)
+          wikskjsji = wikskjsji                                    &
+                    + xrotac(ii,kk)*xstrai(kk,jj)*xstrai(jj,ii)
+          skiwjksji = skiwjksji                                    &
+                    + xstrai(kk,ii)*xrotac(jj,kk)*xstrai(jj,ii)
+          wikwjksji = wikwjksji                                    &
+                    + xrotac(ii,kk)*xrotac(jj,kk)*xstrai(jj,ii)
+        end do
+      end do
+    end do
+
+    xss  = xttke*sqrt(.5d0*sijsij)
+    xcmu = d2s3/(3.9d0 + xss)
+
+    ! Evaluating "constants"
+    xqc1 = cnl1/((cnl4 + cnl5*xss**3.d0)*xcmu)
+    xqc2 = cnl2/((cnl4 + cnl5*xss**3.d0)*xcmu)
+    xqc3 = cnl3/((cnl4 + cnl5*xss**3.d0)*xcmu)
+
+    ! Evaluating the turbulent production
+    smbrk(iel)  = visct*strain(iel)                                         &
+                  - xqc1*visct*xttke* ( sikskjsji - d1s3*sijsij*divu(iel) ) &
+                  - xqc2*visct*xttke* ( wikskjsji + skiwjksji )             &
+                  - xqc3*visct*xttke* ( wikwjksji - d1s3*wijwij*divu(iel) )
+    smbre(iel) = smbrk(iel)
+
+  ! End loop on ncel
+  end do
+
+! End test on specific k-epsilon model
+! In the general case Pk = mu_t*SijSij
 else
   do iel = 1, ncel
     visct = cpro_pcvto(iel)
@@ -445,6 +572,7 @@ endif
 
 ! Allocate an array for the modified Ceps2 coefficient
 allocate(ce2rc(ncel))
+allocate(ce1rc(ncel))
 
 if (irccor.eq.1) then
 
@@ -455,16 +583,49 @@ if (irccor.eq.1) then
 else
 
   if (itytur.eq.2) then
-    do iel = 1, ncel
-      ce2rc(iel) = ce2
-    enddo
+    ! Launder-Sharma k-epsilon model
+    if (iturb.eq.22) then
+      do iel = 1, ncel
+        rho  = crom(iel)
+        xeps = cvar_ep(iel)
+        xk   = cvar_k(iel)
+        ce2rc(iel) = (1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))*ce2
+        ce1rc(iel) = ce1
+      end do
+    ! Baglietto quadratic k-epsilon model
+    else if (iturb.eq.23) then
+      do iel = 1, ncel
+        rho  = crom(iel)
+        xeps = cvar_ep(iel)
+        xk   = cvar_k(iel)
+        ce2rc(iel) = (1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))*ce2
+
+        xdist = max(w_dist(iel),epzero)
+        xrey  = rho*xdist*sqrt(xk)/viscl(iel)
+        xpk = smbrk(iel) -  d2s3*rho*xk*divu(iel)
+        xpkp = 1.33d0*(1.d0-0.3d0*exp(-(rho*xk**2/viscl(iel)/xeps)**2))          &
+              *(xpk + 2.d0*viscl(iel)*xk/(xdist**2.d0))*exp(-3.75d-3*xrey**2.d0)
+
+        ce1rc(iel) = (1.d0+xpkp/max(xpk,1.d-10))*ce1
+      end do
+    ! Other k-epsilon models
+    else
+      do iel = 1, ncel
+        ce2rc(iel) = ce2
+        ce1rc(iel) = ce1
+      enddo
+    end if
+
   elseif (iturb.eq.50) then
     do iel = 1, ncel
       ce2rc(iel) = cv2fe2
+      ce1rc(iel) = ce1
     enddo
+
   elseif (iturb.eq.51) then
     do iel = 1, ncel
       ce2rc(iel) = ccaze2
+      ce1rc(iel) = ce1
     enddo
   endif
 
@@ -493,38 +654,67 @@ else if (igrake.eq.1) then
 
   ! Allocate a temporary for the gradient calculation
   allocate(grad(3,ncelet))
+  allocate(grad_dot_g(ncelet))
 
-  iccocg = 1
-  inc = 1
-  nswrgp = vcopt_k%nswrgr
-  epsrgp = vcopt_k%epsrgr
-  imligp = vcopt_k%imligr
-  iwarnp = vcopt_k%iwarni
-  climgp = vcopt_k%climgr
-  extrap = vcopt_k%extrag
-
-  ! Dirichlet boundary condition on the gradient of rho
-  do ifac = 1, nfabor
-    viscb(ifac) = 0.d0
-  enddo
-
-  f_id0 = -1
-
-  call gradient_s                                                 &
- ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
-   cromo  , bromo  , viscb  ,                                     &
-   grad   )
-
-  ! Production term due to buoyancy
-  !   smbrk = P+G
-  !   smbre = P+(1-ce3)*G
   if (iscalt.gt.0.and.nscal.ge.iscalt) then
     call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
     prdtur = turb_schmidt
   else
     prdtur = 1.d0
   endif
+
+  ! Boussinesq approximation, only for the thermal scalar for the moment
+  if (idilat.eq.0)  then
+
+    iccocg = 1
+    inc = 1
+
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, iccocg, &
+                               grad)
+
+    !FIXME make it dependant on the scalar and use is_buoyant field
+    call field_get_val_s(ibeta, cpro_beta)
+
+    ! - Beta grad(T) . g / Pr_T
+    do iel = 1, ncel
+      grad_dot_g(iel) = - cpro_beta(iel) &
+        * (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) / (prdtur)
+    enddo
+
+  else
+    iccocg = 1
+    inc = 1
+    nswrgp = vcopt_k%nswrgr
+    epsrgp = vcopt_k%epsrgr
+    imligp = vcopt_k%imligr
+    iwarnp = vcopt_k%iwarni
+    climgp = vcopt_k%climgr
+    extrap = vcopt_k%extrag
+
+    ! Dirichlet boundary condition on the gradient of rho
+    do ifac = 1, nfabor
+      viscb(ifac) = 0.d0
+    enddo
+
+    f_id0 = -1
+
+    call gradient_s                                                 &
+   ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+     iwarnp , epsrgp , climgp , extrap ,                            &
+     cromo  , bromo  , viscb  ,                                     &
+     grad   )
+
+
+    do iel = 1, ncel
+      grad_dot_g(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
+        / (rho*prdtur)
+    enddo
+
+  endif
+
+  ! Production term due to buoyancy
+  !   smbrk = P+G
+  !   smbre = P+(1-ce3)*G
 
   ! smbr* store mu_TxS**2
   do iel = 1, ncel
@@ -534,8 +724,7 @@ else if (igrake.eq.1) then
     xk   = cvara_k(iel)
     ttke = xk / xeps
 
-    gravke = -(grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
-           / (rho*prdtur)
+    gravke = - grad_dot_g(iel)
 
     ! Implicit Buoyant terms when negativ
     tinstk(iel) = tinstk(iel) + max(-rho*cell_f_vol(iel)*cmu*ttke*gravke, 0.d0)
@@ -547,6 +736,7 @@ else if (igrake.eq.1) then
 
   ! Free memory
   deallocate(grad)
+  deallocate(grad_dot_g)
 
 endif
 
@@ -667,6 +857,74 @@ if (iturb.eq.51) then
 endif
 
 !===============================================================================
+! 7bis. pre Only for the Launder-Sharma model, calculation of E and D terms
+
+!      The terms are stored in          grad_sqk, grad_sqs
+!===============================================================================
+
+if (iturb.eq.22) then
+
+  !----------------------------------------------
+  ! Gradient of square root of k
+  !----------------------------------------------
+
+  iccocg = 1
+  inc = 1
+  nswrgp = vcopt_k%nswrgr
+  epsrgp = vcopt_k%epsrgr
+  imligp = vcopt_k%imligr
+  iwarnp = vcopt_k%iwarni
+  climgp = vcopt_k%climgr
+  extrap = vcopt_k%extrag
+  ivar = ik
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
+  ! For all usual type of boundary faces (wall, inlet, sym, outlet) :
+  !   - coefa for sqrt(k) is the sqrt of the coefa for k,
+  !   - coefb is the same as for k
+  do ifac = 1, nfabor
+    coefa_sqk(ifac) = coefap(ifac)**.5d0
+    coefb_sqk(ifac) = coefbp(ifac)
+  enddo
+
+  f_id0 = -1
+  call gradient_s                                               &
+( f_id0   , imrgra     , inc       , iccocg , nswrgp , imligp , &
+  iwarnp  , epsrgp     , climgp    , extrap ,                   &
+  sqrt_k  , coefa_sqk  , coefb_sqk ,                            &
+  grad_sqk   )
+
+  !-------------------------------------------------------------------------
+  !  Gradient of the Strain gradient (grad S)
+  !-------------------------------------------------------------------------
+
+  iccocg = 1
+  inc = 1
+  nswrgp = vcopt_k%nswrgr
+  epsrgp = vcopt_k%epsrgr
+  imligp = vcopt_k%imligr
+  iwarnp = vcopt_k%iwarni
+  climgp = vcopt_k%climgr
+  extrap = vcopt_k%extrag
+
+  do ifac = 1, nfabor
+   coefa_sqs(ifac) = 0.d0
+   coefb_sqs(ifac) = 1.d0
+  enddo
+
+  f_id0 = - 1
+  call gradient_s                                                  &
+( f_id0       , imrgra    , inc       , iccocg , nswrgp , imligp , &
+  iwarnp      , epsrgp    , climgp    , extrap ,                   &
+  sqrt_strain , coefa_sqs , coefb_sqs ,                            &
+  grad_sqs   )
+
+endif
+
+!===============================================================================
 ! 8. Finalization of explicit and implicit source terms
 !===============================================================================
 
@@ -695,14 +953,32 @@ if (itytur.eq.2) then
                - d2s3*rho*cvara_k(iel)*divu(iel)                      &
                )
 
-    smbre(iel) = cell_f_vol(iel)*                                              &
-               ( cvara_ep(iel)/cvara_k(iel)*( ce1*smbre(iel)                       &
-                                            - ce2rc(iel)*rho*cvara_ep(iel)     &
+    smbre(iel) = cell_f_vol(iel)*                                          &
+               ( cvara_ep(iel)/cvara_k(iel)*( ce1rc(iel)*smbre(iel)               &
+                                            - ce2rc(iel)*rho*cvara_ep(iel) &
                                             )                              &
-               - d2s3*rho*ce1*cvara_ep(iel)*divu(iel)                          &
+               - d2s3*rho*ce1rc(iel)*cvara_ep(iel)*divu(iel)                      &
                )
 
   enddo
+
+  if (iturb.eq.22) then
+    do iel = 1, ncel
+      rho   = cromo(iel)
+      xnu   = cpro_pcvlo(iel)/rho
+      xnut  = cpro_pcvto(iel)/rho
+
+      smbrk(iel) = smbrk(iel) - cell_f_vol(iel) *  2.d0 * rho * xnu        &
+                                                * ( grad_sqk(1,iel)**2.d0  &
+                                                  + grad_sqk(2,iel)**2.d0  &
+                                                  + grad_sqk(3,iel)**2.d0  )
+
+      smbre(iel) = smbre(iel) + cell_f_vol(iel) * 2.d0 * rho * xnu * xnut  &
+                                                * ( grad_sqs(1,iel)**2.d0  &
+                                                  + grad_sqs(2,iel)**2.d0  &
+                                                  + grad_sqs(3,iel)**2.d0  )
+    enddo
+  endif
 
   ! If the solving of k-epsilon is uncoupled, negative source terms are implicited
   if (ikecou.eq.0) then
@@ -714,7 +990,7 @@ if (itytur.eq.2) then
       tinstk(iel) = tinstk(iel) + rho*cell_f_vol(iel)/ttke            &
                   + max(d2s3*rho*cell_f_vol(iel)*divu(iel), 0.d0)
       tinste(iel) = tinste(iel) + ce2rc(iel)*rho*cell_f_vol(iel)/ttke &
-                  + max(d2s3*ce1*rho*cell_f_vol(iel)*divu(iel), 0.d0)
+                  + max(d2s3*ce1rc(iel)*rho*cell_f_vol(iel)*divu(iel), 0.d0)
     enddo
   endif
 
@@ -1165,8 +1441,8 @@ if (ikecou.eq.1) then
            -2.d0*cvara_k(iel)/cvara_ep(iel)                               &
            *cmu*min(prdtke(iel)/visct,zero)+divp23
       a12 = 1.d0
-      a21 = -ce1*cmu*prdeps(iel)/visct-ce2rc(iel)*epssuk*epssuk
-      a22 = 1.d0/dt(iel)+ce1*divp23                               &
+      a21 = -ce1rc(iel)*cmu*prdeps(iel)/visct-ce2rc(iel)*epssuk*epssuk
+      a22 = 1.d0/dt(iel)+ce1rc(iel)*divp23                               &
            +2.d0*ce2rc(iel)*epssuk
 
       unsdet = 1.d0/(a11*a22 -a12*a21)
@@ -1255,7 +1531,7 @@ endif
 ! Solving k
 iconvp = vcopt_k%iconv
 idiffp = vcopt_k%idiff
-ndircp = ndircl(ik)
+ndircp = vcopt_k%ndircl
 nswrsp = vcopt_k%nswrsm
 nswrgp = vcopt_k%nswrgr
 imligp = vcopt_k%imligr
@@ -1277,13 +1553,14 @@ relaxp = vcopt_k%relaxv
 thetap = vcopt_k%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_k         , cvara_k         ,                            &
@@ -1331,7 +1608,7 @@ endif
 ! Solving epsilon
 iconvp = vcopt_e%iconv
 idiffp = vcopt_e%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_e%ndircl
 nswrsp = vcopt_e%nswrsm
 nswrgp = vcopt_e%nswrgr
 imligp = vcopt_e%imligr
@@ -1353,12 +1630,13 @@ relaxp = vcopt_e%relaxv
 thetap = vcopt_e%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_ep        , cvara_ep        ,                            &
@@ -1378,6 +1656,7 @@ iclip = 1
 call clipke(ncelet, ncel, iclip)
 
 ! Free memory
+deallocate(gradv)
 deallocate(viscf, viscb)
 deallocate(usimpk)
 deallocate(smbrk, smbre, rovsdt)
@@ -1387,9 +1666,16 @@ deallocate(w4, w5)
 deallocate(w7, w8, usimpe)
 deallocate(dpvar)
 deallocate(ce2rc)
+deallocate(ce1rc)
 
 if (allocated(w10)) deallocate(w10, w11)
 if (allocated(prdtke)) deallocate(prdtke, prdeps)
+if (allocated(sqrt_k)) then
+  deallocate(sqrt_k, sqrt_strain)
+  deallocate(grad_sqk, grad_sqs)
+  deallocate(coefa_sqk, coefb_sqk)
+  deallocate(coefa_sqs, coefb_sqs)
+end if
 
 !--------
 ! Formats
@@ -1406,7 +1692,10 @@ if (allocated(prdtke)) deallocate(prdtke, prdeps)
  1002 format(/,                                      &
 '   ** Resolution du v2f (k et epsilon)               ',/,&
 '      --------------------------------          ',/)
- 1100 format(1X,A8,' : Bilan explicite = ',E14.5)
+ 1003 format(/,                                      &
+'   ** Resolution du k-epsilon Launder Sharma    ',/,&
+'      --------------------------------          ',/)
+1100 format(1X,A8,' : Bilan explicite = ',E14.5)
 
 #else
 
@@ -1419,6 +1708,9 @@ if (allocated(prdtke)) deallocate(prdtke, prdeps)
  1002 format(/,                                      &
 '   ** Solving v2f (k and epsilon)'               ,/,&
 '      ---------------------------'               ,/)
+ 1003 format(/,                                      &
+'   ** Solving k-epsilon Launder Sharma          ',/,&
+'      --------------------------------          ',/)
  1100 format(1X,A8,' : Explicit balance = ',E14.5)
 #endif
 

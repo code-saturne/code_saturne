@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -117,9 +117,15 @@ class Parser(object):
 
         if len(l) == 1:
             current = l.item(0)
-            data = current.firstChild.data
+            if current.firstChild:
+                data = current.firstChild.data
+            else:
+                data = None
+        elif len(l) == 0:
+            print("Error: in getDataFromNode no markup %s found." %  childName)
+            sys.exit(1)
         else:
-            print("Error: in getDataFromNode several markup %s found." %  childName)
+            print("Error: in getDataFromNode several markups %s found." %  childName)
             sys.exit(1)
 
         return data
@@ -181,16 +187,8 @@ class Parser(object):
         @rtype: C{String}
         @return: repository directory of all studies.
         """
-        if self.__repo == None: # Set the member
-            elt = self.root.getElementsByTagName("repository");
-            if len(elt) == 1:
-                try:
-                    self.__repo=elt.item(0).firstChild.data;
-                except AttributeError:
-                    msg="Parser.getRepository() >> No repository set.\n";
-                    msg+="Add a path to the *.xml file or use the command "
-                    msg+="line argument.\n"
-                    sys.exit(msg);
+        if self.__repo == None:
+            self.__repo = self.getDataFromNode(self.root, "repository")
 
         return self.__repo;
 

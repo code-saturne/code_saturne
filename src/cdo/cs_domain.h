@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -30,9 +30,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_boundary.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_domain_boundary.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_time_step.h"
@@ -84,28 +84,31 @@ typedef struct {
 typedef struct {
 
   /* Code_Saturne mesh and mesh quantities structures already computed */
-  const  cs_mesh_t              *mesh;
-  const  cs_mesh_quantities_t   *mesh_quantities;
+  cs_mesh_t                *mesh;
+  cs_mesh_quantities_t     *mesh_quantities;
 
   /* CDO structures:
-     - cs_cdo_connect_t contains additional information about connectivity
-     - cs_cdo_quantities_t contains additional information on mesh quantities
-  */
-  cs_cdo_connect_t              *connect;
-  cs_cdo_quantities_t           *cdo_quantities;
+   * - cs_cdo_connect_t contains additional information about connectivity
+   * - cs_cdo_quantities_t contains additional information on mesh quantities
+   */
+  cs_cdo_connect_t         *connect;
+  cs_cdo_quantities_t      *cdo_quantities;
+
+  /* Boundary of the computational domain */
+  cs_boundary_t            *boundaries;
+  cs_boundary_t            *ale_boundaries;
 
   /* Time step management */
   bool                      only_steady;
-  bool                      is_last_iter;     // true or false
-  double                    dt_cur;           // current time step
-  cs_xdef_t                *time_step_def;    // Definition of the time_step
-  cs_time_step_t           *time_step;        // time step descriptor
-  cs_time_step_options_t    time_options;     // time step options
+  bool                      is_last_iter;     /* true or false */
+  cs_xdef_t                *time_step_def;    /* Definition of the time_step */
+  cs_time_step_t           *time_step;        /* time step descriptor */
+  cs_time_step_options_t    time_options;     /* time step options */
 
   /* Output options */
-  int        output_nt;   /* Log information every nt iterations */
-  int        restart_nt;  /* Write a restart every nt iterations */
-  int        verbosity;   /* Level of details given in log */
+  int                       output_nt;   /* Logging done every nt iterations */
+  int                       restart_nt;  /* Restart done every nt iterations */
+  int                       verbosity;   /* Level of details given in log */
 
   /* Specific context structure related to the numerical schemes */
   cs_domain_cdo_context_t   *cdo_context;
@@ -121,8 +124,28 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-extern cs_domain_t *cs_glob_domain; /* Pointer to main computational domain
-                                       used in CDO/HHO schmes */
+extern cs_domain_t *cs_glob_domain; /* Pointer to main computational domain */
+
+/*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the time step after one temporal iteration
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_domain_increment_time_step(cs_domain_t  *domain)
+{
+  cs_time_step_t  *ts = domain->time_step;
+
+  /* Increment time iteration */
+  ts->nt_cur++;
+}
 
 /*============================================================================
  * Public function prototypes
@@ -224,17 +247,6 @@ cs_domain_define_current_time_step(cs_domain_t   *domain);
 
 void
 cs_domain_increment_time(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the time step after one temporal iteration
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_increment_time_step(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

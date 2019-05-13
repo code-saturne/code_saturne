@@ -4,7 +4,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -235,25 +235,13 @@ endif
 ! ==========
 
 !        if = -1   module not activated
-!        if = 0    module activated
-!        if = 1    barotropic version
+!        if =  0   module activated
+!        if =  1   barotropic version
+!        if =  2   homogeneous two phase model
 
 if (ixmlpu.eq.0) then
 
   ippmod(icompf) = -1
-
-endif
-
-! --- eos: equation of state for compressible flows
-! ========
-
-!        if = 1    ideal gas with constant gamma
-!        if = 2    stiffened gas
-!        if = 3    ideal gas mix
-
-if (ixmlpu.eq.0.and.ippmod(icompf).ge.0) then
-
-  ieos = 1
 
 endif
 
@@ -478,50 +466,6 @@ integer iturb, itherm, iale, ivofmt, icavit
 
 !< [usipph]
 
-! --- Turbulence
-!       0: Laminar
-!      10: Mixing length
-!      20: k-epsilon
-!      21: k-epsilon (linear production)
-!      30: Rij-epsilon, (standard LRR)
-!      31: Rij-epsilon (SSG)
-!      32: Rij-epsilon (EBRSM)
-!      40: LES (Smagorinsky)
-!      41: LES (Dynamic)
-!      42: LES (WALE)
-!      50: v2f (phi-model)
-!      51: v2f (BL-v2/k)
-!      60: k-omega SST
-!      70: Spalart Allmaras
-!  For 10, contact the development team before use
-
-if (ixmlpu.eq.0) then
-
-  iturb = 21
-
-endif
-
-
-! Coupled solver for Rij components (when iturb=30, 31 or 32)
-
-irijco = 1
-
-! --- Thermal model
-!      0: none
-!      1: temperature
-!      2: enthalpy
-!      3: total energy (only for compressible module)
-!
-!  For temperature, the temperature scale may be set later using itpscl
-!  (1 for Kelvin, 2 for Celsius).
-!
-!  Warning: When using specific physics, this value is
-!           set automatically by the physics model.
-
-
-itherm = 1
-
-
 ! --- Cavitation module
 !    - -1: module not activated
 !    -  0: no vaporization/condensation model
@@ -531,14 +475,7 @@ itherm = 1
 !  (see example in cs_user_parameters-cavitation.f90)
 !
 
-
 icavit = -1
-
-
-! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
-
-
-iale = 1
 
 !< [usipph]
 
@@ -604,7 +541,6 @@ integer nmodpp
 
 logical       inoprv
 integer       ii, jj, ivar, kscmin, kscmax, keydri, kbfid, kccmin, kccmax
-integer       klimiter
 integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
 
 type(var_cal_opt) :: vcopt
@@ -634,61 +570,6 @@ type(var_cal_opt) :: vcopt
 ! Writing of auxiliary restart files may also be deactivated using: iecaux = 0
 
 ileaux = 0
-
-
-! --- Time stepping  (0 : uniform and constant
-!                     1 : variable in time, uniform in space
-!                     2 : variable in time and space
-!                    -1 : steady algorithm)
-
-idtvar = 0
-
-
-! --- Duration
-!       ntmabs = absolute number of the last time step required
-!         if we have already run 10 time steps and want to
-!         run 10 more, ntmabs must be set to 10 + 10 = 20
-
-ntmabs = 10
-
-
-! --- Reference time step
-!     The example given below is probably not adapted to your case.
-
-
-dtref  = 0.01d0
-
-! --- Maximum time step: dtmax
-!     Set a value base on characteristic values of your case.
-!      otherwise, the code will use a multiple of dtref by default.
-!     Example with
-!        Ld: "dynamic" length (for example, the domain length)
-!        Ud: characteristic flow velocity
-!        Lt: thermal length (for example, the domain height gravity-wise)
-!        Delta_rho/rho: relative density difference
-!        g: gravity acceleration
-
-!     dtmax = min(Ld/Ud, sqrt(Lt/(g.Delta_rho/rho)))
-
-! --- Handling of hydrostatic pressure
-!     iphydr = 0 : ignore hydrostatic pressure (by default)
-!              1 : with hydrotatic pressure computation to handle the balance
-!                  between the pressure gradient and source terms (gravity and
-!                  head losses)
-!              2 : with hydrostatic pressure computation to handle the imbalance
-!                  between the pressure gradient and gravity source term
-
-iphydr = 1
-
-
-! --- Algorithm to take into account the density variation in time
-!
-!     idilat = 0 : Boussinesq algorithm with constant density (not available)
-!              1 : dilatable steady algorithm (default)
-!              2 : dilatable unsteady algorithm
-!              3 : low-Mach algorithm
-
-idilat = 1
 
 ! --- Algorithm to take into account the thermodynamical pressure variation in time
 !     (not used by default except if idilat = 3)
@@ -743,15 +624,6 @@ if (nscaus.gt.0) then
   enddo
 endif
 
-
-! --- Solver taking a scalar porosity into account:
-!       0 No porosity taken into account (Standard)
-!       1 Porosity taken into account
-!
-
-iporos = 1
-
-
 ! --- Calculation (restart) with frozen velocity field (1 yes, 0 no)
 
 
@@ -767,13 +639,6 @@ iccvfg = 1
 if (itytur.eq.4) then
   ivrtex = 1
 endif
-
-
-! --- Velocity/pressure coupling (0 : classical algorithm,
-!                                 1 : transient coupling)
-
-ipucou = 0
-
 
 ! --- Convective scheme
 
@@ -1070,107 +935,6 @@ xyzp0(1) = 0.d0
 xyzp0(2) = 0.d0
 xyzp0(3) = 0.d0
 
-! --- Minimum and maximum admissible values for each USER scalar:
-
-!      Results are clipped at the end of each time step.
-
-!      If min > max, we do not clip.
-
-!      For a scalar jj representing the variance of another, we may
-!        abstain from defining these values
-!        (a default clipping is set in place).
-!        This is the purpose of the test on iscavr(jj) in the example below.
-
-!      For non-user scalars relative to specific physics (coal, combustion,
-!        electric arcs: see usppmo) implicitly defined according to the
-!        model, the information is automatically set elsewhere: we
-!        do not set min or max values here.
-
-call field_get_key_id("min_scalar_clipping", kscmin)
-call field_get_key_id("max_scalar_clipping", kscmax)
-
-! Thermal scalar:
-if (iscalt.gt.0) then
-  ! We define the min and max bounds
-  call field_set_key_double(ivarfl(isca(iscalt)), kscmin, -grand)
-  call field_set_key_double(ivarfl(isca(iscalt)), kscmax, +grand)
-endif
-
-! Loop on user scalars:
-do jj = 1, nscaus
-  ! For scalars which are not variances
-  if (iscavr(jj).le.0) then
-    ! We define the min and max bounds
-    call field_set_key_double(ivarfl(isca(jj)), kscmin, -grand)
-    call field_set_key_double(ivarfl(isca(jj)), kscmax, +grand)
-  endif
-enddo
-
-! --- Convective scheme for user (and non-user) scalars
-
-! ischcv is the type of convective scheme:
-!   - 0: second order linear upwind
-!   - 1: centered
-!   - 2: pure upwind gradient in SOLU
-
-! isstpc is the slope test, Min/Max limiter or Roe and Sweby limiters
-!   - 0: swich on the slope test
-!   - 1: swich off the slope test (default)
-!   - 2: continuous limiter ensuring boundedness (beta limiter)
-!   - 3: NVD/TVD Scheme
-!        Then "limiter_choice" keyword must be set:
-!        * 0: Gamma
-!        * 1: SMART
-!        * 2: CUBISTA
-!        * 3: SUPERBEE
-!        * 4: MUSCL
-!        * 5: MINMOD
-!        * 6: CLAM
-!        * 7: STOIC
-!        * 8: OSHER
-!        * 9: WASEB
-!        * --- VOF scheme ---
-!        * 10: M-HRIC
-!        * 11: M-CICSAM
-
-! Get the Key for the Sup and Inf for the convective scheme
-call field_get_key_id("min_scalar", kccmin)
-call field_get_key_id("max_scalar", kccmax)
-
-! Thermal model:
-if (iscalt.gt.0) then
-  ivar = isca(iscalt)
-
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  vcopt%ischcv = 0
-  vcopt%isstpc = 3
-  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
-  ! Get the Key for the limiter choice of the studied scalar
-  call field_get_key_id("limiter_choice", klimiter)
-  call field_set_key_int(ivarfl(isca(iscalt)), klimiter, 3)! Set SUPERBEE
-
-  ! Set the Value for the Sup and Inf of the studied scalar
-  call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)
-  call field_set_key_double(ivarfl(ivar), kccmax, 1.d0)
-
-endif
-
-! We loop on user scalars:
-do jj = 1, nscaus
-  ivar = isca(jj)
-
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  vcopt%ischcv = 0
-  vcopt%isstpc = 2
-  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
-  ! Set the Value for the Sup and Inf of the studied scalar
-  call field_set_key_double(ivarfl(ivar), kccmin, 0.d0)
-  call field_set_key_double(ivarfl(ivar), kccmax, 1.d0)
-enddo
-
-
 ! --- Variable diffusivity field id (ifcvsl>=0) or constant
 !     diffusivity (ifcvsl=-1) for the thermal scalar and USER scalars.
 
@@ -1272,92 +1036,6 @@ uref = 1.d0
 
 almax = 0.5
 
-! --- Scalar with a drift (key work "drift_scalar_model">0) or without drift
-!       ((key work "drift_scalar_model"=0, default option) for each USER scalar.
-!       - to specify that a scalar have a drift and need the drift computation:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
-!
-! --- Then, for each scalar with a drift, add a flag to specify if
-!     specific terms have to be taken into account:
-!       - thermophoresis terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
-!       - turbophoresis terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
-!       - centrifugal force terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
-
-
-! Key id for drift scalar
-call field_get_key_id("drift_scalar_model", keydri)
-
-if (nscaus.ge.1) then
-
-  iscdri = 1
-  iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
-
-  if (.false.) then
-    iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
-  endif
-
-  if (.false.) then
-    iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
-  endif
-
-  if (.false.) then
-    iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
-  endif
-
-  iscal = 1
-  f_id = ivarfl(isca(iscal))
-
-  ! Set the key word "drift_scalar_model" into the field structure
-  call field_set_key_int(f_id, keydri, iscdri)
-
-endif
-
-
-! Postprocessing-related fields
-! =============================
-
-! Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
-!          yplus may be saved, or a local Nusselt number may be computed using
-!          the post_boundary_nusselt subroutine.
-!          When postprocessing of these quantities is activated, those fields
-!          are present, but if we need to compute them in the
-!          cs_user_extra_operations user subroutine without postprocessing them,
-!          forcing the definition of these fields to save the values computed
-!          for the boundary layer is necessary.
-
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-ityloc = 3 ! boundary faces
-idim1 = 1 ! dimension
-inoprv = .false. ! no previous time step values needed
-
-call field_get_id_try('yplus', f_id)
-if (f_id.lt.0) then
-  call field_create('yplus', itycat, ityloc, idim1, inoprv, f_id)
-  ! yplus postprocessed and in the log
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
-call field_get_id_try('tplus', f_id)
-if (f_id.lt.0) then
-  call field_create('tplus', itycat, ityloc, idim1, inoprv, f_id)
-  ! tplus postreated and in the log
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
-call field_get_id_try('tstar', f_id)
-if (f_id.lt.0) then
-  call field_create('tstar', itycat, ityloc, idim1, inoprv, f_id)
-  ! tstar postreated and in the log
-  call field_set_key_int(f_id, keyvis, POST_ON_LOCATION + POST_MONITOR)
-  call field_set_key_int(f_id, keylog, 1)
-endif
-
-
 ! Error estimators for Navier-Stokes (non-frozen velocity field)
 
 ! We recommend running a calculation restart on a few time steps
@@ -1391,12 +1069,6 @@ nalimx = 15
 
 epalim = 1.d-5
 
-
-! Mesh viscosity modeling
-!   0: isotropic
-!   1: orthotropic
-
-iortvm = 0
 
 !< [usipsu]
 
@@ -1478,7 +1150,7 @@ type(var_cal_opt) :: vcopt
 ntlist = 1
 
 
-! Log (listing) verbosity
+! Log verbosity
 
 do ii = 1, nvar
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
@@ -1682,6 +1354,11 @@ inucl_siream = 1
 ! and dynamic bins (icut_siream to nbin_aer)
 icut_siream = nbin_aer
 
+! computation / storage of downward and upward infrared radiative fluxes
+irdu = 1
+! computation / storage of downward and upward solar radiative fluxes
+soldu = 1
+
 !< [usati1]
 
 !----
@@ -1858,7 +1535,9 @@ implicit none
 
 ! Local variables
 
-integer :: ifcvsl
+integer :: ifcvsl, nphases
+
+double precision :: cv(2), gamma(2), pinf(2), qprim(2)
 
 !===============================================================================
 

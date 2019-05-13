@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_domain.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -53,22 +54,29 @@ BEGIN_C_DECLS
  * SUBROUTINE UIALIN()
  * *****************
  *
- * INTEGER          IALE    <--   iale method activation
- * INTEGER          NALINF  <--   number of subiterations of initialization of
- *                                fluid
- * INTEGER          NALIMX  <--   max number of iterations of implicitation of
- *                                the displacement of the structures
- * DOUBLE           EPALIM  <--   realtive precision of implicitation of
- *                                the displacement of the structures
- * INTEGER          IORTVM  <--   type of viscosity of mesh
+ * nalinf  <->   number of subiterations of initialization of
+ *               fluid
+ * nalimx  <->   max number of iterations of implicitation of
+ *               the displacement of the structures
+ * epalim  <->   realtive precision of implicitation of
+ *               the displacement of the structures
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialin, UIALIN) (int    *const iale,
-                                int    *const nalinf,
-                                int    *const nalimx,
-                                double *const epalim,
-                                int    *const iortvm);
+void CS_PROCF (uialin, UIALIN) (int    *nalinf,
+                                int    *nalimx,
+                                double *epalim);
+
+/*----------------------------------------------------------------------------
+ * ALE diffusion type
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIALVM
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uialvm, UIALVM) (void);
 
 /*-----------------------------------------------------------------------------
  * uialcl
@@ -189,6 +197,29 @@ cs_gui_get_ale_viscosity_type(int  *type);
 
 void
 cs_gui_mesh_viscosity(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Translate the user settings for the domain boundaries into a
+ *         structure storing the ALE boundaries (New mechanism used in CDO)
+ *
+ * \param[in, out]  domain   pointer to a \ref cs_domain_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the fixed velocity for a boundary
+ *
+ * \param[in]  label boundary condition label
+ * \param[out] vel   imposed mesh velocity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
+                                      cs_real_t     *vel);
 
 /*----------------------------------------------------------------------------*/
 

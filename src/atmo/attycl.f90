@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -33,14 +33,34 @@
 !> \param[in]   itypfb          boundary face types
 !> \param[in]   izfppp          boundary face zone number for atmospheric module
 !> \param[out]  icodcl          face boundary condition code
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[out]  rcodcl          Boundary conditions value
-!>- rcodcl(1) = valeur du dirichlet
-!>- rcodcl(2) = valeur du coef. d'echange ext. (infinie si pas d'echange)
-!>- rcodcl(3) = valeur de la densite de flux (negatif si gain) w/m2 ou
-!> hauteur de rugosite (m) si icodcl=6  \n
-!>    pour les vitesses (vistl+visct)*gradu \n
-!>    pour la pression             dt*gradp \n
-!>    pour les scalaires cp*(viscls+visct/turb_schmidt)*gradt
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!
 !-------------------------------------------------------------------------------
 subroutine attycl ( itypfb, izfppp, icodcl, rcodcl )
 
@@ -80,13 +100,14 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ifac, izone
+integer          ifac, iel, izone
 integer          ii
 integer jsp, isc
 double precision d2s3, zent, vs, xuent, xvent
 double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
-double precision, dimension(:), pointer ::  brom, coefap
+double precision viscla, uref2, rhomoy, dhy, xiturb
+double precision, dimension(:), pointer :: brom, coefap, viscl
 
 ! arrays for cressman interpolation
 double precision , dimension(:),allocatable :: u_bord
@@ -110,6 +131,7 @@ xeent = 0.d0
 tpent = 0.d0
 
 call field_get_val_s(ibrom, brom)
+call field_get_val_s(iviscl, viscl)
 
 !===============================================================================
 ! 2.  SI IPROFM = 1 : CHOIX ENTREE/SORTIE SUIVANT LE PROFIL METEO SI
@@ -290,7 +312,7 @@ do ifac = 1, nfabor
     ! ete  specifiee par utilisateur.
 
     if (iautom(ifac).ge.1) then
-      if (vs.gt.0) then
+      if (vs.gt.epzero) then
         itypfb(ifac) = isolib
       else
         if (itypfb(ifac).eq.0) itypfb(ifac) = ientre
@@ -299,14 +321,11 @@ do ifac = 1, nfabor
 
     if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
 
-      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iu,1) = xuent
-      if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iv,1) = xvent
-      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iw,1) = 0.d0
+      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = xuent
+      if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = xvent
+      if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = 0.d0
 
-      call turbulence_bc_inlet_k_eps(ifac, xkent, xeent, rcodcl)
+      call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, rcodcl)
 
       if (iscalt.ne.-1) then
 
@@ -346,12 +365,13 @@ do ifac = 1, nfabor
 
       if (iautom(ifac).ge.1) then
 
-        ! Dirichlet on the pressure
-        icodcl(ifac,ipr) = 1
+        ! Dirichlet on the pressure: expressed in solved pressure directly
+        ! (not in total pressure), that is why -1 is used (transformed as 1 in typecl.f90).
+        icodcl(ifac,ipr) = -1
         rcodcl(ifac,ipr,1) = coefap(ifac)
 
         ! Dirichlet on turbulent variables
-        call turbulence_bc_inlet_k_eps(ifac, xkent, xeent, rcodcl)
+        call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, rcodcl)
 
         if (iautom(ifac).eq.1) then
 
@@ -375,6 +395,36 @@ do ifac = 1, nfabor
 
         endif
 
+      endif
+
+    endif
+
+  else
+
+    if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
+
+      if (icalke(izone).eq.1) then
+        uref2 =   rcodcl(ifac,iu,1)**2                       &
+                + rcodcl(ifac,iv,1)**2                       &
+                + rcodcl(ifac,iw,1)**2
+        uref2 = max(uref2,epzero)
+        rhomoy = brom(ifac)
+        iel    = ifabor(ifac)
+        viscla = viscl(iel)
+        dhy    = dh(izone)
+        call turbulence_bc_inlet_hyd_diam(ifac,                            &
+                                          uref2, dhy, rhomoy, viscla,      &
+                                          rcodcl)
+      else if (icalke(izone).eq.1) then
+        uref2 =   rcodcl(ifac,iu,1)**2                       &
+                + rcodcl(ifac,iv,1)**2                       &
+                + rcodcl(ifac,iw,1)**2
+        uref2 = max(uref2,epzero)
+        dhy    = dh(izone)
+        xiturb = xintur(izone)
+        call turbulence_bc_inlet_turb_intensity(ifac,                      &
+                                                uref2, xiturb, dhy,        &
+                                                rcodcl)
       endif
 
     endif

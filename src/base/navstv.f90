@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -89,6 +89,7 @@ use rotation
 use turbomachinery
 use ptrglo
 use field
+use field_operator
 use cavitation
 use vof
 use cs_c_bindings
@@ -134,6 +135,7 @@ double precision distbf, srfbnf, hint
 double precision rnx, rny, rnz
 double precision vr(3), vr1(3), vr2(3), vrn
 double precision disp_fac(3)
+double precision mass_fl_drhovol1, mass_fl_drhovol2
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -304,10 +306,6 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet))
 
-if (vcopt_u%iwarni.ge.1) then
-  write(nfecra,1000)
-endif
-
 ! Initialize variables to avoid compiler warnings
 
 ivar = 0
@@ -454,9 +452,9 @@ endif
 ! 3. Pressure resolution and computation of mass flux for compressible flow
 !===============================================================================
 
-if ( ippmod(icompf).ge.0 ) then
+if (ippmod(icompf).ge.0) then
 
-  if(vcopt_u%iwarni.ge.1) then
+  if(vcopt_p%iwarni.ge.1) then
     write(nfecra,1080)
   endif
 
@@ -483,6 +481,10 @@ endif
 !===============================================================================
 ! 5. Velocity prediction step
 !===============================================================================
+
+if (vcopt_u%iwarni.ge.1) then
+  write(nfecra,1000)
+endif
 
 iappel = 1
 
@@ -511,7 +513,7 @@ if (iprco.le.0) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.ge.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni
@@ -529,39 +531,41 @@ if (iprco.le.0) then
    imasfl , bmasfl )
 
   ! In the ALE framework, we add the mesh velocity
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     call field_get_val_v(ivarfl(iuma), mshvel)
 
     call field_get_val_prev_v(fdiale, disala)
 
-    ! One temporary array needed for internal faces, in case some internal vertices
-    !  are moved directly by the user
-    allocate(intflx(nfac), bouflx(ndimfb))
+    if (iflxmw.gt.0) then
+      ! One temporary array needed for internal faces, in case some internal vertices
+      !  are moved directly by the user
+      allocate(intflx(nfac), bouflx(ndimfb))
 
-    itypfl = 1
-    init   = 1
-    inc    = 1
-    iflmb0 = 1
-    call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
-    nswrgp = vcopt%nswrgr
-    imligp = vcopt%imligr
-    iwarnp = vcopt%iwarni
-    epsrgp = vcopt%epsrgr
-    climgp = vcopt%climgr
+      itypfl = 1
+      init   = 1
+      inc    = 1
+      iflmb0 = 1
+      call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+      nswrgp = vcopt%nswrgr
+      imligp = vcopt%imligr
+      iwarnp = vcopt%iwarni
+      epsrgp = vcopt%epsrgr
+      climgp = vcopt%climgr
 
-    call field_get_coefa_v(ivarfl(iuma), claale)
-    call field_get_coefb_v(ivarfl(iuma), clbale)
+      call field_get_coefa_v(ivarfl(iuma), claale)
+      call field_get_coefb_v(ivarfl(iuma), clbale)
 
-    call inimav &
-  ( ivarfl(iuma)    , itypfl ,                                     &
-    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-    iwarnp ,                                                       &
-    epsrgp , climgp ,                                              &
-    crom, brom,                                                    &
-    mshvel ,                                                       &
-    claale , clbale ,                                              &
-    intflx , bouflx )
+      call inimav &
+    ( ivarfl(iuma)    , itypfl ,                                     &
+      iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+      iwarnp ,                                                       &
+      epsrgp , climgp ,                                              &
+      crom, brom,                                                    &
+      mshvel ,                                                       &
+      claale , clbale ,                                              &
+      intflx , bouflx )
+    endif
 
     ! Here we need of the opposite of the mesh velocity.
     do ifac = 1, nfabor
@@ -617,9 +621,10 @@ if (iprco.le.0) then
       endif
     enddo
 
-    ! Free memory
-    deallocate(intflx, bouflx)
-
+    if (iflxmw.gt.0) then
+      ! Free memory
+      deallocate(intflx, bouflx)
+    endif
   endif
 
   ! Ajout de la vitesse du solide dans le flux convectif,
@@ -889,10 +894,10 @@ call cs_bad_cells_regularisation_scalar(cvar_pr)
 ! 8. Mesh velocity solving (ALE)
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   if (itrale.gt.nalinf) then
-    call alelav(iterns)
+    call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
   endif
 
 endif
@@ -901,20 +906,9 @@ endif
 ! 9. Update of the fluid velocity field
 !===============================================================================
 
-! Mass flux initialization for VOF algorithm
-if (ivofmt.ge.0) then
-  do ifac = 1, nfac
-    imasfl(ifac) = 0.d0
-  enddo
-  do ifac = 1, nfabor
-    bmasfl(ifac) = 0.d0
-  enddo
-endif
-
 if (ippmod(icompf).lt.0) then
 
-  ! irevmc = 0: Only the standard method is available for the coupled
-  !              version of navstv.
+  ! irevmc = 0: Update the velocity with the pressure gradient.
 
   if (irevmc.eq.0) then
 
@@ -1087,6 +1081,123 @@ if (ippmod(icompf).lt.0) then
     !Free memory
     deallocate(gradp)
 
+    ! RT0 update from the mass fluxes
+  else
+
+    ! Initialization to 0
+    do iel = 1, ncelet
+      vel(1, iel) = 0.d0
+      vel(2, iel) = 0.d0
+      vel(3, iel) = 0.d0
+    enddo
+
+    ! vel = 1 / (rho Vol) SUM mass_flux (X_f - X_i)
+    if (ivofmt.lt.0) then
+      do ifac = 1, nfac
+
+        iel1 = ifacel(1,ifac)
+        iel2 = ifacel(2,ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = imasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
+
+
+        mass_fl_drhovol2 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel2).eq.0) &
+          mass_fl_drhovol2 = imasfl(ifac) / (crom(iel2) * cell_f_vol(iel2))
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
+
+        vel(1, iel2) = vel(1, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
+        vel(2, iel2) = vel(2, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
+        vel(3, iel2) = vel(3, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
+
+      enddo
+
+      do ifac = 1, nfabor
+        iel1 = ifabor(ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = bmasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
+
+      enddo
+
+      ! vel = 1 / (Vol) SUM vol_flux (X_f - X_i)
+    else
+
+      do ifac = 1, nfac
+
+        iel1 = ifacel(1,ifac)
+        iel2 = ifacel(2,ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = imasfl(ifac) / cell_f_vol(iel1)
+
+
+        mass_fl_drhovol2 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel2).eq.0) &
+          mass_fl_drhovol2 = imasfl(ifac) / cell_f_vol(iel2)
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
+
+        vel(1, iel2) = vel(1, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
+        vel(2, iel2) = vel(2, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
+        vel(3, iel2) = vel(3, iel2) &
+          - mass_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
+
+      enddo
+
+      do ifac = 1, nfabor
+        iel1 = ifabor(ifac)
+
+        mass_fl_drhovol1 = 0.d0
+        ! If it is not a solid cell
+        if (isolid(iporos, iel1).eq.0) &
+          mass_fl_drhovol1 = bmasfl(ifac) / cell_f_vol(iel1)
+
+        vel(1, iel1) = vel(1, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
+        vel(2, iel1) = vel(2, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
+        vel(3, iel1) = vel(3, iel1) &
+          + mass_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
+
+      enddo
+
+    endif
+
+    call synvin(vel)
+
   endif
 
 endif
@@ -1094,41 +1205,53 @@ endif
 ! Bad cells regularisation
 call cs_bad_cells_regularisation_vector(vel, 1)
 
+! Mass flux initialization for VOF algorithm
+if (ivofmt.ge.0) then
+  do ifac = 1, nfac
+    imasfl(ifac) = 0.d0
+  enddo
+  do ifac = 1, nfabor
+    bmasfl(ifac) = 0.d0
+  enddo
+endif
+
 ! In the ALE framework, we add the mesh velocity
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   call field_get_val_v(ivarfl(iuma), mshvel)
 
   call field_get_val_v(fdiale, disale)
   call field_get_val_prev_v(fdiale, disala)
 
-  ! One temporary array needed for internal faces, in case some internal vertices
-  !  are moved directly by the user
-  allocate(intflx(nfac), bouflx(ndimfb))
+  if (iflxmw.gt.0) then
+    ! One temporary array needed for internal faces, in case some internal vertices
+    !  are moved directly by the user
+    allocate(intflx(nfac), bouflx(ndimfb))
 
-  itypfl = 1
-  init   = 1
-  inc    = 1
-  iflmb0 = 1
-  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
-  nswrgp = vcopt%nswrgr
-  imligp = vcopt%imligr
-  iwarnp = vcopt%iwarni
-  epsrgp = vcopt%epsrgr
-  climgp = vcopt%climgr
+    itypfl = 1
+    init   = 1
+    inc    = 1
+    iflmb0 = 1
+    call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
 
-  call field_get_coefa_v(ivarfl(iuma), claale)
-  call field_get_coefb_v(ivarfl(iuma), clbale)
+    call field_get_coefa_v(ivarfl(iuma), claale)
+    call field_get_coefb_v(ivarfl(iuma), clbale)
 
-  call inimav &
-( ivarfl(iuma)    , itypfl ,                                     &
-  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-  iwarnp ,                                                       &
-  epsrgp , climgp ,                                              &
-  crom, brom,                                                    &
-  mshvel ,                                                       &
-  claale , clbale ,                                              &
-  intflx , bouflx )
+    call inimav &
+  ( ivarfl(iuma)    , itypfl ,                                     &
+    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+    iwarnp ,                                                       &
+    epsrgp , climgp ,                                              &
+    crom, brom,                                                    &
+    mshvel ,                                                       &
+    claale , clbale ,                                              &
+    intflx , bouflx )
+  endif
 
   ! Here we need of the opposite of the mesh velocity.
   !$omp parallel do if(nfabor > thr_n_min)
@@ -1186,9 +1309,10 @@ if (iale.eq.1) then
     endif
   enddo
 
-  ! Free memory
-  deallocate(intflx, bouflx)
-
+  if (iflxmw.gt.0) then
+    ! Free memory
+    deallocate(intflx, bouflx)
+  endif
 endif
 
 !FIXME for me we should do that before predvv
@@ -1322,7 +1446,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.ge.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni
@@ -1438,19 +1562,19 @@ if (nterup.gt.1) then
 
 endif
 
-! ---> RECALAGE DE LA PRESSION SUR UNE PRESSION A MOYENNE NULLE
-!  On recale si on n'a pas de Dirichlet. Or le nombre de Dirichlets
-!  calcule dans typecl.F est NDIRCL si IDIRCL=1 et NDIRCL-1 si IDIRCL=0
-!  (ISTAT vaut toujours 0 pour la pression)
+! Shift pressure field to set its spatial mean value to zero
+! if there is no boundary faces with a Dirichlet condition on the pressure.
+! Number of faces with Dirichlet condition for the pressure is:
+! - ndircl if idiricl = 1
+! - ndircl-1 if idircl = 0
 
-if (idircl(ipr).eq.1) then
-  ndircp = ndircl(ipr)
+if (vcopt_p%idircl.eq.1) then
+  ndircp = vcopt_p%ndircl
 else
-  ndircp = ndircl(ipr)-1
+  ndircp = vcopt_p%ndircl-1
 endif
 if (ndircp.le.0) then
-  call prmoy0 &
-( ncelet , ncel   , cell_f_vol , cvar_pr )
+  call field_set_volume_average(ivarfl(ipr), pred0)
 endif
 
 ! Compute the total pressure (defined as a post-processed property).

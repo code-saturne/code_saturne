@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -213,7 +213,7 @@ cs_thermal_model_field(void)
     th_f = CS_F_(h);
     break;
   case CS_THERMAL_MODEL_TOTAL_ENERGY:
-    th_f = CS_F_(energy);
+    th_f = CS_F_(e_tot);
     break;
   default:
     th_f = NULL;

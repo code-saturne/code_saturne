@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2444,11 +2444,11 @@ cs_join_mesh_destroy_edges(cs_join_edges_t  **edges)
 
       BFT_FREE(e->gnum);
       BFT_FREE(e->def);
-
-      BFT_FREE(e->vtx_idx);
-      BFT_FREE(e->adj_vtx_lst);
-      BFT_FREE(e->edge_lst);
     }
+
+    BFT_FREE(e->vtx_idx);
+    BFT_FREE(e->adj_vtx_lst);
+    BFT_FREE(e->edge_lst);
 
     BFT_FREE(*edges);
   }

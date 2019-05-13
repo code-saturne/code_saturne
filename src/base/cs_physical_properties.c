@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -792,6 +792,13 @@ cs_phys_prop_freesteam(cs_phys_prop_thermo_plane_type_t   thermo_plane,
     }
   }
 #else
+  CS_UNUSED(thermo_plane);
+  CS_UNUSED(property);
+  CS_UNUSED(n_vals);
+  CS_UNUSED(var1);
+  CS_UNUSED(var2);
+  CS_UNUSED(val);
+
   bft_error(__FILE__, __LINE__, 0,
             _("Freesteam support not available in this build."));
 #endif

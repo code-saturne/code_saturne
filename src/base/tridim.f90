@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -115,7 +115,6 @@ integer          isvhb, iz
 integer          ii
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
-integer          nbzfmx, nozfmx
 integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
 
@@ -130,23 +129,20 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
-integer, allocatable, dimension(:,:) :: icodcl
-integer, allocatable, dimension(:) :: ilzfbr
+integer, pointer, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
 
-double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
-double precision, allocatable, dimension(:,:) :: cofale
+double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+double precision, pointer, dimension(:,:) :: cofale
 double precision, pointer, dimension(:,:) :: dttens
-double precision, allocatable, dimension(:) :: qcalc
-double precision, allocatable, dimension(:,:,:) :: rcodcl
-double precision, allocatable, dimension(:) :: hbord, theipb
-double precision, allocatable, dimension(:) :: visvdr
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, pointer, dimension(:) :: hbord, theipb
+double precision, pointer, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
 double precision, allocatable, dimension(:) :: mass_source
 double precision, dimension(:), pointer :: brom, crom
 
 double precision, pointer, dimension(:,:) :: trava
-double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer :: cvar_vec
 double precision, dimension(:), pointer :: cvar_sca
@@ -178,6 +174,32 @@ type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 
 interface
 
+  subroutine condli &
+  ( nvar   , nscal  , iterns ,                                     &
+    isvhb  ,                                                       &
+    itrale , italim , itrfin , ineefl , itrfup ,                   &
+    flmalf , flmalb , cofale , xprale ,                            &
+    icodcl , isostd ,                                              &
+    dt     , rcodcl ,                                              &
+    visvdr , hbord  , theipb )
+
+    use mesh, only: nfac, nfabor
+
+    implicit none
+
+    integer          nvar, nscal, iterns, isvhb
+    integer          itrale , italim , itrfin , ineefl , itrfup
+
+    double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+    double precision, pointer, dimension(:,:) :: cofale
+    integer, pointer, dimension(:,:) :: icodcl
+    integer, dimension(nfabor+1) :: isostd
+    double precision, pointer, dimension(:) :: dt
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, pointer, dimension(:) :: visvdr, hbord, theipb
+
+  end subroutine condli
+
   subroutine navstv &
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
@@ -185,7 +207,6 @@ interface
     frcxt  ,                                                       &
     trava  )
 
-    use dimens, only: ndimfb
     use mesh, only: nfabor
 
     implicit none
@@ -200,11 +221,7 @@ interface
 
   end subroutine navstv
 
-  subroutine richards &
- (icvrge, dt)
-
-    use dimens, only: ndimfb
-    use mesh, only: nfabor
+  subroutine richards(icvrge, dt)
 
     implicit none
 
@@ -213,8 +230,17 @@ interface
 
   end subroutine richards
 
-end interface
+  subroutine cs_lagr_head_losses(n_hl_cells, cell_ids, bc_type, cku) &
+    bind(C, name='cs_lagr_head_losses')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: n_hl_cells
+    integer(c_int), dimension(*), intent(in) :: cell_ids
+    integer(c_int), dimension(*) :: bc_type
+    real(kind=c_double), dimension(*) :: cku
+  end subroutine cs_lagr_head_losses
 
+end interface
 
 !===============================================================================
 
@@ -409,15 +435,13 @@ endif
 !===============================================================================
 ! 5. Temporal update of previous values (mass flux, density, ...)
 !===============================================================================
-!  on sort avant SCHTMP car sinon a l'ordre 2 en temps la valeur du
-!  flux de masse au pas de temps precedent est ecrasee par la valeur
-!  au pas de temps actuel. Dans le cas INPDT0=1 sans suite, il
-!  n'y a pas de probleme puisque tous les flux de masse sont a 0           !
-!  Si itrale=0, on est a l'iteration d'initialisation de l'ALE,
-!  on ne touche pas au flux de masse non plus
+!  We exit before SCHTMP as otherwise for 2nd order in time the value of the
+!  mass flux at the previous time is overwritten by the value at the current
+!  time step. When ntmabs = 0, there is no issue since all mass fluxes are 0.
 
+if (ntmabs.eq.ntpabs .and. isuite.eq.1) return
 
-if (inpdt0.eq.1.and.isuite.eq.1) return
+!  If itrale=0, we are initializing ALE, we do not touch the mas flux either.
 
 if (itrale.gt.0) then
   iappel = 1
@@ -467,7 +491,7 @@ if (ncpdct.gt.0) then
   call cs_head_losses_compute(ckupdc)
 
  if (iflow .eq.1) then
-   call laghlo(ncepdc, icepdc, itypfb, ckupdc)
+   call cs_lagr_head_losses(ncepdc, icepdc, itypfb, ckupdc)
  endif
 
 endif
@@ -767,7 +791,7 @@ endif
 italim = 1
 itrfin = 1
 ineefl = 0
-if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
+if (iale.ge.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !     On reserve certains tableaux pour permettre le retour a l'etat
 !       initial en fin d'iteration ALE
 !       - flux de masse
@@ -785,6 +809,11 @@ if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfin = 0
 
+else
+  flmalf => null()
+  flmalb => null()
+  cofale => null()
+  xprale => null()
 endif
 
 300 continue
@@ -806,8 +835,12 @@ if (nterup.gt.1.or.isno2t.gt.0) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 endif
 
-! Deprecated, only for compatibility reason
-nvarcl = nvar
+icodcl => null()
+rcodcl => null()
+hbord => null()
+theipb => null()
+visvdr => null()
+
 ! Allocate temporary arrays for boundary conditions
 if (italim .eq. 1) then
   allocate(icodcl(nfabor,nvar))
@@ -836,205 +869,15 @@ endif
 iterns = 1
 do while (iterns.le.nterup)
 
-  call precli(nvar, icodcl, rcodcl)
-
-  !     - Interface Code_Saturne
-  !       ======================
-
-  if (iihmpr.eq.1) then
-
-  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
-  !    physiques particulieres, meme sans physique particuliere
-  !    -> sera modifie lors de la restructuration des zones de bord
-
-    call uiclim &
-  ( ippmod(idarcy),                                                &
-    nozppm, ncharm, ncharb, nclpch,                                &
-    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
-    ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
-
-    if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
-
-    ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
-
-      nbzfmx = nbzppm
-      nozfmx = nozppm
-      allocate(ilzfbr(nbzfmx))
-      allocate(qcalc(nozfmx))
-
-      call stdtcl &
-    ( nbzfmx , nozfmx ,                                              &
-      iqimp  , icalke , qimp   , dh , xintur,                        &
-      itypfb , izfppp , ilzfbr ,                                     &
-      rcodcl , qcalc  )
-
-      ! Free memory
-      deallocate(ilzfbr)
-      deallocate(qcalc)
-
-    endif
-
-  endif
-
-  !     - Sous-programme utilisateur
-  !       ==========================
-
-  call cs_f_user_boundary_conditions &
-  ( nvar   , nscal  ,                                              &
-    icodcl , itrifb , itypfb , izfppp ,                            &
-    dt     ,                                                       &
-    rcodcl )
-
-  call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
-
-  !     - Interface Code_Saturne
-  !       ======================
-
-  if (iihmpr.eq.1) then
-
-    call uiclve(nozppm, iale, itypfb, izfppp)
-
-  endif
-
-  ! -- Methode des vortex en L.E.S. :
-  !    (Transfert des vortex dans les tableaux RCODCL)
-
-  if (ivrtex.eq.1) then
-    call vor2cl(itypfb, rcodcl)
-  endif
-
-  ! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
-  !       On s'occupe ici du couplage via les faces de bord, et de la
-  !       transformation de l'information recue en condition limite.
-
-  if (nbrcpl.gt.0) then
-
-    call cscfbr &
-  ( nscal  ,                                                       &
-    icodcl , itypfb ,                                              &
-    dt     ,                                                       &
-    rcodcl )
-
-  endif
-
-! -- Synthetic Eddy Method en L.E.S. :
-!    (Transfert des structures dans les tableaux rcodcl)
-
-    call synthe &
-  ( nvar   , nscal  ,                                              &
-    iu     , iv     , iw     ,                                     &
-    ttcabs , dt     ,                                              &
-    rcodcl )
-
-  ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
-
-  if (iale.eq.1) then
-
-    call field_get_val_v(fdiale, disale)
-
-    do ii = 1, nnod
-      impale(ii) = 0
-    enddo
-
-    ! - Interface Code_Saturne
-    !   ======================
-
-    if (iihmpr.eq.1) then
-
-      call uialcl &
-    ( ibfixe, igliss, ivimpo, ifresf,    &
-      ialtyb,                            &
-      impale,                            &
-      disale,                            &
-      iuma, ivma, iwma,                  &
-      rcodcl)
-
-    endif
-
-    call usalcl &
-  ( itrale ,                                                       &
-    nvar   , nscal  ,                                              &
-    icodcl , itypfb , ialtyb ,                                     &
-    impale ,                                                       &
-    dt     ,                                                       &
-    rcodcl , xyzno0 , disale )
-
-    !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
-    !       remet le deplacement initial
-    do ii  = 1, nnod
-      if (impale(ii).eq.0) then
-        disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
-        disale(2,ii) = xyznod(2,ii)-xyzno0(2,ii)
-        disale(3,ii) = xyznod(3,ii)-xyzno0(3,ii)
-      endif
-    enddo
-
-    !     En cas de couplage de structures, on calcule un deplacement predit
-    if (nbstru.gt.0.or.nbaste.gt.0) then
-
-      call strpre &
-    ( itrale , italim , ineefl ,                                     &
-      impale ,                                                       &
-      flmalf , flmalb , xprale , cofale )
-
-    endif
-
-  endif
-
-  !     UNE FOIS CERTAINS CODES DE CONDITIONS LIMITES INITIALISES PAR
-  !     L'UTILISATEUR, ON PEUT COMPLETER CES CODES PAR LES COUPLAGES
-  !     AUX BORDS (TYPE SYRTHES), SAUF SI ON DOIT Y REPASSER ENSUITE
-  !     POUR CENTRALISER CE QUI EST RELATIF AU COUPLAGE AVEC SYRTHES
-  !     ON POSITIONNE ICI L'APPEL AU COUPLAGE VOLUMIQUE SYRTHES
-  !     UTILE POUR BENIFICER DE LA DERNIERE VITESSE CALCULEE SI ON
-  !     BOUCLE SUR U/P.
-  !     LE COUPLAGE VOLUMIQUE DOIT ETRE APPELE AVANT LE SURFACIQUE
-  !     POUR RESPECTER LE SCHEMA DE COMMUNICATION
-
-  if (itrfin.eq.1 .and. itrfup.eq.1) then
-
-    call cpvosy(iscalt, dt)
-
-    call coupbi(nfabor, nscal, icodcl, rcodcl)
-
-    if (nfpt1t.gt.0) then
-      call cou1di(nfabor, iscalt, icodcl, rcodcl)
-    endif
-
-    ! coupling 1D thermal model with condensation modelling
-    ! to take into account the solid temperature evolution over time
-    if (nftcdt.gt.0) then
-      call cs_tagmri(nfabor, iscalt, icodcl, rcodcl)
-    endif
-
-  endif
-
-
-  !Radiative transfer: add contribution to enrgy BCs.
-  if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
-
-     call cs_rad_transfer_bcs(nvar, itypfb, icodcl,             &
-                              dt, rcodcl)
-
-  endif
-
-
-  ! For internal coupling, set itypfb to wall function by default
-  ! if not set by the user
-  call cs_internal_coupling_bcs(itypfb)
-
-  !     ON CALCULE LES COEFFICIENTS ASSOCIES AUX CONDITIONS LIMITES
-
+  ! Calls user BCs and computes BC coefficients
   call condli &
-( nvar   , nscal  , iterns ,                                     &
-  isvhb  ,                                                       &
-  icodcl , isostd ,                                              &
-  dt     ,                                                       &
-  rcodcl ,                                                       &
-  visvdr , hbord  , theipb )
+    (nvar   , nscal  , iterns ,                                    &
+     isvhb  ,                                                      &
+     itrale , italim , itrfin , ineefl , itrfup ,                  &
+     flmalf , flmalb , cofale , xprale ,                           &
+     icodcl , isostd ,                                             &
+     dt     , rcodcl ,                                             &
+     visvdr , hbord  , theipb )
 
   if (nftcdt.gt.0) then
     ! Coefficient exchange of the enthalpy scalar
@@ -1095,9 +938,11 @@ do while (iterns.le.nterup)
   !  constant ou variable
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call coupbo(itherm, cvcst, hbord, theipb)
+    if (isvhb.gt.0) then
+      call coupbo(itherm, cvcst, hbord, theipb)
+    endif
 
-    if (nfpt1t.gt.0) then
+    if (iscalt.gt.0 .and. nfpt1t.gt.0) then
       call cou1do(cvcst, hbord, theipb)
 
       if (iirayo.ge.1) call cou1di(nfabor, iscalt, icodcl, rcodcl)
@@ -1133,7 +978,6 @@ do while (iterns.le.nterup)
   ! In ALE, this computation is done only for the first step.
   if (italim.eq.1) then
 
-
     ! Pour le moment, on suppose que l'on peut se contenter de faire
     !  cela au premier passage, sauf avec les maillages mobiles. Attention donc
     !  aux conditions aux limites variables (faces qui deviennent des parois ou
@@ -1157,10 +1001,6 @@ do while (iterns.le.nterup)
 
   endif
 
-  !     CALCUL DE L'AMORTISSEMENT DE VAN DRIEST
-  !     OU CALCUL DE Y+ POUR LE LAGRANGIEN
-
-
   ! Compute y+ if needed
   ! and Van Driest "amortissement"
   if (itytur.eq.4 .and. idries.eq.1) then
@@ -1172,7 +1012,7 @@ do while (iterns.le.nterup)
 !      ON SORT ICI
 !===============================================================================
 
-  if (inpdt0.eq.1.and.isuite.eq.0) must_return = .true.
+  if (ntmabs.eq.ntpabs .and. isuite.eq.0) must_return = .true.
 
   if (iilagr.eq.3) must_return = .true.
 
@@ -1180,12 +1020,12 @@ do while (iterns.le.nterup)
 ! 11. RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
 !===============================================================================
 
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     ! otherwise it is done in navstv.f90
     if (itrale.eq.0) then
 
-      call alelav(iterns)
+      call cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)
       must_return = .true.
 
     endif
@@ -1198,9 +1038,9 @@ do while (iterns.le.nterup)
 
   if (must_return) then
 
-    if (allocated(hbord)) deallocate(hbord)
-    if (allocated(theipb)) deallocate(theipb)
-    if (allocated(visvdr)) deallocate(visvdr)
+    if (associated(hbord)) deallocate(hbord)
+    if (associated(theipb)) deallocate(theipb)
+    if (associated(visvdr)) deallocate(visvdr)
 
     if (nterup.gt.1) then
       deallocate(trava)
@@ -1356,61 +1196,12 @@ enddo
 
 if (ippmod(idarcy).eq.1) then
 
-  call precli(nvar, icodcl, rcodcl)
-
-  if (iihmpr.eq.1) then
-
-  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
-  !    physiques particulieres, meme sans physique particuliere
-  !    -> sera modifie lors de la restructuration des zones de bord
-
-    call uiclim &
-  ( ippmod(idarcy),                                                &
-    nozppm, ncharm, ncharb, nclpch,                                &
-    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
-    ientfu, ientgb, ientgf, iprofm, iautom,                        &
-    itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
-
-    if (ippmod(iphpar).eq.0) then
-
-    ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
-
-      nbzfmx = nbzppm
-      nozfmx = nozppm
-      allocate(ilzfbr(nbzfmx))
-      allocate(qcalc(nozfmx))
-
-      call stdtcl &
-    ( nbzfmx , nozfmx ,                                              &
-      iqimp  , icalke , qimp   , dh , xintur,                        &
-      itypfb , izfppp , ilzfbr ,                                     &
-      rcodcl , qcalc  )
-
-      ! Free memory
-      deallocate(ilzfbr)
-      deallocate(qcalc)
-
-    endif
-
-  endif
-
-  call cs_f_user_boundary_conditions &
-  ( nvar   , nscal  ,                                              &
-    icodcl , itrifb , itypfb , izfppp ,                            &
-    dt     ,                                                       &
-    rcodcl )
-
-  call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
-
-  ! For internal coupling, set itypfb to wall function by default
-  ! if not set by the user
-  call cs_internal_coupling_bcs(itypfb)
-
+  ! Calls user BCs and computes BC coefficients
   call condli &
-   ( nvar   , nscal  , iterns ,                                    &
+    (nvar   , nscal  , iterns ,                                    &
      isvhb  ,                                                      &
+     itrale , italim , itrfin , ineefl , itrfup ,                  &
+     flmalf , flmalb , cofale , xprale ,                           &
      icodcl , isostd ,                                             &
      dt     , rcodcl ,                                             &
      visvdr , hbord  , theipb )
@@ -1418,15 +1209,15 @@ if (ippmod(idarcy).eq.1) then
 endif
 
 ! Free memory
-if (allocated(hbord)) deallocate(hbord)
-if (allocated(theipb)) deallocate(theipb)
-if (allocated(visvdr)) deallocate(visvdr)
+if (associated(hbord)) deallocate(hbord)
+if (associated(theipb)) deallocate(theipb)
+if (associated(visvdr)) deallocate(visvdr)
 
 if (nterup.gt.1) then
   deallocate(trava)
 endif
 
-! Calcul sur champ de vitesse fige SUITE (a cause de la boucle U/P)
+! Calcul sur champ de vitesse NON fige SUITE (a cause de la boucle U/P)
 if (iccvfg.eq.0) then
 
 !===============================================================================
@@ -1448,7 +1239,7 @@ if (iccvfg.eq.0) then
     endif
 
     ! Free memory
-    if (allocated(flmalf)) then
+    if (associated(flmalf)) then
       deallocate(flmalf, flmalb)
       deallocate(cofale)
       deallocate(xprale)

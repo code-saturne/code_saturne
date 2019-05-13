@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -831,7 +831,7 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const double  dp_cf = p_c - p_f;
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
-    const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
+    const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  ee = 2*cm->f2e_ids[i];
@@ -928,7 +928,7 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const double  dp_cf = p_c - p_f;
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
-    const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
+    const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  ee = 2*cm->f2e_ids[i];

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_field_pointer.h"
 #include "cs_gui.h"
 #include "cs_log.h"
 #include "cs_map.h"
@@ -135,6 +136,8 @@ cs_head_losses_compute(cs_real_6_t cku[])
     }
   }
 
+  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(vel)->val_pre);
+
   /* Loop on head loss zones */
 
   cs_lnum_t n_p_cells = 0;
@@ -156,7 +159,7 @@ cs_head_losses_compute(cs_real_6_t cku[])
 
       /* GUI definitions go first, then user function definitions */
 
-      cs_gui_head_losses(z, _cku);
+      cs_gui_head_losses(z, cvara_vel, _cku);
       cs_user_head_losses(z, _cku);
 
       /* update previous cells accumulator */

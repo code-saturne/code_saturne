@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2018 EDF S.A.
+% Copyright (C) 1998-2019 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -168,24 +168,25 @@ completed
 \item \texttt{-g, --debug}: activate debugging mode
 \item \texttt{--with-tags=WITH\_TAGS}: only process runs with all specified tags (separated by commas)
 \item \texttt{--without-tags=WITHOUT\_TAGS}: exclude any run with one of specified tags (separated by commas)
+\item \texttt{--create-xml}: create xml from study (current directory has to be a study)
 \end{list}
 
 \underline{Examples:}
 
 \begin{list}{$\bullet$}{}
-\item duplicates all cases from the \textbf{repository} in the \textbf{destination}, compile all user files and exits;
+\item read \texttt{sample.xml}, create \textbf{destination} directory and exits;
 {\noindentgroup\begin{lstlisting}
 $ code_saturne studymanager -f sample.xml
 \end{lstlisting}}
 
-\item as above, and run all cases if defined in \texttt{sample.xml}
+\item duplicates all cases from the \textbf{repository} in the \textbf{destination}, compile all user files and run enabled cases;
 {\noindentgroup\begin{lstlisting}
 $ code_saturne studymanager -f sample.xml -r
 \end{lstlisting}}
 
 \item as above, and compares all new checkpoint files with those from the \textbf{repository} if defined in \texttt{sample.xml}
 {\noindentgroup\begin{lstlisting}
-$ code\_saturne smgr -f sample.xml -r -c
+$ code_saturne smgr -f sample.xml -r -c
 \end{lstlisting}}
 
 \item as above, and plots results if defined in \texttt{sample.xml}
@@ -196,11 +197,6 @@ $ code_saturne smgr -f sample.xml -rcp
 \item as above, and send the two reports
 {\noindentgroup\begin{lstlisting}
 $ code_saturne smgr -f sample.xml -r -c -p -m "dt@moulinsart.be dd@moulinsart.be"
-\end{lstlisting}}
-
-\item compares and plots results in the \textbf{destination} already computed
-{\noindentgroup\begin{lstlisting}
-$ code_saturne smgr -f sample.xml -c -p
 \end{lstlisting}}
 
 \item compares and plots results in the \textbf{destination} already computed
@@ -250,7 +246,7 @@ The last line of the file of parameters must be:
 \end{verbatim}
 \normalsize
 
-\subsection{Case creation and compilation fo the user files}
+\subsection{Case creation and compilation of the user files}
 
 When \textsc{studymanager} is launched, the file of parameters is parsed in order to
 known which studies and cases from the \textbf{repository} should be duplicated
@@ -824,8 +820,6 @@ the legend, it is possible to draw the legend outside the axis;
 \item \texttt{ylim}: set range for the y axis.
 \end{list}
 
-The attributes \texttt{fig} and \texttt{ycol} are mandatory.
-
 For more advanced options see section \ref{sec:raw}.
 
 \subsubsection{Define figures}
@@ -1339,7 +1333,7 @@ from optparse import OptionParser
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
-from Pages.ScriptRunningModel import ScriptRunningModel
+from model.ScriptRunningModel import ScriptRunningModel
 
 #-------------------------------------------------------------------------------
 
@@ -1359,9 +1353,6 @@ def process_cmd_line(argv):
     parser.add_option("-n", "--iter-num", dest="iterationsNumber", type="int",
                       help="New iteration number")
 
-    parser.add_option("-u", "--n-procs", dest="n_procs", type="int",
-                      help="Number of processes (units)")
-
     parser.add_option("-t", "--time-step", dest="timeStep", type="float",
                       help="New time step")
 
@@ -1376,11 +1367,10 @@ def process_cmd_line(argv):
 
 def main(options):
     from cs_package import package
-    from Base.XMLengine import Case
-    from Base.XMLinitialize import XMLinit
-    from Pages.SolutionDomainModel import SolutionDomainModel
-    from Pages.TimeStepModel import TimeStepModel
-    from Pages.SteadyManagementModel import SteadyManagementModel
+    from model.XMLengine import Case
+    from model.XMLinitialize import XMLinit
+    from model.SolutionDomainModel import SolutionDomainModel
+    from model.TimeStepModel import TimeStepModel
 
     fp = os.path.join(options.case, "DATA", options.param)
     if os.path.isfile(fp):
@@ -1405,20 +1395,12 @@ def main(options):
             s.setRotationAngle(0, options.rotationAngle)
 
         if (options.iterationsNumber):
-            s = SteadyManagementModel(case)
             t = TimeStepModel(case)
-            if s.getSteadyFlowManagement() == 'on':
-                s.setNbIter(options.iterationsNumber)
-            else:
-                t.setIterationsNumber(options.iterationsNumber)
+            t.setStopCriterion('iterations', options.iterationsNumber)
 
         if (options.TimeStep):
             t = TimeStepModel(case)
             t.setTimeStep(options.TimeStep)
-
-        if (options.n_procs):
-            mdl = ScriptRunningModel(case)
-            mdl.setString('n_procs', str(options.n_procs))
 
         case.xmlSaveDocument()
 

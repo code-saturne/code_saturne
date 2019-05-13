@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>788</width>
-    <height>914</height>
+    <width>419</width>
+    <height>418</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,50 +35,40 @@
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="0">
-         <widget class="QLabel" name="labelISUIST">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>Particles statistics read from restart file</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="checkBoxISUIST">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="labelNBCLST">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>Number of particle clusters </string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="lineEditNBCLST">
+        <item row="4" column="2">
+         <widget class="QLineEdit" name="lineEditSEUIL">
           <property name="maximumSize">
            <size>
-            <width>50</width>
+            <width>100</width>
             <height>16777215</height>
            </size>
           </property>
           <property name="toolTip">
-           <string/>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the threshold for statistical meaning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="4" column="1">
+         <widget class="QLabel" name="labelSEUIL">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the threshold for statistical meaning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Threshold for statistical weight</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="labelNBCLST">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Defining multiple statistical classes allows compation of separate statistics for each statistical class of particles. These classes can be used to keep track of different physical characteristics as well as injection zones, in any combination needed.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Statistical class 0 includes all particles, so statistical classes assigned to injected particles should be &amp;gt; 0 where separate statistics are required for those particles.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Number of particle statistical classes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
          <widget class="QLabel" name="labelIDSTNT">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the absolute time step number (including the restarts) after which the calculation of the volume statistics is activated.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -89,7 +79,17 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="0" column="1">
+         <widget class="QLabel" name="labelISUIST">
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>Particles statistics read from restart file</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
          <widget class="QLineEdit" name="lineEditIDSTNT">
           <property name="maximumSize">
            <size>
@@ -102,7 +102,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="3" column="1">
          <widget class="QLabel" name="labelNSTIST">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the absolute time step number (includings the restarts) after which the volume statistics are cumulated over time (they are then said to be steady).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -113,7 +113,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="3" column="2">
          <widget class="QLineEdit" name="lineEditNSTIST">
           <property name="maximumSize">
            <size>
@@ -126,26 +126,26 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="labelSEUIL">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the threshold for statistical meaning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Threshold for statistical weight</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QLineEdit" name="lineEditSEUIL">
+        <item row="1" column="2">
+         <widget class="QLineEdit" name="lineEditNBCLST">
           <property name="maximumSize">
            <size>
-            <width>100</width>
+            <width>50</width>
             <height>16777215</height>
            </size>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the threshold for statistical meaning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QCheckBox" name="checkBoxISUIST">
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string/>
           </property>
          </widget>
         </item>
@@ -205,16 +205,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
           <item row="0" column="0">
-           <widget class="QGroupBox" name="groupBoxVolumeNames">
-            <property name="title">
-             <string>Variable names</string>
-            </property>
-            <layout class="QGridLayout">
-             <item row="0" column="0">
-              <widget class="QTableView" name="tableViewVolumicNames"/>
-             </item>
-            </layout>
-           </widget>
+           <widget class="QTableView" name="tableViewVolumicNames"/>
           </item>
          </layout>
         </widget>
@@ -239,16 +230,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="0" column="0">
-           <widget class="QGroupBox" name="groupBoxBoundariesNames">
-            <property name="title">
-             <string>Variable names</string>
-            </property>
-            <layout class="QGridLayout">
-             <item row="0" column="0">
-              <widget class="QTableView" name="tableViewBoundariesNames"/>
-             </item>
-            </layout>
-           </widget>
+           <widget class="QTableView" name="tableViewBoundariesNames"/>
           </item>
          </layout>
         </widget>

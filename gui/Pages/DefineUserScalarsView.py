@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -52,16 +52,15 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 
 from code_saturne.Pages.DefineUserScalarsForm import Ui_DefineUserScalarsForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+from code_saturne.model.LocalizationModel import LocalizationModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -126,7 +125,7 @@ class NameDelegate(QItemDelegate):
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, to_qvariant(str(new_pname)), Qt.DisplayRole)
+            model.setData(index, str(new_pname), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -172,7 +171,7 @@ class GGDHDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -235,7 +234,7 @@ class VarianceNameDelegate(QItemDelegate):
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, to_qvariant(str(new_pname)), Qt.DisplayRole)
+            model.setData(index, str(new_pname), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -273,7 +272,7 @@ class VarianceDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -298,9 +297,6 @@ class StandardItemModelScalars(QStandardItemModel):
 
         self.setColumnCount(len(self.headers))
 
-        self.toolTipRole = [self.tr("Code_Saturne keyword: NSCAUS"),
-                            self.tr("Code_Saturne keyword: ITURT")]
-
         self._data = []
         self.parent = parent
         self.mdl  = mdl
@@ -308,17 +304,15 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         col = index.column()
 
-        if role == Qt.ToolTipRole:
-            return to_qvariant(self.toolTipRole[col])
         if role == Qt.DisplayRole:
-            return to_qvariant(self._data[row][col])
+            return self._data[row][col]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -333,8 +327,8 @@ class StandardItemModelScalars(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -414,7 +408,7 @@ class StandardItemModelVariance(QStandardItemModel):
         QStandardItemModel.__init__(self)
 
         self.headers = [self.tr("Variance"),
-                        self.tr("Species_Name")]
+                        self.tr("Associated variable")]
 
         self.setColumnCount(len(self.headers))
 
@@ -425,17 +419,15 @@ class StandardItemModelVariance(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         col = index.column()
 
-        if role == Qt.ToolTipRole:
-            return to_qvariant(self.toolTipRole[col])
         if role == Qt.DisplayRole:
-            return to_qvariant(self._data[row][col])
+            return self._data[row][col]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -446,8 +438,8 @@ class StandardItemModelVariance(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

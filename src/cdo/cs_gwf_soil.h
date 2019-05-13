@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -37,7 +37,6 @@
 #include "cs_cdo_quantities.h"
 #include "cs_mesh.h"
 #include "cs_property.h"
-#include "cs_time_step.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
@@ -59,10 +58,10 @@ BEGIN_C_DECLS
  *         updated. If the simulation is time-depedent, then the soil capacity
  *         can be updated also.
  *
+ * \param[in]      t_eval       time at which one performs the evaluation
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
  * \param[in]      head_in_law  array of values for head used in law
  * \param[in]      zone         pointer to a cs_zone_t
  * \param[in, out] input        pointer to a structure cast on-the-fly
@@ -70,10 +69,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_gwf_soil_update_t) (const cs_mesh_t             *mesh,
+(cs_gwf_soil_update_t) (const cs_real_t              t_eval,
+                        const cs_mesh_t             *mesh,
                         const cs_cdo_connect_t      *connect,
                         const cs_cdo_quantities_t   *quant,
-                        const cs_time_step_t        *ts,
                         const cs_real_t             *head_values,
                         const cs_zone_t             *zone,
                         void                        *input);

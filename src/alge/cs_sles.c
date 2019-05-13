@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -365,6 +365,7 @@ static cs_sles_t **_cs_sles_systems[3] = {NULL, NULL, NULL};
 
 /* Timer statistics */
 
+static cs_timer_counter_t   _sles_t_tot;     /* Total time in linear solvers */
 static int _sles_stat_id = -1;
 
 /*============================================================================
@@ -889,6 +890,8 @@ _post_function(void                  *sles_p,
 void
 cs_sles_initialize(void)
 {
+  CS_TIMER_COUNTER_INIT(_sles_t_tot);
+
   int stats_root = cs_timer_stats_id_by_name("operations");
 
   if (stats_root > -1) {
@@ -949,6 +952,13 @@ cs_sles_log(cs_log_t  log_type)
 {
   int log_order[] = {2, 0, 1}; /* log previous setups first, then fields,
                                   then others */
+
+  if (log_type == CS_LOG_PERFORMANCE)
+    cs_log_printf
+      (log_type,
+       _("\n"
+         "Total elapsed time for linear equation system solvers:  %.3f s\n"),
+       _sles_t_tot.wall_nsec*1e-9);
 
   const char *option_category[]
     = {N_("Linear solver options modified during run (previous values)"),
@@ -1205,7 +1215,7 @@ cs_sles_push(int          f_id,
   if (retval->name != NULL)
     bft_error
       (__FILE__, __LINE__, 0,
-       _("cs_slesh_push() only allows a stack of depth 1:\n"
+       _("cs_sles_push() only allows a stack of depth 1:\n"
          "  it  may not be called multiple times for a given field (id %d)\n"
          "  without calling cs_sles_pop between those calls."), f_id);
   else {
@@ -1510,6 +1520,8 @@ void
 cs_sles_setup(cs_sles_t          *sles,
               const cs_matrix_t  *a)
 {
+  cs_timer_t t0 = cs_timer_time();
+
   if (sles->context == NULL)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
@@ -1535,6 +1547,9 @@ cs_sles_setup(cs_sles_t          *sles,
   }
 
   cs_timer_stats_switch(t_top_id);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_sles_t_tot, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1583,6 +1598,8 @@ cs_sles_solve(cs_sles_t           *sles,
               size_t               aux_size,
               void                *aux_vectors)
 {
+  cs_timer_t t0 = cs_timer_time();
+
   if (sles->context == NULL)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
@@ -1659,6 +1676,9 @@ cs_sles_solve(cs_sles_t           *sles,
   }
 
   cs_timer_stats_switch(t_top_id);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_sles_t_tot, &t0, &t1);
 
   return state;
 }

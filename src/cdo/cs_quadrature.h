@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -317,9 +317,9 @@ cs_quadrature_tria_1pt(const cs_real_3_t   v1,
                        cs_real_3_t         gpts[],
                        double             *w)
 {
-  gpts[0][0] = cs_math_onethird * (v1[0] + v2[0] + v3[0]);
-  gpts[0][1] = cs_math_onethird * (v1[1] + v2[1] + v3[1]);
-  gpts[0][2] = cs_math_onethird * (v1[2] + v2[2] + v3[2]);
+  gpts[0][0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
+  gpts[0][1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
+  gpts[0][2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
   w[0] = area;
 }
 
@@ -635,9 +635,9 @@ cs_quadrature_tria_1pt_scal(double                 tcur,
   double  evaluation;
 
   /* Copied from cs_quadrature_1pt */
-  xg[0] = cs_math_onethird * (v1[0] + v2[0] + v3[0]);
-  xg[1] = cs_math_onethird * (v1[1] + v2[1] + v3[1]);
-  xg[2] = cs_math_onethird * (v1[2] + v2[2] + v3[2]);
+  xg[0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
+  xg[1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
+  xg[2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
 
   ana(tcur, 1, NULL, xg, false, input, &evaluation);
 
@@ -754,9 +754,9 @@ cs_quadrature_tria_1pt_vect(double                 tcur,
   double evaluation[3];
 
   /* Copied from cs_quadrature_1pt */
-  xg[0] = cs_math_onethird * (v1[0] + v2[0] + v3[0]);
-  xg[1] = cs_math_onethird * (v1[1] + v2[1] + v3[1]);
-  xg[2] = cs_math_onethird * (v1[2] + v2[2] + v3[2]);
+  xg[0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
+  xg[1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
+  xg[2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
 
   ana(tcur, 1, NULL, xg, false, input, evaluation);
 
@@ -880,9 +880,9 @@ cs_quadrature_tria_1pt_tens(double                 tcur,
   double evaluation[9];
 
   /* Copied from cs_quadrature_1pt */
-  xg[0] = cs_math_onethird * (v1[0] + v2[0] + v3[0]);
-  xg[1] = cs_math_onethird * (v1[1] + v2[1] + v3[1]);
-  xg[2] = cs_math_onethird * (v1[2] + v2[2] + v3[2]);
+  xg[0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
+  xg[1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
+  xg[2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
 
   ana(tcur, 1, NULL, xg, false, input, evaluation);
 
@@ -1132,7 +1132,7 @@ cs_quadrature_tet_1pt_vect(double                 tcur,
                            double                 results[])
 {
   cs_real_3_t  xg;
-  double evaluation[3];
+  double  evaluation[3];
 
   /* Copied from cs_quadrature_tet_1pt */
   xg[0] = 0.25 * (v1[0] + v2[0] + v3[0] + v4[0]);

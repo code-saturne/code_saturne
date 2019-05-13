@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -47,12 +47,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, IntValidator, to_qvariant
+from code_saturne.model.Common import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, IntValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.NumericalParamEquationForm import Ui_NumericalParamEquationForm
-from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquationModel
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -99,7 +99,7 @@ class SchemeOrderDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value))
+                model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
 # Combo box delegate for IRESOL
@@ -162,7 +162,8 @@ class SolverChoiceDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value))
+                model.setData(idx, value)
+
 
 #-------------------------------------------------------------------------------
 # Combo box delegate for preconditioning
@@ -185,11 +186,12 @@ class PreconditioningChoiceDelegate(QItemDelegate):
         editor.addItem("None")
         editor.addItem("Multigrid, V-cycle")
         editor.addItem("Multigrid, K-cycle")
+        editor.addItem("Multigrid, K-cycle, HPC")
         editor.addItem("Jacobi")
         editor.addItem("Polynomial")
 
         solver = index.model().dataSolver[index.row()]['iresol']
-        if solver in ('multigrid', 'multigrid_k_cycle'):
+        if solver in ('multigrid', 'multigrid_k_cycle', 'multigrid_k_cycle_hpc'):
             editor.model().item(1).setEnabled(False)
         editor.installEventFilter(self)
         return editor
@@ -203,7 +205,7 @@ class PreconditioningChoiceDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for BLENCV
@@ -239,7 +241,7 @@ class BlendingFactorDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value))
+                    model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for nswrsm
@@ -271,7 +273,7 @@ class RhsReconstructionDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value))
+                    model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
 # Delegate for Solver QTableView
@@ -313,7 +315,7 @@ class SolverDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value))
+                    model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
 # Scheme class
@@ -371,7 +373,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         column = index.column()
@@ -379,31 +381,31 @@ class StandardItemModelScheme(QStandardItemModel):
         key = self.keys[column]
 
         if dico[key] == None:
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
             if index.column() > 0:
-                return to_qvariant(self.tr("Code_Saturne keyword: " + key.upper()))
+                return self.tr("Code_Saturne keyword: " + key.upper())
 
         elif role == Qt.DisplayRole and not column in [3, 4]:
             if key == 'ischcv':
-                return to_qvariant(self.dicoM2V[dico[key]])
+                return self.dicoM2V[dico[key]]
             else:
-                return to_qvariant(dico[key])
+                return dico[key]
 
         elif role == Qt.CheckStateRole and column in [3, 4]:
             st = None
             if key in ['isstpc', 'ircflu']:
                 st = dico[key]
             if st == 'on':
-                return to_qvariant(Qt.Checked)
+                return Qt.Checked
             else:
-                return to_qvariant(Qt.Unchecked)
+                return Qt.Unchecked
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -426,8 +428,8 @@ class StandardItemModelScheme(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -518,6 +520,7 @@ class StandardItemModelSolver(QStandardItemModel):
     def populateModel(self):
         self.dicoV2M= {"Multigrid, V-cycle"     : 'multigrid',
                        "Multigrid, K-cycle"     : 'multigrid_k_cycle',
+                       "Multigrid, K-cycle, HPC" : 'multigrid_k_cycle_hpc',
                        "Conjugate gradient"     : 'conjugate_gradient',
                        "Flexible conjugate gradient" : 'flexible_conjugate_gradient',
                        "Inexact conjugate gradient"  : 'inexact_conjugate_gradient',
@@ -533,6 +536,7 @@ class StandardItemModelSolver(QStandardItemModel):
                        "Polynomial"             : "polynomial"}
         self.dicoM2V= {"multigrid"              : 'Multigrid, V-cycle',
                        "multigrid_k_cycle"      : 'Multigrid, K-cycle',
+                       "multigrid_k_cycle_hpc"  : 'Multigrid, K-cycle, HPC',
                        "conjugate_gradient"     : 'Conjugate gradient',
                        "inexact_conjugate_gradient"  : 'Inexact conjugate gradient',
                        "flexible_conjugate_gradient" : 'Flexible conjugate gradient',
@@ -571,39 +575,39 @@ class StandardItemModelSolver(QStandardItemModel):
     def data(self, index, role):
 
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
             if index.column() == 3:
-                return to_qvariant(self.tr("Code_Saturne keyword: EPSILO"))
+                return self.tr("Field variable calculation option keyword: epsilo")
             elif index.column() == 4:
-                return to_qvariant(self.tr("Code_Saturne keyword: IWARNI"))
+                return self.tr("Field variable calculation option keyword: iwarni")
             elif index.column() == 5:
-                return to_qvariant(self.tr("Code_Saturne keyword: CDTVAR"))
+                return self.tr("Code_Saturne keyword: CDTVAR")
 
         elif role == Qt.DisplayRole:
             row = index.row()
             dico = self.dataSolver[row]
 
             if index.column() == 0:
-                return to_qvariant(dico['name'])
+                return dico['name']
             elif index.column() == 1:
-                return to_qvariant(self.dicoM2V[dico['iresol']])
+                return self.dicoM2V[dico['iresol']]
             elif index.column() == 2:
-                return to_qvariant(self.dicoM2V[dico['precond']])
+                return self.dicoM2V[dico['precond']]
             elif index.column() == 3:
-                return to_qvariant(dico['epsilo'])
+                return dico['epsilo']
             elif index.column() == 4:
-                return to_qvariant(dico['verbo'])
+                return dico['verbo']
             elif index.column() == 5:
-                return to_qvariant(dico['cdtvar'])
+                return dico['cdtvar']
             else:
-                return to_qvariant()
+                return None
 
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -623,20 +627,20 @@ class StandardItemModelSolver(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Name"))
+                return self.tr("Name")
             elif section == 1:
-                return to_qvariant(self.tr("Solver\nChoice"))
+                return self.tr("Solver\nChoice")
             elif section == 2:
-                return to_qvariant(self.tr("Preconditioning\nChoice"))
+                return self.tr("Preconditioning\nChoice")
             elif section == 3:
-                return to_qvariant(self.tr("Solver\nPrecision"))
+                return self.tr("Solver\nPrecision")
             elif section == 4:
-                return to_qvariant(self.tr("Verbosity"))
+                return self.tr("Verbosity")
             elif section == 5:
-                return to_qvariant(self.tr("Time Step\nFactor"))
+                return self.tr("Time Step\nFactor")
             else:
-                return to_qvariant()
-        return to_qvariant()
+                return None
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -699,7 +703,7 @@ class MinimumDelegate(QItemDelegate):
                     maxi = model.getData(idx)['scamax']
                     name = model.getData(idx)['name']
                     if model.checkMinMax(name, value, maxi):
-                        model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                        model.setData(idx, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -733,7 +737,7 @@ class VerbosityDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value))
+                    model.setData(idx, value)
 
 
 #-------------------------------------------------------------------------------
@@ -769,7 +773,7 @@ class MaximumDelegate(QItemDelegate):
                     mini = model.getData(idx)['scamin']
                     name = model.getData(idx)['name']
                     if model.checkMinMax(name, mini, value):
-                        model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                        model.setData(idx, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -815,28 +819,28 @@ class StandardItemModelClipping(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         row = index.row()
         col = index.column()
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.toolTipRole[col])
+            return self.toolTipRole[col]
         if role == Qt.DisplayRole:
             row = index.row()
             dico = self._data[row]
             if col == 0:
-                return to_qvariant(dico['name'])
+                return dico['name']
             elif col == 1:
-                return to_qvariant(dico['scamin'])
+                return dico['scamin']
             elif col == 2:
-                return to_qvariant(dico['scamax'])
+                return dico['scamax']
             else:
-                return to_qvariant()
+                return None
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
+            return Qt.AlignCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -851,8 +855,8 @@ class StandardItemModelClipping(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -952,7 +956,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         elif QT_API == "PYQT5":
             self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        from code_saturne.Pages.TimeStepModel import TimeStepModel
+        from code_saturne.model.TimeStepModel import TimeStepModel
         idtvar = TimeStepModel(self.case).getTimePassing()
         if idtvar in [-1, 2]:
             self.tableViewSolver.setColumnHidden(5, True)

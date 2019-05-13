@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -744,8 +744,8 @@ _log_fields(void)
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
-                    "  ** Computed fields on %s\n"
-                    "     -------------------%.*s\n"),
+                    "  ** Field values on %s\n"
+                    "     ----------------%.*s\n"),
                   loc_name, (int)loc_name_w, _underline);
 
     cs_log_strpad(tmp_s[0], _("field"), max_name_width, 64);
@@ -1657,6 +1657,9 @@ cs_log_iteration_clipping_field(int               f_id,
 void
 cs_log_l2residual(void)
 {
+  if (cs_glob_rank_id > 0)
+    return;
+
   const cs_time_step_t *ts = cs_glob_time_step;
   const int n_fields = cs_field_n_fields();
 

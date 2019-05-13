@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -46,7 +46,7 @@ from code_saturne.Base.QtGui     import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.BrowserForm import Ui_BrowserForm
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.BrowserView import TreeItem, TreeModel
 from code_saturne.Base.BrowserView import BrowserView as SaturneBrowserView
 from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
@@ -94,7 +94,7 @@ Define plotter
         return
 
 
-    def display(self, root, case, stbar, study, tree):
+    def display(self, root, case, stbar, tree):
         """
         """
         index = self.treeView.currentIndex()
@@ -102,7 +102,7 @@ Define plotter
         name  = item.itemData[0]
         case['current_tab'] = 0
         case['current_index'] = index
-        return displaySelectedPage(name, root, case, stbar, study, tree)
+        return displaySelectedPage(name, root, case, stbar, tree)
 
 
     def configureTree(self, case):

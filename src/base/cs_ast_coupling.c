@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -139,8 +139,6 @@ void CS_PROCF(astgeo, ASTGEO)
   cs_lnum_t j, n_faces;
   cs_lnum_t n_vertices;
 
-  fvm_nodal_t  *fsi_mesh;
-
   cs_lnum_t *faces_color = NULL;
   cs_lnum_t *vertices_color = NULL;
 
@@ -153,13 +151,14 @@ void CS_PROCF(astgeo, ASTGEO)
 
   n_faces = *(nbfast);
 
-  fsi_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                            "MaillageExtraitAster_1",
-                                            false,
-                                            0,
-                                            n_faces,
-                                            NULL,
-                                            lstfac);
+  fvm_nodal_t
+    *fsi_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                               "MaillageExtraitAster_1",
+                                               false,
+                                               0,
+                                               n_faces,
+                                               NULL,
+                                               lstfac);
 
   /* Creation of the information structure for Code_Saturne/Code_Aster
      coupling */
@@ -185,29 +184,26 @@ void CS_PROCF(astgeo, ASTGEO)
   assert(sizeof(cs_coord_t)==sizeof(cs_real_t));
 
   fvm_nodal_get_vertex_coords(fsi_mesh, CS_INTERLACE,
-                              (cs_coord_t *) vtx_coords);
+                              (cs_coord_t *)vtx_coords);
 
   for (j = 0; j < n_faces; j++) {
 
-    face_centers[3*j]   = b_face_cog[3*(lstfac[j]-1)];
-    face_centers[3*j+1] = b_face_cog[3*(lstfac[j]-1)+1];
-    face_centers[3*j+2] = b_face_cog[3*(lstfac[j]-1)+2];
+    cs_lnum_t f_id = lstfac[j] - 1;
+    face_centers[3*j]   = b_face_cog[3*f_id];
+    face_centers[3*j+1] = b_face_cog[3*f_id+1];
+    face_centers[3*j+2] = b_face_cog[3*f_id+2];
 
     faces_color[j]      = idfast[j];
 
   }
 
   for (j = 0; j < n_vertices; j++) {
-
-    vertices_color[j]      = idnast[j];
-
+    vertices_color[j]   = idnast[j];
   }
 
   /* In parallel, all YACS/Calcium I/O goes through rank 0;
-     This is about 1990's level technology/scalability, but to do better
-     (for example switch to PLE or MedCoupling), we'll need to wait for
-     more users or more parallism in Code_Aster, as this involves
-     both codes. */
+     This is about 1990's level technology/scalability, so a rewrite
+     (for example switch to PLE or MedCoupling) would be useful */
 
 #if defined(HAVE_MPI)
 
@@ -253,8 +249,6 @@ void CS_PROCF(astgeo, ASTGEO)
     /* For vertices, which may be shared, copy global numbering
        associated with temporary mesh. */
 
-    ast_coupling->n_g_vertices = fvm_nodal_get_n_g_vertices(fsi_mesh);
-
     BFT_MALLOC(s_vtx_gnum, ast_coupling->n_vertices, cs_gnum_t);
     fvm_nodal_get_global_vertex_num(fsi_mesh, s_vtx_gnum);
 
@@ -287,11 +281,19 @@ void CS_PROCF(astgeo, ASTGEO)
 
     int sizes[2] = {ast_coupling->n_g_faces, ast_coupling->n_g_vertices};
 
-    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
-                         "DONGEO", 2, &(sizes[0]));
+    /* For "milieu" */
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
                             "ALMAXI", 1, almax);
+
+    /* Directly for code_aster */
+
+    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+                         "NB_DYN", 1, &(sizes[1]));
+
+    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+                         "NB_FOR", 1, &(sizes[0]));
+
 
   }
 
@@ -577,14 +579,14 @@ void CS_PROCF(astpar, ASTPAR)
   bft_printf("@                                                          \n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@                                                          \n"
-               "@ @@ ATTENTION : MODIFICATION DES PARAMETRES UTILISATEURS  \n"
+               "@ @@ ATTENTION: Change in user parameters                  \n"
                "@    *********                                             \n"
                "@                                                          \n"
-               "@    Presence du couplage Code_Saturne/Code_Aster :        \n"
-               "@    Les donnees rentrees dans l'outil 'Milieu'            \n"
-               "@    ecrasent les donnees rentrees par l'utilisateur       \n"
+               "@    In presence of coupling with code_aster, values       \n"
+               "@    provided in the 'Milieu' tool overwrite those         \n"
+               "@    in the base setup                                     \n"
                "@                                                          \n"
-               "@   Nouvelles valeurs:                                     \n"
+               "@   New values:                                            \n"
                "@      NTMABS = %i                                         \n"
                "@      NALIMX = %i                                         \n"
                "@      EPALIM = %f                                         \n"
@@ -606,7 +608,6 @@ void CS_PROCF(astpdt, ASTPDT)
   cs_int_t  *nbpdt
 )
 {
-  int        i;
   cs_real_t  dttmp = 0.;
 
   if (cs_glob_rank_id <= 0) {
@@ -638,9 +639,8 @@ void CS_PROCF(astpdt, ASTPDT)
 #endif
 
 
-  for (i = 0; i < *ncelet; i++)
+  for (cs_lnum_t i = 0; i < *ncelet; i++)
     dttab[i] = dttmp;
-
 
   bft_printf("@                                                          \n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -661,11 +661,9 @@ void CS_PROCF(astpdt, ASTPDT)
                "@  Valeur du pas de temps retenue pour le calcul couple:   \n"
                "@  dt = %f                                                 \n"
                "@                                                          \n"
-               "@                                                          \n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@                                                          \n",
                dttmp);
-
 }
 
 /*----------------------------------------------------------------------------

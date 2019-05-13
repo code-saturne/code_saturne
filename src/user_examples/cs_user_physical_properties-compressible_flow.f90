@@ -4,7 +4,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -64,7 +64,7 @@
 !> selected by the user.
 !>
 !> To set a variable diffusivity for a given user-defined scalar, the
-!> variable integer key kivisl (scalar_diffusivity_id) must have been set to 0
+!> variable integer key kivisl (diffusivity_id) must have been set to 0
 !> or a field id for the matching field in the user subroutine \ref usipsu or
 !> in the GUI (otherwise, a memory problem is expected).
 !>

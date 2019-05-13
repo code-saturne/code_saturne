@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -123,11 +123,12 @@ if (ippmod(iphpar).le.1) then
 
 endif
 
-! Mappings for specific physics
-
-call field_get_val_s(ibym(1), bym1)
-call field_get_val_s(ibym(2), bym2)
-call field_get_val_s(ibym(3), bym3)
+! Mappings for gas combustion
+if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
+  call field_get_val_s(ibym(1), bym1)
+  call field_get_val_s(ibym(2), bym2)
+  call field_get_val_s(ibym(3), bym3)
+end if
 
 ! Arrays of pointers containing the fields values for each class
 ! (loop on cells outside loop on classes)

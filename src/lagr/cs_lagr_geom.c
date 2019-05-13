@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -105,73 +105,61 @@ void
 cs_lagr_geom(void)
 {
   cs_mesh_t            *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *fvq  = cs_glob_mesh_quantities;
 
-  BFT_REALLOC(cs_glob_lagr_b_u_normal, mesh->n_b_faces, cs_real_4_t);
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_normal;
+  const cs_real_3_t *vtx_coord
+    = (const cs_real_3_t *)(cs_glob_mesh->vtx_coord);
+
   BFT_REALLOC(cs_glob_lagr_b_face_proj, mesh->n_b_faces, cs_real_33_t);
 
 /* ==============================================================================*/
-/* 1. Boundary faces planes computation     */
-/* A X + B Y + C Z + D = 0   */
+/* 1. The reference frame chang matrix is:
+ *
+ *  ( nx  ny  nz )
+ *  ( t1x t1y t1z)
+ *  ( t2x t2y t2z)
+ *
+ *  With n, t1, t2 three unit orthogonal vectors and n the outwrding normal to the
+ *  boundary face.
+ * */
 /* ==============================================================================*/
 
-  for (cs_lnum_t ifac = 0; ifac < mesh->n_b_faces; ifac++) {
+  for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+
+    /* normal vector coordinates */
+    cs_real_3_t normal;
+    cs_math_3_normalise(b_face_normal[face_id], normal);
 
     /* Recover the first face nodes */
-    cs_lnum_t v_id0  = mesh->b_face_vtx_lst[mesh->b_face_vtx_idx[ifac]];
-    cs_lnum_t v_id1  = mesh->b_face_vtx_lst[mesh->b_face_vtx_idx[ifac] + 1];
+    cs_lnum_t v_id0  = mesh->b_face_vtx_lst[mesh->b_face_vtx_idx[face_id]];
+    cs_lnum_t v_id1  = mesh->b_face_vtx_lst[mesh->b_face_vtx_idx[face_id] + 1];
 
-    cs_real_t xs1     = mesh->vtx_coord[v_id0*3];
-    cs_real_t ys1     = mesh->vtx_coord[v_id0*3+1];
-    cs_real_t zs1     = mesh->vtx_coord[v_id0*3+2];
+    cs_real_3_t v0v1 = {
+      vtx_coord[v_id1][0] - vtx_coord[v_id0][0],
+      vtx_coord[v_id1][1] - vtx_coord[v_id0][1],
+      vtx_coord[v_id1][2] - vtx_coord[v_id0][2]};
 
-    cs_real_t xs2     = mesh->vtx_coord[v_id1*3];
-    cs_real_t ys2     = mesh->vtx_coord[v_id1*3+1];
-    cs_real_t zs2     = mesh->vtx_coord[v_id1*3+2];
+    /* tangential projection to the wall:
+     * (Id -n (x) n) vect */
+    cs_real_3_t t1, t1p, t2;
+    cs_math_3_orthogonal_projection(normal, v0v1, t1p);
 
-    /* Face plane equation  */
+    cs_math_3_normalise(t1p, t1);
 
-    cs_real_t xnor = cs_math_3_norm(fvq->b_face_normal + ifac*3);
-
-    cs_real_t xn   = fvq->b_face_normal[ifac*3]   / xnor;
-    cs_real_t yn   = fvq->b_face_normal[ifac*3+1] / xnor;
-    cs_real_t zn   = fvq->b_face_normal[ifac*3+2] / xnor;
-
-    cs_glob_lagr_b_u_normal[ifac][0] = xn;
-    cs_glob_lagr_b_u_normal[ifac][1] = yn;
-    cs_glob_lagr_b_u_normal[ifac][2] = zn;
-
-    cs_glob_lagr_b_u_normal[ifac][3] = -(xn*xs1 + yn*ys1 + zn*zs1);
+    /* t2 = n ^ t1 */
+    cs_math_3_cross_product(normal, t1, t2);
 
     /* Matrix of Reference frame change    */
-
-    xnor = sqrt (  (xs2 - xs1) * (xs2 - xs1)
-                 + (ys2 - ys1) * (ys2 - ys1)
-                 + (zs2 - zs1) * (zs2 - zs1));
-
-    cs_real_t xt   = (xs2 - xs1) / xnor;
-    cs_real_t yt   = (ys2 - ys1) / xnor;
-    cs_real_t zt   = (zs2 - zs1) / xnor;
-
-    cs_real_t xtt  = yn * zt - zn * yt;
-    cs_real_t ytt  = zn * xt - xn * zt;
-    cs_real_t ztt  = xn * yt - yn * xt;
-
-    xnor = sqrt(xtt*xtt + ytt*ytt + ztt*ztt);
-
-    xtt  = xtt / xnor;
-    ytt  = ytt / xnor;
-    ztt  = ztt / xnor;
-
-    cs_glob_lagr_b_face_proj[ifac][0][0] = xn;
-    cs_glob_lagr_b_face_proj[ifac][0][1] = yn;
-    cs_glob_lagr_b_face_proj[ifac][0][2] = zn;
-    cs_glob_lagr_b_face_proj[ifac][1][0] = xt;
-    cs_glob_lagr_b_face_proj[ifac][1][1] = yt;
-    cs_glob_lagr_b_face_proj[ifac][1][2] = zt;
-    cs_glob_lagr_b_face_proj[ifac][2][0] = xtt;
-    cs_glob_lagr_b_face_proj[ifac][2][1] = ytt;
-    cs_glob_lagr_b_face_proj[ifac][2][2] = ztt;
+    cs_glob_lagr_b_face_proj[face_id][0][0] = normal[0];
+    cs_glob_lagr_b_face_proj[face_id][0][1] = normal[1];
+    cs_glob_lagr_b_face_proj[face_id][0][2] = normal[2];
+    cs_glob_lagr_b_face_proj[face_id][1][0] = t1[0];
+    cs_glob_lagr_b_face_proj[face_id][1][1] = t1[1];
+    cs_glob_lagr_b_face_proj[face_id][1][2] = t1[2];
+    cs_glob_lagr_b_face_proj[face_id][2][0] = t2[0];
+    cs_glob_lagr_b_face_proj[face_id][2][1] = t2[1];
+    cs_glob_lagr_b_face_proj[face_id][2][2] = t2[2];
 
   }
 

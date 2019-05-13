@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -63,12 +63,14 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Separation lines: long, medium, short */
-const char lsepline[80] =
-  "# =======================================================================\n";
-const char msepline[60] =
-  "# =========================================\n";
-const char ssepline[40] =
-  "# =================\n";
+const char h1_sep[80] =
+  "=======================================================================\n";
+const char h2_sep[80] =
+  "-----------------------------------------------------------------------\n";
+const char sepline[80] =
+  "# =====================================================================\n";
+const char msepline[50] =
+  "# ========================================\n";
 
 /*============================================================================
  * Global static variables
@@ -127,6 +129,37 @@ const char *
 cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info)
 {
   return cs_param_hodge_type_desc[h_info.type];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Output the settings related to a cs_param_hodge_t structure
+ *
+ * \param[in] prefix    optional string
+ * \param[in] hp        a cs_param_hodge_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_hodge_log(const char               *prefix,
+                   const cs_param_hodge_t    hp)
+{
+  const char  *_p;
+  const char _empty_prefix[2] = "";
+  if (prefix == NULL)
+    _p = _empty_prefix;
+  else
+    _p = prefix;
+
+  cs_log_printf(CS_LOG_SETUP, "%s | Type: %s\n",
+                _p, cs_param_hodge_get_type_name(hp));
+  cs_log_printf(CS_LOG_SETUP, "%s | Algo: %s\n",
+                _p, cs_param_hodge_get_algo_name(hp));
+  cs_log_printf(CS_LOG_SETUP, "%s | Property inversion: %s\n",
+                _p, cs_base_strtf(hp.inv_pty));
+  if (hp.algo == CS_PARAM_HODGE_ALGO_COST)
+    cs_log_printf(CS_LOG_SETUP, "%s | Algo.Coef: %.3e\n",
+                  _p, hp.coef);
 }
 
 /*----------------------------------------------------------------------------*/

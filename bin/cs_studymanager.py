@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -67,11 +67,8 @@ def process_cmd_line(argv, pkg):
     """
     Processes the passed command line arguments.
     """
-    if sys.argv[0][-3:] == '.py':
-        usage = "usage: %prog <options>"
-    else:
-        usage = "usage: %prog studymanager <options>"
 
+    usage = "usage: %prog studymanager <options>"
     parser = OptionParser(usage=usage)
 
     parser.add_option("-f", "--file", dest="filename", type="string",
@@ -144,11 +141,11 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("--repo", type="string",
                       dest="repo_path", default="",
-                      help="force the path to the repository directory")
+                      help="Force path to repository directory")
 
     parser.add_option("--dest", type="string",
                       dest="dest_path", default="",
-                      help="force the path to the destination directory")
+                      help="Force path to destination directory")
 
     parser.add_option("-g", "--debug", action="store_true",
                       dest="debug", default=False,
@@ -161,6 +158,14 @@ def process_cmd_line(argv, pkg):
     parser.add_option("--without-tags", type="string",
                       dest="without_tags", default="",
                       help="exclude any run with one of specified tags (separated by commas)")
+
+    parser.add_option("--create-xml", action="store_true",
+                      dest="create_xml", default=False,
+                      help="create xml from study (current directory has to be a study)")
+
+    if len(argv)==0:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
     (options, args) = parser.parse_args(argv)
 
@@ -307,16 +312,19 @@ def run_studymanager(pkg, options):
     studies.reporting(" Kernel version:    " + pkg.version)
     studies.reporting(" Install directory: " + pkg.get_dir('exec_prefix'))
     studies.reporting(" File dump:         " + dif)
-    studies.reporting(" Repository:        " + studies.getRepository())
-    studies.reporting(" Destination:       " + studies.getDestination())
+
     studies.reporting("\n Informations:")
     studies.reporting(" -------------\n")
-    studies.reporting(" Date:               " + datetime.now().strftime("%A %B %d %H:%M:%S %Y"))
-    studies.reporting(" Platform:           " + platform.platform())
-    studies.reporting(" Computer:           " + platform.uname()[1] + "  " + release())
-    studies.reporting(" Process Id:         " + str(os.getpid()))
-    studies.reporting(" User name:          " + getpass.getuser())
-    studies.reporting(" Working directory:  " + os.getcwd())
+    studies.reporting(" Date:                   " + datetime.now().strftime("%A %B %d %H:%M:%S %Y"))
+    studies.reporting(" Platform:               " + platform.platform())
+    studies.reporting(" Computer:               " + platform.uname()[1] + "  " + release())
+    studies.reporting(" Process Id:             " + str(os.getpid()))
+    studies.reporting(" User name:              " + getpass.getuser())
+    studies.reporting(" Repository:             " + studies.getRepository())
+    dest = studies.getDestination()
+    studies.reporting(" Destination:            " + dest)
+    doc = os.path.join(dest, options.log_file)
+    studies.reporting(" Ext. subprocesses logs: " + doc)
     studies.reporting("\n")
 
     # Update repository if needed
@@ -391,42 +399,6 @@ def run_studymanager(pkg, options):
 
     return 0
 
-def studymanager_usage():
-
-    usage = \
-        """Usage: %(prog) studymanager <options>
-
-Options:
-  -h, --help            show this help message and exit
-  -f FILE, --file=FILE  xml FILE of parameters
-  -q, --quiet           don't print status messages to stdout
-  -u, --update          update scripts in the repository
-  -x, --update-xml      update only xml files in the repository
-  -t, --test-compile    compile all cases
-  -r, --run             run all cases
-  -n N_ITERATIONS, --n-iterations=N_ITERATIONS
-                        maximum number of iterations for cases of the study
-  -c, --compare         compare results between repository and destination
-  -d REFERENCE, --ref-dir=REFERENCE
-                        absolute reference directory to compare dest with
-  -p, --post            postprocess results of computations
-  -m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...
-                        addresses for sending the reports
-  -l LOG_FILE, --log=LOG_FILE
-                        name of studymanager log file (default value is
-                        'studymanager.log'
-  -z, --disable-tex     disable text rendering with LaTex in Matplotlib (use
-                        Mathtext)
-  --rm                  remove existing run directories
-  -s, --skip-reports    disable the generation of reports
-  --fmt=DEFAULT_FMT     Set the default format for exporting matplotlib figuer
-  --repo=REPO_PATH      Force the path to the repository directory
-  --dest=DEST_PATH      Force the path to the destination directory
-  -g, --debug           Activate debugging mode
-"""
-
-    print(usage % {'prog':sys.argv[0]})
-
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
@@ -436,14 +408,9 @@ def main(argv, pkg):
     Main function.
     """
 
-    if argv == []:
-        studymanager_usage()
-        sys.exit(1)
-    else:
-        # Process command line
-        options = process_cmd_line(argv, pkg)
+    options = process_cmd_line(argv, pkg)
 
-        retcode = run_studymanager(pkg, options)
-        sys.exit(retcode)
+    retcode = run_studymanager(pkg, options)
+    sys.exit(retcode)
 
 #-------------------------------------------------------------------------------

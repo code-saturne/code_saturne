@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -74,9 +74,17 @@ typedef enum {
 
   CS_RENUMBER_B_FACES_THREAD,        /* No cell shared between threads */
   CS_RENUMBER_B_FACES_SIMD,          /* Renumber for vector (SIMD) operations */
-  CS_RENUMBER_B_FACES_NONE           /* No interior face numbering */
+  CS_RENUMBER_B_FACES_NONE           /* No boundary face numbering */
 
 } cs_renumber_b_faces_type_t;
+
+typedef enum {
+
+  CS_RENUMBER_VERTICES_BY_CELL_ADJ,  /* Renumbering based on cell adjacency */
+  CS_RENUMBER_VERTICES_BY_FACE_ADJ,  /* Renumbering based on face adjacency */
+  CS_RENUMBER_VERTICES_NONE          /* No vertex numbering */
+
+} cs_renumber_vertices_type_t;
 
 /* Ordering options for adjacency arrays */
 
@@ -142,48 +150,57 @@ void
 cs_renumber_get_min_subset_size(cs_lnum_t  *min_i_subset_size,
                                 cs_lnum_t  *min_b_subset_size);
 
-/*----------------------------------------------------------------------------
- * Select the options for interior faces renumbering.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Select the algorithm for mesh renumbering.
  *
- * parameters:
- *   halo_adjacent_cells_last <-- if true, cells adjacent to ghost cells
- *                                will be placed last (after pre-numbering)
- *   halo_adjacent_faces_last <-- if true, interior faces adjacent to ghost
- *                                cells will be placed last (after pre-numbering)
- *   i_faces_base_ordering    <-- pre-ordering of interior faces by
- *                                lowest or highest adjacent cell id
- *   cells_pre_numbering      <-- algorithm for cells pre-numbering
- *   cells_numbering          <-- algorithm for cells numbering
- *   i_faces_numbering        <-- algorithm for interior faces numbering
- *   b_faces_numbering        <-- algorithm for boundary faces numbering
- *----------------------------------------------------------------------------*/
+ * \param[in]  halo_adjacent_cells_last  if true, cells adjacent to ghost cells
+ *                                       will be placed last
+ *                                       (after pre-numbering)
+ * \param[in]  halo_adjacent_faces_last  if true, interior faces adjacent to
+ *                                       ghost cells will be placed last
+ *                                       (after pre-numbering)
+ * \param[in]  i_faces_base_ordering     pre-ordering of interior faces by
+ *                                       lowest or highest adjacent cell id
+ * \param[in]  cells_pre_numbering       algorithm for cells pre-numbering
+ * \param[in]  cells_numbering           algorithm for cells numbering
+ * \param[in]  i_faces_numbering         algorithm for interior faces numbering
+ * \param[in]  b_faces_numbering         algorithm for boundary faces numbering
+ * \param[in]  vertices_numbering        algorithm for vertices numbering
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_set_algorithm(bool                        halo_adjacent_cells_last,
-                          bool                        halo_adjacent_faces_last,
-                          cs_renumber_ordering_t      i_faces_base_ordering,
-                          cs_renumber_cells_type_t    cells_pre_numbering,
-                          cs_renumber_cells_type_t    cells_numbering,
-                          cs_renumber_i_faces_type_t  i_faces_numbering,
-                          cs_renumber_b_faces_type_t  b_faces_numbering);
+cs_renumber_set_algorithm(bool                         halo_adjacent_cells_last,
+                          bool                         halo_adjacent_faces_last,
+                          cs_renumber_ordering_t       i_faces_base_ordering,
+                          cs_renumber_cells_type_t     cells_pre_numbering,
+                          cs_renumber_cells_type_t     cells_numbering,
+                          cs_renumber_i_faces_type_t   i_faces_numbering,
+                          cs_renumber_b_faces_type_t   b_faces_numbering,
+                          cs_renumber_vertices_type_t  vertices_numbering);
 
-/*----------------------------------------------------------------------------
- * Return the options for interior faces renumbering.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the algorithms for mesh renumbering.
  *
  * Any argument may be passed NULL if this option is not queried.
  *
- * parameters:
- *   halo_adjacent_cells_last --> if true, cells adjacent to ghost cells
- *                                will be placed last (after pre-numbering)
- *   halo_adjacent_faces_last --> if true, interior faces adjacent to ghost
- *                                cells will be placed last (after pre-numbering)
- *   i_faces_base_ordering    --> pre-ordering of interior faces by
- *                                lowest or highest adjacent cell id
- *   cells_pre_numbering      --> algorithm for cells pre-numbering
- *   cells_numbering          --> algorithm for cells numbering
- *   i_faces_numbering        --> algorithm for interior faces numbering
- *   b_faces_numbering        --> algorithm for boundary faces numbering
- *----------------------------------------------------------------------------*/
+ * \param[out]  halo_adjacent_cells_last  if true, cells adjacent to ghost cells
+ *                                        will be placed last
+ *                                        (after pre-numbering)
+ * \param[out]  halo_adjacent_faces_last  if true, interior faces adjacent to
+ *                                        ghost cells will be placed last
+ *                                        (after pre-numbering)
+ * \param[out]  i_faces_base_ordering     pre-ordering of interior faces by
+ *                                        lowest or highest adjacent cell id
+ * \param[out]  cells_pre_numbering       algorithm for cells pre-numbering
+ * \param[out]  cells_numbering           algorithm for cells numbering
+ * \param[out]  i_faces_numbering         algorithm for interior faces numbering
+ * \param[out]  b_faces_numbering         algorithm for boundary faces numbering
+ * \param[out]  vertices_numbering        algorithm for vertices numbering
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
@@ -192,7 +209,8 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
                           cs_renumber_cells_type_t    *cells_pre_numbering,
                           cs_renumber_cells_type_t    *cells_numbering,
                           cs_renumber_i_faces_type_t  *i_faces_numbering,
-                          cs_renumber_b_faces_type_t  *b_faces_numbering);
+                          cs_renumber_b_faces_type_t  *b_faces_numbering,
+                          cs_renumber_vertices_type_t *vertices_numbering);
 
 /*----------------------------------------------------------------------------
  * Renumber mesh elements for vectorization or threading depending on code
@@ -269,6 +287,20 @@ cs_renumber_b_faces(cs_mesh_t  *mesh);
 
 void
 cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber vertices depending on code options and target machine.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_vertices(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 

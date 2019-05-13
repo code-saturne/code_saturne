@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -53,10 +53,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from code_saturne.Pages.OpenTurnsForm import Ui_OpenTurnsForm
-from code_saturne.Pages.OpenTurnsModel import OpenTurnsModel
+from code_saturne.model.OpenTurnsModel import OpenTurnsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -115,6 +115,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         # Hosts are stored in the form <batch_rm>_<host_name> hence the split
         # used hereafter to determine the "real" host name
         self.hosts_binpath =  {}
+        self.hosts_binpath['localhost'] = 'default'
 
         self.distant_host_builds = None
         if dist_hosts != None:
@@ -130,6 +131,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
                 dh_not_found = False
                 if self.distant_host_builds[host_name] == None:
+                    self.distant_host_builds[host_name] = ['none found']
                     dh_not_found = True
 
                 host_tag = 'distant : ' + host_name
@@ -154,6 +156,8 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.spinBoxNumberHours.valueChanged[int].connect(self.slotUpdateWCHours)
         self.spinBoxNumberMinutes.valueChanged[int].connect(self.slotUpdateWCMinutes)
         self.spinBoxNumberSeconds.valueChanged[int].connect(self.slotUpdateWCSeconds)
+        self.lineEditWCKEY.textChanged[str].connect(self.slotUpdateWckey)
+        self.lineEditOutputFile.textChanged[str].connect(self.slotUpdateResultsFile)
 
         self.pushButtonLaunchOT.clicked.connect(self.slotLaunchCsOt)
 
@@ -193,7 +197,8 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.spinBoxNumberMinutes.setValue(int(wct[2]))
         self.spinBoxNumberSeconds.setValue(int(wct[3]))
 
-        self.lineEditWCKEY.setText(self.mdl.wckey)
+        self.lineEditWCKEY.setText(self.mdl.getWCKEY())
+        self.lineEditOutputFile.setText(self.mdl.getResultsFile())
 
 
     @pyqtSlot(str)
@@ -318,6 +323,24 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
+    @pyqtSlot(str)
+    def slotUpdateWckey(self, text):
+        """
+        Update the WCKEY variable
+        """
+
+        self.mdl.setWCKEY(text)
+
+
+    @pyqtSlot(str)
+    def slotUpdateResultsFile(self, text):
+        """
+        Update the outputfile name
+        """
+
+        self.mdl.setResultsFile(text)
+
+
     @pyqtSlot()
     def slotLaunchCsOt(self):
         """
@@ -412,7 +435,7 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
         exec_file_name = os.path.join(self.mdl.otstudy_path, 'cs_execute_job.py')
 
-        f = open(exec_file_name, 'wa')
+        f = open(exec_file_name, 'w')
 
         script_cmd = "\n"
         script_cmd += "# ============================================================================== \n"
@@ -467,13 +490,17 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         script_cmd += toffset + 'cfd_eval.study2code() \n\n'
         script_cmd += toffset + 'cfd_eval.run() \n\n'
 
-        vals_list = ''
-        for i in range(len(self.mdl.output_variables)):
-            if i > 0:
+        n_vals = len(self.mdl.output_variables)
+        vals_list = ""
+        for i in range(n_vals):
+            if i != 0:
                 vals_list += ', '
             vals_list += self.mdl.output_variables[i]
 
-        script_cmd += toffset + vals_list + ' = cfd_eval.code2study()\n\n'
+        cmd_m1 = '(%s,) = cfd_eval.code2study(n_values=%d)\n' %(vals_list, n_vals)
+        script_cmd += toffset + cmd_m1
+
+        script_cmd += '\n'
 
         script_cmd += toffset + 'return '
         script_cmd += vals_list + '\n'
@@ -515,7 +542,8 @@ def __getListOfDistantBuilds__(host_name, search_path):
         vr.sort()
         dist_versions = []
         for iv in range(len(vr)):
-            dist_versions.append(str(vr[iv][:-1]))
+            version_name = vr[iv][:-1].decode('utf-8')
+            dist_versions.append(version_name)
 
 
     return dist_versions

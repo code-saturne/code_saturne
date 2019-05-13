@@ -10,7 +10,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -48,21 +48,22 @@ BEGIN_C_DECLS
 /* According to the flag which are set, different quantities or connectivities
    are built on-the-fly and stored in a local cache structure (cell/base) */
 
-#define CS_CDO_LOCAL_PV   (1 <<  0) //     1: local info. for vertices
-#define CS_CDO_LOCAL_PVQ  (1 <<  1) //     2: local quant. on vertices
-#define CS_CDO_LOCAL_PE   (1 <<  2) //     4: local info. for edges
-#define CS_CDO_LOCAL_PEQ  (1 <<  3) //     8: local quant. on edges
-#define CS_CDO_LOCAL_DFQ  (1 <<  4) //    16: local quant. on dual faces
-#define CS_CDO_LOCAL_PF   (1 <<  5) //    32: local info. for faces
-#define CS_CDO_LOCAL_PFQ  (1 <<  6) //    64: local quant. on faces
-#define CS_CDO_LOCAL_DEQ  (1 <<  7) //   128: local quant. on dual edges
-#define CS_CDO_LOCAL_EV   (1 <<  8) //   256: local e2v connectivity
-#define CS_CDO_LOCAL_FE   (1 <<  9) //   512: local f2e connectivity
-#define CS_CDO_LOCAL_FEQ  (1 << 10) //  1024: local f2e quantities
-#define CS_CDO_LOCAL_EF   (1 << 11) //  2048: local e2f connectivity
-#define CS_CDO_LOCAL_EFQ  (1 << 12) //  4096: local e2f quantities
-#define CS_CDO_LOCAL_HFQ  (1 << 13) //  8192: local quant. on face pyramids
-#define CS_CDO_LOCAL_DIAM (1 << 14) // 16384: local diameters on faces/cell
+#define CS_CDO_LOCAL_PV   (1 <<  0) /*     1: local info. for vertices */
+#define CS_CDO_LOCAL_PVQ  (1 <<  1) /*     2: local quant. on vertices */
+#define CS_CDO_LOCAL_PE   (1 <<  2) /*     4: local info. for edges */
+#define CS_CDO_LOCAL_PEQ  (1 <<  3) /*     8: local quant. on edges */
+#define CS_CDO_LOCAL_DFQ  (1 <<  4) /*    16: local quant. on dual faces */
+#define CS_CDO_LOCAL_PF   (1 <<  5) /*    32: local info. for faces */
+#define CS_CDO_LOCAL_PFQ  (1 <<  6) /*    64: local quant. on faces */
+#define CS_CDO_LOCAL_DEQ  (1 <<  7) /*   128: local quant. on dual edges */
+#define CS_CDO_LOCAL_EV   (1 <<  8) /*   256: local e2v connectivity */
+#define CS_CDO_LOCAL_FE   (1 <<  9) /*   512: local f2e connectivity */
+#define CS_CDO_LOCAL_FEQ  (1 << 10) /*  1024: local f2e quantities */
+#define CS_CDO_LOCAL_FV   (1 << 11) /*  2048: local f2v connectivity */
+#define CS_CDO_LOCAL_EF   (1 << 12) /*  4096: local e2f connectivity */
+#define CS_CDO_LOCAL_EFQ  (1 << 13) /*  8192: local e2f quantities */
+#define CS_CDO_LOCAL_HFQ  (1 << 14) /* 16384: local quant. on face pyramids */
+#define CS_CDO_LOCAL_DIAM (1 << 15) /* 32768: local diameters on faces/cell */
 
 /*============================================================================
  * Type definitions
@@ -93,7 +94,7 @@ typedef struct {
 
   /* Temporary buffers (erase and updated several times during the system
      build */
-  short int    *ids;     /*!< local ids */
+  int          *ids;     /*!< local ids */
   double       *values;  /*!< local values */
   cs_real_3_t  *vectors; /*!< local 3-dimensional vectors */
 
@@ -140,8 +141,11 @@ typedef struct {
   double     *neu_values;       /*!< Neumann BCs values; size = n_dofs */
 
   /* Robin BCs */
-  bool        has_robin;
-  double     *rob_values;    /*!< Robin BCs values; size = 2*n_dofs */
+  bool        has_robin;     /*!< Robin BCs ? */
+  double     *rob_values;    /*!< Robin BCs values; size = 3*n_dofs */
+
+  /* Sliding BCs */
+  bool        has_sliding;   /*!< Sliding BCs ? */
 
   /* Internal enforcement of DoFs */
   bool        has_internal_enforcement;  /*!< Internal enforcement ? */
@@ -201,6 +205,10 @@ typedef struct {
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
   short int   *e2v_ids; /*!< cell-wise edge->vertices connectivity */
   short int   *e2v_sgn; /*!< cell-wise edge->vertices orientation (-1 or +1) */
+
+  /* Local f2v connectivity: size = 2*n_max_ebyc */
+  short int   *f2v_idx; /*!< size n_fc + 1 */
+  short int   *f2v_ids; /*!< size 2*n_max_ebyc */
 
   /* Local f2e connectivity: size = 2*n_max_ebyc */
   short int   *f2e_idx; /*!< size n_fc + 1 */
@@ -286,6 +294,125 @@ extern cs_face_mesh_t        **cs_cdo_local_face_meshes;
 extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 
 /*============================================================================
+ * Staic inline function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the vertex id in the cellwise numbering associated to the
+ *          given vertex id in the mesh numbering
+ *
+ * \param[in]       v_id    vertex id in the mesh numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ *
+ * \return the vertex id in the cell numbering or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline short int
+cs_cell_mesh_get_v(const cs_lnum_t              v_id,
+                   const cs_cell_mesh_t  *const cm)
+{
+  if (cm == NULL)
+    return -1;
+  for (short int v = 0; v < cm->n_vc; v++)
+    if (cm->v_ids[v] == v_id)
+      return v;
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the face id in the cellwise numbering associated to the
+ *          given face id in the mesh numbering
+ *
+ * \param[in]       f_id    face id in the mesh numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ *
+ * \return the face id in the cell numbering or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline short int
+cs_cell_mesh_get_f(const cs_lnum_t              f_id,
+                   const cs_cell_mesh_t  *const cm)
+{
+  if (cm == NULL)
+    return -1;
+  for (short int f = 0; f < cm->n_fc; f++)
+    if (cm->f_ids[f] == f_id)
+      return f;
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the list of vertices attached to a face
+ *
+ * \param[in]       f       face id in the cell numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  n_vf    pointer of pointer to a cellwise view of the mesh
+ * \param[in, out]  v_ids   list of vertex ids in the cell numbering
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cell_mesh_get_f2v(short int                    f,
+                     const cs_cell_mesh_t        *cm,
+                     short int                   *n_vf,
+                     short int                   *v_ids)
+{
+  /* Reset */
+  *n_vf = 0;
+  for (short int v = 0; v < cm->n_vc; v++) v_ids[v] = -1;
+
+  /* Tag vertices belonging to the current face f */
+  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+    const int  shift_e = 2*cm->f2e_ids[i];
+    v_ids[cm->e2v_ids[shift_e]] = 1;
+    v_ids[cm->e2v_ids[shift_e+1]] = 1;
+
+  } /* Loop on face edges */
+
+  for (short int v = 0; v < cm->n_vc; v++) {
+    if (v_ids[v] > 0)
+      v_ids[*n_vf] = v, *n_vf += 1;
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the next three vertices in a row from a face to edge connectivity
+ *         and a edge to vertex connectivity
+ *
+ * \param[in]       f2e_ids     face-edge connectivity
+ * \param[in]       e2v_ids     edge-vertex connectivity
+ * \param[in, out]  v0          id of the first vertex
+ * \param[in, out]  v1          id of the second vertex
+ * \param[in, out]  v2          id of the third vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
+                                 const short int   *e2v_ids,
+                                 short int         *v0,
+                                 short int         *v1,
+                                 short int         *v2)
+{
+  const short int e0  = f2e_ids[0];
+  const short int e1  = f2e_ids[1];
+  const short int tmp = e2v_ids[2*e1];
+
+  *v0 = e2v_ids[2*e0];
+  *v1 = e2v_ids[2*e0+1];
+  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
+}
+
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -319,16 +446,17 @@ cs_cdo_local_finalize(void);
  * \param[in]   n_max_fbyc      max number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
  * \param[in]   block_sizes     size of each block or NULL if n_blocks = 1
+ *                              Specific treatment n_blocks = 1.
  *
  * \return a pointer to a new allocated \ref cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int          n_max_dofbyc,
-                   int          n_max_fbyc,
-                   short int    n_blocks,
-                   short int   *block_sizes);
+cs_cell_sys_create(int    n_max_dofbyc,
+                   int    n_max_fbyc,
+                   int    n_blocks,
+                   int   *block_sizes);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -468,72 +596,6 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_cell_mesh_t              *cm);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Retrieve the list of vertices attached to a face
- *
- * \param[in]       f       face id in the cell numbering
- * \param[in]       cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out]  n_vf    pointer of pointer to a cellwise view of the mesh
- * \param[in, out]  v_ids   list of vertex ids in the cell numbering
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_cell_mesh_get_f2v(short int                    f,
-                     const cs_cell_mesh_t        *cm,
-                     short int                   *n_vf,
-                     short int                   *v_ids)
-{
-  /* Reset */
-  *n_vf = 0;
-  for (short int v = 0; v < cm->n_vc; v++) v_ids[v] = -1;
-
-  /* Tag vertices belonging to the current face f */
-  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
-
-    const short int  shift_e = (short int)2*cm->f2e_ids[i];
-    v_ids[cm->e2v_ids[shift_e]] = 1;
-    v_ids[cm->e2v_ids[shift_e+1]] = 1;
-
-  } // Loop on face edges
-
-  for (short int v = 0; v < cm->n_vc; v++) {
-    if (v_ids[v] > 0)
-      v_ids[*n_vf] = v, *n_vf += 1;
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the next three vertices in a row from a face to edge connectivity
- *         and a edge to vertex connectivity
- *
- * \param[in]       f2e_ids     face-edge connectivity
- * \param[in]       e2v_ids     edge-vertex connectivity
- * \param[in, out]  v0          id of the first vertex
- * \param[in, out]  v1          id of the second vertex
- * \param[in, out]  v2          id of the third vertex
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
-                                 const short int   *e2v_ids,
-                                 short int         *v0,
-                                 short int         *v1,
-                                 short int         *v2)
-{
-  const short int e0  = f2e_ids[0];
-  const short int e1  = f2e_ids[1];
-  const short int tmp = e2v_ids[2*e1];
-
-  *v0 = e2v_ids[2*e0];
-  *v1 = e2v_ids[2*e0+1];
-  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

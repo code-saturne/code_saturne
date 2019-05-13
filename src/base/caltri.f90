@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -20,26 +20,19 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine caltri
-!================
+!> \file caltri.f90
+!> \brief Main time loop.
+!>
+!------------------------------------------------------------------------------
 
-!===============================================================================
-! Purpose:
-! --------
-
-! Main solver subroutine (read, time loop, write)
-
-!-------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________.____._____.________________________________________________.
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine caltri
 
 !===============================================================================
 ! Module files
@@ -119,11 +112,39 @@ double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: disale => null()
 
+integer, allocatable, dimension(:,:) :: icodcl
+integer, allocatable, dimension(:) :: isostd
+double precision, allocatable, dimension(:,:,:) :: rcodcl
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
 
 interface
+
+  subroutine condli_ini &
+  ( nvar   , nscal  ,                                              &
+    itrale ,                                                       &
+    icodcl , isostd ,                                              &
+    dt     , rcodcl )
+
+    use mesh, only: nfac, nfabor
+
+    implicit none
+
+    integer          nvar, nscal
+    integer          itrale
+
+    integer, dimension(nfabor,nvar) :: icodcl
+    integer, dimension(nfabor+1) :: isostd
+
+    double precision, dimension(nfabor,nvar,3) :: rcodcl
+
+    double precision, pointer, dimension(:)   :: dt
+
+  end subroutine condli_ini
+
+  !=============================================================================
 
   subroutine tridim(itrale, nvar, nscal, dt)
 
@@ -144,6 +165,15 @@ interface
 
   !=============================================================================
 
+  subroutine cs_time_step_increment(dt) &
+    bind(C, name='cs_time_step_increment')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), value :: dt
+  end subroutine cs_time_step_increment
+
+  !=============================================================================
+
   subroutine cs_gui_postprocess_activate()  &
     bind(C, name='cs_gui_postprocess_activate')
     use, intrinsic :: iso_c_binding
@@ -157,6 +187,24 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_profile_output
+
+  !=============================================================================
+
+  subroutine cs_restart_map_build()  &
+    bind(C, name='cs_restart_map_build')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_restart_map_build
+
+  !=============================================================================
+
+  subroutine cs_restart_map_free()  &
+    bind(C, name='cs_restart_map_free')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_restart_map_free
+
+  !=============================================================================
 
 end interface
 
@@ -397,7 +445,7 @@ if (ippmod(icompf).ge.0) then
   call init_compf (nfabor)
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call init_ale (nfabor, nnod)
 endif
 
@@ -457,25 +505,25 @@ if (iporos.ge.1) then
   endif
 
   do iel = 1, ncelet
+    ! Penalisation of solid cells
+    if (porosi(iel).lt.epzero) then
+      porosi  (iel) = 0.d0
+      isolid_0(iel) = 1
+    endif
     cell_f_vol(iel) = volume(iel) * porosi(iel)
   enddo
 
   ! For integral formulation, in case of 0 fluid volume, clip fluid faces
   if (iporos.eq.3) then
     do ifac = 1, nfac
-      !TODO compute i_f_face_factor with porosi AND fluid surface and surface: epsilon_i*surface/f_surface
-      if (porosi(ifacel(1, ifac)).lt.epzero) then
-        porosi(ifacel(1, ifac)) = 0.d0
-        isolid_0(ifacel(1, ifac)) = 1
-
+      !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
+      ! epsilon_i*surface/f_surface
+      if (isolid_0(ifacel(1, ifac)) .eq. 1) then
         suffac(1, ifac) = 0.d0
         suffac(2, ifac) = 0.d0
         suffac(3, ifac) = 0.d0
         suffan(ifac) = 0.d0
-      else if (porosi(ifacel(2, ifac)).lt.epzero) then
-        porosi(ifacel(2, ifac)) = 0.d0
-        isolid_0(ifacel(2, ifac)) = 1
-
+      else if (isolid_0(ifacel(2, ifac)).eq.1) then
         suffac(1, ifac) = 0.d0
         suffac(2, ifac) = 0.d0
         suffac(3, ifac) = 0.d0
@@ -484,11 +532,9 @@ if (iporos.ge.1) then
     enddo
 
     do ifac = 1, nfabor
-      !TODO compute i_f_face_factor with porosi AND fluid surface and surface: epsilon_i*surface/f_surface
-      if (porosi(ifabor(ifac)).lt.epzero) then
-        porosi(ifabor(ifac)) = 0.d0
-        isolid_0(ifabor(ifac)) = 1
-
+      !TODO compute i_f_face_factor with porosi AND fluid surface and surface:
+      ! epsilon_i*surface/f_surface
+      if (isolid_0(ifabor(ifac)) .eq. 1) then
         suffbo(1, ifac) = 0.d0
         suffbo(2, ifac) = 0.d0
         suffbo(3, ifac) = 0.d0
@@ -497,6 +543,16 @@ if (iporos.ge.1) then
     enddo
   endif
 
+  call cs_f_mesh_quantities_fluid_vol_reductions
+
+endif
+
+!===============================================================================
+! Initialization for the atmospheric soil model
+!===============================================================================
+
+if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
+  call atmsol()
 endif
 
 !==============================================================================
@@ -533,6 +589,13 @@ if (nftcdt.gt.0) then
 endif
 
 !===============================================================================
+! Initialization for the Synthetic turbulence Inlets
+!===============================================================================
+
+nent = 0
+call defsyn(nent)
+
+!===============================================================================
 ! Possible restart
 !===============================================================================
 
@@ -545,10 +608,12 @@ if (isuite.eq.1) then
 
   call timer_stats_start(restart_stats_id)
 
+  call cs_restart_map_build
+
   call lecamo
 
   ! Using ALE, geometric parameters must be recalculated
-  if (iale.eq.1) then
+  if (iale.ge.1) then
 
     call field_get_val_v(fdiale, disale)
 
@@ -558,11 +623,36 @@ if (isuite.eq.1) then
       enddo
     enddo
 
-    call algrma(volmin, volmax, voltot)
+    call cs_ale_update_mesh_quantities(volmin, volmax, voltot)
 
     ! Abort at the end of the current time-step if there is a negative volume
     if (volmin.le.0.d0) ntmabs = ntcabs
 
+  endif
+
+  ! Radiative module restart */
+  if (iirayo.gt.0) then
+    call cs_rad_transfer_read
+  endif
+
+  ! Lagrangian module restart (particles) */
+  if (iilagr.gt.0) then
+    call laglec()
+  endif
+
+  if (isuisy.eq.1) then
+    call lecsyn('les_inflow'//c_null_char)
+  endif
+
+  ! TODO
+  ! cs_restart_map_free may not be called yet, because
+  ! cs_lagr_solve_initialize and the first call of cs_lagr_solve_time_step
+  ! may also need restart data for particles and statistics respectively.
+  ! This should be solved by moving the corresponding stages at least to
+  ! cs_lagr_solve_initialize sor as to free mapping data before the time loop.
+
+  if (iilagr.lt.1) then
+    call cs_restart_map_free
   endif
 
   call timer_stats_stop(restart_stats_id)
@@ -575,22 +665,6 @@ endif
 !===============================================================================
 
 call inivar(nvar, nscal)
-
-!===============================================================================
-! Radiative transfer: possible restart
-!===============================================================================
-
-if (iirayo.gt.0) then
-   call cs_rad_transfer_read
-endif
-
-!===============================================================================
-! Initialize particles for Lagrangian module
-!===============================================================================
-
-if (iilagr.gt.0) then
-  call laglec()
-endif
 
 !===============================================================================
 ! Initializations for the 1D thermal wall module
@@ -620,36 +694,33 @@ if (nfpt1t.gt.0) then
 
   else
 
-!     Creation du maillage, initialisation de la temperature.
+    ! Create mesh, initialize temperature.
     call cs_1d_wall_thermal_mesh_create
 
   endif
 
 endif
 
-!     Les infos sur l'epaisseur de la paroi, le nombre de points de
-!     discretisation et la raison geometrique ont ete transmises a
-!     la structure C. Elles sont maintenant inutiles dans le Fortran.
-!     -> on libere la memoire.
+! First pass for the BCs:
+! - initilalize itypfb, reference pressure point...
+!--------------------------------------------------
 
-!===============================================================================
-! Initialization for the Synthetic turbulence Inlets
-!===============================================================================
+! Deprecated, only for compatibility reason
+nvarcl = nvar
 
-nent = 0
+allocate(icodcl(nfabor,nvar))
+allocate(rcodcl(nfabor,nvar,3))
+allocate(isostd(nfabor+1))
 
-call defsyn(nent)
+! First pass for initialization BC types
+! -- Couplage Code_Saturne/Code_Saturne
 
-if (isuisy.eq.1) then
-  call lecsyn('les_inflow'//c_null_char)
-endif
+call cscini(nvar)
+call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)
 
-! ATMO MODULE : INITIALIZATION FOR THE SOIL MODEL (ippmo(iatmos) = 2)
-!===============================================================================
-
-if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
-  call atmsol()
-endif
+deallocate(icodcl)
+deallocate(rcodcl)
+deallocate(isostd)
 
 !===============================================================================
 ! Arrays for time block, to discard afterwards
@@ -699,10 +770,7 @@ if (ivrtex.eq.1) then
 
   iappel = 1
 
-  call usvort &
- ( nvar   , nscal  , iappel ,                                     &
-   dt     )
-
+  call usvort(nvar, nscal, iappel, dt)
   call vorver (nfabor, iappel)
 
   call init_vortex
@@ -715,15 +783,11 @@ endif
 
 ! -- Structures mobiles en ALE
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call strini(dt)
 endif
 
 ! -- Fin de zone Structures mobiles en ALE
-
-! -- Couplage Code_Saturne/Code_Saturne
-
-call cscini(nvar)
 
 ! Lagrangian initialization
 
@@ -750,10 +814,6 @@ if (iturbo.eq.2)  ttcmob = ttpmob
 
 write(nfecra,3000)
 
-if(inpdt0.eq.1) then
-  ntmabs = ntcabs
-endif
-
 !     Nb d'iter ALE (nb relatif a l'execution en cours)
 !     Si ITALIN=1, on fait une iteration d'initialisation
 !     (si ITALIN=-999, c'est qu'on a fait une suite de calculs
@@ -778,7 +838,7 @@ if (itrale.gt.0) then
     call cplsyn (ntmabs, ntcabs, dtref)
   endif
 
-  if (ntmabs .eq. ntcabs .and. inpdt0.eq.0) then
+  if (ntmabs .eq. ntcabs .and. ntmabs.gt.ntpabs) then
     call csexit (1)
   endif
 
@@ -799,15 +859,18 @@ call timer_stats_stop(post_stats_id)
 
  100  continue
 
-if (inpdt0.eq.0 .and. itrale.gt.0) then
-  ntcabs = ntcabs + 1
+if (ttmabs.gt.0 .and. ttmabs.gt.ttcabs) then
+  ntmabs = ntcabs + (ttmabs-ttcabs)/dtref
+  if (ntmabs.le.ntcabs) ntmabs = ntcabs + 1
+endif
+
+if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
   call timer_stats_increment_time_step
-  if(idtvar.eq.0.or.idtvar.eq.1) then
-    ttcabs = ttcabs + dt(1)
+  if (idtvar.eq.0.or.idtvar.eq.1) then
+    call cs_time_step_increment(dt(1))
   else
-    ttcabs = ttcabs + dtref
+    call cs_time_step_increment(dtref)
   endif
-  write(nfecra,3001) ttcabs,ntcabs
   if (iturbo.eq.2) then
     if(idtvar.eq.0.or.idtvar.eq.1) then
       ttcmob = ttcmob + dt(1)
@@ -817,6 +880,23 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
   endif
 endif
 
+if (ntlist.gt.0) then
+  modntl = mod(ntcabs,ntlist)
+  ! Always print 10 first iterations
+  if (ntcabs - ntpabs.le.10) then
+    modntl = 0
+  endif
+elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
+  modntl = 0
+else
+  modntl = 1
+endif
+
+if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
+  if (modntl.eq.0) then
+    write(nfecra,3001) ttcabs,ntcabs
+  endif
+endif
 
 !===============================================================================
 ! Step forward in time
@@ -836,13 +916,9 @@ call cs_boundary_zone_build_all(mesh_modified)
 
 call dmtmps(titer1)
 
-call tridim                                                       &
- ( itrale ,                                                       &
-   nvar   , nscal  ,                                              &
-   dt     )
+call tridim(itrale, nvar, nscal, dt)
 
-
-if (inpdt0.eq.0 .and. itrale.gt.0) then
+if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
 
   ! Lagrangian module
   !==================
@@ -891,12 +967,10 @@ endif
 ! Update mesh (ALE)
 !===============================================================================
 
-if (iale.eq.1 .and. inpdt0.eq.0) then
+if (iale.ge.1 .and. ntmabs.gt.ntpabs) then
 
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
-
-    call alemav(itrale, xyzno0)
-
+    call cs_ale_update_mesh(itrale, xyzno0)
   endif
 
 endif
@@ -932,7 +1006,7 @@ if (iisuit.eq.1) then
   if(ntcabs.lt.ntmabs) then
     write(nfecra,3020) ntcabs, ttcabs
   else if(ntcabs.eq.ntmabs) then
-    write(nfecra,3021)ntcabs,ttcabs
+    write(nfecra,3021) ntcabs,ttcabs
   endif
 
   call ecrava
@@ -974,8 +1048,7 @@ call post_activate_by_time_step
 call cs_gui_postprocess_activate
 call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
-! If ITRALE=0, deactivate all writers, as geometry has not
-!              been output yet.
+! If ITRALE=0, deactivate all writers, as geometry has not been output yet.
 if (itrale.eq.0) then
   call post_activate_writer(0, .false.)
 endif
@@ -1004,7 +1077,6 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
   if (modhis.eq.1) then
 
     ttchis = ttcabs
-
     if (ihistr.eq.1) then
       call strhis(modhis)
     endif
@@ -1014,19 +1086,12 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 endif
 
 !===============================================================================
-! Write to "listing" every ntlist iterations
+! Write to "run_solver.log" every ntlist iterations
 !===============================================================================
 
-if (ntlist.gt.0) then
-  modntl = mod(ntcabs,ntlist)
-elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
-  modntl = 0
-else
-  modntl = 1
-endif
 if (modntl.eq.0) then
 
-  call ecrlis(ncelet, ncel, dt, volume)
+  call ecrlis(ncelet, ncel, dt, cell_f_vol)
 
   call log_iteration
 
@@ -1057,6 +1122,12 @@ if (idtvar.eq.1) then
 endif
 
 ! LIBERATION DES TABLEAUX INTERMEDIAIRES (PDC+TSM)
+
+if (isuite.eq.1.and.iilagr.gt.0) then
+  call timer_stats_start(restart_stats_id)
+  call cs_restart_map_free
+  call timer_stats_stop(restart_stats_id)
+endif
 
 !===============================================================================
 ! Finalize probes
@@ -1117,7 +1188,7 @@ if (ippmod(igmix).ge.0) then
   call finalize_gas_mix
 endif
 
-if (iale.eq.1) then
+if (iale.ge.1) then
   call finalize_ale
 endif
 

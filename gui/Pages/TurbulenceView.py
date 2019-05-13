@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -48,11 +48,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
 from code_saturne.Pages.TurbulenceForm import Ui_TurbulenceForm
 from code_saturne.Pages.TurbulenceAdvancedOptionsDialogForm import Ui_TurbulenceAdvancedOptionsDialogForm
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -220,23 +220,37 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel.addItem(self.tr("LES (classical dynamic model)"), "LES_dynamique")
         self.modelTurbModel.addItem(self.tr("LES (WALE)"), "LES_WALE")
 
+        self.modelLength = ComboModel(self.comboBoxLength,2,1)
+        self.modelLength.addItem(self.tr("Automatic"), 'automatic')
+        self.modelLength.addItem(self.tr("Prescribed"), 'prescribed')
+        self.comboBoxLength.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+
         # Connections
 
         self.comboBoxTurbModel.activated[str].connect(self.slotTurbulenceModel)
         self.pushButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
         self.lineEditLength.textChanged[str].connect(self.slotLengthScale)
 
+        self.lineEditV0.textChanged[str].connect(self.slotVelocity)
+        self.comboBoxLength.activated[str].connect(self.slotLengthChoice)
+        self.lineEditL0.textChanged[str].connect(self.slotLength)
+
         # Frames display
 
         self.frameAdvanced.hide()
         self.frameLength.hide()
 
-        # Validator
+        # Validators
 
         validator = DoubleValidator(self.lineEditLength, min=0.0)
         validator.setExclusiveMin(True)
         self.lineEditLength.setValidator(validator)
 
+        validatorV0 = DoubleValidator(self.lineEditV0, min=0.0)
+        self.lineEditV0.setValidator(validatorV0)
+
+        validatorL0 = DoubleValidator(self.lineEditL0, min=0.0)
+        self.lineEditL0.setValidator(validatorL0)
 
         # Update the turbulence models list with the calculation features
 
@@ -248,14 +262,59 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         model = self.model.getTurbulenceModel()
         self.modelTurbModel.setItem(str_model=model)
-        self.slotTurbulenceModel(self.comboBoxTurbModel.currentText())
+        self.__initializeView()
 
         # Length scale
 
         l_scale = self.model.getLengthScale()
         self.lineEditLength.setText(str(l_scale))
 
+        # Initialization
+
+        v = self.model.getVelocity()
+        self.lineEditV0.setText(str(v))
+
+        init_length_choice = self.model.getLengthChoice()
+        self.modelLength.setItem(str_model=init_length_choice)
+        if init_length_choice == 'automatic':
+            self.lineEditL0.setText(str())
+            self.lineEditL0.hide()
+            self.labelUnitL0.hide()
+        else:
+            self.lineEditL0.show()
+            self.labelUnitL0.show()
+            l = self.model.getLength()
+            self.lineEditL0.setText(str(l))
+
         self.case.undoStartGlobal()
+
+
+    def __initializeView(self):
+        """
+        Private Method.
+        initalize view for a turbulence model
+        """
+        model = self.model.getTurbulenceModel()
+
+        self.frameAdvanced.hide()
+        self.frameLength.hide()
+        self.groupBoxReferenceValues.hide()
+
+        if model not in ('off', 'mixing_length', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+            self.groupBoxReferenceValues.show()
+
+        if model == 'mixing_length':
+            self.frameLength.show()
+            self.frameAdvanced.hide()
+            self.model.getLengthScale()
+        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
+            self.frameLength.hide()
+            self.frameAdvanced.show()
+
+        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
+            self.line.hide()
+        else:
+            self.line.show()
 
 
     @pyqtSlot(str)
@@ -277,22 +336,48 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         """
         model = self.modelTurbModel.dicoV2M[str(text)]
         self.model.setTurbulenceModel(model)
+        self.__initializeView()
 
-        self.frameAdvanced.hide()
-        self.frameLength.hide()
+    @pyqtSlot(str)
+    def slotVelocity(self,  text):
+        """
+        Private slot.
+        Input reference velocity.
+        """
+        if self.lineEditV0.validator().state == QValidator.Acceptable:
+            v = from_qvariant(text, float)
+            self.model.setVelocity(v)
 
-        if model == 'mixing_length':
-            self.frameLength.show()
-            self.frameAdvanced.hide()
-            self.model.getLengthScale()
-        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
-            self.frameLength.hide()
-            self.frameAdvanced.show()
 
-        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
-            self.line.hide()
+    @pyqtSlot(str)
+    def slotLengthChoice(self,text):
+        """
+        Private slot.
+        Input mode for reference length.
+        """
+        choice = self.modelLength.dicoV2M[str(text)]
+        self.model.setLengthChoice(choice)
+        if choice == 'automatic':
+            self.lineEditL0.setText(str())
+            self.lineEditL0.hide()
+            self.labelUnitL0.hide()
         else:
-            self.line.show()
+            self.lineEditL0.show()
+            self.labelUnitL0.show()
+            value = self.model.getLength()
+            self.lineEditL0.setText(str(value))
+        log.debug("slotlengthchoice-> %s" % choice)
+
+
+    @pyqtSlot(str)
+    def slotLength(self,  text):
+        """
+        Private slot.
+        Input reference length.
+        """
+        if self.lineEditL0.validator().state == QValidator.Acceptable:
+            l = from_qvariant(text, float)
+            self.model.setLength(l)
 
 
     @pyqtSlot()

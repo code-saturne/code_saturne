@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,18 +45,18 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage  import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
-from code_saturne.Pages.LocalizationModel             import LocalizationModel, Zone
-from code_saturne.Pages.DefineUserScalarsModel        import DefineUserScalarsModel
-from code_saturne.Pages.ThermalScalarModel            import ThermalScalarModel
-from code_saturne.Pages.QMeiEditorView                import QMeiEditorView
-from code_saturne.Pages.Boundary                      import Boundary
-from code_saturne.Pages.CompressibleModel             import CompressibleModel
-from code_saturne.Pages.AtmosphericFlowsModel         import AtmosphericFlowsModel
-from code_saturne.Pages.NotebookModel                 import NotebookModel
+from code_saturne.model.LocalizationModel             import LocalizationModel, Zone
+from code_saturne.model.DefineUserScalarsModel        import DefineUserScalarsModel
+from code_saturne.model.ThermalScalarModel            import ThermalScalarModel
+from code_saturne.Pages.QMegEditorView                import QMegEditorView
+from code_saturne.model.Boundary                      import Boundary
+from code_saturne.model.CompressibleModel             import CompressibleModel
+from code_saturne.model.AtmosphericFlowsModel         import AtmosphericFlowsModel
+from code_saturne.model.NotebookModel                 import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -87,11 +87,11 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
-        self.notebook = NotebookModel(self.__case)
+        self.case.undoStopGlobal()
+        self.notebook = NotebookModel(self.case)
 
         self.lineEditValueThermal.textChanged[str].connect(self.slotValueThermal)
         self.lineEditValueSpecies.textChanged[str].connect(self.slotValueSpecies)
@@ -125,7 +125,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.lineEditExSpecies.setValidator(validatorExSpecies)
         self.lineEditExMeteo.setValidator(validatorExMeteo)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def __setBoundary(self, boundary):
@@ -135,10 +135,10 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.__boundary = boundary
 
         self.nature  = boundary.getNature()
-        self.therm   = ThermalScalarModel(self.__case)
-        self.sca_mo  = DefineUserScalarsModel(self.__case)
-        self.comp    = CompressibleModel(self.__case)
-        self.atm     = AtmosphericFlowsModel(self.__case)
+        self.therm   = ThermalScalarModel(self.case)
+        self.sca_mo  = DefineUserScalarsModel(self.case)
+        self.comp    = CompressibleModel(self.case)
+        self.atm     = AtmosphericFlowsModel(self.case)
 
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
@@ -217,7 +217,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
            (self.nature == 'inlet' or self.nature == 'outlet')):
             label = self.__boundary.getLabel()
             nature = "meteo_" + self.nature
-            bb = Boundary(nature, label, self.__case)
+            bb = Boundary(nature, label, self.case)
 
             if bb.getMeteoDataStatus() == 'off':
                 self.groupBoxMeteo.hide()
@@ -348,7 +348,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 nature = "meteo_" + self.nature
             else:
                 nature = self.nature
-            bb = Boundary(nature, label, self.__case)
+            bb = Boundary(nature, label, self.case)
 
             if self.nature == 'wall' or bb.getMeteoDataStatus() == 'off':
                 self.meteo_type = self.__boundary.getScalarChoice(self.meteo)
@@ -390,9 +390,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         Show the widget
         """
-        if DefineUserScalarsModel(self.__case).getScalarNameList() or\
-           DefineUserScalarsModel(self.__case).getMeteoScalarsNameList() or\
-           DefineUserScalarsModel(self.__case).getThermalScalarName():
+        if DefineUserScalarsModel(self.case).getScalarNameList() or\
+           DefineUserScalarsModel(self.case).getMeteoScalarsNameList() or\
+           DefineUserScalarsModel(self.case).getThermalScalarName():
             self.__setBoundary(boundary)
             self.show()
         else:
@@ -487,12 +487,17 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        c = self.__boundary.getScalarChoice(name)
+        dialog = QMegEditorView(parent      = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotThermalFormula -> %s" % str(result))
@@ -524,12 +529,17 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        c = self.__boundary.getScalarChoice(self.species)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = self.species,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotSpeciesFormula -> %s" % str(result))
@@ -562,12 +572,16 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = self.meteo,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = self.meteo_type,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotMeteoFormula -> %s" % str(result))

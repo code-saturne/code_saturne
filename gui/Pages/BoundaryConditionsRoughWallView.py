@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,10 +45,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsRoughWallForm import Ui_BoundaryConditionsRoughWallForm
+
+from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -93,6 +95,10 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         validatorRoughCoef = DoubleValidator(self.lineEditRoughCoef)
         self.lineEditRoughCoef.setValidator(validatorRoughCoef)
 
+        turb_mdl = TurbulenceModel(self.case)
+        if turb_mdl.getWallFunction() in [0, 1, 4, 7]:
+            self.radioButtonRough.setEnabled(False)
+
         self.case.undoStartGlobal()
 
 
@@ -125,7 +131,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         """
         Private slot.
 
-        Selects if the wall is rought or smooth.
+        Selects if the wall is rough or smooth.
         """
         if self.radioButtonSmooth.isChecked():
             self.frameRoughness.hide()

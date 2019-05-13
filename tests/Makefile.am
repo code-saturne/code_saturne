@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -44,13 +44,42 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS   = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS  =
+
+BUILT_SOURCES = \
+cs_halo.c \
+cs_range_set.c \
+cs_sort.c \
+cs_matrix.c \
+cs_matrix_assembler.c \
+cs_blas.c \
+cs_random.c
+
+cs_halo.c: Makefile $(top_srcdir)/src/base/cs_halo.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_range_set.c: Makefile $(top_srcdir)/src/base/cs_range_set.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_sort.c: Makefile $(top_srcdir)/src/base/cs_sort.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_random.c: Makefile $(top_srcdir)/src/base/cs_random.c
+	cat $(top_srcdir)/src/base/$@ >$@
+
+cs_blas.c: Makefile $(top_srcdir)/src/alge/cs_blas.c
+	cat $(top_srcdir)/src/alge/$@ >$@
+
+cs_matrix.c: Makefile $(top_srcdir)/src/alge/cs_matrix.c
+	cat $(top_srcdir)/src/alge/$@ >$@
+
+cs_matrix_assembler.c: Makefile $(top_srcdir)/src/alge/cs_matrix_assembler.c
+	cat $(top_srcdir)/src/alge/$@ >$@
 
 check_PROGRAMS =
 
@@ -87,24 +116,6 @@ bft_printf_test_SOURCES  = bft_printf_test.c
 bft_printf_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_printf_test_LDADD    = $(LDADD_BFT_TESTS)
 
-# MEI tests
-
-check_PROGRAMS += \
-mei_test
-
-mei_test_SOURCES = mei_test_main.c mei_test_graph.c
-mei_test_CPPFLAGS  = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mei \
--I$(top_builddir)/src/mei \
-$(CPPFLAGS_PLE) \
-$(MPI_CPPFLAGS)
-mei_test_LDFLAGS =
-mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
-	$(top_builddir)/src/bft/libbft.la -lm
-
 # Code_Saturne tests
 
 check_PROGRAMS += \
@@ -119,10 +130,10 @@ cs_interface_test \
 cs_map_test \
 cs_matrix_test \
 cs_moment_test \
+cs_random_test \
 cs_rank_neighbors_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
-cs_random_test \
 cs_sizes_test \
 cs_tree_test
 
@@ -139,7 +150,7 @@ cs_all_to_all_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_blas_test_SOURCES  = \
 cs_blas_test.c \
-../src/alge/cs_blas.c
+cs_blas.c
 cs_blas_test_CPPFLAGS  = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
@@ -185,11 +196,11 @@ cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_matrix_test_SOURCES  = \
 cs_matrix_test.c \
-../src/base/cs_halo.c \
-../src/base/cs_range_set.c \
-../src/base/cs_sort.c \
-../src/alge/cs_matrix.c \
-../src/alge/cs_matrix_assembler.c
+cs_halo.c \
+cs_range_set.c \
+cs_sort.c \
+cs_matrix.c \
+cs_matrix_assembler.c
 cs_matrix_test_CPPFLAGS  = \
 -D_CS_UNIT_MATRIX_TEST \
 $(AM_CPPFLAGS)
@@ -202,7 +213,7 @@ cs_moment_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_random_test_SOURCES  = \
 cs_random_test.c \
-../src/base/cs_random.c
+cs_random.c
 cs_random_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_random_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -235,5 +246,9 @@ EXTRA_DIST = \
 unittests.py \
 $(top_srcdir)/tests/graphics
 
-dist-hook:
-	rm -rf `find $(distdir)/tests/graphics -type d -name .svn`
+# Clean
+
+clean-local:
+	-rm -f $(BUILT_SOURCES)
+
+

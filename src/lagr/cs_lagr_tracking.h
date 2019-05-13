@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,20 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/* State where a particle can be.
+   (order is chosen so as to make tests simpler;
+   inside domain first, outside after) */
+
+typedef enum {
+  CS_LAGR_PART_TO_SYNC,
+  CS_LAGR_PART_TO_SYNC_NEXT,
+  CS_LAGR_PART_TREATED,
+  CS_LAGR_PART_STUCK,
+  CS_LAGR_PART_MERGED,
+  CS_LAGR_PART_OUT,
+  CS_LAGR_PART_ERR
+} cs_lagr_tracking_state_t;
 
 /*=============================================================================
  * Global variables

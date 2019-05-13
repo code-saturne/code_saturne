@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -73,15 +73,20 @@ double precision vela  (3  ,ncelet)
 ! Local variables
 
 integer          iel   , ielpdc
+integer          key_t_ext_id
+integer          iroext
 double precision romvom, vit1  , vit2  , vit3
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision, dimension(:), pointer :: crom, croma
 
 !===============================================================================
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 call field_get_val_s(icrom, crom)
 
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 if (iroext.gt.0.and.isno2t.gt.0) then
   call field_get_val_prev_s(icrom, croma)
 endif
@@ -102,9 +107,9 @@ do ielpdc = 1, ncepdp
   vit2   = vela(2,iel)
   vit3   = vela(3,iel)
 
-  trav(1,iel) = romvom*(cpdc11*vit1 + cpdc12*vit2 + cpdc13*vit3)
-  trav(2,iel) = romvom*(cpdc12*vit1 + cpdc22*vit2 + cpdc23*vit3)
-  trav(3,iel) = romvom*(cpdc13*vit1 + cpdc23*vit2 + cpdc33*vit3)
+  trav(1,ielpdc) = romvom*(cpdc11*vit1 + cpdc12*vit2 + cpdc13*vit3)
+  trav(2,ielpdc) = romvom*(cpdc12*vit1 + cpdc22*vit2 + cpdc23*vit3)
+  trav(3,ielpdc) = romvom*(cpdc13*vit1 + cpdc23*vit2 + cpdc33*vit3)
 
 enddo
 

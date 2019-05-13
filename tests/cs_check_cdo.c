@@ -1,7 +1,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -579,7 +579,7 @@ _define_cm_tetra_ref(double            a,
     CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |CS_CDO_LOCAL_EFQ  |
     CS_CDO_LOCAL_DIAM;
 
-  cm->vol_c = cs_math_onesix*a*a*a;
+  cm->vol_c = cs_math_1ov6*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
 
   /* VERTICES */
@@ -768,7 +768,7 @@ _define_cm_tetra_ref(double            a,
   /* Compute dual cell volume */
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const double  hf_coef = cs_math_onesix * cm->hfc[f];
+    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -1107,8 +1107,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-    cs_cdo_diffusion_pena_dirichlet(eqp, cm, cs_cdovb_diffusion_cost_flux_op,
-                                    fm, cb, csys);
+    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
@@ -1116,8 +1115,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
-    cs_cdovb_diffusion_weak_dirichlet(eqp, cm, cs_cdovb_diffusion_cost_flux_op,
-                                      fm, cb, csys);
+    cs_cdo_diffusion_svb_cost_weak_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
 
@@ -1126,8 +1124,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
-    cs_cdovb_diffusion_wsym_dirichlet(eqp, cm, cs_cdovb_diffusion_cost_flux_op,
-                                      fm, cb, csys);
+    cs_cdo_diffusion_svb_cost_wsym_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
@@ -1152,8 +1149,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-    cs_cdo_diffusion_pena_dirichlet(eqp, cm, cs_cdovb_diffusion_cost_flux_op,
-                                    fm, cb, csys);
+    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out,
                  "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO",
                  csys);
@@ -1187,8 +1183,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-    cs_cdo_diffusion_pena_dirichlet(eqp, cm, cs_cdovb_diffusion_wbs_flux_op,
-                                    fm, cb, csys);
+    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO",
                  csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
@@ -1196,16 +1191,14 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
-    cs_cdovb_diffusion_weak_dirichlet(eqp, cm, cs_cdovb_diffusion_wbs_flux_op,
-                                      fm, cb, csys);
+    cs_cdo_diffusion_svb_wbs_weak_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
 
         /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
-    cs_cdovb_diffusion_wsym_dirichlet(eqp, cm, cs_cdovb_diffusion_wbs_flux_op,
-                                      fm, cb, csys);
+    cs_cdo_diffusion_svb_wbs_wsym_dirichlet(eqp, cm,fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);

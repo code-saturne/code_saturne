@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -109,6 +109,9 @@ integer          ipatrg
 integer          imucpp, idftnp, iswdyp
 integer          f_id
 integer          init
+integer          key_t_ext_id
+integer          iroext
+integer          iviext
 
 double precision romvsd
 double precision visct , rom
@@ -120,6 +123,7 @@ double precision cofbnu
 double precision chi  , chi3, taussa, nusa, distbf, fw, fv1, fv2
 double precision gsa , rsa , dsigma, cv13
 double precision nu0, dsa0, hssa, omega, sbar, cst2, cst3
+double precision normp
 
 double precision rvoid(1)
 
@@ -136,7 +140,6 @@ double precision, allocatable, dimension(:) :: csab1r, rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
 double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
-double precision, dimension(:), pointer :: cpro_pcvto
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_nusa_p
@@ -149,6 +152,9 @@ type(var_cal_opt) :: vcopt_nusa
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -192,11 +198,13 @@ endif
 call field_get_val_s(icrom, cromo)
 
 if (istprv.ge.0) then
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
-    call field_get_val_prev_s(ivisct, cpro_pcvto)
+    call field_get_val_prev_s(ivisct, cvisct)
   endif
 endif
 
@@ -333,11 +341,7 @@ endif
 !                                 visct is visct^n
 do iel = 1, ncel
 
-  if (istprv.ge.0 .and. iviext.gt.0) then
-    visct = cpro_pcvto(iel)
-  else
-    visct = cvisct(iel)
-  endif
+  visct = cvisct(iel)
   rom   = cromo(iel)
   ! kinematic viscosity
   nu0   = viscl(iel)/rom
@@ -554,7 +558,7 @@ endif
 
 iconvp = vcopt_nusa%iconv
 idiffp = vcopt_nusa%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_nusa%ndircl
 nswrsp = vcopt_nusa%nswrsm
 nswrgp = vcopt_nusa%nswrgr
 imligp = vcopt_nusa%imligr
@@ -576,13 +580,14 @@ relaxp = vcopt_nusa%relaxv
 thetap = vcopt_nusa%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_nusa      , cvara_nusa      ,                            &

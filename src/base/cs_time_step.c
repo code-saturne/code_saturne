@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_base.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parall.h"
@@ -114,7 +115,7 @@ BEGIN_C_DECLS
         If the time step is uniform (\ref cs_time_step_options_t::idtvar "idtvar"
         = 0 or 1), \ref t_cur increases of \ref dt (value of the time step) at each iteration.
         If the time step is non-uniform (\ref cs_time_step_options_t::idtvar "idtvar"=2),
-        \ref t_cur increases of \ref cs_time_step_options_t::dtref "dtref" at each time step.\n
+        \ref t_cur increases of \ref cs_time_step_t::dt_ref "dt_ref" at each time step.\n
         \ref t_cur is initialised and updated automatically by the code,
         its value is not to be modified by the user.
   \var  cs_time_step_t::t_max
@@ -127,16 +128,6 @@ BEGIN_C_DECLS
   Members of this time step options descriptor are publicly accessible, to
   allow for concise syntax.
 
-  \var  cs_time_step_options_t::inpdt0
-        Indicator "zero time step"
-        - 0: standard calculation
-        - 1: to simulate no time step
-        - for non-restarted computations: only resolution (Navier-Stokes,
-          turbulence, scalars) is skipped
-        - for restarted computations: resolution, computation of physical
-          properties, and definition of boundary conditions is skipped
-          (values are read from checkpoint file).
-
   \var  cs_time_step_options_t::iptlro
         Clip the time step with respect to the buoyant effects\n
 
@@ -146,7 +137,7 @@ BEGIN_C_DECLS
         lower than this limit, otherwise numerical instabilities may appear.\n
         \ref iptlro indicates whether the time step should be limited to the
         local thermal time step (=1) or not (=0).\n
-        When \ref iptlro=1, the listing shows the number of cells where the
+        When \ref iptlro=1, the log shows the number of cells where the
         time step has been clipped due to the thermal criterion, as well as
         the maximum ratio between the time step and the maximum thermal time
         step. If \ref idtvar=0, since the time step is fixed and cannot be
@@ -164,7 +155,7 @@ BEGIN_C_DECLS
         If the numerical scheme is a second-order in time, only the
         option 0 is allowed.
 
-  \var  cs_time_step_options_t::dtref
+  \var  cs_time_step_t::dt_ref
         Reference time step.\n
 
         This is the time step value used in the case of a calculation run with a
@@ -231,27 +222,29 @@ static cs_time_step_t  _time_step = {
   .nt_ini = 2,
   .t_prev = 0.,
   .t_cur = 0.,
-  .t_max = -1.
+  .t_max = -1.,
+  .dt = {0.1, 0.1, 0.1},
+  .dt_ref = 0.1,
+  .dt_next = 0.1
 };
 
-static cs_time_step_options_t  _time_step_options =
-{
-  .inpdt0 = 0,
+static cs_time_step_options_t  _time_step_options = {
   .iptlro = 0,
-  .idtvar = 0,
-  .dtref  = -1.e12*10.,
+  .idtvar = 0, /* constant time step by default */
   .coumax = 1.,
   .cflmmx = 0.99,
   .foumax = 10.,
   .varrdt = 0.1,
-  .dtmin  = -1.e12*10.,
-  .dtmax  = -1.e12*10.,
-  .relxst = 0.7
+  .dtmin  = -1.e13,
+  .dtmax  = -1.e13,
+  .relxst = 0.7 /* Not used in CDO schemes */
 };
 
 const cs_time_step_t  *cs_glob_time_step = &_time_step;
 
 const cs_time_step_options_t  *cs_glob_time_step_options = &_time_step_options;
+
+static double _c = 0; /* compensation term for Kahan sum */
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -263,15 +256,14 @@ cs_f_time_step_get_pointers(int     **nt_prev,
                             int     **nt_cur,
                             int     **nt_max,
                             int     **nt_ini,
+                            double  **dtref,
                             double  **t_prev,
                             double  **t_cur,
                             double  **t_max);
 
 void
-cs_f_time_step_options_get_pointers(int    **inpdt0,
-                                    int    **iptlro,
+cs_f_time_step_options_get_pointers(int    **iptlro,
                                     int    **idtvar,
-                                    double **dtref,
                                     double **coumax,
                                     double **cflmmx,
                                     double **foumax,
@@ -299,6 +291,7 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
  *   nt_cur  --> pointer to cs_glob_time_step->nt_cur
  *   nt_max  --> pointer to cs_glob_time_step->nt_max
  *   nt_ini  --> pointer to cs_glob_time_step->nt_ini
+ *   dt_ref  --> pointer to cs_glob_time_step->dt_ref
  *   t_prev  --> pointer to cs_glob_time_step->t_prev
  *   t_cur   --> pointer to cs_glob_time_step->t_cur
  *   t_max   --> pointer to cs_glob_time_step->t_ax
@@ -309,6 +302,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
                             int      **nt_cur,
                             int      **nt_max,
                             int      **nt_ini,
+                            double   **dtref,
                             double   **t_prev,
                             double   **t_cur,
                             double   **t_max)
@@ -317,6 +311,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
   *nt_cur = &(_time_step.nt_cur);
   *nt_max = &(_time_step.nt_max);
   *nt_ini = &(_time_step.nt_ini);
+  *dtref  = &(_time_step.dt_ref);
   *t_prev = &(_time_step.t_prev);
   *t_cur = &(_time_step.t_cur);
   *t_max = &(_time_step.t_max);
@@ -329,10 +324,8 @@ cs_f_time_step_get_pointers(int      **nt_prev,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   inpdt0 --> pointer to cs_glob_time_step_options->inpdt0
  *   iptlro --> pointer to cs_glob_time_step_options->iptlro
  *   idtvar --> pointer to cs_glob_time_step_options->idtvar
- *   dtref  --> pointer to cs_glob_time_step_options->dtref
  *   coumax --> pointer to cs_glob_time_step_options->coumax
  *   cflmmx --> pointer to cs_glob_time_step_options->cflmmx
  *   foumax --> pointer to cs_glob_time_step_options->foumax
@@ -343,10 +336,8 @@ cs_f_time_step_get_pointers(int      **nt_prev,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_time_step_options_get_pointers(int    **inpdt0,
-                                    int    **iptlro,
+cs_f_time_step_options_get_pointers(int    **iptlro,
                                     int    **idtvar,
-                                    double **dtref,
                                     double **coumax,
                                     double **cflmmx,
                                     double **foumax,
@@ -355,10 +346,8 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
                                     double **dtmax,
                                     double **relxst)
 {
-  *inpdt0 = &(_time_step_options.inpdt0);
   *iptlro = &(_time_step_options.iptlro);
   *idtvar = &(_time_step_options.idtvar);
-  *dtref  = &(_time_step_options.dtref );
   *coumax = &(_time_step_options.coumax);
   *cflmmx = &(_time_step_options.cflmmx);
   *foumax = &(_time_step_options.foumax);
@@ -366,6 +355,33 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
   *dtmin  = &(_time_step_options.dtmin );
   *dtmax  = &(_time_step_options.dtmax );
   *relxst = &(_time_step_options.relxst);
+}
+
+/*=============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update Kahan compensation.
+ *
+ * Called as a function to help avoid compiler optimizating Kahan
+ * summation out (though aggressive or LTO optimizations might).
+ *
+ * new copensation term is (a - b) - c
+ *
+ * \param[in]  a  a
+ * \param[in]  b  b
+ * \param[in]  c  c
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_kahan_compensation(double  *a,
+                           double  *b,
+                           double  *c)
+{
+  _c = (*a - *b) - *c;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -446,6 +462,7 @@ void
 cs_time_step_define_nt_max(int  nt_max)
 {
   _time_step.nt_max = nt_max;
+  _time_step.t_max = -1.;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -460,6 +477,7 @@ void
 cs_time_step_define_t_max(double  t_max)
 {
   _time_step.t_max = t_max;
+  _time_step.nt_max = -1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -492,8 +510,20 @@ cs_time_step_define_prev(int     nt_prev,
 void
 cs_time_step_increment(double  dt)
 {
+  _time_step.dt[2] = _time_step.dt[1];
+  _time_step.dt[1] = _time_step.dt[0];
+  _time_step.dt[0] = dt;
+
+  double z = dt - _c;
+  double t = _time_step.t_cur + z;
+
+  _update_kahan_compensation(&t, &_time_step.t_cur, &z);
+
+  _time_step.t_cur = t;
   _time_step.nt_cur += 1;
-  _time_step.t_cur += dt;
+
+  cs_base_update_status("time step: %d; t = %g\n",
+                        _time_step.nt_cur, _time_step.t_cur);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -549,8 +579,10 @@ cs_time_step_log_setup(void)
        _("   Frozen velocity field\n\n"
          "    iccvfg:      %14d (1: Frozen velocity field)\n"),
          cs_glob_stokes_model->iccvfg);
-  } else {
+  }
+
   /* Unsteady */
+  else {
     cs_log_printf
       (CS_LOG_SETUP,
        _("  Unsteady algorithm\n\n"
@@ -574,7 +606,7 @@ cs_time_step_log_setup(void)
          cs_glob_time_step_options->varrdt,
          cs_glob_time_step_options->dtmin,
          cs_glob_time_step_options->dtmax,
-         cs_glob_time_step_options->dtref);
+         cs_glob_time_step->dt_ref);
 
     /* Frozen velocity field */
     cs_log_printf

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -357,6 +357,30 @@ _expand_limit(const cs_mesh_t  *m,
   return count;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prescribe displacements based on extrusion vector definitions.
+ *
+ * \param[in]  e  extrusion vector definitions
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_prescribe_displacements(const cs_mesh_extrude_vectors_t  *e)
+{
+  cs_real_3_t *_c_shift;
+  BFT_MALLOC(_c_shift, e->n_vertices, cs_real_3_t);
+# pragma omp parallel for if (e->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < e->n_vertices; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++)
+      _c_shift[i][j] = - e->coord_shift[i][j];
+  }
+  cs_mesh_deform_prescribe_displacement(e->n_vertices,
+                                        e->vertex_ids,
+                                        (const cs_real_3_t *)_c_shift);
+  BFT_FREE(_c_shift);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -375,6 +399,9 @@ _expand_limit(const cs_mesh_t  *m,
  *                                     reduced below this; < 0 to ignore
  * \param[in]       interior_gc        if true, maintain group classes of
  *                                     interior faces previously on boundary
+ * \param[in]       n_fixed_vertices   local number of fixed vertices
+ * \param[in]       fixed_vertex_ids   ids of vertices which should be fixed,
+ *                                     or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -382,7 +409,9 @@ void
 cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                               cs_mesh_extrude_vectors_t  *e,
                               cs_real_t                   min_volume_factor,
-                              bool                        interior_gc)
+                              bool                        interior_gc,
+                              cs_lnum_t                   n_fixed_vertices,
+                              const cs_lnum_t            *fixed_vertex_ids)
 {
   cs_timer_t t0 = cs_timer_time();
 
@@ -433,19 +462,26 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
   cs_cdo_initialize_setup(domain);
 
-  cs_cdo_initialize_structures(domain, m, mq);
-
-  /* Deactive logging and visualization for deformation
+  /* Deactivate logging and visualization for deformation
      fields, as they are reset to 0 anyways after extrusion */
 
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
   for (int i = 0; i < 3; i++) {
-    cs_field_t *f = cs_field_by_name_try(eq_name[i]);
-    if (f != NULL) {
-      cs_field_set_key_int(f, cs_field_key_id("log"), 0);
-      cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
-    }
+    cs_field_t *f = cs_field_by_name(eq_name[i]);
+    cs_field_set_key_int(f, cs_field_key_id("log"), 0);
+    cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
   }
+
+  /* Now prescribe displacements (invert extrusion direction)
+     before initializing structures */
+
+  _prescribe_displacements(e);
+
+  cs_mesh_deform_force_displacements(n_fixed_vertices,
+                                     fixed_vertex_ids,
+                                     NULL);
+
+  cs_cdo_initialize_structures(domain, m, mq);
 
   /* Compute or access reference volume for displacement limiter */
 
@@ -456,20 +492,6 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
   bool compute_displacement = true;
 
   while (compute_displacement) {
-
-    /* Now prescribe displacement (invert extrusion direction) */
-
-    cs_real_3_t *_c_shift;
-    BFT_MALLOC(_c_shift, e->n_vertices, cs_real_3_t);
-#   pragma omp parallel for if (m->n_vertices > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < e->n_vertices; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
-        _c_shift[i][j] = - e->coord_shift[i][j];
-    }
-    cs_mesh_deform_prescribe_displacement(e->n_vertices,
-                                          e->vertex_ids,
-                                          (const cs_real_3_t *)_c_shift);
-    BFT_FREE(_c_shift);
 
     /* Now deform mesh */
 
@@ -485,7 +507,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
       m->vtx_coord[i*3 + 2] += vd[i][2];
     }
 
-    /* Check deformation is acceptable;
+    /* Check if deformation is acceptable;
      * We mark cells using cell_vol_cmp = -3 for negative volumes,
      * -2 for volumes reduced below the required threshold, and -1 for cells
      * marked through adjacency with one of the above. */
@@ -537,7 +559,8 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
         counts[3] = _expand_limit(m, cell_vol_cmp, vtx_flag);
         _flag_vertices_for_limiter(m, cell_vol_cmp, vtx_flag);
         counts[2] = _extrude_vector_limit(vtx_flag, e);
-        cs_parall_sum(2, CS_GNUM_TYPE, counts+2); /* do not change initial cell counts */
+        cs_parall_sum(2, CS_GNUM_TYPE, counts+2); /* do not change initial
+                                                     cell counts */
       }
 
       BFT_FREE(vtx_flag);
@@ -567,11 +590,17 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
       }
 
       if (compute_displacement) {
+
         for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
           m->vtx_coord[i*3]     -= vd[i][0];
           m->vtx_coord[i*3 + 1] -= vd[i][1];
           m->vtx_coord[i*3 + 2] -= vd[i][2];
         }
+
+        /* Prescribe new displacement */
+
+        _prescribe_displacements(e);
+
       }
 
     } /* end of displacements computation and checking loop */

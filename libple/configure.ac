@@ -4,7 +4,7 @@
 # This file is part of the "Parallel Location and Exchange" library,
 # intended to provide mesh or particle-based code coupling services.
 #
-# Copyright (C) 2005-2018 EDF S.A.
+# Copyright (C) 2005-2019 EDF S.A.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@ m4_define([ple_licence_c_comment],
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2018  EDF
+  Copyright (C) 2005-2019  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -186,6 +186,55 @@ AM_CONDITIONAL(HAVE_RELOCATABLE, [test "${relocatable}" = yes])
 if test "${relocatable}" = yes ; then
   AC_DEFINE([HAVE_RELOCATABLE], 1, [Relocatable installation])
 fi
+
+# Optionally install the code with python wrappers
+
+AC_ARG_ENABLE(python,
+  [AS_HELP_STRING([--enable-python], [enable python installation])],
+  [
+    case "${enableval}" in
+      yes) python_bindings=yes ;;
+      no)  python_bindings=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-python]) ;;
+    esac
+  ],
+  [ python_bindings=no ]
+)
+
+if test "${python_bindings}" = "yes" ; then
+
+  AX_PKG_SWIG(1.3.21) # check swig version
+  AX_SWIG_PYTHON
+  AM_PATH_PYTHON(2.6)
+  AX_PYTHON_DEVEL([>='2.6'])
+  AX_PYTHON_MODULE(mpi4py)
+
+fi
+
+AM_CONDITIONAL(HAVE_MPI4PY, [test "${HAVE_PYMOD_MPI4PY}" = yes])
+AM_CONDITIONAL(HAVE_SWIG, [test "${SWIG}" != ""])
+
+AC_ARG_VAR([SWIG_PYTHON_FLAGS], [Additional flags for SWIG (usually -I<path>)])
+
+if test "${python_bindings}" = "yes" ; then
+
+  if test "${HAVE_PYMOD_MPI4PY}" = "yes"; then
+    AC_DEFINE([HAVE_MPI4PY], 1, [mpi4py module])
+  else
+    # AC_MSG_WARN(mpi4py MPI Python bindings not found])
+    python_bindings=no
+  fi
+
+  if test "${SWIG}" != ""; then
+    AC_DEFINE([HAVE_SWIG], 1, [swig presence])
+  else
+    # AC_MSG_WARN(SWIG not found])
+    python_bindings=no
+  fi
+
+fi
+
+AC_SUBST(python_bindings)
 
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
@@ -487,7 +536,7 @@ PLE_AC_CONFIG_INFO_FINALIZE
 
 # If we use GNU gettext, we need to add po/Makefile.
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile
+AC_CONFIG_FILES([Makefile src/Makefile pyple/Makefile tests/Makefile
                  doc/Makefile doc/doxygen/Makefile
                  po/Makefile.in])
 
@@ -521,6 +570,7 @@ echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " MPI (Message Passing Interface) support: "$ple_have_mpi""
 echo " OpenMP support: "$ple_have_openmp""
+echo " Python bindings: "$python_bindings""
 echo
 echo "The package has been configured. Type:"
 echo " make"

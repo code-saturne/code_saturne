@@ -1,7 +1,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -68,8 +68,8 @@ recv_geom(void *component)
   int    i = 0;
   int    ii = 0;
   int    iret = 0;
+  int    nb_loc = 0;
   char   nomvar[144];
-  int    geom[2] = {0, 0};
   float  tps = 0.;
   double tps2=0.;
   double almloc = 0.;
@@ -81,12 +81,9 @@ recv_geom(void *component)
   nb_dyn = 0;
   lref   = 0.0;
 
-  strcpy(nomvar, "DONGEO");
+  /* Receive geometric variables */
 
-  /* Receive geometric variables:
-   * 1 array of size 1 * 2 is received
-   * geom[0] = nb_for; geom[1] = nb_dyn */
-
+  strcpy(nomvar, "NB_DYN");
   i = 0;
   iret = cp_len(component,
                 CP_ITERATION,
@@ -96,7 +93,24 @@ recv_geom(void *component)
                 nomvar,
                 2,
                 &(ii),
-                &(geom[0]));
+                &nb_loc);
+
+  nb_dyn = nb_loc;
+
+  if (iret < 1) {
+    strcpy(nomvar, "NB_FOR");
+    i = 0;
+    iret = cp_len(component,
+                  CP_ITERATION,
+                  &(tps),
+                  &(tps),
+                  &(i),
+                  nomvar,
+                  2,
+                  &(ii),
+                  &nb_loc);
+    nb_for = nb_loc;
+  }
 
   if (iret < 1) {
     strcpy(nomvar, "ALMAXI");
@@ -112,35 +126,6 @@ recv_geom(void *component)
                   &(ii),
                   &(almloc));
     lref = almloc;
-  }
-
-  nb_for = geom[0];
-  nb_dyn = geom[1];
-
-  return iret;
-}
-
-/*----------------------------------------------------------------------------
- * Send geometric data to Code_Aster
- * To be removed in initialization stage
- *----------------------------------------------------------------------------*/
-
-int
-send_geom(void* component)
-{
-  /* Local variables */
-  int iret = 0;
-  char nomvar[] = "NB_DYN";
-
-  /* Trace of call to this function */
-  printf("in recv_geom\n");
-
-  /* Send number of Code_Saturne points to Code_Aster */
-  iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(nb_dyn));
-  if (iret < 1) {
-    strcpy(nomvar,"NB_FOR");
-    /* send nbssit variable */
-    iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(nb_for));
   }
 
   return iret;

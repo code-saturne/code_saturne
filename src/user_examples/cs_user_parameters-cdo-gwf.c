@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,24 +50,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_advection_field.h"
-#include "cs_base.h"
-#include "cs_domain_setup.h"
-#include "cs_field.h"
-#include "cs_gwf.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_param.h"
-#include "cs_physical_model.h"
-#include "cs_property.h"
-#include "cs_prototypes.h"
-#include "cs_time_step.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -184,19 +167,22 @@ get_tracer_sol(cs_real_t          time,
 void
 cs_user_model(void)
 {
+  cs_domain_t  *domain = cs_glob_domain;
+
   /* ======================
      Boundary of the domain
      ====================== */
 
+  cs_boundary_t  *bdy = domain->boundaries;
+
   /* Choose a boundary by default */
-  cs_domain_boundary_set_default(CS_DOMAIN_BOUNDARY_SYMMETRY);
+  cs_boundary_set_default(bdy, CS_BOUNDARY_SYMMETRY);
 
   /* Add new boundaries */
-  cs_domain_boundary_add(CS_DOMAIN_BOUNDARY_INLET, "left");
-  cs_domain_boundary_add(CS_DOMAIN_BOUNDARY_OUTLET, "right");
+  cs_boundary_add(bdy, CS_BOUNDARY_INLET, "left");
+  cs_boundary_add(bdy, CS_BOUNDARY_OUTLET, "right");
 
   /* Activate CDO/HHO module so that main additional structure are built */
-  cs_domain_t  *domain = cs_glob_domain;
 
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
 
@@ -300,7 +286,7 @@ cs_user_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  - Specify the elements such as properties, advection fields,
+ * \brief  Specify the elements such as properties, advection fields,
  *           user-defined equations and modules which have been previously
  *           added.
  *
@@ -309,7 +295,7 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 

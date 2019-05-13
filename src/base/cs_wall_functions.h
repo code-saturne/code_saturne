@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -857,7 +857,7 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
    * ln((y+y0)/y0) = ln((y+y0)/alpha xi) + kappa * 5.2
    *
    * y0 =  roughness * exp(-kappa * 8.5)
-   * */
+   */
   double y0 = roughness*exp(-cs_turb_xkappa*cs_turb_cstlog_rough);
 
   /* Blending for very low values of k */

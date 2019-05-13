@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -47,9 +47,11 @@ SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_C
 
 AUX_DIST = \
 build-aux/catalyst \
+build-aux/catalyst-5.6 \
 build-aux/cs_compile_build.py \
 build-aux/cs_config_test.py \
 build-aux/cs_version.py \
+build-aux/list_modules.sh \
 build-aux/petsc-petscvariables.makefile \
 build-aux/petsc-variables.makefile \
 m4/codeset.m4 \
@@ -141,18 +143,21 @@ m4/cs_salome.m4 \
 m4/cs_scotch.m4 \
 m4/cs_zlib.m4
 
-# One adds several sub-directories and get rid of the .svn
-# directories with a dist-hook. The reason for this trick is that
+# One adds several sub-directories with a dist-hook.
+# The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples extras patches
 
-nodist_pkginclude_HEADERS = cs_config.h
+nodist_pkginclude_HEADERS = \
+cs_config.h \
+cs_version.h
 
 DISTCLEANFILES = \
 bin/code_saturne \
 bin/cs_package.py \
 extras/salome/fsi_appli_config.xml \
-cs_config.h
+cs_config.h \
+cs_version.h
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -197,42 +202,73 @@ edit_package = sed \
 	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
 	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
-	-e 's|@cs_src_revision[@]|$(cs_src_revision)|g' \
-	-e 's|@cs_version[@]|$(cs_version)|g' \
-	-e 's|@cs_version_full[@]|$(cs_version_full)|g' \
-	-e 's|@cs_version_short[@]|$(cs_version_short)|g' \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
 	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
+
+edit_shell = sed \
+	-e 's|@SHELL[@]|$(SHELL)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON)|g' \
+	-e 's|@cs_env_modules[@]|$(cs_env_modules)|g' \
+	-e 's|@shell_env[@]|$(shell_env)|g'
+
+if HAVE_SHELL_LAUNCHER
+  LAUNCHER_EXT=sh
+  edit_launcher=$(edit_shell)
+else
+  LAUNCHER_EXT=py
+  edit_launcher=$(edit_python)
+endif
 
 bin/code_saturne: Makefile
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
-	test -f ./$@.py.in || srcdir=$(srcdir)/; \
-	$(edit_python) $${srcdir}$@.py.in >$@.tmp
+	test -f ./$@.$(LAUNCHER_EXT).in || srcdir=$(srcdir)/; \
+	$(edit_launcher) $${srcdir}$@.$(LAUNCHER_EXT).in >$@.tmp
 	mv $@.tmp $@
+	${top_srcdir}/build-aux/cs_version.py --replace $@ $@
 
-bin/cs_package.py: Makefile
+if HAVE_SHELL_LAUNCHER
+bin/code_saturne.py: Makefile $(srcdir)/bin/code_saturne.py.in
+	rm -f $@ $@.tmp
+	$(MKDIR_P) bin
+	srcdir=''; \
+	test -f ./$@.in || srcdir=$(srcdir)/; \
+	$(edit_python) $${srcdir}$@.in >$@.tmp;
+	mv $@.tmp $@
+endif
+
+bin/cs_package.py: Makefile $(srcdir)/bin/cs_package.py.in
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
 	$(edit_package) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace $@ $@
 
-bin/code_saturne: $(srcdir)/bin/code_saturne.py.in
-bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
+bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
 
-BUILT_SOURCES = bin/cs_package.py
+cs_version.h: Makefile $(top_srcdir)/src/base/cs_version.h.in
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
+
+BUILT_SOURCES = \
+bin/cs_package.py \
+cs_version.h
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in \
+EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
+	      bin/code_saturne.sh.in \
               data/thch/dp_radiat_MFS.tar.xz
 
 # Install binary scripts
 
 nodist_bin_SCRIPTS = \
 bin/code_saturne
+
+if HAVE_SHELL_LAUNCHER
+nodist_bin_SCRIPTS += bin/code_saturne.py
+endif
 
 # Install Python library
 
@@ -265,6 +301,7 @@ bin/cs_runcase.py \
 bin/cs_salome.py \
 bin/cs_script.py \
 bin/cs_submit.py \
+bin/cs_mei_to_c.py \
 bin/cs_xml_reader.py
 
 studymanagerdir = $(pkgpythondir)/studymanager
@@ -274,7 +311,90 @@ bin/studymanager/cs_studymanager_drawing.py \
 bin/studymanager/__init__.py \
 bin/studymanager/cs_studymanager_parser.py \
 bin/studymanager/cs_studymanager_study.py \
-bin/studymanager/cs_studymanager_texmaker.py
+bin/studymanager/cs_studymanager_texmaker.py \
+bin/studymanager/cs_studymanager_pathes_model.py \
+bin/studymanager/cs_studymanager_xml_init.py
+
+modeldir = $(pkgpythondir)/model
+model_PYTHON = \
+bin/model/Common.py \
+bin/model/AtmosphericFlowsModel.py \
+bin/model/BalanceModelNeptune.py \
+bin/model/BalanceModel.py \
+bin/model/BatchRunningModel.py \
+bin/model/BodyForcesModel.py \
+bin/model/BoundaryConditionsModelNeptune.py \
+bin/model/BoundaryNeptune.py \
+bin/model/Boundary.py \
+bin/model/CathareCouplingModel.py \
+bin/model/CoalCombustionModel.py \
+bin/model/CompressibleModel.py \
+bin/model/ConjugateHeatTransferModel.py \
+bin/model/CoriolisSourceTermsModel.py \
+bin/model/DefineUserScalarsModel.py \
+bin/model/DropletCondensationEvaporationModel.py \
+bin/model/ElectricalModel.py \
+bin/model/FansModel.py \
+bin/model/FluidCharacteristicsModel.py \
+bin/model/FluidStructureInteractionModel.py \
+bin/model/GasCombustionModel.py \
+bin/model/GlobalNumericalParametersModel.py \
+bin/model/GroundwaterLawModel.py \
+bin/model/GroundwaterModel.py \
+bin/model/HeadLossesModel.py \
+bin/model/IdentityAndPathesModel.py \
+bin/model/ImmersedBoundariesModel.py \
+bin/model/InitializationModel.py \
+bin/model/__init__.py \
+bin/model/InterfacialAreaModel.py \
+bin/model/InterfacialEnthalpyModel.py \
+bin/model/InterfacialForcesModel.py \
+bin/model/LagrangianBoundariesModel.py \
+bin/model/LagrangianModel.py \
+bin/model/LagrangianOutputModel.py \
+bin/model/LagrangianStatisticsModel.py \
+bin/model/LocalizationModelNeptune.py \
+bin/model/LocalizationModel.py \
+bin/model/MainFieldsInitializationModel.py \
+bin/model/MainFieldsSourceTermsModel.py \
+bin/model/MainFieldsModel.py \
+bin/model/MobileMeshModel.py \
+bin/model/NonCondensableModel.py \
+bin/model/NotebookModel.py \
+bin/model/NucleateBoilingModel.py \
+bin/model/NumericalParamEquationModelNeptune.py \
+bin/model/NumericalParamEquationModel.py \
+bin/model/NumericalParamGlobalModel.py \
+bin/model/OpenTurnsModel.py \
+bin/model/OutputControlModel.py \
+bin/model/OutputFieldsModel.py \
+bin/model/OutputSurfacicFieldsModel.py \
+bin/model/OutputSurfacicVariablesModel.py \
+bin/model/OutputVolumicVariablesModel.py \
+bin/model/PerformanceTuningModel.py \
+bin/model/PorosityModel.py \
+bin/model/ProfilesModel.py \
+bin/model/ScriptRunningModel.py \
+bin/model/SolidModel.py \
+bin/model/SolutionDomainModel.py \
+bin/model/SourceTermsModel.py \
+bin/model/SpeciesModel.py \
+bin/model/StartRestartModel.py \
+bin/model/ThermalRadiationModel.py \
+bin/model/ThermalScalarModel.py \
+bin/model/ThermodynamicsModel.py \
+bin/model/TimeAveragesModel.py \
+bin/model/TimeStepModelNeptune.py \
+bin/model/TimeStepModel.py \
+bin/model/TurboMachineryModel.py \
+bin/model/TurbulenceModel.py \
+bin/model/TurbulenceNeptuneModel.py \
+bin/model/UsersControlModel.py \
+bin/model/XMLengine.py \
+bin/model/XMLinitializeNeptune.py \
+bin/model/XMLinitialize.py \
+bin/model/XMLmodel.py \
+bin/model/XMLvariables.py
 
 # Install user scripts
 
@@ -371,7 +491,7 @@ install-doc:
 
 update-copyright:
 	y=`date +%Y`; yold=$$(($$y-1)); \
-	lst=`find ${top_srcdir} -type d \( -name .svn -o -name .git -o -name "build*" \) -prune -o \( -type f -a ! -name Makefile.in \) -print`; \
+	lst=`find ${top_srcdir} -type d \( -name .git -o -name "build*" \) -prune -o \( -type f -a ! -name Makefile.in \) -print`; \
 	for f in $$lst; do \
 	  echo $$f && \
 	  $(SED) -i "s/Copyright (C) 1998-$${yold} EDF S.A./Copyright (C) 1998-$$y EDF S.A./" $$f; \
@@ -380,8 +500,13 @@ update-copyright:
 dist-hook:
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --full > $(distdir)/build-aux/version
 
-clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
+# Additional local targets
+
+all-local:
+	@$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
+	@if test -f bin/cs_package.py; then \
+	  $(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace bin/cs_package.py bin/cs_package.py; \
+	fi
 
 install-data-local:
 	@$(NORMAL_INSTALL)

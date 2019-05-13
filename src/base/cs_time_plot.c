@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -845,16 +845,17 @@ void CS_PROCF (tpsini, TPSINI)
 
       _fortran_time_plot_realloc(*tplnum, plot_name, fmt);
 
-      _plot_files[fmt][*tplnum - 1] = cs_time_plot_init_struct(plot_name,
-                                                               file_prefix,
-                                                               fmt,
-                                                               use_iteration,
-                                                              _flush_wtime_default,
-                                                              _n_buffer_steps_default,
-                                                               *nstru,
-                                                               xmstru,
-                                                               xcstru,
-                                                               xkstru);
+      _plot_files[fmt][*tplnum - 1]
+        = cs_time_plot_init_struct(plot_name,
+                                   file_prefix,
+                                   fmt,
+                                   use_iteration,
+                                   _flush_wtime_default,
+                                   _n_buffer_steps_default,
+                                   *nstru,
+                                   xmstru,
+                                   xcstru,
+                                   xkstru);
     }
 
   }

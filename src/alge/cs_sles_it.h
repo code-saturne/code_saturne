@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -56,27 +56,38 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_SLES_PCG,                 /* Preconditionned conjugate gradient */
-  CS_SLES_FCG,                 /* Preconditionned flexible conjugate gradient */
-  CS_SLES_IPCG,                /* Preconditionned inexact conjugate gradient */
-  CS_SLES_JACOBI,              /* Jacobi */
-  CS_SLES_BICGSTAB,            /* Bi-conjugate gradient stabilized */
-  CS_SLES_BICGSTAB2,           /* Bi-conjugate gradient stabilized - 2*/
-  CS_SLES_GMRES,               /* Generalized minimal residual */
-  CS_SLES_P_GAUSS_SEIDEL,      /* Process-local Gauss-Seidel */
-  CS_SLES_P_SYM_GAUSS_SEIDEL,  /* Process-local symmetric Gauss-Seidel */
-  CS_SLES_TS_F_GAUSS_SEIDEL,   /* Truncated forward Gauss-Seidel
-                                  smoothing */
-  CS_SLES_TS_B_GAUSS_SEIDEL,   /* Truncated backward Gauss-Seidel
-                                  smoothing */
-  CS_SLES_PCR3,                /* 3-layer conjugate residual */
-  CS_SLES_N_IT_TYPES           /* Number of resolution algorithms */
+  CS_SLES_PCG,                 /*!< Preconditionned conjugate gradient */
+  CS_SLES_FCG,                 /*!< Preconditions flexible conjugate gradient,
+                                    described in \cite Notay:2015 */
+  CS_SLES_IPCG,                /*!< Preconditions inexact conjugate gradient */
+  CS_SLES_JACOBI,              /*!< Jacobi */
+  CS_SLES_BICGSTAB,            /*!< Preconditioned BiCGstab
+                                    (biconjugate gradient stabilized) */
+  CS_SLES_BICGSTAB2,           /*!< Preconditioned BiCGstab2 */
+  CS_SLES_GMRES,               /*!< Preconditioned GMRES
+                                    (generalized minimal residual) */
+  CS_SLES_P_GAUSS_SEIDEL,      /*!< Process-local Gauss-Seidel */
+  CS_SLES_P_SYM_GAUSS_SEIDEL,  /*!< Process-local symmetric Gauss-Seidel */
+  CS_SLES_PCR3,                /*!< 3-layer conjugate residual */
+
+  CS_SLES_N_IT_TYPES,          /*!< Number of resolution algorithms
+                                    excluding smoother only*/
+
+  CS_SLES_TS_F_GAUSS_SEIDEL,   /*!< Truncated forward Gauss-Seidel smoother */
+  CS_SLES_TS_B_GAUSS_SEIDEL,   /*!< Truncated backward Gauss-Seidel smoother */
+
+  CS_SLES_N_SMOOTHER_TYPES     /*!< Number of resolution algorithms
+                                    including smoother only */
 
 } cs_sles_it_type_t;
 
 /* Iterative linear solver context (opaque) */
 
 typedef struct _cs_sles_it_t  cs_sles_it_t;
+
+/* Forward type declarations */
+
+typedef struct _cs_sles_it_convergence_t  cs_sles_it_convergence_t;
 
 /*============================================================================
  *  Global variables
@@ -377,7 +388,7 @@ cs_sles_it_set_shareable(cs_sles_it_t        *context,
  *
  * The system is solved only on ranks with a non-NULL communicator or
  * if the caller communicator has less than 2 ranks. convergence info
- * is the broadcast across the caller communicator.
+ * is broadcast across the caller communicator.
  *
  * \param[in, out]  context      pointer to iterative solver info and context
  * \param[in]       comm         MPI communicator for solving
@@ -517,23 +528,6 @@ void
 cs_sles_it_set_plot_options(cs_sles_it_t  *context,
                             const char    *base_name,
                             bool           use_iteration);
-
-/*----------------------------------------------------------------------------
- * Assign existing time plot to iterative sparse linear equation solver.
- *
- * This is useful mainly when a time plot has a longer lifecycle than
- * the linear solver context, such as inside a multigrid solver.
- *
- * parameters:
- *   context    <-> pointer to iterative solver info and context
- *   time_plot  <-- pointer to time plot structure
- *   time_stamp <-- associated time stamp
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_assign_plot(cs_sles_it_t    *context,
-                       cs_time_plot_t  *time_plot,
-                       int              time_stamp);
 
 /*----------------------------------------------------------------------------*/
 

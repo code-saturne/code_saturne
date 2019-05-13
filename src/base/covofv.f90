@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -190,7 +190,7 @@ call field_get_key_int(iflid, key_buoyant_id, is_buoyant_fld)
 ! If the vector is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
 ! otherwise it is outside of the loop and iterns = -1.
 if (  (is_buoyant_fld.eq. 1 .and. iterns.eq.-1) &
-  .or.(is_buoyant_fld.eq.-1 .and. iterns.ne.-1)) return
+  .or.(is_buoyant_fld.eq. 0 .and. iterns.ne.-1)) return
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -402,11 +402,21 @@ if (st_prv_id .ge. 0) then
   enddo
 endif
 
+! Compressible algorithm
+! or Low Mach compressible algos with mass flux prediction
+if (ippmod(icompf).ge.0.or.(idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1)) then
+  pcrom => croma
+
 ! Low Mach compressible algos (conservative in time).
 ! Same algo for Volume of Fluid method.
-if (idilat.gt.1 .or. ivofmt.ge.0) then
-  call field_get_val_prev_s(icrom, pcrom)
-! Standard algo
+else if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
+  if (iterns.eq.1) then
+    call field_get_val_prev2_s(icrom, pcrom)
+  else
+    call field_get_val_prev_s(icrom, pcrom)
+  endif
+
+! Deprecated algo or constant density
 else
   call field_get_val_s(icrom, pcrom)
 endif
@@ -621,7 +631,7 @@ endif
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
 idftnp = vcopt%idften
-ndircp = ndircl(ivar)
+ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr

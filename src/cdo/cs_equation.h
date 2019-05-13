@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -95,7 +95,7 @@ cs_equation_by_name(const char    *eqname);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_has_field_name(const cs_equation_t  *eq,
                            const char           *fld_name);
 
@@ -182,6 +182,20 @@ cs_equation_get_field(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the id related to the variable field structure associated to
+ *         the cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return an integer (-1 if the field is not defined)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_field_id(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the field structure for the (normal) boundary flux associated
  *         to a cs_equation_t structure
  *
@@ -258,7 +272,7 @@ cs_equation_get_scheme_context(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_is_steady(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -271,7 +285,7 @@ cs_equation_is_steady(const cs_equation_t    *eq);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+_Bool
 cs_equation_uses_new_mechanism(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -325,6 +339,18 @@ cs_equation_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if a steady-state computation is requested according to the
+ *         setting
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_needs_steady_state_solve(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Print a synthesis of the monitoring information in the performance
  *         file
  */
@@ -332,6 +358,21 @@ cs_equation_destroy_all(void);
 
 void
 cs_equation_log_monitoring(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the count of equations of each macro type
+ *
+ * \param[out]  n_equations          total number of equations
+ * \param[out]  n_predef_equations   number of predefined equations
+ * \param[out]  n_user_equations     number of user equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_get_count(int      *n_equations,
+                      int      *n_predef_equations,
+                      int      *n_user_equations);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -344,38 +385,93 @@ cs_equation_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a parameter attached to a keyname for the default settigns
+ *
+ * \param[in] key      key related to the member of eq to set
+ * \param[in] keyval   accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_default_param(cs_equation_key_t      key,
+                              const char            *keyval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Setup the linear algebra requirements
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_linear_solvers(void);
+cs_equation_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign cs_range_set_t structures for synchronization when computing
- *         in parallel mode
- *         After this call, parameters related to an equation are set once for
- *         all
+ * \brief  Set shared structures among the activated class of discretization
+ *         schemes
+ *
+ * \param[in]  connect          pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant            pointer to additional mesh quantities struct.
+ * \param[in]  time_step        pointer to a time step structure
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_time_step_t        *time_step,
+                                  cs_flag_t                    vb_scheme_flag,
+                                  cs_flag_t                    vcb_scheme_flag,
+                                  cs_flag_t                    fb_scheme_flag,
+                                  cs_flag_t                    hho_scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Release shared structures among the activated class of discretization
+ *         schemes
+ *
+ * \param[in]  vb_scheme_flag   metadata for Vb schemes
+ * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  fb_scheme_flag   metadata for Fb schemes
+ * \param[in]  hho_scheme_flag  metadata for HHO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
+                                    cs_flag_t    vcb_scheme_flag,
+                                    cs_flag_t    fb_scheme_flag,
+                                    cs_flag_t    hho_scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a \ref cs_range_set_t structures for synchronization when
+ *         computing in parallel mode.
  *
  * \param[in]  connect        pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assign_range_set(const cs_cdo_connect_t   *connect);
+cs_equation_set_range_set(const cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
+ *         After this call, parameters related to an equation are set once for
+ *         all
  *
  * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_equation_assign_functions(void);
+_Bool
+cs_equation_set_functions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -425,14 +521,12 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
  *         unsteady term
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       dt_cur      value of the current time step
  * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_solve(const cs_mesh_t            *mesh,
-                  double                      dt_cur,
                   cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -440,16 +534,12 @@ cs_equation_solve(const cs_mesh_t            *mesh,
  * \brief  Build the linear system for this equation
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       time_step   pointer to a time step structure
- * \param[in]       dt_cur      value of the current time step
  * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_build_system(const cs_mesh_t            *mesh,
-                         const cs_time_step_t       *time_step,
-                         double                      dt_cur,
                          cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/
@@ -508,6 +598,35 @@ cs_equation_get_time_property(const cs_equation_t    *eq);
 cs_property_t *
 cs_equation_get_reaction_property(const cs_equation_t    *eq,
                                   const int               reaction_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the type of numerical scheme used for the discretization in
+ *         time
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  a cs_param_time_scheme_t variable
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_time_scheme_t
+cs_equation_get_time_scheme(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the value of the theta parameter in theta time scheme
+ *         discretization
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the value of the theta coefficient. -1 if the time scheme is not
+ *          a theta time scheme
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_equation_get_theta_time_val(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -604,6 +723,24 @@ cs_equation_get_cell_values(const cs_equation_t    *eq);
 
 cs_real_t *
 cs_equation_get_vertex_values(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the diffusive flux across all boundary faces
+ *         According to the space discretization scheme, the size of the
+ *         resulting array differs.
+ *         For Vb and VCb schemes, this array relies on the bf2v adjacency.
+ *
+ * \param[in]      t_eval     time at which one performs the property evaluation
+ * \param[in]      eq         pointer to a cs_equation_t structure
+ * \param[in, out] diff_flux  value of the diffusive part of the flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
+                                       const cs_equation_t   *eq,
+                                       cs_real_t             *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -704,7 +841,6 @@ cs_equation_write_extra_restart(cs_restart_t   *restart);
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
  * \param[in]  ts        pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur    value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
@@ -712,8 +848,7 @@ void
 cs_equation_post_balance(const cs_mesh_t            *mesh,
                          const cs_cdo_connect_t     *connect,
                          const cs_cdo_quantities_t  *cdoq,
-                         const cs_time_step_t       *ts,
-                         double                      dt_cur);
+                         const cs_time_step_t       *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!

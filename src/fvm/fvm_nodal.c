@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1756,7 +1756,7 @@ fvm_nodal_make_vertices_private(fvm_nodal_t  *this_nodal)
     const cs_lnum_t n_vertices = this_nodal->n_vertices;
     const int dim = this_nodal->dim;
 
-    BFT_MALLOC(vertex_coords, n_vertices * dim, cs_coord_t);
+    BFT_MALLOC(_vertex_coords, n_vertices * dim, cs_coord_t);
 
     /* If renumbering is necessary, update connectivity */
 

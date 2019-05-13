@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -237,12 +237,24 @@ ieqnox = 1
 imdnox = 0
 irb = 0
 
-ieqco2 = 0
+! Kinetic model
+! solve transport equation of CO2 mass fraction by default
+! (for coal or fuel combustion)
+ieqco2 = 1
 
 ! ---> Coefficient de relation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 srrom = 1.d0
 
+! Initialization for compressible module
+
+! Standard compressible module scalars
+ienerg = 0
+itempk = 0
+! Compressible homogeneous two-phase flow scalars
+ifracv = 0
+ifracm = 0
+ifrace = 0
 
 !===============================================================================
 ! 2. REMPLISSAGE INCLUDE ppthch.h

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>396</width>
-    <height>358</height>
+    <width>355</width>
+    <height>316</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,242 +17,233 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxMode">
      <property name="title">
-      <string>Post-processing for particles</string>
+      <string>Particles post-processing output</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QGroupBox" name="groupBoxVariables">
-        <property name="title">
-         <string>Variables selection</string>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="2">
+       <widget class="QLabel" name="labelIVISV2">
+        <property name="toolTip">
+         <string/>
         </property>
-        <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="1">
-          <widget class="QLabel" name="labelIVISV2">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Particle velocity</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISV2">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLabel" name="labelIVISV1">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Fluid velocity seen by particles</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISV1">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLabel" name="labelIVISTP">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Residence time</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISTP">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLabel" name="labelIVISDM">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Particle diameter</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISDM">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>16</width>
-             <height>21</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="4" column="1">
-          <widget class="QLabel" name="labelIVISTE">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Particle temperature</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISTE">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="3">
-          <spacer>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>21</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="5" column="1">
-          <widget class="QLabel" name="labelIVISMP">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Particle mass</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISMP">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="1">
-          <widget class="QLabel" name="labelIVISDK">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Shrinking core diameter of the coal particles</string>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISDK">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="1">
-          <widget class="QLabel" name="labelIVISCH">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Mass of reactive coal of the coal particles</string>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISCH">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="1">
-          <widget class="QLabel" name="labelIVISCK">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Mass of char of the coal particles</string>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="2">
-          <widget class="QCheckBox" name="checkBoxIVISCK">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="1">
-          <widget class="QLabel" name="labelIMoisture">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>Mass of moisture</string>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="2">
-          <widget class="QCheckBox" name="checkBoxMoisture">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <property name="text">
+         <string>Particle velocity</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>21</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="4" column="2">
+       <widget class="QLabel" name="labelIVISTE">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Particle temperature</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="2">
+       <widget class="QLabel" name="labelIVISCH">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Mass of reactive coal of the coal particles</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
+       <widget class="QLabel" name="labelIVISDK">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Shrinking core diameter of the coal particles</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="labelIVISV1">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Fluid velocity seen by particles</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QLabel" name="labelIVISMP">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Particle mass</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="labelIVISTP">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Residence time</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="2">
+       <widget class="QLabel" name="labelIMoisture">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Mass of moisture</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>16</width>
+          <height>21</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="labelIVISDM">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Particle diameter</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="2">
+       <widget class="QLabel" name="labelIVISCK">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>Mass of char of the coal particles</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISTE">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISDM">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISTP">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISV1">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISV2">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISMP">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISDK">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISCH">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1">
+       <widget class="QCheckBox" name="checkBoxIVISCK">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1">
+       <widget class="QCheckBox" name="checkBoxMoisture">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
        </widget>
       </item>
      </layout>

@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,14 +41,9 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_equation_common.h"
-#include "cs_equation_param.h"
-#include "cs_field.h"
-#include "cs_matrix.h"
+#include "cs_equation.h"
 #include "cs_mesh.h"
-#include "cs_navsto_coupling.h"
 #include "cs_navsto_param.h"
-#include "cs_source_term.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -62,6 +57,28 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the values of the velocity on the faces
+ *
+ * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to an array of \ref cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_cdofb_uzawa_get_face_velocity(void    *scheme_context)
+{
+  CS_UNUSED(scheme_context);
+
+  return cs_equation_get_face_values(cs_equation_by_name("momentum"));
+}
 
 /*============================================================================
  * Public function prototypes
@@ -87,6 +104,7 @@ cs_cdofb_uzawa_init_common(const cs_cdo_quantities_t     *quant,
  * \brief  Initialize a \ref cs_cdofb_uzawa_t structure
  *
  * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in] fb_type    type of boundary for each boundary face
  * \param[in] nsc_input  pointer to a \ref cs_navsto_uzawa_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_uzawa_t structure
@@ -94,8 +112,9 @@ cs_cdofb_uzawa_init_common(const cs_cdo_quantities_t     *quant,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_uzawa_init_scheme_context(const cs_navsto_param_t     *nsp,
-                                   void                        *nsc_input);
+cs_cdofb_uzawa_init_scheme_context(const cs_navsto_param_t    *nsp,
+                                   cs_boundary_type_t         *fb_type,
+                                   void                       *nsc_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -112,60 +131,66 @@ cs_cdofb_uzawa_free_scheme_context(void   *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the velocity values
+ * \brief  Start setting-up the Navier-Stokes equations when an ALU algorithm
+ *         is used to couple the system.
+ *         No mesh information is available at this stage
  *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] context  pointer to a context structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_uzawa_init_velocity(const cs_navsto_param_t     *nsp,
-                             void                        *scheme_context);
+cs_cdofb_uzawa_set_sles(const cs_navsto_param_t    *nsp,
+                        void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the pressure values
- *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_uzawa_init_pressure(const cs_navsto_param_t     *nsp,
-                             void                        *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the Navier-Stokes system with a CDO face-based scheme using
- *         a Uzawa-Lagrangian Augmented approach.
+ * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
+ *         using a Uzawa-Lagrangian Augmented approach.
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
  * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] dt_cur          current value of the time step
  * \param[in] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_uzawa_compute(const cs_mesh_t              *mesh,
-                       const cs_navsto_param_t      *nsp,
-                       double                        dt_cur,
-                       void                         *scheme_context);
+cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
+                              const cs_navsto_param_t      *nsp,
+                              void                         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the values of the velocity on the faces
+ * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ *         using a Uzawa-Lagrangian Augmented approach and an Euler time scheme
  *
+ * \param[in] mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
  * \param[in] scheme_context  pointer to a structure cast on-the-fly
- *
- * \return a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_cdofb_uzawa_get_face_velocity(void    *scheme_context);
+void
+cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
+                                const cs_navsto_param_t      *nsp,
+                                void                         *scheme_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ *         using a Uzawa-Lagrangian Augmented approach and a theta time scheme
+ *
+ * \param[in] mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
+                             const cs_navsto_param_t      *nsp,
+                             void                         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 

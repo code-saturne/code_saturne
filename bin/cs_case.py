@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,28 +45,6 @@ homard_prefix = None
 # Utility functions
 #===============================================================================
 
-def adaptation(adaptation, saturne_script, case_dir):
-
-    """
-    Call HOMARD adaptation.
-    """
-
-    cmd = os.path.join(homard_prefix, 'saturne_homard')
-
-    if adaptation == '-help':
-        cmd.append('-help')
-        cs_exec_environment.run_command(cmd)
-        sys.exit(0)
-    else:
-        homard_options = '-v'
-        cmd = cmd + ['-Saturne_Script', saturne_script, case_dir]
-        cmd = cmd + ['-Pilotage_Adaptation', adaptation, homard_options]
-
-    if cs_exec_environment.run_command(cmd) != 0:
-        sys.exit(0)
-
-#-------------------------------------------------------------------------------
-
 def check_exec_dir_stamp(d):
 
     """
@@ -88,6 +66,88 @@ def check_exec_dir_stamp(d):
 
     return retval
 
+#-------------------------------------------------------------------------------
+
+def get_case_dir(case=None, param=None, coupling=None, id=None):
+
+    """
+    Check and return case path based on partial or sub-path.
+    """
+
+    casedir = None
+    staging_dir = None
+    data = None
+    src = None
+
+    if coupling:
+
+        # Multiple domain case
+
+        if param and coupling:
+            err_str = 'Error: coupling and param options are incompatible.\n'
+            raise RunCaseError(err_str)
+
+        coupling = os.path.realpath(coupling)
+        if not os.path.isfile(coupling):
+            err_str = 'Error: coupling parameters: ' + coupling + '\n' \
+                      'not found or not a file.\n'
+            raise RunCaseError(err_str)
+
+        if id:
+            cwd = os.path.split(coupling)[0]
+            if os.path.basename(cwd) == str(id):
+                d = os.path.split(cwd)[0]
+                if os.path.basename(d) == 'RESU_COUPLING':
+                    staging_dir = cwd
+
+        if case:
+            casedir = os.path.realpath(case)
+        else:
+            casedir = os.path.split(coupling)[0]
+            if staging_dir:
+                casedir = os.path.split(os.path.split(staging_dir)[0])[0]
+
+    else:
+
+        cwd = os.getcwd()
+
+        # Single domain case
+
+        if param:
+            param = os.path.basename(param)
+            if param != param:
+                datadir = os.path.split(os.path.realpath(param))[0]
+                (casedir, data) = os.path.split(datadir)
+                if data != 'DATA': # inconsistent paramaters location.
+                    casedir = None
+
+        if id:
+            if os.path.basename(cwd) == str(id):
+                d = os.path.split(cwd)[0]
+                if os.path.basename(d) == 'RESU':
+                    staging_dir = cwd
+
+        if case:
+            casedir = os.path.realpath(case)
+            data = os.path.join(casedir, 'DATA')
+            src = os.path.join(casedir, 'SRC')
+        else:
+            casedir = cwd
+            while os.path.basename(casedir):
+                data = os.path.join(casedir, 'DATA')
+                src = os.path.join(casedir, 'SRC')
+                if os.path.isdir(data) and os.path.isdir(src):
+                    break
+                casedir = os.path.split(casedir)[0]
+
+        if not (os.path.isdir(data) and os.path.isdir(src)):
+            casedir = None
+
+    # Return casedir or None
+
+    return casedir, staging_dir
+
+
 #===============================================================================
 # Main class
 #===============================================================================
@@ -106,7 +166,8 @@ class case:
                  domains = None,
                  syr_domains = None,
                  ast_domain = None,
-                 fsi_coupler = None):
+                 fsi_coupler = None,
+                 py_domains = None):
 
         # Package specific information
 
@@ -128,24 +189,39 @@ class case:
 
         # Ensure we have tuples or lists to simplify later tests
 
-        if type(domains) == tuple or  type(domains) == list:
+        if type(domains) == list:
             self.domains = domains
+        elif type(domains) == tuple:
+            self.domains = list(domains)
         else:
-            self.domains = (domains,)
+            self.domains = [domains]
 
         if syr_domains == None:
-            self.syr_domains = ()
-        elif type(syr_domains) == tuple or type(syr_domains) == list:
+            self.syr_domains = []
+        elif type(syr_domains) == tuple :
+            self.syr_domains = list(syr_domains)
+        elif type(syr_domains) == list:
             self.syr_domains = syr_domains
         else:
-            self.syr_domains = (syr_domains,)
+            self.syr_domains = [syr_domains]
 
         if ast_domain == None:
-            self.ast_domains = ()
+            self.ast_domains = []
+        elif type(ast_domain) == list:
+            self.ast_domains = ast_domain
         else:
-            self.ast_domains = (ast_domain,)
+            self.ast_domains = [ast_domain]
 
         self.fsi_coupler = fsi_coupler
+
+        if py_domains == None:
+            self.py_domains = []
+        elif type(py_domains) == tuple:
+            self.py_domains = list(py_domains)
+        elif type(py_domains) == list:
+            self.py_domains = py_domains
+        else:
+            self.py_domains = [py_domains]
 
         # Mark fluid domains as coupled with Code_Aster if coupling is present.
         # This should be improved by migrating tests to the executable,
@@ -157,15 +233,12 @@ class case:
 
         # Check names in case of multiple domains (coupled by MPI)
 
-        n_domains = len(self.domains) + len(self.syr_domains)
+        n_domains = len(self.domains) + len(self.syr_domains) + len(self.py_domains)
 
         if n_domains > 1:
             err_str = 'In case of multiple domains (i.e. code coupling), ' \
                 + 'each domain must have a name.\n'
-            for d in self.domains:
-                if d.name == None:
-                    raise RunCaseError(err_str)
-            for d in self.syr_domains:
+            for d in (self.domains + self.syr_domains + self.py_domains):
                 if d.name == None:
                     raise RunCaseError(err_str)
 
@@ -185,6 +258,8 @@ class case:
                 self.domains[0].name = None
             elif len(self.syr_domains) == 1:
                 self.syr_domains[0].name = None
+            elif len(self.py_domains) == 1:
+                self.py_domains[0].name = None
 
         else:
             # Coupling or single domain run from coupling script
@@ -195,11 +270,8 @@ class case:
         if staging_dir:
             staging_dir = check_exec_dir_stamp(staging_dir)
 
-        for d in self.domains:
-            d.set_case_dir(self.case_dir, staging_dir)
-        for d in self.syr_domains:
-            d.set_case_dir(self.case_dir, staging_dir)
-        for d in self.ast_domains:
+        for d in ( self.domains + self.syr_domains \
+                 + self.ast_domains + self.py_domains ):
             d.set_case_dir(self.case_dir, staging_dir)
 
         # Working directory
@@ -210,20 +282,15 @@ class case:
         self.exec_solver = True
 
         n_exec_solver = 0
-        for d in self.domains:
-            if d.exec_solver:
-                n_exec_solver += 1
-        for d in self.syr_domains:
-            if d.exec_solver:
-                n_exec_solver += 1
-        for d in self.ast_domains:
+        for d in ( self.domains + self.syr_domains \
+                 + self.ast_domains + self.py_domains ):
             if d.exec_solver:
                 n_exec_solver += 1
 
         if n_exec_solver == 0:
             self.exec_solver = False
         elif n_exec_solver <   len(self.domains) + len(self.syr_domains) \
-                             + len(self.ast_domains):
+                             + len(self.ast_domains) + len(self.py_domains):
             err_str = 'In case of multiple domains (i.e. code coupling), ' \
                 + 'all or no domains must execute their solver.\n'
             raise RunCaseError(err_str)
@@ -290,6 +357,19 @@ class case:
                     + str(d.n_procs) + ' processes.\n'
                 sys.stdout.write(msg)
 
+        if len(self.py_domains) == 1:
+            if self.py_domains[0].n_procs > 1:
+                msg = ' Parallel Python script on ' \
+                    + str(self.py_domains[0].n_procs) + ' processes.\n'
+            else:
+                msg = ' Single processor Python script simulation.\n'
+            sys.stdout.write(msg)
+        else:
+            for d in self.py_domains:
+                msg = ' Python script domain ' + d.name + ' on ' \
+                    + str(d.n_procs) + ' processes.\n'
+                sys.stdout(msg)
+
         sys.stdout.write('\n')
 
     #---------------------------------------------------------------------------
@@ -305,10 +385,7 @@ class case:
 
         np_list = []
 
-        for d in self.domains:
-            np_list.append(d.get_n_procs())
-
-        for d in self.syr_domains:
+        for d in (self.domains + self.syr_domains + self.py_domains):
             np_list.append(d.get_n_procs())
 
         # Code_Aster is handled in a specific manner: processes are counted
@@ -417,11 +494,7 @@ class case:
 
         app_id = 0
 
-        for d in self.domains:
-            d.set_n_procs(np_list[app_id][0])
-            app_id += 1
-
-        for d in self.syr_domains:
+        for d in (self.domains + self.syr_domains + self.py_domains):
             d.set_n_procs(np_list[app_id][0])
             app_id += 1
 
@@ -455,7 +528,8 @@ class case:
             self.exec_dir = os.path.join(self.exec_prefix, exec_dir_name)
         else:
             r = os.path.join(self.case_dir, 'RESU')
-            if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
+            if len(self.domains) + len(self.syr_domains) \
+             + len(self.ast_domains) + len(self.py_domains) > 1:
                 r += '_COUPLING'
             self.exec_dir = os.path.join(r, self.run_id)
 
@@ -485,11 +559,8 @@ class case:
 
         # Set execution directory
 
-        for d in self.domains:
-            d.set_exec_dir(self.exec_dir)
-        for d in self.syr_domains:
-            d.set_exec_dir(self.exec_dir)
-        for d in self.ast_domains:
+        for d in ( self.domains + self.syr_domains + self.ast_domains \
+                 + self.py_domains):
             d.set_exec_dir(self.exec_dir)
 
     #---------------------------------------------------------------------------
@@ -499,7 +570,8 @@ class case:
         r = os.path.join(self.case_dir, 'RESU')
 
         # Coupled case
-        if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
+        if len(self.domains) + len(self.syr_domains) \
+         + len(self.ast_domains) + len(self.py_domains) > 1:
             r += '_COUPLING'
 
         if os.path.isdir(r):
@@ -529,13 +601,8 @@ class case:
         else:
             os.mkdir(self.result_dir)
 
-        for d in self.domains:
-            d.set_result_dir(self.run_id, self.result_dir)
-
-        for d in self.syr_domains:
-            d.set_result_dir(self.run_id, self.result_dir)
-
-        for d in self.ast_domains:
+        for d in ( self.domains + self.syr_domains + self.ast_domains \
+                 + self.py_domains):
             d.set_result_dir(self.run_id, self.result_dir)
 
     #---------------------------------------------------------------------------
@@ -596,7 +663,7 @@ class case:
             s.write('\n')
         s.write(hline)
 
-        if len(self.domains) + len(self.syr_domains) > 1:
+        if len(self.domains) + len(self.syr_domains) + len(self.py_domains)  > 1:
             s.write('  Exec. dir.     : ' + self.exec_dir + '\n')
             s.write(hline)
 
@@ -607,13 +674,8 @@ class case:
             s.write('    ' + k + '=' + os.environ[k] + '\n')
         s.write(hline)
 
-        for d in self.domains:
-            d.summary_info(s)
-            s.write(hline)
-        for d in self.syr_domains:
-            d.summary_info(s)
-            s.write(hline)
-        for d in self.ast_domains:
+        for d in ( self.domains + self.syr_domains + self.ast_domains \
+                 + self.py_domains):
             d.summary_info(s)
             s.write(hline)
 
@@ -853,6 +915,15 @@ export SALOME_INSTANCE=$3
                 + ' ' + s_args[1] + s_args[2]
             app_id += 1
 
+        for d in self.py_domains:
+            s_args = d.solver_command()
+            if len(cmd) > 0:
+                cmd += ' : '
+            cmd += '-n ' + str(d.n_procs) \
+                + ' -wdir ' + os.path.basename(s_args[0]) \
+                + ' ' + s_args[1] + s_args[2]
+            app_id += 1
+
         return cmd
 
     #---------------------------------------------------------------------------
@@ -867,15 +938,7 @@ export SALOME_INSTANCE=$3
 
         app_id = 0
 
-        for d in self.syr_domains:
-            s_args = d.solver_command()
-            cmd = '-n ' + str(d.n_procs) \
-                + ' -wdir ' + os.path.basename(s_args[0]) \
-                + ' ' + s_args[1] + s_args[2] + '\n'
-            e.write(cmd)
-            app_id += 1
-
-        for d in self.domains:
+        for d in (self.syr_domains + self.domains + self.py_domains):
             s_args = d.solver_command()
             cmd = '-n ' + str(d.n_procs) \
                 + ' -wdir ' + os.path.basename(s_args[0]) \
@@ -903,20 +966,7 @@ export SALOME_INSTANCE=$3
 
         rank_id = 0
 
-        for d in self.syr_domains:
-            s_args = d.solver_command()
-            if s_args[1][0:2] == './':
-                s_path = os.path.join(s_args[0], s_args[1])
-                s_path = './' + os.path.relpath(s_path, self.exec_dir)
-            else:
-                s_path = s_args[1]
-            cmd = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1) \
-                   + s_path + s_args[2] \
-                   + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
-            e.write(cmd)
-            rank_id += d.n_procs
-
-        for d in self.domains:
+        for d in (self.syr_domains + self.domains + self.py_domains):
             s_args = d.solver_command()
             if s_args[1][0:2] == './':
                 s_path = os.path.join(s_args[0], s_args[1])
@@ -945,7 +995,7 @@ export SALOME_INSTANCE=$3
 
         rank_id = 0
 
-        for d in self.syr_domains:
+        for d in (self.syr_domains + self.domains + self.py_domains):
             cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
             e.write(cmd)
             s_args = d.solver_command()
@@ -956,21 +1006,6 @@ export SALOME_INSTANCE=$3
                 s_path = s_args[1]
             cmd = '#mpmdcmd ' + s_path + s_args[2] \
                 + ' -w ' + os.path.basename(s_args[0]) + '\n'
-            e.write(cmd)
-            e.write('#mpmdend\n')
-            rank_id += d.n_procs
-
-        for d in self.domains:
-            cmd = '#mpmdbegin %d-%d\n' % (rank_id, rank_id + d.n_procs - 1)
-            e.write(cmd)
-            s_args = d.solver_command()
-            if s_args[1][0:2] == './':
-                s_path = os.path.relpath(os.path.join(s_args[0], s_args[1]),
-                                         self.exec_dir)
-            else:
-                s_path = s_args[1]
-            cmd = '#mpmdcmd ' + s_path + s_args[2] \
-                + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
             e.write(cmd)
             e.write('#mpmdend\n')
             rank_id += d.n_procs
@@ -1035,6 +1070,16 @@ export SALOME_INSTANCE=$3
                 test_pf = 'el' + test_pf
             app_id += 1
 
+        for d in self.py_domains:
+            nr += d.n_procs
+            e.write(test_pf + str(nr) + test_sf)
+            s_args = d.solver_command()
+            e.write('  cd ' + s_args[0] + '\n')
+            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
+            if app_id == 0:
+                test_pf = 'el' + test_pf
+            app_id += 1
+
         e.write('fi\n'
                 + 'CS_RET=$?\n'
                 + 'exit $CS_RET\n')
@@ -1057,7 +1102,7 @@ export SALOME_INSTANCE=$3
         # Determine if an MPMD syntax (mpiexec variant) will be used
 
         mpiexec_mpmd = False
-        if len(self.domains) + len(self.syr_domains) > 1:
+        if len(self.domains) + len(self.syr_domains) + len(self.py_domains) > 1:
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
                 mpiexec_mpmd = True
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
@@ -1089,7 +1134,8 @@ export SALOME_INSTANCE=$3
 
         # Case with only one cs_solver instance possibly under MPI
 
-        if len(self.domains) == 1 and len(self.syr_domains) == 0:
+        if len(self.domains) == 1 and len(self.syr_domains) == 0 \
+           and len(self.py_domains) == 0:
 
             s_args = self.domains[0].solver_command()
 
@@ -1230,7 +1276,7 @@ $appli/salome kill `cat $port_log`
 
         if n_procs == None:
             n_procs = 0
-            for d in self.syr_domains:
+            for d in (self.syr_domains + self.py_domains):
                 n_procs += d.n_procs
 
         # Set PATH for Windows DLL search PATH
@@ -1450,7 +1496,7 @@ $appli/salome kill `cat $port_log`
         """
         Check if the allocated time limit was exceeded.
         """
-        p = os.path.join(self.exec_dir, 'status.exceeded_time_limit')
+        p = os.path.join(self.exec_dir, 'run_status.exceeded_time_limit')
 
         if os.path.isfile(os.path.join(p)):
             return True
@@ -1525,8 +1571,6 @@ $appli/salome kill `cat $port_log`
 
         if len(self.error) > 0:
             self.update_scripts_tmp('preparing', 'failed', self.error)
-            err_str = ' Error in ' + self.error + ' stage.\n\n'
-            sys.stderr.write(err_str)
             return 1
 
         # Setup data
@@ -1538,15 +1582,8 @@ $appli/salome kill `cat $port_log`
                          ' ****************************\n\n')
         sys.stdout.flush()
 
-        for d in self.domains:
-            d.prepare_data()
-            if len(d.error) > 0:
-                self.error = d.error
-        for d in self.syr_domains:
-            d.prepare_data()
-            if len(d.error) > 0:
-                self.error = d.error
-        for d in self.ast_domains:
+        for d in ( self.domains + self.syr_domains + self.ast_domains \
+                 + self.py_domains):
             d.prepare_data()
             if len(d.error) > 0:
                 self.error = d.error
@@ -1598,6 +1635,9 @@ $appli/salome kill `cat $port_log`
         for d in self.syr_domains:
             d.solver_path = os.path.join('.', 'syrthes')
 
+        for d in self.py_domains:
+            d.solver_path = os.path.join('.', 'python')
+
     #---------------------------------------------------------------------------
 
     def preprocess(self,
@@ -1628,7 +1668,8 @@ $appli/salome kill `cat $port_log`
         # resource manager, method argument).
 
         n_procs_default = None
-        if len(self.domains) == 1 and len(self.syr_domains) == 0:
+        if len(self.domains) == 1 and len(self.syr_domains) == 0 \
+           and len(self.py_domains) == 0:
             d = self.domains[0]
             if hasattr(d, 'case_n_procs'):
                 n_procs_default = int(d.case_n_procs)
@@ -1646,7 +1687,8 @@ $appli/salome kill `cat $port_log`
 
         # Transfer parameters MPI parameters from user scripts here.
 
-        if len(self.domains) == 1 and len(self.syr_domains) == 0:
+        if len(self.domains) == 1 and len(self.syr_domains) == 0 \
+           and len(self.py_domains) == 0:
             d = self.domains[0]
             if d.user_locals:
                 m = 'define_mpi_environment'
@@ -1674,11 +1716,7 @@ $appli/salome kill `cat $port_log`
 
         self.summary_init(exec_env)
 
-        for d in self.domains:
-            d.preprocess()
-            if len(d.error) > 0:
-                self.error = d.error
-        for d in self.syr_domains:
+        for d in (self.domains + self.syr_domains + self.py_domains):
             d.preprocess()
             if len(d.error) > 0:
                 self.error = d.error
@@ -1771,6 +1809,12 @@ $appli/salome kill `cat $port_log`
                     'Either ' + name + ' or SYRTHES may have failed.\n\n' \
                     'Check ' + name + ' log (listing) and SYRTHES log (syrthes.log)\n' \
                     'for details, as well as error* files.\n\n'
+            elif len(self.py_domains) > 0:
+                err_str = \
+                    'Error running the coupled calculation.\n\n' \
+                    'Either ' + name + ' or Python script may have failed.\n\n' \
+                    'Check ' + name + ' log (listing) and Python log (python.log)\n' \
+                    'for details, as well as error* files.\n\n'
             else:
                 err_str = \
                     'Error running the calculation.\n\n' \
@@ -1779,9 +1823,7 @@ $appli/salome kill `cat $port_log`
 
             # Update error status for domains
 
-            for d in self.domains:
-                d.error = self.error
-            for d in self.syr_domains:
+            for d in (self.domains + self.syr_domains + self.py_domains):
                 d.error = self.error
 
         # Indicate status using temporary file for SALOME.
@@ -1820,7 +1862,7 @@ $appli/salome kill `cat $port_log`
         self.summary_finalize()
         self.copy_log('summary')
 
-        n_domains = len(self.domains) + len(self.syr_domains)
+        n_domains = len(self.domains) + len(self.syr_domains) + len(self.py_domains)
         if n_domains > 1 and self.error == '':
             dir_files = os.listdir(self.exec_dir)
             for f in [self.package.runsolver,
@@ -1832,12 +1874,7 @@ $appli/salome kill `cat $port_log`
                         pass
 
         e_caption = None
-        for d in self.domains:
-            d.copy_results()
-            if d.error:
-                e_caption = d.error
-
-        for d in self.syr_domains:
+        for d in (self.domains + self.syr_domains + self.py_domains):
             d.copy_results()
             if d.error:
                 e_caption = d.error
@@ -2029,7 +2066,8 @@ $appli/salome kill `cat $port_log`
 
         r = os.path.join(self.case_dir, 'RESU')
 
-        if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
+        if len(self.domains) + len(self.syr_domains) \
+         + len(self.ast_domains) + len(self.py_domains) > 1:
             r += '_COUPLING'
         elif len(self.domains) == 1 and not (run_id_prefix or run_id_suffix):
             try:

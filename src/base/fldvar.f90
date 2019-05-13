@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -59,6 +59,7 @@ use ihmpre
 use mesh
 use field
 use cs_c_bindings
+use cfpoin, only:ieos
 
 !===============================================================================
 
@@ -70,7 +71,7 @@ integer       nmodpp
 
 ! Local variables
 
-integer       ipp
+integer       ipp, iloc1, ityloc
 integer       iok   , keycpl, nmodpp_compatibility
 
 type(var_cal_opt) :: vcopt
@@ -173,9 +174,11 @@ endif
 
 nvar = 0
 
+iloc1 = 1
+
 ! Velocity
 
-call add_variable_field('velocity', 'Velocity', 3, iu)
+call add_variable_field('velocity', 'Velocity', 3, iu, iloc1)
 call field_set_key_int(ivarfl(iu), keycpl, 1)
 
 ! All components point to same field
@@ -185,9 +188,9 @@ iw = iv + 1
 ! Pressure or hydraulic head for groundwater flow module
 
 if (ippmod(idarcy).eq.-1) then
-  call add_variable_field('pressure', 'Pressure', 1, ipr)
+  call add_variable_field('pressure', 'Pressure', 1, ipr, iloc1)
 else
-  call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr)
+  call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr, iloc1)
 endif
 
 ! Cavitation: activate VoF
@@ -206,7 +209,7 @@ call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! Void fraction (Volume of Fluid algorithm)
 if (ivofmt.ge.0) then
-  call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2)
+  call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2, iloc1)
   call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
   vcopt%idiff = 0
   call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
@@ -215,11 +218,11 @@ endif
 ! --- Turbulence
 
 if (itytur.eq.2) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
+  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik, iloc1)
+  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep, iloc1)
 else if (itytur.eq.3) then
   if (irijco.eq.1) then
-    call add_variable_field('rij', 'Rij', 6, irij)
+    call add_variable_field('rij', 'Rij', 6, irij, iloc1)
     call field_set_key_int(ivarfl(irij), keycpl, 1)
 
     ! All rij components point to same field
@@ -230,59 +233,65 @@ else if (itytur.eq.3) then
     ir23 = ir12 + 1
     ir13 = ir23 + 1
   else
-    call add_variable_field('r11', 'R11', 1, ir11)
+    call add_variable_field('r11', 'R11', 1, ir11, iloc1)
     irij = ir11
-    call add_variable_field('r22', 'R22', 1, ir22)
-    call add_variable_field('r33', 'R33', 1, ir33)
-    call add_variable_field('r12', 'R12', 1, ir12)
-    call add_variable_field('r23', 'R23', 1, ir23)
-    call add_variable_field('r13', 'R13', 1, ir13)
+    call add_variable_field('r22', 'R22', 1, ir22, iloc1)
+    call add_variable_field('r33', 'R33', 1, ir33, iloc1)
+    call add_variable_field('r12', 'R12', 1, ir12, iloc1)
+    call add_variable_field('r23', 'R23', 1, ir23, iloc1)
+    call add_variable_field('r13', 'R13', 1, ir13, iloc1)
   endif
 
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
+  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep, iloc1)
   if (iturb.eq.32) then
-    call add_variable_field('alpha', 'Alphap', 1, ial)
+    call add_variable_field('alpha', 'Alphap', 1, ial, iloc1)
     ! Elliptic equation (no convection, no time term)
     call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     ! For alpha, we always have a diagonal term, so do not shift the diagonal
-    idircl(ial) = 0
+    vcopt%idircl = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
   endif
 else if (itytur.eq.5) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
-  call add_variable_field('phi', 'Phi', 1, iphi)
+  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik, iloc1)
+  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep, iloc1)
+  call add_variable_field('phi', 'Phi', 1, iphi, iloc1)
   if (iturb.eq.50) then
-    call add_variable_field('f_bar', 'f_bar', 1, ifb)
+    call add_variable_field('f_bar', 'f_bar', 1, ifb, iloc1)
     call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
     ! For fb, we always have a diagonal term, so do not shift the diagonal
-    idircl(ifb) = 0
+    vcopt%idircl = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
   else if (iturb.eq.51) then
-    call add_variable_field('alpha', 'Alpha', 1, ial)
+    call add_variable_field('alpha', 'Alpha', 1, ial, iloc1)
     call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     ! For alpha, we always have a diagonal term, so do not shift the diagonal
-    idircl(ial) = 0
+    vcopt%idircl = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
   endif
 else if (iturb.eq.60) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
-  call add_variable_field('omega', 'Omega', 1, iomg)
+  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik, iloc1)
+  call add_variable_field('omega', 'Omega', 1, iomg, iloc1)
 else if (iturb.eq.70) then
-  call add_variable_field('nu_tilda', 'NuTilda', 1, inusa)
+  call add_variable_field('nu_tilda', 'NuTilda', 1, inusa, iloc1)
 endif
 
 ! Mesh velocity with ALE
+if (iale.ge.1) then
 
-if (iale.eq.1) then
+  ityloc = 1
+  ! field defined on vertices if CDO-Vb scheme is used
+  if (iale.eq.2) then
+    ityloc = 4
+  endif
 
-  call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma)
+  call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma, ityloc)
+
   call field_set_key_int(ivarfl(iuma), keycpl, 1)
 
   ivma = iuma + 1
@@ -629,7 +638,7 @@ end subroutine
 !> \brief add field defining a general solved variable, with default options
 !
 !> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 
 !-------------------------------------------------------------------------------
@@ -644,7 +653,7 @@ end subroutine
 !_______________________________________________________________________________
 
 subroutine add_variable_field &
- ( name, label, dim, ivar )
+ ( name, label, dim, ivar , location_id )
 
 !===============================================================================
 ! Module files
@@ -664,17 +673,14 @@ implicit none
 ! Arguments
 
 character(len=*), intent(in) :: name, label
-integer, intent(in)          :: dim
+integer, intent(in)          :: dim, location_id
 integer, intent(out)         :: ivar
 
 ! Local variables
 
 integer  id, ii
-integer  location_id
 
 integer, save :: keyvar = -1
-
-location_id = 1         ! variables defined on cells
 
 ! Create field
 
@@ -695,8 +701,6 @@ ivarfl(ivar) = id
 call field_set_key_int(id, keyvar, ivar)
 
 call init_var_cal_opt(id)
-
-call field_set_key_double(id, ksigmas, 1.d0)
 
 if (dim .gt. 1) then
   do ii = 2, dim
@@ -803,7 +807,6 @@ do id = nfld1, nfld2 - 1
 
   call field_set_key_int(id, keyvar, ivar)
   call field_set_key_int(id, keysca, iscal)
-  call field_set_key_double(id, ksigmas, 1.d0)
   call init_var_cal_opt(id)
 
   if (dim .gt. 1) then
@@ -828,7 +831,7 @@ end subroutine add_user_scalar_fields
 !>        with default options
 !
 !> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------
@@ -881,7 +884,7 @@ end subroutine add_model_scalar_field
 !>        with default options
 !
 !> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------
@@ -1007,7 +1010,6 @@ enddo
 
 call field_set_key_int(f_id, keyvar, ivar)
 call field_set_key_int(f_id, keysca, iscal)
-call field_set_key_double(f_id, ksigmas, 1.d0)
 call init_var_cal_opt(f_id)
 
 return
@@ -1144,32 +1146,20 @@ integer id
 ! Local variables
 type(var_cal_opt) :: vcopt
 
+! Most values set by default at in _var_cal_opt default;
+! see cs_parameters.c
+
 call field_get_key_struct_var_cal_opt(id, vcopt)
-vcopt%iwarni = 0
-vcopt%iconv  = 1
-vcopt%istat  = 1
-vcopt%idiff  = 1
-vcopt%idifft = 1
-vcopt%idften = ISOTROPIC_DIFFUSION
-vcopt%iswdyn = 0
-vcopt%ischcv = 1
-vcopt%ibdtso = 1
+
 vcopt%isstpc = -999
-vcopt%nswrgr = 100
-vcopt%nswrsm = -999
-vcopt%imrgra = 0
+vcopt%nswrsm = -1
 vcopt%imligr = -999
-vcopt%ircflu = 1
-vcopt%iwgrec = 0
-vcopt%thetav = -999.d0
-vcopt%blencv = -999.d0
-vcopt%blend_st = 0.d0
-vcopt%epsilo = -999.d0
-vcopt%epsrsm = -999.d0
-vcopt%epsrgr = 1.d-5
-vcopt%climgr = 1.5d0
-vcopt%extrag = 0.d0
-vcopt%relaxv = -999.d0
+vcopt%thetav = -1.d0
+vcopt%blencv = -1.d0
+vcopt%epsilo = -1.d0
+vcopt%epsrsm = -1.d0
+vcopt%relaxv = -1.d0
+
 call field_set_key_struct_var_cal_opt(id, vcopt)
 
 return

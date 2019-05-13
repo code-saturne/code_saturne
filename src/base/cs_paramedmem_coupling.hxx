@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -35,10 +35,6 @@
  * MED library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_PARAMEDMEM)
-#include <ParaFIELD.hxx>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -47,8 +43,16 @@
 
 /*----------------------------------------------------------------------------*/
 
+extern const int cs_medcpl_cell_field;
+extern const int cs_medcpl_vertex_field;
+
+extern const int cs_medcpl_no_time;
+extern const int cs_medcpl_one_time;
+extern const int cs_medcpl_linear_time;
+
+/*----------------------------------------------------------------------------*/
+
 #if defined(HAVE_PARAMEDMEM)
-using namespace MEDCoupling;
 
 /*=============================================================================
  * Local Macro Definitions
@@ -93,6 +97,14 @@ cs_paramedmem_interpkernel_create(const char  *name,
                                   int          grp1_size,
                                   int         *grp2_global_ranks,
                                   int          grp2_size);
+
+
+/*----------------------------------------------------------------------------
+ * Get a ParaMEDMEM coupling instance by its id
+ *
+ *----------------------------------------------------------------------------*/
+cs_paramedmem_coupling_t *
+cs_paramedmem_coupling_by_id(int pc_id);
 
 /*----------------------------------------------------------------------------
  * Define new ParaMEDMEM coupling.
@@ -204,8 +216,8 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                         const char                *name,
                         int                        mesh_id,
                         int                        dim,
-                        TypeOfField                type,
-                        TypeOfTimeDiscretization   td,
+                        int                        medcpl_field_type,
+                        int                        medcpl_time_discr,
                         int                        dirflag);
 
 /*----------------------------------------------------------------------------
@@ -225,21 +237,6 @@ int
 cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
                            int                        mesh_id,
                            const char                *name);
-
-/*----------------------------------------------------------------------------
- * Return ParaMEDMEM::ParaFIELD object associated with a given field id.
- *
- * parameters:
- *   coupling  <-- pointer to associated coupling
- *   field_id  <-- id of associated field structure
- *
- * returns:
- *   pointer to ParaFIELD to which values were assigned
- *----------------------------------------------------------------------------*/
-
-MEDCoupling::ParaFIELD *
-cs_paramedmem_field_get(cs_paramedmem_coupling_t  *coupling,
-                        int                        field_id);
 
 /*----------------------------------------------------------------------------
  * Write field associated with a mesh to MEDCoupling.

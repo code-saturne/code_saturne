@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -258,7 +258,7 @@ _matrix_vector_test(double                 t_measure,
                     cs_real_t             *restrict x,
                     cs_real_t             *restrict y)
 {
-  cs_int_t ii;
+  cs_lnum_t ii;
   double wt0, wt1;
   int    run_id, n_runs;
   long   n_ops, n_ops_glob;
@@ -450,13 +450,13 @@ _matrix_vector_test(double                 t_measure,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_exdiag_native(cs_int_t             n_faces,
+_mat_vec_exdiag_native(cs_lnum_t            n_faces,
                        const cs_lnum_2_t   *face_cell,
                        const cs_real_t     *restrict xa,
                        cs_real_t           *restrict x,
                        cs_real_t           *restrict y)
 {
-  cs_int_t  ii, jj, face_id;
+  cs_lnum_t  ii, jj, face_id;
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
@@ -487,13 +487,13 @@ _mat_vec_exdiag_native(cs_int_t             n_faces,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_exdiag_native_v1(cs_int_t             n_faces,
+_mat_vec_exdiag_native_v1(cs_lnum_t            n_faces,
                           const cs_lnum_2_t   *face_cell,
                           const cs_real_t     *restrict xa,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y)
 {
-  cs_int_t  ii, ii_prev, kk, face_id, kk_max;
+  cs_lnum_t  ii, ii_prev, kk, face_id, kk_max;
   cs_real_t y_it, y_it_prev;
 
   const int l1_cache_size = 508;
@@ -561,13 +561,13 @@ _mat_vec_exdiag_native_v1(cs_int_t             n_faces,
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_exdiag_part_p1(cs_int_t             n_faces,
+_mat_vec_exdiag_part_p1(cs_lnum_t            n_faces,
                         const cs_lnum_2_t   *face_cell,
                         const cs_real_t     *restrict xa,
                         cs_real_t           *restrict x,
                         cs_real_t           *restrict ya)
 {
-  cs_int_t  ii, jj, face_id;
+  cs_lnum_t  ii, jj, face_id;
 
   /* Tell IBM compiler not to alias */
 #if defined(__xlc__)
@@ -601,15 +601,15 @@ _mat_vec_exdiag_part_p1(cs_int_t             n_faces,
 
 static void
 _sub_matrix_vector_test(double               t_measure,
-                        cs_int_t             n_cells,
-                        cs_int_t             n_cells_ext,
-                        cs_int_t             n_faces,
+                        cs_lnum_t            n_cells,
+                        cs_lnum_t            n_cells_ext,
+                        cs_lnum_t            n_faces,
                         const cs_lnum_2_t   *face_cell,
                         const cs_real_t     *restrict xa,
                         cs_real_t           *restrict x,
                         cs_real_t           *restrict y)
 {
-  cs_int_t  jj;
+  cs_lnum_t  jj;
   double wt0, wt1;
   int    run_id, n_runs;
   long   n_ops, n_ops_glob;

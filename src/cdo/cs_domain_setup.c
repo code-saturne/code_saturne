@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -39,9 +39,11 @@
 
 #include "bft_mem.h"
 
+#include "cs_ale.h"
 #include "cs_boundary_zone.h"
 #include "cs_evaluate.h"
 #include "cs_equation.h"
+#include "cs_equation_assemble.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_gwf.h"
@@ -196,7 +198,7 @@ _set_scheme_flags(cs_domain_t    *domain)
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                _(" Undefined type of schme to solve for eq. %s."
+                _(" Undefined type of scheme to solve for eq. %s."
                   " Please check your settings."), cs_equation_get_name(eq));
     }
 
@@ -265,7 +267,7 @@ cs_domain_update_advfield(cs_domain_t       *domain)
  *
  * \param[in, out]  domain       pointer to a cs_domain_t structure
  * \param[in]       nt_interval  frequency for the restart process
- * \param[in]       nt_list      output frequency into the listing
+ * \param[in]       nt_list      output frequency into the log
  * \param[in]       verbosity    level of information displayed
  */
 /*----------------------------------------------------------------------------*/
@@ -306,6 +308,10 @@ cs_domain_set_time_param(cs_domain_t       *domain,
 
   domain->time_step->nt_max = nt_max;
   domain->time_step->t_max = t_max;
+
+  /* Add a property related to the time step (in case of use when building a
+     linear system) */
+  cs_property_add("time_step", CS_PROPERTY_ISO);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -313,35 +319,40 @@ cs_domain_set_time_param(cs_domain_t       *domain,
  * \brief  Define the value of the time step thanks to a predefined function
  *
  * \param[in, out] domain      pointer to a cs_domain_t structure
- * \param[in]      func        pointer to a cs_timestep_func_t function
+ * \param[in]      func        pointer to a cs_time_func_t function
  * \param[in]      func_input  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_def_time_step_by_function(cs_domain_t          *domain,
-                                    cs_timestep_func_t   *func,
-                                    void                 *func_input)
+cs_domain_def_time_step_by_function(cs_domain_t        *domain,
+                                    cs_time_func_t     *func,
+                                    void               *func_input)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  domain->time_step->is_variable = 1; // not constant time step
+  domain->time_step->is_variable = 1; /* not constant time step */
   domain->time_options.idtvar = 1;    /* uniform in space but can change
                                          from one time step to the other */
 
-  cs_xdef_timestep_input_t  def = {.input = func_input,
-                                   .func = func};
+  cs_xdef_time_func_input_t  def = {.input = func_input,
+                                    .func = func};
 
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_TIME_FUNCTION,
-                                                  0, // state flag
-                                                  0, // meta flag
+                                                  0,     /* state flag */
+                                                  0,     /* meta flag */
                                                   &def);
+
+  /* Set the property related to the time step if used for building a system */
+  cs_property_def_by_time_func(cs_property_by_name("time_step"),
+                               NULL, /* all cells are selected */
+                               func, func_input);
 
   /* Default initialization.
      To be changed at first call to cs_domain_time_step_increment() */
 
-  domain->dt_cur = domain->time_step->t_max;
-  domain->time_options.dtref =  domain->time_step->t_max;
+  domain->time_step->dt[0] = domain->time_step->t_max;
+  domain->time_step->dt_ref =  domain->time_step->t_max;
   domain->time_options.dtmin =  domain->time_step->t_max;
   domain->time_options.dtmax = 0.;
 }
@@ -361,18 +372,21 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  domain->time_step->is_variable = 0; // constant time step
-  domain->time_options.idtvar = 0;    // constant time step by default
+  domain->time_step->is_variable = 0; /* constant time step */
+  domain->time_options.idtvar = 0;    /* constant time step by default */
 
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_VALUE,
-                                                  0, // state flag
-                                                  0, // meta flag
+                                                  0, /* state flag */
+                                                  0, /* meta flag */
                                                   &dt);
 
-  domain->dt_cur = dt;
-  domain->time_options.dtref = domain->dt_cur;
-  domain->time_options.dtmin = domain->dt_cur;
-  domain->time_options.dtmax = domain->dt_cur;
+  domain->time_step->dt[0] = dt;
+  domain->time_step->dt_ref = dt;
+  domain->time_options.dtmin = dt;
+  domain->time_options.dtmax = dt;
+
+  /* Set the property related to the time step if used for building a system */
+  cs_property_def_iso_by_value(cs_property_by_name("time_step"), NULL, dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -390,11 +404,6 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 void
 cs_domain_initialize_setup(cs_domain_t    *domain)
 {
-  /* Add a boundary zone gathering all "wall" boundaries */
-  if (cs_navsto_system_is_activated() ||
-      cs_walldistance_is_activated())
-    cs_domain_boundary_def_wall_zones();
-
   /* Setup predefined equations which are activated. At this stage,
    * no equation is added. Space discretization scheme and the related
    * numerical parameters are set.
@@ -416,6 +425,10 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_navsto_system_is_activated())
     cs_navsto_system_init_setup();
 
+  /* ALE mesh velocity */
+  if (cs_ale_is_activated())
+    cs_ale_init_setup(domain);
+
   /* Add variables related to user-defined and predefined equations */
   cs_equation_create_fields();
   cs_advection_field_create_fields();
@@ -423,10 +436,16 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* Set the scheme flag for the computational domain */
   _set_scheme_flags(domain);
 
-  /* Proceed to the settings of a cs_equation_t structure. Setup the structure
-     related to cs_sles_*
+  /* Last step: Proceed to the settings of a cs_equation_t structure. Setup the
+     structure related to cs_sles_*
   */
-  cs_equation_set_linear_solvers();
+
+  /* Navier-Stokes system */
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_set_sles();
+
+  /* Set the remaining equations */
+  cs_equation_set_sles();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -455,9 +474,6 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   cs_restart_checkpoint_set_defaults(domain->restart_nt,
                                      t_interval,
                                      wt_interval);
-
-  domain->mesh = mesh;
-  domain->mesh_quantities = mesh_quantities;
 
   /* Build additional connectivity structures
      Update mesh structure with range set structures */
@@ -500,13 +516,32 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   cs_field_allocate_or_map_all();
 
   /* Allocate common structures for solving equations */
-  cs_equation_common_allocate(domain->connect,
-                              domain->cdo_quantities,
-                              domain->time_step,
-                              domain->cdo_context);
+  cs_equation_common_init(domain->connect,
+                          domain->cdo_quantities,
+                          domain->time_step,
+                          cc->vb_scheme_flag,
+                          cc->vcb_scheme_flag,
+                          cc->fb_scheme_flag,
+                          cc->hho_scheme_flag);
+
+  /* Allocate matrix-related structures for the assembly stage */
+  cs_equation_assemble_init(domain->connect,
+                            cc->vb_scheme_flag,
+                            cc->vcb_scheme_flag,
+                            cc->fb_scheme_flag,
+                            cc->hho_scheme_flag);
 
   /* Set the range set structure for synchronization in parallel computing */
-  cs_equation_assign_range_set(domain->connect);
+  cs_equation_set_range_set(domain->connect);
+
+  cs_equation_set_shared_structures(domain->connect,
+                                    domain->cdo_quantities,
+                                    domain->time_step,
+                                    cc->vb_scheme_flag,
+                                    cc->vcb_scheme_flag,
+                                    cc->fb_scheme_flag,
+                                    cc->hho_scheme_flag);
+
 
   /* Set the definition of user-defined properties and/or advection
    * fields (no more fields are created at this stage)
@@ -519,7 +554,7 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
    * --> Source term
    */
 
-  cs_user_cdo_finalize_setup(cs_glob_domain);
+  cs_user_finalize_setup(cs_glob_domain);
 
   /* Assign to a cs_equation_t structure a list of function to manage this
    * structure during the computation.
@@ -527,7 +562,7 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
    * specifying the cs_equation_t structure
    */
 
-  domain->only_steady = cs_equation_assign_functions();
+  domain->only_steady = cs_equation_set_functions();
   if (domain->only_steady)
     domain->is_last_iter = true;
 
@@ -544,9 +579,13 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
     cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);
 
   if (cs_navsto_system_is_activated())
-    cs_navsto_system_finalize_setup(domain->connect,
+    cs_navsto_system_finalize_setup(domain->mesh,
+                                    domain->connect,
                                     domain->cdo_quantities,
                                     domain->time_step);
+
+  if (cs_ale_is_activated())
+    cs_ale_finalize_setup(domain);
 
   /* Last stage to define properties (when complex definition is requested) */
   cs_property_finalize_setup();
@@ -594,9 +633,79 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                   domain->connect,
                   domain->cdo_quantities,
                   domain->time_step,
-                  domain->dt_cur,
                   false); /* operate current to previous ? */
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of the main domain settings
+ *
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_setup_log(const cs_domain_t   *domain)
+{
+  cs_log_printf(CS_LOG_SETUP, "\nSummary of the CDO domain settings\n");
+  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+
+  /* CDO main structure count */
+  cs_log_printf(CS_LOG_SETUP, "\n## CDO main structures\n");
+
+  int  n_equations, n_predef_equations, n_user_equations;
+  cs_equation_get_count(&n_equations, &n_predef_equations, &n_user_equations);
+
+  cs_log_printf(CS_LOG_SETUP, " **Number of equations**             %2d\n",
+                n_equations);
+  cs_log_printf(CS_LOG_SETUP, " **Number of predefined equations**  %2d\n",
+                n_predef_equations);
+  cs_log_printf(CS_LOG_SETUP, " **Number of user equations**        %2d\n",
+                n_user_equations);
+  cs_log_printf(CS_LOG_SETUP, " **Number of properties**            %2d\n",
+                cs_property_get_n_properties());
+  cs_log_printf(CS_LOG_SETUP, " **Number of advection fields**      %2d\n",
+                cs_advection_field_get_n_fields());
+
+
+
+  cs_cdo_connect_summary(domain->connect);
+  cs_cdo_quantities_summary(domain->cdo_quantities);
+
+  /* Boundaries of the domain */
+  cs_boundary_log_setup(domain->boundaries);
+
+  /* Time step summary */
+  cs_log_printf(CS_LOG_SETUP, "\n## Time step information\n");
+  if (domain->only_steady)
+    cs_log_printf(CS_LOG_SETUP, " * Steady-state computation\n");
+
+  else { /* Time information */
+
+    cs_log_printf(CS_LOG_SETUP, " * Unsteady computation\n");
+
+    if (domain->time_step->t_max > 0.)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
+                    " * Final simulation time:", domain->time_step->t_max);
+    if (domain->time_step->nt_max > 0)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %9d\n",
+                    " * Final time step:", domain->time_step->nt_max);
+
+    if (domain->time_options.idtvar == 0)
+      cs_log_printf(CS_LOG_SETUP, " * Time step **constant**\n\n");
+    else if (domain->time_options.idtvar == 1)
+      cs_log_printf(CS_LOG_SETUP, " * Time step **variable in time**\n\n");
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid idtvar value for the CDO module.\n"));
+
+    cs_xdef_log("        Time step definition", domain->time_step_def);
+    cs_log_printf(CS_LOG_SETUP, "\n");
+
+  }
+
+}
+
 
 /*----------------------------------------------------------------------------*/
 

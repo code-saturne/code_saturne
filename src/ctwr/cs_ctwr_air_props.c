@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -84,7 +84,23 @@ static cs_ctwr_fluid_props_t _props = {
 cs_ctwr_fluid_props_t *cs_glob_ctwr_props = &_props;
 
 /*============================================================================
- *  Public function prototypes for Fortran API
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_ctwr_glob_properties_get_pointer(double  **humidity0,
+                                    double  **cp_a,
+                                    double  **cp_v,
+                                    double  **cp_l,
+                                    double  **hv0,
+                                    double  **rho_l,
+                                    double  **lambda_h,
+                                    double  **lambda_l,
+                                    double  **droplet_diam);
+
+/*============================================================================
+ *  Public functions for Fortran API
  *============================================================================*/
 
 void
@@ -98,7 +114,6 @@ cs_ctwr_glob_properties_get_pointer(double  **humidity0,
                                     double  **lambda_l,
                                     double  **droplet_diam)
 {
-
   *humidity0    = &(_props.humidity0    );
   *cp_a         = &(_props.cp_a         );
   *cp_v         = &(_props.cp_v         );

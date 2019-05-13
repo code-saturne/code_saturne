@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -45,13 +45,14 @@
   Definition of user variables or properties should be defined here,
   if not already done throught the GUI.
 
+  \section cs_user_parameters_h_cs_user_parameters General options (\ref cs_user_parameters)
+
   Most definitions should be done in the \ref cs_user_parameters
   function, which is the C equivalent of the \ref usipsu Fortran routine.
 
-  For example, to force the presence of a boundary temperature field, which
-  may be useful for postprocessing:
+  For example, to change the log (run_solver.log) verbosity of all the variables:
 
-  \snippet cs_user_parameters-base.c param_force_b_temperature
+  \snippet cs_user_parameters-base.c param_log_verbosity
 
   For example, to change limiters for the convective scheme for a given scalar:
 
@@ -67,11 +68,83 @@
 
   \snippet cs_user_parameters-base.c param_var_is_buoyant
 
+  If one wants to activate drift terms on a transported scalar:
+
+  \snippet cs_user_parameters-base.c param_var_drift
+
 
   To set options for the solving of the Stokes problem (velocity pressure coupling
   see \ref cs_stokes_model_t structure):
 
   \snippet cs_user_parameters-base.c param_stokes_model
+
+  \subsection cs_user_parameters_h_cs_user_parameters1 Special fields and activate some automatic post-processings
+
+  For example, to force the presence of a boundary temperature field, which
+  may be useful for postprocessing:
+
+  \snippet cs_user_parameters-base.c param_force_b_temperature
+
+  To add boundary values for all scalars, the
+  following code can be added:
+
+  \snippet cs_user_parameters-base.c param_var_boundary_vals_1
+
+  Enforce existence of 'tplus' and 'tstar' fields, so that
+  a Nusselt number may be computed using the
+  \ref post_boundary_nusselt subroutine.
+  When postprocessing this quantity is activated, those fields
+  are present, but if we need to compute them in the
+  \ref cs_user_extra_operations user subroutine without postprocessing them,
+  forcing the definition of these fields to save the values computed
+  for the boundary layer is necessary.
+
+  \snippet cs_user_parameters-base.c param_force_yplus
+
+  You can activate the post-processing of the Q-criterion on the whole domain
+  mesh with:
+
+  \snippet cs_user_parameters-base.c param_var_q_criterion
+
+  Save contribution of slope test for variables in special fields.
+  These fields are automatically created, with postprocessing output enabled,
+  if the matching variable is convected, does not use a pure upwind scheme,
+  and has a slope test (the slope_test_upwind_id key value for a given
+  variable's field is automatically set to the matching postprocessing field's
+  id, or -1 if not applicable).
+
+  \snippet cs_user_parameters-base.c param_post_slop_test
+
+  You can activate the post-processing of clipping on turbulent quantities
+  on the whole domain mesh with:
+
+  \snippet cs_user_parameters-base.c param_var_rij_clipping
+
+
+  \section cs_user_parameters_h_finalize_setup Input-output related examples (usipes)
+
+  \subsection cs_user_parameters_h_example_base Basic options
+
+  Frequency of log output.
+
+  \snippet cs_user_parameters-base.c setup_log
+
+  Change a property's label (here for density, first checking if it
+  is variable). A field's name cannot be changed, but its label,
+  used for logging and postprocessing output, may be redefined.
+
+  \snippet cs_user_parameters-base.c setup_label
+
+  \subsection cs_user_parameters_h_example_post Postprocessing output
+
+  Activate or deactivate probes output.
+
+  \snippet cs_user_parameters-base.c setup_post
+
+  Probes for Radiative Transfer (Luminance and radiative density flux vector).
+
+  \snippet cs_user_parameters-base.c setup_post_lum
+
 
   \section cs_user_parameters_h_cs_user_model_cdo Base model for CDO/HHO schemes
 
@@ -480,6 +553,9 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_velocity_rotation
 
+  To activate means for all variables:
+  \snippet cs_user_parameters-time_moments.c tmom_all_variables
+
   \section cs_user_parameters_h_cs_user_fans  Fan modelling options
 
   Code_Saturne allows modelling of some circular fans as volume
@@ -494,22 +570,5 @@
   The following example shows how a fan may be defined:
 
   \snippet cs_user_parameters-fans.c fan_user_1
-
-  \section cs_user_parameters_h_postprocess Activate some automatic post-processings
-
-  To add boundary values for all scalars, the
-  following code can be added:
-
-  \snippet cs_user_parameters-base.c param_var_boundary_vals_1
-
-  You can activate the post-processing of the Q-criterion on the whole domain
-  mesh with:
-
-  \snippet cs_user_parameters-base.c param_var_q_criterion
-
-  You can activate the post-processing of clipping on turbulent quantities
-  on the whole domain mesh with:
-
-  \snippet cs_user_parameters-base.c param_var_rij_clipping
 
 */

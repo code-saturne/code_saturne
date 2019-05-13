@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -123,12 +123,15 @@ integer          st_prv_id
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
+integer          key_t_ext_id
+integer          iroext
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp, alpha3
 double precision trprod , trrij
 double precision tseps , kseps , ceps2
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision prdeps, xttdrb, xttke , xttkmg
+double precision normp
 
 double precision rvoid(1)
 
@@ -157,6 +160,11 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 ivar = iep
 
@@ -543,7 +551,7 @@ endif
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -564,13 +572,14 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    cvara_ep        , cvara_ep        ,                            &

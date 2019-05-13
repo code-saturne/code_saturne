@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -42,6 +42,7 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_math.h"
 #include "cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------*/
@@ -272,6 +273,71 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set Dirichlet BC for a vector for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pimpv  dirichlet value to impose
+ * \param[in]   hint   internal exchange coefficient
+ * \param[in]   hextv  external exchange coefficient
+ *                     (assumed infinite/ignored if < 0)
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t    a,
+                                            cs_real_3_t    af,
+                                            cs_real_33_t   b,
+                                            cs_real_33_t   bf,
+                                            cs_real_3_t    pimpv,
+                                            cs_real_t      hint,
+                                            cs_real_3_t    hextv)
+{
+  for (int isou = 0 ; isou < 3; isou++) {
+    if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
+
+      /* Gradient BCs */
+      a[isou] = pimpv[isou];
+      for (int jsou = 0 ; jsou < 3 ; jsou++)
+        b[isou][jsou] = 0.;
+
+      /* Flux BCs */
+      af[isou] = -hint*pimpv[isou];
+      for (int jsou = 0; jsou < 3; jsou++) {
+        if (jsou == isou)
+          bf[isou][jsou] = hint;
+        else
+          bf[isou][jsou] = 0.;
+      }
+    } else {
+
+      cs_real_t heq = hint*hextv[isou]/(hint + hextv[isou]);
+
+      /* Gradient BCs */
+      a[isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
+      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+        if (jsou == isou)
+          b[isou][jsou] = hint/(hint + hextv[isou]);
+        else
+          b[isou][jsou] = 0.;
+      }
+
+      /* Flux BCs */
+      af[isou] = -heq*pimpv[isou];
+      for (int jsou = 0 ; jsou < 3 ; jsou++) {
+        if (jsou == isou)
+          bf[isou][jsou] = heq;
+        else
+          bf[isou][jsou] = 0.;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set convective oulet boundary condition for a scalar
  *
  * Parameters:
@@ -293,6 +359,62 @@ cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
                                                     cs_real_t  pimp,
                                                     cs_real_t  cfl,
                                                     cs_real_t  hint);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set Dirichlet BC for a vector for a given face with left anisotropic
+ *        diffusion.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pimpv  dirichlet value to impose
+ * \param[in]   hintt  internal exchange coefficient
+ * \param[in]   hextv  external exchange coefficient
+ *                     (assumed infinite/ignored if < 0)
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_dirichlet_vector_aniso(cs_real_3_t    a,
+                                                  cs_real_3_t    af,
+                                                  cs_real_33_t   b,
+                                                  cs_real_33_t   bf,
+                                                  cs_real_3_t    pimpv,
+                                                  cs_real_6_t    hintt,
+                                                  cs_real_3_t    hextv)
+{
+  for (int isou = 0 ; isou < 3 ; isou++) {
+    if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
+
+      /* Gradient BCs */
+      a[isou] = pimpv[isou];
+      for (int jsou = 0 ; jsou < 3 ; jsou++)
+        b[isou][jsou] = 0.;
+
+    } else {
+
+      cs_exit(1);
+
+    }
+  }
+
+  /* Flux BCs */
+  cs_math_sym_33_3_product(hintt, pimpv, af);
+  for (int isou = 0 ; isou < 3 ; isou++)
+    af[isou] = -af[isou];
+
+  bf[0][0] = hintt[0];
+  bf[1][1] = hintt[1];
+  bf[2][2] = hintt[2];
+  bf[0][1] = hintt[3];
+  bf[1][0] = hintt[3];
+  bf[1][2] = hintt[4];
+  bf[2][1] = hintt[4];
+  bf[0][2] = hintt[5];
+  bf[2][0] = hintt[5];
+}
 
 /*----------------------------------------------------------------------------*/
 

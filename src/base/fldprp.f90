@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -142,7 +142,7 @@ end interface
 
 call add_property_field_1d('density', 'Density', irom)
 icrom = irom
-! Postprocessed and in the log file by default, hidden in modini if not variable.
+! Postprocessed and in the log file by default, hidden in modini if not variable
 call field_set_key_int(icrom, keylog, 1)
 call field_set_key_int(icrom, keyvis, 1)
 
@@ -292,7 +292,7 @@ endif
 
 ! --- Mesh displacement for ALE
 
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   has_previous = .true.
   idim3 = 3
@@ -347,7 +347,7 @@ end subroutine fldprp
 !>        with no previous time values and with default options
 !
 !> It is recommended not to define property names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------
@@ -451,7 +451,7 @@ end subroutine hide_property
 !>        with default options
 !
 !> It is recommended not to define property names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------
@@ -558,7 +558,7 @@ end subroutine add_property_field
 !>        with default options
 !
 !> It is recommended not to define property names of more than 16
-!> characters, to get a clear execution listing (some advanced writing
+!> characters, to get a clear execution log (some advanced writing
 !> levels take into account only the first 16 characters).
 !
 !-------------------------------------------------------------------------------

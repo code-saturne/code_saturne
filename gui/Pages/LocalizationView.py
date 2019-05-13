@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -56,14 +56,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, RegExpValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.LocalizationForm import Ui_LocalizationForm
 from code_saturne.Pages.VolumicZoneAdvancedDialogForm import Ui_VolumicZoneAdvancedDialogForm
 from code_saturne.Pages.PreProcessingInformationsView import Informations, preprocessorFile
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
 # log config
@@ -301,7 +300,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     p_value = self.p_value
 
-            model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for the zone
@@ -339,7 +338,7 @@ class CodeNumberDelegate(QItemDelegate):
                 QMessageBox.warning(self.parent, title, msg)
                 return
 
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for the boundary nature
@@ -382,7 +381,7 @@ class BoundaryNatureDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -425,25 +424,25 @@ class StandardItemVolumeNature(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.EditRole:
             key = self.keys[index.row()]
-            return to_qvariant(self.dicoM2V[key])
+            return self.dicoM2V[key]
 
         elif role == Qt.DisplayRole:
             key = self.keys[index.row()]
-            return to_qvariant(self.dicoM2V[key])
+            return self.dicoM2V[key]
 
         elif role == Qt.CheckStateRole:
             key = self.keys[index.row()]
             value = self.dicoNature[key]
             if value == 'on':
-                return to_qvariant(Qt.Checked)
+                return Qt.Checked
             else:
-                return to_qvariant(Qt.Unchecked)
+                return Qt.Unchecked
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -510,7 +509,7 @@ class FlagBox(QComboBox):
             s = Qt.Checked
         else:
             s = Qt.Unchecked
-        self.setItemData(index, to_qvariant(s), Qt.CheckStateRole)
+        self.setItemData(index, s, Qt.CheckStateRole)
 
 
 #-------------------------------------------------------------------------------
@@ -545,7 +544,7 @@ class VolumeNatureDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         value = self.flagbox_model.getChecked()
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for localization
@@ -559,7 +558,30 @@ class LocalizationSelectorDelegate(QItemDelegate):
 
 
     def createEditor(self, parent, option, index):
+
         editor = QLineEdit(parent)
+
+        # Auto completion for selection criteria!
+        comp_list = ['all[]']
+        if self.mdl._typeZone == 'BoundaryZone':
+            comp_list += ['normal[x, y, z, epsilon]']
+        comp_list += ['plane[a, b, c, d, epsilon]',
+                      'plane[a, b, c, d, inside]',
+                      'plane[a, b, c, d, outside]',
+                      'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
+                      'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
+                      'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
+                      'box[xmin, ymin, zmin, xmax, ymax, zmax]',
+                      'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
+                      'cylinder[x0, y0, z0, x1, y1, z1, radius]',
+                      'sphere[x_c, y_c, z_c, radius]']
+
+        completer = QCompleter()
+        editor.setCompleter(completer)
+        model = QStringListModel()
+        completer.setModel(model)
+        model.setStringList(comp_list)
+
         return editor
 
 
@@ -580,7 +602,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
             return
 
         if str(value) != "" :
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -609,27 +631,27 @@ class StandardItemModelLocalization(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
 
             if col in [0, 1, 3]:
-                return to_qvariant(self._data[row][col])
+                return self._data[row][col]
 
             elif col == 2:
                 if self.zoneType == "VolumicZone":
                     data = self._data[row][col]
                     item = "\n".join([self.dicoM2V[key] for key in list(self.dicoM2V.keys()) if data[key] == "on"])
 
-                    return to_qvariant(item)
+                    return item
 
                 elif self.zoneType == "BoundaryZone":
                     key = self._data[row][col]
-                    return to_qvariant(self.dicoM2V[key])
+                    return self.dicoM2V[key]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -642,8 +664,8 @@ class StandardItemModelLocalization(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -954,7 +976,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
     @pyqtSlot()
     def slotAddFromPrePro(self):
         """
-        Research a Preprocessor listing to pick colors or groups of cells or faces.
+        Research a preprocessor log to pick colors or groups of cells or faces.
         """
         if self.zoneType == 'VolumicZone':
             entity = 'cells'
@@ -1114,7 +1136,7 @@ class BoundaryLocalizationView(LocalizationView):
 
         LocalizationView.__init__(self, "BoundaryZone", parent, self.case, dicoM2V, tree)
 
-        title = self.tr("Definition of boundary regions")
+        title = self.tr("Boundary regions definition")
         self.groupBoxLocalization.setTitle(title)
 
         # Delegates

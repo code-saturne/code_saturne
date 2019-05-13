@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -51,37 +51,36 @@
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
-#include "cs_halo.h"
 #include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "cs_order.h"
 #include "cs_parall.h"
-#include "cs_prototypes.h"
 #include "cs_random.h"
-#include "cs_search.h"
 #include "cs_timer_stats.h"
-
-#include "cs_field.h"
-#include "cs_field_pointer.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_clogging.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_dlvo.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr_geom.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_tracking.h"
+#include "cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_lagr_particle.c
+        Particle structure.
+*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -98,11 +97,11 @@ BEGIN_C_DECLS
 
 /* keys to sort attributes by type.
 
-   ieptp/ieptpa integer values at current and previous time steps
-   pepa real values at current time step
-   _int_loc local integer values at current time step
-   ipepa integer values at current time step
-   iprkid values are for rank ids, useful and valid only for previous
+   rvar real values at current an previous time steps
+   ivar integer values at current and previous time steps
+   rprp real properties at current an previous time steps
+   iprp integer properties at current and previous time steps
+   rkid values are for rank ids, useful and valid only for previous
    time steps */
 
 typedef enum {
@@ -155,7 +154,8 @@ union cs_lagr_value_t {
 /* Enumerator names */
 
 const char *cs_lagr_attribute_name[] = {
-  "cell_num",
+  "state_flag",
+  "cell_id",
   "rank_id",
   "rebound_id",
   "random_value",
@@ -178,7 +178,6 @@ const char *cs_lagr_attribute_name[] = {
   "interf",
   "neighbor_face_id",
   "marko_value",
-  "deposition_flag",
   "fouling_index",
   "n_large_asperities",
   "n_small_asperities",
@@ -476,6 +475,7 @@ _create_particle_set(cs_lnum_t                       n_particles_max,
 
   new_set->n_particles = 0;
   new_set->n_part_new = 0;
+  new_set->n_part_merged = 0;
   new_set->n_part_out = 0;
   new_set->n_part_dep = 0;
   new_set->n_part_fou = 0;
@@ -667,16 +667,19 @@ cs_lagr_particle_attr_initialize(void)
   }
 
   /* Special case:
-     cell number is also needed in for previous time step.
+     cell id is also needed in for previous time step.
   */
 
-  attr_keys[CS_LAGR_CELL_NUM][0] = CS_LAGR_P_IVAR;
-  attr_keys[CS_LAGR_CELL_NUM][1] = ++loc_count;
+  attr_keys[CS_LAGR_CELL_ID][0] = CS_LAGR_P_IVAR;
+  attr_keys[CS_LAGR_CELL_ID][1] = ++loc_count;
 
   attr_keys[CS_LAGR_RANK_ID][0] = CS_LAGR_P_RKID;
   attr_keys[CS_LAGR_RANK_ID][1] = 1;
 
   /* Other attributes */
+
+  attr_keys[CS_LAGR_P_FLAG][0] = CS_LAGR_P_IPRP;
+  attr_keys[CS_LAGR_P_FLAG][1] = ++loc_count;
 
   attr_keys[CS_LAGR_REBOUND_ID][0] = CS_LAGR_P_IPRP;
   attr_keys[CS_LAGR_REBOUND_ID][1] = ++loc_count;
@@ -750,9 +753,6 @@ cs_lagr_particle_attr_initialize(void)
 
     attr_keys[CS_LAGR_INTERF][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_INTERF][1] = ++loc_count;
-
-    attr_keys[CS_LAGR_DEPOSITION_FLAG][0] = CS_LAGR_P_IPRP;
-    attr_keys[CS_LAGR_DEPOSITION_FLAG][1] = ++loc_count;
 
     attr_keys[CS_LAGR_NEIGHBOR_FACE_ID][0] = CS_LAGR_P_IPRP;
     attr_keys[CS_LAGR_NEIGHBOR_FACE_ID][1] = ++loc_count;
@@ -856,6 +856,11 @@ cs_lagr_particle_attr_initialize(void)
   if (lagr_model->n_stat_classes > 0) {
     attr_keys[CS_LAGR_STAT_CLASS][0] = CS_LAGR_P_IPRP;
     attr_keys[CS_LAGR_STAT_CLASS][1] = ++loc_count;
+  }
+
+  if (lagr_model->n_particle_aggregates > 0) {
+    attr_keys[CS_LAGR_PARTICLE_AGGREGATE][0] = CS_LAGR_P_IPRP;
+    attr_keys[CS_LAGR_PARTICLE_AGGREGATE][1] = ++loc_count;
   }
 
   if (lagr_model->n_user_variables > 0) {

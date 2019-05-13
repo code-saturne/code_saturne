@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -91,7 +91,9 @@ cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
     N_("Dirichlet"),
     N_("Homogeneous Neumann"),
     N_("Neumann"),
-    N_("Robin") };
+    N_("Robin"),
+    N_("Sliding")
+  };
 
 static const char
 cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
@@ -203,20 +205,8 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
 {
   switch (solver) {
 
-  case CS_PARAM_ITSOL_JACOBI:
-    return  "Jacobi";
-    break;
-  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
-    return  "Gauss.Seidel";
-    break;
-  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
-    return  "Symmetric.Gauss.Seidel";
-    break;
-  case CS_PARAM_ITSOL_CG:
-    return  "CG";
-    break;
-  case CS_PARAM_ITSOL_FCG:
-    return  "Flexible.CG";
+  case CS_PARAM_ITSOL_AMG:
+    return "Algebraic.Multigrid";
     break;
   case CS_PARAM_ITSOL_BICG:
     return "BiCG";
@@ -224,15 +214,31 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_BICGSTAB2:
     return "BiCGstab2";
     break;
+  case CS_PARAM_ITSOL_CG:
+    return  "CG";
+    break;
   case CS_PARAM_ITSOL_CR3:
     return "Conjugate.Residual.3Layers";
+    break;
+  case CS_PARAM_ITSOL_FCG:
+    return  "Flexible.CG";
+    break;
+  case CS_PARAM_ITSOL_GAUSS_SEIDEL:
+    return  "Gauss.Seidel";
     break;
   case CS_PARAM_ITSOL_GMRES:
     return "GMRES";
     break;
-  case CS_PARAM_ITSOL_AMG:
-    return "Algebraic.Multigrid";
+  case CS_PARAM_ITSOL_JACOBI:
+    return  "Jacobi";
     break;
+  case CS_PARAM_ITSOL_MINRES:
+    return  "MinRes";
+    break;
+  case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
+    return  "Symmetric.Gauss.Seidel";
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Invalid solver. Stop execution."), __func__);
@@ -282,6 +288,9 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
     break;
   case CS_PARAM_PRECOND_AMG:
     return  "Algebraic.MultiGrid";
+    break;
+  case CS_PARAM_PRECOND_AMG_BLOCK:
+    return  "Algebraic.MultiGrid.ByBlock";
     break;
   case CS_PARAM_PRECOND_AS:
     return  "Additive.Schwarz";

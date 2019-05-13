@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -388,8 +388,8 @@ cs_xdef_cw_eval_scalar_face_avg_by_array(const cs_cell_mesh_t       *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_input_t *array_input =
-    (const cs_xdef_array_input_t *)input;
+  const cs_xdef_array_input_t *array_input
+    = (const cs_xdef_array_input_t *)input;
 
   assert(input != NULL);
   assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
@@ -497,8 +497,8 @@ cs_xdef_cw_eval_vector_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_input_t *array_input =
-    (const cs_xdef_array_input_t *)input;
+  const cs_xdef_array_input_t *array_input
+    = (const cs_xdef_array_input_t *)input;
 
   assert(input != NULL);
   assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
@@ -577,8 +577,8 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_input_t *array_input =
-    (const cs_xdef_array_input_t *)input;
+  const cs_xdef_array_input_t *array_input
+    = (const cs_xdef_array_input_t *)input;
 
   assert(input != NULL);
   assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
@@ -796,6 +796,24 @@ cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                        void                     *input,
                                        cs_quadrature_type_t      qtype,
                                        cs_real_t                *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate a  quantity by a cellwise process using a definition by
+ *         time function
+ *
+ * \param[in]  cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]  time_eval  physical time at which one evaluates the term
+ * \param[in]  input      pointer to an input structure
+ * \param[out] eval       result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_by_time_func(const cs_cell_mesh_t     *cm,
+                             cs_real_t                 time_eval,
+                             void                     *input,
+                             cs_real_t                *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!

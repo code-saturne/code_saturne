@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -143,7 +143,7 @@ call field_set_key_double(f_id, kscmax, 0.25d0)
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!    - PROPRES AUX SCALAIRES   : scalar_diffusivity_id
+!    - PROPRES AUX SCALAIRES   : diffusivity_id
 !      Rq : pas de variance associee a un scalaire dans notre cas
 !    - PROPRES A LA SUSPENSION : icp
 !===============================================================================

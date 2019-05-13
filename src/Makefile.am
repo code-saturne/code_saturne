@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,7 @@ SUBDIRS += \
 fvm gui \
 base cdo pprt alge mesh turb darc \
 atmo cfbl cogz comb ctwr elec lagr rayt \
-user user_examples apps
+user user_examples meg apps
 endif
 
 # General flags
@@ -55,6 +55,7 @@ base/alaste.f90 \
 base/albase.f90 \
 base/alstru.f90 \
 base/cavitation.f90 \
+base/cdomod.f90 \
 base/cplsat.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
@@ -102,7 +103,7 @@ base/turbomachinery.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/albase.lo: base/cplsat.lo base/optcal.lo
+base/albase.lo: base/cplsat.lo base/optcal.lo base/cs_c_bindings.lo
 base/alstru.lo: base/paramx.lo
 base/cavitation.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo\
  base/pointe.lo base/mesh.lo base/paramx.lo base/entsor.lo base/parall.lo \
@@ -112,7 +113,7 @@ base/vof.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo \
  base/rotation.lo base/turbomachinery.lo
 base/cplsat.lo: base/paramx.lo
 base/cstphy.lo: base/paramx.lo
-base/cs_c_bindings.lo: base/paramx.lo base/mesh.lo base/period.lo \
+base/cs_c_bindings.lo: base/paramx.lo base/entsor.lo base/mesh.lo base/period.lo \
  base/field.lo base/field_operator.lo
 base/cs_f_interfaces.lo: base/cs_c_bindings.lo base/paramx.lo base/dimens.lo \
  base/mesh.lo base/optcal.lo base/field.lo lagr/lagran.lo
@@ -150,6 +151,7 @@ pprt/ppincl.lo: pprt/ppppar.lo pprt/ppthch.lo
 pprt/ppthch.lo: base/cstphy.lo
 rayt/radiat.lo: pprt/ppppar.lo pprt/ppincl.lo base/optcal.lo pprt/ppcpfu.lo base/numvar.lo
 darc/darcy_module.lo: base/paramx.lo
+cfbl/cfpoin.lo: pprt/ppincl.lo
 
 # Additional local targets
 

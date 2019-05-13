@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -419,7 +419,7 @@ class cs_compile(object):
             if f_base == 'cs_user_initialization.f90':
                 o_name = "cs_f_user_initialization.o"
                 cmd += ["-o", o_name]
-            if f == 'cs_user_physical_properties.f90':
+            if f_base == 'cs_user_physical_properties.f90':
                 o_name = "cs_f_user_physical_properties.o"
                 cmd += ["-o", o_name]
             if f_base == 'cs_user_porosity.f90':
@@ -518,6 +518,17 @@ class cs_compile(object):
         cmd += p_libs
         if pkg.config.rpath != "":
             cmd += self.so_dirs_path(cmd)
+
+        # Clean paths in link flags
+        cmd_new = []
+        for c in cmd:
+            if c[:2] == '-L':
+                c = '-L' + os.path.normpath(c[2:])
+                if cmd_new.count(c) < 1:
+                    cmd_new.append(c)
+            else:
+                cmd_new.append(c)
+        cmd = cmd_new
 
         # Call linker
 

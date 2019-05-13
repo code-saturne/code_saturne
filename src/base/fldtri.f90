@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2018 EDF S.A., France
+!     Copyright (C) 1998-2019 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -38,12 +38,8 @@ subroutine fldtri
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 !__________________.____._____.________________________________________________.
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -90,6 +86,8 @@ character(len=80) :: fname
 
 integer, save :: ipass = 0
 
+logical :: has_exch_bc
+
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
@@ -113,7 +111,7 @@ ipass = ipass + 1
 ivar = ipr
 
 if (ipass .eq. 1) then
-  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+  call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
   call field_init_bc_coeffs(ivarfl(ivar))
 endif
 
@@ -121,9 +119,9 @@ ivar = iu
 
 if (ipass.eq.1) then
   if (ippmod(icompf).ge.0) then
-    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true., .false.)
   else
-    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
   endif
   call field_init_bc_coeffs(ivarfl(ivar))
 endif
@@ -134,7 +132,7 @@ endif
 if (ivofmt.ge.0) then
   ivar = ivolf2
   if (ipass .eq. 1) then
-    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
     call field_init_bc_coeffs(ivarfl(ivar))
   endif
 endif
@@ -215,19 +213,19 @@ do ii = 1, nfld
     if (itytur.eq.3 ) then
       if (irijco.eq.1) then
         if(ivar.eq.irij) then
-          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false.)
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false., .false.)
         else if (ivar.gt.ir13) then
-          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
         endif
       else
         if (ivar.ge.ir11 .and. ivar.le.ir13) then
-          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false.)
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false., .false.)
         else
-          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
         endif
       endif
     else
-      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
     endif
     call field_init_bc_coeffs(ivarfl(ivar))
   endif
@@ -238,10 +236,11 @@ nfld = 0
 ! Mesh velocity
 !--------------
 
+! ALE legacy solver
 if (iale.eq.1) then
   ivar = iuma
   if (ipass .eq. 1) then
-    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+    call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., .false.)
     call field_init_bc_coeffs(ivarfl(ivar))
   endif
 endif
@@ -253,7 +252,7 @@ call field_get_id_try("wall_distance", f_id)
 
 if (f_id.ne.-1) then
   if (ipass .eq. 1) then
-    call field_allocate_bc_coeffs(f_id, .true., .false., .false.)
+    call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
 endif
@@ -262,7 +261,7 @@ call field_get_id_try("wall_yplus", f_id)
 
 if (f_id.ne.-1) then
   if (ipass .eq. 1) then
-    call field_allocate_bc_coeffs(f_id, .true., .false., .false.)
+    call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
     call field_init_bc_coeffs(f_id)
   endif
 endif
@@ -275,11 +274,15 @@ nscal = nscaus + nscapp
 do ii = 1, nscal
   if (isca(ii) .gt. 0) then
     ivar = isca(ii)
+    has_exch_bc = .false.
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+    if (vcopt%icoupl.gt.0) has_exch_bc = .true.
+
     if (ipass .eq. 1) then
       if (ippmod(icompf).ge.0 .and. ii.eq.ienerg) then
-        call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)
+        call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true., has_exch_bc)
       else
-        call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+        call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false., has_exch_bc)
       endif
       call field_init_bc_coeffs(ivarfl(ivar))
       ! Boundary conditions of the turbulent fluxes T'u'
@@ -287,14 +290,14 @@ do ii = 1, nscal
         call field_get_name(ivarfl(ivar), fname)
         ! Index of the corresponding turbulent flux
         call field_get_id(trim(fname)//'_turbulent_flux', f_id)
-        call field_allocate_bc_coeffs(f_id, .true., .true., .false.)
+        call field_allocate_bc_coeffs(f_id, .true., .true., .false., .false.)
         call field_init_bc_coeffs(f_id)
       endif
       ! Elliptic Blending (AFM or DFM)
       if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
         call field_get_name(ivarfl(ivar), fname)
         call field_get_id(trim(fname)//'_alpha', f_id)
-        call field_allocate_bc_coeffs(f_id, .true., .false., .false.)
+        call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
         call field_init_bc_coeffs(f_id)
       endif
     endif

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -118,6 +118,38 @@ void
 cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
                                const cs_cell_mesh_t     *cm,
                                cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local stiffness matrix using the generic COST algo.
+ *          Case of CDO vertex-based schemes and isotropic property
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    h_info,
+                                   const cs_cell_mesh_t     *cm,
+                                   cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local stiffness matrix using the generic COST algo.
+ *          Case of CDO vertex-based schemes
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    h_info,
+                                     const cs_cell_mesh_t     *cm,
+                                     cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -337,6 +369,23 @@ void
 cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell using the COST algo.
+ *          Hodge op. from dual edges to primal faces.
+ *          This function is related to face-based schemes
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_edfp_cost_get_opt(const cs_param_hodge_t    h_info,
+                           const cs_cell_mesh_t     *cm,
+                           cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!

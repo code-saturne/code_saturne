@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -105,11 +105,13 @@ BEGIN_C_DECLS
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void)
+cs_user_extra_operations(cs_domain_t     *domain)
 {
   //!< [example_1]
 
@@ -142,7 +144,7 @@ cs_user_extra_operations(void)
 
     cs_real_t balance[CS_BALANCE_P_N_TERMS];
 
-    BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells, cs_lnum_t);
+    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -172,8 +174,8 @@ cs_user_extra_operations(void)
 
   /* More advanced usage for pressure drop */
 
+  //!< [example_6]
   {
-    /*< [example_6] */
     const char criteria[] = "zone_group";
 
     cs_lnum_t   n_selected_cells = 0;
@@ -181,7 +183,7 @@ cs_user_extra_operations(void)
 
     cs_real_t balance[CS_BALANCE_P_N_TERMS];
 
-    BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells, cs_lnum_t);
+    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -200,8 +202,8 @@ cs_user_extra_operations(void)
                "outlet mass flow (rho.u): %g\n",
                balance[rhou_in_idx],
                balance[rhou_out_idx]);
-    /*< [example_6] */
   }
+  //!< [example_6]
 }
 
 /*----------------------------------------------------------------------------*/

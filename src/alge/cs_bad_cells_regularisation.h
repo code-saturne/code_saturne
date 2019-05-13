@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -78,7 +78,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
 
 void
 cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
-                                   int         boundary_projection);
+                                   int          boundary_projection);
 
 /*----------------------------------------------------------------------------*/
 

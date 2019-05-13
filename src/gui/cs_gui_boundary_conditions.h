@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -101,13 +101,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
  * *****************
  *
  * integer          nozppm  <-- max number of boundary conditions zone
- * integer          iale    <-- ale module activated
  * integer          itypfb  <-- type of boundary for each face
  * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
-                               const int  *iale,
                                int        *itypfb,
                                int        *izfppp);
 

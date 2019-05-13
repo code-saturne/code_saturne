@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -116,7 +116,7 @@ CS_PROCF(lagout, LAGOUT)(void)
 void
 cs_restart_lagrangian_checkpoint_read(void)
 {
-  cs_lnum_t mstits, musbor, itysup, nbval, nberro;
+  cs_lnum_t mstits, nberro;
   cs_lnum_t mstist, jdstnt, nclsto, mstbor, jsttio;
   cs_lnum_t jturb , jtytur;
 
@@ -134,7 +134,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   /* Default initializations */
 
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     for (int ivar = 0; ivar < cs_glob_lagr_dim->ntersl; ivar++) {
 
@@ -165,10 +165,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   BFT_MALLOC(nomtsl, nvplmx, cs_char_64_t);
 
-  /* ====================================================================   */
-  /* 2. LECTURE DU FICHIER SUITE STATISTIQUES ET TERMES SOURCES   */
-  /*    DE COUPLAGE RETOUR     */
-  /* ====================================================================   */
+  /* Read stats and ST restart file. */
 
   static cs_restart_t  *cs_lag_stat_restart = NULL;
 
@@ -191,20 +188,14 @@ cs_restart_lagrangian_checkpoint_read(void)
     cs_log_printf(CS_LOG_DEFAULT,
                   "      Debut de la lecture\n");
 
-    /*  ---> Type de fichier suite    */
-    /*        Pourrait porter le numero de version si besoin.  */
-    /*        On ne se sert pas de IVERS pour le moment   */
+    /* Restart file type (ivers unused as yet) */
     {
-      itysup = 0;
-      nbval  = 1;
-      char rubriq[] = "version_fichier_suite_Lagrangien_statistiques";
-      cs_int_t *tabvar;
-
-      BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-      ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
-                                       itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-      BFT_FREE(tabvar);
+      cs_lnum_t ivers = -1;
+      ierror = cs_restart_read_section
+                 (cs_lag_stat_restart,
+                  "version_fichier_suite_Lagrangien_statistiques",
+                  CS_MESH_LOCATION_NONE,
+                  1, CS_TYPE_cs_int_t, &ivers);
       if (ierror != 0)
         bft_error(__FILE__, __LINE__, 0,
                   _("Abort while opening the lagrangian module restart file: %s\n"
@@ -213,29 +204,25 @@ cs_restart_lagrangian_checkpoint_read(void)
     }
 
     {
-      itysup = 0;
-      nbval  = 1;
-      char rubriq[] = "indicateur_ecoulement_stationnaire";
-      cs_int_t *tabvar;
-
-      BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-      ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
-                                       itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-      jsttio = tabvar[0];
-      BFT_FREE(tabvar);
-
+      ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                       "indicateur_ecoulement_stationnaire",
+                                       CS_MESH_LOCATION_NONE,
+                                       1, CS_TYPE_cs_int_t, &jsttio);
       if (ierror != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Abort while opening the lagrangian module restart file: %s\n"
-                    "Error reading section: %s"),
-                  ficsui, rubriq);
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("in Lagrangian module"),
+           _("The following information is not available in restart file: %s\n"
+             "so the computation cannot be run:\n"
+             "  %s\n"),
+           cs_restart_get_name(cs_lag_stat_restart),
+           "Unsteady flow flag");
     }
 
     /* Mesh dimensions*/
     bool ncelok, nfaiok, nfabok, nsomok;
-    cs_restart_check_base_location (cs_lag_stat_restart, &ncelok, &nfaiok,
-                                    &nfabok, &nsomok);
+    cs_restart_check_base_location(cs_lag_stat_restart, &ncelok, &nfaiok,
+                                   &nfabok, &nsomok);
 
     if (! ncelok)
       cs_parameters_error
@@ -263,451 +250,199 @@ cs_restart_lagrangian_checkpoint_read(void)
            "boundary face data will be reinitialized.\n"),
          cs_restart_get_name(cs_lag_stat_restart));
 
-    /* --> Est-on cense lire une suite de stats volumiques ?   */
+    /* Do we read restart with volume statistics ? */
     if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt) {
 
       nberro  = 0;
 
-      {
-        itysup  = 0;
-        nbval   = 1;
-        cs_int_t *tabvar;
+      nberro += cs_restart_read_section(cs_lag_stat_restart,
+                                        "iteration_debut_statistiques",
+                                        CS_MESH_LOCATION_NONE,
+                                        1, CS_TYPE_cs_int_t, &jdstnt);
 
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-        char rubriq[] = "iteration_debut_statistiques";
-        ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup,
-                                         nbval, CS_TYPE_cs_int_t, tabvar);
-        jdstnt  = tabvar[0];
-        nberro += ierror;
-        BFT_FREE(tabvar);
-      }
-
-      {
-        itysup  = 0;
-        nbval   = 1;
-        cs_int_t *tabvar;
-
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-        char rubriq[]  = "iteration_debut_statistiques_stationnaires";
-        ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup,
-                                         nbval, CS_TYPE_cs_int_t, tabvar);
-        mstist  = tabvar[0];
-        nberro += ierror;
-        BFT_FREE(tabvar);
-      }
-
-      /*  ---> S'il y a des erreurs, on suppose que c'est parce que le fichier  */
-      /*         suite ne contient pas d'infos sur les stats volumiques.   */
-      /*         Dans ce cas, si on est en instationnaire on se dit que c'est   */
-      /*         pas grave, on saute l'etape et on continue. Par contre si on   */
-      /*         est dans une configuration de calcul de stats volumiques  */
-      /*         en stationnaire on stoppe.  */
+      nberro += cs_restart_read_section
+                  (cs_lag_stat_restart,
+                   "iteration_debut_statistiques_stationnaires",
+                   CS_MESH_LOCATION_NONE,
+                   1, CS_TYPE_cs_int_t, &mstist);
 
       if (nberro != 0) {
 
-        if (   cs_glob_lagr_time_scheme->isttio == 0
-            || (   cs_glob_lagr_time_scheme->isttio == 1
-                && cs_glob_time_step->nt_cur < cs_glob_lagr_stat_options->nstist))
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      LES STATISTIQUES VOLUMIQUES DU CALCUL AMONT\n"
-             "@        NE PEUVENT PAS ETRE RELUES OU SONT ABSENTES\n"
-             "@        DU FICHIER SUITE\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des\n"
-             "@      statistiques volumiques sont positionnes en mode\n"
-             "@      instationnaire ou en debut de calcul stationnaire :\n"
-             "@\n"
-             "@          ISTTIO    IDSTNT    NSTIST    Iter de redemarrage\n"
-             "@      %10d%10d%10d%10d\n"
-             "@\n"
-             "@    Elles seront initialisees par des valeurs par defaut.\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui, cs_glob_lagr_time_scheme->isttio,
+        if (cs_glob_lagr_time_scheme->isttio == 0)
+          cs_parameters_error
+            (CS_WARNING,
+             _("in Lagrangian module"),
+             _("Statistics from the previous computation are not available.\n\n"
+               "Steady/unsteady computation of volume statistics\n"
+               "is reset to unsteady or steady initialization mode:\n"
+               " isttio = %d\n"
+               " idstnt = %d\n"
+               " restart iteration = %d\n"),
+             cs_glob_lagr_time_scheme->isttio,
              cs_glob_lagr_stat_options->idstnt,
-             cs_glob_lagr_stat_options->nstist,
              cs_glob_time_step->nt_cur+1);
-
         else
-          bft_error
-            (__FILE__, __LINE__, 0,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      LES STATISTIQUES VOLUMIQUES DU CALCUL AMONT\n"
-             "@        NE PEUVENT PAS ETRE RELUES OU SONT ABSENTES\n"
-             "@        DU FICHIER SUITE\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des\n"
-             "@      statistiques volumiques sont positionnes\n"
-             "@      en mode stationnaire :\n"
-             "@\n"
-             "@          ISTTIO    IDSTNT    NSTIST    Iter de redemarrage\n"
-             "@      %10d%10d%10d%10d\n"
-             "@\n"
-             "@    Le calcul ne peut pas etre execute.\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui, cs_glob_lagr_time_scheme->isttio,
-             cs_glob_lagr_stat_options->idstnt,
-             cs_glob_lagr_stat_options->nstist,
-             cs_glob_time_step->nt_cur+1);
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in Lagrangian module"),
+             _("Volume statistics from the previous computation are\n"
+               "not available or usable."));
 
       }
-      /* --> A partir d'ici on considere que le fichier suite contient     */
-      /*       des stats volumiques     */
+      /* Frome here on we assume the restart file contains volume statistics */
       else {
 
         if (   jsttio != cs_glob_lagr_time_scheme->isttio
             || jdstnt != cs_glob_lagr_stat_options->idstnt
             || mstist != cs_glob_lagr_stat_options->nstist)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des\n"
-             "@      statistiques volumiques sont modifies :\n"
-             "@\n"
-             "@              ISTTIO    IDSTNT    NSTIST\n"
-             "@  AMONT : %10d%10d%10d'\n"
-             "@  ACTUEL: %10d%10d%10d\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             jsttio,
-             jdstnt,
-             mstist,
-             cs_glob_lagr_time_scheme->isttio,
-             cs_glob_lagr_stat_options->idstnt,
-             cs_glob_lagr_stat_options->nstist);
+          cs_parameters_error
+            (CS_WARNING,
+             _("in Lagrangian module"),
+             _("Options are changed relative to the previous computation.\n\n"
+               " isttio = %d previous, %d current\n"
+               " idstnt = %d previous, %d current\n"
+               " nstist = %d previous, %d current\n"),
+             jsttio, cs_glob_lagr_time_scheme->isttio,
+             jdstnt, cs_glob_lagr_stat_options->idstnt,
+             mstist, cs_glob_lagr_stat_options->nstist);
 
         {
-          itysup  = 0;
-          nbval   = 1;
-          cs_int_t *tabvar;
-
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
+          cs_int_t tabvar[1];
 
           char rubriq[] = "classe_statistique_particules";
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup,
-                                           nbval, CS_TYPE_cs_int_t, tabvar);
-          nclsto  = tabvar[0];
-          BFT_FREE(tabvar);
+          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
+                                           CS_MESH_LOCATION_NONE,
+                                           1, CS_TYPE_cs_int_t, tabvar);
+          nclsto = tabvar[0];
+          if (ierror != 0)
+            nclsto = 0;
         }
-        if (ierror != 0)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-             "@ %s\n"
-             "@\n"
-             "@    Le mot cle est initialise avec sa valeur par defaut\n"
-             "@      ou celle donnee dans le sous-programme cs_user_lagr_model.c :\n"
-             "@        %s  = %d\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             "classes_statistiques",
-             "NBCLST",
-             nclsto);
 
-        /*  --> Verif de coherence de l'avancement du calcul avec les   */
-        /*       indicateurs de calcul de la suite actuelle : */
+        /* Check consistency with current settings */
 
         if (cs_glob_lagr_model->n_stat_classes != nclsto)
-          bft_error
-            (__FILE__, __LINE__, 0,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-             "@\n"
-             "@    LE CALCUL SE POURSUIT AVEC UN CALCUL DE\n"
-             "@      STATISTIQUES VOLUMIQUES EN MODE STATIONNAIRE\n"
-             "@      MAIS LES INDICATEURS DE CONTROLES DES STATISTIQUES\n"
-             "@      ON ETE MODIFIEES.\n"
-             "@\n"
-             "@    Pour eviter les incoherences dans le calcul\n"
-             "@      NBCLST ne devrait pas etre modifies entre\n"
-             "@      deux calculs de statistiques volumiques.\n"
-             "@\n"
-             "@    Le calcul ne peut pas etre execute.\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui);
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in Lagrangian module"),
+             _("Statistics from the previous computation are compatible with\n"
+               "current statistics computation options (in steady mode).\n"));
 
       }
-
     }
 
     if (cs_glob_lagr_dim->n_boundary_stats > 0 && nfabok) {
 
       {
-        itysup  = 0;
-        nbval   = 1;
-
-        cs_int_t tabvar;
+        cs_lnum_t  tabvar[1];
 
         char rubriq[]  = "iteration_debut_stats_frontieres_stationnaires";
         ierror = cs_restart_read_section(cs_lag_stat_restart,
-                                         rubriq, itysup, nbval, CS_TYPE_cs_int_t,
-                                         &tabvar);
-        mstbor = tabvar;
+                                         rubriq,
+                                         CS_MESH_LOCATION_NONE,
+                                         1, CS_TYPE_cs_int_t,
+                                         tabvar);
+        mstbor = tabvar[0];
       }
-
-      /*  ---> S'il y a une erreur, on suppose que c'est parce que le fichier   */
-      /*         suite ne contient pas d'infos sur les stats aux frontieres.    */
-      /*         Dans ce cas, si on est en instationnaire on se dit que c'est   */
-      /*         pas grave, on saute l'etape et on continue. Par contre si on   */
-      /*         est dans une configuration de calcul de stats aux frontieres   */
-      /*         en stationnaire on stoppe.  */
 
       if (ierror != 0) {
 
-        if (   cs_glob_lagr_time_scheme->isttio == 0
-            || (   cs_glob_lagr_time_scheme->isttio == 1
-                &&   cs_glob_time_step->nt_cur
-                   < cs_glob_lagr_stat_options->nstist)) {
-
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      LES STATISTIQUES AUX FRONTIERES DU CALCUL AMONT\n"
-             "@        NE PEUVENT PAS ETRE RELUES OU SONT ABSENTES\n"
-             "@        DU FICHIER SUITE\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des\n"
-             "@      statistiques aux frontieres sont positionnes en mode\n"
-             "@      instationnaire ou en debut de calcul stationnaire :\n"
-             "@\n"
-             "@          ISTTIO    NSTBOR    Iter de redemarrage\n"
-             "@      %10d%10d%10d\n"
-             "@\n"
-             "@    Elles seront initialisees par des valeurs par defaut.\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
+        if (cs_glob_lagr_time_scheme->isttio == 0) {
+          cs_parameters_error
+            (CS_WARNING,
+             _("in Lagrangian module"),
+             _("Statistics from the previous computation are not available.\n\n"
+               "Steady/unsteady computation of boundary statistics\n"
+               "is reset to unsteady or steady initialization mode:\n"
+               " isttio = %d\n"
+               " idstnt = %d\n"
+               " restart iteration = %d\n"),
              cs_glob_lagr_time_scheme->isttio,
-             cs_glob_lagr_stat_options->nstist,
+             cs_glob_lagr_stat_options->idstnt,
              cs_glob_time_step->nt_cur+1);
-
         }
-        else
-          bft_error
-            (__FILE__, __LINE__, 0,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      LES STATISTIQUES AUX FRONTIERES DU CALCUL AMONT\n"
-             "@        NE PEUVENT PAS ETRE RELUES OU SONT ABSENTES\n"
-             "@        DU FICHIER SUITE\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des\n"
-             "@      statistiques aux frontieres sont positionnes\n"
-             "@      en mode stationnaire :\n"
-             "@\n"
-             "@          ISTTIO    NSTBOR    Iter de redemarrage\n"
-             "@      %10d%10d%10d\n"
-             "@\n"
-             "@    Le calcul ne peut pas etre execute.\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             cs_glob_lagr_time_scheme->isttio,
-             cs_glob_lagr_stat_options->nstist,
-             cs_glob_time_step->nt_cur+1);
+        else if (      cs_glob_lagr_time_scheme->isttio == 1
+                 && (   cs_glob_time_step->nt_cur
+                     >= cs_glob_lagr_stat_options->nstist))
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in Lagrangian module"),
+             _("Boundary statistics from the previous computation are\n"
+               "not available or usable."));
 
       }
-      /* --> A partir d'ici on considere que le fichier suite contient     */
-      /*       des stats volumiques     */
+      /* From here on we assume the file contains volume statistics */
       else {
 
         if (   jsttio != cs_glob_lagr_time_scheme->isttio
             || mstbor != cs_glob_lagr_stat_options->nstist)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des\n"
-             "@      statistiques aux frontieres sont modifies :\n"
-             "@\n"
-             "@                        ISTTIO    NSTBOR\n"
-             "@            AMONT : %10d%10d\n"
-             "@            ACTUEL: %10d%10d\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             jsttio,
-             mstbor,
-             cs_glob_lagr_time_scheme->isttio,
-             cs_glob_lagr_stat_options->nstist);
+          cs_parameters_error
+            (CS_WARNING,
+             _("in Lagrangian module"),
+             _("Options are changed relative to the previous computation.\n\n"
+               " isttio = %d previous, %d current\n"
+               " nstbor = %d previous, %d current\n"),
+             jsttio, cs_glob_lagr_time_scheme->isttio,
+             mstbor, cs_glob_lagr_stat_options->nstist);
 
-        /*  --> Lecture de l'avancement du calcul stats aux frontieres  */
+        /* Read advancement of boundary statistics */
         {
-          char rubriq[] = "nombre_iterations_stats_frontieres";
-          cs_int_t *tabvar;
-
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                           CS_TYPE_cs_int_t, tabvar);
-          cs_glob_lagr_boundary_interactions->npstft  = tabvar[0];
-          BFT_FREE(tabvar);
+          cs_lnum_t tabvar[1];
+          ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                           "nombre_iterations_stats_frontieres",
+                                           CS_MESH_LOCATION_NONE,
+                                           1, CS_TYPE_cs_int_t, tabvar);
+          if (ierror == 0)
+            cs_glob_lagr_boundary_interactions->npstft  = tabvar[0];
+          else
+            cs_parameters_error
+              (CS_WARNING,
+               _("in Lagrangian module"),
+               _("The following information is not available in restart file: %s\n"
+                 "and is set to default or user settings:\n"
+                 "  %s\n"),
+               cs_restart_get_name(cs_lag_stat_restart),
+               "numbero boundary statistics iterations");
         }
-        if (ierror != 0)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-             "@ %s\n"
-             "@\n"
-             "@    Le mot cle est initialise avec sa valeur par defaut\n"
-             "@      ou celle donnee dans le sous-programme cs_user_lagr_model :\n"
-             "@        %s  = %d\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             "nombre_iterations_stats_frontieres",
-             "NPSTFT",
-             cs_glob_lagr_boundary_interactions->npstft);
 
         {
-          char rubriq[]  = "nombre_iterations_stats_frontieres_stationnaires";
-          cs_int_t *tabvar;
-
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                           CS_TYPE_cs_int_t, tabvar);
-          cs_glob_lagr_boundary_interactions->npstf   = tabvar[0];
-          BFT_FREE(tabvar);
+          cs_lnum_t tabvar[1];
+          ierror = cs_restart_read_section
+                     (cs_lag_stat_restart,
+                      "nombre_iterations_stats_frontieres_stationnaires",
+                      CS_MESH_LOCATION_NONE,
+                      1, CS_TYPE_cs_int_t, tabvar);
+          if (ierror == 0)
+            cs_glob_lagr_boundary_interactions->npstf = tabvar[0];
+          else
+            cs_parameters_error
+              (CS_WARNING,
+               _("in Lagrangian module"),
+               _("The following information is not available in restart file: %s\n"
+                 "and is set to default or user settings:\n"
+                 "  %s\n"),
+               cs_restart_get_name(cs_lag_stat_restart),
+               "Number of iterations for unsteady boundary statistics");
         }
-        if (ierror != 0)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-             "@ %s\n"
-             "@\n"
-             "@    Le mot cle est initialise avec sa valeur par defaut\n"
-             "@      ou celle donnee dans le sous-programme cs_user_lagr_model :\n"
-             "@        %s  = %d\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             "nombre_iterations_stats_frontieres_stationnaires",
-             "NPSTF",
-             cs_glob_lagr_boundary_interactions->npstf);
 
         {
-          char rubriq[] = "temps_stats_frontieres_stationnaires";
-          cs_real_t *tabvar;
-
-          BFT_MALLOC(tabvar, nbval, cs_real_t);
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                           CS_TYPE_cs_real_t, tabvar);
-          cs_glob_lagr_boundary_interactions->tstatp  = tabvar[0];
-          BFT_FREE(tabvar);
+          cs_real_t tabvar[1];
+          ierror = cs_restart_read_section
+                     (cs_lag_stat_restart,
+                      "temps_stats_frontieres_stationnaires",
+                      CS_MESH_LOCATION_NONE,
+                      1, CS_TYPE_cs_real_t, tabvar);
+          if (ierror == 0)
+            cs_glob_lagr_boundary_interactions->tstatp = tabvar[0];
+          else
+            cs_parameters_error
+              (CS_WARNING,
+               _("in Lagrangian module"),
+               _("The following information is not available in restart file: %s\n"
+                 "and is set to default or user settings:\n"
+                 "  %s\n"),
+               cs_restart_get_name(cs_lag_stat_restart),
+               "Steady boundary statistics statistics time (tstatp)");
         }
-        if (ierror != 0)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-             "@ %s\n"
-             "@\n"
-             "@    Le mot cle est initialise avec sa valeur par defaut\n"
-             "@      ou celle donnee dans le sous-programme cs_user_lagr_model :\n"
-             "@        %s  = %14.5E\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             "temps_stats_frontieres_stationnaires",
-             "TSTATP",
-             cs_glob_lagr_boundary_interactions->tstatp);
 
         /*  --> Verif de coherence de l'avancement du calcul avec les   */
         /*       indicateurs de calcul de la suite actuelle : */
@@ -802,199 +537,59 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         }
 
-        /* --> Stats supplementaires utilisateurs   */
-        {
-          cs_int_t *tabvar;
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
-          char rubriq[] = "nombre_stats_frontieres_utilisateur";
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-          musbor  = tabvar[0];
-          BFT_FREE(tabvar);
-        }
-        if (cs_glob_lagr_boundary_interactions->nusbor < musbor)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-             "@\n"
-             "@    L'indicateur du  nombre de statistiques aux frontieres\n"
-             "@      supplementaires utilisateur est modifie,\n"
-             "@      ou n'a pas pu etre relu.\n"
-             "@\n"
-             "@              NUSBOR\n"
-             "@    AMONT : %d      ACTUEL : %d\n"
-             "@\n"
-             "@    Si ACTUEL > AMONT, on initialise les %d 1eres\n"
-             "@      statistiques supplementaires actuelles avec celles\n"
-             "@      du fichier suite, les autres sont initialisees a zero.\n"
-             "@\n"
-             "@    Si ACTUEL < AMONT, on initialise les %d 1eres\n"
-             "@      statistiques supplementaires actuelles avec les 1eres\n"
-             "@      du fichier suite, le reste des statistiques du fichier\n"
-             "@      suite sont perdues.\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             musbor,
-             cs_glob_lagr_boundary_interactions->nusbor,
-             cs_glob_lagr_boundary_interactions->nusbor,
-             cs_glob_lagr_boundary_interactions->nusbor);
-
-        /*  --> Read boundary stats. No error treatment, we assume changes are    */
-        /*       due to physical model changes. */
-        itysup  = 3;
-        nbval   = 1;
-
-        for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->n_boundary_stats; ivar++) {
-
-          char rubriq[32];
-          sprintf(rubriq, "stat_bord_%s",
-                  cs_glob_lagr_boundary_interactions->nombrd[ivar]);
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup,
-                                           nbval, CS_TYPE_cs_real_t,
-                                           &bound_stat[nfabor * ivar]);
-
-        }
-
       }
 
     }
 
-    if (cs_glob_lagr_time_scheme->iilagr == 2) {
+    if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
-      itysup  = 0;
-      nbval   = 1;
       {
-        cs_int_t *tabvar;
-
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
+        cs_int_t tabvar[1];
 
         char rubriq[] = "iteration_debut_termes_sources_stationnaires";
-        ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                         CS_TYPE_cs_int_t, tabvar);
-        mstits  = tabvar[0];
-        BFT_FREE(tabvar);
+        ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
+                                         CS_MESH_LOCATION_NONE,
+                                         1, CS_TYPE_cs_int_t, tabvar);
+        mstits = tabvar[0];
       }
-      if (ierror != 0)
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"
-           "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-           "@    =========     LAGRANGIEN %s\n"
-           "@      TYPE DE FICHIER INCORRECT\n"
-           "@\n"
-           "@    Ce fichier ne semble pas etre un fichier\n"
-           "@      suite Lagrangien.\n"
-           "@\n"
-           "@    Le calcul ne peut etre execute.\n"
-           "@\n"
-           "@    Verifier que le fichier suite utilise correspond bien\n"
-           "@        a un fichier suite Lagrangien.\n"
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n",
-           ficsui);
-      // "iteration_debut_termes_sources_stationnaires", "NSTITS", mstits);
-
-
-      /*  ---> S'il y a une erreur, on suppose que c'est parce que le fichier   */
-      /*         suite ne contient pas d'infos sur les TS de couplage retour.   */
-      /*         Dans ce cas, si on est en instationnaire on se dit que c'est   */
-      /*         pas grave, on saute l'etape et on continue. Par contre si on   */
-      /*         est dans une configuration de calcul de stats aux frontieres   */
-      /*         en stationnaire on stoppe.  */
-
       if (ierror != 0) {
 
-        if (   cs_glob_lagr_time_scheme->isttio == 0
-            || (   cs_glob_lagr_time_scheme->isttio == 1
-                && cs_glob_time_step->nt_cur < cs_glob_lagr_source_terms->nstits))
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      LES TERMES SOURCES DE COUPLAGE RETOUR DU CALCUL AMONT\n"
-             "@        NE PEUVENT PAS ETRE RELUES OU SONT ABSENTS\n"
-             "@        DU FICHIER SUITE\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des termes sources\n"
-             "@      de couplage retour sont positionnes en mode\n"
-             "@      instationnaire ou en debut de calcul stationnaire :\n"
-             "@\n"
-             "@          ISTTIO    NSTITS    Iter de redemarrage\n"
-             "@      %10d%10d%10d\n"
-             "@\n"
-             "@    Ils seront initialisees par des valeurs par defaut.\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
+        if (cs_glob_lagr_time_scheme->isttio == 0)
+          cs_parameters_error
+            (CS_WARNING,
+             _("in Lagrangian module"),
+             _("Source terms from the previous computation are not available.\n\n"
+               "Start of time averaging of statistics for return coupling\n"
+               "is reset to current time step:\n"
+               " isttio = %d\n"
+               " idstnt = %d\n"
+               " restart iteration = %d\n"),
              cs_glob_lagr_time_scheme->isttio,
              cs_glob_lagr_source_terms->nstits,
              cs_glob_time_step->nt_cur+1);
-
-        else
-          bft_error
-            (__FILE__, __LINE__, 0,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      LES TERMES SOURCES DE COUPLAGE RETOUR DU CALCUL AMONT\n"
-             "@        NE PEUVENT PAS ETRE RELUES OU SONT ABSENTS\n"
-             "@        DU FICHIER SUITE\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des termes sources\n"
-             "@      de couplage retour sont positionnes\n"
-             "@      en mode stationnaire :\n"
-             "@\n"
-             "@          ISTTIO    NSTITS    Iter de redemarrage\n"
-             "@      %10d%10d%10d\n"
-             "@\n"
-             "@    Le calcul ne peut pas etre execute.\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             cs_glob_lagr_time_scheme->isttio,
-             cs_glob_lagr_source_terms->nstits,
-             cs_glob_time_step->nt_cur+1);
+        else if (    cs_glob_lagr_time_scheme->isttio == 1
+                 && (   cs_glob_time_step->nt_cur
+                     >= cs_glob_lagr_source_terms->nstits))
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in Lagrangian module"),
+             _("Source terms from the previous computation are\n"
+               "not available or usable."));
 
       }
-      /* --> A partir d'ici on considere que le fichier suite contient     */
-      /*       des stats volumiques     */
+
+      /* From here on we assume the restart contains volum statistics */
       else {
 
         {
-          cs_int_t *tabvar;
-
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
+          cs_int_t tabvar[1];
 
           char rubriq[] = "modele_turbulence_termes_sources";
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                           CS_TYPE_cs_int_t, tabvar);
+          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
+                                           CS_MESH_LOCATION_NONE,
+                                           1, CS_TYPE_cs_int_t, tabvar);
           jturb   = tabvar[0];
           jtytur  = jturb / 10;
-          BFT_FREE(tabvar);
         }
 
         if (   jsttio != cs_glob_lagr_time_scheme->isttio
@@ -1049,17 +644,15 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         }
 
-        /*  --> Lecture de l'avancement du couplage retour    */
+        /* Read of return coupling progress */
         {
-          cs_int_t *tabvar;
-
-          BFT_MALLOC(tabvar, nbval, cs_int_t);
+          cs_int_t tabvar[1];
 
           char rubriq[] = "nombre_iterations_termes_sources_stationnaires";
-          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                           CS_TYPE_cs_int_t, tabvar);
+          ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
+                                           CS_MESH_LOCATION_NONE,
+                                           1, CS_TYPE_cs_int_t, tabvar);
           cs_glob_lagr_source_terms->npts = tabvar[0];
-          BFT_FREE(tabvar);
         }
         if (ierror != 0)
           cs_log_printf
@@ -1230,15 +823,14 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         /* Old style return coupling terms */
 
-        itysup  = 1;
-        nbval   = 1;
         for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->ntersl; ivar++) {
 
           cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ivar*n_cells_ext;
 
           cs_restart_read_section(cs_lag_stat_restart,
-                                  nomtsl[ivar+1], itysup, nbval,
-                                  CS_TYPE_cs_real_t, st_val);
+                                  nomtsl[ivar+1],
+                                  CS_MESH_LOCATION_CELLS,
+                                  1, CS_TYPE_cs_real_t, st_val);
         }
 
         /* New style return coupling terms */
@@ -1291,8 +883,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   }
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n-------------------------------------------------------------\n");
+  cs_log_separator(CS_LOG_DEFAULT);
 
   BFT_FREE(nomtsl);
 }
@@ -1307,8 +898,8 @@ void
 cs_lagr_restart_read_p(void)
 {
   /* counters */
-  cs_lnum_t ierror, itysup, nbval, iok;
-  iok = 0;
+  cs_lnum_t ierror = 0, iok = 0;
+
   /* read variables */
   cs_lnum_t mvls, jphyla, jtpvar, jdpvar, jmpvar;
 
@@ -1317,11 +908,9 @@ cs_lagr_restart_read_p(void)
   if (cs_glob_lagr_time_scheme->isuila == 0)
     return;
 
-  /* ====================================================================   */
-  /* 1. LECTURE DU FICHIER SUITE : VARIABLES LIEES AUX PARTICULES */
-  /* ====================================================================   */
+  /* Read restart file: particle data
+     ================================ */
 
-  /*  ---> Ouverture */
   cs_log_printf(CS_LOG_DEFAULT,
                 _("   ** INFORMATIONS SUR LE CALCUL LAGRANGIEN\n"
                   "      -------------------------------------\n"
@@ -1336,20 +925,15 @@ cs_lagr_restart_read_p(void)
   cs_log_printf(CS_LOG_DEFAULT,
                 "      Debut de la lecture\n");
 
-  /*  ---> Type de fichier suite    */
-  /*        Pourrait porter le numero de version si besoin.  */
+  /* Restart file type; version number not used as yet. */
 
-  itysup = 0;
-  nbval  = 1;
   {
-    cs_int_t *tabvar;
-
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
+    cs_int_t tabvar[1];
 
     char rubriq[] = "version_fichier_suite_Lagrangien_variables";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, tabvar);
   }
 
   if (ierror != 0)
@@ -1374,239 +958,94 @@ cs_lagr_restart_read_p(void)
        "@\n",
        ficsui);
 
-  /*     Dimensions des supports    */
+  /* Mesh location dimensions */
   bool ncelok, nfaiok, nfabok, nsomok;
   cs_restart_check_base_location(cs_lag_stat_restart, &ncelok, &nfaiok,
                                  &nfabok, &nsomok);
 
-  if (! ncelok) {
+    if (! ncelok)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in Lagrangian module"),
+         _("The number of cells in restart file: %s\n"
+           "is different from that of the current mesh.\n"),
+         cs_restart_get_name(cs_lag_stat_restart));
 
-    cs_log_printf
-      (CS_LOG_DEFAULT,
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n"
-       "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-       "@    =========     LAGRANGIEN %s\n"
-       "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-       "@\n"
-       "@    Le nombre de cellules a ete modifie\n"
-       "@\n"
-       "@    Le calcul ne peut etre execute.\n"
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n",
-       ficsui);
-    iok++;
+    if (! nfaiok)
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The number of interior faces in restart file: %s\n"
+           "is different from that of the current mesh.\n\n"
+           "interior face data will be reinitialized.\n"),
+         cs_restart_get_name(cs_lag_stat_restart));
 
-  }
+    if (! nfabok)
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The number of boundary faces in restart file: %s\n"
+           "is different from that of the current mesh.\n\n"
+           "boundary face data will be reinitialized.\n"),
+         cs_restart_get_name(cs_lag_stat_restart));
 
-  if (!nfaiok)
-    cs_log_printf
-      (CS_LOG_DEFAULT,
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n"
-       "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-       "@    =========     LAGRANGIEN %s\n"
-       "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-       "@\n"
-       "@    Le nombre de faces %s a ete modifie.\n"
-       "@\n"
-       "@    Le calcul peut etre execute mais les donnees\n"
-       "@      sur les faces %s ne seront pas relues\n"
-       "@      dans le fichier suite.\n"
-       "@    Elles seront initialisees par des valeurs par defaut.\n"
-       "@\n"
-       "@    Le calcul se poursuit...\n"
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n",
-       ficsui,
-       "internes",
-       "internes");
-
-  if (!nfabok)
-    cs_log_printf
-      (CS_LOG_DEFAULT,
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n"
-       "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-       "@    =========     LAGRANGIEN %s\n"
-       "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-       "@\n"
-       "@    Le nombre de faces %s a ete modifie.\n"
-       "@\n"
-       "@    Le calcul peut etre execute mais les donnees\n"
-       "@      sur les faces %s ne seront pas relues\n"
-       "@      dans le fichier suite.\n"
-       "@    Elles seront initialisees par des valeurs par defaut.\n"
-       "@\n"
-       "@    Le calcul se poursuit...\n"
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n",
-       ficsui,
-       "de bord",
-       "de bord");
-
-  itysup = 0;
-  nbval  = 1;
-
-  /*     Physique associee aux particules     */
+  /* Physical model associated to particles */
   {
-    cs_int_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    char rubriq[] = "indicateur_physique_particules";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
-    jphyla = tabvar[0];
-    BFT_FREE(tabvar);
-    if (ierror != 0) {
-
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s\n"
-         "@\n"
-         "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-         "@ %s\n"
-         "@\n"
-         "@    Le calcul ne peut pas etre execute.\n"
-         "@\n"
-         "@    Verifier que ce fichier suite\n"
-         "@        correspond bien a un fichier suite Lagrangien,\n"
-         "@        et qu'il n'a pas ete endommage.\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
-         rubriq);
-      iok++;
-
-    }
-
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "indicateur_physique_particules",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, &jphyla);
+    if (ierror != 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in Lagrangian module"),
+         _("The following information is not available in restart file: %s\n"
+           "so the computation cannot be run:\n"
+           "  %s\n"),
+         cs_restart_get_name(cs_lag_stat_restart),
+         "Pbysical model flag");
   }
-
   {
-    cs_int_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    char rubriq[] = "indicateur_temperature_particules";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
-    jtpvar = tabvar[0];
-    BFT_FREE(tabvar);
-
-    if (ierror != 0) {
-
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s\n"
-         "@\n"
-         "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-         "@ %s\n"
-         "@\n"
-         "@    Le calcul ne peut pas etre execute.\n"
-         "@\n"
-         "@    Verifier que ce fichier suite\n"
-         "@        correspond bien a un fichier suite Lagrangien,\n"
-         "@        et qu'il n'a pas ete endommage.\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
-         rubriq);
-      iok++;
-
-    }
-
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "indicateur_temperature_particules",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, &jtpvar);
+    if (ierror != 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in Lagrangian module"),
+         _("The following information is not available in restart file: %s\n"
+           "so the computation cannot be run:\n"
+           "  %s\n"),
+         cs_restart_get_name(cs_lag_stat_restart),
+         "Particle temperature flag");
   }
 
-  /*     Arret  */
+  cs_parameters_error_barrier();
+
+  /* Stop */
   if (iok != 0)
     cs_exit(1);
 
   {
-    cs_int_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    char rubriq[] = "indicateur_diametre_particules";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
-    jdpvar      = tabvar[0];
-    BFT_FREE(tabvar);
-
-    if (ierror != 0) {
-
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s\n"
-         "@\n"
-         "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-         "@ %s\n"
-         "@\n"
-         "@    Le calcul se poursuit...\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
-         rubriq);
-      jdpvar    = cs_glob_lagr_specific_physics->idpvar;
-
-    }
-
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "indicateur_diametre_particules",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, &jdpvar);
+    if (ierror != 0)
+      jdpvar = cs_glob_lagr_specific_physics->idpvar;
   }
 
   {
-    cs_int_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    char rubriq[] = "indicateur_masse_particules";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
-    jmpvar = tabvar[0];
-    BFT_FREE(tabvar);
-
-    if (ierror != 0) {
-
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s\n"
-         "@\n"
-         "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-         "@ %s\n"
-         "@\n"
-         "@    Le calcul se poursuit...\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
-         rubriq);
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "indicateur_masse_particules",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, &jmpvar);
+    if (ierror != 0)
       jmpvar = cs_glob_lagr_specific_physics->impvar;
-
-    }
-
   }
 
-  /* ---> On previent si des parametres sont differents */
+  /* Warn if some parameters are different */
 
   if (   jphyla != cs_glob_lagr_model->physical_model
       || jtpvar != cs_glob_lagr_specific_physics->itpvar
@@ -1643,7 +1082,7 @@ cs_lagr_restart_read_p(void)
        cs_glob_lagr_specific_physics->idpvar,
        cs_glob_lagr_specific_physics->impvar);
 
-  /* ---> Verification de la compatibilite si changement de thermique  */
+  /* Check compatibility if thermal model change */
 
   if (jphyla != 0 && cs_glob_lagr_model->physical_model == 0)
     cs_log_printf
@@ -1797,218 +1236,99 @@ cs_lagr_restart_read_p(void)
        cs_glob_lagr_stat_options->nstist);
 
   {
-    cs_real_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_real_t);
-
-    char rubriq[] = "temps_physique_Lagrangien";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_real_t, tabvar);
+    cs_real_t tabvar[1];
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "temps_physique_Lagrangien",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_real_t, tabvar);
     cs_glob_lagr_time_step->ttclag = tabvar[0];
-    BFT_FREE(tabvar);
 
     if (ierror != 0)
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s\n"
-         "@\n"
-         "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-         "@ %s\n"
-         "@\n"
-         "@    Le mot cle est initialise avec sa valeur par defaut\n"
-         "@      ou celle donnee dans le sous-programme cs_user_lagr_model :\n"
-         "@        %s  = %14.5E\n"
-         "@\n"
-         "@    Le calcul se poursuit...\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
-         "temps_physique_Lagrangien",
-         "TTCLAG",
-         cs_glob_lagr_time_step->ttclag);
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The following information is not available in restart file: %s\n"
+           "and is set to default or user settings:\n"
+           "  %s\n"),
+         cs_restart_get_name(cs_lag_stat_restart),
+         "Physical lagrangiant time");
   }
 
   {
-    cs_int_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    char rubriq[] = "nombre_total_particules";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
+    cs_lnum_t tabvar[1];
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "nombre_total_particules",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, tabvar);
     pc->n_g_cumulative_total = tabvar[0];
-    BFT_FREE(tabvar);
-
     if (ierror != 0)
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s\n"
-         "@\n"
-         "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-         "@ %s\n"
-         "@\n"
-         "@    Le mot cle est initialise avec sa valeur par defaut\n"
-         "@      ou celle donnee dans le sous-programme cs_user_lagr_model :\n"
-         "@        %s  = %llu\n"
-         "@\n"
-         "@    Le calcul se poursuit...\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
-         "nombre_total_particules",
-         "NBPTOT",
-         (unsigned long long)(pc->n_g_cumulative_total));
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The following information is not available in restart file: %s\n"
+           "and is set to default or user settings:\n"
+           "  %s\n"),
+         cs_restart_get_name(cs_lag_stat_restart),
+         "Cumulative number of particles");
   }
 
   {
-    cs_int_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    char rubriq[] = "nombre_particules_perdues";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
+    cs_lnum_t tabvar[1];
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "nombre_particules_perdues",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, tabvar);
     pc->n_g_cumulative_failed = tabvar[0];
-    BFT_FREE(tabvar);
-
     if (ierror != 0)
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s\n"
-         "@\n"
-         "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-         "@ %s\n"
-         "@\n"
-         "@    Le mot cle est initialise avec sa valeur par defaut\n"
-         "@      ou celle donnee dans le sous-programme cs_user_lagr_model :\n"
-         "@        %s  = %llu\n"
-         "@\n"
-         "@    Le calcul se poursuit...\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
-         "nombre_particules_perdues",
-         "NBPERT",
-         (unsigned long long)(pc->n_g_cumulative_failed));
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The following information is not available in restart file: %s\n"
+           "and is set to default or user settings:\n"
+           "  %s\n"),
+         cs_restart_get_name(cs_lag_stat_restart),
+         "Cumulative number of lost particles");
   }
 
   {
-    cs_int_t *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-    char rubriq[] = "nombre_variables_utilisateur";
-    ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq, itysup, nbval,
-                                     CS_TYPE_cs_int_t, tabvar);
-    mvls   = tabvar[0];
-    BFT_FREE(tabvar);
-
-    if (ierror != 0) {
-
+    cs_int_t tabvar[1];
+    ierror = cs_restart_read_section(cs_lag_stat_restart,
+                                     "nombre_variables_utilisateur",
+                                     CS_MESH_LOCATION_NONE,
+                                     1, CS_TYPE_cs_int_t, tabvar);
+    mvls = tabvar[0];
+    if (ierror != 0)
       mvls = 0;
 
-      if (cs_glob_lagr_model->n_user_variables > 0)
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"
-           "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-           "@    =========     LAGRANGIEN %s\n"
-           "@\n"
-           "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-           "@ %s\n"
-           "@\n"
-           "@    Le calcul se poursuit...\n"
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n",
-           ficsui, "nombre_variables_utilisateur");
-    }
-
     if (cs_glob_lagr_model->n_user_variables < mvls) {
-
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s'\n"
-         "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-         "@\n"
-         "@    L'indicateur du  nombre de variables supplementaires\n"
-         "@      utilisateur est modifie, ou n'a pas pu etre relu.\n"
-         "@\n"
-         "@              NVLS\n"
-         "@    AMONT : %d      ACTUEL : %d\n"
-         "@\n"
-         "@    Si ACTUEL > AMONT, on initialise les %d 1eres\n"
-         "@      variables supplementaires actuelles avec celles\n"
-         "@      du fichier suite, les autres sont initialisees a zero.\n"
-         "@\n"
-         "@    Si ACTUEL < AMONT, on initialise les %d 1eres\n"
-         "@      variables supplementaires actuelles avec les 1eres\n"
-         "@      du fichier suite, le reste des variables du fichier\n"
-         "@      suite sont perdues.\n"
-         "@\n"
-         "@    Le calcul se poursuit...\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The number of additional user variables in restart file: %s\n"
+           "is modified:\n"
+           "  previous: %d\n"
+           "  current:  %d\n"
+           "Excess previous user variables are removed.\n"),
+         cs_restart_get_name(cs_lag_stat_restart),
          mvls,
-         cs_glob_lagr_model->n_user_variables,
-         cs_glob_lagr_model->n_user_variables,
          cs_glob_lagr_model->n_user_variables);
       mvls = cs_glob_lagr_model->n_user_variables;
-
     }
     else if (cs_glob_lagr_model->n_user_variables > mvls)
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n"
-         "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-         "@    =========     LAGRANGIEN %s'\n"
-         "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-         "@\n"
-         "@    L'indicateur du  nombre de variables supplementaires\n"
-         "@      utilisateur est modifie, ou n'a pas pu etre relu.\n"
-         "@\n"
-         "@              NVLS\n"
-         "@    AMONT : %d      ACTUEL : %d\n"
-         "@\n"
-         "@    Si ACTUEL > AMONT, on initialise les %d 1eres\n"
-         "@      variables supplementaires actuelles avec celles\n"
-         "@      du fichier suite, les autres sont initialisees a zero.\n"
-         "@\n"
-         "@    Si ACTUEL < AMONT, on initialise les %d 1eres\n"
-         "@      variables supplementaires actuelles avec les 1eres\n"
-         "@      du fichier suite, le reste des variables du fichier\n"
-         "@      suite sont perdues.\n"
-         "@\n"
-         "@    Le calcul se poursuit...\n"
-         "@\n"
-         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-         "@\n",
-         ficsui,
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The number of additional user variables in restart file: %s\n"
+           "is modified:\n"
+           "  previous: %d\n"
+           "  current:  %d\n"
+           "New user variables are initialized with zero.\n"),
+         cs_restart_get_name(cs_lag_stat_restart),
          mvls,
-         cs_glob_lagr_model->n_user_variables,
-         cs_glob_lagr_model->n_user_variables,
          cs_glob_lagr_model->n_user_variables);
   }
+
+  cs_parameters_error_barrier();
 
   /* Particle data */
   cs_lagr_restart_read_particle_data(cs_lag_stat_restart);
@@ -2026,7 +1346,8 @@ cs_lagr_restart_read_p(void)
 }
 
 /*--------------------------------------------------------------------*/
-/*! \brief Output Lagrangian restart files
+/*!
+ * \brief Output Lagrangian restart files
  */
 /*--------------------------------------------------------------------*/
 
@@ -2055,20 +1376,15 @@ cs_restart_lagrangian_checkpoint_write(void)
                 _("   ** Writing the Lagrangian restart file\n"
                   "-----------------------------------\n"));
 
-  /* Entete et Infos sur le calcul ou on saute si erreur
-   *   On inclut une rubrique destinee a distinguer ce fichier
-   *     d'un autre fichier suite
-   *   Pour le moment, IVERS n'est pas utilise */
-
-  cs_lnum_t itysup  = 0;
-  cs_lnum_t nbval  = 1;
+  /* Header and metadata;
+     for now, ivers is not used */
 
   {
     int ivers = 32000;
-
     cs_restart_write_section(cs_lag_stat_restart,
                              "version_fichier_suite_Lagrangien_variables",
-                             itysup, 1, CS_TYPE_cs_int_t, &ivers);
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, &ivers);
   }
 
   {
@@ -2076,92 +1392,65 @@ cs_restart_lagrangian_checkpoint_write(void)
 
     cs_restart_write_section(cs_lag_stat_restart,
                              "temps_physique_Lagrangien",
-                             itysup, 1, CS_TYPE_cs_real_t, &val);
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_real_t, &val);
   }
 
   /* Infos sur le suivi du calcul   */
   {
-    cs_int_t   *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    tabvar[0] = cs_glob_lagr_particle_counter->n_g_cumulative_total;
-    char rubriq[] = "nombre_total_particules";
-
-    cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                             itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    cs_lnum_t tabvar[1] = {cs_glob_lagr_particle_counter->n_g_cumulative_total};
+    cs_restart_write_section(cs_lag_stat_restart,
+                             "nombre_total_particules",
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, tabvar);
   }
 
   {
-    cs_int_t   *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    tabvar[0] = cs_glob_lagr_particle_counter->n_g_cumulative_failed;
-    char rubriq[] = "nombre_particules_perdues";
-
-    cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                             itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    cs_lnum_t tabvar[1] = {cs_glob_lagr_particle_counter->n_g_cumulative_failed};
+    cs_restart_write_section(cs_lag_stat_restart,
+                             "nombre_particules_perdues",
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, tabvar);
   }
 
   {
-    cs_int_t   *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    tabvar[0] = cs_glob_lagr_model->physical_model;
-    char rubriq[] = "indicateur_physique_particules";
-
-    cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                             itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_model->physical_model};
+    cs_restart_write_section(cs_lag_stat_restart,
+                             "indicateur_physique_particules",
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, tabvar);
   }
 
   {
-    cs_int_t   *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    tabvar[0] = cs_glob_lagr_specific_physics->itpvar;
-    char rubriq[] = "indicateur_temperature_particules";
-
-    cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                             itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->itpvar};
+    cs_restart_write_section(cs_lag_stat_restart,
+                             "indicateur_temperature_particules",
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, tabvar);
   }
 
   {
-    cs_int_t   *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    tabvar[0] = cs_glob_lagr_specific_physics->idpvar;
-    char rubriq[]= "indicateur_diametre_particules";
-
-    cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                             itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->idpvar};
+    cs_restart_write_section(cs_lag_stat_restart,
+                             "indicateur_diametre_particules",
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, tabvar);
   }
 
   {
-    cs_int_t   *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    tabvar[0] = cs_glob_lagr_specific_physics->impvar;
-    char rubriq[] = "indicateur_masse_particules";
-
-    cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                             itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_specific_physics->impvar};
+    cs_restart_write_section(cs_lag_stat_restart,
+                             "indicateur_masse_particules",
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, tabvar);
   }
 
   {
-    cs_int_t   *tabvar;
-    BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-    tabvar[0] = cs_glob_lagr_model->n_user_variables;
-    char rubriq[] = "nombre_variables_utilisateur";
-
-    cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                             itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-    BFT_FREE(tabvar);
+    cs_lnum_t  tabvar[1] = {cs_glob_lagr_model->n_user_variables};
+    cs_restart_write_section(cs_lag_stat_restart,
+                             "nombre_variables_utilisateur",
+                             CS_MESH_LOCATION_NONE,
+                             1, CS_TYPE_cs_int_t, tabvar);
   }
 
   cs_restart_write_fields(cs_lag_stat_restart, CS_RESTART_LAGR);
@@ -2181,15 +1470,13 @@ cs_restart_lagrangian_checkpoint_write(void)
                 _("    End writing of restart file\n"
                   "      on particle-based variables\n"));
 
-  /*====================================================================
-   * 2. Writing of restart stats files and coupling sources terms
-   *====================================================================*/
+  /* Writing of restart stats files and coupling source terms
+   * ======================================================== */
 
   if (   cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt
-      || cs_glob_lagr_time_scheme->iilagr == 2
+      || cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       || cs_glob_lagr_dim->n_boundary_stats > 0) {
 
-    /* ---> Ouverture (et on saute si erreur)   */
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   ** INFORMATION ON LAGRANGIAN CALCULATION\n"
                     "-------------------------------------\n"
@@ -2197,157 +1484,106 @@ cs_restart_lagrangian_checkpoint_write(void)
                     "    and boundary statistics and for\n"
                     "    return coupling source terms\n"));
 
-    /* Open restart file    */
+    /* Open restart file */
     char const *ficsuist = "lagrangian_stats";
     cs_lag_stat_restart = cs_restart_create(ficsuist, NULL, CS_RESTART_MODE_WRITE);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("      Start writing statistics and ST\n"));
 
-    /* Entete et Infos sur le calcul ou on saute si erreur
-     *   On inclut une rubrique destinee a distinguer ce fichier
-     *     d'un autre fichier suite
-     *   Pour le moment, IVERS n'est pas utilise*/
+    /* Specific header for this type of restart file usage; ivers not used yet */
 
-    itysup = 0;
-    nbval = 1;
     {
-      //cs_lnum_t ivers = 111;
-      cs_lnum_t ivers = 112;
-      cs_int_t  *tabvar;
-      BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-      char rubriq[] = "version_fichier_suite_Lagrangien_statistiques";
-      tabvar[0] = ivers;
-
-      cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                               itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-      BFT_FREE(tabvar);
+      cs_lnum_t tabvar[1] = {112};
+      cs_restart_write_section(cs_lag_stat_restart,
+                               "version_fichier_suite_Lagrangien_statistiques",
+                               CS_MESH_LOCATION_NONE,
+                               1, CS_TYPE_cs_int_t, tabvar);
     }
 
-
-    /* ---> On ecrit ISTTIO c'est utile dans tous les cas */
+    /* write isttio which can be useful in all cases */
     {
-      cs_int_t *tabvar;
-      BFT_MALLOC(tabvar, nbval, cs_int_t);
-      char rubriq[] = "indicateur_ecoulement_stationnaire";
-      tabvar[0] = cs_glob_lagr_time_scheme->isttio;
-
-      cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                               itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-      BFT_FREE(tabvar);
+      cs_lnum_t  tabvar[1] = {cs_glob_lagr_time_scheme->isttio};
+      cs_restart_write_section(cs_lag_stat_restart,
+                               "indicateur_ecoulement_stationnaire",
+                               CS_MESH_LOCATION_NONE,
+                               1, CS_TYPE_cs_int_t, tabvar);
     }
 
-    /* --> En premier, on ecrit les statistiques volumiques    */
+    /* write volume statistics first */
     if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt) {
 
       {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-        char rubriq[] = "iteration_debut_statistiques";
-        tabvar[0] = cs_glob_lagr_stat_options->idstnt;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_lnum_t  tabvar[1] = {cs_glob_lagr_stat_options->idstnt};
+        cs_restart_write_section(cs_lag_stat_restart,
+                                 "iteration_debut_statistiques",
+                                 CS_MESH_LOCATION_NONE,
+                                 1, CS_TYPE_cs_int_t, tabvar);
       }
 
       {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-        char rubriq[] = "iteration_debut_statistiques_stationnaires";
-        tabvar[0] = cs_glob_lagr_stat_options->nstist;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_lnum_t  tabvar[1] = {cs_glob_lagr_stat_options->nstist};
+        cs_restart_write_section(cs_lag_stat_restart,
+                                 "iteration_debut_statistiques_stationnaires",
+                                 CS_MESH_LOCATION_NONE,
+                                 1, CS_TYPE_cs_int_t, tabvar);
       }
 
       {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-        char rubriq[] = "classe_statistique_particules";
-        tabvar[0] = cs_glob_lagr_model->n_stat_classes;
+        cs_lnum_t  tabvar[1] = {cs_glob_lagr_model->n_stat_classes};
 
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_restart_write_section(cs_lag_stat_restart,
+                                 "classe_statistique_particules",
+                                 CS_MESH_LOCATION_NONE,
+                                 1, CS_TYPE_cs_int_t, tabvar);
       }
 
-      /*  Statistiques volumiques  */
+      /* volume statistics */
       cs_lagr_stat_restart_write(cs_lag_stat_restart);
 
     }
 
-    /* --> At the second step, treat boundary stats */
+    /* At the second step, treat boundary stats */
     if (cs_glob_lagr_dim->n_boundary_stats > 0) {
 
-      itysup = 0;
-      nbval = 1;
-
       {
-        cs_int_t   *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-        char rubriq[] = "iteration_debut_stats_frontieres_stationnaires";
-        tabvar[0] = cs_glob_lagr_stat_options->nstist;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_lnum_t  tabvar[1] = {cs_glob_lagr_stat_options->nstist};
+        cs_restart_write_section
+          (cs_lag_stat_restart,
+           "iteration_debut_stats_frontieres_stationnaires",
+           CS_MESH_LOCATION_NONE,
+           1, CS_TYPE_cs_int_t, tabvar);
       }
 
       {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
+        cs_lnum_t  tabvar[1] = {cs_glob_lagr_boundary_interactions->npstft};
 
-        char rubriq[] = "nombre_iterations_stats_frontieres";
-        tabvar[0] = cs_glob_lagr_boundary_interactions->npstft;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_restart_write_section(cs_lag_stat_restart,
+                                 "nombre_iterations_stats_frontieres",
+                                 CS_MESH_LOCATION_NONE,
+                                 1, CS_TYPE_cs_int_t, tabvar);
       }
 
       {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
+        cs_lnum_t  tabvar[1] = {cs_glob_lagr_boundary_interactions->npstf};
 
-        char rubriq[] = "nombre_iterations_stats_frontieres_stationnaires";
-        tabvar[0] = cs_glob_lagr_boundary_interactions->npstf;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_restart_write_section
+          (cs_lag_stat_restart,
+           "nombre_iterations_stats_frontieres_stationnaires",
+           CS_MESH_LOCATION_NONE,
+           1, CS_TYPE_cs_int_t, tabvar);
       }
 
       {
-        cs_real_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_real_t);
+        cs_real_t tabvar[1] = {cs_glob_lagr_boundary_interactions->tstatp};
 
-        char rubriq[] = "temps_stats_frontieres_stationnaires";
-        tabvar[0] = cs_glob_lagr_boundary_interactions->tstatp;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_real_t, tabvar);
-        BFT_FREE(tabvar);
-      }
-
-      {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-        char rubriq[] = "nombre_stats_frontieres_utilisateur";
-        tabvar[0] = cs_glob_lagr_boundary_interactions->nusbor;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_restart_write_section(cs_lag_stat_restart,
+                                 "temps_stats_frontieres_stationnaires",
+                                 CS_MESH_LOCATION_NONE,
+                                 1, CS_TYPE_cs_real_t, tabvar);
       }
 
       /* Boundary statistics */
-      itysup = 3;
-      nbval = 1;
 
       for (cs_lnum_t ii = 0; ii < cs_glob_lagr_dim->n_boundary_stats; ii++) {
 
@@ -2357,7 +1593,8 @@ cs_restart_lagrangian_checkpoint_write(void)
         cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
 
         cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_real_t,
+                                 CS_MESH_LOCATION_BOUNDARY_FACES,
+                                 1, CS_TYPE_cs_real_t,
                                  (void *)(&bound_stat[ii * nfabor]));
 
       }
@@ -2365,51 +1602,39 @@ cs_restart_lagrangian_checkpoint_write(void)
     }
 
 
-    /* --> Enfin, en cas de couplage retour, on ecrit les termes sources */
+    /* Source terms for return coupling */
 
-    if (cs_glob_lagr_time_scheme->iilagr == 2) {
-
-      itysup = 0;
-      nbval = 1;
+    if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
       {
-        cs_int_t   *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-
         char rubriq[] = "iteration_debut_termes_sources_stationnaires";
-        tabvar[0] = cs_glob_lagr_source_terms->nstits;
+        cs_lnum_t tabvar[1] = {cs_glob_lagr_source_terms->nstits};
 
         cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+                                 CS_MESH_LOCATION_NONE,
+                                 1, CS_TYPE_cs_int_t, tabvar);
       }
 
       {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
+        cs_lnum_t tabvar[1] = {cs_glob_lagr_source_terms->npts};
 
-        char rubriq[] = "nombre_iterations_termes_sources_stationnaires";
-        tabvar[0] = cs_glob_lagr_source_terms->npts;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_restart_write_section
+          (cs_lag_stat_restart,
+           "nombre_iterations_termes_sources_stationnaires",
+           CS_MESH_LOCATION_NONE,
+           1, CS_TYPE_cs_int_t, tabvar);
       }
 
       {
-        cs_int_t *tabvar;
-        BFT_MALLOC(tabvar, nbval, cs_int_t);
-
-        char rubriq[] = "modele_turbulence_termes_sources";
-        tabvar[0] = extra->iturb;
-
-        cs_restart_write_section(cs_lag_stat_restart, rubriq,
-                                 itysup, nbval, CS_TYPE_cs_int_t, tabvar);
-        BFT_FREE(tabvar);
+        cs_lnum_t tabvar[1] = {extra->iturb};
+        cs_restart_write_section(cs_lag_stat_restart,
+                                 "modele_turbulence_termes_sources",
+                                 CS_MESH_LOCATION_NONE,
+                                 1, CS_TYPE_cs_int_t, tabvar);
       }
 
-      /* On donne des labels au different TS pour les noms de rubriques    */
-      /* On donne le meme label au keps, au v2f et au k-omega (meme variable k) */
+      /* ST labels for section names */
+      /* Same label for keps, v2f and k-omega (save variable k) */
       if (cs_glob_lagr_source_terms->ltsdyn == 1) {
         sprintf(nomtsl[cs_glob_lagr_source_terms->itsli], "terme_source_vitesse_implicite");
         if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60) {
@@ -2447,9 +1672,6 @@ cs_restart_lagrangian_checkpoint_write(void)
 
       /* Old style return source terms */
 
-      itysup = 1;
-      nbval = 1;
-
       const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
       for (int ii = 0; ii < cs_glob_lagr_dim->ntersl; ii++) {
@@ -2457,7 +1679,8 @@ cs_restart_lagrangian_checkpoint_write(void)
         cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ii*n_cells_ext;
 
         cs_restart_write_section(cs_lag_stat_restart, nomtsl[ii+1],
-                                 itysup, nbval, CS_TYPE_cs_real_t,
+                                 CS_MESH_LOCATION_CELLS,
+                                 1, CS_TYPE_cs_real_t,
                                  st_val);
 
       }

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -168,6 +168,43 @@ extern void cs_f_majgeo(const cs_int_t     *ncel,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Determine if preprocessing is needed.
+ *
+ * Preprocessing is ignored when a ./restart/mesh_input file is present but
+ * no ./mesh_input file or directory is present. In this case, restart mesh
+ * file is read, and all other preprocessing steps are skipped.
+ *
+ * \return  true if preprocessing is needed, false if only reading is needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_preprocess_mesh_is_needed(void)
+{
+  bool retval = true;
+  int needed = 1;
+
+  if (cs_glob_rank_id < 1) {
+    if (cs_file_isreg("restart/mesh_input")) {
+      const char path[] = "mesh_input";
+      if (! (cs_file_isreg(path) || cs_file_isdir(path)))
+        needed = 0;
+    }
+  }
+
+#if defined(HAVE_MPI)
+  if (cs_glob_rank_id >= 0)
+    MPI_Bcast(&needed,  1, MPI_INT,  0, cs_glob_mpi_comm);
+#endif
+
+  if (! needed)
+    retval = false;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define all mesh preprocessing operations.
  */
 /*----------------------------------------------------------------------------*/
@@ -175,6 +212,9 @@ extern void cs_f_majgeo(const cs_int_t     *ncel,
 void
 cs_preprocess_mesh_define(void)
 {
+  if (cs_preprocess_mesh_is_needed() == false)
+    return;
+
   /* Define meshes to read */
 
   cs_user_mesh_input();
@@ -207,6 +247,8 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   int t_top_id = cs_timer_stats_switch(t_stat_id);
 
+  bool allow_modify = cs_preprocess_mesh_is_needed();
+
   /* Disable all writers until explicitely enabled for this stage */
 
   cs_post_disable_writer(0);
@@ -235,16 +277,20 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_preprocessor_data_read_mesh(cs_glob_mesh,
                                  cs_glob_mesh_builder);
 
-  /* Join meshes / build periodicity links if necessary */
+  if (allow_modify) {
 
-  cs_join_all(true);
+    /* Join meshes / build periodicity links if necessary */
 
-  /* Insert boundaries if necessary */
+    cs_join_all(true);
 
-  cs_gui_mesh_boundary(cs_glob_mesh);
-  cs_user_mesh_boundary(cs_glob_mesh);
+    /* Insert boundaries if necessary */
 
-  cs_internal_coupling_preprocess(cs_glob_mesh);
+    cs_gui_mesh_boundary(cs_glob_mesh);
+    cs_user_mesh_boundary(cs_glob_mesh);
+
+    cs_internal_coupling_preprocess(cs_glob_mesh);
+
+  }
 
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
@@ -252,49 +298,61 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
   cs_mesh_update_auxiliary(cs_glob_mesh);
 
-  /* Possible geometry modification */
+  if (allow_modify) {
 
-  cs_gui_mesh_extrude(cs_glob_mesh);
-  cs_user_mesh_modify(cs_glob_mesh);
+    /* Possible geometry modification */
 
-  /* Discard isolated faces if present */
+    cs_gui_mesh_extrude(cs_glob_mesh);
+    cs_user_mesh_modify(cs_glob_mesh);
 
-  cs_post_add_free_faces();
-  cs_mesh_discard_free_faces(cs_glob_mesh);
+    /* Discard isolated faces if present */
 
-  /* Smoothe mesh if required */
+    cs_post_add_free_faces();
+    cs_mesh_discard_free_faces(cs_glob_mesh);
 
-  cs_gui_mesh_smoothe(cs_glob_mesh);
-  cs_user_mesh_smoothe(cs_glob_mesh);
+    /* Smoothe mesh if required */
 
-  /* Triangulate warped faces if necessary */
+    cs_gui_mesh_smoothe(cs_glob_mesh);
+    cs_user_mesh_smoothe(cs_glob_mesh);
 
-  {
-    double  cwf_threshold = -1.0;
-    int  cwf_post = 0;
+    /* Triangulate warped faces if necessary */
 
-    cs_mesh_warping_get_defaults(&cwf_threshold, &cwf_post);
+    {
+      double  cwf_threshold = -1.0;
+      int  cwf_post = 0;
 
-    if (cwf_threshold >= 0.0) {
+      cs_mesh_warping_get_defaults(&cwf_threshold, &cwf_post);
 
-      t1 = cs_timer_wtime();
-      cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
-      t2 = cs_timer_wtime();
+      if (cwf_threshold >= 0.0) {
 
-      bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
+        t1 = cs_timer_wtime();
+        cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
+        t2 = cs_timer_wtime();
 
+        bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
+
+      }
     }
+
+    /* Now that mesh modification is finished, save mesh if modified */
+
+    cs_gui_mesh_save_if_modified(cs_glob_mesh);
+    cs_user_mesh_save(cs_glob_mesh); /* Disable or force */
+
   }
 
-  /* Now that mesh modification is finished, save mesh if modified */
-
-  cs_user_mesh_save(cs_glob_mesh); /* Disable or force */
-
   bool partition_preprocess = cs_partition_get_preprocess();
+  bool need_save = false;
+  if (   (cs_glob_mesh->modified > 0 && cs_glob_mesh->save_if_modified > 0)
+      || cs_glob_mesh->save_if_modified > 1)
+    need_save = true;
+
   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
     if (partition_preprocess) {
-      if (cs_glob_mesh->modified > 0)
+      if (need_save) {
         cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output");
+        need_save = false;
+      }
       else
         cs_mesh_to_builder(cs_glob_mesh, cs_glob_mesh_builder, true, NULL);
       cs_partition(cs_glob_mesh, cs_glob_mesh_builder, CS_PARTITION_MAIN);
@@ -302,9 +360,10 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
       cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
       cs_mesh_update_auxiliary(cs_glob_mesh);
     }
-    else
-      cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
   }
+
+  if (need_save)
+    cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
 
   /* Destroy the temporary structure used to build the main mesh */
 

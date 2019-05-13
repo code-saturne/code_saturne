@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -48,12 +48,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.HeadLossesForm import Ui_HeadLossesForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.HeadLossesModel import HeadLossesModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.HeadLossesModel import HeadLossesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -79,10 +79,10 @@ class StandardItemModelHeadLosses(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataHeadLossesZones[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataHeadLossesZones[index.row()][index.column()]
+        return None
 
     def flags(self, index):
         if not index.isValid():
@@ -93,7 +93,7 @@ class StandardItemModelHeadLosses(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return to_qvariant(self.headers[section])
-        return to_qvariant()
+        return None
 
 
     def setData(self, index, value, role):

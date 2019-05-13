@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -71,8 +71,6 @@ subroutine ctphyv
 !   ITYPFB et ITRIFB n'ont pas ete renseignes)
 
 
-
-
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
@@ -107,10 +105,6 @@ implicit none
 
 ! Local variables
 
-integer          iel, ifcvsl
-
-double precision, dimension(:), pointer :: cvar_press
-
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -130,7 +124,7 @@ if (icp.lt.0) then
 endif
 
 !===============================================================================
-! 1 - Update properties at cell centres
+! 1 - Update properties at cell centers
 !===============================================================================
 
 call cs_ctwr_phyvar_update(ro0,t0,p0,molmass_rat)

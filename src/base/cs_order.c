@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1252,16 +1252,16 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
           number_list[i*stride + j] = number[(list[i] - 1)*stride + j];
       }
       _order_lnum_s(number_list,
-                     stride,
-                     order,
-                     nb_ent);
+                    stride,
+                    order,
+                    nb_ent);
       BFT_FREE(number_list);
     }
     else
       _order_lnum_s(number,
-                     stride,
-                     order,
-                     nb_ent);
+                    stride,
+                    order,
+                    nb_ent);
 
   }
 
@@ -1270,9 +1270,9 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
   else
 
     cs_order_lnum_allocated(list,
-                              NULL,
-                              order,
-                              nb_ent);
+                            NULL,
+                            order,
+                            nb_ent);
 
 }
 

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -44,10 +44,6 @@ subroutine iniusi
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -87,7 +83,7 @@ implicit none
 ! Local variables
 
 integer          nmodpp
-integer          nscmax, nscusi
+integer          nscmax
 integer          iihmpu, l_size
 double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)
 
@@ -103,6 +99,12 @@ interface
     implicit none
     integer(c_int) :: iihmpr
   end function cs_gui_file_is_loaded
+
+  subroutine cs_gui_porous_model()  &
+       bind(C, name='cs_gui_porous_model')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_porous_model
 
   subroutine cs_gui_radiative_transfer_parameters()  &
        bind(C, name='cs_gui_radiative_transfer_parameters')
@@ -123,60 +125,59 @@ call parameters_read_restart_info
 iihmpr = cs_gui_file_is_loaded()
 
 !===============================================================================
-! 1. INITIALISATION DE PARAMETRES POUR LA PHASE CONTINUE
+! 1. Initialize model settings
 !===============================================================================
 
-!     Turbulence
-!     Chaleur massique variable ou non
+! Flow model selection through GUI
 
-!   - Interface Code_Saturne
-!     ======================
+call cs_gui_physical_model_select
+
+! Flow model selection through user Fortran subroutine
+
+iihmpu = iihmpr
+call usppmo(iihmpu)
+
+! Other models selection through GUI
 
 if (iihmpr.eq.1) then
 
-  call csther()
+  ! ALE parameters
+  call uialin (nalinf, nalimx, epalim)
 
-  call csturb()
+  ! thermal model
+  call csther
 
-  call cscpva()
+  ! turbulence model choice
+  call cs_gui_turb_model
+
+  ! constant or variable specific heat
+  call cscpva
 
 endif
 
-! ALE parameters
-!---------------
-
-! GUI
-
-if (iihmpr.eq.1) then
-  call uialin (iale, nalinf, nalimx, epalim, iortvm)
-endif
-
-! User sub-routines
-! =================
+! Other models selection through user Fortran subroutine
 
 iihmpu = iihmpr
 call usipph(iihmpu, iturb, itherm, iale, ivofmt, icavit)
 
-! Other model parameters, including user-defined scalars
-!-------------------------------------------------------
+! Flow and other models selection through user C function
+call cs_user_model
 
-! GUI
+! Activate CDO for ALE
+if (iale.eq.2) then
+  call cs_ale_activate
+endif
+
+! Other model parameters, including user-defined scalars
 
 if (iihmpr.eq.1) then
   call cs_gui_user_variables
+  call cs_gui_user_arrays
 endif
-
-! User sub-routines
-
-call cs_user_model
 
 !===============================================================================
 ! 2. Initialize parameters for specific physics
 !===============================================================================
-
-! GUI
-
-call cs_gui_physical_model_select(ieos)
 
 if (iihmpr.eq.1) then
   call cfnmtd(ficfpp, len(ficfpp))
@@ -193,27 +194,20 @@ endif
 
 call cs_gui_radiative_transfer_parameters
 
-! User subroutine
-
-! Initialize specific physics modules not available at the moment
-
-! User initialization
-
-iihmpu = iihmpr
-call usppmo(iihmpu)
-
 ! Define fields for variables, check and build iscapp
+! and computes the number of user scalars (nscaus)
 if (icdo.lt.2) then
    call fldvar(nmodpp)
 endif
 
 if (iihmpr.eq.1) then
+  if (iale.ge.1) then
+    call uialvm
+  endif
   call csivis
 endif
 
 nscmax = nscamx
-nscusi = nscaus
-iihmpu = iihmpr
 
 ! ---> Physique particuliere : darcy
 
@@ -267,14 +261,14 @@ endif
 
 if (iihmpr.eq.1) then
 
-!     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
+  ! Restart, read auxiliary file, frozen velocity field
 
   call csisui(ntsuit, ileaux, iccvfg)
 
-!     Pas de temps (seulement NTMABS, DTREF, INPDT0)
+  ! Time step (only ntmabs, dtref)
   call cstime()
 
-!      Options numériques locales
+  ! Local numerical options
 
   call uinum1(cdtvar)
 
@@ -284,7 +278,7 @@ if (iihmpr.eq.1) then
      call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
      !     Options numériques globales
-     relaxp = -999.d0
+     relaxp = -1.d0
      extrap = 0.d0
      call csnum2 (relaxp, extrap, imrgra)
      vcopt%extrag = extrap
@@ -294,19 +288,20 @@ if (iihmpr.eq.1) then
 
   endif
 
-!     Gravite, prop. phys
+  ! Gravity, physical properties
   call csphys(viscv0, visls0, itempk)
 
-!     Scamin, scamax, turbulent flux model
+  ! Turbulence reference values (uref, almax)
+  call cs_gui_turb_ref_values
+
+  ! Scamin, scamax, turbulent flux model
   call cssca2(iturt)
 
-  ! Diffusivites
+  ! Diffusivities
   call cssca3(visls0)
 
-  ! Init of reference values (uref, almax)
-  call cstini()
-
-  call uiipsu(iporos)
+  ! Porosity model
+  call cs_gui_porous_model()
 
   ! Init fan
   call uifans()
@@ -337,7 +332,7 @@ call indsui(isuite)
 if (ippmod(icompf).ge.0) then
   ! ieos has been set above in uippmo with the GUI or in usppmo without the GUI.
   ! The variability of the thermal conductivity
-  ! (scalar_diffusivity_id for itempk) and the volume viscosity (iviscv) has
+  ! (diffusivity_id for itempk) and the volume viscosity (iviscv) has
   ! been set in fldprp.
 
   ! Here call to uscfx2 to get visls0(itempk), viscv0, xmasmr, ivivar and
@@ -358,11 +353,13 @@ endif
 call comcoc(imrgra)
 
 ! Choose the porous model
-call compor(iporos)
+call cs_mesh_quantities_set_porous_model(iporos)
 
 ! --- Varpos
-call varpos
-
+! If CDO mode only, skip this stage
+if (icdo.lt.2) then
+  call varpos
+endif
 ! --- Internal coupling
 call cs_user_internal_coupling
 

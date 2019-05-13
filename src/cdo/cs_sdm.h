@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -286,10 +286,26 @@ cs_sdm_create_transpose(cs_sdm_t  *mat);
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create(int                n_max_blocks_by_row,
-                    int                n_max_blocks_by_col,
-                    const short int    max_row_block_sizes[],
-                    const short int    max_col_block_sizes[]);
+cs_sdm_block_create(int          n_max_blocks_by_row,
+                    int          n_max_blocks_by_col,
+                    const int    max_row_block_sizes[],
+                    const int    max_col_block_sizes[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_sdm_t structure by block when the
+ *          block size is constant and equal to 3
+ *
+ * \param[in]  n_max_blocks_by_row    max number of blocks in a row
+ * \param[in]  n_max_blocks_by_col    max number of blocks in a column
+ *
+ * \return  a new allocated cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sdm_t *
+cs_sdm_block33_create(int      n_max_blocks_by_row,
+                      int      n_max_blocks_by_col);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -390,11 +406,27 @@ cs_sdm_square_init(int         n_rows,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_init(cs_sdm_t          *m,
-                  int                n_row_blocks,
-                  int                n_col_blocks,
-                  const short int    row_block_sizes[],
-                  const short int    col_block_sizes[]);
+cs_sdm_block_init(cs_sdm_t      *m,
+                  int            n_row_blocks,
+                  int            n_col_blocks,
+                  const int      row_block_sizes[],
+                  const int      col_block_sizes[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize the pattern of cs_sdm_t structure defined by 3x3 block
+ *          The matrix should have been allocated before calling this function
+ *
+ * \param[in, out] m
+ * \param[in]      n_row_blocks      number of blocks in a row
+ * \param[in]      n_col_blocks      number of blocks in a column
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block33_init(cs_sdm_t     *m,
+                    int           n_row_blocks,
+                    int           n_col_blocks);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -449,9 +481,9 @@ cs_sdm_block_create_copy(const cs_sdm_t   *mref);
 /*----------------------------------------------------------------------------*/
 
 static inline cs_sdm_t *
-cs_sdm_get_block(const cs_sdm_t    *m,
-                 int                row_block_id,
-                 int                col_block_id)
+cs_sdm_get_block(const cs_sdm_t    *const m,
+                 int                      row_block_id,
+                 int                      col_block_id)
 {
   /* Sanity checks */
   assert(m != NULL);
@@ -459,9 +491,8 @@ cs_sdm_get_block(const cs_sdm_t    *m,
   assert(col_block_id < m->block_desc->n_col_blocks);
   assert(row_block_id < m->block_desc->n_row_blocks);
 
-  const cs_sdm_block_t  *bd = m->block_desc;
-
-  return  bd->blocks + row_block_id*bd->n_col_blocks + col_block_id;
+  return  m->block_desc->blocks
+    + row_block_id*m->block_desc->n_col_blocks + col_block_id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -824,6 +855,18 @@ cs_sdm_add_mult(cs_sdm_t        *mat,
 void
 cs_sdm_square_add_transpose(cs_sdm_t  *mat,
                             cs_sdm_t  *tr);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the given matrix to two times its symmetric part
+ *          mat --> mat + mat_tr = 2*symm(mat)
+ *
+ * \param[in, out] mat   small dense matrix to transform
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_square_2symm(cs_sdm_t   *mat);
 
 /*----------------------------------------------------------------------------*/
 /*!

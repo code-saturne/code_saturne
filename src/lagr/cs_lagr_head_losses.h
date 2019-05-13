@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -51,15 +51,20 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define Head losses to take into account deposit in the flow
+ *  \brief Define Head losses to take into account deposit in the flow
+ *
+ * \param[in]   n_hl_cells  number of cells on which to apply head losses
+ * \param[in]   cell_ids    ids of cells on which to apply head losses
+ * \param[in]   bc_type     boundary face type
+ * \param[out]  cku         head loss coefficients at matchin cells
  */
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(laghlo, LAGHLO)(cs_lnum_t *ncepdc,
-                         cs_lnum_t *icepdc,
-                         cs_lnum_t  itypfb[],
-                         cs_real_t  ckupdc[]);
+cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
+                    const cs_lnum_t  cell_ids[],
+                    const cs_lnum_t  bc_type[],
+                    cs_real_t        cku[][6]);
 
 /*----------------------------------------------------------------------------*/
 

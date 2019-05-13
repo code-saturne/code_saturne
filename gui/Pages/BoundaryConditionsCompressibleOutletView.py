@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,14 +45,14 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsCompressibleOutletForm import \
      Ui_BoundaryConditionsCompressibleOutletForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.Boundary import Boundary
-from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.Boundary import Boundary
+from code_saturne.model.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -81,12 +81,12 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
-        self.mdl = CompressibleModel(self.__case)
+        self.mdl = CompressibleModel(self.case)
 
         # Connections
         self.comboBoxTypeOutlet.activated[str].connect(self.slotOutletType)
@@ -103,7 +103,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         # Apply validators
         self.lineEditPressure.setValidator(validatorP)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -111,7 +111,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         Show the widget
         """
         label = boundary.getLabel()
-        self.__boundary = Boundary('compressible_outlet', label, self.__case)
+        self.__boundary = Boundary('compressible_outlet', label, self.case)
         self.initialize()
 
 

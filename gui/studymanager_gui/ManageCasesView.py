@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,9 +45,8 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
+from code_saturne.Base.QtPage import RegExpValidator, from_qvariant, to_text_string
 from code_saturne.studymanager_gui.ManageCasesForm import Ui_ManageCasesForm
 from code_saturne.studymanager_gui.ManageCasesModel import ManageCasesModel
 
@@ -113,33 +112,33 @@ class TreeItem(object):
     def data(self, column, role):
         if self.item == None:
             if column == 0:
-                return to_qvariant(self.header)
+                return self.header
             else:
-                return to_qvariant()
+                return None
         else:
             if column == 0 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.name)
+                return self.item.name
             elif column == 1 and role == Qt.CheckStateRole:
                 value = self.item.status
                 if value == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
             elif column == 2 and role == Qt.CheckStateRole:
                 value = self.item.compute
                 if value == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
             elif column == 3 and role == Qt.CheckStateRole:
                 value = self.item.post
                 if value == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
             elif column == 4 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.run_id)
-        return to_qvariant()
+                return self.item.run_id
+        return None
 
 
     def parent(self):
@@ -186,7 +185,7 @@ class LabelDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.Acceptable:
             p_value = str(editor.text())
-            model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -225,26 +224,26 @@ class CaseStandardItemModel(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("Case name"))
+                return self.tr("Case name")
             elif index.column() == 1:
-                return to_qvariant(self.tr("Status"))
+                return self.tr("Status")
             elif index.column() == 2:
-                return to_qvariant(self.tr("Compute"))
+                return self.tr("Compute")
             elif index.column() == 3:
-                return to_qvariant(self.tr("Post-processing"))
+                return self.tr("Post-processing")
             elif index.column() == 4:
-                return to_qvariant(self.tr("Run_id"))
+                return self.tr("Run_id")
 
         # Display
         if role == Qt.DisplayRole:
@@ -252,7 +251,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         elif role == Qt.CheckStateRole:
             return item.data(index.column(), role)
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -275,16 +274,16 @@ class CaseStandardItemModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Case name"))
+                return self.tr("Case name")
             elif section == 1:
-                return to_qvariant(self.tr("Status"))
+                return self.tr("Status")
             elif section == 2:
-                return to_qvariant(self.tr("Compute"))
+                return self.tr("Compute")
             elif section == 3:
-                return to_qvariant(self.tr("Post-\nprocessing"))
+                return self.tr("Post-\nprocessing")
             elif section == 4:
-                return to_qvariant(self.tr("run_id"))
-        return to_qvariant()
+                return self.tr("run_id")
+        return None
 
 
     def index(self, row, column, parent = QModelIndex()):

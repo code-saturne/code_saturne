@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -56,6 +56,19 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+/* Symetric tensor component name */
+
+typedef enum {
+
+  XX,
+  YY,
+  ZZ,
+  XY,
+  YZ,
+  XZ
+
+} cs_math_sym_tensor_component_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -63,10 +76,13 @@ BEGIN_C_DECLS
 /* Numerical constants */
 
 extern const cs_real_t cs_math_zero_threshold;
-extern const cs_real_t cs_math_onethird;
-extern const cs_real_t cs_math_onesix;
-extern const cs_real_t cs_math_onetwelve;
-extern const cs_real_t cs_math_one24;
+extern const cs_real_t cs_math_1ov3;
+extern const cs_real_t cs_math_2ov3;
+extern const cs_real_t cs_math_4ov3;
+extern const cs_real_t cs_math_5ov3;
+extern const cs_real_t cs_math_1ov6;
+extern const cs_real_t cs_math_1ov12;
+extern const cs_real_t cs_math_1ov24;
 extern const cs_real_t cs_math_epzero;
 extern const cs_real_t cs_math_infinite_r;
 extern const cs_real_t cs_math_big_r;
@@ -88,14 +104,14 @@ extern const cs_real_t cs_math_pi;
 /*----------------------------------------------------------------------------*/
 
 static inline int
-cs_math_binom(short int  n,
-              short int  k)
+cs_math_binom(int  n,
+              int  k)
 {
   int ret = 1;
   assert(n >= k);
 
-  const short int n_iter = (k > n-k) ? n-k : k;
-  for (short int j = 1; j <= n_iter; j++, n--) {
+  const int n_iter = (k > n-k) ? n-k : k;
+  for (int j = 1; j <= n_iter; j++, n--) {
     if (n % j == 0)
       ret *= n/j;
     else if (ret % j == 0)
@@ -103,6 +119,62 @@ cs_math_binom(short int  n,
     else
       ret = (ret*n)/j;
   }
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the absolute value of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the real of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_fabs(cs_real_t  x)
+{
+  cs_real_t ret = (x <  0) ? -x : x;
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the min value of two real values.
+ *
+ * \param[in]  x, y  values
+ *
+ * \return the min value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_fmin(cs_real_t  x,
+             cs_real_t  y)
+{
+  cs_real_t ret = (x <  y) ? x : y;
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the max value of two real values.
+ *
+ * \param[in]  x, y  values
+ *
+ * \return the max value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_fmax(cs_real_t  x,
+             cs_real_t  y)
+{
+  cs_real_t ret = (x <  y) ? y : x;
 
   return ret;
 }
@@ -623,6 +695,32 @@ cs_math_3_cross_product(const cs_real_t u[3],
   uv[0] = u[1]*v[2] - u[2]*v[1];
   uv[1] = u[2]*v[0] - u[0]*v[2];
   uv[2] = u[0]*v[1] - u[1]*v[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the triple product
+ *
+ * \param[in]     u             vector of 3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[in]     w             vector of 3 real values
+ *
+ * \return the scalar triple product
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 0 /* Bug with O1 or above with icc 15.0.1 20141023 */
+#endif
+
+static inline cs_real_t
+cs_math_3_triple_product(const cs_real_t u[3],
+                         const cs_real_t v[3],
+                         const cs_real_t w[3])
+{
+  return (u[1]*v[2] - u[2]*v[1]) * w[0]
+    + (u[2]*v[0] - u[0]*v[2]) * w[1]
+    + (u[0]*v[1] - u[1]*v[0]) * w[2];
 }
 
 /*----------------------------------------------------------------------------*/

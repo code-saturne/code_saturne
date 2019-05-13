@@ -4,7 +4,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -338,7 +338,11 @@ else
     call parrsm(2, acc)
   endif
 
-  fmul = fmprsc/(acc(1)/acc(2)) ! 1 / estimate flow multiplier
+  if (acc(1).le.epzero) then
+     fmul = 0.d0 ! zero velocity in bulk domain
+  else
+     fmul = fmprsc/(acc(1)/acc(2)) ! 1 / estimate flow multiplier
+  endif
 
   ! Apply BC
 

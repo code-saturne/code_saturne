@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -41,13 +41,15 @@ if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-# to use PyQt API 2
-#if sys.version_info[0] == 2:
-#    import sip
-#    sip.setapi('QString', 2)
-#    sip.setapi('QVariant', 2)
-#    sip.setapi('QTime', 2)
-#    sip.setapi('QUrl', 2)
+# Force PyQt API 2 for PyQt4
+
+try:
+    import sip
+    for api in ('QDate', 'QDateTime', 'QString', 'QTextStream',
+                'QTime', 'QUrl', 'QVariant'):
+        sip.setapi(api, 2)
+except Exception:
+    pass
 
 try:
     from code_saturne.Base.QtCore    import *
@@ -64,8 +66,8 @@ if list(map(int, QT_VERSION_STR.split( "."))) < [4, 3, 0]:
                      "(found %s)." % QT_VERSION_STR)
 
 
-if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 3, 0]:
-    raise SystemExit("Graphical user interface requires PyQt 4.3 or later "\
+if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 5, 0]:
+    raise SystemExit("Graphical user interface requires PyQt 4.5 or later "\
                      "(found %s)." % PYQT_VERSION_STR)
 
 #-------------------------------------------------------------------------------
@@ -102,8 +104,7 @@ def process_cmd_line(argv):
                       action="store_false",
                       help="deactivate splash screen")
 
-
-    parser.set_defaults(splash_screen=True)
+    parser.set_defaults(splash_screen=True, enable_neptune_cfd=True)
 
     (options, args) = parser.parse_args(argv)
 
@@ -165,7 +166,7 @@ def main(argv, pkg):
 
     case, spl = process_cmd_line(argv)
 
-    app = QApplication(argv)
+    app = QApplication(sys.argv)
     app.setOrganizationName(pkg.code_name) # Defines the name of subdirectory under .config
     app.setOrganizationDomain(pkg.url)
     app.setApplicationName("gui") # Defines the name of the configuration file

@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -48,6 +48,7 @@
 #include "cs_base.h"
 #include "cs_volume_zone.h"
 #include "cs_math.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
@@ -105,6 +106,7 @@ cs_user_lagr_volume_conditions(void)
     zis->n_inject = 1000;
     zis->injection_frequency = 1; /* if <= 0, injection at
                                      initialization only */
+    zis->velocity_profile = -1; /* fluid velocity */
 
     zis->stat_weight = 1.0;
 

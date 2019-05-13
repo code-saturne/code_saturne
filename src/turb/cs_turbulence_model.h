@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -45,28 +45,57 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * turbulence models
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_TURB_NONE = 0,
+  CS_TURB_MIXING_LENGTH = 10,
+  CS_TURB_K_EPSILON = 20,
+  CS_TURB_K_EPSILON_LIN_PROD = 21,
+  CS_TURB_K_EPSILON_LS = 22,
+  CS_TURB_K_EPSILON_QUAD = 23,
+  CS_TURB_RIJ_EPSILON_LRR = 30,
+  CS_TURB_RIJ_EPSILON_SSG = 31,
+  CS_TURB_RIJ_EPSILON_EBRSM = 32,
+  CS_TURB_LES_SMAGO_CONST = 40,
+  CS_TURB_LES_SMAGO_DYN = 41,
+  CS_TURB_LES_WALE = 42,
+  CS_TURB_V2F_PHI = 50,
+  CS_TURB_V2F_BL_V2K = 51,
+  CS_TURB_K_OMEGA = 60,
+  CS_TURB_SPALART_ALLMARAS = 70
+};
+
+
 /* turbulence model general options descriptor */
 /*---------------------------------------------*/
 
 typedef struct {
 
-  int           iturb;        /* turbulence model
-                                 - 0: no turbulence model (laminar flow)
-                                 - 10: mixing length model
-                                 - 20: standard k-epsilon model
-                                 - 21: k-epsilon model with Linear
-                                       Production (LP) correction
-                                 - 30: Rij-epsilon (LRR)
-                                 - 31: Rij-epsilon (SSG)
-                                 - 32: Rij-epsilon (EBRSM)
-                                 - 40: LES (constant Smagorinsky model)
-                                 - 41: LES ("classical" dynamic Smagorisky
-                                       model)
-                                 - 42: LES (WALE)
-                                 - 50: v2f phi-model
-                                 - 51: v2f BL-v2-k
-                                 - 60: k-omega SST
-                                 - 70: Spalart-Allmaras model */
+  int           iturb; /* turbulence model
+                          CS_TURB_NONE: no turbulence model (laminar flow)
+                          CS_TURB_MIXING_LENGTH: mixing length model
+                          CS_TURB_K_EPSILON: standard k-epsilon model
+                          CS_TURB_K_EPSILON_LIN_PROD: k-epsilon model with
+                            Linear Production (LP) correction
+                          CS_TURB_K_EPSILON_LS: Launder-Sharma low Re
+                            k-epsilon model
+                          CS_TURB_K_EPSILON_QUAD : Balgietto et al. low Re
+                            k epsilon model
+                          CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
+                          CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
+                          CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)
+                          CS_TURB_LES_SMAGO_CONST: LES
+                            (constant Smagorinsky model)
+                          CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic
+                            Smagorisky model)
+                          CS_TURB_LES_WALE: LES (WALE)
+                          CS_TURB_V2F_PHI: v2f phi-model
+                          CS_TURB_V2F_BL_V2K: v2f BL-v2-k
+                          CS_TURB_K_OMEGA: k-omega SST
+                          CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
   int           itytur;       /* class of turbulence model (integer value
                                  iturb/10) */
 } cs_turb_model_t;
@@ -208,7 +237,7 @@ extern const double cs_turb_sigmak;
 extern double cs_turb_sigmae;
 extern double cs_turb_crij1;
 extern double cs_turb_crij2;
-extern const double cs_turb_crij3;
+extern double cs_turb_crij3;
 extern const double cs_turb_crijp1;
 extern const double cs_turb_crijp2;
 extern const double cs_turb_cssge2;
@@ -221,7 +250,7 @@ extern const double cs_turb_cssgr4;
 extern const double cs_turb_cssgr5;
 extern const double cs_turb_cebms1;
 extern const double cs_turb_cebms2;
-extern const double cs_turb_cebmr1, cebmr2, cebmr3, cebmr4, cebmr5, cebmr6;
+extern const double cs_turb_cebmr1, cebmr2, cebmr3, cebmr4, cebmr5;
 extern double cs_turb_csrij;
 extern const double cs_turb_cebme2;
 extern const double cs_turb_cebmmu;

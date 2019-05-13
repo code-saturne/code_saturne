@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,19 +45,19 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
 
 from code_saturne.Pages.InitializationForm import Ui_InitializationForm
-from code_saturne.Pages.TurbulenceModel import TurbulenceModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from code_saturne.Pages.InitializationModel import InitializationModel
-from code_saturne.Pages.CompressibleModel import CompressibleModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.TurbulenceModel import TurbulenceModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
+from code_saturne.model.InitializationModel import InitializationModel
+from code_saturne.model.CompressibleModel import CompressibleModel
+from code_saturne.Pages.QMegEditorView import QMegEditorView
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -272,27 +272,25 @@ class InitializationView(QWidget, Ui_InitializationForm):
     def slotVelocityFormula(self):
         """
         """
-        exp = self.init.getVelocityFormula(self.zone)
-        if not exp:
-            exp = self.init.getDefaultVelocityFormula()
         exa = """#example: \n""" + self.init.getDefaultVelocityFormula()
-        req = [('velocity[0]', "velocity"),
-               ('velocity[1]', "velocity"),
-               ('velocity[2]', "velocity")]
-        sym = [('uref', 'reference velocity'),
-               ('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getVelocityFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "velocity",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -308,56 +306,37 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         turb_model = self.turb.getTurbulenceModel()
         exa = """#example \n""" + self.init.getDefaultTurbFormula(turb_model)
-        exp = self.init.getTurbFormula(self.zone, turb_model)
-        sym = [('rho0', 'density (reference value)'),
-               ('mu0', 'viscosity (reference value)'),
-               ('cp0', 'specific heat (reference value)'),
-               ('lambda0', 'thermal conductivity (reference value)'),
-               ('x','cell center coordinate'),
-               ('y','cell center coordinate'),
-               ('z','cell center coordinate'),
-               ('uref','reference velocity'),
-               ('almax','reference length')]
+
+        exp, req, sym = self.init.getTurbFormulaComponents(self.zone, turb_model)
+
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
-            req = [('k', "turbulent energy"),
-                   ('epsilon', "turbulent dissipation")]
+            turb_vname = 'turbulence_ke'
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
-            req = [('r11', "Reynolds stress R11"),
-                   ('r22', "Reynolds stress R22"),
-                   ('r33', "Reynolds stress R33"),
-                   ('r12', "Reynolds stress R12"),
-                   ('r23', "Reynolds stress R23"),
-                   ('r13', "Reynolds stress R13"),
-                   ('epsilon', "turbulent dissipation")]
+            turb_vname = 'turbulence_rije'
         elif turb_model == 'Rij-EBRSM':
-            req = [('r11', "Reynolds stress R11"),
-                   ('r22', "Reynolds stress R22"),
-                   ('r33', "Reynolds stress R33"),
-                   ('r12', "Reynolds stress R12"),
-                   ('r23', "Reynolds stress R23"),
-                   ('r13', "Reynolds stress R13"),
-                   ('epsilon', "turbulent dissipation"),
-                   ('alpha', "alpha")]
+            turb_vname = 'turbulence_rij_ebrsm'
         elif turb_model == 'v2f-BL-v2/k':
-            req = [('k', "turbulent energy"),
-                   ('epsilon', "turbulent dissipation"),
-                   ('phi', "variable phi in v2f model"),
-                   ('alpha', "variable alpha in v2f model")]
+            turb_vname = 'turbulence_v2f'
         elif turb_model == 'k-omega-SST':
-            req = [('k', "turbulent energy"),
-                   ('omega', "specific dissipation rate")]
+            turb_vname = 'turbulence_kw'
         elif turb_model == 'Spalart-Allmaras':
-            req = [('nu_tilda', "nusa")]
+            turb_vname = 'turbulence_spalart'
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = turb_vname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
@@ -371,29 +350,25 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         Input the initial formula of thermal scalar
         """
-        exp = self.init.getThermalFormula(self.zone)
-        if not exp:
-            exp = self.init.getDefaultThermalFormula()
         exa = """#example \n""" + self.init.getDefaultThermalFormula()
-        if self.therm.getThermalScalarModel() == "enthalpy":
-            req = [('enthalpy', 'enthalpy')]
-        elif self.therm.getThermalScalarModel() == "total_energy":
-            req = [('total_energy', 'total energy')]
-        else:
-            req = [('temperature', 'temperature')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getThermalFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "thermal",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
@@ -407,25 +382,26 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         Input the initial formula of species
         """
-        exp = self.init.getSpeciesFormula(self.zone, self.scalar)
-        name = self.th_sca.getScalarName(self.scalar)
-        if not exp:
-            exp = str(name)+""" = 0;\n"""
+        exp, req, sym = self.init.getSpeciesFormulaComponents(self.zone, self.scalar)
+
+        name = DefineUserScalarsModel(self.case).getScalarName(self.scalar)
         exa = """#example: \n""" + str(name)+""" = 0;\n"""
-        req = [(str(name), str(name))]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
@@ -438,25 +414,26 @@ class InitializationView(QWidget, Ui_InitializationForm):
     def slotMeteoFormula(self):
         """
         """
-        exp = self.init.getMeteoFormula(self.zone, self.scalar_meteo)
         name = self.scalar_meteo
-        if not exp:
-            exp = str(name)+""" = 0;\n"""
         exa = """#example: \n""" + str(name)+""" = 0;\n"""
-        req = [(str(name), str(name))]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getMeteoFormulaComponents(self.zone, self.scalar_meteo)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMeteo -> %s" % str(result))
@@ -618,27 +595,25 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         Input the initial Pressure formula
         """
-        exp = self.init.getPressureFormula(self.zone)
-        if not exp:
-            exp = """p0 = 0.;
-g = 9.81;
-ro = 1.17862;
-pressure = p0 + g * ro * z;\n"""
         exa = """#example: """
-        req = [('pressure', 'pressure')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getPressureFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "pressure",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
@@ -653,24 +628,25 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Hydraulic Head formula
         """
-        exp = self.init.getHydraulicHeadFormula(self.zone)
-        if not exp:
-            exp = """H = z;\n"""
         exa = """#example: """
-        req = [('H', 'hydraulic head')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getHydraulicHeadFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "hydraulic_head",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
@@ -685,24 +661,25 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Density formula
         """
-        exp = self.init.getDensityFormula(self.zone)
-        if not exp:
-            exp = """density = 0;\n"""
         exa = """#example: """
-        req = [('density', 'density')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getDensityFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "density",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotDensityFormula -> %s" % str(result))
@@ -717,24 +694,25 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Temperature formula
         """
-        exp = self.init.getTemperatureFormula(self.zone)
-        if not exp:
-            exp = """temperature = 0;\n"""
         exa = """#example: """
-        req = [('temperature', 'temperature')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getTemperatureFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "temperature",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotTemperatureFormula -> %s" % str(result))
@@ -749,24 +727,25 @@ pressure = p0 + g * ro * z;\n"""
         """
         Input the initial Energy formula
         """
-        exp = self.init.getEnergyFormula(self.zone)
-        if not exp:
-            exp = """total_energy = 0;\n"""
         exa = """#example: """
-        req = [('total_energy', 'Energy')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.init.getEnergyFormulaComponenets(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = "ini",
+                                zone_name     = zone_name,
+                                variable_name = "energy",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotEnergyFormula -> %s" % str(result))

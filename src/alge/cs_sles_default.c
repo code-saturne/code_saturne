@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -323,9 +323,6 @@ cs_sles_default_setup(void)
 
   cs_log_printf(CS_LOG_SETUP, "\n");
   cs_log_separator(CS_LOG_SETUP);
-
-  if (cs_multigrid_needed() && cs_glob_n_ranks > 1)
-    cs_grid_log_merge_options();
 
   cs_sles_it_log_parallel_options();
 

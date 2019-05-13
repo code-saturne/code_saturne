@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -62,7 +62,6 @@ WARNING: a SALOME Study should not be confused with a CFD study.
 #-------------------------------------------------------------------------------
 # Standard modules
 #-------------------------------------------------------------------------------
-from __future__ import print_function
 import os
 import re
 import string
@@ -82,9 +81,9 @@ from omniORB import CORBA
 #-------------------------------------------------------------------------------
 # Salome modules
 #-------------------------------------------------------------------------------
-
-from SALOME_NamingServicePy import *
-from LifeCycleCORBA import *
+from omniORB import CORBA
+from SALOME_NamingServicePy import SALOME_NamingServicePy_i
+from LifeCycleCORBA import LifeCycleCORBA
 import SALOMEDS
 import SALOMEDS_Attributes_idl
 
@@ -95,7 +94,7 @@ import salome
 # Application modules
 #-------------------------------------------------------------------------------
 
-from CFDSTUDYGUI_Commons import CFD_Code, BinCode, Trace, sgPyQt, sg
+from CFDSTUDYGUI_Commons import CFD_Code, BinCode, Trace, sg
 from CFDSTUDYGUI_Commons import CaseInProcessStart, CaseInProcessEnd
 from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
 import CFDSTUDYGUI_SolverGUI
@@ -180,7 +179,7 @@ dict_object["DESFile"]        = 100072
 dict_object["MESHFile"]       = 100073
 dict_object["DATFile"]        = 100074
 dict_object["CGNSFile"]       = 100075
-dict_object["GeomFile"]       = 100076
+dict_object["CcmFile"]        = 100076
 dict_object["CaseFile"]       = 100077
 dict_object["NeuFile"]        = 100078
 dict_object["MSHFile"]        = 100079
@@ -204,6 +203,9 @@ dict_object["SRCSYRFolder"]             = 100108
 dict_object["USRSRCSYRFile"]            = 100109
 dict_object["CouplingStudy"]            = 100110
 dict_object["OpenSyrthesCaseFile"]      = 100111
+d_dirMesh      = {}
+MESHSubFolder = "MESHSubFolder"
+MESHSubFolder_int = 200000
 #-------------------------------------------------------------------------------
 # Definition of the icon of objects to represent in the Object Browser.
 # Attribut "AttributePixMap" for the related SObject.
@@ -264,7 +266,7 @@ icon_collection[dict_object["MESHFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DESFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["DATFile"]]        = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["CGNSFile"]]       = "MESH_OBJ_ICON"
-icon_collection[dict_object["GeomFile"]]       = "MESH_OBJ_ICON"
+icon_collection[dict_object["CcmFile"]]       = "MESH_OBJ_ICON"
 icon_collection[dict_object["CaseFile"]]       = "MESH_OBJ_ICON"
 icon_collection[dict_object["NeuFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["MSHFile"]]        = "MESH_OBJ_ICON"
@@ -295,68 +297,66 @@ icon_collection[dict_object["CouplingStudy"]]         = "CFDSTUDY_STUDY_OBJ_ICON
 ObjectTR = QObject()
 
 #-------------------------------------------------------------------------------
-# CORBA
-#-------------------------------------------------------------------------------
-
-# init ORB
-orb = CORBA.ORB_init([''], CORBA.ORB_ID)
-
-# create naming service instance
-naming_service = SALOME_NamingServicePy_i(orb)
-
-# create life cycle CORBA instance
-lcc = LifeCycleCORBA(orb)
-
-#-------------------------------------------------------------------------------
-# Get Study manager
-#-------------------------------------------------------------------------------
-# Interface to manipulate SALOME Studies. You will find in this interface the
-# methods to create, open, close, and save a SALOME Study. Since a SALOME
-# session is multi-document, you will also find methods allowing to navigate
-# through a collection of SALOME Studies currently present in a session.
-
-obj = naming_service.Resolve('/myStudyManager')
-studyManager = obj._narrow(SALOMEDS.StudyManager)
-
-#-------------------------------------------------------------------------------
 # Internal methods
 #-------------------------------------------------------------------------------
 
-def _getEngine():
-    """
-    Gets component engine.
+###
+# Get ORB reference
+###
+__orb__ = None
+def getORB():
+    global __orb__
+    if __orb__ is None:
+        __orb__ = CORBA.ORB_init( [''], CORBA.ORB_ID )
+        pass
+    return __orb__
 
-    @return: engine part of the module CFDSTUDY.
-    @rtype: C{Engine}
-    """
-    import CFDSTUDY_ORB
-    engine = lcc.FindOrLoadComponent("FactoryServerPy", __MODULE_NAME__)
-    return engine
+#--------------------------------------------------------------------------
+###
+# Get naming service instance
+###
+__naming_service__ = None
+def getNS():
+    global __naming_service__
+    if __naming_service__ is None:
+        __naming_service__ = SALOME_NamingServicePy_i( getORB() )
+        pass
+    return __naming_service__
+
+#--------------------------------------------------------------------------
+##
+# Get life cycle CORBA instance
+##
+__lcc__ = None
+def getLCC():
+    global __lcc__
+    if __lcc__ is None:
+        __lcc__ = LifeCycleCORBA( getORB() )
+        pass
+    return __lcc__
 
 
+#--------------------------------------------------------------------------
+##
+# Get study
+###
+__study__ = None
 def _getStudy():
-    """
-    Gets active SALOME Study. C{Study} is a warehouse of data. It can be understood as a document,
-    the data storage of the upper level. SALOME Study contains data of multiple components, it's a
-    single document for all components. Most of operations on a SALOME Study object are handled by
-    C{StudyManager} and C{StudyBuilder} interfaces.
+    global __study__
+    if __study__ is None:
+        obj = getNS().Resolve( '/Study' )
+        __study__ = obj._narrow( SALOMEDS.Study )
+        pass
+    return __study__
 
-    @return: active Study.
-    @rtype: C{Study}
-    """
-    # getStudyId() -> get study associated to component instance
-    # return -1: not initialised (Internal Error)
-    #         0: multistudy component instance
-    #        >0: study id associated to this instance
-
-    studyId = sgPyQt.getStudyId()
-    study = studyManager.GetStudyByID(studyId)
-    return study
-
-
-def _getStudy_Id(studyName) :
-    s = studyManager.GetStudyByName(studyName)
-    return s._get_StudyId()
+#--------------------------------------------------------------------------
+__engine__ = None
+def _getEngine():
+    global __engine__
+    if __engine__ is None:
+        __engine__ = getLCC().FindOrLoadComponent( "FactoryServerPy", __MODULE_NAME__ )
+        pass
+    return __engine__
 
 
 def _getNewBuilder():
@@ -403,6 +403,7 @@ def _findOrCreateComponent():
     @return: the root C{SObject} for the Object browser representation.
     @rtype: C{SObject}
     """
+    log.debug("_findOrCreateComponent")
     study = _getStudy()
     father = study.FindComponent(__MODULE_NAME__)
     if father is None:
@@ -419,8 +420,35 @@ def _findOrCreateComponent():
             builder.DefineComponentInstance(father, _getEngine())
         except:
             pass
-
     return father
+
+def _SetCaseLocation(theCasePath):
+    log.debug("_SetCaseLocation")
+    study         = _getStudy()
+    builder       = study.NewBuilder()
+    father        = _findOrCreateComponent()
+    theStudyPath  = os.path.dirname(theCasePath)
+    aCaseName      = os.path.basename(theCasePath)
+    studyObject   = FindStudyByPath(theStudyPath)
+    if studyObject == None:
+        if CFDSTUDYGUI_Commons.isaCFDStudy(theStudyPath):
+            studyObject  = builder.NewObject(father)
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
+            attr.SetValue(dict_object["Study"])
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributePixMap")
+            attr.SetPixMap(str(ObjectTR.tr("CFDSTUDY_STUDY_OBJ_ICON")))
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributeName")
+            attr.SetValue(os.path.basename(theStudyPath))
+            attr = builder.FindOrCreateAttribute(studyObject, "AttributeComment")
+            attr.SetValue(os.path.dirname(theStudyPath))
+    _CreateItem(studyObject,aCaseName)
+    caseObject = getSObject(studyObject,aCaseName)
+    UpdateSubTree(caseObject)
+    if getSObject(studyObject,"MESH") == None:
+        _CreateItem(studyObject,"MESH")
+        meshObject = getSObject(studyObject,"MESH")
+        if meshObject != None:
+            UpdateSubTree(meshObject)
 
 
 def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
@@ -435,11 +463,14 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
     @type theCaseNames: C{String}
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
+    log.debug("_SetStudyLocation")
+
     iok = True
     if theCopyOpt:
         if not os.path.exists(theNameRef):
             raise ValueError("reference case is not a repository")
     if os.path.exists(theStudyPath) :
+
         if theCreateOpt:
             mess = cfdstudyMess.trMessage(ObjectTR.tr("STUDY_DIRECTORY_ALREADY_EXISTS"),[""])
             cfdstudyMess.criticalMessage(mess)
@@ -452,7 +483,6 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
     builder = study.NewBuilder()
     father  = _findOrCreateComponent()
     studyObject = FindStudyByPath(theStudyPath)
-
     if studyObject == None:
         #obtain name and dir for new study
         lst = os.path.split(theStudyPath)
@@ -508,6 +538,7 @@ def replaceOrInsertCouplingPath(The_coupling_parameters_path):
     """
     coupling_parameters.py file is updated according to syrthes path needed
     """
+    log.debug("replaceOrInsertCouplingPath")
     f = open(The_coupling_parameters_path,"r")
     l = f.readlines()
     f.close()
@@ -540,6 +571,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
     @type theCaseNames: C{String}
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
+    log.debug("_CallCreateScript")
     mess = ""
     scrpt, c ,mess = BinCode()
     if mess == "" :
@@ -578,6 +610,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
 
 def updateCasePath(theCasePath):
 
+    log.debug("updateCasePath")
     mess = ""
     scrpt, c ,mess = BinCode()
     if mess == "" :
@@ -598,6 +631,7 @@ def _UpdateStudy():
     """
     Updates CFD study tree of data from the root.
     """
+    log.debug("_UpdateStudy")
     study   = _getStudy()
     component = study.FindComponent(__MODULE_NAME__)
     if component == None:
@@ -616,15 +650,14 @@ def UpdateSubTree(theObject=None):
     @type theObject: C{SObject}
     @param theObject: branch of a tree of data to update.
     """
+    log.debug("UpdateSubTree")
     if theObject != None:
-        log.debug("_RebuildTreeRecursively -> path: %s" % _GetPath(theObject))
+        log.debug("UpdateSubTree -> path: %s" % _GetPath(theObject))
         _RebuildTreeRecursively(theObject)
     else:
-        log.debug("UpdateStudy")
         _UpdateStudy()
     # --- update object browser from a thread different of the main thread is not safe !
-    studyId = sgPyQt.getStudyId()
-    sgPyQt.updateObjBrowser(studyId,1)
+    sg.updateObjBrowser()
 
 def closeCFDStudyTree(theObject):
     """
@@ -659,7 +692,6 @@ def _RebuildTreeRecursively(theObject):
         return
     log.debug("_RebuildTreeRecursively -> %s childs: %s" % (theObject.GetName(), ScanChildNames(theObject,  ".*")))
     theObjectPath = _GetPath(theObject)
-    log.debug("_RebuildTreeRecursively -> path: %s" % theObjectPath)
 
     if theObjectPath == None:
         return
@@ -667,7 +699,6 @@ def _RebuildTreeRecursively(theObject):
     study   = _getStudy()
     builder = study.NewBuilder()
     attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
-
     # clean the SObject, if the corresponding file or directory
     # does not exist any more in the file system
 
@@ -817,6 +848,7 @@ def _CreateItem(theFather,theNewName) :
 def getNameCodeFromXmlCasePath(XMLCasePath) :
     """
     """
+    log.debug("getNameCodeFromXmlCasePath")
     code = ""
     if os.path.isfile(XMLCasePath):
         fd = os.open(XMLCasePath,os.O_RDONLY)
@@ -844,6 +876,38 @@ def getNameCodeFromXmlCasePath(XMLCasePath) :
     return code
 
 
+def searchDepth(directory):
+    l = []
+    l = directory.split(str(os.sep))
+    niveau = 0
+    for i in list(reversed(range(len(l)-1))):
+        if l[i] == "MESH":
+            niveau = len(l)-1-i
+            return len(l)-1-i
+    return niveau
+
+
+def parseDir(dirname):
+    """
+    External method which permits to return a directory whose keys are objectId for the salome study and value is a list of MESH sub-directories to see then into Object Browser, to access to the med or other extensions mesh files
+    """
+    global d_dirMesh
+    niveau = 0
+    for root,dirs,files in os.walk(dirname):
+        l_dirs = []
+        if dirs != []:
+            for j in dirs:
+                l_dirs.append(os.path.join(root,j))
+            niveau = searchDepth(root)+1
+            key = MESHSubFolder_int+niveau
+            if key not in list(d_dirMesh.keys()):
+                d_dirMesh[key] = l_dirs
+                dict_object[MESHSubFolder+str(niveau)] = key
+                icon_collection[dict_object[MESHSubFolder+str(niveau)]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
+            else:
+                d_dirMesh[key] = d_dirMesh[key]+l_dirs
+
+
 def _FillObject(theObject, theParent, theBuilder):
     """
     Creates the attribute "AttributeLocalID" for the branch I{theObject}.
@@ -856,26 +920,24 @@ def _FillObject(theObject, theParent, theBuilder):
     @type theBuilder: C{SUIT_Study}
     @param theBuilder: C{SObject} constructor for create an attribut.
     """
+    log.debug("_FillObject")
     attr = theBuilder.FindOrCreateAttribute(theParent, "AttributeLocalID")
     parentId = attr.Value()
     name = theObject.GetName()
     objectId = dict_object["OtherFile"]
     path = os.path.join(_GetPath(theParent), name)
-    #log.debug("_FillObject: %s" % name)
-
+    log.debug("_FillObject Object Name : %s" % name)
+    log.debug("_FillObject Parent Name : %s" % theParent.GetName())
     # Parent is study
     if parentId == dict_object["Study"] or parentId == dict_object["CouplingStudy"]:
         if Trace(): print("_FillObject : parent is Study ", theParent.GetName())
         #check for case
         if os.path.isdir(path):
-            dirList = os.listdir(path)
-            if dirList.count("DATA") and \
-               dirList.count("SRC")  and \
-               dirList.count("RESU") and \
-               dirList.count("SCRIPTS"):
+            if CFDSTUDYGUI_Commons.isaCFDCase(path):
                 objectId = dict_object["Case"]
             else:
                 boo = False
+                dirList = os.listdir(path)
                 for i in dirList:
                     if re.match(".*\.syd$", i) or re.match(".*\.syd_example$", i): boo = True
                 if boo :
@@ -883,6 +945,7 @@ def _FillObject(theObject, theParent, theBuilder):
                 else:
                     if name == "MESH":
                         objectId = dict_object["MESHFolder"]
+                        parseDir(path)
                     elif name == "POST":
                         objectId = dict_object["POSTFolder"]
                     else:
@@ -1005,7 +1068,10 @@ def _FillObject(theObject, theParent, theBuilder):
     # parent is MESH folder
     elif parentId == dict_object["MESHFolder"]:
         if os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
+            if d_dirMesh != {}:
+                for key in list(d_dirMesh.keys()):
+                    if path in d_dirMesh[key]:
+                        objectId = key
         else:
             if re.match(".*\.des$", name):
                 objectId = dict_object["DESFile"]
@@ -1015,8 +1081,8 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["DATFile"]
             elif re.match(".*\.cgns$", name):
                 objectId = dict_object["CGNSFile"]
-            elif re.match(".*\.ngeom$", name):
-                objectId = dict_object["GeomFile"]
+            elif re.match(".*\.ccm$", name):
+                objectId = dict_object["CcmFile"]
             elif re.match(".*\.case$", name):
                 objectId = dict_object["CaseFile"]
             elif re.match(".*\.neu$", name):
@@ -1183,6 +1249,40 @@ def _FillObject(theObject, theParent, theBuilder):
         elif re.match("listing$", name):
             objectId = dict_object["RESUFile"]
 
+#MESH sub folder
+    if parentId in list(d_dirMesh.keys()):
+        if os.path.isdir(path):
+            if d_dirMesh != {}:
+                for key in list(d_dirMesh.keys()):
+                    if path in d_dirMesh[key]:
+                        objectId = key
+        else:
+            if re.match(".*\.des$", name):
+                objectId = dict_object["DESFile"]
+            elif re.match(".*\.med$", name):
+                objectId = dict_object["MEDFile"]
+            elif re.match(".*\.dat$", name):
+                objectId = dict_object["DATFile"]
+            elif re.match(".*\.cgns$", name):
+                objectId = dict_object["CGNSFile"]
+            elif re.match(".*\.ccm$", name):
+                objectId = dict_object["CcmFile"]
+            elif re.match(".*\.case$", name):
+                objectId = dict_object["CaseFile"]
+            elif re.match(".*\.neu$", name):
+                objectId = dict_object["NeuFile"]
+            elif re.match(".*\.msh$", name):
+                objectId = dict_object["MSHFile"]
+            elif re.match(".*\.hex$", name):
+                objectId = dict_object["HexFile"]
+            elif re.match(".*\.unv$", name):
+                objectId = dict_object["UnvFile"]
+            elif re.match(".*\.syr$", name):
+                objectId = dict_object["SYRMESHFile"]
+            else:
+                objectId = dict_object["MESHFile"]
+
+
     if objectId == dict_object["OtherFile"]:
         if re.match(".*\.[fF]$", name) or \
            re.match(".*\.[fF]90$", name) or \
@@ -1277,7 +1377,6 @@ def _GetPath(theObject):
     study   = _getStudy()
     builder = study.NewBuilder()
     path = str(theObject.GetName())
-
     attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
     if attr.Value() == dict_object["Study"] or attr.Value() == dict_object["CouplingStudy"]:
         dir = builder.FindOrCreateAttribute(theObject, "AttributeComment")
@@ -1307,7 +1406,6 @@ def _GetDirList(theObject):
     lst = []
     if os.path.isdir(path):
         lst = os.listdir(path)
-
     lst.sort()
     return lst
 
@@ -1385,7 +1483,7 @@ def GetCase(theObject):
         attr = builder.FindOrCreateAttribute(cur, "AttributeLocalID")
         if Trace():
             print("attr:",attr)
-            print("Value", attr.Value())
+            print("Value for Case", attr.Value())
         value = attr.Value()
         if value == dict_object["Case"]:
             return cur
@@ -1454,6 +1552,7 @@ def FindStudyByPath(theStudyPath):
     @return: the CFD study.
     @rtype: C{SObject} or C{None}
     """
+    log.debug("FindStudyByPath")
     component = _getComponent()
     if component == None:
         return None
@@ -1473,6 +1572,34 @@ def FindStudyByPath(theStudyPath):
 
     return None
 
+def FindCaseByPath(theCasePath):
+    """
+    Returns a CFD study described by the unix path I{theCasePath}.
+
+    @type theCasePath: C{String}
+    @param theCasePath: unix path of the CFD study.
+    @return: the CFD study.
+    @rtype: C{SObject} or C{None}
+    """
+    log.debug("FindCaseByPath")
+    component = _getComponent()
+    if component == None:
+        return None
+
+    study = _getStudy()
+    builder = study.NewBuilder()
+    studyCfdObject = FindStudyByPath(os.path.dirname(theCasePath))
+    iter  = study.NewChildIterator(studyCfdObject)
+    while iter.More():
+        attr = builder.FindOrCreateAttribute(iter.Value(), "AttributeLocalID")
+        if attr.Value() == dict_object["Case"]:
+            #compare case path
+            aCurCasePath = _GetPath(iter.Value())
+            if aCurCasePath == theCasePath:
+                return iter.Value()
+        iter.Next()
+
+    return None
 
 def GetCaseNameList(theStudy):
     """
@@ -1559,7 +1686,7 @@ def getXmlCaseNameList(theCase):
     while iter.More():
         aName = iter.Value().GetName()
         if aName != "" :
-            if "XML" in subprocess.check_output(["file",_GetPath(iter.Value())]):
+            if "XML" in subprocess.check_output(["file",_GetPath(iter.Value())]).decode():
                 XmlCaseNameList.append(iter.Value().GetName())
         iter.Next()
     return XmlCaseNameList
@@ -1631,16 +1758,15 @@ def getType(theObject):
     return attr.Value()
 
 def hasTheSameType(ListObject):
-
     if ListObject == []:
         return False
     typListBool = True
     typListBoolRESUSub = None
     typList = []
-    typ     = getType(ListObject[0])
+    typ     = getType(list(ListObject)[0])
     typList.append(typ)
     if len(ListObject)> 1:
-        for SObject in ListObject[1:]:
+        for SObject in list(ListObject)[1:]:
             typListBool = typListBool and getType(SObject) == typ
             typList.append(getType(SObject))
         if not typListBool:
@@ -1703,7 +1829,7 @@ def checkPreMEDType(theObject):
     """
     return checkType(theObject, dict_object["DESFile"]) or \
            checkType(theObject, dict_object["CGNSFile"]) or \
-           checkType(theObject, dict_object["GeomFile"]) or \
+           checkType(theObject, dict_object["CcmFile"]) or \
            checkType(theObject, dict_object["CaseFile"]) or \
            checkType(theObject, dict_object["NeuFile"]) or \
            checkType(theObject, dict_object["MSHFile"]) or \
@@ -1858,6 +1984,7 @@ def setCaseInProcess(theCasePath, isInProcess):
     @type isInProcess: C{True} or C{False}
     @param isInProcess: if C{True}, shows the I{CaseInProcess} icon.
     """
+    log.debug("setCaseInProcess")
     aStudyPath, aCaseName = os.path.split(theCasePath)
     aStudyObj = FindStudyByPath(aStudyPath)
     if not aStudyPath:
@@ -1921,7 +2048,6 @@ def getOrLoadObject(item):
     object = item.GetObject()
     if object is None: # the engine has not been loaded yet
         sComponent = item.GetFatherComponent()
-        #self.loadComponentEngine(sComponent)
         study   = _getStudy()
         builder = study.NewBuilder()
         engine = _getEngine()
@@ -1963,7 +2089,6 @@ def getMeshFromGroup(meshGroupItem):
     group = None
     meshItem = None
     obj = getOrLoadObject(meshGroupItem)
-    #obj = self.editor.getOrLoadObject(meshGroupItem) # version 515
 
     if obj is not None:
         group = obj._narrow(SMESH.SMESH_GroupBase)

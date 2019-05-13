@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -24,7 +24,6 @@
 
 """
 This module contains the following classes and function:
-- BatchRunningAdvancedOptionsDialogView
 - BatchRunningStopByIterationDialogView
 - BatchRunningListingLinesDisplayedDialogView
 - ListingDialogView
@@ -65,17 +64,16 @@ import cs_submit
 #-------------------------------------------------------------------------------
 
 from code_saturne.Pages.BatchRunningForm import Ui_BatchRunningForm
-from code_saturne.Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
 from code_saturne.Pages.BatchRunningDebugOptionsHelpDialogForm import Ui_BatchRunningDebugOptionsHelpDialogForm
 from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant
+from code_saturne.Base.QtPage import from_qvariant
 from code_saturne.Base.CommandMgrDialogView import CommandMgrDialogView
-from code_saturne.Pages.BatchRunningModel import BatchRunningModel
-from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.BatchRunningModel import BatchRunningModel
+from code_saturne.model.ScriptRunningModel import ScriptRunningModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,7 +84,7 @@ log = logging.getLogger("BatchRunningView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Popup advanced options
+# Popup help for debug tools
 #-------------------------------------------------------------------------------
 
 class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOptionsHelpDialogForm):
@@ -99,7 +97,7 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOption
         """
         QDialog.__init__(self, parent)
 
-        Ui_BatchRunningAdvancedOptionsDialogForm.__init__(self)
+        Ui_BatchRunningDebugOptionsHelpDialogForm.__init__(self)
         self.setupUi(self)
         self.retranslateUi(self)
 
@@ -119,123 +117,6 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOption
         QDialog.accept(self)
         return
 
-
-#-------------------------------------------------------------------------------
-# Popup advanced options
-#-------------------------------------------------------------------------------
-
-
-class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOptionsDialogForm):
-    """
-    Advanced dialog
-    """
-    def __init__(self, parent):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-
-        Ui_BatchRunningAdvancedOptionsDialogForm.__init__(self)
-        self.setupUi(self)
-
-        self.setWindowTitle(self.tr("Advanced options"))
-        self.parent = parent
-
-        # Combo models
-        self.modelCSOUT1       = ComboModel(self.comboBox_6, 2, 1)
-        self.modelCSOUT2       = ComboModel(self.comboBox_7, 3, 1)
-
-        # Combo items
-        self.modelCSOUT1.addItem(self.tr("to standard output"), 'stdout')
-        self.modelCSOUT1.addItem(self.tr("to listing"), 'listing')
-
-        self.modelCSOUT2.addItem(self.tr("no output"), 'null')
-        self.modelCSOUT2.addItem(self.tr("to standard output"), 'stdout')
-        self.modelCSOUT2.addItem(self.tr("to listing_r<r>"), 'listing')
-
-        # Connections
-        self.toolButton_2.clicked.connect(self.slotDebugHelp)
-        self.lineEdit_3.textChanged[str].connect(self.slotDebug)
-        self.comboBox_6.activated[str].connect(self.slotLogType)
-        self.comboBox_7.activated[str].connect(self.slotLogType)
-
-        # Previous values
-        self.debug = self.parent.mdl.getString('debug')
-        if self.debug is not None:
-            self.lineEdit_3.setText(str(self.debug))
-
-        self.setLogType()
-
-
-    @pyqtSlot(str)
-    def slotDebug(self, text):
-        """
-        Input for Debug.
-        """
-        self.debug = str(text)
-
-
-    def setLogType(self):
-        """
-        Set logging arguments.
-        """
-        self.log_type = self.parent.mdl.getLogType()
-        self.modelCSOUT1.setItem(str_model=self.log_type[0])
-        self.modelCSOUT2.setItem(str_model=self.log_type[1])
-
-
-    @pyqtSlot(str)
-    def slotLogType(self, text):
-        """
-        Input logging options.
-        """
-        self.log_type = [self.modelCSOUT1.dicoV2M[str(self.comboBox_6.currentText())],
-                         self.modelCSOUT2.dicoV2M[str(self.comboBox_7.currentText())]]
-
-
-    @pyqtSlot()
-    def slotDebugHelp(self):
-        """
-        Show help page for debugging
-        """
-
-        dialog = BatchRunningDebugOptionsHelpDialogView(self)
-        dialog.show()
-
-        return
-
-
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
-
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-
-        self.parent.mdl.setString('debug', self.debug.strip())
-
-        self.parent.mdl.setLogType(self.log_type)
-
-        QDialog.accept(self)
-
-
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        QDialog.reject(self)
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Popup window class: stop the computation at a iteration
@@ -533,10 +414,12 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 if not build_type_label:
                     build_type_label = "[default]"
                 self.comboBoxBuildType.addItem(self.tr(build_type_label),
-                                               to_qvariant(build_type_label))
+                                               build_type_label)
             self.comboBoxBuildType.setCurrentIndex(compute_build_id)
 
         self.class_list = None
+
+        self.__updateRunButton__()
 
         if self.jmdl.batch.rm_type != None:
 
@@ -547,7 +430,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.lineEditJobName.setValidator(validatorSimpleName)
             self.lineEditJobAccount.setValidator(validatorAccountName)
             self.lineEditJobWCKey.setValidator(validatorAccountName)
-            self.pushButtonRunSubmit.setText("Submit job")
 
         else:
 
@@ -560,6 +442,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                     self.mdl.setString('n_procs', None)
                 except Exception:
                     pass
+
         validatorRunId = RegExpValidator(self.lineEditRunId,
                                          QRegExp("[_A-Za-z0-9]*"))
         self.lineEditRunId.setValidator(validatorRunId)
@@ -584,25 +467,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.spinBoxNProcs.valueChanged[int].connect(self.slotNProcs)
             self.spinBoxNThreads.valueChanged[int].connect(self.slotNThreads)
 
-        self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
-        self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
         self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
         self.lineEditRunId.textChanged[str].connect(self.slotJobRunId)
 
-        # Combomodels
+        self.lineEdit_tool.textChanged[str].connect(self.slotDebug)
+        self.toolButton_2.clicked.connect(self.slotDebugHelp)
 
-        self.modelArg_cs_verif = ComboModel(self.comboBoxRunType, 2, 1)
-
-        self.modelArg_cs_verif.addItem(self.tr("Import mesh only"), 'none')
-        self.modelArg_cs_verif.addItem(self.tr("Mesh preprocessing"), 'mesh preprocess')
-        self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh quality')
-        if self.case['prepro'] == True:
-            self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType(self.case['prepro']))
-            self.labelRunType.show()
-            self.comboBoxRunType.show()
-        else:
-            self.labelRunType.hide()
-            self.comboBoxRunType.hide()
+        self.checkBoxTrace.stateChanged.connect(self.slotTrace)
+        self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
 
         # initialize Widgets
 
@@ -621,11 +493,61 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             self.lineEditRunId.setText("")
 
+        # Advanced options
+
+        self.debug = self.mdl.getString('debug')
+        if self.debug is not None:
+            self.lineEdit_tool.setText(str(self.debug))
+
+        if self.mdl.getTrace():
+            self.checkBoxTrace.setChecked(True)
+        if self.mdl.getLogParallel():
+            self.checkBoxLogParallel.setChecked(True)
+
         # Script info is based on the XML model
 
         self.displayScriptInfo()
 
         self.case.undoStartGlobal()
+
+
+    def __caseIsSaved__(self):
+        """
+        Launch Code_Saturne batch running.
+        """
+        # Is the file saved?
+
+        xml_current = os.path.basename(self.case['xmlfile'])
+        xml_param = None
+        if self.case['runcase']:
+            xml_param = self.case['runcase'].get_parameters()
+        if not xml_current or xml_current != xml_param:
+            self.case['saved'] = "no"
+
+        is_saved = True
+        if self.case['saved'] == "no":
+            is_saved = False
+        if len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
+            is_saved = False
+
+        return is_saved
+
+
+    def __updateRunButton__(self):
+        """
+        Update push button for run
+        """
+        if self.__caseIsSaved__():
+            if self.jmdl.batch.rm_type != None:
+                self.pushButtonRunSubmit.setText("Submit job")
+            else:
+                self.pushButtonRunSubmit.setText("Run calculation")
+
+        else:
+            if self.jmdl.batch.rm_type != None:
+                self.pushButtonRunSubmit.setText("Save case and submit job")
+            else:
+                self.pushButtonRunSubmit.setText("Save case and run calculation")
 
 
     @pyqtSlot(str)
@@ -731,15 +653,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_wckey')
 
 
-    @pyqtSlot(str)
-    def slotArgRunType(self, text):
-        """
-        Input run type option.
-        """
-        run_type = self.modelArg_cs_verif.dicoV2M[str(text)]
-        self.mdl.setRunType(run_type)
-
-
     @pyqtSlot(int)
     def slotNProcs(self, v):
         """
@@ -826,18 +739,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         # Is the file saved?
 
-        xml_current = os.path.basename(self.case['xmlfile'])
-        xml_param = None
-        if self.case['runcase']:
-            xml_param = self.case['runcase'].get_parameters()
-        if not xml_current or xml_current != xml_param:
-            self.case['saved'] = "no"
+        if not self.__caseIsSaved__():
+            #self.parent.fileSave(renew_page=False)
+            self.parent.fileSave(renew_page=True)
+            self.__updateRunButton__
 
-        if self.case['saved'] == "no" or len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
-
+        if not self.__caseIsSaved__():
             title = self.tr("Warning")
             msg   = self.tr("The current case must be saved before "\
-                            "running the ") + self.tr(self.case['package']).code_name + self.tr(" script.")
+                            "running the computation script.")
             QMessageBox.information(self, title, msg)
             return
 
@@ -862,7 +772,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             return
 
         # Verify if boundary condition definitions exist
-        if self.case['prepro'] == False:
+        if self.case['run_type'] == 'standard':
             bd = LocalizationModel('BoundaryZone', self.case)
             if not bd.getZones():
                 if self.case['no_boundary_conditions'] == False:
@@ -901,6 +811,51 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.__updateRuncase('')  # remove --id <id> from runcase
 
         os.chdir(prv_dir)
+
+
+    @pyqtSlot(str)
+    def slotDebug(self, text):
+        """
+        Input for Debug.
+        """
+        self.debug = str(text)
+        self.mdl.setString('debug', self.debug.strip())
+
+
+    @pyqtSlot()
+    def slotDebugHelp(self):
+        """
+        Show help page for debugging
+        """
+
+        dialog = BatchRunningDebugOptionsHelpDialogView(self)
+        dialog.show()
+
+        return
+
+
+    @pyqtSlot()
+    def slotTrace(self):
+        """
+        Update log type for trace
+        """
+        if self.checkBoxTrace.isChecked():
+            trace = True
+        else:
+            trace = False
+        self.mdl.setTrace(trace)
+
+
+    @pyqtSlot()
+    def slotLogParallel(self):
+        """
+        Update log type for trace
+        """
+        if self.checkBoxLogParallel.isChecked():
+            logp = True
+        else:
+            logp = False
+        self.mdl.setLogParallel(logp)
 
 
     def __suggest_run_id(self):
@@ -1053,10 +1008,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 self.class_list = self.jmdl.batch.get_class_list()
                 if len(self.class_list) > 0:
                     for c in self.class_list:
-                        self.comboBoxClass.addItem(self.tr(c), to_qvariant(c))
+                        self.comboBoxClass.addItem(self.tr(c), c)
                 else:
                     c = self.job_class
-                    self.comboBoxClass.addItem(self.tr(c), to_qvariant(c))
+                    self.comboBoxClass.addItem(self.tr(c), c)
 
             # All passes
             try:

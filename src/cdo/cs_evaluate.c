@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -321,8 +321,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
   } /* Loop on selected cells */
 
   /* Handle parallelism */
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_DOUBLE, &volume_marked);
+  cs_parall_sum(1, CS_DOUBLE, &volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
   if (volume_marked > 0)
@@ -539,7 +538,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
         const double  hfco =
-          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+          cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
@@ -630,7 +629,7 @@ _pcvd_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfc = cs_math_onethird *
+        const double hfc = cs_math_1ov3 *
                 cs_math_3_dot_product(pfq.unitv, quant->dedge_vector+3*i);
         const cs_lnum_t start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
@@ -720,7 +719,7 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
         const double  hfco =
-          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
+          cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
                                                    quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
@@ -795,7 +794,7 @@ _pcva_by_analytic(cs_real_t                        time_eval,
   const cs_adjacency_t  *f2e = connect->f2e;
 
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t  id = 0; id < n_elts; id++) {
+  for (cs_lnum_t id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
     cs_real_t *val_i = values + 3*c_id;
@@ -818,9 +817,9 @@ _pcva_by_analytic(cs_real_t                        time_eval,
 
         const cs_lnum_t  f_id = c2f->ids[i];
         const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
-        const double hfco =
-          cs_math_onethird * cs_math_3_dot_product(pfq.unitv,
-                                                   quant->dedge_vector+3*i);
+        const double  hfco =
+          cs_math_1ov3 * cs_math_3_dot_product(pfq.unitv,
+                                               quant->dedge_vector+3*i);
         const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
         if (end - start == 3) {
@@ -1712,21 +1711,23 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 
     /* Retrieve information from mesh location structures */
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids
+    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
-  cs_quadrature_tetra_integral_t
-    *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
+  cs_quadrature_tetra_integral_t *qfunc
+    = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcsd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
       _dcsd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
@@ -1736,11 +1737,11 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
       _pcvd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
       _dcvd_by_analytic(time_eval, anai->func, anai->input,
-                        z->n_elts, z->elt_ids, qfunc,
+                        z->n_elts, elt_ids, qfunc,
                         retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
@@ -1873,7 +1874,9 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                        retval);
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+      /* Stride=1 since the global numbering is adapted in each case
+       * (scalar-, vector-valued equations) */
+      cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 
   } /* Located at primal vertices */
 
@@ -1921,7 +1924,9 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
                        retval);
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+      /* Stride=1 since the global numbering is adapted in each case
+       * (scalar-, vector-valued equations) */
+      cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 
   } /* Located at primal faces */
 
@@ -2182,7 +2187,9 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
     }
 
     if (cs_glob_n_ranks > 1)
-      cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+      /* Stride=1 since the global numbering is adapted in each case
+       * (scalar-, vector-valued equations) */
+      cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 
   } /* Deal with a selection of cells */
 
@@ -2190,7 +2197,8 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the average of a function on the faces
+ * \brief  Evaluate the average of a function on the faces.
+ *         Warning: retval has to be initialize before calling this function.
  *
  * \param[in]      def        pointer to a cs_xdef_t pointer
  * \param[in]      time_eval  physical time at which one evaluates the term
@@ -2211,6 +2219,8 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids
+    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_range_set_t  *rs = NULL;
   cs_quadrature_tria_integral_t
@@ -2223,7 +2233,7 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
     rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
     _pfsa_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
@@ -2231,7 +2241,7 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
     rs = cs_cdo_connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
 
     _pfva_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
@@ -2242,7 +2252,9 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
   } /* End of switch on dimension */
 
   if (cs_glob_n_ranks > 1)
-    cs_range_set_sync(rs, CS_DOUBLE, def->dim, (void *)retval);
+    /* Stride=1 since the global numbering is adapted in each case
+     * (scalar-, vector-valued equations) */
+    cs_range_set_sync(rs, CS_DOUBLE, 1, (void *)retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2347,7 +2359,8 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the average of a function on the cells
+ * \brief  Evaluate the average of a function on the cells.
+ *         Warning: retval has to be initialize before calling this function.
  *
  * \param[in]      def        pointer to a cs_xdef_t pointer
  * \param[in]      time_eval  physical time at which one evaluates the term
@@ -2368,6 +2381,8 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_lnum_t  *elt_ids
+    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
@@ -2377,13 +2392,13 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
 
   case 1: /* Scalar-valued */
     _pcsa_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
   case 3: /* Vector-valued */
     _pcva_by_analytic(time_eval,
-                      anai->func, anai->input, z->n_elts, z->elt_ids, qfunc,
+                      anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 

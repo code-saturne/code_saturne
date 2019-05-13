@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -425,8 +425,8 @@ cs_source_term_set_reduction(cs_xdef_t     *st,
       st->meta |= CS_FLAG_DUAL | CS_FLAG_CELL;
     else
       bft_error(__FILE__, __LINE__, 0,
-                " Stop modifying the source term flag.\n"
-                " This case is not handled.");
+                " %s: Stop modifying the source term flag.\n"
+                " This case is not handled.", __func__);
   }
   else if (flag & CS_FLAG_PRIMAL) {
     assert(save_meta & CS_FLAG_DUAL);
@@ -529,7 +529,10 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
         case CS_XDEF_BY_VALUE:
           msh_flag |= CS_CDO_LOCAL_PVQ;
-          compute_source[st_id] = cs_source_term_dcsd_by_value;
+          if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+            compute_source[st_id] = cs_source_term_dcvd_by_value;
+          else
+            compute_source[st_id] = cs_source_term_dcsd_by_value;
           break;
 
         case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1116,6 +1119,47 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it the given array of values.
+ *         Case of a vector-valued density defined at dual cells by a value.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
+
+  const cs_real_t *st_vect = (const cs_real_t *)source->input;
+
+  for (int v = 0; v < cm->n_vc; v++)
+    for (int k = 0; k < 3; k++)
+      values[3*v+k] += st_vect[k] * cm->wvc[v] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
  *         Case of a scalar density defined at dual cells by an array.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
@@ -1203,7 +1247,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
     cs_real_3_t  xfc;
 
     const double  *xf = cm->face[f].center;
-    const double  hf_coef = cs_math_onesix * cm->hfc[f];
+    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
 
     for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
 
@@ -1292,7 +1336,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
     cs_real_t  eval_xg[2];
 
     const double  *xf = cm->face[f].center;
-    const double  hf_coef = cs_math_onesix * cm->hfc[f];
+    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
 
     for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
 
@@ -1308,7 +1352,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
       for (int k = 0; k < 3; k++)
         xg[0][k] = xfc[k] + 0.375*xv1[k] + 0.125*xv2[k];
 
-      /* xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
+      /* xg = 0.25(xv2 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
       for (int k = 0; k < 3; k++)
         xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
 
@@ -1466,7 +1510,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       const short int  e = cm->f2e_ids[i];
       const short int  v1 = cm->e2v_ids[2*e];
       const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  half_pef_vol = cs_math_onesix * cm->tef[i] * hfc;
+      const double  half_pef_vol = cs_math_1ov6 * cm->tef[i] * hfc;
 
       pvf_vol[v1] += half_pef_vol;
       pvf_vol[v2] += half_pef_vol;
@@ -1935,7 +1979,7 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int  n_vf = end - start;  /* #vertices (=#edges) */
@@ -2155,7 +2199,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int  n_vf = end - start; // #vertices (=#edges)
@@ -2333,7 +2377,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
         for (short int f = 0; f < cm->n_fc; f++) {
 
           const cs_quant_t  pfq = cm->face[f];
-          const double  hf_coef = cs_math_onethird * cm->hfc[f];
+          const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
           const int  start = cm->f2e_idx[f];
           const int  end = cm->f2e_idx[f+1];
           const short int n_vf = end - start; /* #vertices (=#edges) */
@@ -2458,7 +2502,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */
@@ -2580,7 +2624,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */

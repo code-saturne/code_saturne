@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,16 +45,16 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel
 
 from code_saturne.Pages.BoundaryConditionsMobileMeshForm import Ui_BoundaryConditionsMobileMeshForm
-from code_saturne.Pages.MobileMeshModel import MobileMeshModel
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.Boundary import Boundary
+from code_saturne.model.MobileMeshModel import MobileMeshModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.Boundary import Boundary
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,13 +86,13 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
-        self.__model = MobileMeshModel(self.__case)
-        self.notebook = NotebookModel(self.__case)
+        self.__model = MobileMeshModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         self.__comboModel = ComboModel(self.comboMobilBoundary, 6, 1)
         self.__comboModel.addItem(self.tr("Fixed boundary"), "fixed_boundary")
@@ -105,7 +105,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         self.comboMobilBoundary.activated[str].connect(self.__slotCombo)
         self.pushButtonMobilBoundary.clicked.connect(self.__slotFormula)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     @pyqtSlot()
@@ -139,7 +139,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
             symbs.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
+                                check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbs,
@@ -184,8 +184,8 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         Show the widget
         """
         if self.__model.getMethod() != "off":
-            self.__boundary = Boundary("mobile_boundary", b.getLabel(), self.__case)
-            modelData = self.__boundary.getALEChoice()
+            self.__boundary = b
+            modelData = b.getALEChoice()
             self.__comboModel.setItem(str_model=modelData)
             if modelData in ["fixed_velocity", "fixed_displacement"]:
                 self.pushButtonMobilBoundary.show()

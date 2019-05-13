@@ -10,7 +10,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -75,6 +75,12 @@ extern mei_node_t  *mei_glob_root;
 /*============================================================================
  * Public function prototypes defined by Yacc
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Scan the expression
+ *----------------------------------------------------------------------------*/
+
+extern int yylex(void);
 
 /*----------------------------------------------------------------------------
  * Parse the expression

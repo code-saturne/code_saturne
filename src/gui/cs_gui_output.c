@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -633,7 +633,7 @@ cs_gui_postprocess_activate(void)
 
     const char *frequency_choice
       = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "frequency"),
-                             "perio");
+                             "period");
 
     if (cs_gui_strcmp(frequency_choice, "formula")) {
       const char *formula = cs_tree_node_get_child_value_str(tn, "frequency");

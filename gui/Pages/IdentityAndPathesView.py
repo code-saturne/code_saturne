@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,9 +45,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
+from code_saturne.Base.MainView import MainView
 from code_saturne.Pages.IdentityAndPathesForm import Ui_IdentityAndPathesForm
-from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -73,17 +74,19 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
     """
     Class to open Identity and Pathes Page.
     """
-    def __init__(self, parent, case, study):
+    def __init__(self, parent, case):
         """
         Constructor
         """
+
+        self.parent = parent
+
         QWidget.__init__(self, parent)
 
         Ui_IdentityAndPathesForm.__init__(self)
         self.setupUi(self)
 
         self.case = case
-        self.study = study
 
         self.case.undoStopGlobal()
 
@@ -103,7 +106,6 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
         if not self.case['case_path']:
 
             # Set case path to its default value
-            #
             fic = self.mdl.getXmlFileName()
             if not fic:
                 f = os.getcwd()
@@ -124,13 +126,23 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
                     self.mdl.setCasePath(os.path.split(os.getcwd())[0])
 
         self.case_path = self.mdl.getCasePath()
-        self.lineEditCasePath.setText(self.case_path)
-        self.getAbsolutePath()
+
+        study_path = ''
+        case_path = self.case_path
+        if case_path:
+            study_path = os.path.split(os.path.abspath(self.case_path))[0]
+            if study_path:
+                case_path = os.path.basename(case_path)
+
+        self.__getAbsolutePath()
+
+        self.lineEditStudyPath.setText(study_path)
+        self.lineEditCasePath.setText(case_path)
 
         self.case.undoStartGlobal()
 
 
-    def updateId(self, case_path):
+    def __updateId(self, case_path):
         """
         Update Study and Case names in the StudyId bar.
         """
@@ -140,7 +152,9 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
 
         self.mdl.setId(case_name, study_name)
         fic = self.mdl.getXmlFileName()
-        self.study.set(study=study_name, case=case_name, filename=fic)
+
+        if hasattr(self.parent, 'updateTitleBar'):
+            self.parent.updateTitleBar()
 
 
     def searchDir(self):
@@ -157,16 +171,16 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
 
         if dir_name:
             self.case_path = dir_name
-            self.lineEditCasePath.setText(self.case_path)
-            self.getAbsolutePath()
-            self.updateId(dir_name)
+            self.mdl.setCasePath(self.case_path)
+            self.__getAbsolutePath()
+            self.__updateId(dir_name)
 
 
-    def getAbsolutePath(self):
+    def __getAbsolutePath(self):
         """
         Get absolute path for the case sub-directories and the meshes.
         """
-        self.case_path = str(self.lineEditCasePath.text())
+        self.case_path = self.mdl.getCasePath()
         self.lineEditCasePath.setText(self.case_path)
         case_dir = os.path.abspath(self.case_path)
         self.case_path = case_dir
@@ -175,7 +189,7 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
 
         if os.path.isdir(case_dir) :
             self.mdl.setCasePath(case_dir)
-            self.updateId(case_dir)
+            self.__updateId(case_dir)
 
             msg = [self.tr("Warning: the DATA sub-directory DATA is required."),
                    self.tr("Warning: the RESU sub-directory RESU is required."),

@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,8 @@
 AUTOMAKE_OPTIONS = -Wno-portability
 
 include $(top_srcdir)/config/salome_module.mk
+
+if HAVE_SALOME_GUI
 
 MODULE_NAME = CFDSTUDY
 
@@ -66,6 +68,8 @@ CLEANFILES = *.hh *SK.cc *.py *.hxx *.cxx
 
 EXTRA_DIST = $(IDL_FILES)
 # potential problem on parallel make on the following - multiple outputs
+
+endif
 
 install-data-local: $(IDL_FILES)
 	$(INSTALL) -d  $(DESTDIR)$(salomepythondir)

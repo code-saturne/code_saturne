@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -105,6 +105,10 @@ integer          iwarnp
 integer          istprv
 integer          init
 integer          imucpp, idftnp, iswdyp
+integer          key_t_ext_id
+integer          iroext
+integer          iviext
+integer          kclipp, clip_w_id, clip_k_id
 
 integer          icvflb, imasac
 integer          ivoid(1)
@@ -122,6 +126,7 @@ double precision xlt, xdelta, xrd, xfd, xs2pw2, xdist, xdiff, fddes
 double precision var, vrmin(2), vrmax(2)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0
 double precision turb_schmidt
+double precision normp
 
 double precision rvoid(1)
 
@@ -154,6 +159,10 @@ double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_divukw, cpro_s2kw
 double precision, dimension(:), pointer :: ddes_fd_coeff
 double precision, dimension(:), pointer :: w_dist
+double precision, dimension(:), pointer :: cpro_k_clipped
+double precision, dimension(:), pointer :: cpro_w_clipped
+double precision, dimension(:), pointer :: cpro_beta
+double precision, allocatable, dimension(:) :: grad_dot_g
 
 type(var_cal_opt) :: vcopt_w, vcopt_k
 
@@ -230,14 +239,22 @@ if (istprv.ge.0) then
   if (istprv.ge.0) istprv = 1
 endif
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
 if (istprv.ge.0) then
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_prev_s(iviscl, cpro_pcvlo)
+  endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cpro_pcvto)
-    call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
 endif
 
@@ -392,35 +409,7 @@ if (igrake.eq.1) then
 
   ! Allocate a temporary array for the gradient calculation
   allocate(grad(3,ncelet))
-
-  ! --- Buoyant term:     G = Beta*g*GRAD(T)/PrT/rho
-  !     Here is computed: G =-g*GRAD(rho)/PrT/rho
-
-  iccocg = 1
-  inc = 1
-
-  nswrgp = vcopt_k%nswrgr
-  epsrgp = vcopt_k%epsrgr
-  imligp = vcopt_k%imligr
-  iwarnp = vcopt_k%iwarni
-  climgp = vcopt_k%climgr
-  extrap = vcopt_k%extrag
-
-  ! BCs on rho: Dirichlet ROMB
-  !  NB: viscb is used as COEFB
-
-  do ifac = 1, nfabor
-    viscb(ifac) = 0.d0
-  enddo
-
-  f_id = -1
-
-  call gradient_s                                                 &
- ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
-   cromo  , bromo  , viscb  ,                                     &
-   grad   )
-
+  allocate(grad_dot_g(ncelet))
 
   ! Buoyancy production
   !   prodk=min(P,c1*eps)+G
@@ -432,12 +421,67 @@ if (igrake.eq.1) then
     prdtur = 1.d0
   endif
 
+
+  ! --- Buoyant term:     G = Beta*g*GRAD(T)/PrT/rho
+  !     Here is computed: G =-g*GRAD(rho)/PrT/rho
+
+  ! Boussinesq approximation, only for the thermal scalar for the moment
+  if (idilat.eq.0)  then
+
+    iccocg = 1
+    inc = 1
+
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, iccocg, &
+                               grad)
+
+    !FIXME make it dependant on the scalar and use is_buoyant field
+    call field_get_val_s(ibeta, cpro_beta)
+
+    ! - Beta grad(T) . g / Pr_T
+    do iel = 1, ncel
+      grad_dot_g(iel) = - cpro_beta(iel) &
+        * (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) / (prdtur)
+    enddo
+
+  else
+
+    iccocg = 1
+    inc = 1
+
+    nswrgp = vcopt_k%nswrgr
+    epsrgp = vcopt_k%epsrgr
+    imligp = vcopt_k%imligr
+    iwarnp = vcopt_k%iwarni
+    climgp = vcopt_k%climgr
+    extrap = vcopt_k%extrag
+
+    ! BCs on rho: Dirichlet ROMB
+    !  NB: viscb is used as COEFB
+
+    do ifac = 1, nfabor
+      viscb(ifac) = 0.d0
+    enddo
+
+    f_id = -1
+
+    call gradient_s                                                 &
+   ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+     iwarnp , epsrgp , climgp , extrap ,                            &
+     cromo  , bromo  , viscb  ,                                     &
+     grad   )
+
+    do iel = 1, ncel
+      grad_dot_g(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
+        / (rho*prdtur)
+    enddo
+
+  endif
+
   do iel = 1, ncel
     rho = cromo(iel)
     visct = cpro_pcvto(iel)
 
-    w2(iel) = -(grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) / &
-               (rho*prdtur)
+    w2(iel) = - grad_dot_g(iel)
 
     prodw(iel) = prodw(iel)+visct*max(w2(iel),zero)
     prodk(iel) = prodk(iel)+visct*w2(iel)
@@ -449,6 +493,7 @@ if (igrake.eq.1) then
 
   ! Free memory
   deallocate(grad)
+  deallocate(grad_dot_g)
 
 endif
 
@@ -1010,7 +1055,7 @@ endif
 ! Solving k
 iconvp = vcopt_k%iconv
 idiffp = vcopt_k%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_k%ndircl
 nswrsp = vcopt_k%nswrsm
 nswrgp = vcopt_k%nswrgr
 imligp = vcopt_k%imligr
@@ -1032,13 +1077,14 @@ relaxp = vcopt_k%relaxv
 thetap = vcopt_k%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_k         , cvara_k         ,                            &
@@ -1080,7 +1126,7 @@ endif
 ! Solving omega
 iconvp = vcopt_w%iconv
 idiffp = vcopt_w%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_w%ndircl
 nswrsp = vcopt_w%nswrsm
 nswrgp = vcopt_w%nswrgr
 imligp = vcopt_w%imligr
@@ -1102,13 +1148,14 @@ relaxp = vcopt_w%relaxv
 thetap = vcopt_w%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    cvara_omg       , cvara_omg       ,                            &
@@ -1142,6 +1189,25 @@ do ii = 1, 2
 enddo
 
 ! On clippe simplement k et omega par valeur absolue
+call field_get_key_id("clipping_id", kclipp)
+
+call field_get_key_int(ivarfl(ik), kclipp, clip_k_id)
+if (clip_k_id.ge.0) then
+  call field_get_val_s(clip_k_id, cpro_k_clipped)
+endif
+
+call field_get_key_int(ivarfl(iomg), kclipp, clip_w_id)
+if (clip_w_id.ge.0) then
+  call field_get_val_s(clip_w_id, cpro_w_clipped)
+endif
+
+do iel = 1, ncel
+  if (clip_k_id.ge.0) &
+    cpro_k_clipped(iel) = 0.d0
+  if (clip_w_id.ge.0) &
+    cpro_w_clipped(iel) = 0.d0
+enddo
+
 iclipk(1) = 0
 iclipw = 0
 do iel = 1, ncel
@@ -1149,21 +1215,29 @@ do iel = 1, ncel
   xw = cvar_omg(iel)
   if (abs(xk).le.epz2) then
     iclipk(1) = iclipk(1) + 1
-    cvar_k(iel) = max(cvar_k(iel),epz2)
+    if (clip_k_id.ge.0) &
+      cpro_k_clipped(iel) = epz2 - xk
+    cvar_k(iel) = epz2
   elseif (xk.le.0.d0) then
     iclipk(1) = iclipk(1) + 1
+    if (clip_k_id.ge.0) &
+      cpro_k_clipped(iel) = - xk
     cvar_k(iel) = -xk
   endif
   if (abs(xw).le.epz2) then
     iclipw = iclipw + 1
-    cvar_omg(iel) = max(cvar_omg(iel),epz2)
+    if (clip_w_id.ge.0) &
+      cpro_w_clipped(iel) = epz2 - xw
+    cvar_omg(iel) = epz2
   elseif (xw.le.0.d0) then
     iclipw = iclipw + 1
+    if (clip_w_id.ge.0) &
+      cpro_w_clipped(iel) = - xw
     cvar_omg(iel) = -xw
   endif
 enddo
 
-! ---  Stockage nb de clippings pour listing
+! ---  Stockage nb de clippings pour log
 
 call log_iteration_clipping_field(ivarfl(ik), iclipk(1), 0,    &
                                   vrmin(1:1), vrmax(1:1),iclipk(1), iclpkmx(1))

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -217,6 +217,105 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
                                       double      t_intensity,
                                       double      dh,
                                       double     *rcodcl);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
+ *        on given k and epsilon values.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     k          turbulent kinetic energy
+ * \param[in]     eps        turbulent dissipation
+ * \param[out]    rcodcl     boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
+                             double      k,
+                             double      eps,
+                             double     *rcodcl);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
+ *        on given k and epsilon values only if not already initialized.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     k          turbulent kinetic energy
+ * \param[in]     eps        turbulent dissipation
+ * \param[out]    rcodcl     boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
+                                        double      k,
+                                        double      eps,
+                                        double     *rcodcl);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute matrix \f$\tens{\alpha}\f$ used in the computation of the
+ * Reynolds stress tensor boundary conditions.
+ *
+ * We note \f$\tens{R}_g\f$ the Reynolds Stress tensor in the global reference
+ * frame (mesh reference frame) and \f$\tens{R}_l\f$ the Reynolds stress
+ * tensor in the local reference frame (reference frame associated to the
+ * boundary face).
+ *
+ * \f$\tens{P}_{lg}\f$ is the change of basis orthogonal matrix from local
+ * to global reference frame.
+
+ * \f$\tens{\alpha}\f$ is a 6 by 6 matrix such that:
+ * \f[
+ * \vect{R}_{g,\fib} = \tens{\alpha} \vect{R}_{g,\centip} + \vect{R}_{g}^*
+ * \f]
+ * where symetric tensors \f$\tens{R}_g\f$ have been unfolded as follows:
+ * \f[
+ * \vect{R}_g = \transpose{\left(R_{g,11},R_{g,22},R_{g,33},
+ *                              R_{g,12},R_{g,13},R_{g,23}\right)}
+ * \f].
+ *
+ * \f$\tens{\alpha}\f$ is defined so that \f$ \tens{R}_{g,\fib} \f$ is computed
+ * as a function of \f$\tens{R}_{g,\centip}\f$ as follows:
+ * \f[
+ * \tens{R}_{g,\fib}=\tens{P}_{lg}\tens{R}_{l,\fib}\transpose{\tens{P}_{lg}}
+ * \f]
+ *
+ * with
+ * \f[
+ * \tens{R}_{l,\fib} =
+ * \begin{bmatrix}
+ * R_{l,11,\centip}   &   u^* u_k        & c R_{l,13,\centip}\\
+ *   u^* u_k          & R_{l,22,\centip} & 0                 \\
+ * c R_{l,13,\centip} & 0                & R_{l,33,\centip}
+ * \end{bmatrix} +
+ * \underbrace{\begin{bmatrix}
+ *                 0  &   u^* u_k        & 0                 \\
+ *   u^* u_k          & 0                & 0                 \\
+ * 0                  & 0                & 0
+ * \end{bmatrix}}_{\tens{R}_l^*}
+ * \f]
+ *
+ * and
+ * \f$\tens{R}_{l,\centip}=\transpose{\tens{P}_{lg}}\tens{R}_{g,\centip}
+ *                       \tens{P}_{lg}\f$.
+ *
+ * Constant c is chosen depending on the type of the boundary face:
+ * \f$c = 0\f$ at a wall face, \f$c = 1\f$ at a symmetry face.
+ *
+ * \param[in]      is_sym  Constant c in description above
+ *                         (1 at a symmetry face, 0 at a wall face)
+ * \param[in]      p_lg    change of basis matrix (local to global)
+ * \param[out]     alpha   transformation matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_rij_transform(int        is_sym,
+                               cs_real_t  p_lg[3][3],
+                               cs_real_t  alpha[][6]);
 
 /*----------------------------------------------------------------------------*/
 

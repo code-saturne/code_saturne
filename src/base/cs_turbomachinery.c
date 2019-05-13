@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -906,9 +906,11 @@ _update_mesh(bool     restart_mode,
 
   if (restart_mode == false) {
 
-    int n_retry = CS_MIN(tbm->n_max_join_tries, 1);
+    int n_retry = CS_MAX(tbm->n_max_join_tries, 1);
     cs_lnum_t boundary_changed = 0;
     double eps_dt = 0.;
+
+    const cs_time_step_t *ts = cs_glob_time_step;
 
     do {
 
@@ -994,8 +996,7 @@ _update_mesh(bool     restart_mode,
                     (unsigned long long)cs_glob_mesh->n_g_b_faces);
         }
         else {
-          double dt = cs_glob_time_step->t_cur - cs_glob_time_step->t_prev;
-          eps_dt += tbm->dt_retry * dt;
+          eps_dt += tbm->dt_retry * ts->dt[0];
           bft_printf(_(join_err_fmt),
                      (unsigned long long)n_g_b_faces_ref,
                      (unsigned long long)cs_glob_mesh->n_g_b_faces);
@@ -1003,14 +1004,12 @@ _update_mesh(bool     restart_mode,
 
           /* Destroy previous global mesh and related entities */
 
-          cs_mesh_location_finalize();
           cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
 
           cs_mesh_destroy(cs_glob_mesh);
 
           /* Create new global mesh and related entities */
 
-          cs_mesh_location_initialize();
           cs_glob_mesh = cs_mesh_create();
           cs_glob_mesh->verbosity = 0;
           cs_glob_mesh_builder = cs_mesh_builder_create();

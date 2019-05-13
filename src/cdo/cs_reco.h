@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -86,12 +86,49 @@ cs_reco_fw_scalar_pv_at_face_center(const cs_face_mesh_t    *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at the face center from an array of values
+ *         defined on primal vertices.
+ *
+ * \param[in]  f      id of the face in the cellwise numbering
+ * \param[in]  cm     pointer to cs_cell_mesh_t structure
+ * \param[in]  p_v    pointer to an array of values (local to the cell)
+ *
+ * \return the value of the reconstruction at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_reco_cw_scalar_pv_at_face_center(const short int          f,
+                                    const cs_cell_mesh_t    *cm,
+                                    const cs_real_t         *p_v)
+{
+  cs_real_t  p_f = 0.;
+
+  if (p_v == NULL)
+    return p_f;
+
+  assert(cs_flag_test(cm->flag,
+                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ |
+                      CS_CDO_LOCAL_FE));
+
+  const cs_quant_t  pfq = cm->face[f];
+  for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
+    const short int  *v = cm->e2v_ids + 2*cm->f2e_ids[ie];
+    p_f += (p_v[v[0]] + p_v[v[1]]) * cm->tef[ie];
+  }
+  p_f *= 0.5 / pfq.meas;
+
+  return p_f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value of a scalar potential at the cell center from
  *         an array of values defined on primal vertices.
  *         Algorithm based on the cs_cell_mesh_t structure.
  *
  *  \param[in]      cm       pointer to a cs_cell_mesh_t structure
- *  \param[in]      array    pointer to the array of values
+ *  \param[in]      array    pointer to the array of values (size: n_vc)
  *
  *  \return the value of the reconstruction at the cell center
  */
@@ -99,18 +136,20 @@ cs_reco_fw_scalar_pv_at_face_center(const cs_face_mesh_t    *fm,
 
 static inline cs_real_t
 cs_reco_cw_scalar_pv_at_cell_center(const cs_cell_mesh_t     *cm,
-                                    const cs_real_t          *array)
+                                    const cs_real_t          *p_v)
 {
-  /* Sanity checks */
-  assert(cm != NULL && array != NULL);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ));
+  cs_real_t  p_c = 0.;
+
+  if (p_v == NULL || cm == NULL)
+    return p_c;
+
+  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ)); /* Sanity check */
 
   /* Reconstruct the value at the cell center */
-  cs_real_t  pc = 0.;
   for (short int v = 0; v < cm->n_vc; v++)
-    pc += cm->wvc[v] * array[cm->v_ids[v]];
+    p_c += cm->wvc[v] * p_v[v];
 
-  return pc;
+  return p_c;
 }
 
 /*============================================================================

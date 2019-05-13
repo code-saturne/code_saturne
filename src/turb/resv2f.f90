@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -106,6 +106,9 @@ integer          istprv
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
+integer          key_t_ext_id
+integer          iroext
+integer          iviext
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision tuexpe, thets , thetv , thetap, thetp1
@@ -114,6 +117,7 @@ double precision xk, xe, xnu, xrom, ttke, ttmin, llke, llmin, tt
 double precision fhomog
 double precision hint
 double precision l2, time_scale
+double precision normp
 
 double precision rvoid(1)
 
@@ -201,6 +205,9 @@ if (vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
 !===============================================================================
 ! 2. Calculation of term grad(phi).grad(k)
 !===============================================================================
@@ -262,9 +269,12 @@ thetv  = vcopt%thetav
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(iviscl, cpro_pcvlo)
 if (istprv.ge.0) then
+  call field_get_key_int(icrom, key_t_ext_id, iroext)
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
+
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(iviscl, cpro_pcvlo)
   endif
@@ -463,7 +473,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -484,6 +494,7 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -494,7 +505,7 @@ call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &
@@ -528,6 +539,7 @@ thetv  = vcopt%thetav
 
 call field_get_val_s(ivisct, cpro_pcvto)
 if (istprv.ge.0) then
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cpro_pcvto)
   endif
@@ -780,7 +792,7 @@ endif
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -801,6 +813,7 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -811,7 +824,7 @@ call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &

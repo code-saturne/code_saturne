@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -50,6 +50,7 @@ use ppthch
 use ppincl
 use ihmpre
 use field
+use cs_c_bindings
 use cs_cf_bindings
 
 !===============================================================================
@@ -59,6 +60,10 @@ implicit none
 ! Arguments
 
 ! Local variables
+
+integer keyrf
+
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -91,11 +96,49 @@ if (ippmod(icompf).ge.0) then
   iviscv = -1
   viscv0 = 0.d0
 
+  ! Mixture fractions (two-phase homogeneous flows)
+  if (ippmod(icompf).gt.1) then
+    ! Volume fraction of phase 1 (with respect to the EOS parameters)
+    call add_model_scalar_field('volume_fraction', 'Volume Fraction', ifracv)
+
+    ! Mass fraction of phase 1
+    call add_model_scalar_field('mass_fraction', 'Mass Fraction', ifracm)
+
+    ! Energy fraction of phase 1
+    call add_model_scalar_field('energy_fraction', 'Energy Fraction', ifrace)
+
+    ! Pointer and reference value for diffusivity of three fractions
+    call field_set_key_int (ivarfl(ifracv), kivisl, -1)
+    visls0(ifracv) = epzero
+    call field_set_key_int (ivarfl(ifracm), kivisl, -1)
+    visls0(ifracm) = epzero
+    call field_set_key_int (ivarfl(ifrace), kivisl, -1)
+    visls0(ifrace) = epzero
+
+    ! Pure convection equation for three fractions
+    call field_get_key_struct_var_cal_opt(ivarfl(ifracv), vcopt)
+    vcopt%idifft = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ifracv), vcopt)
+
+    call field_get_key_struct_var_cal_opt(ivarfl(ifracm), vcopt)
+    vcopt%idifft = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ifracm), vcopt)
+
+    call field_get_key_struct_var_cal_opt(ivarfl(ifrace), vcopt)
+    vcopt%idifft = 0
+    call field_set_key_struct_var_cal_opt(ivarfl(ifrace), vcopt)
+
+    ! Set restart file for fractions
+    call field_get_key_id('restart_file', keyrf)
+    call field_set_key_int (ivarfl(ifracv), keyrf, RESTART_MAIN)
+    call field_set_key_int (ivarfl(ifracm), keyrf, RESTART_MAIN)
+    call field_set_key_int (ivarfl(ifrace), keyrf, RESTART_MAIN)
+  endif
+
 endif
 !--------
 ! Formats
 !--------
-
 
 return
 end subroutine

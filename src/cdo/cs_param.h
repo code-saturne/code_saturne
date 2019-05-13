@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -73,22 +73,22 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function which defines the time step according to the number of
- *         iteration already done, the current time and any structure given as
- *         a parameter
+ * \brief  Function which defines the evolution of a quantity according to the
+ *         number of iteration already done, the current time and any structure
+ *         given as a parameter
  *
  * \param[in]   time_iter   current number of iterations
  * \param[in]   time        value of the time at the end of the last iteration
  * \param[in]   input       pointer to a structure cast on-the-fly
- *
- * \return the value of the time step
+ * \param[in]   retval      result of the evaluation
  */
 /*----------------------------------------------------------------------------*/
 
-typedef cs_real_t
-(cs_timestep_func_t) (int       time_iter,
-                      double    time,
-                      void     *input);
+typedef void
+(cs_time_func_t) (int           time_iter,
+                  double        time,
+                  void         *input,
+                  cs_real_t    *retval);
 
 /* ================
  * ENUM definitions
@@ -107,16 +107,19 @@ typedef cs_real_t
  * CDO scheme with vertex+cell-based positionning
  *
  * \var CS_SPACE_SCHEME_CDOFB
- * CDO scheme with vertex+cell-based positionning
+ * CDO scheme with face-based positionning
  *
  * \var CS_SPACE_SCHEME_HHO_P0
- * CDO scheme with vertex+cell-based positionning
+ * Hybrid High Order (HHO) schemes
+ * HHO scheme with face-based positionning (lowest order)
  *
  * \var CS_SPACE_SCHEME_HHO_P1
- * CDO scheme with vertex+cell-based positionning
+ * Hybrid High Order (HHO) schemes
+ * HHO scheme with face-based positionning (k=1 up to order 3)
  *
  * \var CS_SPACE_SCHEME_HHO_P2
- * CDO scheme with vertex+cell-based positionning
+ * Hybrid High Order (HHO) schemes
+ * HHO scheme with face-based positionning (k=2 up to order 4)
  */
 
 typedef enum {
@@ -164,10 +167,10 @@ typedef enum {
  * \var CS_TIME_SCHEME_STEADY
  * No time scheme. Steady-state computation.
  *
- * \var CS_TIME_SCHEME_IMPLICIT
+ * \var CS_TIME_SCHEME_EULER_IMPLICIT
  * fully implicit (forward Euler/theta-scheme = 1)
  *
- * \var CS_TIME_SCHEME_EXPLICIT
+ * \var CS_TIME_SCHEME_EULER_EXPLICIT
  * fully explicit (backward Euler/theta-scheme = 0)
  *
  * \var CS_TIME_SCHEME_CRANKNICO
@@ -180,8 +183,8 @@ typedef enum {
 typedef enum {
 
   CS_TIME_SCHEME_STEADY,
-  CS_TIME_SCHEME_IMPLICIT,
-  CS_TIME_SCHEME_EXPLICIT,
+  CS_TIME_SCHEME_EULER_IMPLICIT,
+  CS_TIME_SCHEME_EULER_EXPLICIT,
   CS_TIME_SCHEME_CRANKNICO,
   CS_TIME_SCHEME_THETA,
 
@@ -280,6 +283,14 @@ typedef enum {
  * \var CS_PARAM_BC_NEUMANN
  * Neumann conditions. The value of the flux of variable is set to the user
  * requirements.
+ *
+ * \var CS_PARAM_BC_ROBIN
+ * Robin conditions.
+ *
+ * \var CS_PARAM_BC_SLIDING
+ * Sliding conditions. Homogeneous Dirichlet for the normal componenent and
+ * homogeneous Neumann for the tangential components. Only available for
+ * vector-valued equations.
  */
 
 typedef enum {
@@ -289,6 +300,7 @@ typedef enum {
   CS_PARAM_BC_HMG_NEUMANN,
   CS_PARAM_BC_NEUMANN,
   CS_PARAM_BC_ROBIN,
+  CS_PARAM_BC_SLIDING,
   CS_PARAM_N_BC_TYPES
 
 } cs_param_bc_type_t;
@@ -335,9 +347,30 @@ typedef enum {
 
 /*!
  * @}
- * @name Settings for the linear solvers
+ * @name Settings for the linear solvers or SLES (Sparse Linear Equation Solver)
  * @{
  *
+ * \enum cs_param_sles_class_t
+ * \brief Class of iterative solvers to consider for solver the linear system
+ *
+ * \var CS_PARAM_SLES_CLASS_CS
+ * Iterative solvers available in Code_Saturne
+ *
+ * \var CS_PARAM_SLES_CLASS_PETSC
+ * Solvers available in Code_Saturne
+ *
+ * \var CS_PARAM_SLES_N_CLASSES
+ */
+
+typedef enum {
+
+  CS_PARAM_SLES_CLASS_CS,
+  CS_PARAM_SLES_CLASS_PETSC,
+  CS_PARAM_SLES_N_CLASSES
+
+} cs_param_sles_class_t;
+
+/*!
  * \enum cs_param_amg_type_t
  * Type of AMG (Algebraic MultiGrid) algorithm to use (either as a
  * preconditionnerwith or a solver).
@@ -357,8 +390,9 @@ typedef enum {
 /*!
  * \enum cs_param_precond_type_t
  * Type of preconditionner to use with the iterative solver. Some
- * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0 or
- * \ref CS_PARAM_PRECOND_AS are available only with the PETSc interface.
+ * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0,
+ * \ref CS_PARAM_PRECOND_AS and \ref CS_PARAM_PRECOND_AMG_BLOCK are available
+ * only with the PETSc interface.
  */
 
 typedef enum {
@@ -372,7 +406,8 @@ typedef enum {
   CS_PARAM_PRECOND_ILU0,    /*!< Incomplete LU factorization */
   CS_PARAM_PRECOND_ICC0,    /*!< Incomplete Cholesky factorization */
   CS_PARAM_PRECOND_AMG,     /*!< Algebraic MultiGrid */
-  CS_PARAM_PRECOND_AS,      /*!< Additive Schwarz method */
+  CS_PARAM_PRECOND_AMG_BLOCK,  /*!< Algebraic MultiGrid by block */
+  CS_PARAM_PRECOND_AS,         /*!< Additive Schwarz method */
   CS_PARAM_N_PRECOND_TYPES
 
 } cs_param_precond_type_t;
@@ -385,40 +420,64 @@ typedef enum {
 
 typedef enum {
 
-  CS_PARAM_ITSOL_JACOBI,           /*!< Jacobi */
-  CS_PARAM_ITSOL_GAUSS_SEIDEL,     /*!< Gauss-Seidel */
-  CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL, /*!< Symetric Gauss-Seidel */
-  CS_PARAM_ITSOL_CG,               /*!< Conjuguate Gradient */
+  CS_PARAM_ITSOL_AMG,              /*!< Algebraic MultiGrid */
   CS_PARAM_ITSOL_BICG,             /*!< Bi-Conjuguate gradient */
   CS_PARAM_ITSOL_BICGSTAB2,        /*!< Stabilized Bi-Conjuguate gradient */
+  CS_PARAM_ITSOL_CG,               /*!< Conjuguate Gradient */
   CS_PARAM_ITSOL_CR3,              /*!< 3-layer conjugate residual*/
-  CS_PARAM_ITSOL_GMRES,            /*!< Generalized Minimal RESidual */
   CS_PARAM_ITSOL_FCG,              /*!< Flexible Conjuguate Gradient */
-  CS_PARAM_ITSOL_AMG,              /*!< Algebraic MultiGrid */
+  CS_PARAM_ITSOL_GAUSS_SEIDEL,     /*!< Gauss-Seidel */
+  CS_PARAM_ITSOL_GMRES,            /*!< Generalized Minimal RESidual */
+  CS_PARAM_ITSOL_JACOBI,           /*!< Jacobi */
+  CS_PARAM_ITSOL_MINRES,           /*!< Mininal Residual */
+  CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL, /*!< Symetric Gauss-Seidel */
   CS_PARAM_N_ITSOL_TYPES
 
 } cs_param_itsol_type_t;
 
 /*!
- * \struct cs_param_itsol_t
+ * \enum cs_param_resnorm_type_t
+ * Way to renormalize (or not) the residual arising during the resolution of
+ * linear systems
+ */
+
+typedef enum {
+
+  CS_PARAM_RESNORM_NONE,           /*!< No renormalization  */
+  CS_PARAM_RESNORM_VOLTOT,         /*!< Renormalization based on the volume of
+                                        the computational domain */
+  CS_PARAM_RESNORM_WEIGHTED_RHS,   /*!< Renormalization based on a weighted
+                                        L2-norm of the right-hand side */
+  CS_PARAM_RESNORM_MAT_DIAG,
+  CS_PARAM_N_RESNORM_TYPES
+
+} cs_param_resnorm_type_t;
+
+/*!
+ * \struct cs_param_sles_t
  * \brief Structure storing all metadata related to the resolution of a linear
  *        system with an iterative solver.
  */
 
 typedef struct {
 
-  cs_param_precond_type_t  precond;    /*!< type of preconditioner */
-  cs_param_itsol_type_t    solver;     /*!< type of solver */
-  cs_param_amg_type_t      amg_type;   /*!< type of AMG algorithm if needed  */
-  int                      n_max_iter; /*!< max. number of iterations */
-  double                   eps;        /*!< stopping criterion on accuracy */
+  _Bool                    setup_done;   /*!< SLES setup step has been done */
+  int                      verbosity;    /*!< SLES verbosity */
 
-  /*! \var resid_normalized
+  cs_param_sles_class_t    solver_class; /*!< class of SLES to consider  */
+  cs_param_precond_type_t  precond;      /*!< type of preconditioner */
+  cs_param_itsol_type_t    solver;       /*!< type of solver */
+  cs_param_amg_type_t      amg_type;     /*!< type of AMG algorithm if needed */
+
+  /*! \var resnorm_type
    *  normalized or not the norm of the residual used for the stopping criterion
+   *  See \ref CS_EQKEY_ITSOL_RESNORM_TYPE for more details.
    */
-  bool         resid_normalized;
+  cs_param_resnorm_type_t  resnorm_type;
+  int                      n_max_iter;   /*!< max. number of iterations */
+  double                   eps;          /*!< stopping criterion on accuracy */
 
-} cs_param_itsol_t;
+} cs_param_sles_t;
 
 /*============================================================================
  * Global variables

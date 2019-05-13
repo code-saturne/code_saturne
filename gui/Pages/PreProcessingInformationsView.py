@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -46,7 +46,7 @@ from code_saturne.Base.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import getopenfilename
 
 #-------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ def preprocessorFile(parent, initdir):
     Verify if the choses of file is correct
     """
     file_name = ""
-    title = tr("Select a Code_Saturne Preprocessor listing")
+    title = tr("Select a preprocessor log")
     filetypes = "Preprocessor log (*.log);;All Files (*)"
     filt = "All files (*)"
     initdir = os.path.join(initdir, 'check_mesh')
@@ -114,7 +114,7 @@ class Informations:
 
         lines = self.readFile(file)
         if not lines:
-            raise ValueError("Code_Saturne Preprocessor log language unknown.")
+            raise ValueError("Preprocessor log language unknown.")
 
         refList, groupList = self.getLists(lines)
 

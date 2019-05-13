@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -95,7 +95,6 @@ integer          itytu0
 double precision xjjp   , yjjp   , zjjp
 double precision d2s3
 double precision xjpf,yjpf,zjpf,jpf
-double precision xx, yy, zz
 
 double precision, allocatable, dimension(:,:,:) :: gradv, gradts
 double precision, allocatable, dimension(:,:) :: grad
@@ -566,8 +565,7 @@ elseif (itytur.eq.3) then
     ! allocate a temporary array
     allocate(gradts(6,3,ncelet))
 
-    call field_gradient_tensor(ivarfl(irij), iprev, imrgra, inc,  &
-         gradts)
+    call field_gradient_tensor(ivarfl(irij), iprev, imrgra, inc, gradts)
 
     do ipt = 1, nptdis
 

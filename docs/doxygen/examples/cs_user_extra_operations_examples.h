@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -42,6 +42,7 @@
   - \subpage cs_user_extra_operations_examples_force_temperature_p
   - \subpage cs_user_extra_operations_examples_global_efforts_p
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
+  - \subpage cs_user_extra_operations_examples_stopping_criterion_p
 
 */
 // __________________________________________________________________________________
@@ -93,10 +94,8 @@
 
   To ensure calculations have physical meaning, it is best to use
   a spatially uniform time step (\ref optcal::idtvar "idtvar" = 0 or 1).
-  In addition, when restarting a calculation, the balance is
-  incorrect if \ref optcal::inpdt0 "inpdt0"= 1 (visct not initialized
-  and t(n-1) not known).
-
+  In addition, when restarting a calculation, the balance may be
+  incorrect at the first time step.
 
   Temperature variable
   - ivar = \ref isca(\ref optcal::iscalt "iscalt")
@@ -234,7 +233,7 @@
   of coordinates).
 
   The box criterion can be used as follows:
-  box[\f$x_{min}\f$, \f$y_{min}\f$, \f$z_{min}\f$, \f$x_{max}\f$, \f$y_{max}\f$, \f$z_{max}\f$].
+  box[\f$ x_{min}\f$, \f$ y_{min}\f$, \f$ z_{min}\f$, \f$ x_{max}\f$, \f$ y_{max}\f$, \f$ z_{max}\f$].
 
   Here is the corresponding code:
 
@@ -440,5 +439,26 @@
   in this example, we use 3 velocity values from process rank 0 (irangv).
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_15
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_stopping_criterion_p Stopping criterion based on L2 time residuals
+
+  \section cs_user_extra_operations_examples_stopping_criterion Stopping criterion based on L2 time residuals
+
+  This is an example of \ref cs_user_extra_operations allowing to properly stop a computation
+  when the L2 time residuals (displayed in the run_solver.log file) of all
+  solved variables have decreased below a value of 1e-3.
+
+  L2 time residuals of a variable at a given time step are a relative measure of
+  the unsteady term of its transport equation:
+
+  \f[
+  \sqrt{\int_\Omega \left| \der{\varia}{t} \right|^2 \dd \Omega / \int_\Omega \left| \varia \right|^2 \dd \Omega}
+  \f]
+
+  \snippet cs_user_extra_operations-stopping_criterion.c extra_stopping_criterion
 
 */

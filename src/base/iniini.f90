@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -58,6 +58,7 @@ use radiat
 use turbomachinery
 use cs_nz_condensation, only: nzones
 use ctincl
+use cfpoin
 
 !===============================================================================
 
@@ -104,8 +105,6 @@ write(nfecra, 900)
 
 #endif
 
-
-
 !===============================================================================
 ! 0. Global field keys
 !===============================================================================
@@ -117,10 +116,10 @@ call field_get_key_id('post_vis', keyvis)
 call field_get_key_id("inner_mass_flux_id", kimasf)
 call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
-call field_get_key_id("scalar_diffusivity_id", kivisl)
-call field_get_key_id("scalar_diffusivity_ref", kvisl0)
+call field_get_key_id("diffusivity_id", kivisl)
+call field_get_key_id("diffusivity_ref", kvisl0)
 
-call field_get_key_id("scalar_density_id", kromsl)
+call field_get_key_id("density_id", kromsl)
 
 call field_get_key_id("gradient_weighting_id", kwgrec)
 
@@ -157,6 +156,8 @@ call listing_writing_period_init
 call radiat_init
 call gas_mix_options_init
 call ctwr_properties_init
+call map_ale
+call cf_model_init
 
 call map_turbomachinery_model(iturbo, ityint)
 
@@ -238,7 +239,7 @@ do ii = 1, nusrmx
   impusr(ii) = 69+ii
 enddo
 
-! ---> Sorties listing
+! ---> Sorties log
 
 ntlist = 1
 
@@ -249,14 +250,6 @@ ipstdv(ipstyp) = 1
 ipstdv(ipsttp) = 0
 ipstdv(ipstft) = 1
 ipstdv(ipstnu) = 0
-
-! ---> CPU
-!      TMARUS : marge (Arret du calcul avant limite CPU)
-!        Si TMARUS negatif, le code calcule une marge seul
-!        Sinon, il utilise TMARUS (donnee en secondes)
-
-tmarus = -1.d0
-
 
 ! Ici entsor.f90 est completement initialise
 
@@ -440,14 +433,11 @@ thetst = -999.d0
 !       fichier suite portant les valeurs adaptees)
 
 !     Masse volumique
-iroext = -999
 initro = 0
 !     Viscosite totale
-iviext = -999
 thetvi = -999.d0
 initvi = 0
 !     Chaleur specifique
-icpext = -999
 thetcp = -999.d0
 initcp = 0
 
@@ -492,7 +482,6 @@ do iscal = 1, nscamx
 !     INIT.. =1 indique que la variable a ete proprement initialisee (dans un
 !       fichier suite portant les valeurs adaptees)
 
-  ivsext(iscal) = -999
   thetvs(iscal) = -999.d0
   initvs(iscal) = 0
 
@@ -510,22 +499,6 @@ iflxmw = 0
 !         meme pour la pression (par securite : moins stable sur certains cas)
 
 anomax = -grand*10.d0
-
-! --- Solveurs iteratifs
-!       La methode de resolution sera choisie selon les equations
-!       La valeur de epsilon relatif est tres faible
-!         (1.D-5 pourrait suffire)
-!       On met IDIRCL a 1 pour toutes les variables. Pour toutes les
-!       variables sauf pression et fb (en v2f) on a ISTAT=1, le
-!       decalage de diagonale ne sera pas active. Pour la pression
-!       on decalera la diagonale si necessaire. Pour fb, on sait qu'il
-!       y a un autre terme diagonal (meme si ISTAT=0), donc IDIRCL
-!       sera mis a 0 dans varpos.
-
-do ii = 1, nvarmx
-  idircl(ii) = 1
-  ndircl(ii) = 0
-enddo
 
 ! --- Restarted calculation
 !       By default, non-restarted calculation
@@ -545,51 +518,14 @@ isuit1 = -1
 isuivo = -1
 isuisy = -1
 
-! --- Reperage du temps
-
-ntpabs = 0
-ntcabs = ntpabs
-ntmabs = 10
-ntinit = 2
-
-inpdt0 = 0
-
-ttpabs = 0.d0
-ttcabs = ttpabs
+! Time stepping (value not already in C)
 
 ttpmob = 0.d0
 ttcmob = ttpmob
 
-! --- Marche en temps
-!       Par defaut pas de temps uniforme et constant,
-!         sans coef multiplicatif
-!       Dans les cas a pas de temps variable, par defaut
-!         COUMAX = FOUMAX = 0.5 et variation max 10%
-!       Les autres grandeurs sont a renseigner par l'utilisateur
-!       Pour DTMIN et DTMAX, si on impose DTMIN > DTMAX,
-!         les bornes sont prises egales a +/-1D12
-
-idtvar = 0
-
-coumax = 1.d0
-foumax = 10.d0
-cflmmx = 0.99d0
-dtmin  = -grand*10.d0
-dtmax  = -grand*10.d0
-varrdt = 0.1d0
-
-dtref  = -grand*10.d0
-
 do ii = 1, nvarmx
   cdtvar(ii) = 1.d0
 enddo
-relxst = 0.7d0
-
-
-!     Par defaut, pas de limitation du pas de temps liee aux
-!     effets de densite
-
-iptlro = 0
 
 ! --- Thermique
 
@@ -796,10 +732,6 @@ nftcdt= 0
 ineedy = 0
 imajdy = 0
 icdpar = -999
-ntcmxy = 1000
-coumxy = 5000.d0
-epscvy = 1.0d-8
-yplmxy = 200.d0
 
 ! --- Methode des vortex
 ivrtex = 0
@@ -844,7 +776,14 @@ ce2     = 1.92d0
 ce4     = 1.20d0
 sigmak  = 1.00d0
 
-!   pour le Rij-epsilon standard (et SSG pour CRIJ3)
+!   pour le k-epsilon quadratic (Baglietto)
+cnl1  = 0.8d0
+cnl2  = 11.d0
+cnl3  = 4.5d0
+cnl4  = 1.d3
+cnl5  = 1.d0
+
+!   pour le Rij-epsilon LRR (et SSG pour crij3)
 crij1  = 1.80d0
 crij2  = 0.60d0
 crij3  = 0.55d0
@@ -869,8 +808,6 @@ cebmr2  = 0.80d0
 cebmr3  = 0.65d0
 cebmr4  = 0.625d0
 cebmr5  = 0.20d0
-! cebmr6  is used in the buoyant term
-cebmr6  = 0.6d0
 cebme2  = 1.83d0
 cebmmu  = 0.22d0
 xcl     = 0.122d0
@@ -1002,15 +939,11 @@ cthebdfm = 0.22d0
 xclt   = 0.305d0
 rhebdfm = 0.5d0
 
-
 ! --- Ici tout cstphy a ete initialise
 
 !===============================================================================
 ! 9. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
 !===============================================================================
-
-!     Par defaut, pas de fichier IHM consulte (on regarde ensuite si on
-!       en trouve un a partir de la ligne de commande)
 
 iihmpr = 0
 
@@ -1018,14 +951,8 @@ iihmpr = 0
 ! 10. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
 !===============================================================================
 
-! --- Methode ALE
-iale = 0
-
 ! --- Iterations d'initialisation fluide seul
 nalinf = 0
-
-! --- Type de viscosite de maillage (isotrope par defaut)
-iortvm = 0
 
 ! --- Nombre de structures internes
 !     (sera relu ou recalcule)

@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2018 EDF S.A.
+dnl Copyright (C) 1998-2019 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -43,7 +43,7 @@ AC_ARG_WITH(medcoupling,
             [with_medcoupling=check])
 
 AC_ARG_ENABLE(medcoupling-as-plugin,
-  [AS_HELP_STRING([--disable-medcoupling-as-plugin], [do not use MEDCoupling as plugin])],
+  [AS_HELP_STRING([--enable-medcoupling-as-plugin], [use MEDCoupling as plugin])],
   [
     case "${enableval}" in
       yes) cs_have_plugin_medcoupling=yes ;;
@@ -51,7 +51,7 @@ AC_ARG_ENABLE(medcoupling-as-plugin,
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-medcoupling-as-plugin]) ;;
     esac
   ],
-  [ cs_have_plugin_medcoupling=yes ]
+  [ cs_have_plugin_medcoupling=no ]
 )
 
 if test x$cs_have_dlloader = xno -o x$enable_shared = xno ; then
@@ -95,10 +95,11 @@ if test "x$with_medcoupling" != "xno" ; then
 
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 [[#include <MEDCouplingFieldDouble.hxx>
-#include <MEDLoader.hxx>]],
+#include <MEDLoader.hxx>
+#include <MEDFileField1TS.hxx>]],
 [[using namespace MEDCoupling;
   std::string f_name;
-  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+  MEDCouplingField *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
                     ],
                     [ cs_have_medcoupling_loader=yes ],
                     [ AC_MSG_WARN([no MEDCoupling file support]) ],
@@ -145,7 +146,7 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 #include <MEDLoader.hxx>]],
 [[using namespace MEDCoupling;
   std::string f_name;
-  MEDCouplingFieldDouble *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
+  MEDCouplingField *f = ReadFieldCell("path", "name", 0, f_name, 0, 0);]])
                      ],
                      [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
                        cs_have_medcoupling=yes
@@ -173,23 +174,23 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
 
     CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
 
-    cs_paramedmem_l0="-lparamedmem"
-    cs_paramedmem_l1="-lparamedmem -lparamedloader"
+    if test "$cs_have_medcoupling_loader" = "yes"; then
+      cs_paramedmem_libs="-lparamedmem -lparamedloader"
+    else
+      cs_paramedmem_libs="-lparamedmem"
+    fi
 
-    for cs_paramedmem_libs in "$cs_paramedmem_l0" "$cs_paramedmem_l1"
-    do
+    if test "x$cs_have_paramedmem" = "xno" ; then
 
-      if test "x$cs_have_paramedmem" = "xno" ; then
+      if test "$cs_have_medcoupling_loader" = "no"; then
+        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
+      else
+        LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
+        LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${LIBS}"
+      fi
 
-        if test "$cs_have_medcoupling_loader" = "no"; then
-          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MPI_LIBS} ${LIBS}"
-        else
-          LDFLAGS="${MEDCOUPLING_LDFLAGS} ${MED_LDFLAGS} ${HDF5_LDFLAGS} ${MPI_LDFLAGS} ${LDFLAGS}"
-          LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS} ${MED_LIBS} ${HDF5_LIBS} ${MPI_LIBS} ${LIBS}"
-        fi
-
-        AC_LINK_IFELSE([AC_LANG_PROGRAM(
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <InterpKernelDEC.hxx>
 #include <set>]],
 [[using namespace MEDCoupling;
@@ -205,16 +206,14 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
                        [ ],
                       )
 
-        if test "x$cs_have_paramedmem" = "xyes"; then
-          MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
-        fi
-
-        LDFLAGS="$saved_LDFLAGS"
-        LIBS="$saved_LIBS"
-
+      if test "x$cs_have_paramedmem" = "xyes"; then
+        MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
       fi
 
-    done
+      LDFLAGS="$saved_LDFLAGS"
+      LIBS="$saved_LIBS"
+
+    fi
 
     if test "x$cs_have_paramedmem" != "xyes"; then
       AC_MSG_WARN([no ParaMEDMEM support])
@@ -250,6 +249,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
 fi
 
 AM_CONDITIONAL(HAVE_MEDCOUPLING, test x$cs_have_medcoupling = xyes)
+AM_CONDITIONAL(HAVE_MEDCOUPLING_LOADER, test x$cs_have_medcoupling_loader = xyes)
 AM_CONDITIONAL(HAVE_PARAMEDMEM, test x$cs_have_paramedmem = xyes)
 AM_CONDITIONAL(HAVE_PLUGIN_MEDCOUPLING, test x$cs_have_plugin_medcoupling = xyes)
 
@@ -259,6 +259,7 @@ if test x$cs_have_plugin_medcoupling = xyes ; then
 fi
 
 AC_SUBST(cs_have_medcoupling)
+AC_SUBST(cs_have_medcoupling_loader)
 AC_SUBST(cs_have_paramedmem)
 AC_SUBST(cs_py_have_plugin_medcoupling)
 AC_SUBST(MEDCOUPLING_CPPFLAGS)

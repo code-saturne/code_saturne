@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -37,7 +37,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/gui \
--I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
@@ -70,6 +69,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_elec_headers.h \
 cs_elec_model.h
 
 # Library source files

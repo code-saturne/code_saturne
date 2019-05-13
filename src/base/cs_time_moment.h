@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -297,6 +297,17 @@ cs_time_moment_get_field(int  moment_id);
 
 int
 cs_time_moment_is_active(int  moment_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset a time moment.
+ *
+ * \param[in]   moment_id  id of associated moment
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_reset(int   moment_id);
 
 /*----------------------------------------------------------------------------
  * Update all moment accumulators.

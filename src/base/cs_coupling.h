@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -118,7 +118,8 @@ void CS_PROCF(cplact, CPLACT)
  *----------------------------------------------------------------------------*/
 
 void
-cs_coupling_discover_mpi_apps(const char  *app_name);
+cs_coupling_discover_mpi_apps(const char  *app_name,
+                              const char  *forced_app_type);
 
 /*----------------------------------------------------------------------------
  * Finalize MPI coupling helper structures.

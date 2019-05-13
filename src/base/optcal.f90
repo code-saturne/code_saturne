@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -149,63 +149,6 @@ module optcal
   !> otherwise to 0.
   integer, save ::          isso2t(nscamx)
 
-  !> \ref iroext specifies the time scheme activated
-  !> for the physical property \f$\phi\f$ density.
-  !> - 0: "standard" first-order: the value calculated at
-  !> the beginning of the current time step (from the
-  !> variables known at the end of the previous time step) is used
-  !> - 1: second-order: the physical property \f$\phi\f$ is
-  !> extrapolated according to the formula
-  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$ being
-  !> given by the value of 0.5
-  !> - 2: first-order: the physical property \f$\phi\f$ is
-  !> extrapolated at $n+1$ according to the same formula
-  !> as when \ref iroext = 1 but with \f$\theta\f$ = 1
-  integer, save ::          iroext
-
-  !> \ref iviext specifies the time scheme activated
-  !> for the physical property \f$\phi\f$ "total viscosity"
-  !> (molecular+turbulent or sub-grid viscosities).
-  !> - 0: "standard" first-order: the value calculated at
-  !> the beginning of the current time step (from the
-  !> variables known at the end of the previous time step) is used
-  !> - 1: second-order: the physical property \f$\phi\f$ is
-  !> extrapolated according to the formula
-  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
-  !> being given by the value of \ref thetvi = 0.5
-  !> - 2: first-order: the physical property \f$\phi\f$ is
-  !> extrapolated at \f$n+1\f$ according to the
-  !> same formula as when \ref iviext = 1, but with \f$\theta\f$= \ref thetvi = 1
-  integer, save ::          iviext
-
-  !> \ref icpext specifies the time scheme activated
-  !> for the physical property \f$\phi\f$ "specific heat".
-  !> - 0: "standard" first-order: the value calculated at
-  !> the beginning of the current time step (from the
-  !> variables known at the end of the previous time step) is used
-  !> - 1: second-order: the physical property \f$\phi\f$ is
-  !> extrapolated according to the formula
-  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
-  !> being given by the value of \ref thetcp = 0.5
-  !> - 2: first-order: the physical property \f$\phi\f$ is
-  !> extrapolated at \f$n+1\f$ according to the
-  !> same formula as when \ref icpext = 1, but with \f$\theta\f$ = \ref thetcp = 1
-  integer, save ::          icpext
-
-  !> for each scalar iscal, \ref ivsext (iscal) specifies the time scheme
-  !> activated for the physical property \f$\phi\f$ "diffusivity".
-  !> - 0: "standard" first-order: the value calculated at
-  !> the beginning of the current time step (from the variables known
-  !> at the end of the previous time step) is used
-  !> - 1: second-order: the physical property \f$\phi\f$ is
-  !> extrapolated according to the formula
-  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
-  !> being given by the value of \ref thetvs (iscal) = 0.5
-  !> - 2: first-order: the physical property \f$\phi\f$ is
-  !> extrapolated at $n+1$ according to the same formula as
-  !> when \ref ivsext = 1, but with \f$\theta\f$ = \ref thetvs (iscal) = 1
-  integer, save ::          ivsext(nscamx)
-
   !> initvi : =1 if total viscosity read from checkpoint file
   integer, save ::          initvi
 
@@ -264,10 +207,11 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "total viscosity" when the extrapolation
-  !> has been activated (see \ref iviext), according to the formula
+  !> has been activated (see \ref time_extrapolated key word), according to the formula
   !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
   !> The value of \f$\theta\f$ = \ref thetvi is deduced from the value
-  !> chosen for \ref iviext. Generally, only the value 0.5 is used.
+  !> chosen for \ref time_extrapolated key word for the viscosity.
+  !> Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
@@ -275,10 +219,10 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "specific heat" when the extrapolation
-  !> has been activated (see \ref icpext), according to the
+  !> has been activated (see \ref time_extrapolated field key int), according to the
   !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
   !> The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen for
-  !> \ref icpext. Generally, only the value 0.5 is used.
+  !> the specific heat. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
@@ -286,10 +230,10 @@ module optcal
 
   !> \f$ \theta \f$-scheme for the extrapolation of the physical
   !> property \f$\phi\f$ "diffusivity" when the extrapolation has
-  !> been activated (see \ref ivsext), according to the formula
+  !> been activated (see \ref time_extrapolated key word), according to the formula
   !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
   !> The value of\f$\theta\f$ = \ref thetvs is deduced from the value
-  !> chosen for \ref ivsext. Generally, only the value 0.5 is used.
+  !> chosen for \ref time_extrapolated key word. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
@@ -359,33 +303,7 @@ module optcal
 
   !> \}
 
-  !> \defgroup linear_solver Linear solver
-  !> \addtogroup linear_solver
-  !> \{
-
-  !> \anchor idircl
-  !> indicates whether the diagonal of the matrix should be slightly
-  !> shifted or not if there is no Dirichlet boundary condition and
-  !> if \ref cs_var_cal_opt_t::istat "istat" = 0.
-  !>    - 0: false
-  !>    - 1: true
-  !> Indeed, in such a case, the matrix for the general
-  !> advection/diffusion equation is singular. A slight shift in the
-  !> diagonal will make it invertible again.\n By default, \ref idircl
-  !> is set to 1 for all the unknowns, except \f$\overline{f}\f$ in v2f
-  !> modelling, since its equation contains another diagonal term
-  !> that ensures the regularity of the matrix.
-  !> \remark
-  !> the code computes automatically for each variable the number of Dirichlet
-  !> BCs
-  integer, save ::          idircl(nvarmx)
-
-  !> number of Dirichlet BCs
-  integer, save ::          ndircl(nvarmx)
-
-  !> \}
-
-  !> \}
+ !> \}
 
   !> Indicator of a calculation restart (=1) or not (=0).
   !> This value is set automatically by the code; depending on
@@ -484,17 +402,6 @@ module optcal
   !> Maximum absolute time.
   real(c_double), pointer, save :: ttmabs
 
-  !> indicator "zero time step"
-  !>    - 0: standard calculation
-  !>    - 1: to simulate no time step
-  !>         - for non-restarted computations:
-  !>           only resolution (Navier-Stokes, turbulence, scalars) is skipped
-  !>         - for restarted computations:
-  !>           resolution, computation of physical properties, and definition
-  !>           of boundary conditions is skipped (values are read from
-  !>           checkpoint file)
-  integer(c_int), pointer, save :: inpdt0
-
   !> Clip the time step with respect to the buoyant effects
   !>
   !> When density gradients and gravity are present, a local thermal time
@@ -503,7 +410,7 @@ module optcal
   !> lower than this limit, otherwise numerical instabilities may appear.\n
   !> \ref iptlro indicates whether the time step should be limited to the
   !> local thermal time step (=1) or not (=0).\n
-  !> When \ref iptlro=1, the listing shows the number of cells where the
+  !> When \ref iptlro=1, the log shows the number of cells where the
   !> time step has been clipped due to the thermal criterion, as well as
   !> the maximum ratio between the time step and the maximum thermal time
   !> step. If \ref idtvar=0, since the time step is fixed and cannot be
@@ -678,7 +585,7 @@ module optcal
   integer(c_int), pointer, save :: idirsm
 
   !>  Wall functions
-  !>  Indicates the type of wall function is used for the velocity
+  !>  Indicates the type of wall function used for the velocity
   !>  boundary conditions on a frictional wall.
   !>  - 0: no wall functions
   !>  - 1: one scale of friction velocities (power law)
@@ -909,6 +816,7 @@ module optcal
 
   !> Reconstruction of the velocity field with the updated pressure option
   !>    - 0: default
+  !>    - 1: from the mass flux with a RT0 like recontruction
   integer(c_int), pointer, save ::          irevmc
 
   !> Compute the pressure step thanks to the continuity equation
@@ -1079,7 +987,7 @@ module optcal
   !> except for \ref paramx::iescor "iescor", for which
   !> \f$|\Omega_i|\ \eta^{corr}_{i,1}\ \f$
   !> is calculated. The names of the estimators appearing
-  !> in the listing and the post-processing are made up of
+  !> in the log and the post-processing are made up of
   !> the default name (given before), followed by the value of
   !> \ref iescal}. For instance, EsPre2 is the estimator
   !> \ref paramx::iespre "iespre" calculated with \ref iescal = 2.
@@ -1138,7 +1046,7 @@ module optcal
   !> take the porosity fomulation into account
   !>    - 1: Taking porosity into account
   !>    - 0: Standard algorithm (Without porosity)
-  integer, save :: iporos
+  integer(c_int), pointer, save :: iporos
 
   !TODO move it elsewhere?
   ! Indicateur de passage dans l'initialisation des
@@ -1201,25 +1109,6 @@ module optcal
   !> beginning of the calculation; it is therefore not compatible with moving walls.
   !> Please contact the development team if you need to override this limitation.
   integer, save :: icdpar
-
-  !> to the wall \f$ y+ \f$.\n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  integer, save :: ntcmxy
-
-  !> Target Courant number for the calculation of the non-dimensional distance
-  !> to the wall\n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  double precision, save :: coumxy
-
-  !> relative precision for the convergence of the pseudo-transient regime
-  !> for the calculation of the non-dimensional distance to the wall \n
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  double precision, save :: epscvy
-
-  !> value of the non-dimensional distance to the wall above which the
-  !> calculation of the distance is not necessary (for the damping)
-  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
-  double precision, save :: yplmxy
 
   !> \}
 
@@ -1316,12 +1205,16 @@ module optcal
   !> flag for activating imposed mass flux
   integer :: DRIFT_SCALAR_IMPOSED_MASS_FLUX
 
+  !> flag for activating imposed mass flux
+  integer :: DRIFT_SCALAR_ZERO_BNDY_FLUX
+
   parameter (DRIFT_SCALAR_ADD_DRIFT_FLUX=1)
   parameter (DRIFT_SCALAR_THERMOPHORESIS=2)
   parameter (DRIFT_SCALAR_TURBOPHORESIS=3)
   parameter (DRIFT_SCALAR_ELECTROPHORESIS=4)
   parameter (DRIFT_SCALAR_CENTRIFUGALFORCE=5)
   parameter (DRIFT_SCALAR_IMPOSED_MASS_FLUX=6)
+  parameter (DRIFT_SCALAR_ZERO_BNDY_FLUX=7)
 
   !> flag for isotropic diffusion
   integer :: ISOTROPIC_DIFFUSION
@@ -1424,25 +1317,25 @@ module optcal
     ! global time step structure
 
     subroutine cs_f_time_step_get_pointers(nt_prev, nt_cur, nt_max, nt_ini,  &
-                                           t_prev, t_cur, t_max)             &
+                                           dt_ref, t_prev, t_cur, t_max)     &
       bind(C, name='cs_f_time_step_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: nt_prev, nt_cur, nt_max, nt_ini
-      type(c_ptr), intent(out) :: t_prev, t_cur, t_max
+      type(c_ptr), intent(out) :: dt_ref, t_prev, t_cur, t_max
     end subroutine cs_f_time_step_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global time step options structure
 
-    subroutine cs_f_time_step_options_get_pointers(inpdt0, iptlro, idtvar, &
-                                                   dtref, coumax, cflmmx,  &
+    subroutine cs_f_time_step_options_get_pointers(iptlro, idtvar,         &
+                                                   coumax, cflmmx,         &
                                                    foumax, varrdt, dtmin,  &
                                                    dtmax, relxst)          &
       bind(C, name='cs_f_time_step_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: inpdt0, iptlro, idtvar, dtref, coumax, cflmmx
+      type(c_ptr), intent(out) :: iptlro, idtvar, coumax, cflmmx
       type(c_ptr), intent(out) :: foumax, varrdt, dtmin, dtmax, relxst
     end subroutine cs_f_time_step_options_get_pointers
 
@@ -1503,6 +1396,15 @@ module optcal
       implicit none
       type(c_ptr), intent(out) :: idries, ivrtex
     end subroutine cs_f_turb_les_model_get_pointers
+
+    ! Interface to C function retrieving pointers to mesh quantity options
+
+    subroutine cs_f_mesh_quantities_get_pointers(iporos)  &
+      bind(C, name='cs_f_mesh_quantities_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iporos
+    end subroutine cs_f_mesh_quantities_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! Stokes options structure
@@ -1619,16 +1521,17 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit
-    type(c_ptr) :: c_ttpabs, c_ttcabs, c_ttmabs
+    type(c_ptr) :: c_dtref, c_ttpabs, c_ttcabs, c_ttmabs
 
     call cs_f_time_step_get_pointers(c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit, &
-                                     c_ttpabs, c_ttcabs, c_ttmabs)
+                                     c_dtref, c_ttpabs, c_ttcabs, c_ttmabs)
 
     call c_f_pointer(c_ntpabs, ntpabs)
     call c_f_pointer(c_ntcabs, ntcabs)
     call c_f_pointer(c_ntmabs, ntmabs)
     call c_f_pointer(c_ntinit, ntinit)
 
+    call c_f_pointer(c_dtref,  dtref)
     call c_f_pointer(c_ttpabs, ttpabs)
     call c_f_pointer(c_ttcabs, ttcabs)
     call c_f_pointer(c_ttmabs, ttmabs)
@@ -1645,20 +1548,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_inpdt0, c_iptlro, c_idtvar
-    type(c_ptr) :: c_dtref, c_coumax, c_cflmmx
+    type(c_ptr) :: c_iptlro, c_idtvar
+    type(c_ptr) :: c_coumax, c_cflmmx
     type(c_ptr) :: c_foumax, c_varrdt, c_dtmin
     type(c_ptr) :: c_dtmax, c_relxst
 
-    call cs_f_time_step_options_get_pointers(c_inpdt0, c_iptlro, c_idtvar, &
-                                             c_dtref, c_coumax, c_cflmmx,  &
+    call cs_f_time_step_options_get_pointers(c_iptlro, c_idtvar,  &
+                                             c_coumax, c_cflmmx,  &
                                              c_foumax, c_varrdt, c_dtmin,  &
                                              c_dtmax, c_relxst)
 
-    call c_f_pointer(c_inpdt0, inpdt0)
     call c_f_pointer(c_iptlro, iptlro)
     call c_f_pointer(c_idtvar, idtvar)
-    call c_f_pointer(c_dtref,  dtref)
     call c_f_pointer(c_coumax, coumax)
     call c_f_pointer(c_cflmmx, cflmmx)
     call c_f_pointer(c_foumax, foumax)
@@ -1801,16 +1702,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_arak
+    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
 
-
+    call cs_f_mesh_quantities_get_pointers(c_iporos)
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
-                                          c_arak  , c_ipucou, c_iccvfg, &
-                                          c_idilat, c_epsdp , c_itbrrb, c_iphydr, c_igprij, &
-                                          c_igpust, c_iifren, c_icalhy, c_irecmf)
+                                          c_arak  , c_ipucou, c_iccvfg,  &
+                                          c_idilat, c_epsdp , c_itbrrb,  &
+                                          c_iphydr, c_igprij, c_igpust,  &
+                                          c_iifren, c_icalhy, c_irecmf)
 
+    call c_f_pointer(c_iporos, iporos)
     call c_f_pointer(c_ivisse, ivisse)
     call c_f_pointer(c_irevmc, irevmc)
     call c_f_pointer(c_iprco , iprco )

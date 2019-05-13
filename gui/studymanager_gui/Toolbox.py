@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -37,13 +37,13 @@ import os, sys, logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import *
+from code_saturne.model.Common import *
 
 #-------------------------------------------------------------------------------
 # displaySelectedPage direct to the good page with its name
 #-------------------------------------------------------------------------------
 
-def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None):
+def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
     """
     This function enables to display a new page when the TreeNavigator
     send the order.

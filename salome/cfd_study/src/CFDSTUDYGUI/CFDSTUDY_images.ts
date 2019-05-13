@@ -146,14 +146,6 @@
             <translation>edit-redo.png</translation>
         </message>
         <message>
-            <source>PREPRO_MODE_CFD_GUI_ACTION_ICON</source>
-            <translation>prepro-mode.png</translation>
-        </message>
-        <message>
-            <source>CALCULATION_MODE_CFD_GUI_ACTION_ICON</source>
-            <translation>calc-mode.png</translation>
-        </message>
-        <message>
             <source>OPENTURNS_MODE_CFD_GUI_ACTION_ICON</source>
             <translation>ot-logo.png</translation>
         </message>

@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -34,15 +34,17 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/rayt \
@@ -76,7 +78,7 @@ examplefiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \
-cs_user_cdo_extra_op-verif-diffusion.c \
+cs_user_boundary_conditions-notebook.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
 cs_user_coupling.c \
@@ -84,8 +86,11 @@ cs_user_electric_scaling.c \
 cs_user_extra_operations-balance_by_zone.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
+cs_user_extra_operations-verif_cdo_diffusion.c \
 cs_user_gwf-example.c \
 cs_user_head_losses.c \
+cs_user_hgn-relax_time_scale.c \
+cs_user_initialization-base.c \
 cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_volume_conditions.c \
 cs_user_lagr_model.c \
@@ -145,7 +150,6 @@ cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_initialization-atmospheric.f90 \
-cs_user_initialization-base.f90 \
 cs_user_initialization-compressible.f90 \
 cs_user_initialization-cooling_towers.f90 \
 cs_user_initialization-electric_arcs.f90 \
@@ -162,7 +166,6 @@ cs_user_mass_source_terms.f90 \
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-cavitation.f90 \
-cs_user_parameters-output.f90 \
 cs_user_parameters-richards.f90 \
 cs_user_parameters-rotation.f90 \
 cs_user_parameters.f90 \
@@ -187,7 +190,7 @@ exampledir = $(pkgdatadir)/user_examples
 example_DATA = $(examplefiles)
 
 clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
+	-rm -f *__genmod.f90 *.mod
 
 # Finish example files installation
 # - tag with the package version number

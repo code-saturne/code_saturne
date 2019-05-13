@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -149,7 +149,7 @@ class runcase(object):
         # We should have exited before reaching this.
 
         err_str = "Error: unable to determine the name of the script for " + self.path
-        raise ValueError(err_str)
+        sys.stderr.write(err_str)
 
     #---------------------------------------------------------------------------
 

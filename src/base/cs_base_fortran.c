@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -101,7 +101,7 @@ extern void CS_PROCF (csprnt, CSPRNT)
 );
 
 /*----------------------------------------------------------------------------
- * Initialize Fortran log (listing) files
+ * Initialize Fortran log files
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (csopli, CSOPLI)
@@ -112,7 +112,7 @@ extern void CS_PROCF (csopli, CSOPLI)
 );
 
 /*----------------------------------------------------------------------------
- * Close log (listing) handled by Fortran: (CLose LIsting)
+ * Close log handled by Fortran: (CLose LIsting)
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (csclli, CSCLLI)
@@ -448,17 +448,14 @@ void CS_PROCF (csdatadir, CSDATADIR)
  *
  * parameters:
  *   log_name    <-- base file name for log, or NULL for stdout
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to <log_name> file
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to <log_name>_n*" file;
- *                   2: redirected to "/dev/null" (suppressed)
+ *                   false:  to "/dev/null" (suppressed)
+ *                   true: redirected to <log_name>_n*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_fortran_bft_printf_set(const char  *log_name,
-                               int          r0_log_flag,
-                               int          rn_log_flag)
+                               bool         rn_log_flag)
 {
   const char *name = NULL;
   bool suppress = false;
@@ -466,12 +463,23 @@ cs_base_fortran_bft_printf_set(const char  *log_name,
 
   /* C output */
 
-  cs_base_bft_printf_init(log_name, r0_log_flag, rn_log_flag);
+  cs_base_bft_printf_init(log_name, rn_log_flag);
 
   name = cs_base_bft_printf_name();
   suppress = cs_base_bft_printf_suppressed();
 
   if (suppress == false) {
+
+    /* Allow bypassing this with environment variable to accomodate
+       some debug habits */
+
+    const char *p = getenv("CS_LOG_TO_STDOUT");
+    if (p != NULL) {
+      if (atoi(p) > 0)
+        name = NULL;
+    }
+
+    /* In standard case, redirect if possible */
 
     if (name != NULL) {
 
@@ -599,6 +607,47 @@ cs_base_fortran_bft_printf_to_f(void)
   bft_printf_proxy_set(_bft_printf_f);
   ple_printf_function_set(_bft_printf_f);
 }
+
+/*----------------------------------------------------------------------------
+ * Wrappers to cs_user_*
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_initialize_wrapper(void)
+{
+  cs_user_extra_operations_initialize(cs_glob_domain);
+}
+
+void
+cs_user_extra_operations_wrapper(void)
+{
+  cs_user_extra_operations(cs_glob_domain);
+}
+
+void
+cs_user_initialization_wrapper(void)
+{
+  cs_user_initialization(cs_glob_domain);
+}
+
+void
+cs_user_parameters_wrapper(void)
+{
+  cs_user_parameters(cs_glob_domain);
+}
+
+void
+cs_user_finalize_setup_wrapper(void)
+{
+  cs_user_finalize_setup(cs_glob_domain);
+}
+
+void
+cs_user_porosity_wrapper(void)
+{
+  cs_user_porosity(cs_glob_domain);
+}
+
 
 /*----------------------------------------------------------------------------*/
 

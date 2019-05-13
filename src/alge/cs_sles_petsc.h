@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,7 @@
  * PETSc headers
  *----------------------------------------------------------------------------*/
 
+#include <petscviewer.h>
 #include <petscksp.h>
 
 /*----------------------------------------------------------------------------
@@ -69,11 +70,13 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
+ *   a       <-> PETSc matrix context
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 typedef void
 (cs_sles_petsc_setup_hook_t) (void               *context,
+                              Mat                 a,
                               KSP                 ksp);
 
 /* Iterative linear solver context (opaque) */
@@ -103,12 +106,60 @@ typedef struct _cs_sles_petsc_t  cs_sles_petsc_t;
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
+ *   a       <-> PETSc matrix context
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
+                        Mat                 a,
                         KSP                 ksp);
+
+/*=============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Initialized PETSc if needed
+ *----------------------------------------------------------------------------*/
+
+static inline void
+cs_sles_petsc_init(void)
+{
+  /* Initialization must be called before setting options;
+     it does not need to be called before calling
+     cs_sles_petsc_define(), as this is handled automatically. */
+
+  PetscBool is_initialized;
+  PetscInitialized(&is_initialized);
+
+  if (is_initialized == PETSC_FALSE) {
+#if defined(HAVE_MPI)
+    PETSC_COMM_WORLD = cs_glob_mpi_comm;
+#endif
+    PetscInitializeNoArguments();
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * \brief Output the settings of a KSP structure
+ *
+ * \param[in]  ksp     Krylov SubSpace structure
+ *----------------------------------------------------------------------------*/
+
+static inline void
+cs_sles_petsc_log_setup(KSP          ksp)
+{
+  PetscViewer  v;
+
+  PetscViewerCreate(PETSC_COMM_WORLD, &v);
+  PetscViewerSetType(v, PETSCVIEWERASCII);
+  PetscViewerFileSetMode(v, FILE_MODE_APPEND);
+  PetscViewerFileSetName(v, "petsc_setup.log");
+
+  KSPView(ksp, v);
+  PetscViewerDestroy(&v);
+}
 
 /*=============================================================================
  * Public function prototypes

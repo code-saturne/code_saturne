@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -47,16 +47,16 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 
 from code_saturne.Pages.LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.LagrangianBoundariesModel import LagrangianBoundariesModel
-from code_saturne.Pages.LagrangianModel import LagrangianModel
-from code_saturne.Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LagrangianBoundariesModel import LagrangianBoundariesModel
+from code_saturne.model.LagrangianModel import LagrangianModel
+from code_saturne.model.LagrangianStatisticsModel import LagrangianStatisticsModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 
 
 #-------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ class ValueDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -132,7 +132,7 @@ class ParticleBoundaryInteractionDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -211,7 +211,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.DisplayRole:
             row = index.row()
@@ -219,16 +219,16 @@ class StandardItemModelBoundaries(QStandardItemModel):
             if col == 2:
                 nature = self._data[row][1]
                 dico = self.dicoM2V[nature]
-                return to_qvariant(dico[self._data[row][col]])
+                return dico[self._data[row][col]]
             else:
-                return to_qvariant(self._data[row][col])
+                return self._data[row][col]
 
         if role == Qt.ToolTipRole:
             if index.column() == 2:
-                return to_qvariant(self.tr("Code_Saturne keyword: IUSCLB"))
+                return self.tr("Code_Saturne keyword: IUSCLB")
             elif index.column() == 3:
-                return to_qvariant(self.tr("Code_Saturne keyword: NBCLAS"))
-        return to_qvariant()
+                return self.tr("Code_Saturne keyword: NBCLAS")
+        return None
 
 
     def flags(self, index):
@@ -247,8 +247,8 @@ class StandardItemModelBoundaries(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

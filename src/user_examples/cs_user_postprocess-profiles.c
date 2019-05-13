@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -273,7 +273,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
 
-    const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(u)->val;
+    const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
     const cs_real_t uref = cs_glob_turb_ref_values->uref;
     const cs_real_t uref2 = uref*uref;
 
@@ -321,7 +321,8 @@ cs_user_postprocess_values(const char            *mesh_name,
           || turb_mdl->itytur == 5
           || turb_mdl->itytur == 6) {
 
-        cs_post_evm_reynolds_stresses(n_cells, cell_list, rij);
+        cs_real_3_t *coords = NULL; /* profile points are cell centers */
+        cs_post_evm_reynolds_stresses(n_cells, cell_list, coords, rij);
 
       } else if (turb_mdl->itytur == 3 && turb_rans_mdl->irijco == 0) {
 

@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -35,7 +35,6 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/cdo \
@@ -58,6 +57,7 @@ $(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_alge_headers.h \
 cs_balance.h \
 cs_benchmark.h \
 cs_blas.h \
@@ -73,13 +73,16 @@ cs_matrix_building.h \
 cs_matrix_default.h \
 cs_matrix_priv.h \
 cs_matrix_assembler.h \
+cs_matrix_assembler_priv.h \
 cs_matrix_tuning.h \
 cs_matrix_util.h \
 cs_multigrid.h \
+cs_multigrid_smoother.h \
 cs_bad_cells_regularisation.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h \
+cs_sles_it_priv.h \
 cs_sles_pc.h
 
 if HAVE_PETSC
@@ -113,12 +116,13 @@ cs_matrix_assembler.c \
 cs_matrix_tuning.c \
 cs_matrix_util.c \
 cs_multigrid.c \
+cs_multigrid_smoother.c \
 cs_bad_cells_regularisation.c \
 cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \
-cs_sles_pc.c \
-visort.f90
+cs_sles_it_priv.c \
+cs_sles_pc.c
 libcsalge_la_LDFLAGS = -no-undefined
 
 libcsalge_la_LIBADD =

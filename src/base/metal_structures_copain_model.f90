@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -473,7 +473,7 @@ deallocate(mix_mol_mas, x_ncond, mol_mas_ncond)
 deallocate(x_h2o_g, diff_m)
 
 !===============================================================================
-! 5 - Print in the listing every ntlist of the min/max values
+! 5 - Print in the log every ntlist of the min/max values
 !         for exchange coefficient and flux computed
 !===============================================================================
 

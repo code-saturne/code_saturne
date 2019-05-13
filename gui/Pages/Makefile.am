@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -23,133 +23,113 @@
 #-------------------------------------------------------------------------------
 
 # Python files
-
 PYFILES = \
 AnalysisFeaturesView.py \
-AtmosphericFlowsModel.py \
 AtmosphericFlowsView.py \
-BalanceModel.py \
 BalanceView.py \
-BatchRunningModel.py \
+BalanceViewNeptune.py \
 BatchRunningView.py \
-BodyForcesModel.py \
 BodyForcesView.py \
 BoundaryConditionsCoalInletView.py \
 BoundaryConditionsCompressibleOutletView.py \
 BoundaryConditionsConvectiveInletView.py \
 BoundaryConditionsElectricalView.py \
+BoundaryConditionsEnergyView.py \
 BoundaryConditionsExternalHeadLossesView.py \
+BoundaryConditionsFractionView.py \
+BoundaryConditionsHydraulicHeadView.py \
+BoundaryConditionsInterfacialAreaView.py \
 BoundaryConditionsMappedInletView.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshView.py \
-BoundaryConditionsHydraulicHeadView.py \
+BoundaryConditionsNonCondensableView.py \
 BoundaryConditionsPressureView.py \
+BoundaryConditionsPressureViewNeptune.py \
 BoundaryConditionsRoughWallView.py \
 BoundaryConditionsScalarsView.py \
+BoundaryConditionsScalarViewNeptune.py \
 BoundaryConditionsSlidingWallView.py \
 BoundaryConditionsTurbulenceInletView.py \
 BoundaryConditionsVelocityInletView.py \
+BoundaryConditionsVelocityInletViewNeptune.py \
 BoundaryConditionsWallRadiativeTransferView.py \
+BoundaryConditionsTurbulenceInletViewNeptune.py \
 BoundaryConditionsView.py \
-Boundary.py \
-CoalCombustionModel.py \
+BoundaryConditionsViewNeptune.py \
+BoundaryConditionsWallView.py \
+CathareCouplingView.py \
 CoalCombustionView.py \
-CompressibleModel.py \
 ConjugateHeatTransferView.py \
-ConjugateHeatTransferModel.py \
-CoriolisSourceTermsModel.py \
-CoriolisSourceTermsView.py \
-GroundwaterModel.py \
 GroundwaterView.py \
-GroundwaterLawModel.py \
 GroundwaterLawView.py \
-DefineUserScalarsModel.py \
 DefineUserScalarsView.py \
-ElectricalModel.py \
+DropletCondensationEvaporationView.py \
 ElectricalView.py \
 FacesSelectionView.py \
-FansModel.py \
 FansView.py \
-FluidCharacteristicsModel.py \
 FluidCharacteristicsView.py \
-FluidStructureInteractionModel.py \
 FluidStructureInteractionView.py \
-GasCombustionModel.py \
 GasCombustionView.py \
-HeadLossesModel.py \
+GlobalNumericalParametersView.py \
 HeadLossesView.py \
-IdentityAndPathesModel.py \
 IdentityAndPathesView.py \
-InitializationModel.py \
+ImmersedBoundariesViewNeptune.py \
 InitializationView.py \
-LagrangianBoundariesModel.py \
+InterfacialEnthalpyView.py \
+InterfacialForcesView.py \
+InterfacialAreaView.py \
 LagrangianBoundariesView.py \
-LagrangianModel.py \
-LagrangianOutputModel.py \
 LagrangianOutputView.py \
-LagrangianStatisticsModel.py \
 LagrangianStatisticsView.py \
 LagrangianView.py \
-LocalizationModel.py \
 LocalizationView.py \
-MobileMeshModel.py \
+MainFieldsView.py \
+MainFieldsInitializationView.py \
+MainFieldsSourceTermsView.py \
 MobileMeshView.py \
-NotebookModel.py \
+NonCondensableView.py \
 NotebookView.py \
-NumericalParamEquationModel.py \
+NucleateBoilingView.py \
 NumericalParamEquationView.py \
-NumericalParamGlobalModel.py \
+NumericalParamEquationViewNeptune.py \
 NumericalParamGlobalView.py \
-OpenTurnsModel.py \
-OpenTurnsView.py \
-OutputControlModel.py \
 OutputControlView.py \
-OutputSurfacicVariablesModel.py \
 OutputSurfacicVariablesView.py \
-OutputVolumicVariablesModel.py \
 OutputVolumicVariablesView.py \
 PreProcessingInformationsView.py \
-PerformanceTuningModel.py \
 PerformanceTuningView.py \
-PorosityModel.py \
 PorosityView.py \
-ProfilesModel.py \
+PreprocessingView.py \
 ProfilesView.py \
+QMegEditorView.py \
 QMeiEditorView.py \
-ReferenceValuesModel.py \
-ReferenceValuesView.py \
 SalomeActors.py \
 SalomeHandler.py \
-ScriptRunningModel.py \
-SolutionDomainModel.py \
 SolutionDomainView.py \
-SourceTermsModel.py \
 SourceTermsView.py \
-StartRestartModel.py \
 StartRestartView.py \
-ThermalRadiationModel.py \
-ThermalRadiationView.py \
-ThermalScalarModel.py \
-ThermalScalarView.py \
-TimeAveragesModel.py \
+ThermalView.py \
 TimeAveragesView.py \
-TimeStepModel.py \
 TimeStepView.py \
-TurboMachineryModel.py \
 TurboMachineryView.py \
-TurbulenceModel.py \
 TurbulenceView.py \
+TurbulenceNeptuneView.py \
 VerifyExistenceLabelDialogView.py \
 WelcomeView.py \
-XMLEditorView.py
+XMLEditorView.py \
+SpeciesView.py \
+UsersControlView.py \
+OutputFieldsView.py \
+OpenTurnsView.py \
+SolidView.py \
+ThermodynamicsView.py \
+TimeStepViewNeptune.py
 
 # PyQt User Interface files
-
 UIFILES = \
 AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
 BalanceForm.ui \
-BatchRunningAdvancedOptionsDialogForm.ui \
 BatchRunningDebugOptionsHelpDialogForm.ui \
 BatchRunningForm.ui \
 BatchRunningStopByIterationDialogForm.ui \
@@ -174,7 +154,6 @@ BoundaryConditionsWallRadiativeTransferForm.ui \
 CoalCombustionForm.ui \
 CompressibleForm.ui \
 ConjugateHeatTransferForm.ui \
-CoriolisSourceTermsForm.ui \
 GroundwaterForm.ui \
 GroundwaterLawForm.ui \
 DefineUserScalarsForm.ui \
@@ -187,6 +166,7 @@ FluidStructureInteractionForm.ui \
 GasCombustionForm.ui \
 HeadLossesForm.ui \
 IdentityAndPathesForm.ui \
+ImmersedBoundariesNeptune.ui \
 InitializationForm.ui \
 LagrangianAdvancedOptionsDialogForm.ui \
 LagrangianBoundariesForm.ui \
@@ -207,23 +187,51 @@ PerformanceTuningForm.ui \
 PorosityForm.ui \
 ProfilesForm.ui \
 QMeiEditorForm.ui \
-ReferenceValuesForm.ui \
+PreprocessingForm.ui \
 SolutionDomainForm.ui \
 SourceTermsForm.ui \
 StartRestartAdvancedDialogForm.ui \
 StartRestartForm.ui \
 ThermalRadiationAdvancedDialogForm.ui \
-ThermalRadiationForm.ui \
-ThermalScalarForm.ui \
+ThermalForm.ui \
 TimeAveragesForm.ui \
 TimeStepForm.ui \
 TurboMachineryForm.ui \
 TurbulenceAdvancedOptionsDialogForm.ui \
 TurbulenceForm.ui \
+TurbulenceNeptune.ui \
 VerifyExistenceLabelDialogForm.ui \
 VolumicZoneAdvancedDialogForm.ui \
 WelcomeForm.ui \
-XMLEditorForm.ui
+XMLEditorForm.ui \
+Noncondensable.ui \
+Turbulence.ui \
+Species.ui\
+InterfacialForces.ui \
+InterfacialArea.ui \
+MainFields.ui \
+GlobalNumericalParameters.ui \
+GlobalNumericalParametersAdvancedOptionsDialog.ui \
+InterfacialEnthalpy.ui \
+NucleateBoiling.ui \
+DropletCondensationEvaporation.ui \
+MainFieldsInitialization.ui \
+MainFieldsSourceTerms.ui \
+CathareCouplingForm.ui \
+BoundaryConditionsNeptune.ui \
+UsersControl.ui \
+OutputFields.ui \
+Solid.ui \
+Thermodynamics.ui \
+NumericalParamEquationNeptune.ui \
+BoundaryConditionsPressure.ui \
+BoundaryConditionsEnergy.ui \
+BoundaryConditionsFraction.ui \
+BoundaryConditionsNonCondensable.ui \
+BoundaryConditionsScalar.ui \
+BoundaryConditionsWall.ui \
+BoundaryConditionsInterfacialArea.ui \
+TimeStep.ui
 
 # PyQt Resources files
 

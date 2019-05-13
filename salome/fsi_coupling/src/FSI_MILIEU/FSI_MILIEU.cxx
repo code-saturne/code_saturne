@@ -1,7 +1,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -211,7 +211,8 @@ FSI_MILIEU_i::init_service(const char * service_name) {
           create_calcium_port(this,(char *)"DEPAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
           create_calcium_port(this,(char *)"VITAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
           create_calcium_port(this,(char *)"FORSAT",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"DONGEO",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
+          create_calcium_port(this,(char *)"NB_FOR",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
+          create_calcium_port(this,(char *)"NB_DYN",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
           create_calcium_port(this,(char *)"ICV",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
           //initialization CALCIUM ports OUT
           create_calcium_port(this,(char *)"DTCALC",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
@@ -226,8 +227,6 @@ FSI_MILIEU_i::init_service(const char * service_name) {
           create_calcium_port(this,(char *)"NTCHRO",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"ICVEXT",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"ICVAST",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"NB_DYN",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"NB_FOR",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
         }
       catch(const PortAlreadyDefined& ex)
         {

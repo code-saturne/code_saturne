@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -664,7 +664,7 @@ _cs_dot_xx_yy_xy_xz_yz_superblock(cs_lnum_t                    n,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the global residual of 2 extensive vectors:
- *        1/sum(vol) . sum(X.Y/vol)
+ *        1/sum(vol) . sum(X.Y.vol)
  *        using a superblock algorithm.
  *
  * In parallel mode, the local results are summed on the default
@@ -716,7 +716,7 @@ _cs_gres_superblock(cs_lnum_t         n,
         double cdot = 0.;
         double cvtot = 0.;
         for (cs_lnum_t i = start_id; i < end_id; i++) {
-          cdot += _x[i]*_y[i]/_vol[i];
+          cdot += _x[i] * _y[i] * _vol[i];
           cvtot += _vol[i];
         }
         sdot += cdot;
@@ -1147,7 +1147,7 @@ _cs_dot_xx_yy_xy_xz_yz_kahan(cs_lnum_t                    n,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the global residual of 2 extensive vectors:
- *        1/sum(vol) . sum(X.Y/vol)
+ *        1/sum(vol) . sum(X.Y.vol)
  *        using Kahan summation.
  *
  * In parallel mode, the local results are summed on the default
@@ -1186,7 +1186,7 @@ _cs_gres_kahan(cs_lnum_t         n,
 
     for (cs_lnum_t i = 0; i < _n; i++) {
       double t[2];
-      double u[2] = {(_x[i]*_y[i]/_vol[i]) - c[0],
+      double u[2] = {(_x[i]*_y[i]*_vol[i]) - c[0],
                      _vol[i]               - c[1]};
       for (int j = 0; j < 2; j++) {
         t[j] = s[j] + u[j];
@@ -1350,6 +1350,62 @@ cs_sum(cs_lnum_t         n,
   } /* OpenMP block */
 
   return sum;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the weighted sum of a vector. For better precision, a superblock
+ * algorithm is used.
+ *
+ * \param[in]  n  size of array x
+ * \param[in]  w  array of floating-point weights
+ * \param[in]  x  array of floating-point values
+ *
+ * \return the resulting weighted sum
+ *----------------------------------------------------------------------------*/
+
+double
+cs_weighted_sum(cs_lnum_t         n,
+                const cs_real_t  *w,
+                const cs_real_t  *x)
+{
+  double wsum = 0.0;
+
+# pragma omp parallel reduction(+:wsum) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n, &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_x = x + s_id;
+    const cs_real_t *_w = w + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double sblk_sum = 0.0;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double blk_sum = 0.0;
+        for (cs_lnum_t i = start_id; i < end_id; i++)
+          blk_sum += _w[i]*_x[i];
+        sblk_sum += blk_sum;
+      }
+
+      wsum += sblk_sum;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  return wsum;
 }
 
 /*----------------------------------------------------------------------------*/

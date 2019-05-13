@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -100,7 +100,7 @@ call field_get_val_s(ivarfl(ir13), cvar_r13)
 call field_get_val_s(ivarfl(ir23), cvar_r23)
 
 !===============================================================================
-!  ---> Stockage Min et Max pour listing
+!  ---> Stockage Min et Max pour log
 !===============================================================================
 
 do isou = 1, 7
@@ -235,7 +235,7 @@ do isou = 4, 6
 
 enddo
 
-! ---> Stockage nb de clippings pour listing
+! ---> Stockage nb de clippings pour log
 
 do isou = 1, 7
   if    (isou.eq.1) then
@@ -357,7 +357,7 @@ if (clip_r_id.ge.0) then
 endif
 
 !===============================================================================
-!  Compute and store Min Max values for the listing
+!  Compute and store Min Max values for the log
 !===============================================================================
 
 do isou = 1, 7
@@ -429,6 +429,7 @@ do iel = 1, ncel
       cvar_rij(isou+3,iel) = 0.0d0
 
       iclrij(isou) = iclrij(isou) + 1
+      iclrij(isou+3) = iclrij(isou+3) + 1
     end do
 
     is_clipped = 1
@@ -443,20 +444,24 @@ do iel = 1, ncel
     eigen_min = minval(eigen_vals(1:3))
     eigen_max = maxval(eigen_vals(1:3))
 
-    if ( (eigen_min .le. (eigen_tol*eigen_max)) .or. &
-      (eigen_min .le. epzero*rijref) ) then
+    ! If negative eigen value, return to isotropy
+    if ( eigen_min .le. (eigen_tol*eigen_max) .or. &
+         eigen_min .le. epzero ) then
 
       is_clipped = 1
 
-      eigen_offset = (eigen_tol*eigen_max - eigen_min) * trrij
+      eigen_min = min(eigen_min, - eigen_tol)
+      eigen_offset = min(- eigen_min / (1.d0/3.d0 - eigen_min) + 0.1d0, 1.d0)
 
-      eigen_offset = max(eigen_offset, epzero*rijref)
+      do isou = 1, 6
+        cvar_rij(isou,iel) = (1.d0 - eigen_offset) * cvar_rij(isou,iel)
 
-      do isou = 1, 3
-        cvar_rij(isou,iel) = cvar_rij(isou,iel) + eigen_offset
+        if (isou.le.3) then
+          cvar_rij(isou,iel) = cvar_rij(isou,iel) + trrij * (eigen_offset + eigen_tol) / 3.d0
+        endif
 
         if (clip_r_id.ge.0) &
-          cpro_rij_clipped(isou, iel) = eigen_offset
+          cpro_rij_clipped(isou, iel) = eigen_offset * cvar_rij(isou,iel)
 
         iclrij(isou) = iclrij(isou) + 1
       end do

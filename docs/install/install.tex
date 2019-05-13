@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2018 EDF S.A.
+% Copyright (C) 1998-2019 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -155,19 +155,31 @@ and their role is given in \S\ref{sec:list_ext_lib}.
 For some external libraries, such as Catalyst (see \ref{sec:list_ext_lib}),
 a C++ compiler is also required.
 
-The SALOME platform is currently only compatible with Python 2,
-so Python 3 should only be used when not building with SALOME support.
+The SALOME platform V9 and above requires Python 3, older versions Python 2,
+and a matching version should be used when building with SALOME support.
 
 In practice, the code is known to build and function properly at least with the
-GNU compilers 4.4 and above (up to 6.3 at this date), Intel compilers 11 and
-above (up to 17 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
+GNU compilers 4.4 and above (up to 8.x at this date), Intel compilers 11 and
+above (up to 18 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
 (tested with 3.7 or above).
 
 Note also that while \CS makes heavy use of Python, this is for scripts and
-for the GUI only; The solver only uses compiled code, so we may for example use
+for the GUI only; The solver only uses compiled code, so we could for example use
 a 32-bit version of Python with 64-bit \CS libraries and executables.
 Also, the version of Python used by ParaView/Catalyst may be independent
 from the one used for building \CS.
+
+\section{Loading an environment\label{sec:shell_env}}
+
+If installing and running \CS requires sourcing a given environment
+or loading environement modules (see \S\ref{sec:obtain_ext_lib}),
+the \texttt{--with-shell-env} option allows defining the path for a file
+to source, or if no path is given, loading default modules.
+
+By default, the main \texttt{code\_saturne} command is a Python
+script. When sourcing an environment, a launcher shell script is
+run first, loads the required environment, then calls Python with the
+\texttt{code\_saturne.py} script.
 
 \section{Third-Party libraries\label{sec:ext_lib}}
 
@@ -207,11 +219,12 @@ ways:
       but \texttt{libopenmpi-dev} must also be installed for the \CS
       build to be able to use the former.
 
-\item On many large compute clusters, Environment Modules allow
-      the administrators to provide multiple versions of many
+\item On some systems, especially compute clusters, Environment Modules
+      allow the administrators to provide multiple versions of many
       scientific libraries, as well us compilers or MPI libraries,
       using the \texttt{module} command. More details on
-      Environment Modules may be found at \url{http://modules.sourceforge.net}.
+      Environment Modules may be found at \url{http://modules.sourceforge.net}
+      or \url{https://github.com/TACC/Lmod}.
       When being configured and installed \CS checks for modules loaded
       with the \texttt{module} command, and records the list of loaded
       modules. Whenever running that build of \CS, the modules detected
@@ -347,7 +360,7 @@ The list of third-party software usable with \CS is provided here:
       \url{http://www.mcs.anl.gov/petsc/}) consists  of a variety of libraries,
       which may be used by \CS for the resolution of linear equation systems.
       In addition to providing many solver options, it may be used as a bridge
-      to other major solver libraries. Version 3.6 has been tested with \CS.
+      to other major solver libraries.
 
 \end{itemize}
 
@@ -459,8 +472,8 @@ manually using \texttt{mpirun}, then pursue the build process.
 The Autotools installation of MED is simple on most machines,
 but a few remarks may be useful for specific cases.
 
-Note that as of MED 3.3.0, HDF5 1.8 is required, but HDF5 1.10 is
-not supported yet.
+Note that up to MED 3.3.1, HDF5 1.8 is required, while MED 4.x
+uses  HDF5 1.10.
 
 MED has a C API, is written in a mix of C and C++ code,
 and provides both a C (\texttt{libmedC}) and an Fortran API
@@ -605,12 +618,12 @@ Alternatively, to copy less files and avoid changing the structure provided
 by CoolProp:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include/CoolProp.h
+\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include
+{\$INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name} \\
 \textbackslash \\
-{INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name} \\
-\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include/PlatFormDetermination.h
+\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/externals/fmtlib/fmt
 \textbackslash \\
-{INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}
+{\$INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}/include/
 }\end{minipage}}
 
 \sloppy
@@ -720,8 +733,8 @@ tool instead of the native {\tt make} is recommended.
 
 \subsection{Source trees obtained through a source code repository\label{sec:preparerepo}}
 
-For developers obtaining the code was obtained through a version control
-system such as Subversion, an additional step is required:
+For developers obtaining the code was obtained through a Git repository,
+an additional step is required:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ cd saturne\\
@@ -771,7 +784,7 @@ Select configuration options, then run {\tt configure}, for example:
 \$ /home/user/Code\_Saturne/\verscs/src/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/\verscs/arch/prod
 \textbackslash \\
-\textcolor{Violet}{--with-med}=/home/user/opt/med-3.3 \textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-4.0 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich-3.2/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
@@ -803,7 +816,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ ../../code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/\verscs/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
-\textcolor{Violet}{--with-med}=/home/user/opt/med-3.3 \textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-4.0 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich-3.2/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
@@ -814,10 +827,9 @@ By default, on most architectures, \CS will be built with shared libraries.
 Shared libraries may be disabled (in which case static libraries
 are automatically enabled) by adding  {\tt --disable-shared} to the options
 passed to {\tt configure}.
-On some systems, such as BlueGene/Q, the build may default to static libraries
-instead.
+On some systems, the build may default to static libraries instead.
 
-It is possible to build both shared and static libraries by adding
+It is possible to build both shared and static libraries by not adding
 {\tt --disable-static} to the {\tt configure} options, but the
 executables will be linked with the shared version of the libraries,
 so this is rarely useful (the build process is also slower in this case, as
@@ -825,8 +837,8 @@ each file is compiled twice).
 
 In some cases, a shared build may fail due to some dependencies
 on static-only libraries. In this case, {\tt --disable-shared}
-will be necessary. Disabling shared libraries has also been seen
-to avoid issues with linking on Mac OSX systems.
+will be necessary. Disabling shared libraries is also necessary
+to avoid issues with linking user functions on Mac OSX systems.
 
 In any case, be careful if you switch from one option to the other: as
 linking will be done with shared libraries by default, a build
@@ -1008,11 +1020,13 @@ force the \CS \texttt{configure} script to find some libraries
 which may be available in the SALOME distribution, such as HDF5,
 MED, or CGNS. To indicate that the versions from SALOME should be used,
 without needing to provide the full paths, the following configuration
-options may be used for HDF5, CGNS, and MED respectively:
+options may be used for HDF5, CGNS, and MED respectively, as well
+as for Catalyst when available in a given Salome platform variant.
 
  \texttt{--with-hdf5=salome}\\
  \texttt{--with-cgns=salome}\\
- \texttt{--with-med=salome}
+ \texttt{--with-med=salome}\\
+ \texttt{--with-catalyst=salome}
 
 As CGNS and MED file formats are portable, MED or CGNS files produced
 by either \CS or SALOME remain interoperable.\footnote{At the least,
@@ -1061,9 +1075,9 @@ build on a cluster named \texttt{athos}, using the Intel compilers
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/athos\_ompi
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/mkl-2016.0.047/mkl \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/athos
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10/arch/athos
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/athos
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/athos
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/athos \textbackslash \\
@@ -1163,8 +1177,8 @@ using CMake is as simple as on a workstation, and simply requires
 choosing the correct compilers and possibly a few other options (in
 the EDF \CS build, the GCC compilers were chosen to reduce risks, and
 the Fortran wrappers were not needed, so not built).
-\item CGNS: building CGNS 3.1 or 3.2 is based on CMake, and no specific
-problems have been observed.
+\item CGNS: building CGNS 3.1 to 3.3 is preferentially based on CMake,
+and no specific problems have been observed.
 \item MED: building MED 3.0.5 or above for \CS is easier than previous versions,
 as a new \\ \texttt{--disable-fortan} option is available for the
 \texttt{configure} script. Both the C and C++ compiler wrappers
@@ -1185,9 +1199,9 @@ For an example, let us start with the front-end build:
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/frontend
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10.3/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/frontend
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/frontend
 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \\
@@ -1203,8 +1217,8 @@ compute nodes:
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq
 \textbackslash \\
 \textcolor{Violet}{--without-blas} \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{
@@ -1244,8 +1258,8 @@ options such as in the following example are recommended:
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/xc30
 \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/xc30 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.3/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/xc30 \textbackslash \\
 \textcolor{Violet}{

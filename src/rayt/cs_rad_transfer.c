@@ -4,7 +4,7 @@
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -58,8 +58,6 @@
 #include "cs_sles_it.h"
 #include "cs_timer.h"
 
-#include "cs_prototypes.h"
-
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -90,13 +88,13 @@ BEGIN_C_DECLS
         Phase which radiates (bulk by default, but may be coal class or fuel
         droplets phase).
   \var  cs_rad_transfer_params_t::iimpar
-        Verbosity level in the listing concerning the calculation of
+        Verbosity level in the log concerning the calculation of
         the wall temperatures:
         - 0: no display
         - 1: standard
         - 2: complete
   \var  cs_rad_transfer_params_t::iimlum
-        Verbosity level in the listing concerning the calculation of
+        Verbosity level in the log concerning the calculation of
         the radiative transfer equation:
         - 0: no display
         - 1: standard

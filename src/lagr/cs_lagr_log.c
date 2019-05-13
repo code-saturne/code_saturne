@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -58,6 +58,7 @@
 #include "cs_field.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_particle.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_post.h"
 #include "cs_lagr_stat.h"
@@ -120,77 +121,35 @@ _status(int i)
  *
  * Parameters:
  * \param[in]  s_id      stat id
+ * \param[out] nbrfac    number of particles used for the statistics
  * \param[out] gmin      min value
  * \param[out] gmax      max value
- * \param[in]  unsnbr    inverse of the number of particles impacting
- *                       the boundary
- * \param[in]  unsnbrfou inverse of the number of particles impacting
- *                       the boundary taking fooling into account.
  */
  /*----------------------------------------------------------------*/
 
 static void
 _lagr_min_max_boundary_stats(int         s_id,
+                             cs_lnum_t  *nbrfac,
                              cs_real_t  *gmin,
-                             cs_real_t  *gmax,
-                             cs_real_t   unsnbr[],
-                             cs_real_t   unsnbrfou[])
+                             cs_real_t  *gmax)
 {
   cs_lagr_boundary_interactions_t *lagr_bd_i = cs_glob_lagr_boundary_interactions;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   /* Initializations */
-  cs_lnum_t nbrfac = 0;
+  *nbrfac = 0;
   *gmax = -cs_math_big_r;
   *gmin =  cs_math_big_r;
 
   cs_real_t threshold = cs_glob_lagr_stat_options->threshold;
 
-  if (lagr_bd_i->imoybr[s_id] == 3) {
-
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (bound_stat[ifac + n_b_faces * lagr_bd_i->iencnb] > threshold) {
-        nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] * unsnbrfou[ifac]);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] * unsnbrfou[ifac]);
-      }
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
+      *nbrfac = *nbrfac + 1;
+      *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id]);
+      *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id]);
     }
-
   }
-  else if (lagr_bd_i->imoybr[s_id] == 2) {
-
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
-        nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] * unsnbr[ifac]);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] * unsnbr[ifac]);
-      }
-    }
-
-  }
-  else if (lagr_bd_i->imoybr[s_id] == 1) {
-
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
-        nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id] / lagr_bd_i->tstatp);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id] / lagr_bd_i->tstatp);
-      }
-    }
-
-  }
-  else if (lagr_bd_i->imoybr[s_id] == 0) {
-
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-      if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
-        nbrfac++;
-        *gmax = CS_MAX(*gmax, bound_stat[ifac + n_b_faces * s_id]);
-        *gmin = CS_MIN(*gmin, bound_stat[ifac + n_b_faces * s_id]);
-      }
-    }
-
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -209,7 +168,7 @@ _log_setup_injection(cs_log_t  log)
   if (cs_glob_lagr_time_scheme == NULL)
     return;
 
-  if (cs_glob_lagr_time_scheme->iilagr < 1)
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
@@ -340,7 +299,7 @@ cs_lagr_log_setup(void)
   if (cs_glob_lagr_time_scheme == NULL)
     return;
 
-  if (cs_glob_lagr_time_scheme->iilagr < 1)
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
   /* Now add Lagrangian setup info */
@@ -492,24 +451,6 @@ cs_lagr_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "    %s\n", "none");
   if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr)
     cs_log_printf(CS_LOG_SETUP, "    %s\n", "particle impact number");
-  if (cs_glob_lagr_boundary_interactions->iflmbd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "particle mass flow");
-  if (cs_glob_lagr_boundary_interactions->iangbd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "impact angle");
-  if (cs_glob_lagr_boundary_interactions->ivitbd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "impact velocity");
-  if (cs_glob_lagr_boundary_interactions->iencnbbd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "interactions with fouling");
-  if (cs_glob_lagr_boundary_interactions->iencmabd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal mass flux");
-  if (cs_glob_lagr_boundary_interactions->iencdibd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal diameter");
-  if (cs_glob_lagr_boundary_interactions->iencckbd)
-    cs_log_printf(CS_LOG_SETUP, "    %s\n", "fouling coal coke fraction");
-  if (cs_glob_lagr_boundary_interactions->nusbor)
-    cs_log_printf(CS_LOG_SETUP,
-                  _("    number of additional user statistics: %d\n"),
-                  cs_glob_lagr_boundary_interactions->nusbor);
 
   /* Volumic statistics   */
 
@@ -537,11 +478,12 @@ cs_lagr_log_setup(void)
 
   }
 
+  cs_lagr_stat_log_setup();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Log Lagrangian module output in the main listing file.
+ * \brief  Log Lagrangian module output in the main log file.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -553,10 +495,12 @@ cs_lagr_log_iteration(void)
   if (cs_glob_lagr_time_scheme == NULL)
     return;
 
-  if (cs_glob_lagr_time_scheme->iilagr < 1)
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
-  const cs_real_t  *b_stats = bound_stat;
+  /* Return silently if called before Lagrangian start */
+  if (cs_glob_lagr_particle_set == NULL)
+    return;
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("   ** INFORMATION ON THE LAGRANGIAN CALCULATION\n"));
@@ -660,15 +604,17 @@ cs_lagr_log_iteration(void)
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_OUTLET)
         chcond = _("outlet");
 
-      else if (   bdy_cond->zone_type[z_id] == CS_LAGR_DEPO1
-               || bdy_cond->zone_type[z_id] == CS_LAGR_DEPO2)
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO1)
+        chcond = _("deposition and elimination");
+
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO2)
         chcond = _("deposition");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_FOULING)
         chcond = _("fouling");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO_DLVO)
-        chcond = _("dlvo conditions");
+        chcond = _("DLVO conditions");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_SYM)
         chcond = _("symmetry");
@@ -730,68 +676,31 @@ cs_lagr_log_iteration(void)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("                           Min value    Max value    \n"));
 
-    const cs_real_t _threshold = 1.e-30;
-
-    cs_real_t *tabvr = NULL;
-    cs_real_t *tabvrfou = NULL;
-
-    if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr == 1) {
-
-      /* Allocate a work array */
-      BFT_MALLOC(tabvr, cs_glob_mesh->n_b_faces, cs_real_t);
-
-      int s_id = cs_glob_lagr_boundary_interactions->inbr;
-
-      for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
-
-        if (b_stats[ifac + cs_glob_mesh->n_b_faces * s_id] > _threshold)
-          tabvr[ifac] = 1.0 / b_stats[ifac + cs_glob_mesh->n_b_faces * s_id];
-        else
-          tabvr[ifac] = 0.0;
-
-      }
-
-    }
-
-    if (cs_glob_lagr_boundary_interactions->iencnbbd == 1) {
-
-      BFT_MALLOC(tabvrfou, cs_glob_mesh->n_b_faces, cs_real_t);
-
-      int s_id = cs_glob_lagr_boundary_interactions->iencnb;
-
-      for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
-
-        if (b_stats[ifac + cs_glob_mesh->n_b_faces * s_id] > _threshold)
-          tabvrfou[ifac] = 1.0 / b_stats[ifac + cs_glob_mesh->n_b_faces * s_id];
-        else
-          tabvrfou[ifac] = 0.0;
-
-      }
-    }
-
     for (int s_id = 0; s_id < cs_glob_lagr_dim->n_boundary_stats; s_id++) {
 
-      cs_real_t gmin = cs_math_big_r;
-      cs_real_t gmax =-cs_math_big_r;
+      cs_real_t gmin;
+      cs_real_t gmax;
+      cs_lnum_t nbrfac;
 
-      _lagr_min_max_boundary_stats(s_id, &gmin, &gmax, tabvr, tabvrfou);
+      _lagr_min_max_boundary_stats(s_id, &nbrfac, &gmin, &gmax);
 
+      cs_parall_max(1, CS_INT_TYPE, &nbrfac);
       cs_parall_min(1, CS_REAL_TYPE, &gmin);
       cs_parall_max(1, CS_REAL_TYPE, &gmax);
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "lp  %20s  %12.5E  %12.5E\n",
-                    cs_glob_lagr_boundary_interactions->nombrd[s_id],
-                    gmin,
-                    gmax);
+      /* If there is no particles, no statistics */
+      if (nbrfac > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "lp  %20s  %12.5E  %12.5E\n",
+                      cs_glob_lagr_boundary_interactions->nombrd[s_id],
+                      gmin,
+                      gmax);
+      else
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "lp  %20s\n",
+                      cs_glob_lagr_boundary_interactions->nombrd[s_id]);
 
     }
-
-    /* Free memory */
-    if (tabvr != NULL)
-      BFT_FREE(tabvr);
-    if (tabvrfou != NULL)
-      BFT_FREE(tabvrfou);
 
     cs_log_separator(CS_LOG_DEFAULT);
 
@@ -799,7 +708,7 @@ cs_lagr_log_iteration(void)
 
   /* Information about two-way coupling  */
 
-  if (cs_glob_lagr_time_scheme->iilagr == 2) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     if (cs_glob_lagr_time_scheme->isttio == 0) {
 

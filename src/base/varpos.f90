@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -69,11 +69,11 @@ implicit none
 
 ! Local variables
 
-integer          iscal , id, ityloc, itycat, ifcvsl, pflag
+integer          iscal , id, ityloc, itycat, pflag
 integer          ii
 integer          iok
-integer          f_id
-integer          ivisph, iest
+integer          f_id, idftnp
+integer          iest
 integer          key_buoyant_id, is_buoyant_fld
 
 double precision gravn2
@@ -81,18 +81,6 @@ double precision gravn2
 character(len=80) :: f_name, f_label, s_label, s_name
 
 type(var_cal_opt) :: vcopt
-
-!===============================================================================
-! Verification
-!===============================================================================
-
-! ALE viscosity
-if (iale.eq.1) then
-  if (iortvm.ne.0 .and. iortvm.ne.1) then
-    write(nfecra, 8022) 'iortvm', iortvm
-    call csexit (1)
-  endif
-endif
 
 !===============================================================================
 ! Initialization
@@ -124,11 +112,14 @@ if (icp.ge.0) then
 endif
 
 ! ALE mesh viscosity
-if (iale.eq.1) then
-  if (iortvm.eq.0) then
+if (iale.ge.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+  idftnp = vcopt%idften
+
+  if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call add_property_field('mesh_viscosity', 'Mesh Visc', 1, .false., ivisma)
-  else
-    call add_property_field('mesh_viscosity', 'Mesh Visc', 3, .false., ivisma)
+  else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
+    call add_property_field('mesh_viscosity', 'Mesh Visc', 6, .false., ivisma)
   endif
 endif
 
@@ -195,36 +186,7 @@ if (istmpf.eq.-999) then
     istmpf = 2
   endif
 endif
-!     Masse volumique
-if (iroext.eq.-999) then
-  if (ischtp.eq.1) then
-    iroext = 0
-  else if (ischtp.eq.2) then
-    !       Pour le moment par defaut on ne prend pas l'ordre 2
-    !              IROEXT = 1
-    iroext = 0
-  endif
-endif
-!     Viscosite
-if (iviext.eq.-999) then
-  if (ischtp.eq.1) then
-    iviext = 0
-  else if (ischtp.eq.2) then
-    !       Pour le moment par defaut on ne prend pas l'ordre 2
-    !              IVIEXT = 1
-    iviext = 0
-  endif
-endif
-!     Chaleur massique
-if (icpext.eq.-999) then
-  if (ischtp.eq.1) then
-    icpext = 0
-  else if (ischtp.eq.2) then
-    !       Pour le moment par defaut on ne prend pas l'ordre 2
-    !              ICPEXT = 1
-    icpext = 0
-  endif
-endif
+
 !     Termes sources NS,
 if (isno2t.eq.-999) then
   if (ischtp.eq.1) then
@@ -262,15 +224,6 @@ do iscal = 1, nscal
       isso2t(iscal) = 1
     endif
   endif
-  ! Diffusivite scalaires
-  if (ivsext(iscal).eq.-999) then
-    if (ischtp.eq.1) then
-      ivsext(iscal) = 0
-    else if (ischtp.eq.2) then
-      ! Pour le moment par defaut on ne prend pas l'ordre 2
-      ivsext(iscal) = 0
-    endif
-  endif
 
   ! Model for turbulent fluxes u'T' (SGDH, GGDH, AFM, DFM)
   ityturt(iscal) = iturt(iscal)/10
@@ -282,19 +235,6 @@ do iscal = 1, nscal
   endif
 
 enddo
-
-! Pression hydrostatique
-if (iphydr.ne.0.and.iphydr.ne.1.and.iphydr.ne.2) then
-  write(nfecra,8121) 'IPHYDR ',iphydr
-  iok = iok + 1
-endif
-
-! Viscosite secondaire
-ivisph = ivisse
-if (ivisph.ne.0.and.ivisph.ne.1) then
-  write(nfecra,8022) 'IVISSE ',ivisph
-  iok = iok + 1
-endif
 
 ! Schemas en temps
 
@@ -348,24 +288,6 @@ if (isto2t.ne.0.and.isto2t.ne. 1.and.isto2t.ne.2) then
   iok = iok + 1
 endif
 
-! Schema en temps pour la masse volumique
-if (iroext.ne.0.and.iroext.ne. 1.and.iroext.ne.2) then
-  write(nfecra,8131) 'IROEXT',iroext
-  iok = iok + 1
-endif
-
-! Schema en temps pour la viscosite
-if (iviext.ne.0.and.iviext.ne. 1.and.iviext.ne.2) then
-  write(nfecra,8131) 'IVIEXT',iviext
-  iok = iok + 1
-endif
-
-! Schema en temps pour la chaleur specifique
-if (icpext.ne.0 .and. icpext.ne.1 .and.icpext.ne.2) then
-  write(nfecra,8131) 'ICPEXT',icpext
-  iok = iok + 1
-endif
-
 do iscal = 1, nscal
   ! Schema en temps pour les termes sources des scalaires
   if (isso2t(iscal).ne.0.and.                                    &
@@ -373,17 +295,20 @@ do iscal = 1, nscal
     write(nfecra,8141) iscal,'ISSO2T',isso2t(iscal)
     iok = iok + 1
   endif
-  ! Schema en temps pour la viscosite
-  if (ivsext(iscal).ne.0.and.                                    &
-      ivsext(iscal).ne. 1.and.ivsext(iscal).ne.2) then
-    write(nfecra,8141) iscal,'IVSEXT',ivsext(iscal)
-    iok = iok + 1
-  endif
 enddo
 
 ! Stop si probleme
 if (iok.gt.0) then
   call csexit(1)
+endif
+
+! add thermal expansion field for Boussinesq approximation
+! if not already added
+if (idilat.eq.0) then
+  call field_get_id_try('thermal_expansion', ibeta)
+  if (ibeta.lt.0) then
+    call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
+  endif
 endif
 
 ! Source term for weakly compressible algorithm (semi analytic scheme)
@@ -401,30 +326,6 @@ if (idilat.ge.4) then
   call add_property_field_1d('dila_st', '', iustdy(itsrho))
   id = iustdy(iscal)
   call field_set_key_int(id, keyvis, 0)
-endif
-
-! Density at the second previous time step for VOF algorithm
-! or dilatable algorithm
-if (ivofmt.ge.0.or.idilat.gt.1.or.irovar.eq.1) then
-  call field_set_n_previous(icrom, 2)
-  call field_set_n_previous(ibrom, 2)
-  ! The density at the previous time step is required if
-  ! we perform a hydrostatic pressure correction (icalhy=1)
-else if (icalhy.eq.1.or.ipthrm.eq.1.or.ippmod(icompf).ge.0) then
-  call field_set_n_previous(icrom, 1)
-  call field_set_n_previous(ibrom, 1)
-endif
-! Dans le cas d'une extrapolation de la viscosite totale
-if (iviext.gt.0) then
-  call field_set_n_previous(iviscl, 1)
-  call field_set_n_previous(ivisct, 1)
-endif
-
-! CP s'il est variable
-if (icp.ge.0) then
-  if (icpext.gt.0) then
-    call field_set_n_previous(icp, 1)
-  endif
 endif
 
 ! On a besoin d'un tableau pour les termes sources de Navier Stokes
@@ -472,7 +373,6 @@ if (isto2t.gt.0) then
 endif
 
 ! Proprietes des scalaires : termes sources pour theta schema
-!   et VISCLS si elle est variable
 if (nscal.ge.1) then
   do ii = 1, nscal
     if (isso2t(ii).gt.0) then
@@ -487,20 +387,6 @@ if (nscal.ge.1) then
     call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
     if (vcopt%isstpc.eq.2) then
       call add_source_term_field(ivarfl(isca(ii)))
-    endif
-    ! Diffusivity
-    call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
-    if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
-      if (ivsext(ii).gt.0) then
-        call field_set_n_previous(ifcvsl, 1)
-      endif
-    endif
-    ! Density
-    call field_get_key_int (ivarfl(isca(ii)), kromsl, ifcvsl)
-    if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
-      if (ivsext(ii).gt.0) then
-        call field_set_n_previous(ifcvsl, 1)
-      endif
     endif
   enddo
 endif
@@ -625,21 +511,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 8022 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8101 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -842,21 +713,6 @@ return
 
 #else
 
- 8022 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    ',A6,' MUST BE AN INTEGER EQUAL TO 0 OR 1               ',/,&
-'@    HERE IT IS  ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8101 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

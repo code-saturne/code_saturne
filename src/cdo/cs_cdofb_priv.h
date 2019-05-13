@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -31,9 +31,9 @@
 
 #include "cs_defs.h"
 #include "cs_hodge.h"
-#include "cs_cdo_diffusion.h"
 #include "cs_cdo_advection.h"
-#include "cs_cdo_time.h"
+#include "cs_equation_assemble.h"
+#include "cs_equation_bc.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -55,11 +55,14 @@ struct  _cs_cdofb_t {
   int          bflux_field_id;
 
   /* System size (n_faces + n_cells) */
-  cs_lnum_t                        n_dofs;
+  cs_lnum_t    n_dofs;
 
-  /* Solution of the algebraic system at the last iteration
-     DoF unknowns (x) + BCs */
-  cs_real_t                       *face_values;
+  /* Solution of the algebraic system DoF unknowns (x) + BCs */
+  cs_real_t   *face_values;     /* At the last iteration */
+  cs_real_t   *face_values_pre; /* At the previous iteration */
+
+  /* Assembly process */
+  cs_equation_assembly_t    *assemble;
 
   /* Members related to the static condensation */
   cs_real_t   *rc_tilda;   /* Acc^-1 * RHS_cell */
@@ -70,24 +73,21 @@ struct  _cs_cdofb_t {
 
   /* Array storing the value arising from the contribution of all source
      terms (only allocated to n_cells) */
-  cs_real_t                       *source_terms;
+  cs_real_t                 *source_terms;
 
   /* Pointer of function to build the diffusion term */
-  cs_hodge_t                      *get_stiffness_matrix;
-  cs_hodge_t                      *get_diffusion_hodge;
-  cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
-  cs_cdo_diffusion_flux_trace_t   *bdy_flux_op;
+  cs_hodge_t                *get_stiffness_matrix;
+  cs_hodge_t                *get_diffusion_hodge;
+  cs_cdo_enforce_bc_t       *enforce_dirichlet;
+  cs_cdo_enforce_bc_t       *enforce_sliding;
 
   /* Pointer of function to build the advection term */
-  cs_cdofb_advection_t              *adv_func;
-  cs_cdofb_advection_bc_t           *adv_func_bc;
-
-  /* Pointer of function to apply the time scheme */
-  cs_cdo_time_scheme_t            *apply_time_scheme;
+  cs_cdofb_advection_t      *adv_func;
+  cs_cdofb_advection_bc_t   *adv_func_bc;
 
   /* If one needs to build a local hodge op. for time and reaction */
-  cs_param_hodge_t                 hdg_mass;
-  cs_hodge_t                      *get_mass_matrix;
+  cs_param_hodge_t           hdg_mass;
+  cs_hodge_t                *get_mass_matrix;
 };
 
 /*============================================================================

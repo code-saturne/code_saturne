@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -83,6 +83,7 @@ double precision thetv , thetap
 double precision d1s4, d3s2, d1s2
 double precision xk, xnu, l2
 double precision xllke, xllkmg, xlldrb
+double precision normp
 
 double precision rvoid(1)
 
@@ -225,7 +226,7 @@ call viscfa                                                       &
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ial) ! Diagonal reinforcement: same as dynamic Alpha
+ndircp = vcopt%ndircl ! Diagonal reinforcement: same as dynamic Alpha
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -247,6 +248,7 @@ relaxp = vcopt%relaxv
 
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 init   = 1
 
@@ -254,7 +256,7 @@ call codits &
  ( idtvar , init   , f_id   , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    cvara_al        , cvara_al        ,                            &

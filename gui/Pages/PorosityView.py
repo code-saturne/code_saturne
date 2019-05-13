@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -48,14 +48,14 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.PorosityForm import Ui_PorosityForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.PorosityModel import PorosityModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.PorosityModel import PorosityModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -81,10 +81,10 @@ class StandardItemModelPorosity(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataPorosityZones[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataPorosityZones[index.row()][index.column()]
+        return None
 
     def flags(self, index):
         if not index.isValid():
@@ -94,14 +94,12 @@ class StandardItemModelPorosity(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
-
+            return self.headers[section]
+        return None
 
     def setData(self, index, value, role):
         self.dataChanged.emit(index, index)
         return True
-
 
     def insertItem(self, label, name, local):
         line = [label, name, local]
@@ -142,9 +140,14 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.treeView.setModel(self.modelPorosity)
 
         # Combo model
-        self.modelPorosityType = ComboModel(self.comboBoxType, 2, 1)
-        self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
-        self.modelPorosityType.addItem(self.tr("anisotropic"), 'anisotropic')
+        if self.case['package'].name == 'code_saturne':
+            self.modelPorosityType = ComboModel(self.comboBoxType, 2, 1)
+            self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
+            self.modelPorosityType.addItem(self.tr("anisotropic"), 'anisotropic')
+        else:
+            self.modelPorosityType = ComboModel(self.comboBoxType, 1, 1)
+            self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
+            self.modelPorosityType.disableItem(index=0)
 
         # Connections
         self.treeView.clicked[QModelIndex].connect(self.slotSelectPorosityZones)
@@ -215,31 +218,14 @@ class PorosityView(QWidget, Ui_PorosityForm):
         """
         label, name, local = self.modelPorosity.getItem(self.entriesNumber)
 
-        exp = self.mdl.getPorosityFormula(name)
-
         choice = self.mdl.getPorosityModel(name)
+
+        exp, req, sca, sym = self.mdl.getPorosityFormulaComponents(name)
 
         if exp == None:
             exp = self.getDefaultPorosityFormula(choice)
 
-        if choice == "isotropic":
-            req = [('porosity', 'Porosity')]
-        else:
-            req = [('porosity', 'Porosity'),
-                   ('porosity[XX]', 'Porosity'),
-                   ('porosity[YY]', 'Porosity'),
-                   ('porosity[ZZ]', 'Porosity'),
-                   ('porosity[XY]', 'Porosity'),
-                   ('porosity[XZ]', 'Porosity'),
-                   ('porosity[YZ]', 'Porosity')]
         exa = """#example: \n""" + self.mdl.getDefaultPorosityFormula(choice)
-
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
-
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

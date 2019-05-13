@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -37,9 +37,6 @@ subroutine impini
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -77,9 +74,8 @@ implicit none
 
 ! Local variables
 
-character        name*300, chaine*80
+character        chaine*80
 integer          ii    , iiesca, iest
-integer          iwar  , kval
 integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
 integer          igg, ige
@@ -102,6 +98,11 @@ interface
   end subroutine syr_coupling_log_setup
 
 end interface
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
 
 !===============================================================================
 ! 1. Introduction
@@ -240,7 +241,6 @@ write(nfecra,1500)
 write(nfecra,1520) nvar,nscal,nscaus,nscapp
 
 write(nfecra,9900)
-
 
 #if defined(_CS_LANG_FR)
 
@@ -543,9 +543,8 @@ write(nfecra,9900)
 
 ! --- Stokes
 write(nfecra,4114)istmpf,thetfl,     &
-     iroext,                         &
-     iviext,thetvi,                  &
-     icpext,thetcp,                  &
+     thetvi,                  &
+     thetcp,                  &
      thetsn,thetst,epsup
 
 write(nfecra,9900)
@@ -565,20 +564,8 @@ write(nfecra,9900)
 '                ',14x,       ' (1 : schema std (Saturne 1.0 )',/,&
 '                ',14x,       ' (2 : ordre 2   (THETFL = 0.5 )',/,&
 '       THETFL = ', e14.5,    ' (theta pour flux de masse    )',/,&
-'       IROEXT = ',4x,i10,    ' (extrap. masse volumique',      /,&
-'                ',14x,       ' (0 : explicite',                /,&
-'                ',14x,       ' (1 : n+thetro avec thetro=1/2', /,&
-'                ',14x,       ' (2 : n+thetro avec thetro=1',   /,&
-'       IVIEXT = ',4x,i10,    ' (extrap. viscosite totale',     /,&
-'                ',14x,       ' (0 : explicite',                /,&
-'                ',14x,       ' (1 : n+thetvi avec thetro=1/2', /,&
-'                ',14x,       ' (2 : n+thetvi avec thetro=1',   /,&
 '       THETVI = ', e14.5,    ' (theta pour viscosite totale',  /,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       ICPEXT = ',4x,i10,    ' (extrap. chaleur specifique',   /,&
-'                ',14x,       ' (0 : explicite',                /,&
-'                ',14x,       ' (1 : n+thetcp avec thetro=1/2', /,&
-'                ',14x,       ' (2 : n+thetcp avec thetro=1',   /,&
 '       THETCP = ', e14.5,    ' (theta schema chaleur spec',    /,&
 '                               ((1+theta)nouveau-theta ancien',/,&
 '       THETSN = ', e14.5,    ' (theta schema T.S. Nav-Stokes)',/,&
@@ -596,27 +583,15 @@ write(nfecra,9900)
 ' ** STOKES',                                                   /,&
 '    ------',                                                   /,&
                                                                 /,&
-'  -- Phase continue :',                                        /,&
+'  -- Continuous phase:',                                       /,&
                                                                 /,&
 '       ISTMPF = ',4x,i10,    ' (time scheme for flow',         /,&
 '                ',14x,       ' (0: explicit (THETFL = 0     )',/,&
 '                ',14x,       ' (1: std scheme (Saturne 1.0  )',/,&
 '                ',14x,       ' (2: 2nd-order (THETFL = 0.5  )',/,&
 '       THETFL = ', e14.5,    ' (theta for mass flow         )',/,&
-'       IROEXT = ',4x,i10,    ' (density extrapolation',        /,&
-'                ',14x,       ' (0: explicit',                  /,&
-'                ',14x,       ' (1: n+thetro with thetro=1/2',  /,&
-'                ',14x,       ' (2: n+thetro with thetro=1',    /,&
-'       IVIEXT = ',4x,i10,    ' (total viscosity extrapolation',/,&
-'                ',14x,       ' (0: explicit',                  /,&
-'                ',14x,       ' (1: n+thetvi with thetro=1/2',  /,&
-'                ',14x,       ' (2: n+thetvi with thetro=1',    /,&
 '       THETVI = ', e14.5,    ' (theta for total viscosity',    /,&
 '                               ((1+theta).new-theta.old',      /,&
-'       ICPEXT = ',4x,i10,    ' (specific heat extrapolation',  /,&
-'                ',14x,       ' (0: explicit',                  /,&
-'                ',14x,       ' (1: n+thetcp with thetro=1/2',  /,&
-'                ',14x,       ' (2: n+thetcp with thetro=1',    /,&
 '       THETCP = ', e14.5,    ' (specific heat theta-scheme',   /,&
 '                               ((1+theta).new-theta.old',      /,&
 '       THETSN = ', e14.5,    ' (Nav-Stokes S.T. theta scheme)',/,&
@@ -653,9 +628,6 @@ endif
 if(ineedy.eq.1) then
 
   write(nfecra,4950) icdpar
-  if(abs(icdpar).eq.1) then
-    write(nfecra,4951) ntcmxy, coumxy, epscvy, yplmxy
-  endif
   write(nfecra,9900)
 
 endif
@@ -730,13 +702,6 @@ endif
 '                               (-1: std et recalcule si suite',/,&
 '                               ( 2: old et relu      si suite',/,&
 '                               (-2: old et recalcule si suite',/)
-4951  format(                                                     &
-                                                                /,&
-'       NTCMXY = ',4x,i10,    ' (Nb iter pour convection stat.',/,&
-                                                                /,&
-'       COUMXY = ',e14.5,     ' (Courant max pour convection )',/,&
-'       EPSCVY = ',e14.5,     ' (Precision pour convect. stat.',/,&
-'       YPLMXY = ',e14.5,     ' (y+ max avec influence amort.)',/)
 
 #else
 
@@ -804,78 +769,11 @@ endif
 '                               (-1: std, recomputed if restrt',/,&
 '                               ( 2: old, reread if restart',   /,&
 '                               (-2: old, recomputed if restrt',/)
-4951  format(                                                     &
-                                                                /,&
-'       NTCMXY = ',4x,i10,    ' (Nb iter for steady convect. )',/,&
-                                                                /,&
-'       COUMXY = ',e14.5,     ' (Max CFL for convection      )',/,&
-'       EPSCVY = ',e14.5,     ' (Precision for steady conv.  )',/,&
-'       YPLMXY = ',e14.5,     ' (y+ max w. damping influence )',/)
-
-#endif
-
-
-!===============================================================================
-! 5. SOLVEURS
-!===============================================================================
-
-! --- Solveurs iteratifs de base
-
-write(nfecra,5010)
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.lt.0) cycle
-  call field_get_label(f_id, chaine)
-  call field_get_key_struct_var_cal_opt(f_id, vcopt)
-  write(nfecra,5020) chaine(1:16), vcopt%epsilo, idircl(ii)
-enddo
-write(nfecra,5030)
-
-write(nfecra,9900)
-
-
-#if defined(_CS_LANG_FR)
-
- 5010 format(                                                     &
-                                                                /,&
-' ** SOLVEURS ITERATIFS DE BASE',                               /,&
-'    --------------------------',                               /,&
-                                                                /,&
-'------------------------------------',                         /,&
-' Variable              EPSILO IDIRCL',                         /,&
-'------------------------------------'                           )
- 5020 format(                                                     &
- 1x,    a16,    e12.4,    i7                                      )
- 5030 format(                                                     &
-'------------------------------------',                         /,&
-                                                                /,&
-'       EPSILO =                (precision de la resolution)',  /,&
-'       IDIRCL = 0 ou 1         (decalage de la diagonale si',  /,&
-'                                ISTAT=0 et pas de Dirichlet)', /)
-
-#else
-
- 5010 format(                                                     &
-                                                                /,&
-' ** BASE ITERATIVE SOLVERS',                                   /,&
-'    ----------------------',                                   /,&
-                                                                /,&
-'------------------------------------',                         /,&
-' Variable              EPSILO IDIRCL',                         /,&
-'------------------------------------'                          )
- 5020 format(                                                     &
- 1x,    a16,    e12.4,    i7                                      )
- 5030 format(                                                     &
-'------------------------------------',                          /,&
-                                                                 /,&
-'       EPSILO =                (resolution precision)',         /,&
-'       IDIRCL = 0 ou 1         (shift diagonal if',             /,&
-'                                ISTAT=0 and no Dirichlet)',     /)
 
 #endif
 
 !===============================================================================
-! 6. SCALAIRES
+! 5. SCALAIRES
 !===============================================================================
 
 ! --- Scalaires
@@ -913,7 +811,7 @@ if (nscal.ge.1) then
   write(nfecra,6030)
   write(nfecra,6040)
   do ii = 1, nscal
-    write(nfecra,6041) ii,thetss(ii),ivsext(ii),thetvs(ii)
+    write(nfecra,6041) ii,thetss(ii),thetvs(ii)
   enddo
   write(nfecra,6042)
 
@@ -974,19 +872,15 @@ endif
 '          pris en compte que si ICLVFL = 2',                   /)
  6040 format(                                                     &
 '------------------------------------------------------',       /,&
-'   Scalaire      THETSS    IVSEXT      THETVS',                /,&
+'   Scalaire      THETSS     THETVS',                /,&
 '------------------------------------------------------'         )
  6041 format(                                                     &
- 1x,     i10,      e12.4,      i10,      e12.4                   )
+ 1x,     i10,      e12.4,   e12.4                   )
  6042 format(                                                     &
 '------------------------------------------------------',       /,&
                                                                 /,&
 '       THETSS =                (theta pour termes sources   )',/,&
 '                               ((1+theta)nouveau-theta ancien',/,&
-'       IVSEXT =                (extrap. viscosite totale    )',/,&
-'                               (0 : explicite               )',/,&
-'                               (1 : n+thetvs avec thetvs=1/2', /,&
-'                               (2 : n+thetvs avec thetvs=1  )',/,&
 '       THETVS =                (theta pour diffusiv. scalaire',/,&
 '                               ((1+theta)nouveau-theta ancien',/)
 
@@ -1042,26 +936,22 @@ endif
 '          only if ICLVFL = 2',                                 /)
  6040 format(                                                     &
 '------------------------------------------------------',       /,&
-'   Scalar        THETSS    IVSEXT      THETVS',                /,&
+'   Scalar        THETSS      THETVS',                /,&
 '------------------------------------------------------'         )
  6041 format(                                                     &
- 1x,     i10,      e12.4,      i10,      e12.4                   )
+ 1x,     i10,      e12.4,     e12.4                   )
  6042 format(                                                     &
 '------------------------------------------------------',       /,&
                                                                 /,&
 '       THETSS =                (theta for source terms      )',/,&
 '                               ((1+theta).new-theta.old     )',/,&
-'       IVSEXT =                (extrap. total viscosity     )',/,&
-'                               (0: explicit                 )',/,&
-'                               (1: n+thetvs with thetvs=1/2 )',/,&
-'                               (2: n+thetvs with thetvs=1   )',/,&
 '       THETVS =                (theta for scalar diffusivity', /,&
 '                               ((1+theta).new-theta.old     )',/)
 
 #endif
 
 !===============================================================================
-! 7. GESTION DU CALCUL
+! 6. GESTION DU CALCUL
 !===============================================================================
 
 ! --- Gestion du calcul
@@ -1074,14 +964,9 @@ write(nfecra,7010) isuite, ileaux, iecaux
 
 !   - Duree du calcul
 
-write(nfecra,7110) inpdt0,ntmabs
-
-!   - Marge en temps CPU
-
-write(nfecra,7210) tmarus
+write(nfecra,7110) ntpabs, ntmabs
 
 write(nfecra,9900)
-
 
 #if defined(_CS_LANG_FR)
 
@@ -1101,11 +986,9 @@ write(nfecra,9900)
 '       physique simule sont des valeurs absolues',             /,&
 '       et non pas des valeurs relatives au calcul en cours.',  /,&
                                                                 /,&
-'       INPDT0 = ',4x,i10,    ' (1 : calcul a zero pas de tps)',/,&
-'       NTMABS = ',4x,i10,    ' (Pas de tps final demande    )',/)
- 7210 format(                                                     &
-' --- Marge en temps CPU',                                      /,&
-'       TMARUS = ', e14.5,    ' (Marge CPU avant arret       )',/)
+'       NTPABS = ',4x,i10,    ' (Pas de temps initial)',        /,&
+'       NTMABS = ',4x,i10,    ' (Pas de tps final demande)',    /)
+
 #else
 
  7000 format(                                                     &
@@ -1124,16 +1007,13 @@ write(nfecra,9900)
 '       physical time are absolute values, and not values',     /,&
 '       relative to the current calculation.',                  /,&
                                                                 /,&
-'       INPDT0 = ',4x,i10,    ' (1: 0 time step calcuation   )',/,&
-'       NTMABS = ',4x,i10,    ' (Final time step required    )',/)
- 7210 format(                                                     &
-' --- CPU time margin',                                         /,&
-'       TMARUS = ', e14.5,    ' (CPU time margin before stop )',/)
+'       NTPABS = ',4x,i10,    ' (Initial time step)',           /,&
+'       NTMABS = ',4x,i10,    ' (Final time step required)',    /)
 
 #endif
 
 !===============================================================================
-! 8. ENTREES SORTIES
+! 7. ENTREES SORTIES
 !===============================================================================
 
 write(nfecra,7500)
@@ -1146,23 +1026,10 @@ write(nfecra,7510) ntsuit
 write(nfecra,7530) nthist,frhist
 write(nfecra,7532)
 
-!   - Fichiers listing
+!   - Fichiers log
 
 write(nfecra,7540) ntlist
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    iwar = vcopt%iwarni
-  else
-    iwar = -999
-  endif
-  call field_get_key_int(f_id, keylog, kval)
-  if (kval.eq.1) then
-    call field_get_label(f_id, name)
-    write(nfecra,7531) name(1:16), iwar
-  endif
-enddo
+
 write(nfecra,7532)
 
 !   - Post-traitement automatique (bord)
@@ -1189,15 +1056,11 @@ write(nfecra,9900)
 ' --- Fichiers historiques',                                    /,&
 '       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))')
- 7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &
-' --- Fichiers listing',                                        /,&
-'       NTLIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
-                                                                /,&
-'       Numero Nom                 Niveau d''impression IWARNI',/,&
-'                                      (-999 : non applicable)',/)
+' --- Fichiers run_solver.log',                                 /,&
+'       NTLIST = ',4x,i10,    ' (Periode de sortie    )',       /)
  7550 format(                                                     &
 ' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
 '       ',a6,' = ',4x,i10,    ' (Force exercee par',            /,&
@@ -1221,15 +1084,11 @@ write(nfecra,9900)
 ' --- Probe history files',                                     /,&
 '       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
 '       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )')
- 7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)
  7540 format(                                                     &
-' --- Log files',                                               /,&
-'       NTLIST = ',4x,i10,    ' (Output frequency     )',       /,&
-                                                                /,&
-'       Number Name                IWARNI verbosity level',     /,&
-'                                      (-999: not applicable)', /)
+' --- run_solver.log files',                                    /,&
+'       NTLIST = ',4x,i10,    ' (Output frequency     )',       /)
  7550 format(                                                     &
 ' --- Additional post-processing variables (ipstdv)',           /,&
 '       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
@@ -1244,13 +1103,13 @@ write(nfecra,9900)
 
 
 !===============================================================================
-! 9. COUPLAGES
+! 8. COUPLAGES
 !===============================================================================
 
 call syr_coupling_log_setup
 
 !===============================================================================
-! 10. METHODE ALE
+! 9. METHODE ALE
 !===============================================================================
 ! --- Activation de la methode ALE
 
@@ -1267,7 +1126,7 @@ write(nfecra,9900)
 ' ** METHODE ALE (MAILLAGE MOBILE)',                            /,&
 '    -----------',                                              /)
  8220 format(                                                     &
-'       IALE   = ',4x,i10,    ' (1 : activee                 )',/ &
+'       IALE   = ',4x,i10,    ' (1 : activee, 2 : CDO        )',/ &
 '       NALINF = ',4x,i10,    ' (Iterations d''initialisation', / &
 '                                                   du fluide)',/ &
 '       IFLXMW = ',4x,i10,    ' (Calcul du flux de masse ALE',  / &
@@ -1281,7 +1140,7 @@ write(nfecra,9900)
 ' ** ALE METHOD (MOVING MESH)',                                 /,&
 '    -----------',                                              /)
  8220 format(                                                     &
-'       IALE   = ',4x,i10,    ' (1: activated                )',/ &
+'       IALE   = ',4x,i10,    ' (1: activated,2: CDO         )',/ &
 '       NALINF = ',4x,i10,    ' (Fluid initialization',         / &
 '                                                  iterations)',/ &
 '       IFLXMW = ',4x,i10,    ' (ALE mass flux computation',    / &
@@ -1289,10 +1148,6 @@ write(nfecra,9900)
 '                                1: thanks to mesh velocity)',/)
 
 #endif
-
-!===============================================================================
-! 11. FIN
-!===============================================================================
 
 return
 end subroutine

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,6 +50,21 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine if preprocessing is needed.
+ *
+ * Preprocessing is ignored when a ./restart/mesh_input file is present but
+ * no ./mesh_input file or directory is present. In this case, restart mesh
+ * file is read, and all other preprocessing steps are skipped.
+ *
+ * \return  true if preprocessing is needed, false if only reading is needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_preprocess_mesh_is_needed(void);
 
 /*----------------------------------------------------------------------------
  * Define all mesh preprocessing operations.

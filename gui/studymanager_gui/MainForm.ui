@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <author>A. DOUCE</author>
+ <author>EDF</author>
  <class>MainForm</class>
  <widget class="QMainWindow" name="MainForm">
   <property name="geometry">
@@ -38,7 +38,7 @@
      <x>0</x>
      <y>0</y>
      <width>527</width>
-     <height>31</height>
+     <height>28</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_Help">
@@ -130,21 +130,6 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-  </widget>
-  <widget class="QToolBar" name="toolBar_5">
-   <property name="windowTitle">
-    <string>toolBar_5</string>
-   </property>
-   <property name="layoutDirection">
-    <enum>Qt::RightToLeft</enum>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="displayLogo"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetBrowser">
    <attribute name="dockWidgetArea">
@@ -267,12 +252,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
-   </property>
-  </action>
-  <action name="displayLogo">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/MONO-bulle-HD.png</normaloff>:/icons/22x22/MONO-bulle-HD.png</iconset>
    </property>
   </action>
   <action name="reload_modulesAction">
@@ -498,24 +477,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Z</string>
-   </property>
-  </action>
-  <action name="actionPrepro">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/prepro-mode.png</normaloff>:/icons/22x22/prepro-mode.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Preprocessing Mode</string>
-   </property>
-  </action>
-  <action name="actionCalculation">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/calc-mode.png</normaloff>:/icons/22x22/calc-mode.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Calculation Mode</string>
    </property>
   </action>
   <action name="caseNewAction">

@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -84,6 +84,7 @@ clipsa.f90 \
 clpalp.f90 \
 clprij.f90 \
 clpv2f.f90 \
+cnlevm.f90 \
 divrit.f90 \
 resalp.f90 \
 reseps.f90 \
@@ -104,6 +105,7 @@ turbsa.f90 \
 turrij.f90 \
 visdyn.f90 \
 vislmg.f90 \
+visqke.f90 \
 vissma.f90 \
 vissst.f90 \
 visv2f.f90 \

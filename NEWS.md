@@ -3,6 +3,179 @@ Master (not on release branches yet)
 
 User changes:
 
+- Multigrid: simplify plotting behavior.
+  * Only convergence of cycles is now plotted, as many smoother
+    operators do not compute the residual
+  * With a high enough verbosity, the residual after each level's
+    smoother or solver application is logged.
+
+Architectural changes:
+
+- Allow sourcing environment before launching with the
+  --with-shell-env configure option.
+
+- Update CGNS support for CGNS 3.4 compatibility.
+
+- GUI: force SIP API version to 2 for PqQt4. This allows removing
+  the "to_qvariant" wrapper function and makes code more readable;
+  the GUI will fail if called from external code using PyQt4 which
+  has loaded the default API, so compatibility with Salome
+  versions 7 or older is dropped.
+
+Release 6.0.0 (unreleased)
+--------------------------
+
+User changes:
+
+- Lagrangian module: add particle event structure and associated statistics.
+  * This allow handling boundary statistics in a manner more consistent
+    with volume statistics.
+  * Additional boundary statistics may be defined by the user.
+  * The major boundary statistics are now handled through this system,
+    though some need to be updated in the future.
+  * This system could also be used to track volume events in the future.
+
+- GUI: improve global workflow by adding two new functions (buttons):
+  * A built-in text editor in the GUI, which allows editing of user routines
+    and/or functions inside the SRC folder, as well as opening log files
+    in a RESU folder.
+  * A compiling test for possible user functions. In case of a compiling error,
+    the message is transmitted to the GUI window for the user to analyse.
+
+- GUI: allow disabling paralel IO for MED output writer.
+
+- GUI: significant reorganization
+  * Folders replaced by active pages (with new icons reflecting this)
+  * Preprocessor/calculation modes replaced by run type in mesh page
+  * Many minor changes
+
+- Save mesh_input in restart by default. To avoid using excess disk space when
+  meshes do not change, use hard links where appropriate (and move mesh_output
+  to checkpoint/mesh_input upon checkpointing).
+
+- Provide clean (advanced) option for deactivation of modified mesh output,
+  usable from the GUI.
+- Allow stopping criteria based on physical time and/or additional time.
+
+- Add cs_restart_map_set_mesh_input function to allow mapping restarts
+  from computation using a different mesh.
+
+- Add option --create-xml to studymanager command allowing to generate a xml
+  studymanager parameter file automatically from within a study directory.
+
+- Add the possibility to visualize the turbulent production
+  and buoyant terms for DRSM models
+  (the user only has to create "rij_production" and/or "rij_buoyancy" field).
+
+Physical modelling:
+
+- Add non-linear (quadratic) eddy viscosity model k-epsilon of Baglietto et al.
+  * to enable it, set cs_glob_turb_model->iturb = 23
+  * it is a Low Reynolds model, compatible with adaptative wall functions.
+
+- Add eddy viscosity model k-epsilon Launder-Sharma
+  * to enable it, set cs_glob_turb_model->iturb = 22
+  * all y+ wall model is possible (cs_glob_wall_functions->iwallf = 7)
+  * low Reynolds model behavior can be forced
+    (cs_glob_wall_functions->iwallf = 0)
+  * uses a segregated scheme to solve k-epsilon equations system
+    (cs_glob_turb_rans_model->ikecou = 0).
+
+- Add Boussinesq approximation as a variable density model. To activate it, set
+  cs_glob_stokes_model->idilat to 0 in C or idilat = 0 in Fortran.
+
+- Lagrangian module:
+  * Add agglomeration and fragmentation algorithms.
+  * A global bit-mask based CS_LAGR_P_FLAG attribute is now always present;
+    It includes the features CS_LAGR_DEPOSITION_FLAG, and also includes a
+    CS_LAGR_PART_FIXED bit replacing the use of a negative particle cell number.
+  * Local zero-based particle cell id is now used instead of a
+    signed 1-based cell-number
+  * Advanced user functions are added for particle/face interaction, replacing
+    the (never implemented) JBORD codes.
+
+- Add a compressible two-phase homogeneous model
+  * This model is solved using a fractional step method borrowing mass,
+    momentum, energy balance steps from the compressible algorithm (single
+    phase).
+  * Convection and source terms (relaxation towards equilibrium) step for each
+    fraction (volume, mass, energy) follow.
+  * Thermodynamic of the mixture is generic, though initial values of some
+    iterative processes (secant, dichotomy) used to solve implicit thermodynamic
+    relations remain not generic.
+  * Each phase thermodynamics follow a stiffened gas EOS which parameters are at
+    hand for the user.
+  * Relaxation time scale of return to equilibrium is also at hand for the user.
+  * The model can be activated by setting to 2 the physical model parameter
+    cs_glob_physical_model[CS_COMPRESSIBLE].
+  This integrates the work of Olivier Hurisse.
+
+- ALE module: use CDO vertex based numerical schemes (more robust) for ALE
+  displacement. To activate it use "cs_glob_ale = 2" in C or "iale = 2" in
+  Fortran.
+
+Default option changes:
+
+- Disable CS_FACE_RECONSTRUCTION_CLIP bad cells correction by default
+  (clipping of face reconstruction distances |II'| and |JJ'|).
+  This reduces precision (consistancy loss) and can impair space convergence
+  on several verification test cases run on tetrahedral meshes
+  (INTERNAL_COUPLING, PERMEABILITY_GRADIENT, PLANE_COUETTE_FLOW).
+
+Bug fixes:
+
+- Compressible: fix density time scheme in transported passive scalar/vector
+  balance to ensure conservativity with compressible algorithm.
+
+- Fixes for time scheme of density in unsteady term of momentum, transported
+  scalars / vectors balances.
+  * Use density at time n in momentum balance unsteady term if mass flux is
+    predicted.
+  * Use EOS density in momentum balance unsteady term if mass accumulation is
+    not taken into account. This falls back to former algorithm in this case.
+  * Use same time schemes for vector transport equation as for scalar transport
+    equation.
+
+- Fixes for parallel runs in sedimentation source term with humid atmosphere
+  model.
+
+Numerics:
+
+- Change the way the dimensionless wall distance is computed (LES Smagorinsky
+  model) i.e. convection flux is a face gradient and is now computed using a
+  two point flux approximation (TPFA). Set solver precision to a higher value
+  since there is no need for a high precision (1e-8 to 1e-5).
+
+Architectural changes:
+
+- Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
+
+- Handle mathematical expression in GUI by generating corresponding C code
+  then inserted in a cs_meg_..._function.c file compiled with other run
+  sources. This drastically improves performance when using MEI.
+
+- Move Reynolds stress tensor transformation matrix (alpha in clca66)
+  computation to C. C translation is taken from NEPTUNE_CFD.
+
+- Remove VOFI (VoF initialization) library detection as it is not used anymore.
+
+Release 5.3.0 - October 26, 2018
+--------------------------------
+
+User changes:
+
+- GUI: when the NEPTUNE_CFD module is available, the GUI
+  can now switch directly between Code_Saturne and NEPTUNE_CFD
+  setups.
+
+- Move velocity-pressure algorithm settings from global numerical
+  parameters view to time step view in GUI. "Time step" view is
+  subsequently renamed "Time settings".
+
+- For studymanager, add default destination and repository directories
+  if process is launched from a study directory. Destination directory
+  is based on study directory name (RUN_study_name).
+
 - Boundary layer insertion: added optional cell volume ratio limiter
   to reduce the extrusion near cells that would be excessively
   flattened or entangled.
@@ -29,7 +202,24 @@ User changes:
 
 - Add postprocessing of temperature and flux at internal coupling interface.
 
+Physical modelling:
+
+- Make particle tracking compatible with transient turbomachinery model.
+
+- Add a new continuous "all-y+" 2-scale wall model (iwallf=7) available
+  with the EB-RSM and set by default for this model:
+  * Ensure convergence towards standard EB-RSM when mesh is refined.
+  * Degenerate in a SSG-like model on high Reynolds meshes.
+  This was adapted from developpements done in J.F. Wald PhD.
+
+- Major modification for K-omega SST (iturb=60) boundary condition.
+  * Switch from a Neumann boundary condition to a Dirichlet
+    boundary condition on omega.
+
 Numerics:
+
+- Use left anisotropic diffusion scheme (legacy FV) for mesh velocity solving
+  in ALE framework.
 
 - Major change in the time stepping to ensure 2nd time order for
   variable density flow if 2nd time order is activated.
@@ -43,21 +233,23 @@ Numerics:
     A special care should be done for time averaged quantities.
 
 - Porous modelling: adapte the numerics to discontinous porosity.
-  * The velocity is interpolated at faces using mass conservation and the momentum is
-    corrected so that the steady state of Euler equations is retrieved.
-    This can be activated using iporos = 3, the improved hydrostatic treatment will then be activated.
+  * The velocity is interpolated at faces using mass conservation and the
+    momentum is corrected so that the steady state of Euler equations is
+    retrieved.
+    This can be activated using iporos = 3, the improved hydrostatic treatment
+    will then be activated.
     This was developped in the PhD of C. Colas.
 
 - Improvements in mesh quantity computations.
-  * Cell centers are now based on the actual center of gravity.
-  * The previous method based on face centers can be restored using
-    the cs_mesh_quantities_cell_cen_choice function.
   * Previous face center adjustment for volume removed. Adjustment
     used in versions 1.1 to 5.2 may be restored using
     the cs_mesh_quantities_face_cog_choice function.
   * A refinement of the face center computation (for warped faces)
     may be activated using the CS_FACE_CENTER_REFINE mesh quantities
     computation flag.
+  * An option to compute cell centers based on the actual center of gravity is
+    available. It can be enabled using the cs_mesh_quantities_cell_cen_choice
+    function. The method based on face centers is kept as default.
 
 - Added dispersion modeling option to DOM radiative model:
   * May be activated by setting
@@ -100,7 +292,12 @@ Numerics:
 - Add enforcement of internal degrees of freedom in scalar-valued CDO
   Vertex-based schemes
 
+- Add Robin boundary conditions for scalar-valued CDO Vertex-based and
+  Vertex+Cell-based schemes
+
 Architectural changes:
+
+- Move mesh velocity solving (ALE) from Fortran to C.
 
 - Remove dependency to the libxml2 library.
 
@@ -126,7 +323,19 @@ Architectural changes:
   evaluations can be run on either the local workstation or distant machines
   such as computing clusters.
 
+Default option changes:
+
+- Change default options for bad meshes:
+  CS_BAD_CELLS_WARPED_CORRECTION, CS_FACE_DISTANCE_CLIP, CS_FACE_RECONSTRUCTION
+  are switched on by default.
+
 Bug fixes:
+
+- Fix initialisation of some turbulence constants. Constant/Models concerned:
+  * sigmae (for all RSM models)
+  * csrij (EB-RSM model).
+
+- Fix CGNS reader so as to handle cases with unordered sections.
 
 - Fix allocation size for values at injection in case of mass source terms
   with coupled Reynolds stress solver.
@@ -136,6 +345,13 @@ Bug fixes:
 - Fix face external force projection with tensorial diffusion and porous models 1, 2.
   This was impacting cases with head losses, improved pressure interpolation, and
   scalar or tensorial volume porosity models (iporos=1, 2).
+
+- Fix in the Lagrangian particle tracking:
+  * some minor inconsistencies were introduced on wraped faces
+  * local normal (of the crossed sub-triangle of the crossed face) is stored for
+    particle rebound at the boundary
+  * if the maximum number of sweeps is reached, the put the particle at the last
+    cell center.
 
 Release 5.2.0 - March 30, 2018
 ------------------------------

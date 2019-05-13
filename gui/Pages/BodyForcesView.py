@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,10 +45,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, from_qvariant
 from code_saturne.Pages.BodyForcesForm import Ui_BodyForcesForm
-from code_saturne.Pages.BodyForcesModel import BodyForcesModel
+from code_saturne.model.BodyForcesModel import BodyForcesModel
+from code_saturne.model.CoriolisSourceTermsModel import CoriolisSourceTermsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -80,10 +81,19 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
 
         self.case.undoStopGlobal()
 
-        self.mdl = BodyForcesModel(self.case)
+        self.gmdl = BodyForcesModel(self.case)
+        self.cmdl = None
+
+        if case.xmlRootNode().tagName != "NEPTUNE_CFD_GUI":
+            node_pm = self.case.xmlGetNode('thermophysical_models')
+            if node_pm:
+                node = node_pm.xmlGetNode('groundwater_model',  'model')
+                if not node or node['model'] == 'off':
+                    self.cmdl = CoriolisSourceTermsModel(self.case)
+        if self.cmdl is None:
+            self.groupBoxCoriolis.hide()
 
         # Connections
-
         self.lineEditX.textChanged[str].connect(self.slotGravityX)
         self.lineEditY.textChanged[str].connect(self.slotGravityY)
         self.lineEditZ.textChanged[str].connect(self.slotGravityZ)
@@ -98,14 +108,39 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         self.lineEditZ.setValidator(validatorZ)
 
         # Initialization
-
-        gravity_x = self.mdl.getGravity(self.mdl.nodes[0])
-        gravity_y = self.mdl.getGravity(self.mdl.nodes[1])
-        gravity_z = self.mdl.getGravity(self.mdl.nodes[2])
+        gravity_x = self.gmdl.getGravity(self.gmdl.nodes[0])
+        gravity_y = self.gmdl.getGravity(self.gmdl.nodes[1])
+        gravity_z = self.gmdl.getGravity(self.gmdl.nodes[2])
 
         self.lineEditX.setText(str(gravity_x))
         self.lineEditY.setText(str(gravity_y))
         self.lineEditZ.setText(str(gravity_z))
+
+        # Coriolis source terms view
+
+        if self.cmdl:
+            # Connections
+            self.lineEditOMEGAX.textChanged[str].connect(self.slotOmegaX)
+            self.lineEditOMEGAY.textChanged[str].connect(self.slotOmegaY)
+            self.lineEditOMEGAZ.textChanged[str].connect(self.slotOmegaZ)
+
+            # Validators
+            validatorOmegaX = DoubleValidator(self.lineEditOMEGAX)
+            validatorOmegaY = DoubleValidator(self.lineEditOMEGAY)
+            validatorOmegaZ = DoubleValidator(self.lineEditOMEGAZ)
+
+            self.lineEditOMEGAX.setValidator(validatorOmegaX)
+            self.lineEditOMEGAY.setValidator(validatorOmegaY)
+            self.lineEditOMEGAZ.setValidator(validatorOmegaZ)
+
+            # Initialization
+            omega_x = self.cmdl.getOmega(self.cmdl.nodes[0])
+            omega_y = self.cmdl.getOmega(self.cmdl.nodes[1])
+            omega_z = self.cmdl.getOmega(self.cmdl.nodes[2])
+
+            self.lineEditOMEGAX.setText(str(omega_x))
+            self.lineEditOMEGAY.setText(str(omega_y))
+            self.lineEditOMEGAZ.setText(str(omega_z))
 
         self.case.undoStartGlobal()
 
@@ -117,7 +152,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         if self.lineEditX.validator().state == QValidator.Acceptable:
             gravity_x = from_qvariant(text, float)
-            self.mdl.setGravity('gravity_x', gravity_x)
+            self.gmdl.setGravity('gravity_x', gravity_x)
 
 
     @pyqtSlot(str)
@@ -127,7 +162,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         if self.lineEditY.validator().state == QValidator.Acceptable:
             gravity_y = from_qvariant(text, float)
-            self.mdl.setGravity('gravity_y', gravity_y)
+            self.gmdl.setGravity('gravity_y', gravity_y)
 
 
     @pyqtSlot(str)
@@ -137,7 +172,37 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         if self.lineEditZ.validator().state == QValidator.Acceptable:
             gravity_z = from_qvariant(text, float)
-            self.mdl.setGravity('gravity_z', gravity_z)
+            self.gmdl.setGravity('gravity_z', gravity_z)
+
+
+    @pyqtSlot(str)
+    def slotOmegaX(self, text):
+        """
+        Input OMEGAX
+        """
+        if self.lineEditOMEGAX.validator().state == QValidator.Acceptable:
+            omega_x = from_qvariant(text, float)
+            self.cmdl.setOmega('omega_x', omega_x)
+
+
+    @pyqtSlot(str)
+    def slotOmegaY(self, text):
+        """
+        Input OMEGAY
+        """
+        if self.lineEditOMEGAY.validator().state == QValidator.Acceptable:
+            omega_y = from_qvariant(text, float)
+            self.cmdl.setOmega('omega_y', omega_y)
+
+
+    @pyqtSlot(str)
+    def slotOmegaZ(self, text):
+        """
+        Input OmegaZ
+        """
+        if self.lineEditOMEGAZ.validator().state == QValidator.Acceptable:
+            omega_z = from_qvariant(text, float)
+            self.cmdl.setOmega('omega_z', omega_z)
 
 
     def tr(self, text):

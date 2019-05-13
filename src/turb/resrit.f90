@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -274,7 +274,7 @@ endif
 do iel = 1, ncel
   do isou = 1, 3
     fimp(isou,isou,iel) = fimp(isou,isou,iel)                                  &
-                        + vcopt%istat*(crom(iel)/dt(iel))*volume(iel)
+                        + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
   enddo
 enddo
 
@@ -405,10 +405,10 @@ do iel = 1, ncel
     ! Pressure/thermal fluctuation correlation term
     !----------------------------------------------
     smbrut(isou,iel) = smbrut(isou,iel) +                                      &
-                volume(iel)*crom(iel)*(  alpha *         phiith(isou)          &
+                cell_f_vol(iel)*crom(iel)*(  alpha *         phiith(isou)          &
                                       + (1.d0 - alpha) * phiitw(isou))
 
-    imp_term = max(volume(iel)*crom(iel)*(                                     &
+    imp_term = max(cell_f_vol(iel)*crom(iel)*(                                     &
               alpha        * (c1trit/xttdrbt-c2trit*gradv(isou,isou,iel))      &
             + (1.d0-alpha) * (xxc1*xnal(isou)*xnal(isou) / xttdrbw) &
             ), 0.d0)
@@ -418,7 +418,7 @@ do iel = 1, ncel
     ! Production terms
     !-----------------
     smbrut(isou,iel) = smbrut(isou,iel)                              &
-                     + volume(iel)*crom(iel)                         &
+                     + cell_f_vol(iel)*crom(iel)                         &
                        ! Production term due to the mean velcoity
                        *( -xuta(1,iel)*gradv(1,isou,iel)             &
                           -xuta(2,iel)*gradv(2,isou,iel)             &
@@ -432,20 +432,20 @@ do iel = 1, ncel
     ! Production term due to the gravity
     if (itt.gt.0.and.ibeta.ge.0) then
       smbrut(isou,iel) = smbrut(isou,iel)                            &
-                       + volume(iel)*crom(iel)*(            &
+                       + cell_f_vol(iel)*crom(iel)*(            &
                -grav(isou)*cpro_beta(iel)*cvara_tt(iel))
     endif
 
     ! Dissipation (Wall term only because "h" term is zero
     smbrut(isou,iel) = smbrut(isou,iel) -                                      &
-                volume(iel)*crom(iel)*(1.d0 - alpha) / xttdrbw *               &
+                cell_f_vol(iel)*crom(iel)*(1.d0 - alpha) / xttdrbw *               &
                        ( xxc2 * xuta(isou, iel)                                &
                        + xxc3*( xuta(1,iel)*xnal(1)*xnal(isou)                 &
                               + xuta(2,iel)*xnal(2)*xnal(isou)                 &
                               + xuta(3,iel)*xnal(3)*xnal(isou)))
 
     ! TODO we can implicite more terms
-    imp_term = max(volume(iel)*crom(iel)*(1.d0 - alpha) / xttdrbw *            &
+    imp_term = max(cell_f_vol(iel)*crom(iel)*(1.d0 - alpha) / xttdrbw *            &
                   ( xxc2 + xxc3 * xnal(isou)*xnal(isou)), 0.d0)
     fimp(isou,isou,iel) = fimp(isou,isou,iel) + imp_term
 
@@ -528,7 +528,7 @@ call field_get_coefbf_v(f_id,cofbfv)
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -163,7 +163,12 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       if (cm->isoot >= 1)
         cvar_fsm = CS_F_(fsm)->val;
 
-      const cs_real_t *cpro_temp = CS_F_(t)->val;
+      // If we are in multiphase, we get the first temperature field
+      const cs_real_t *cpro_temp;
+      if (CS_F_(t) != NULL)
+        cpro_temp = CS_F_(t)->val;
+      else
+        cpro_temp = CS_FI_(t,0)->val;
 
       const cs_real_t *cpro_ym1 = cs_field_by_name("ym_fuel")->val;
       const cs_real_t *cpro_ym2 = cs_field_by_name("ym_oxyd")->val;

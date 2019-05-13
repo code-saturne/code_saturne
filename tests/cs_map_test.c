@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -57,8 +57,8 @@ const char *k_base[] =
    "post_vis",
    "property_id",
    "scalar_class",
-   "scalar_diffusivity_id",
-   "scalar_diffusivity_ref",
+   "diffusivity_id",
+   "diffusivity_ref",
    "scalar_id",
    "slope_test_upwind_id",
    "source_term_prev_id",

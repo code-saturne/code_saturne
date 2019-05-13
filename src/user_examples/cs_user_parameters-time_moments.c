@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,43 +50,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_convection_diffusion.h"
-#include "cs_ctwr.h"
-#include "cs_fan.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_gui_util.h"
-#include "cs_grid.h"
-#include "cs_internal_coupling.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_multigrid.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_post.h"
-#include "cs_post_util.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_sles.h"
-#include "cs_sles_it.h"
-#include "cs_thermal_model.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_turbulence_model.h"
-#include "cs_selector.h"
-#include "cs_rad_transfer.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -192,7 +156,7 @@ _velocity_moment_data(const void  *input,
   const int location_id = CS_MESH_LOCATION_CELLS;
 
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
-  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
+  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
 
   const cs_real_3_t  *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -283,11 +247,11 @@ cs_user_time_moments(void)
    *   restart_name <--  name in previous run, NULL for default
    */
 
+  /*! [tmom_u] */
   {
     /* Moment <U> calculated starting from time step 1000. */
 
-    /*! [tmom_u] */
-    int moment_f_id[] = {CS_F_(u)->id};
+    int moment_f_id[] = {CS_F_(vel)->id};
     int moment_c_id[] = {-1};
     int n_fields = 1;
     cs_time_moment_define_by_field_ids("U_mean",
@@ -299,14 +263,14 @@ cs_user_time_moments(void)
                                        -1,   /* t_start */
                                        CS_TIME_MOMENT_RESTART_AUTO,
                                        NULL);
-    /*! [tmom_u] */
   }
+  /*! [tmom_u] */
 
   /*! [tmom_rho_u] */
   {
     /* Moment <U> calculated starting from time step 1000. */
 
-    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(u)->id};
+    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(vel)->id};
     int moment_c_id[] = {-1, -1};
     int n_fields = 2;
     cs_time_moment_define_by_field_ids("U_mean",
@@ -321,12 +285,12 @@ cs_user_time_moments(void)
   }
   /*! [tmom_rho_u] */
 
-  {
-    /* Moment <u v> is calculated from physical time 20 s
-       (reinitialized at each restart). */
+  /* Moment <u v> is calculated from physical time 20 s
+     (reinitialized at each restart). */
 
-    /*! [tmom_rho_u_v] */
-    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(u)->id, CS_F_(u)->id};
+  /*! [tmom_rho_u_v] */
+  {
+    int moment_f_id[] = {CS_F_(rho)->id, CS_F_(vel)->id, CS_F_(vel)->id};
     int moment_c_id[] = {-1, 0, 1};
     int n_fields = 3;
     cs_time_moment_define_by_field_ids("rho_u_v_mean",
@@ -343,8 +307,8 @@ cs_user_time_moments(void)
 
   /* Moments for sum of user scalars "species_1" and "species_2". */
 
+  /*! [tmom_simple_sum] */
   {
-    /*! [tmom_simple_sum] */
     const char *sum_comp_name[] = {"species_sum_mean", "species_sum_variance"};
     cs_time_moment_type_t m_type[] = {CS_TIME_MOMENT_MEAN,
                                       CS_TIME_MOMENT_VARIANCE};
@@ -363,13 +327,13 @@ cs_user_time_moments(void)
                                     CS_TIME_MOMENT_RESTART_AUTO,
                                     NULL);
     }
-    /*! [tmom_simple_sum] */
   }
+  /*! [tmom_simple_sum] */
 
   /* Moments for the boundary thermal flux. */
 
+  /*! [tmom_b_thermal_flux] */
   {
-    /*! [tmom_b_thermal_flux] */
     const char *sum_comp_name[] = {"thermal_flux_mean", "thermal_flux_variance"};
     cs_time_moment_type_t m_type[] = {CS_TIME_MOMENT_MEAN,
                                       CS_TIME_MOMENT_VARIANCE};
@@ -388,15 +352,15 @@ cs_user_time_moments(void)
                                     CS_TIME_MOMENT_RESTART_AUTO,
                                     NULL);
     }
-    /*! [tmom_b_thermal_flux] */
   }
+  /*! [tmom_b_thermal_flux] */
 
   /* Moments for radial, tangential, and axial velocity components
      require extracting those components first, so a more advanced
      function is needed. */
 
+  /*! [tmom_velocity_rotation] */
   {
-    /*! [tmom_velocity_rotation] */
     const char *vel_comp_name[] = {"Wr_moy", "Wt,moy", "Wa_moy"};
 
     /* Data input must be "static" so it can be used in later calls */
@@ -416,8 +380,38 @@ cs_user_time_moments(void)
                                     CS_TIME_MOMENT_RESTART_AUTO,
                                     NULL);
     }
-    /*! [tmom_velocity_rotation] */
   }
+  /*! [tmom_velocity_rotation] */
+
+  /*! [tmom_all_variables] */
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
+
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+
+      int moment_f_id[] = {f_id};
+      int moment_c_id[] = {-1};
+      int n_fields = 1;
+      char *extension = "_mean";
+      char *mean_name;
+      BFT_MALLOC(mean_name, strlen(f->name) + 1 + 5, char);
+
+      strcpy(mean_name, f->name); /* copy field name into the new var */
+      strcat(mean_name, extension); /* add the extension */
+
+      cs_time_moment_define_by_field_ids(mean_name,
+                                         n_fields,
+                                         moment_f_id,
+                                         moment_c_id,
+                                         CS_TIME_MOMENT_MEAN,
+                                         10, /* nt_start */
+                                         -1, /* t_start */
+                                         CS_TIME_MOMENT_RESTART_AUTO,
+                                         NULL);
+    }
+  }
+  /*! [tmom_all_variables] */
+
 }
 
 /*----------------------------------------------------------------------------*/

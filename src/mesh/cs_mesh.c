@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -232,7 +232,7 @@ _display_histograms(cs_lnum_t        n_vals,
 }
 
 /*----------------------------------------------------------------------------
- * Write a summary about halo features in listing
+ * Write a summary about halo features in log
  *
  * parameters:
  *   mesh                   <-- pointer to cs_mesh_t structure
@@ -276,7 +276,7 @@ _print_halo_info(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Write a summary about cell neighbor features in listing
+ * Write a summary about cell neighbor features in log
  *
  * parameters:
  *   mesh                   <-- pointer to cs_mesh_t structure
@@ -941,7 +941,6 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
   MPI_Status   *halo_status = NULL;
 
   const cs_halo_t  *halo = mesh->halo;
-  const fvm_periodicity_t  *periodicity = mesh->periodicity;
 
   /* Initialization */
 
@@ -954,7 +953,6 @@ _get_perio_faces_g(const cs_mesh_t    *mesh,
   }
 
   assert(halo != NULL);
-  assert(periodicity != NULL);
 
   /* Mark ghost cells with their periodicity number and halo rank id */
 
@@ -2193,6 +2191,7 @@ cs_mesh_create(void)
   mesh->cell_numbering = NULL;
   mesh->i_face_numbering = NULL;
   mesh->b_face_numbering = NULL;
+  mesh->vtx_numbering = NULL;
 
   /* Group and family features */
 
@@ -2221,6 +2220,7 @@ cs_mesh_create(void)
   mesh->n_g_free_faces = 0;
   mesh->verbosity = 1;
   mesh->modified = 0;
+  mesh->save_if_modified = 1;
 
   return (mesh);
 }
@@ -2357,6 +2357,8 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
     cs_numbering_destroy(&(mesh->i_face_numbering));
   if (mesh->b_face_numbering != NULL)
     cs_numbering_destroy(&(mesh->b_face_numbering));
+  if (mesh->vtx_numbering != NULL)
+    cs_numbering_destroy(&(mesh->vtx_numbering));
 
   /* Free selection structures */
 
@@ -2906,7 +2908,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     BFT_FREE(gcell_vtx_lst);
   }
 
-  /* Output for listing */
+  /* Output for log */
 
   if (mesh->verbosity > 0) {
 
@@ -4007,6 +4009,7 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   cs_numbering_dump(mesh->cell_numbering);
   cs_numbering_dump(mesh->i_face_numbering);
   cs_numbering_dump(mesh->b_face_numbering);
+  cs_numbering_dump(mesh->vtx_numbering);
 
   /* Modification flag */
 

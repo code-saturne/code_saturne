@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -96,8 +96,9 @@ integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm, iebdfm
 integer          nn    , isou
 integer          mbrom , ifcvsl
-integer          iclipc
-Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
+integer          iclipc, idftnp
+double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
+double precision xfmu, xmu, xmut
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
 double precision xttkmg, xttdrb
@@ -166,12 +167,7 @@ if (iihmpr.eq.1) then
   endif
 endif
 
-
-call usphyv &
-( nvar   , nscal  ,                                              &
-  mbrom  ,                                                       &
-  dt     )
-
+call usphyv(nvar, nscal, mbrom, dt)
 
 ! Finalization of physical properties for specific physics
 ! AFTER the user
@@ -283,15 +279,45 @@ elseif (itytur.eq.2) then
 ! =============
 
   call field_get_val_s(ivisct, visct)
+  call field_get_val_s(iviscl, viscl)
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
-  do iel = 1, ncel
-    xk = cvar_k(iel)
-    xe = cvar_ep(iel)
-    visct(iel) = crom(iel)*cmu*xk**2/xe
-  enddo
+  if (iturb.eq.22) then
+
+    ! 4.3.1 Launder-Sharma
+    ! --------------------
+
+    do iel = 1, ncel
+      xk   = cvar_k(iel)
+      xe   = cvar_ep(iel)
+      xrom = crom(iel)
+      xmu  = viscl(iel)
+      xmut = xrom*xk**2/xe
+      xfmu = exp(-3.4d0/(1.d0+xmut/xmu/50.d0)**2.d0)
+      visct(iel) = cmu*xfmu*xmut
+    enddo
+
+  else if (iturb.eq.23) then
+
+    ! 4.3.2 Non-linear quadratic Baglietto
+    ! ------------------------------------
+
+    call visqke
+
+  else
+
+    ! 4.3.3 Standard and Linear Production
+    ! ------------------------------------
+
+    do iel = 1, ncel
+      xk = cvar_k(iel)
+      xe = cvar_ep(iel)
+      visct(iel) = crom(iel)*cmu*xk**2/xe
+    enddo
+
+  endif
 
 elseif (itytur.eq.3) then
 
@@ -842,13 +868,15 @@ endif
 
 ! ---> Calcul des bornes de viscosite de maillage en ALE
 
-if (iale.eq.1 .and. ntcabs.eq.ntpabs+1) then
+if (iale.ge.1 .and. ntcabs.eq.ntpabs+1) then
 
   call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+  idftnp = vcopt%idften
+
   iok1 = 0
-  if (iortvm.eq.1) then
+  if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     call field_get_val_v(ivisma, cpro_visma_v)
-    do ii = 1, 3
+    do ii = 1, 6
       ! Min et max sur les cellules
       varmx(1) = cpro_visma_v(ii,1)
       varmn(1) = cpro_visma_v(ii,1)
@@ -881,7 +909,7 @@ if (iale.eq.1 .and. ntcabs.eq.ntpabs+1) then
       endif
 
     enddo
-  else
+  else if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
     ! Min et max sur les cellules
     varmx(1) = cpro_visma_s(1)

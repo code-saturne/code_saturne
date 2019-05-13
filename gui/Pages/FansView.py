@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -44,11 +44,11 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, IntValidator, DoubleValidator
-from code_saturne.Base.QtPage import ComboModel, to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import ComboModel, from_qvariant, to_text_string
 from code_saturne.Pages.FansForm import Ui_FansForm
-from code_saturne.Pages.FansModel import FansModel
+from code_saturne.model.FansModel import FansModel
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ class LineEditDelegateIndex(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), int)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ class LineEditDelegateFloat(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ class MeshDimDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, to_qvariant(value), Qt.DisplayRole)
+        model.setData(index, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -175,14 +175,14 @@ class StandardItemModelFans(QStandardItemModel):
 
         self.mdl = mdl
 
-        self.headers = [self.tr("Zone id"),
+        self.headers = [self.tr("Fan id"),
                         self.tr("Mesh dimension"),
                         self.tr("Fan radius"),
                         self.tr("Hub radius"),
                         self.tr("Axial torque"),
                         self.tr("Blade radius")]
 
-        self.tooltip = [self.tr("Zone id"),
+        self.tooltip = [self.tr("Fan id"),
                         self.tr("Mesh dimension"),
                         self.tr("Fan radius"),
                         self.tr("Hub radius"),
@@ -196,17 +196,17 @@ class StandardItemModelFans(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tooltip[index.column()])
+            return self.tooltip[index.column()]
 
         if role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
-            return to_qvariant(self._data[row][col])
+            return self._data[row][col]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -220,8 +220,8 @@ class StandardItemModelFans(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

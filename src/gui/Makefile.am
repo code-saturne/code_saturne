@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -40,12 +40,14 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/turb \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/rayt \
 -I$(top_srcdir)/src/darc \
+-I$(top_srcdir)/src/meg \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -67,7 +69,8 @@ cs_gui_radiative_transfer.h \
 cs_gui_specific_physics.h \
 cs_gui_util.h \
 cs_gui_variables.h \
-cs_tree_xml.h
+cs_tree_xml.h \
+cs_gui_headers.h
 
 # Library source files
 

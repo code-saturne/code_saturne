@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -276,18 +276,18 @@ cs_real_t
 cs_ctwr_enthair(const cs_real_t  xair,
                 const cs_real_t  tair);
 
-/*----------------------------------------------------------------------------
- * Calculation water mass enthalpy
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation water mass enthalpy
  *
- * parameters:
- *   teau <-- water temperature in Celsius degree
+ * \return Liquid water mass enthalpy
  *
- * returns:
- *   water mass enthalpy
- *----------------------------------------------------------------------------*/
+ * \param[in]     t_l          water temperature in Celsius degree
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ctwr_heau(const cs_real_t  teau);
+cs_ctwr_h_l(const cs_real_t  t_l);
 
 /*----------------------------------------------------------------------------
  * Calculation water vapour mass enthalpy

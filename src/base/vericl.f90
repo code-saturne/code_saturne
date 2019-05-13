@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -281,14 +281,6 @@ do ifac = 1, nfabor
     icodvi(1) = -6
     icodvi(2) = icodcl(ifac,iw)
     icodvi(3) = -1
-    nstvit = nstvit + 1
-  endif
-
-  ! --- on interdit les parois rugueuses en compressible
-  if (icodcu.eq.6 .and. ippmod(icompf).gt.0) then
-    icodvi(1) = iu
-    icodvi(2) = icodcl(ifac,iu)
-    icodvi(3) = 1
     nstvit = nstvit + 1
   endif
 
@@ -702,19 +694,19 @@ endif
 
 ! --- Check if the gravity is non zero in case of free-surface
 iok = 0
-if (iale.eq.1) then
+if (iale.ge.1) then
+  grav2 = gx**2 + gy**2 + gz**2
   do ifac = 1, nfabor
-    grav2 = gx**2 + gy**2 + gz**2
-    if (ialtyb(ifac).eq.ifresf) then
-      if (grav2.le.epzero**2) then
-        write(nfecra,2001)
-        iok = 1
-      endif
+    if (ialtyb(ifac).eq.ifresf.and.grav2.le.epzero**2) then
+      iok = 1
     endif
   enddo
 endif
 
+if (irangp.ge.0) call parcmx(iok)
+
 if (iok.ne.0) then
+  write(nfecra,2001)
   call csexit (1)
   !==========
 endif
@@ -1283,8 +1275,6 @@ if(iok.ne.0) then
     endif
     if (icodvi(3).eq.-1) then
       write(nfecra,1010) nstvit, chaine, icodvi(2)
-    elseif (icodvi(3).eq.1) then
-      write(nfecra,1015) nstvit, chaine, icodvi(2), ippmod(icompf)
     endif
   endif
 
@@ -1477,14 +1467,6 @@ endif
 '@   Nombre de faces de bord ',i10   ,'; variable ',a16        ,/,&
 '@     icodcl variable derniere face ', i10                    ,/,&
 '@                                                            '  )
- 1015 format(                                                     &
-'@                                                            ',/,&
-'@ CONDITIONS AUX LIMITES DE PAROI RUGUEUSE INCOMPATIBLES     ',/,&
-'@ AVEC LE MODULE COMPRESSIBLE                                ',/,&
-'@   Nombre de faces de bord ',i10   ,'; variable ',a16        ,/,&
-'@     icodcl variable derniere face ', i10                    ,/,&
-'@     ippmod(icompf)', i10                                    ,/,&
-'@                                                            '  )
  1020 format(                                                     &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. COMPOSANTES DE LA VITESSE           ',/,&
@@ -1621,14 +1603,6 @@ endif
 '@ UNEXPECTED BOUNDARY CONDITIONS                             ',/,&
 '@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
 '@     icodcl variable last face ', i10                        ,/,&
-'@                                                            '  )
- 1015 format(                                                     &
-'@                                                            ',/,&
-'@ ROUGH WALL BOUNDARY CONDITIONS INCOMPATIBLE WITH THE       ',/,&
-'@ COMPRESSIBLE MODULE                                        ',/,&
-'@   Number of boundary faces ',i10   ,'; variable ',a16       ,/,&
-'@     icodcl variable last face ', i10                        ,/,&
-'@     ippmod(icompf)', i10                                    ,/,&
 '@                                                            '  )
  1020 format(                                                     &
 '@                                                            ',/,&

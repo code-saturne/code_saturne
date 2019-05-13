@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,13 +45,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsPressureForm import \
      Ui_BoundaryConditionsPressureForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.Boundary import Boundary
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # log config
@@ -80,10 +80,10 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
         # Connections
         self.lineEditPressure.textChanged[str].connect(self.slotPressureValue)
@@ -94,7 +94,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         # Apply validators
         self.lineEditPressure.setValidator(validatorP)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, boundary):
@@ -103,7 +103,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
         """
         label = boundary.getLabel()
         self.nature  = boundary.getNature()
-        self.__boundary = Boundary(self.nature, label, self.__case)
+        self.__boundary = Boundary(self.nature, label, self.case)
         self.initialize()
 
 

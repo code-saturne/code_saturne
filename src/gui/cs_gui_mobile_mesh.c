@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -48,15 +48,17 @@
 
 #include "mei_evaluate.h"
 
+#include "cs_ale.h"
 #include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_boundary_zone.h"
+#include "cs_convection_diffusion.h"
 #include "cs_field_pointer.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_mesh.h"
-#include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"
 
@@ -95,7 +97,8 @@ enum ale_boundary_nature
   ale_boundary_nature_internal_coupling,
   ale_boundary_nature_external_coupling,
   ale_boundary_nature_fixed_velocity,
-  ale_boundary_nature_fixed_displacement
+  ale_boundary_nature_fixed_displacement,
+  ale_boundary_nature_free_surface
 };
 
 /*============================================================================
@@ -103,7 +106,7 @@ enum ale_boundary_nature
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Return value for iale method
+ * Return value for ALE method
  *
  * parameters:
  *   tn_ale    <-- tree node associated with ALE
@@ -113,7 +116,7 @@ enum ale_boundary_nature
  *----------------------------------------------------------------------------*/
 
 static int
-_iale_visc_type(cs_tree_node_t  *tn_ale)
+_ale_visc_type(cs_tree_node_t  *tn_ale)
 {
   int mvisc_type = 0;
 
@@ -203,7 +206,7 @@ _init_mei_tree(const char    *formula,
  * Get the ale boundary formula
  *
  * parameters:
- *   tn_w    <-- pointer to tree node for a given wall BC
+ *   tn_w    <-- pointer to tree node for a given BC
  *   choice  <-- nature: "fixed_velocity" or "fixed_displacement"
  *----------------------------------------------------------------------------*/
 
@@ -223,7 +226,7 @@ _get_ale_boundary_formula(cs_tree_node_t  *tn_w,
  * Get uialcl data for fixed displacement
  *
  * parameters:
- *   tn_w           <-- pointer to tree node for a given wall BC
+ *   tn_w           <-- pointer to tree node for a given mobile_boundary BC
  *   begin          <-- begin index for nodfbr
  *   end            <-- end index for nodfbr
  *   nnod           <-> number of nodes
@@ -286,7 +289,7 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
  * Get uialcl data for fixed velocity
  *
  * parameters:
- *   tn_w         <-- pointer to tree node for a given wall BC
+ *   tn_w         <-- pointer to tree node for a given mobile_boundary BC
  *   iuma         <-- iuma
  *   ivma         <-- ivma
  *   iwma         <-- iwma
@@ -352,34 +355,100 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
  * Return the ale boundary nature of a given boundary condition
  *
  * parameters:
- *   tn_w <-- pointer to tree node for a given wall BC
+ *   tn <-> pointer to tree node for a given mobile_boundary BC
  *
  * return:
  *   associated nature
  *----------------------------------------------------------------------------*/
 
 static enum  ale_boundary_nature
-_get_ale_boundary_nature(cs_tree_node_t  *tn_w)
+_get_ale_boundary_nature(cs_tree_node_t  *tn)
 {
-  enum ale_boundary_nature nature = ale_boundary_nature_none;
+  const char *nat_bndy = cs_tree_node_get_tag(tn, "nature");
 
-  cs_tree_node_t *tn = cs_tree_get_node(tn_w, "ale/choice");
-  const char *nat = cs_tree_node_get_value_str(tn);
+  if (cs_gui_strcmp(nat_bndy, "free_surface"))
+    return ale_boundary_nature_free_surface;
 
-  if (cs_gui_strcmp(nat, "fixed_boundary"))
-    nature = ale_boundary_nature_fixed_wall;
-  if (cs_gui_strcmp(nat, "sliding_boundary"))
-    nature = ale_boundary_nature_sliding_wall;
-  else if (cs_gui_strcmp(nat, "internal_coupling"))
-    nature = ale_boundary_nature_internal_coupling;
-  else if (cs_gui_strcmp(nat, "external_coupling"))
-    nature = ale_boundary_nature_external_coupling;
-  else if (cs_gui_strcmp(nat, "fixed_velocity"))
-    nature = ale_boundary_nature_fixed_velocity;
-  else if (cs_gui_strcmp(nat, "fixed_displacement"))
-    nature = ale_boundary_nature_fixed_displacement;
+  else {
 
-  return nature;
+    const char *label = cs_tree_node_get_tag(tn, "label");
+
+    /* get the matching BC node */
+    tn = cs_tree_node_get_child(tn->parent, nat_bndy);
+
+    /* Now searh from siblings */
+    tn = cs_tree_node_get_sibling_with_tag(tn, "label", label);
+
+    /* Finaly get child node ALE */
+    cs_tree_node_t *tn_ale = cs_tree_get_node(tn, "ale/choice");
+    const char *nat_ale = cs_tree_node_get_value_str(tn_ale);
+
+    if (cs_gui_strcmp(nat_ale, "fixed_boundary"))
+      return ale_boundary_nature_fixed_wall;
+    if (cs_gui_strcmp(nat_ale, "sliding_boundary"))
+      return ale_boundary_nature_sliding_wall;
+    else if (cs_gui_strcmp(nat_ale, "internal_coupling"))
+      return ale_boundary_nature_internal_coupling;
+    else if (cs_gui_strcmp(nat_ale, "external_coupling"))
+      return ale_boundary_nature_external_coupling;
+    else if (cs_gui_strcmp(nat_ale, "fixed_velocity"))
+      return ale_boundary_nature_fixed_velocity;
+    else if (cs_gui_strcmp(nat_ale, "fixed_displacement"))
+      return ale_boundary_nature_fixed_displacement;
+    else
+      return ale_boundary_nature_none;
+  }
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the ale boundary type of a given boundary condition
+ *
+ * parameters:
+ *   tn_bndy <-- pointer to tree node for a given BC
+ *
+ * return:
+ *   associated boundary type
+ *----------------------------------------------------------------------------*/
+
+static cs_boundary_type_t
+_get_ale_boundary_type(cs_tree_node_t  *tn_bndy)
+{
+  const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
+
+  if (cs_gui_strcmp(nat_bndy, "free_surface"))
+    return CS_BOUNDARY_ALE_FREE_SURFACE;
+
+  else {
+
+    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
+
+    /* get the matching BC node */
+    cs_tree_node_t *tn = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
+
+    /* Now searh from siblings */
+    tn = cs_tree_node_get_sibling_with_tag(tn, "label", label);
+
+    /* Finaly get child node ALE */
+    tn = cs_tree_get_node(tn, "ale/choice");
+    const char *nat = cs_tree_node_get_value_str(tn);
+
+    if (cs_gui_strcmp(nat, "fixed_boundary"))
+      return CS_BOUNDARY_ALE_FIXED;
+    else if (cs_gui_strcmp(nat, "sliding_boundary"))
+      return CS_BOUNDARY_ALE_SLIDING;
+    else if (cs_gui_strcmp(nat, "internal_coupling"))
+      return CS_BOUNDARY_ALE_INTERNAL_COUPLING;
+    else if (cs_gui_strcmp(nat, "external_coupling"))
+      return CS_BOUNDARY_ALE_EXTERNAL_COUPLING;
+    else if (cs_gui_strcmp(nat, "fixed_velocity"))
+      return CS_BOUNDARY_ALE_IMPOSED_VEL;
+    else if (cs_gui_strcmp(nat, "fixed_displacement"))
+      return CS_BOUNDARY_ALE_IMPOSED_DISP;
+    else if (cs_gui_strcmp(nat, "free_surface"))
+      return CS_BOUNDARY_ALE_FREE_SURFACE;
+    else
+      return CS_BOUNDARY_N_TYPES;
+  }
 }
 
 /*-----------------------------------------------------------------------------
@@ -574,47 +643,75 @@ _get_external_coupling_dof(cs_tree_node_t  *tn_ec,
  * SUBROUTINE UIALIN
  * *****************
  *
- * INTEGER          IALE    <--  iale method activation
- * INTEGER          NALINF  <--  number of sub iteration of initialization
- *                               of fluid
- * INTEGER          NALIMX  <--  max number of iterations of implicitation of
- *                               the displacement of the structures
- * DOUBLE           EPALIM  <--  realtive precision of implicitation of
- *                               the displacement of the structures
- * INTEGER          IORTVM  <--  type of viscosity of mesh
+ * nalinf  <->  number of sub iteration of initialization
+ *              of fluid
+ * nalimx  <->  max number of iterations of implicitation of
+ *              the displacement of the structures
+ * epalim  <->  realtive precision of implicitation of
+ *              the displacement of the structures
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialin, UIALIN) (int     *iale,
-                                int     *nalinf,
+void CS_PROCF (uialin, UIALIN) (int     *nalinf,
                                 int     *nalimx,
-                                double  *epalim,
-                                int     *iortvm)
+                                double  *epalim)
 {
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
 
-  cs_gui_node_get_status_int(tn, iale);
+  cs_gui_node_get_status_int(tn, &cs_glob_ale);
 
-  if (*iale) {
+  if (cs_glob_ale) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",
                               nalinf);
     cs_gui_node_get_child_int(tn, "max_iterations_implicitation",
                               nalimx);
     cs_gui_node_get_child_real(tn, "implicitation_precision",
                                epalim);
-
-    *iortvm = _iale_visc_type(tn);
   }
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--iale = %i\n", *iale);
-  if (*iale) {
+  bft_printf("--cs_glob_ale = %i\n", cs_glob_ale);
+  if (cs_glob_ale > 0) {
     bft_printf("--nalinf = %i\n", *nalinf);
     bft_printf("--nalimx = %i\n", *nalimx);
     bft_printf("--epalim = %g\n", *epalim);
-    bft_printf("--iortvm = %i\n", *iortvm);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * ALE diffusion type
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIALVM
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uialvm, UIALVM) ()
+{
+  cs_tree_node_t *tn
+    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
+
+  int iortvm = _ale_visc_type(tn);
+
+  cs_var_cal_opt_t vcopt;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_field_t *f_mesh_u = cs_field_by_name("mesh_velocity");
+  cs_field_get_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
+
+  if (iortvm == 1) { /* orthotropic viscosity */
+    vcopt.idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
+  } else { /* isotropic viscosity */
+    vcopt.idften = CS_ISOTROPIC_DIFFUSION;
+  }
+  cs_field_set_key_struct(f_mesh_u, key_cal_opt_id, &vcopt);
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--iortvm = %i\n",  iortvm);
   }
 #endif
 }
@@ -650,13 +747,13 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
-  /* Loop on wall boundary zones */
+  /* Loop on boundary zones */
 
-  for (cs_tree_node_t *tn_w = cs_tree_node_get_child(tn_b0, "wall");
-       tn_w != NULL;
-       tn_w = cs_tree_node_get_next_of_name(tn_w)) {
+  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
+       tn_bndy != NULL;
+       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
-    const char *label = cs_tree_node_get_tag(tn_w, "label");
+    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
 
     const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
     if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
@@ -665,10 +762,16 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
     cs_lnum_t n_faces = z->n_elts;
     const cs_lnum_t *faces_list = z->elt_ids;
 
-    enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_w);
+    /* Get ALE nature and get sibling tn */
+    enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_bndy);
 
     if (nature == ale_boundary_nature_none)
       continue;
+
+    /* get the matching BC node */
+    const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
+    cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
+    tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
 
     if (nature ==  ale_boundary_nature_fixed_wall) {
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
@@ -682,15 +785,21 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
         ialtyb[ifbr] = *igliss;
       }
     }
+    else if (nature ==  ale_boundary_nature_free_surface) {
+      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        ialtyb[ifbr] = *ifresf;
+      }
+    }
     else if (nature == ale_boundary_nature_fixed_displacement) {
       t0 = cs_timer_wtime();
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
-        _uialcl_fixed_displacement(tn_w,
+        _uialcl_fixed_displacement(tn_bc,
                                    m->b_face_vtx_idx[ifbr],
                                    m->b_face_vtx_idx[ifbr+1],
                                    m->b_face_vtx_lst, impale, disale,
-                                   cs_glob_time_step_options->dtref,
+                                   cs_glob_time_step->dt_ref,
                                    cs_glob_time_step->t_cur,
                                    cs_glob_time_step->nt_cur);
       }
@@ -698,36 +807,14 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
     }
     else if (nature == ale_boundary_nature_fixed_velocity) {
       t0 = cs_timer_wtime();
-      _uialcl_fixed_velocity(tn_w, *iuma, *ivma, *iwma, *ivimpo,
+      _uialcl_fixed_velocity(tn_bc, *iuma, *ivma, *iwma, *ivimpo,
                              m->n_b_faces, n_faces, faces_list,
                              ialtyb, rcodcl,
-                             cs_glob_time_step_options->dtref,
+                             cs_glob_time_step->dt_ref,
                              cs_glob_time_step->t_cur,
                              cs_glob_time_step->nt_cur);
       cs_gui_add_mei_time(cs_timer_wtime() - t0);
     }
-  }
-
-  /* Loop on free surface boundary zones */
-
-  for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_b0, "free_surface");
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn)) {
-
-    const char *label = cs_tree_node_get_tag(tn, "label");
-
-    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
-      continue;
-
-    cs_lnum_t n_faces = z->n_elts;
-    const cs_lnum_t *faces_list = z->elt_ids;
-
-    for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-      cs_lnum_t ifbr = faces_list[ifac];
-      ialtyb[ifbr]  = *ifresf;
-    }
-
   }
 }
 
@@ -770,7 +857,7 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "wall");
+  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
 
   /* At each time-step, loop on boundary faces */
 
@@ -847,7 +934,7 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "wall");
+  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
 
   /* At each time-step, loop on boundary faces */
 
@@ -902,7 +989,7 @@ CS_PROCF(uiaste, UIASTE)(int       *idfstr,
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "wall");
+  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
 
   /* Loop on boundary faces */
 
@@ -963,7 +1050,7 @@ cs_gui_get_ale_viscosity_type(int  *type)
     = cs_tree_get_node(cs_glob_tree,
                        "thermophysical_models/ale_method");
 
-  *type = _iale_visc_type(tn);
+  *type = _ale_visc_type(tn);
 }
 
 /*----------------------------------------------------------------------------
@@ -993,14 +1080,14 @@ cs_gui_mesh_viscosity(void)
                                "mesh_viscosity_2",
                                "mesh_viscosity_3" };
 
-  int orthotropic = _iale_visc_type(tn0);
+  int orthotropic = _ale_visc_type(tn0);
 
   cs_lnum_t nd = (orthotropic) ? 3 : 1;
 
   /* Init mei */
   mei_tree_t *ev = _init_mei_tree(mvisc_expr, variables,
                                   nd, symbols, 0, 3,
-                                  cs_glob_time_step_options->dtref,
+                                  cs_glob_time_step->dt_ref,
                                   cs_glob_time_step->t_cur,
                                   cs_glob_time_step->nt_cur);
 
@@ -1023,6 +1110,134 @@ cs_gui_mesh_viscosity(void)
     }
   }
   mei_tree_destroy(ev);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Translate the user settings for the domain boundaries into a
+ *         structure storing the ALE boundaries (New mechanism used in CDO)
+ *
+ * \param[in, out]  domain   pointer to a \ref cs_domain_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain)
+{
+  assert(domain != NULL);
+
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  /* Loop on boundary zones */
+
+  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
+       tn_bndy != NULL;
+       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
+
+    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
+    const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      continue;
+
+    cs_boundary_type_t ale_bdy = _get_ale_boundary_type(tn_bndy);
+
+    if (ale_bdy == CS_BOUNDARY_N_TYPES)
+      continue;
+
+    cs_boundary_add(domain->ale_boundaries,
+                    ale_bdy,
+                    z->name);
+
+  } /* Loop on mobile_boundary zones */
+
+    /* TODO */
+    /* else if (nature == ale_boundary_nature_fixed_displacement) { */
+    /*   t0 = cs_timer_wtime(); */
+    /*   for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) { */
+    /*     cs_lnum_t ifbr = faces_list[ifac]; */
+    /*     _uialcl_fixed_displacement(tn_bndy, */
+    /*                                m->b_face_vtx_idx[ifbr], */
+    /*                                m->b_face_vtx_idx[ifbr+1], */
+    /*                                m->b_face_vtx_lst, impale, disale, */
+    /*                                cs_glob_time_step->dt_ref, */
+    /*                                cs_glob_time_step->t_cur, */
+    /*                                cs_glob_time_step->nt_cur); */
+    /*   } */
+    /*   cs_gui_add_mei_time(cs_timer_wtime() - t0); */
+    /* } */
+    /* else if (nature == ale_boundary_nature_fixed_velocity) { */
+    /*   t0 = cs_timer_wtime(); */
+    /*   _uialcl_fixed_velocity(tn_bndy, *iuma, *ivma, *iwma, *ivimpo, */
+    /*                          m->n_b_faces, n_faces, faces_list, */
+    /*                          ialtyb, rcodcl, */
+    /*                          cs_glob_time_step->dt_ref, */
+    /*                          cs_glob_time_step->t_cur, */
+    /*                          cs_glob_time_step->nt_cur); */
+    /*   cs_gui_add_mei_time(cs_timer_wtime() - t0); */
+    /* } */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the fixed velocity for a boundary
+ *
+ * \param[in]  label boundary condition label
+ * \param[out] vel   imposed mesh velocity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
+                                      cs_real_3_t    vel)
+{
+  cs_real_t dtref = cs_glob_time_step->dt_ref;
+  cs_real_t ttcabs = cs_glob_time_step->t_cur;
+  int ntcabs = cs_glob_time_step->nt_cur;
+
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+
+  /* Loop on boundary zones */
+
+  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
+       tn_bndy != NULL;
+       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
+
+    const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
+    const char *label_bndy = cs_tree_node_get_tag(tn_bndy, "label");
+
+    /* get the matching BC node */
+    cs_tree_node_t *tn = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
+
+    /* Now searh from siblings */
+    tn = cs_tree_node_get_sibling_with_tag(tn, "label", label_bndy);
+
+    if (strcmp(label_bndy, label) == 0) {
+
+      const char*  variables[3] = {"mesh_velocity_U",
+                                   "mesh_velocity_V",
+                                   "mesh_velocity_W" };
+
+      /* Get formula */
+      const char *formula = _get_ale_boundary_formula(tn, "fixed_velocity");
+
+      if (!formula)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Boundary nature formula is null for %s."),
+                  cs_gui_node_get_tag(tn, "label"));
+
+      /* Init MEI */
+      mei_tree_t *ev = _init_mei_tree(formula, variables, 3, 0, 0, 0,
+                                      dtref, ttcabs, ntcabs);
+
+      mei_evaluate(ev);
+
+      vel[0] = mei_tree_lookup(ev, "mesh_velocity_U");
+      vel[1] = mei_tree_lookup(ev, "mesh_velocity_V");
+      vel[2] = mei_tree_lookup(ev, "mesh_velocity_W");
+
+      mei_tree_destroy(ev);
+
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

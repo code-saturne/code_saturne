@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -64,6 +64,7 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
@@ -105,15 +106,17 @@ BEGIN_C_DECLS
  *        when porosity model is activated.
  *
  * This function is called at the beginning of the simulation only.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(void)
+cs_user_porosity(cs_domain_t   *domain)
 {
   /*!< [init_poro_mq] */
-  cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_mesh_t *m = domain->mesh;
+  cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)m->i_face_cells;

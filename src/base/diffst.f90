@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -127,7 +127,7 @@ do iscal = 1, nscal
   ! If the scalar is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
   ! otherwise it is outside of the loop and iterns = -1.
   if (  (is_buoyant_fld.eq. 1 .and. iterns.eq.-1) &
-    .or.(is_buoyant_fld.eq.-1 .and. iterns.ne.-1)) cycle
+    .or.(is_buoyant_fld.eq. 0 .and. iterns.ne.-1)) cycle
 
   imucpp = 0
   if (iscavr(iscal).gt.0) then

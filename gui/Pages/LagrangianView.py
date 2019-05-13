@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -48,13 +48,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.LagrangianForm import Ui_LagrangianForm
 from code_saturne.Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
-from code_saturne.Pages.LagrangianModel import LagrangianModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.model.LagrangianModel import LagrangianModel
+from code_saturne.model.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -289,7 +289,7 @@ class ValueDelegate(QItemDelegate):
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                    model.setData(idx, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel for Coals
@@ -331,17 +331,17 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant(self.tr("Code_Saturne key word: " + self.kwords[index.column()]))
+            return self.tr("Code_Saturne key word: " + self.kwords[index.column()])
 
         # Display
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataCoals[index.row()][index.column()])
+            return self.dataCoals[index.row()][index.column()]
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -355,8 +355,8 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):

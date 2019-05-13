@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -143,8 +143,11 @@ call restart_read_int_t_compat(rp,                                      &
                                itysup, nbval, ivers, ierror)
 
 if (ierror.ne.0) then
-  write(nfecra,9200) ficsui
-  call csexit (1)
+  ierror = cs_restart_check_if_restart_from_ncfd(rp)
+  if (ierror.eq.0) then
+    write(nfecra,9200) ficsui
+    call csexit (1)
+  endif
 endif
 
 !  --->  Tests sur les supports
@@ -181,6 +184,13 @@ itysup = 0
 nbval  = 1
 call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
 ntpabs = ival(1) ! no direct read to avoid pointer issue
+
+! If section doesnt exist, check if it is a restart from neptune:
+if (ierror.ne.0) then
+  rubriq = 'ntcabs'
+  call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+  ntpabs = ival(1) ! no direct read to avoid pointer issue
+endif
 nberro=nberro+ierror
 
 rubriq = 'instant_precedent'
@@ -188,6 +198,14 @@ itysup = 0
 nbval  = 1
 call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
 ttpabs = rval(1) ! no direct read to avoid pointer issue
+
+! If section doesnt exist, check if it is a restart from neptune:
+if (ierror.ne.0) then
+  rubriq = 'ttcabs'
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  ttpabs = rval(1) ! no direct read to avoid pointer issue
+endif
+
 nberro=nberro+ierror
 
 ! --->  Stop si erreur
@@ -208,9 +226,9 @@ jale = ival(1)
 nberro=nberro+ierror
 
 ! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
-!       -> on n'affiche le message que si IALE=1 (sinon RAS)
+!       -> on n'affiche le message que si IALE>=1 (sinon RAS)
 if (nberro.ne.0) then
-  if (iale.eq.1) write(nfecra,9401)
+  if (iale.ge.1) write(nfecra,9401)
   jale = 0
 endif
 
@@ -251,8 +269,13 @@ if (nberro.ne.0) then
 endif
 
 ! --->  Stop si pas de temps incoherent
-if (ntpabs.ge.ntmabs.and.inpdt0.eq.0) then
-  write(nfecra,9410)ntpabs,ntmabs
+if (ttmabs.ge.0) then
+  if (ttpabs.gt.ttmabs) then
+    write(nfecra,9411) ttpabs,ttmabs
+    call csexit (1)
+  endif
+else if (ntpabs.gt.ntmabs) then
+  write(nfecra,9410) ntpabs,ntmabs
   call csexit (1)
 endif
 
@@ -262,7 +285,7 @@ write(nfecra,2411) ttpabs
 
 ! --->  Si le calcul precedent etait en ALE, on DOIT relire les
 !         coordonnees des noeuds dans le fichier auxiliaire
-if (iale.eq.1 .and. jale.eq.1) then
+if (iale.ge.1 .and. jale.ge.1) then
   if (ileaux.ne.1) then
     write(nfecra,9402)jale,iale,ileaux
     call csexit(1)
@@ -573,7 +596,28 @@ return
 '@      NUMERO DU PAS DE TEMPS VISE      NTMABS = ',I10        ,/,&
 '@                                                            ',/,&
 '@    Le nombre de pas de temps (absolu) vise, NTMABS,        ',/,&
-'@      doit etre superieur au nombre de pas de temps         ',/,&
+'@      doit etre superieur ou egal au nombre de pas de temps ',/,&
+'@      (absolu) deja effectues, NTPABS.                      ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@    Verifier (augmenter) NTMABS.                            ',/,&
+'@    Verifier que le fichier suite utilise correspond bien   ',/,&
+'@        au cas traite.                                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
+'@    =========                                      PRINCIPAL',/,&
+'@      TEMPS PRECEDENT TTPABS = ',E12.4                      ,/,&
+'@      TEMPS VISE      TTMABS = ',E12.4                       ,/,&
+'@                                                            ',/,&
+'@    Le nombre de pas de temps (absolu) vise, NTMABS,        ',/,&
+'@      doit etre superieur ou egal au nombre de pas de temps ',/,&
 '@      (absolu) deja effectues, NTPABS.                      ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne peut etre execute.                         ',/,&
@@ -747,8 +791,29 @@ return
 '@      NUMBER OF TIME STEPS WANTED       NTMABS = ',I10       ,/,&
 '@                                                            ',/,&
 '@    The number of time steps (absolute) wanted, NTMABS,     ',/,&
-'@      has to be larger than the number of time steps        ',/,&
-'@      (absolute) already done, NTPABS.                      ',/,&
+'@      has to be greater or equal to than the number of      ',/,&
+'@      time steps (absolute) already run, NTPABS.            ',/,&
+'@                                                            ',/,&
+'@    The calculation cannot be executed.                     ',/,&
+'@                                                            ',/,&
+'@    Please check (increase) NTMABS.                         ',/,&
+'@    Please make sure the file used as restart file does     ',/,&
+'@          correspond to your case                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+9411 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP AT THE MAIN RESTART FILE READING         ',/,&
+'@    =========                                               ',/,&
+'@      PREVIOUS TIME TTPABS = ',E12.4                         ,/,&
+'@      TIME WANTED   TTMABS = ',E12.4                         ,/,&
+'@                                                            ',/,&
+'@    The number of time steps (absolute) wanted, NTMABS,     ',/,&
+'@      has to be greater or equal to than the number of      ',/,&
+'@      time steps (absolute) already run, NTPABS.            ',/,&
 '@                                                            ',/,&
 '@    The calculation cannot be executed.                     ',/,&
 '@                                                            ',/,&

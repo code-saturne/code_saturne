@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -47,16 +47,16 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Pages.SourceTermsForm import Ui_SourceTermsForm
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from code_saturne.Pages.SourceTermsModel import SourceTermsModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
+from code_saturne.model.SourceTermsModel import SourceTermsModel
+from code_saturne.Pages.QMegEditorView import QMegEditorView
+from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -91,8 +91,6 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
-        self.m_out   = OutputVolumicVariablesModel(self.case)
-
 
         # 0/ Read label names from XML file
 
@@ -113,8 +111,9 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         zones = self.volzone.getZones()
         for zone in zones:
             active = 0
-            if (zone.getNature()['momentum_source_term'] == "on"):
-                active = 1
+            if ('momentum_source_term' in zone.getNature().keys()):
+                if (zone.getNature()['momentum_source_term'] == "on"):
+                    active = 1
 
             if ('thermal_source_term' in zone.getNature().keys()):
                 if (zone.getNature()['thermal_source_term']  == "on"):
@@ -211,6 +210,8 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         if zone['thermal_source_term']  == "on":
             self.pushButtonThermal.show()
             self.labelThermal.show()
+            if self.case['package'].name != "code_saturne" and self.th_sca_name=="":
+                self.th_sca_name = 'enthalpy'
             exp = self.mdl.getThermalFormula(self.zone, self.th_sca_name)
             if exp:
                 self.pushButtonThermal.setToolTip(exp)
@@ -280,47 +281,30 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         """
         Set momentumFormula of the source term
         """
-        exp = self.mdl.getMomentumFormula(self.zone)
-        if not exp:
-            exp = """Su = 0;\nSv = 0;\nSw = 0;\n
-dSudu = 0;\ndSudv = 0;\ndSudw = 0;\n
-dSvdu = 0;\ndSvdv = 0;\ndSvdw = 0;\n
-dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         exa = """#example:\n
 tau = 10.; # relaxation time (s)\n
 vel_x_imp = 1.5; #target velocity (m/s)\n
 Su = rho * (vel_x_imp - velocity[0]) / tau;\n
 dSudu = - rho / tau; # Jacobian of the source term"""
-        req = [('Su', "x component of the momentum source term"),
-               ('Sv', "y component of the momentum source term"),
-               ('Sw', "z component of the momentum source term"),
-               ('dSudu', "x component x velocity derivative"),
-               ('dSudv', "x component y velocity derivative"),
-               ('dSudw', "x component z velocity derivative"),
-               ('dSvdu', "y component x velocity derivative"),
-               ('dSvdv', "y component y velocity derivative"),
-               ('dSvdw', "y component z velocity derivative"),
-               ('dSwdu', "z component x velocity derivative"),
-               ('dSwdv', "z component y velocity derivative"),
-               ('dSwdw', "z component z velocity derivative")]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        sym.append( ("velocity[0]", 'x velocity component'))
-        sym.append( ("velocity[1]", 'y velocity component'))
-        sym.append( ("velocity[2]", 'z velocity component'))
-        sym.append( ("rho", 'local density (kg/m^3)'))
+        exp, req, sym = self.mdl.getMomentumFormulaComponents(self.zone)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = "momentum",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'momentum_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -333,28 +317,26 @@ dSudu = - rho / tau; # Jacobian of the source term"""
     def slotSpeciesFormula(self):
         """
         """
-        exp = self.mdl.getSpeciesFormula(self.zone, self.scalar)
-        if not exp:
-            exp = """S = 0;\ndS = 0;\n"""
         exa = """#example: """
-        req = [('S', 'species source term'),
-               ('dS', 'species source term derivative')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
 
-        name = self.th_sca.getScalarName(self.scalar)
-        sym.append((name, 'current species'))
+        exp, req, sym = self.mdl.getSpeciesFormulaComponents(self.zone, self.scalar)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = self.scalar,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'scalar_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
@@ -367,28 +349,27 @@ dSudu = - rho / tau; # Jacobian of the source term"""
     def slotSpeciesGroundWaterFormula(self):
         """
         """
-        exp = self.mdl.getGroundWaterSpeciesFormula(self.zone, self.scalar)
-        if not exp:
-            exp = """Q = 0;"""
         exa = """#example: """
-        req = [('Q', 'species source term')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate'),
-               ('t', 'current time')]
 
-        name = self.th_sca.getScalarName(self.scalar)
-        sym.append((name, 'current species'))
+        exp, req, sym = self.mdl.getGroundWaterSpeciesFormulaComponents(self.zone,
+                                                                        self.scalar)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = self.scalar,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'scalar_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotSpeciesGroundWaterFormula -> %s" % str(result))
@@ -401,25 +382,26 @@ dSudu = - rho / tau; # Jacobian of the source term"""
     def slotRichardsFormula(self):
         """
         """
-        exp = self.mdl.getRichardsFormula(self.zone)
-        if not exp:
-            exp = """Qs = 0;\n"""
         exa = """#example: """
-        req = [('Qs', 'volumetric source term')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate'),
-               ('t', 'current time')]
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.mdl.getRichardsFormulaComponents(self.zone)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = "richards",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'momentum_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotRichardsFormula -> %s" % str(result))
@@ -442,6 +424,10 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                 unit = "Kelvin"
             elif model == "enthalpy":
                 unit = "J/kg"
+            elif model == "potential_temperature":
+                unit = "Kelvin"
+            else:
+                unit = None
         else:
             th_sca_name = ''
             unit = None
@@ -456,31 +442,27 @@ dSudu = - rho / tau; # Jacobian of the source term"""
         """
         Input the initial formula of thermal scalar
         """
-        exp = self.mdl.getThermalFormula(self.zone, self.th_sca_name)
-        if not exp:
-            exp = self.mdl.getDefaultThermalFormula(self.th_sca_name)
         exa = """#example: """
-        req = [('S', 'thermal source term'),
-               ('dS', 'thermal source term derivative')]
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
-        if self.therm.getThermalScalarModel() == 'enthalpy':
-            sym.append(('enthalpy', 'thermal scalar'))
-        if self.therm.getThermalScalarModel() == 'total_energy':
-            sym.append(('total_energy', 'thermal scalar'))
-        else:
-            sym.append(('temperature', 'thermal scalar'))
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone,
+                                                             self.th_sca_name)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        zone_name = None
+        for zone in self.volzone.getZones():
+            if str(zone.getCodeNumber()) == self.zone:
+                zone_name = zone.getLabel()
+                break
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'src',
+                                zone_name     = zone_name,
+                                variable_name = self.th_sca_name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa,
+                                source_type   = 'thermal_source_term')
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))

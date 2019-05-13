@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -20,13 +20,12 @@
 
 !-------------------------------------------------------------------------------
 !> \file attssc.f90
+!>
 !> \brief Additional right-hand side source terms for scalar equations
-!>    taking into account dry and humid atmospheric variables
-!
-!> \brief Additional right-hand side source terms for scalar equations
-!>   if 1D atmospheric radiative module is used (iatra1 = 1)
-!>    additional source terms
-!>   for the thermal scalar equation to take into account the radiative forcing.
+!> taking into account dry and humid atmospheric variables.
+!> If 1D atmospheric radiative module is used (iatra1 = 1) additional source
+!> terms for the thermal scalar equation to take into account the radiative
+!> forcing.
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -34,7 +33,8 @@
 !______________________________________________________________________________!
 !> \param[in]   iscal           scalar number
 !> \param[in]   crvexp          explicit part of the second term
-!-------------------------------------------------------------------------------
+!_______________________________________________________________________________
+
 subroutine attssc ( iscal, crvexp )
 
 !===============================================================================
@@ -68,7 +68,6 @@ double precision crvexp(ncelet)
 character(len=80) :: chaine
 integer          ivar,  iel
 
-integer i
 double precision pp, dum
 
 double precision, dimension(:), allocatable :: ray3Di, ray3Dst
@@ -76,13 +75,13 @@ double precision, dimension(:,:), allocatable, save :: grad1, grad2
 double precision, dimension(:), allocatable, save :: r3
 
 double precision, save :: qliqmax,r3max
-logical, save :: r3_is_defined = .FALSE.
+logical, save :: r3_is_defined = .false.
 integer, save :: treated_scalars = 0
 
 double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), allocatable :: refrad
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: cvar_scapp3
+double precision, dimension(:), pointer :: cvar_ntdrp
 double precision, dimension(:), pointer :: cvar_pottemp
 double precision, dimension(:), pointer :: cpro_tempc
 double precision, dimension(:), pointer :: cpro_liqwt
@@ -92,21 +91,20 @@ double precision, dimension(:,:), pointer :: vel
 ! 1. Initialization
 !===============================================================================
 
-! --- Numero du scalaire a traiter : ISCAL
-! --- Numero de la variable associee au scalaire a traiter ISCAL
+! variable number from scalar number
 ivar = isca(iscal)
 
-! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
-
-! --- Nom de la variable associee au scalaire a traiter ISCAL
+! variable name
 call field_get_name(ivarfl(ivar), chaine)
 
-! --- Density
+! map field arrays
+call field_get_val_v(ivarfl(iu), vel)
+
+! density
 call field_get_val_s(icrom, crom)
 
 !===============================================================================
-! 2. TAKING INTO ACOUNT RADIATIVE FORCING FOR THE 1D RADIATIVE MODULE :
+! 2. Taking into acount radiative forcing for the 1d radiative module
 !===============================================================================
 
 if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
@@ -114,18 +112,17 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_pottemp)
   call field_get_val_s(itempc, cpro_tempc)
 
-  !   2.1 Source terms in the equation of the liquid potential temperature :
-  !  -----------------------------------------------------------------------
+  !   2.1 Source terms in the equation of the liquid potential temperature
 
   if (ivar.eq.isca(iscalt)) then
 
     allocate(ray3Di(ncel))
     allocate(ray3Dst(ncel))
 
-    ! --- Calls the 1D raditive model
-    ! --- Computes the divergence of the ir and solar radiative fluxes :
+    ! Call the 1D radiative model
+    ! Compute the divergence of the ir and solar radiative fluxes :
 
-    ! --- Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
+    ! Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
     call atr1vf()
 
     ! Infra red
@@ -134,7 +131,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     ! Sun
     call mscrss(idrayst, 1, ray3Dst)
 
-    ! --- Explicite source term for the thermal scalar equation:
+    ! Explicit source term for the thermal scalar equation:
 
     do iel = 1, ncel
       crvexp(iel) = crvexp(iel) +                                   &
@@ -152,12 +149,11 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
 endif
 
 !===============================================================================
-! 3. TAKING INTO SOURCE TERMS FORT THETAL, QW and NC DUE TO SEDIMENTATION OF DROPS
+! 3. Take into source terms fort thetal, qw and nc due to sedimentation of drops
 !===============================================================================
-! we assume that the vertical direction (given by the gravity)
-! is ALWAYS oriented along the z axis.
+! FIXME gravity is assumed to follow z-axis direction
 
-if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics only
+if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
 
   call field_get_val_s(iliqwt, cpro_liqwt)
   call field_get_val_s(itempc, cpro_tempc)
@@ -167,16 +163,17 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
   do iel = 1, ncelet
     qliqmax = max(cpro_liqwt(iel),qliqmax)
   enddo
+  if (irangp.ge.0) call parmax(qliqmax)
 
   if(qliqmax.gt.1e-8)then
 
     if (.not.r3_is_defined)then
 
-      call field_get_val_s(ivarfl(isca(iscapp(3))), cvar_scapp3)
+      call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
 
       ! First : diagnose the droplet number
 
-      if(modnuc.gt.0)then
+      if (modnuc.gt.0)then
         ! nucleation : when liquid water present calculate the
         ! number of condensation nucleii (ncc) and if the droplet number (nc)
         ! is smaller than ncc set it to ncc.
@@ -203,7 +200,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         enddo
 
         call nuclea (                                                 &
-             cvar_scapp3,                                             &
+             cvar_ntdrp,                                              &
              vel,                                                     &
              crom,                                                    &
              cpro_tempc,                                              &
@@ -216,18 +213,16 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 
       allocate(r3(ncelet))
       call define_r3()
-      r3_is_defined = .TRUE.
+      r3_is_defined = .true.
 
-      allocate(grad1(3,ncelet))
-      call grad_sed_ql(grad1)
+      allocate(grad1(3,ncelet), grad2(3,ncelet))
 
-      allocate(grad2(3,ncelet))
-      call grad_sed_nc(grad2)
+      call grad_sed(grad1, grad2)
 
     endif ! r3_not_defined
 
     ivar = isca(iscal)
-    if (ivar.eq.isca(iscalt) )then
+    if (ivar.eq.isca(iscalt)) then
 
       do iel = 1, ncel
         if (imeteo.eq.0) then
@@ -241,9 +236,9 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)           &
                     *(cell_f_vol(iel)*grad1(3,iel)/crom(iel))
       enddo
-      treated_scalars=treated_scalars + 1
+      treated_scalars = treated_scalars + 1
 
-    elseif (ivar.eq.isca(iscapp(2))) then
+    elseif (ivar.eq.isca(itotwt)) then
 
       do iel = 1, ncel
         crvexp(iel) = crvexp(iel) - cell_f_vol(iel)*grad1(3,iel)          &
@@ -251,7 +246,8 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
       enddo
 
       treated_scalars = treated_scalars + 1
-    elseif(ivar.eq.isca(iscapp(3)))then
+
+    elseif (ivar.eq.isca(intdrp)) then
 
       do iel = 1, ncel
         crvexp(iel) = crvexp(iel) + cell_f_vol(iel)*grad2(3,iel)
@@ -261,23 +257,16 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 
     endif
 
-    treated_scalars = mod(treated_scalars,3)
+    treated_scalars = mod(treated_scalars, 3)
 
-    if(treated_scalars.eq.0) then ! keep the same gradients for the 3 atm. var.
-      do iel = 1, ncel    ! clean the arrays
-        r3(iel) = 0.d0
-        do i = 1, 3
-          grad1(i,iel) = 0.d0
-          grad2(i,iel) = 0.d0
-        enddo
-      enddo
+    if (treated_scalars.eq.0) then ! keeping same gradients for 3 atm. var.
       deallocate(r3)
-      r3_is_defined = .FALSE.
+      r3_is_defined = .false.
       deallocate(grad1)
       deallocate(grad2)
     endif
   endif ! qliqmax.gt.1.d-8
-endif! ( ippmod(iatmos).eq.2 ) then ! for humid atmosphere physics only
+endif ! for humid atmosphere physics only
 
 !--------
 ! Formats
@@ -285,255 +274,332 @@ endif! ( ippmod(iatmos).eq.2 ) then ! for humid atmosphere physics only
 
 return
 
-! ***********************************************************************
+!===============================================================================
 
 contains
 
-! ***********************************************************************
-!> \brief Internal function -
-!>  computes the mean volumic radius of the droplets
-subroutine define_r3()
+  !-----------------------------------------------------------------------------
 
-double precision rho
-double precision qliq
-double precision nc
-double precision rho_water
-parameter (rho_water=1d+3)
-double precision a_const
-parameter (a_const=0.620350490899d0 ) ! (3/4*PI)**(1/3)
-double precision conversion
-parameter (conversion=1d+6)! passing from 1/cm**3 to 1/m**3
+  !> \brief Compute the mean volumic radius of the droplets
 
-r3max = 0.d0
-do iel = 1, ncel
-  rho = crom(iel)
-  qliq = cpro_liqwt(iel)
-  nc = cvar_scapp3(iel)
-  if(qliq.ge.1e-8)then
-    nc = max(nc,1.d0)
-    r3(iel) = ((rho*qliq)/(rho_water*nc*conversion))**(1.d0/3.d0)
-    r3(iel) = r3(iel)*a_const
-  else
-    r3(iel) = 0.d0
-  endif
-  r3max = max(r3(iel),r3max)
-enddo
-end subroutine define_r3
+  subroutine define_r3
 
-! *******************************************************************
-! *
-! *******************************************************************
-!> \brief Internal function -
-!>   Compute the sedimentation speed from the radius for water dropplet
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]       r        radius
-!-------------------------------------------------------------------------------
-double precision function vit_sed(r)
-implicit none
-double precision r
-vit_sed = 1.19d+08*r**2
-end function vit_sed
+    !===========================================================================
 
-! *******************************************************************
-! *
-! *******************************************************************
-!> \brief Internal function -
-!> Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[out]   grad        calculated gradient
-!-------------------------------------------------------------------------------
-subroutine grad_sed_ql(grad)
+    !===========================================================================
+    ! Module files
+    !===========================================================================
 
-use cs_c_bindings
-implicit none
-double precision grad(3,ncelet)
+    use cstnum, only: pi
 
-double precision climgp
-double precision epsrgp
-double precision extrap
+    !===========================================================================
 
-integer    iccocg
-integer    iifld
-integer    imligp
-integer    inc
-integer    iqpp
-integer    iwarnp
-integer    nswrgp
-double precision,dimension(:),allocatable :: local_coefa
-double precision,dimension(:),allocatable :: local_coefb
-double precision,dimension(:),allocatable :: local_field
+    implicit none
 
-type(var_cal_opt) :: vcopt
 
-if (r3max.lt.1.d-10) then
-  do iel = 1, ncel
-    do i = 1, 3
-      grad(i,iel) = 0.d0
+    ! Local variables
+
+    double precision rho, qliq, nc
+
+    double precision rho_water
+    parameter (rho_water=1.d+3) ! FIXME should be defined somewhere else
+
+    !===========================================================================
+
+    r3max = 0.d0
+    do iel = 1, ncel
+      rho = crom(iel)
+      qliq = cpro_liqwt(iel)
+      nc = cvar_ntdrp(iel)
+      if(qliq.ge.1e-8)then
+        nc = max(nc,1.d0)
+        r3(iel) = ((rho*qliq)/(rho_water*nc*1.d6)*0.75d0*pi)**(1.d0/3.d0)
+      else
+        r3(iel) = 0.d0
+      endif
+      r3max = max(r3(iel),r3max)
     enddo
-  enddo
-  return
-endif
 
-! Homogeneous Neumann Boundary Conditions
-!----------------------------------------
+    if (irangp.ge.0) call parmax (r3max)
+  end subroutine define_r3
 
-allocate(local_coefa(nfabor))
-do i = 1, nfabor
-  local_coefa(i) = 0.d0
-enddo
-allocate(local_coefb(nfabor))
-do i = 1, nfabor
-  local_coefb(i) = 1.d0
-enddo
-allocate(local_field(ncelet))
+  !-----------------------------------------------------------------------------
 
-! --------------------------------------------------------
-! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
-! --------------------------------------------------------
+  !> \brief Compute the sedimentation velocity based on the radius of water
+  !> droplet
 
-do iel = 1, ncel
-  local_field(iel) = crom(iel)       & ! volumic mass of the air kg/m3
-       *cpro_liqwt(iel)              & ! total liquid water content kg/kg
-       *vit_sed( r3(iel) )           & ! deposition velocity m/s
-       *exp(5*sigc**2)                 ! coefficient coming from log-norm
-                                       ! law of the droplet spectrum
-enddo
+  !> \param[in]       r        radius
 
-iqpp = isca(iscapp(2))
+  double precision function sedimentation_vel(r)
 
-! options for gradient calculation
+    !===========================================================================
 
-iccocg = 1
-inc = 1
+    implicit none
 
-call field_get_key_struct_var_cal_opt(ivarfl(iqpp), vcopt)
+    ! Arguments
 
-nswrgp = vcopt%nswrgr
-epsrgp = vcopt%epsrgr
-imligp = vcopt%imligr
-iwarnp = vcopt%iwarni
-climgp = vcopt%climgr
-extrap = vcopt%extrag
+    double precision r
 
-iifld = -1
+    !===========================================================================
 
-call gradient_s                                                     &
+    sedimentation_vel = 1.19d+8 * r**2
+
+  end function sedimentation_vel
+
+  !-----------------------------------------------------------------------------
+
+  !> \brief Computation of the gradient of the two following quantities
+  !> 1) rho*qliq*V(r3)*exp(5*sc^2)
+  !> 2) nc*V(r3)*exp(-sc^2)
+  !> FIXME describe quantities
+
+  !> \param[out]    grad1
+  !> \param[out]    grad2
+
+  subroutine grad_sed(grad1, grad2)
+
+    !===========================================================================
+
+    !===========================================================================
+    ! Module files
+    !===========================================================================
+
+    use cs_c_bindings
+    use pointe, only: itypfb
+
+    !===========================================================================
+
+    implicit none
+
+    ! Arguments
+
+    double precision grad1(3,ncelet), grad2(3,ncelet)
+
+    ! Local variables
+
+    double precision climgp, epsrgp, extrap, depo
+
+    integer    iccocg, ii, iifld, imligp, inc, iwarnp, nswrgp, ifac, iel
+    double precision, dimension(:), allocatable :: local_coefa, local_coefb
+    double precision, dimension(:), allocatable :: local_field, sed_vel
+    double precision, dimension(:), allocatable :: pres, temp
+
+    double precision, dimension(:), pointer :: bcfnns, ustar, cvar_temp, rugt
+
+    type(var_cal_opt) :: vcopt
+
+    !===========================================================================
+
+    ! no droplets case
+
+    if (r3max.lt.1.d-10) then
+      do iel = 1, ncel
+        do ii = 1, 3
+          grad1(ii,iel) = 0.d0
+          grad2(ii,iel) = 0.d0
+        enddo
+      enddo
+
+      return
+    endif
+
+    ! compute sedimentation velocity
+
+    allocate(sed_vel(ncel))
+    do iel = 1, ncel
+      sed_vel(iel) = sedimentation_vel(r3(iel))
+    enddo
+
+    ! take into account deposition if enabled
+
+    if (moddep.gt.0) then
+      allocate(pres(ncel), temp(ncel))
+      call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
+
+      do iel = 1, ncel
+        if (imeteo.eq.0) then
+          call atmstd(xyzcen(3,iel),pres(iel),dum,dum)
+        else
+          call intprf                                                      &
+              ( nbmett, nbmetm,                                            &
+                ztmet , tmmet , phmet , xyzcen(3,iel) , ttcabs, pres(iel) )
+        endif
+
+        ! FIXME compute real temperature in humid atmosphere in atphyv
+        temp(iel) = cvar_temp(iel)*((ps/pres(iel))**(-rair/cp0)) &
+                   +(clatev/cp0)*cpro_liqwt(iel)
+      enddo
+
+      call field_get_val_s_by_name('non_neutral_scalar_correction', bcfnns)
+      call field_get_val_s_by_name('ustar', ustar)
+      call field_get_val_s_by_name('boundary_thermal_roughness', rugt)
+
+      do ifac = 1, nfabor
+        if (itypfb(ifac).eq.iparug) then
+          iel  = ifabor(ifac)
+          if (r3(iel).gt.0.d0) then
+            if (rugt(ifac).gt.0.d0) then
+              call deposition_vel(temp(iel), crom(iel), pres(iel),         &
+                                  bcfnns(ifac), ustar(ifac), rugt(ifac),   &
+                                  r3(iel), sed_vel(iel), depo)
+
+              sed_vel(iel) = sed_vel(iel) + depo
+            endif
+          endif
+        endif ! itypfb.eq.iparug
+      enddo
+
+      deallocate(pres, temp)
+    endif ! moddep.gt.0
+
+    ! options for gradient calculation
+    iccocg = 1
+    inc = 1
+    iifld = -1
+    call field_get_key_struct_var_cal_opt(ivarfl(isca(itotwt)), vcopt)
+    nswrgp = vcopt%nswrgr
+    epsrgp = vcopt%epsrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    climgp = vcopt%climgr
+    extrap = vcopt%extrag
+
+    ! homogeneous Neumann BCs for gradient computation
+    allocate(local_coefa(nfabor))
+    do ifac = 1, nfabor
+      local_coefa(ifac) = 0.d0
+    enddo
+    allocate(local_coefb(nfabor))
+    do ifac = 1, nfabor
+      local_coefb(ifac) = 1.d0
+    enddo
+
+    allocate(local_field(ncelet))
+
+    ! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc^2)
+    do iel = 1, ncel
+      local_field(iel) = crom(iel)        & ! volumic mass of the air kg/m3
+                        *cpro_liqwt(iel)  & ! total liquid water content kg/kg
+                        *sed_vel(iel)     & ! deposition velocity m/s
+                        *exp(5.d0*sigc**2)  ! coefficient coming from log-norm
+                                            ! law of the droplet spectrum
+    enddo
+
+    call gradient_s                                                 &
    ( iifld  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
      iwarnp , epsrgp , climgp , extrap ,                            &
      local_field     , local_coefa , local_coefb ,                  &
-     grad   )
+     grad1   )
 
-deallocate(local_coefa)
-deallocate(local_coefb)
-deallocate(local_field)
+    ! Computation of the gradient of Nc*V(r3)*exp(-sc^2)
 
-end subroutine grad_sed_ql
-
-! *******************************************************************
-! *
-! *******************************************************************
-!> \brief Internal function -
-!> Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
-!> for sedimentation
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[out]   grad        calculated gradient
-!-------------------------------------------------------------------------------
-subroutine grad_sed_nc(grad)
-
-use cs_c_bindings
-implicit none
-double precision grad(3,ncelet)
-
-double precision climgp
-double precision epsrgp
-double precision extrap
-
-integer    iccocg
-integer    iifld
-integer    imligp
-integer    inc
-integer    iqpp
-integer    iwarnp
-integer    nswrgp
-
-double precision,dimension(:),allocatable :: local_coefa
-double precision,dimension(:),allocatable :: local_coefb
-double precision,dimension(:),allocatable :: local_field
-
-type(var_cal_opt) :: vcopt
-
-if(r3max.lt.1.d-10) then
-  do iel = 1, ncel
-    do i = 1, 3
-      grad(i,iel) = 0.d0
+    do iel = 1, ncel
+      local_field(iel) = cvar_ntdrp(iel)  & ! number of droplets 1/cm**3
+                        *sed_vel(iel)     & ! deposition velocity m/s
+                        *exp(-sigc**2)      ! coefficient coming from log-normal
+                                            ! law of the droplet spectrum
     enddo
-  enddo
-  return
-endif
 
-! Homogeneous Neumann Boundary Conditions
-!----------------------------------------
-
-allocate(local_coefa(nfabor))
-do i = 1, nfabor
-  local_coefa(i) = 0.d0
-enddo
-allocate(local_coefb(nfabor))
-do i = 1, nfabor
-  local_coefb(i) = 1.d0
-enddo
-allocate(local_field(ncelet))
-
-! --------------------------------------------------------
-! Computation of the gradient of Nc*V(r3)*exp(-sc)
-! --------------------------------------------------------
-
-do iel = 1, ncel
-  local_field(iel) = cvar_scapp3(iel)   & ! number of droplets 1/cm**3
-       *vit_sed( r3(iel) )              & ! deposition velocity m/s
-       *exp(-sigc**2)                     ! coefficient coming from log-normal
-                                          ! law of the droplet spectrum
-enddo
-
-iqpp = isca(iscapp(2))
-
-! options for gradient calculation
-
-iccocg = 1
-inc = 1
-
-call field_get_key_struct_var_cal_opt(ivarfl(iqpp), vcopt)
-
-nswrgp = vcopt%nswrgr
-epsrgp = vcopt%epsrgr
-imligp = vcopt%imligr
-iwarnp = vcopt%iwarni
-climgp = vcopt%climgr
-extrap = vcopt%extrag
-
-iifld = -1
-
-call gradient_s                                                     &
+    call gradient_s                                                 &
    ( iifld  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
      iwarnp , epsrgp , climgp , extrap ,                            &
      local_field     , local_coefa , local_coefb ,                  &
-     grad   )
+     grad2   )
 
-deallocate(local_coefa)
-deallocate(local_coefb)
-deallocate(local_field)
+    deallocate(sed_vel)
 
-end subroutine grad_sed_nc
+    deallocate(local_coefa)
+    deallocate(local_coefb)
+    deallocate(local_field)
+
+  end subroutine grad_sed
+
+  !-----------------------------------------------------------------------------
+
+  !> \brief Compute deposition velocity
+
+  !> \param[in]       temp
+  !> \param[in]       rom
+  !> \param[in]       pres
+  !> \param[in]       cfnns       non neutral correction coefficient for scalars
+  !> \param[in]       ustar
+  !> \param[in]       rugt
+  !> \param[in]       rcloudvolmoy
+  !> \param[in]       wg
+  !> \param[in]       depo
+
+  subroutine deposition_vel(temp, rom , pres,          &
+                            cfnns, ustar, rugt,        &
+                            rcloudvolmoy, wg, depo)
+
+    !===========================================================================
+
+    use cstnum
+
+    implicit none
+
+    !===========================================================================
+
+    ! Arguments
+
+    double precision temp, rom, pres
+    double precision cfnns, ustar, rugt
+    double precision rcloudvolmoy, depo
+
+    ! Local variables
+
+    double precision ckarm, eps0, cbolz, gamma, alpha, arecep
+    double precision dp
+    double precision muair, nuair, dbrow, cebro, lpm, ccunning
+    double precision wg, ather
+    double precision raero, st, ceimp, ceint, rsurf,rhoeau
+    double precision dzmin
+
+    !===========================================================================
+
+    ! deposition is computed only for first level
+    ckarm  = 0.4d0
+    eps0   = 3.d0
+    cbolz  = 1.38d-23
+    gamma  = 0.56d0
+    alpha  = 1.5d0
+    arecep = 0.01d0
+    rhoeau = 1000.d0
+    dzmin  = 4.d0
+
+    dp = dzmin/2.d0
+
+    muair = 1.83d-5*(416.16d0/(temp+120.d0))                    &
+           *((temp/296.16d0)**1.5d0)
+
+    nuair = muair/rom
+
+    lpm = (2.d0*muair/pres)*((0.125d0*pi*rair*temp)**(0.5))
+    ccunning = 1.d0 + (lpm/rcloudvolmoy)*(1.257d0 + 0.4d0       &
+              *exp(-1.1d0*rcloudvolmoy/lpm))
+
+    dbrow = cbolz*temp*ccunning/                                &
+            (6.d0*pi*muair*rcloudvolmoy)
+
+    cebro = nuair**((-1.d0)*gamma)/dbrow
+
+    ather = ckarm/log((dp+rugt)/rugt)
+    raero = 1.d0 / (ather * ustar * cfnns)
+
+    st = wg*ustar/(9.81d0*arecep)
+    ceimp = (st/(st+alpha))**(2.)
+    ceint = 2.d0*((rcloudvolmoy/arecep)**(2.))
+
+    ! Fog or cloud droplet deposition
+    if (ustar.gt.0.d0) then
+      rsurf = 1.d0 / (eps0*ustar*(ceimp+ceint+cebro)*exp(-sqrt(st)))
+      depo = 1.d0 / (raero + rsurf)
+    else
+      depo = 0.d0
+    endif
+
+  end subroutine deposition_vel
+
+  !-----------------------------------------------------------------------------
+
 end subroutine attssc

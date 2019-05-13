@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,11 +45,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.model.Common import GuiParam
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
-from code_saturne.Pages.OutputControlModel import OutputControlModel
-from code_saturne.Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
+from code_saturne.model.OutputControlModel import OutputControlModel
+from code_saturne.model.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
+from code_saturne.model.OutputSurfacicFieldsModel import OutputSurfacicFieldsModel #AZ
 from code_saturne.Pages.OutputVolumicVariablesView import LabelDelegate
 
 #-------------------------------------------------------------------------------
@@ -91,6 +92,7 @@ class StandardItemModelOutput(QStandardItemModel):
 
             label = self.mdl.dicoLabelName[name]
             post  = self.mdl.getPostProcessing(label)
+
             if OutputControlModel(self.case).getAssociatedWriterIdList("-2") == []:
                 self.disableItem.append((row, 1))
                 post = "off"
@@ -102,27 +104,27 @@ class StandardItemModelOutput(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         # ToolTips BUG
         if role == Qt.ToolTipRole:
             if index.column() == 2:
-                return to_qvariant(self.tr("Code_Saturne keyword: ipstdv"))
+                return self.tr("Code_Saturne keyword: ipstdv")
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 2:
-                return to_qvariant("Post-processing")
+                return "Post-processing"
 
         # Display
         if role == Qt.DisplayRole:
             row = index.row()
             if index.column() == 0:
-                return to_qvariant(self.dataLabel[row])
+                return self.dataLabel[row]
             elif index.column() == 1:
-                return to_qvariant(self.dataName[row])
+                return self.dataName[row]
             else:
-                return to_qvariant()
+                return None
 
         # CheckState
         if role == Qt.CheckStateRole:
@@ -130,11 +132,11 @@ class StandardItemModelOutput(QStandardItemModel):
             if index.column() == 2:
                 value = self.dataPost[row]
                 if value == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 else:
-                    return to_qvariant(Qt.Unchecked)
+                    return Qt.Unchecked
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -156,12 +158,12 @@ class StandardItemModelOutput(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Output label"))
+                return self.tr("Output label")
             if section == 1:
-                return to_qvariant(self.tr("Internal name"))
+                return self.tr("Internal name")
             elif section == 2:
-                return to_qvariant(self.tr("Post-\nprocessing"))
-        return to_qvariant()
+                return self.tr("Post-\nprocessing")
+        return None
 
 
     def setData(self, index, value, role=None):
@@ -205,7 +207,11 @@ class OutputSurfacicVariablesView(QWidget, Ui_OutputSurfacicVariablesForm):
 
         self.case = case
         self.case.undoStopGlobal()
-        self.mdl = OutputSurfacicVariablesModel(self.case)
+
+        if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+            self.mdl = OutputSurfacicVariablesModel(self.case)
+        else:
+            self.mdl = OutputSurfacicFieldsModel(self.case)
 
         self.modelOutput = StandardItemModelOutput(self.case, self.mdl)
         self.tableViewOutput.setModel(self.modelOutput)

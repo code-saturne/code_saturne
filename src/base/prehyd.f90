@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -121,6 +121,7 @@ integer          ivoid(1)
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
 double precision hint, qimp, epsrsp, blencp, relaxp
+double precision normp
 
 double precision rvoid(1)
 
@@ -251,6 +252,7 @@ relaxp = vcopt%relaxv
 thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 nomva0 = "Prhydro"
 
@@ -261,7 +263,7 @@ call codits &
 ( idtvar , iterns , f_id0  , iconvp , idiffp , ndircp ,          &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  iwarnp ,                                                       &
+  iwarnp , normp  ,                                              &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   prhyd  , prhyd  ,                                              &

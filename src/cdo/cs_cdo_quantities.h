@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -189,9 +189,19 @@ typedef struct { /* Specific mesh quantities */
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_compute_area_from_quant(const cs_quant_t   qa,
-                           const cs_real_t   *xb);
+static inline double
+cs_compute_area_from_quant(const cs_quant_t    qa,
+                           const cs_real_t    *xb)
+{
+  const double  xab[3] = {xb[0] - qa.center[0],
+                          xb[1] - qa.center[1],
+                          xb[2] - qa.center[2]};
+  const double  cp[3] = {qa.unitv[1]*xab[2] - qa.unitv[2]*xab[1],
+                         qa.unitv[2]*xab[0] - qa.unitv[0]*xab[2],
+                         qa.unitv[0]*xab[1] - qa.unitv[1]*xab[0]};
+
+  return 0.5 * qa.meas * cs_math_3_norm(cp);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -275,9 +285,70 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the area of the triangles with basis each edge of the face
+ *         and apex the face center.
+ *         Case of interior faces.
+ *         Storage in agreement with the bf2v adjacency structure
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       f_id      interior face id
+ * \param[in, out]  tef       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_i_tef(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     f_id,
+                                cs_real_t                     tef[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the area of the triangles with basis each edge of the face
+ *         and apex the face center.
+ *         Case of boundary faces.
+ *         Storage in agreement with the bf2v adjacency structure
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       bf_id     border face id
+ * \param[in, out]  tef       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_b_tef(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     bf_id,
+                                cs_real_t                     tef[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the weight related to each vertex of a face. This weight
  *         ensures a 2nd order approximation if the face center is the face
- *         barycenter
+ *         barycenter.
+ *         Case of interior faces.
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       f_id      interior face id
+ * \param[in, out]  wvf       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_i_wvf(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     f_id,
+                                cs_real_t                     wvf[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the weight related to each vertex of a face. This weight
+ *         ensures a 2nd order approximation if the face center is the face
+ *         barycenter.
+ *         Case of boundary faces.
  *
  * \param[in]       connect   pointer to a cs_cdo_connect_t structure
  * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
@@ -287,10 +358,10 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_compute_wvf(const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *cdoq,
-                              cs_lnum_t                     bf_id,
-                              cs_real_t                     wvf[]);
+cs_cdo_quantities_compute_b_wvf(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     bf_id,
+                                cs_real_t                     wvf[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

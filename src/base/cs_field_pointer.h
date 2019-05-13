@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -65,7 +65,7 @@ typedef enum {
   CS_ENUMF_(dt),           /*!< local time step */
 
   CS_ENUMF_(p),            /*!< pressure */
-  CS_ENUMF_(u),            /*!< velocity */
+  CS_ENUMF_(vel),          /*!< velocity */
 
   CS_ENUMF_(k),            /*!< turbulent kinetic energy \f$ k \f$ */
   CS_ENUMF_(eps),          /*!< turbulent dissipation \f$ \varepsilon \f$ */
@@ -80,22 +80,25 @@ typedef enum {
 
   CS_ENUMF_(phi),          /*!< \f$ \phi \f$ for \f$ \phi-f_b \f$ model */
   CS_ENUMF_(f_bar),        /*!< \f$ f_b \f$ for \f$ \phi-f_b \f$ model */
-  CS_ENUMF_(alpha),        /*!< \f$ \alpha \f$ for \f$ Bl-v^2-k \f$
-                             or EBRSM model */
+  CS_ENUMF_(alp_bl),        /*!< \f$ \alpha \f$ for \f$ Bl-v^2-k \f$
+                                 or EBRSM model */
 
   CS_ENUMF_(omg),          /*!< \f$ \omega \f$ for \f$ k-\omega \f$ SST model */
-  CS_ENUMF_(nusa),         /*!< \f$ \widetilde{\nu}_T \f$ for Spalart Allmaras */
+  CS_ENUMF_(nusa),         /*!< \f$ \widetilde{\nu}_T \f$ for Spalart-
+                                Allmaras */
 
   CS_ENUMF_(hybrid_blend), /*!< Blending factor for DDES*/
 
   CS_ENUMF_(mesh_u),       /*!< mesh velocity */
 
   CS_ENUMF_(void_f),       /*!< void fraction */
+  CS_ENUMF_(vol_f),        /*!< volume fraction */
 
   CS_ENUMF_(h),            /*!< enthalpy */
   CS_ENUMF_(t),            /*!< temperature*/
   CS_ENUMF_(t_b),          /*!< temperature (at boundary faces)*/
-  CS_ENUMF_(energy),       /*!< total energy */
+  CS_ENUMF_(e_tot),        /*!< total energy */
+  CS_ENUMF_(h_tot),        /*!< total enthalpy */
 
   CS_ENUMF_(rho),          /*!< density (at cells) */
   CS_ENUMF_(rho_b),        /*!< density (at boundary faces) */
@@ -107,6 +110,7 @@ typedef enum {
   CS_ENUMF_(mu_t),         /*!< turbulent dynamic viscosity */
 
   CS_ENUMF_(poro),         /*!< porosity */
+  CS_ENUMF_(if_poro),      /*!< internal faces porosity */
   CS_ENUMF_(t_poro),       /*!< tensorial porosity */
 
   /* Specific physics variables and properties */
@@ -114,6 +118,10 @@ typedef enum {
   CS_ENUMF_(t_kelvin),     /*!< temperature, in Kelvin */
 
   CS_ENUMF_(vism),         /*!< mesh viscosity */
+
+  CS_ENUMF_(volume_f),     /*!< homogeneous model volume fraction */
+  CS_ENUMF_(mass_f),       /*!< homogeneous model mass fraction */
+  CS_ENUMF_(energy_f),     /*!< homogeneous model energy fraction */
 
   CS_ENUMF_(pot_t),        /*!< potential temperature */
   CS_ENUMF_(totwt),        /*!< total water content */
@@ -194,7 +202,47 @@ typedef enum {
   CS_ENUMF_(y_l_pack),       /*!< Mass of liquid per unit volume of cell */
   CS_ENUMF_(thermal_diff_h), /*!< Humid air thermal diffusivity  */
   CS_ENUMF_(thermal_diff_l), /*!< Injected liquid water thermal diffusivity */
-  CS_ENUMF_(pack_zone_id),    /*!< Id of the packing zone */
+  CS_ENUMF_(pack_zone_id),   /*!< Id of the packing zone */
+
+  /* NCFD fields */
+  CS_ENUMF_(yf_ncond),       /*!< non-condensable mass fraction */
+  CS_ENUMF_(qp),             /*!< Turbulent Kinetic Energy q2 */
+  CS_ENUMF_(qfp),            /*!< Covariance q12 */
+  CS_ENUMF_(qfpxx),          /*!< XX component of qfp */
+  CS_ENUMF_(qfpxy),          /*!< XY component of qfp */
+  CS_ENUMF_(qfpxz),          /*!< XZ component of qfp */
+  CS_ENUMF_(qfpyx),          /*!< YX component of qfp */
+  CS_ENUMF_(qfpyy),          /*!< YY component of qfp */
+  CS_ENUMF_(qfpyz),          /*!< YZ component of qfp */
+  CS_ENUMF_(qfpzx),          /*!< ZX component of qfp */
+  CS_ENUMF_(qfpzy),          /*!< ZY component of qfp */
+  CS_ENUMF_(qfpzz),          /*!< ZZ component of qfp */
+  CS_ENUMF_(gamma),          /*!< Interfacial mass transfer */
+  CS_ENUMF_(ia),             /*!< Interfacial area */
+  CS_ENUMF_(x2),             /*!< x2 for droplets */
+  CS_ENUMF_(d32),            /*!< Sauter diameter */
+  CS_ENUMF_(drag),           /*!< Phases drag */
+  CS_ENUMF_(ad_mass),        /*!< Added mass */
+  CS_ENUMF_(wlubr),          /*!< Wall lubrication */
+  CS_ENUMF_(lambda),         /*!< Thermal conductivity */
+  CS_ENUMF_(th_diff),        /*!< Thermal diffusivity */
+  CS_ENUMF_(th_diff_t),      /*!< Turbulent thermal diffusivity */
+  CS_ENUMF_(drho_dp),        /*!< drho over dp */
+  CS_ENUMF_(drho_dh),        /*!< drho over dh */
+  CS_ENUMF_(tau12_t),        /*!< turbulent tau12 */
+  CS_ENUMF_(lift),           /*!< Particles lift */
+  CS_ENUMF_(disp_t),         /*!< Turbulent dispersion */
+  CS_ENUMF_(drift_vel),      /*!< Particles drift velocity */
+  CS_ENUMF_(yplus),          /*!< Wall distance: y+ */
+  CS_ENUMF_(vel_mean),       /*!< Mean velocity (for dispersed phases) */
+  CS_ENUMF_(vel_rel),        /*!< Relative velocity (for dispersed phases) */
+  CS_ENUMF_(dt_dp),          /*!< dtemp/dpress derivative */
+
+  /* Added variables (scalars) */
+  CS_ENUMF_(add_var),        /*!< User added variables */
+
+  /* User-defined arrays */
+  CS_ENUMF_(user),
 
   /* End of attributes */
 

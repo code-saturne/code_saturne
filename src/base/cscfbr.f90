@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -305,3 +305,107 @@ enddo
 
 return
 end subroutine
+
+!===============================================================================
+
+!> \brief Initialization for coupling two Code_Saturne intances
+!>        with boundary faces.
+!>
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
+!> \param[in]     itypfb        boundary face types
+!______________________________________________________________________________
+
+subroutine cscfbr_init(icodcl, itypfb)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use entsor
+use optcal
+use cstphy
+use cstnum
+use dimens, only: nvar
+use parall
+use period
+use cplsat
+use mesh
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          icodcl(nfabor,nvar)
+integer          itypfb(nfabor)
+
+! Local variables
+
+integer          numcpl
+integer          ncesup , nfbsup
+integer          ncecpl , nfbcpl , ncencp , nfbncp
+
+integer, allocatable, dimension(:) :: lcecpl , lfbcpl , lcencp , lfbncp
+
+!===============================================================================
+
+
+do numcpl = 1, nbrcpl
+
+  ! For each coupling
+
+  call nbecpl(numcpl, ncesup, nfbsup,                            &
+              ncecpl, nfbcpl, ncencp, nfbncp)
+
+  ! Allocate temporary arrays for coupling information
+  allocate(lcecpl(ncecpl), lcencp(ncencp))
+  allocate(lfbcpl(nfbcpl), lfbncp(nfbncp))
+
+  ! Located cells and boundary faces
+  call lelcpl(numcpl, ncecpl, nfbcpl, lcecpl, lfbcpl)
+
+  ! Unlocated cells and boundary faces
+  call lencpl(numcpl, ncencp, nfbncp, lcencp, lfbncp)
+
+  ! Free memory
+  deallocate(lcecpl, lcencp)
+
+!===============================================================================
+! 2.  TRADUCTION DU COUPLAGE EN TERME DE CONDITIONS AUX LIMITES
+!===============================================================================
+
+  if (nfbcpl.gt.0) then
+    call csc2cl_init(nvarcp(numcpl), nfbcpl, nfbncp,              &
+                     icodcl, itypfb, lfbcpl, lfbncp)
+  endif
+
+  ! Free memory
+  deallocate(lfbcpl, lfbncp)
+
+enddo
+
+return
+end subroutine cscfbr_init

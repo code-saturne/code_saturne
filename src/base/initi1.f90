@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -68,11 +68,11 @@ interface
     implicit none
   end subroutine gui_output
 
-  subroutine user_output()  &
-      bind(C, name='cs_user_output')
+  subroutine user_finalize_setup_wrapper()  &
+      bind(C, name='cs_user_finalize_setup_wrapper')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine user_output
+  end subroutine user_finalize_setup_wrapper
 
   subroutine user_syrthes_coupling()  &
       bind(C, name='cs_user_syrthes_coupling')
@@ -121,10 +121,16 @@ call cs_rad_transfer_options
 
 if (ippmod(iatmos).ge.0) call cs_at_data_assim_initialize
 
+! Lagrangian model options
+
+call lagran_init_map
+
+call lagopt(isuite, iccvfg, iscalt, dtref)
+
 ! Additional fields if not in CDO mode only
 
 if (icdo.lt.2) then
-   call addfld
+  call addfld
 endif
 
 ! Time moments
@@ -145,12 +151,6 @@ wtsuit = -1.d0
 
 call dflsui(ntsuit, ttsuit, wtsuit);
 
-! Lagrangian model options
-
-call lagran_init_map
-
-call lagopt(isuite, iccvfg, iscalt, dtref)
-
 !===============================================================================
 ! 3. MODIFS APRES USINI1
 !===============================================================================
@@ -169,10 +169,11 @@ endif
 ! are not defined anymore)
 if (icdo.lt.2) then
    call fldini
-endif
+   call usipes(nmodpp)
 
-call usipes(nmodpp)
-call user_output
+   ! Avoid a second spurious call to this function
+   call user_finalize_setup_wrapper
+endif
 
 !===============================================================================
 ! 5. Coherency checks

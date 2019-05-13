@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -135,9 +135,6 @@ iok = 0
 !    INITIALISATIONS QUI LUI SONT PROPRES
 !===============================================================================
 
-! Initialized thermodynamic variables indicator
-ithvar = 10000
-
 ! Indicateur d'initialisation des scalaires par l'utilisateur
 ! (mis a 1 si passage dans USINIV ou PPINIV ou dans l'IHM ; a 0 sinon)
 
@@ -214,24 +211,25 @@ else
 
   call ppiniv(nvar, nscal, dt)
 
-  if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
-                               .or.isuite.eq.1.and.ileaux.eq.0)) then
-
-    if (     ithvar.ne. 60000.and.ithvar.ne.100000                    &
-        .and.ithvar.ne.140000.and.ithvar.ne.150000.and.ithvar.ne.210000) then
-        write(nfecra,1000) ithvar
-        iok = iok + 1
-    endif
-
-    ivoid = -1
-    call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
-
-  endif
-
 endif
 
 call user_initialization()
 
+if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
+                             .or.isuite.eq.1.and.ileaux.eq.0)) then
+
+  if (     ithvar.ne. 60000.and.ithvar.ne.100000                    &
+      .and.ithvar.ne.140000.and.ithvar.ne.150000.and.ithvar.ne.210000) then
+      write(nfecra,1000) ithvar
+      iok = iok + 1
+  endif
+
+  ivoid = -1
+  call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
+
+endif
+
+call user_extra_operations_initialize()
 
 ! Pressure / Total pressure initialisation
 
@@ -687,79 +685,7 @@ endif
 
 write(nfecra,2000)
 
-!     Inconnues de calcul : on affiche les bornes
-f_id = -1
-c_id = 1
-
-do ivar = 1, nvar
-  f_id_prv = f_id
-  f_id = ivarfl(ivar)
-  if (f_id.eq.f_id_prv) then
-    c_id = c_id + 1
-  else
-    c_id = 1
-  endif
-
-  call field_get_dim(f_id, f_dim)
-
-  if (f_dim.gt.1) then
-    call field_get_val_v(f_id, field_v_v)
-  else if (f_dim.eq.1) then
-    call field_get_val_s(f_id, field_s_v)
-  endif
-
-  if (f_dim.gt.1) then
-    valmax = -grand
-    valmin =  grand
-    do iel = 1, ncel
-      valmax = max(valmax, field_v_v(c_id,iel))
-      valmin = min(valmin, field_v_v(c_id,iel))
-    enddo
-  else
-    valmax = -grand
-    valmin =  grand
-    do iel = 1, ncel
-      valmax = max(valmax, field_s_v(iel))
-      valmin = min(valmin, field_s_v(iel))
-    enddo
-  endif
-
-  if (irangp.ge.0) then
-    call parmax (valmax)
-    call parmin (valmin)
-  endif
-  call field_get_label(f_id, chaine)
-  write(nfecra,2010)chaine(1:16),valmin,valmax
-enddo
-write(nfecra,2020)
-
-if (idtvar.ge.0) then
-!     Pas de temps : on affiche les bornes
-!                    si < 0 on s'arrete
-  vdtmax = -grand
-  vdtmin =  grand
-  do iel = 1, ncel
-    vdtmax = max(vdtmax,dt(iel))
-    vdtmin = min(vdtmin,dt(iel))
-  enddo
-  if (irangp.ge.0) then
-    call parmax (vdtmax)
-    call parmin (vdtmin)
-  endif
-  write(nfecra,2010) 'dt', vdtmin, vdtmax
-  write(nfecra,2020)
-
-  if (vdtmin.le.zero) then
-    write(nfecra,3010) vdtmin
-    iok = iok + 1
-  endif
-
-endif
-
-!     Cumul du temps associe aux moments : on affiche les bornes
-!                                          si < 0 on s'arrete
-
-call time_moment_log_iteration
+call log_iteration
 
 !===============================================================================
 ! 6.  ARRET GENERAL SI PB
@@ -769,8 +695,6 @@ if (iok.gt.0) then
   write(nfecra,3090) iok
   call csexit (1)
 endif
-
-write(nfecra,3000)
 
 !----
 ! Formats
@@ -805,22 +729,10 @@ write(nfecra,3000)
 
  2000 format(                                                     &
                                                                 /,&
-' -----------------------------------------------------------', /,&
-                                                                /,&
-                                                                /,&
 ' ** INITIALISATION DES VARIABLES',                             /,&
 '    ----------------------------',                             /,&
-                                                                /,&
-' -----------------------------------------',                   /,&
-'  Variable          Valeur min  Valeur max',                   /,&
-' -----------------------------------------                   '  )
- 2010 format(                                                     &
- 2x,     a16,      e12.4,      e12.4                             )
- 2020 format(                                                     &
-' ---------------------------------',                           /)
+'                                                             ')
 
- 3000 format(/,/,                                                 &
-'-------------------------------------------------------------',/)
  3010 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1141,22 +1053,10 @@ write(nfecra,3000)
 
  2000 format(                                                     &
                                                                 /,&
-' -----------------------------------------------------------', /,&
-                                                                /,&
-                                                                /,&
 ' ** VARIABLES INITIALIZATION',                                 /,&
 '    ------------------------',                                 /,&
-                                                                /,&
-' -----------------------------------------',                   /,&
-'  Variable          Min. value  Max. value',                   /,&
-' -----------------------------------------                   '  )
- 2010 format(                                                     &
- 2x,     a16,      e12.4,      e12.4                             )
- 2020 format(                                                     &
-' ---------------------------------',                           /)
+'                                                             ')
 
- 3000 format(/,/,                                                 &
-'-------------------------------------------------------------',/)
  3010 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

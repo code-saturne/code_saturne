@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -78,7 +78,7 @@ cs_domain_update_advfield(cs_domain_t       *domain);
  *
  * \param[in, out]  domain       pointer to a cs_domain_t structure
  * \param[in]       nt_interval  frequency for the restart process
- * \param[in]       nt_list      output frequency into the listing
+ * \param[in]       nt_list      output frequency into the log
  * \param[in]       verbosity    level of information displayed
  */
 /*----------------------------------------------------------------------------*/
@@ -110,15 +110,15 @@ cs_domain_set_time_param(cs_domain_t       *domain,
  * \brief  Define the value of the time step thanks to a predefined function
  *
  * \param[in, out] domain      pointer to a cs_domain_t structure
- * \param[in]      func        pointer to a cs_timestep_func_t function
+ * \param[in]      func        pointer to a cs_time_func_t function
  * \param[in]      func_input  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_def_time_step_by_function(cs_domain_t          *domain,
-                                    cs_timestep_func_t   *func,
-                                    void                 *func_input);
+cs_domain_def_time_step_by_function(cs_domain_t        *domain,
+                                    cs_time_func_t     *func,
+                                    void               *func_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -174,6 +174,17 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
 
 void
 cs_domain_initialize_systems(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of the main domain settings
+ *
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_setup_log(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 

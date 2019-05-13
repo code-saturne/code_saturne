@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -31,7 +31,7 @@ This module defines the following classes:
 - NewCaseDialogView
 - MainView
 
-    @copyright: 1998-2018 EDF S.A., France
+    @copyright: 1998-2019 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
     @license: GNU GPL v2 or later, see COPYING for details.
 """
@@ -74,13 +74,14 @@ except:
     from code_saturne.Base.MainForm import Ui_MainForm
     from code_saturne.Base.NewCaseDialogForm import Ui_NewCaseDialogForm
 
-from code_saturne.Base.IdView import IdView
 from code_saturne.Base.BrowserView import BrowserView
-from code_saturne.Base import XMLengine, QtCase
-from code_saturne.Base.XMLinitialize import *
-from code_saturne.Base.XMLmodel import *
-from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
-from code_saturne.Base.Common import XML_DOC_VERSION
+from code_saturne.model import XMLengine
+from code_saturne.Base import QtCase
+from code_saturne.model.XMLinitialize import *
+from code_saturne.model.XMLinitializeNeptune import *
+from code_saturne.model.XMLmodel import *
+from code_saturne.model.Common import GuiParam, XML_DOC_VERSION
+from code_saturne.Base.Toolbox import displaySelectedPage
 
 try:
     import code_saturne.Pages
@@ -88,12 +89,13 @@ except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from code_saturne.Pages.WelcomeView import WelcomeView
-from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
-from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
+from code_saturne.model.ScriptRunningModel import ScriptRunningModel
+from code_saturne.model.SolutionDomainModel import getRunType
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
-
+from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 
 #-------------------------------------------------------------------------------
 # log config
@@ -264,7 +266,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         Method called when user clicks 'OK'
         """
         if self.caseName == None or self.caseName == "":
-            msg = "name case not defined"
+            msg = "case name not defined"
             sys.stderr.write(msg + '\n')
         elif self.copyFrom == True and self.copyFromName == None:
             msg = "copy from case not defined"
@@ -326,12 +328,8 @@ class MainView(object):
         """
         Factory
         """
-        if cmd_package.name == 'code_saturne':
-            return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case, cmd_salome)
-        elif cmd_package.name == 'neptune_cfd':
-            from core.MainView import MainViewNeptune
-            return MainViewNeptune.__new__(MainViewNeptune, cmd_package, cmd_case, cmd_salome)
 
+        return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case, cmd_salome)
 
     @staticmethod
     def updateInstances(qobj):
@@ -346,11 +344,6 @@ class MainView(object):
     def ui_initialize(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
-
-        self.setWindowTitle(self.package.code_name + " GUI" + " - " + self.package.version)
-
-        self.Id = IdView()
-        self.dockWidgetIdentity.setWidget(self.Id)
 
         self.dockWidgetBrowser.setWidget(self.Browser)
 
@@ -377,10 +370,13 @@ class MainView(object):
         self.fileCloseAction.triggered.connect(self.close)
         self.fileQuitAction.triggered.connect(self.fileQuit)
 
+        self.openTextEditorAction.triggered.connect(self.fileEditorOpen)
+        self.openResultsFileAction.triggered.connect(self.fileViewerOpen)
+        self.testUserCompilationAction.triggered.connect(self.testUserFilesCompilation)
+
         self.openXtermAction.triggered.connect(self.openXterm)
         self.displayCaseAction.triggered.connect(self.displayCase)
 
-        self.IdentityAction.toggled.connect(self.dockWidgetIdentityDisplay)
         self.BrowserAction.toggled.connect(self.dockWidgetBrowserDisplay)
 
         self.displayAboutAction.triggered.connect(self.displayAbout)
@@ -450,9 +446,6 @@ class MainView(object):
                     self.setFont(font)
                     app.setFont(font)
 
-        self.actionPrepro.setEnabled(False)
-        self.actionCalculation.setEnabled(False)
-
         self.updateRecentFileMenu()
         QTimer.singleShot(0, self.loadInitialFile)
 
@@ -490,21 +483,6 @@ class MainView(object):
         else:
             self.displayWelcomePage()
             self.dockWidgetBrowserDisplay(False)
-
-
-    def dockWidgetIdentityDisplay(self, bool=True):
-        """
-        Private slot.
-
-        Show or hide the  the identity dock window.
-
-        @type bool: C{True} or C{False}
-        @param bool: if C{True}, shows the identity dock window
-        """
-        if bool:
-            self.dockWidgetIdentity.show()
-        else:
-            self.dockWidgetIdentity.hide()
 
 
     def dockWidgetBrowserDisplay(self, bool=True):
@@ -651,23 +629,18 @@ class MainView(object):
             self.case = QtCase.QtCase(package=self.package)
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
-            title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
-                     + " - " + self.package.version
-            self.setWindowTitle(title)
 
             self.Browser.configureTree(self.case)
             self.dockWidgetBrowserDisplay(True)
 
             self.case['salome'] = self.salome
-            self.scrollArea.setWidget(self.displayFisrtPage())
+            self.scrollArea.setWidget(self.displayFirstPage())
             self.case['saved'] = "yes"
 
             self.case.undo_signal.connect(self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
-        self.actionPrepro.setEnabled(True)
-        self.actionCalculation.setEnabled(True)
+        self.updateTitleBar()
 
 
     def caseNew(self):
@@ -682,20 +655,15 @@ class MainView(object):
                 self.case = QtCase.QtCase(package=self.package)
                 self.case.root()['version'] = self.XML_DOC_VERSION
                 self.initCase()
-                title = self.tr("New parameters set") + \
-                         " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
-                         + " - " + self.package.version
-                self.setWindowTitle(title)
+                self.updateTitleBar()
 
                 self.Browser.configureTree(self.case)
                 self.dockWidgetBrowserDisplay(True)
 
                 self.case['salome'] = self.salome
-                self.scrollArea.setWidget(self.displayFisrtPage())
+                self.scrollArea.setWidget(self.displayFirstPage())
                 self.case['saved'] = "yes"
 
-                self.actionPrepro.setEnabled(True)
-                self.actionCalculation.setEnabled(True)
                 self.case.undo_signal.connect(self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
@@ -784,27 +752,10 @@ class MainView(object):
             return
 
         # Instantiate a new case
-
         try:
             self.case = QtCase.QtCase(package=self.package, file_name=file_name)
         except:
             msg = self.tr("This file is not in accordance with XML specifications.")
-            self.loadingAborted(msg, fn)
-            return
-
-        # Check if the root node is the good one
-
-        if self.case.xmlRootNode().tagName != self.package.code_name + "_GUI":
-            msg = self.tr("This file seems not to be a %s file of parameters.\n\n"  \
-                          "XML root node found: %s" % \
-                          (self.package.code_name, self.case.xmlRootNode().tagName))
-            self.loadingAborted(msg, fn)
-            return
-
-        if self.case.root()['version'] != self.XML_DOC_VERSION:
-            msg = self.tr("The syntax version %s of this file of parameters does\n" \
-                          "not match with the version required y the GUI: %s." %    \
-                          (self.case.root()['version'], self.XML_DOC_VERSION) )
             self.loadingAborted(msg, fn)
             return
 
@@ -813,12 +764,9 @@ class MainView(object):
 
         # we determine if we are in calculation mode when we open an xml file
         mdl = ScriptRunningModel(self.case)
-        self.case['prepro'] = mdl.getPreproMode()
+        self.case['run_type'] = getRunType(self.case)
 
         msg = self.initCase()
-        if msg:
-            self.loadingAborted(msg, fn)
-            return
 
         # All checks are fine, wan can continue...
 
@@ -830,23 +778,63 @@ class MainView(object):
 
         # Update the case and the StudyIdBar
         self.case['xmlfile'] = file_name
-        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
-                   + " - " + self.package.version
-        self.setWindowTitle(title)
 
         msg = self.tr("Loaded: %s" % fn)
         self.statusbar.showMessage(msg, 2000)
 
-        self.scrollArea.setWidget(self.displayFisrtPage())
+        self.scrollArea.setWidget(self.displayFirstPage())
 
         self.case['saved'] = "yes"
-
 
         # Update the Tree Navigator layout
 
         self.case.undo_signal.connect(self.slotUndoRedoView)
-        self.actionPrepro.setEnabled(True)
-        self.actionCalculation.setEnabled(True)
+
+        self.updateTitleBar()
+
+
+    def updateTitleBar(self):
+        """
+        Update Icon, Window Title Name and package name.
+        """
+        icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
+
+        title = ""
+
+        file_name = ''
+        datadir = ''
+        if hasattr(self, 'case'):
+            file_name = self.case['xmlfile']
+            if file_name:
+                file_name = os.path.basename(file_name)
+                datadir = os.path.split(file_name)[0]
+            else:
+                file_name = '<new parameters set>'
+        if not datadir:
+            datadir = os.getcwd()
+        (casedir, data) = os.path.split(datadir)
+        if data != 'DATA': # inconsistent parameters location.
+            casedir = ''
+        case_name = os.path.basename(casedir)
+
+        if case_name:
+            title += case_name + ' : '
+        if file_name:
+            title += file_name + ' - '
+
+        if hasattr(self, 'case'):
+            package = self.case['package']
+        else:
+            package = self.package
+
+        title += self.tr(package.code_name)
+
+        if package.code_name == "NEPTUNE_CFD":
+            icon = QIcon(QPixmap(icondir+"logoneptune.png"))
+        else:
+            icon = QIcon(QPixmap(icondir+"MONO-bulle-HD.png"))
+        self.setWindowIcon(icon)
+        self.setWindowTitle(title)
 
 
     def fileOpen(self):
@@ -889,6 +877,129 @@ class MainView(object):
         self.statusbar.clearMessage()
 
 
+    def fileEditorOpen(self):
+        """
+        public
+        open a text file
+        """
+
+        from code_saturne.Base.QFileEditor import QFileEditor
+
+        if not hasattr(self, 'case'):
+            return
+
+        fileEditor = QFileEditor(parent=self,
+                                 case_dir=self.case['case_path']+'/SRC',
+                                 noOpen=True)
+        fileEditor.show()
+
+
+    def fileViewerOpen(self):
+        """
+        public
+        open a text file
+        """
+
+        from code_saturne.Base.QFileEditor import QFileEditor
+
+        if not hasattr(self, 'case'):
+            return
+
+        fileViewer = QFileEditor(parent=self,
+                                 case_dir=self.case['case_path']+'/RESU',
+                                 readOnly=True,
+                                 noOpen=True,
+                                 useHighlight=False)
+        fileViewer.show()
+
+
+
+    def testUserFilesCompilation(self):
+        """
+        public slot
+        test the compilation for the files within the SRC sub-folder
+        """
+
+        if not hasattr(self, 'case'):
+            return
+
+        test_title = "Compilation test"
+
+        ori_dir = os.getcwd()
+        src_dir = self.case['case_path'] + '/SRC'
+
+        if not os.path.exists(src_dir):
+            msg  = "You are not in a CASE structure.\n"
+            msg += "Compilation aborted.\n"
+            QMessageBox.warning(self, self.tr(test_title), msg)
+            return
+
+        os.chdir(src_dir)
+
+        # Check if there are any user files within the SRC folder
+        from glob import glob
+        usr_files = glob("*.c") + glob("*.cxx") + glob("*.f90")
+
+        if len(usr_files) > 0:
+            from code_saturne import cs_compile
+            from code_saturne.Base.QFileEditor import QExpandingMessageBox
+            box = QExpandingMessageBox()
+
+            out = open('comp.out', 'w')
+            err = open('comp.err', 'w')
+
+            state = cs_compile.compile_and_link(self.case['package'],
+                                                src_dir,
+                                                destdir=None,
+                                                stdout=out,
+                                                stderr=err)
+
+            out.close()
+            err.close()
+
+            errors = open('comp.err', 'r').readlines()
+
+            n_errors = 0
+            if state == 0:
+                box.setIcon(QMessageBox.Information)
+                msg = "User functions compilation succeeded."
+                if len(errors) > 0:
+                    msg += '\n'
+                    msg += 'Warnings were found:'
+                    msg += '\n'
+            else:
+                box.setIcon(QMessageBox.Critical)
+                msg = 'User functions compilation failed with the following errors:\n'
+
+            box.setText(msg)
+            box.setWindowTitle(self.tr(test_title))
+
+            if len(errors) > 0:
+                warnings = ''
+                for line in errors:
+                    warnings += line
+                if sys.version_info[0] < 3:
+                    warnings = warnings.decode('utf-8').replace(u"\u2018", "'")
+                    warnings = warnings.replace(u"\u2019", "'")
+                box.setDetailedText(warnings)
+
+            box.exec_()
+        else:
+            msg = "There are no user files inside the SRC subfolder."
+            QMessageBox.information(self, self.tr(test_title), msg)
+
+
+        # Cleanup
+        if os.path.exists('comp.out'):
+            os.remove('comp.out')
+        if os.path.exists('comp.err'):
+            os.remove('comp.err')
+
+        os.chdir(ori_dir)
+
+        return
+
+
     def openXterm(self):
         """
         public slot
@@ -921,26 +1032,13 @@ class MainView(object):
             dialog.show()
 
 
-    def updateStudyId(self):
-        """
-        private method
-
-        update the Study Identity dock widget
-        """
-        study     = self.case.root().xmlGetAttribute('study')
-        case      = self.case.root().xmlGetAttribute('case')
-        file_name = XMLengine._encode(self.case['xmlfile'])
-        self.Id.setStudyName(study)
-        self.Id.setCaseName(case)
-        self.Id.setXMLFileName(file_name)
-
-
-    def fileSave(self):
+    def fileSave(self, renew_page=True):
         """
         public slot
 
         save the current case
         """
+
         log.debug("fileSave()")
 
         if not hasattr(self, 'case'):
@@ -967,9 +1065,10 @@ class MainView(object):
             self.statusbar.showMessage(msg, 2000)
             return
 
-        self.updateStudyId()
+        self.updateTitleBar()
         self.case.xmlSaveDocument()
         self.batchFileSave()
+        self.saveUserFormulaInC()
 
         # force to blank after save
         self.case['undo'] = []
@@ -981,6 +1080,19 @@ class MainView(object):
 
         msg = self.tr("%s saved" % file_name)
         self.statusbar.showMessage(msg, 2000)
+
+        if renew_page:
+            if self.case['current_page'] == 'Calculation management':
+                p = displaySelectedPage(self.case['current_page'],
+                                        self,
+                                        self.case,
+                                        stbar=self.statusbar,
+                                        tree=self.Browser)
+                # Side effects of page display may mark as not saved
+                # based on queried models, so force saved here to avoid
+                # issues with saved state detection.
+                self.case['saved'] = 'yes'
+                self.scrollArea.setWidget(p)
 
 
     def fileSaveAs(self):
@@ -1003,12 +1115,10 @@ class MainView(object):
                 self.case['xmlfile'] = f
                 self.addRecentFile(f)
                 self.fileSave()
-                self.updateStudyId()
+                self.updateTitleBar()
                 self.case.xmlSaveDocument()
                 self.batchFileSave()
-                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) + self.tr(" GUI") \
-                     + " - " + self.package.version
-                self.setWindowTitle(title)
+                self.updateTitleBar()
 
                 # force to blank after save
                 self.case['undo'] = []
@@ -1127,7 +1237,7 @@ class MainView(object):
                                                   package=self.package)
         del IdentityAndPathesModel
 
-        self.updateStudyId()
+        self.updateTitleBar()
 
 
     @pyqtSlot()
@@ -1148,7 +1258,6 @@ class MainView(object):
                                                   self.batch_file),
                                      package=self.package)
 
-
         parameters = os.path.basename(self.case['xmlfile'])
 
         self.case['runcase'].set_parameters(parameters)
@@ -1164,9 +1273,8 @@ class MainView(object):
         @type index: C{QModelIndex}
         @param index: index of the item in the C{QTreeView} clicked in the browser
         """
-        # stop if the entry is a folder or a file
 
-        if self.Browser.isFolder(): return
+        # stop if the entry is a folder or a file
 
         # warning and stop if is no case
         if not hasattr(self, 'case'):
@@ -1184,7 +1292,6 @@ class MainView(object):
         self.page = self.Browser.display(self,
                                          self.case,
                                          self.statusbar,
-                                         self.Id,
                                          self.Browser)
 
         if self.page is not None:
@@ -1193,6 +1300,36 @@ class MainView(object):
         else:
             log.debug("displayNewPage() self.page == None")
             raise
+
+        # Auto expand nodes in the Browser view when clicked
+        self.Browser.treeView.setExpanded(index, True)
+
+
+    def saveUserFormulaInC(self):
+        """
+        Save user defined laws with MEI to C functions
+        """
+        if self.case['run_type'] == 'standard' and self.case['oturns'] == False:
+            mci = mei_to_c_interpreter(self.case)
+            state = mci.save_all_functions()
+
+            if state == 1:
+                title = self.tr("Warning!")
+                msg  = "You are within a RESU folder!\n"
+                msg += "The xml file was saved, as the cs_meg C functions "
+                msg += "for mathematical expressions.\n"
+                msg += "The C functions are hence different from those in "
+                msg += "your DATA folder!\n"
+                err_msg = self.tr(msg)
+                QMessageBox.warning(self, title, err_msg)
+                msg = self.tr("Saving was done within a RESU folder and not in CASE.")
+                self.statusbar.showMessage(msg, 2000)
+                self.updateTitleBar()
+                return
+
+            else:
+                return
+
 
 
     def displayAbout(self):
@@ -1211,7 +1348,7 @@ class MainView(object):
               self.package.bugreport + "\n\n"               +\
               "Please visit our site:\n"                    +\
               self.package.url
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name, msg)
 
 
     def displayLicence(self):
@@ -1220,7 +1357,8 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
+        QMessageBox.about(self, self.package.code_name,
+                          cs_info.licence_text)
 
 
     def displayConfig(self):
@@ -1229,7 +1367,7 @@ class MainView(object):
 
         configuration information window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
+        QMessageBox.about(self, self.package.code_name, "see config.py") # TODO
 
 
     def setColor(self):
@@ -1329,6 +1467,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         @type cmd_case:
         @param cmd_case:
         """
+
         QMainWindow.__init__(self)
         Ui_MainForm.__init__(self)
 
@@ -1346,20 +1485,29 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.Browser = BrowserView()
         self.ui_initialize()
 
+        # Code_Saturne doc
         self.displayCSManualAction.triggered.connect(self.displayCSManual)
         self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
         self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
         self.displayCSSmgrAction.triggered.connect(self.displayCSSmgr)
         self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
+
+        # NCFD doc
+        self.displayNCManualAction.triggered.connect(self.displayNCManual)
+        self.displayNCTutorialAction.triggered.connect(self.displayNCTutorial)
+        self.displayNCTheoryAction.triggered.connect(self.displayNCTheory)
+        self.displayNCDoxygenAction.triggered.connect(self.displayNCDoxygen)
+
         self.actionUndo.triggered.connect(self.slotUndo)
         self.actionRedo.triggered.connect(self.slotRedo)
-        self.actionPrepro.triggered.connect(self.slotPreproMode)
-        self.actionCalculation.triggered.connect(self.slotCalculationMode)
 
         docdir = self.package.get_dir('docdir')
-        if os.path.isdir(docdir):
-            liste = os.listdir(docdir)
+
+        # Code_Saturne doc
+        ddcs = os.path.join(docdir, '../code_saturne')
+        if os.path.isdir(ddcs):
+            liste = os.listdir(ddcs)
         else:
             liste = []
 
@@ -1373,7 +1521,24 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:
             self.displayCSDoxygenAction.setEnabled(False)
-        self.displayNCManualAction.setVisible(False)
+
+        # NCFD doc
+        ddnc = os.path.join(docdir, '../neptune_cfd')
+        if os.path.isdir(ddnc):
+            liste = os.listdir(ddnc)
+        else:
+            liste = []
+
+        if 'user.pdf' not in liste:
+            self.displayNCManualAction.setEnabled(False)
+        if 'tutorial.pdf' not in liste:
+            self.displayNCTutorialAction.setEnabled(False)
+        if 'theory.pdf' not in liste:
+            self.displayNCTheoryAction.setEnabled(False)
+        if 'doxygen' not in liste:
+            self.displayNCDoxygenAction.setEnabled(False)
+
+        self.updateTitleBar()
 
 
     def initCase(self):
@@ -1381,7 +1546,16 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        return XMLinit(self.case).initialize(self.case['prepro'])
+
+        prepro_only = self.case['run_type'] != 'standard'
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+            from neptune_cfd.nc_package import package as nc_package
+            self.package = nc_package()
+            return XMLinitNeptune(self.case).initialize(prepro_only)
+        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI" :
+            from code_saturne.cs_package import package as cs_package
+            self.package = cs_package()
+            return XMLinit(self.case).initialize(prepro_only)
 
 
     def displayWelcomePage(self):
@@ -1392,17 +1566,16 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.scrollArea.setWidget(self.page)
 
 
-    def displayFisrtPage(self):
+    def displayFirstPage(self):
         """
         Display the first page if a file of parameters (new or previous) is loaded
         """
         self.case['current_tab'] = 0
         self.case['current_index'] = None
-        return displaySelectedPage('Identity and paths',
+        return displaySelectedPage('Calculation environment',
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
 
 
@@ -1412,7 +1585,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the user manual
         """
-        self.displayManual(self.package, 'user')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'user')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'user')
 
 
     def displayCSTutorial(self):
@@ -1422,7 +1600,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the tutorial for Code_Saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name, msg)
 
 
     def displayCSTheory(self):
@@ -1431,7 +1609,13 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the theory and programmer's guide
         """
-        self.displayManual(self.package, 'theory')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'theory')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'theory')
+
 
     def displayCSSmgr(self):
         """
@@ -1439,7 +1623,13 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the studymanager guide
         """
-        self.displayManual(self.package, 'studymanager')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'studymanager')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'studymanager')
+
 
     def displayCSRefcard(self):
         """
@@ -1447,7 +1637,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the quick reference card for Code_Saturne
         """
-        self.displayManual(self.package, 'refcard')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'refcard')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'refcard')
 
 
     def displayCSDoxygen(self):
@@ -1456,7 +1651,68 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the quick doxygen for Code_Saturne
         """
-        self.displayManual(self.package, 'Doxygen')
+        if self.package.name == 'code_saturne':
+            self.displayManual(self.package, 'Doxygen')
+        else:
+            from code_saturne.cs_package import package as cs_package
+            pkg = cs_package()
+            self.displayManual(pkg, 'Doxygen')
+
+
+    def displayNCManual(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'user')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'user')
+
+
+    def displayNCTutorial(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'tutorial')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'tutorial')
+
+
+    def displayNCTheory(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'theory')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'theory')
+
+
+    def displayNCDoxygen(self):
+        """
+        public slot
+
+        open the user manual
+        """
+        if self.package.name == 'neptune_cfd':
+            self.displayManual(self.package, 'doxygen')
+        else:
+            from neptune_cfd.nc_package import package as nc_package
+            pkg = nc_package()
+            self.displayManual(pkg, 'doxygen')
 
 
     def slotUndo(self):
@@ -1489,7 +1745,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
@@ -1524,57 +1779,14 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
-    def slotPreproMode(self):
-        """
-        mode prepro slot
-        """
-        mdl = ScriptRunningModel(self.case)
-        rt = mdl.getRunType(self.case['prepro'])
-        self.case['prepro'] = True
-        self.case['oturns'] = False
-        self.initCase()
-        mdl.setRunType(rt)
-        self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'Prepare batch calculation':
-            p = displaySelectedPage(self.case['current_page'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    study=self.Id,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
-    def slotCalculationMode(self):
-        """
-        mode calculation slot
-        """
-        mdl = ScriptRunningModel(self.case)
-        self.case['prepro'] = False
-        self.case['oturns'] = False
-        self.initCase()
-        mdl.setRunType('standard')
-        self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'Prepare batch calculation':
-            p = displaySelectedPage(self.case['current_page'],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
 
     def slotOpenTurnsMode(self):
         """
-        mode OpenTurns study slot
+        OpenTurns mode study slot
         """
-        self.case['prepro'] = False
         self.case['oturns'] = True
         self.initCase()
         self.Browser.configureTree(self.case)
@@ -1583,7 +1795,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     self,
                                     self.case,
                                     stbar=self.statusbar,
-                                    study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
 
@@ -1598,7 +1809,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.actionRedo.setEnabled(True)
         else:
             self.actionRedo.setEnabled(False)
-
 
 #-------------------------------------------------------------------------------
 

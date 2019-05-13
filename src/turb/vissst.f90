@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -82,10 +82,6 @@ integer          iel, inc
 integer          iprev
 integer          f_id
 
-integer          ipass
-data             ipass /0/
-save             ipass
-
 double precision d1s3, d2s3
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
@@ -118,8 +114,6 @@ call field_get_val_s(f_id, w_dist)
 
 d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
-
-ipass = ipass + 1
 
 !===============================================================================
 ! 2. Compute the scalar s2kw rate SijSij and the trace of the velocity
@@ -181,8 +175,8 @@ do iel = 1, ncel
 
   ! FIXME should be a check on xw...
   if (xk > 0.d0) then
-    ! Wall distance has no value at the first pass, we consider it as infinite
-    if (ipass.eq.1) then
+    ! Wall distance has no value at the first time step, we consider it as infinite
+    if (ntcabs.eq.1) then
       xf2 = 0.d0
     else
       xarg2 = max (2.d0*sqrt(xk)/cmu/xw/xdist,                  &

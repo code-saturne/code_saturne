@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -415,12 +415,6 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             self.code = "Code_Saturne"
 
         if self.checkBoxLoad.isChecked():
-            studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(self.StudyPath)
-            if studyObj != None:
-                mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_OPEN_MESS"),[self.StudyPath])
-                cfdstudyMess.aboutMessage(mess)
-                self.reinit()
-                return False
             if self.StudyName == '':
                 mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_MESS"),[])
                 cfdstudyMess.criticalMessage(mess)
@@ -428,11 +422,12 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
                 return False
             if not CFDSTUDYGUI_Commons.isaSaturneSyrthesCouplingStudy(self.StudyPath):
                 if not CFDSTUDYGUI_Commons.isaCFDStudy(self.StudyPath):
-                    mess = cfdstudyMess.trMessage(self.tr("NOT_A_STUDY_DIRECTORY"),[self.StudyPath,"CFD","SYRTHES"])
-                    cfdstudyMess.criticalMessage(mess)
-                    self.reinit()
-                    return False
-
+#                   search if the cfd study directory self.StudyPath is in fact a cfd case directory: by calling  method isaCFDCase
+                    if not CFDSTUDYGUI_Commons.isaCFDCase(self.StudyPath):
+                        mess = cfdstudyMess.trMessage(self.tr("NOT_A_STUDY_OR_CASE_DIRECTORY"),[self.StudyPath,"CFD","SYRTHES"])
+                        cfdstudyMess.criticalMessage(mess)
+                        self.reinit()
+                        return False
         # ckeck case name
         if self.checkBoxCreate.isChecked() :
             if self.StudyName == '':

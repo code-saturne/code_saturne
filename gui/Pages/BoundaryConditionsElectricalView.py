@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,16 +45,16 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsElectricalForm import Ui_BoundaryConditionsElectricalForm
-from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.model.ElectricalModel import ElectricalModel
 
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.Boundary import Boundary
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.Boundary import Boundary
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,11 +86,11 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         """
         Setup the widget.
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
-        self.__model = ElectricalModel(self.__case)
+        self.__model = ElectricalModel(self.case)
         self.species_list = []
-        self.notebook = NotebookModel(self.__case)
+        self.notebook = NotebookModel(self.case)
 
         self.lineEditValuePotElec.textChanged[str].connect(self.slotPotElec)
         self.lineEditValuePotElecIm.textChanged[str].connect(self.slotPotElecIm)
@@ -353,9 +353,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,expression = exp,
-                                 required   = req,
-                                 symbols    = sym,
-                                 examples   = exa)
+                                required   = req,
+                                symbols    = sym,
+                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPotVectorFormula -> %s" % str(result))
@@ -372,7 +372,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         if self.__model.getElectricalModel() != 'off':
             label = b.getLabel()
             nature = "joule_" + b.getNature()
-            self.__b = Boundary(nature, label, self.__case)
+            self.__b = Boundary(nature, label, self.case)
             self.__setBoundary(b)
 
             self.show()

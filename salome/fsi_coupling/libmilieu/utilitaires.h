@@ -4,7 +4,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,22 +60,6 @@ double
 dinorm(double *vect1,
        double *vect2,
        double nbpts);
-
-/*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
- * number of points.
- *----------------------------------------------------------------------------*/
-
-void
-alldyn(void);
-
-/*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (double) based on the 'nb_for'
- * number of points.
- *----------------------------------------------------------------------------*/
-
-void
-allfor(void);
 
 /*----------------------------------------------------------------------------
  * Convergence test for implicit calculation case

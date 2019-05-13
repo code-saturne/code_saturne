@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,6 +60,7 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
@@ -98,14 +99,16 @@ BEGIN_C_DECLS
 /*!
  * \brief Compute the porosity (volume factor \f$ \epsilon \f$
  *        when the porosity model is activated
- *        (iporos greater than 1 in cs_user_parameters.f90).
+ *        (\ref cs_glob_porous_model > 0).
  *
  * This function is called at the begin of the simulation only.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(void)
+cs_user_porosity(cs_domain_t   *domain)
 {
 
 }

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -168,7 +168,7 @@ if (i_comb_drift.ge.1) then
     call field_set_key_int(f_id, keyccl, icla)
     ! For post-processing
     call field_set_key_int(f_id, keyvis, iopchr)
-    ! For log in the listing
+    ! For log in the log
     call field_set_key_int(f_id, keylog, 1)
 
     write(f_name,'(a,i2.2)')'vg_p_' ,icla
@@ -178,7 +178,7 @@ if (i_comb_drift.ge.1) then
     call field_set_key_int(f_id, keyccl, icla)
     ! For post-processing
     call field_set_key_int(f_id, keyvis, iopchr)
-    ! For log in the listing
+    ! For log in the log
     call field_set_key_int(f_id, keylog, 1)
 
     ! Additional drift velocity for the particle class
@@ -189,7 +189,7 @@ if (i_comb_drift.ge.1) then
     call field_set_key_int(f_id, keyccl, icla)
     ! For post-processing
     call field_set_key_int(f_id, keyvis, iopchr)
-    ! For log in the listing
+    ! For log in the log
     call field_set_key_int(f_id, keylog, 1)
 
   enddo
@@ -210,7 +210,7 @@ if (i_comb_drift.ge.1) then
   call field_set_key_str(f_id, keylbl, f_name)
   ! For post-processing
   call field_set_key_int(f_id, keyvis, iopchr)
-  ! For log in the listing
+  ! For log in the log
   call field_set_key_int(f_id, keylog, 1)
 
 endif

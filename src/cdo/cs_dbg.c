@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
+#include "bft_mem.h"
 
 #include "cs_log.h"
 
@@ -68,6 +69,63 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #if defined(DEBUG) && !defined(NDEBUG)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Function used to select which element deserves a dump or specific
+ *          treatment during a debugging stage
+ *
+ * \param[in]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  csys     pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+_Bool
+cs_dbg_cw_test(const cs_equation_param_t   *eqp,
+               const cs_cell_mesh_t        *cm,
+               const cs_cell_sys_t         *csys)
+{
+  CS_UNUSED(eqp);
+  CS_UNUSED(cm);
+  CS_UNUSED(csys);
+
+#if 0 /* First example: Look for debug information related the cell number 0 */
+  if (cm != NULL)
+    if (cm->c_id == 0)
+      return true;
+  if (csys != NULL)
+    if (csys->c_id == 0)
+      return true;
+#endif
+
+#if 0 /* Second example: Only search debug information for a given equation and
+         a requested vertex */
+
+  /* Vertex number 441 belongs to the current cell ? */
+  const cs_lnum_t  target_vertex_id = 441;
+  const short int _v = cs_cell_mesh_get_v(target_vertex_id, cm);
+  if (_v < 0)
+    return false;
+
+  if (eqp != NULL)
+    if (strcmp(eqp->name, "Tracer1") == 0)
+      return true;
+#endif
+
+#if 0 /* Third example: Look for the cells which have a previous DoF value
+         greater than 0.06 for the face 1 */
+  const cs_lnum_t target_face_id = 1;
+  const short int _f = cs_cell_mesh_get_f(target_face_id, cm);
+
+  if (csys != NULL && _f > -1) {
+    if (csys->val_n[_f] > 0.06)
+      return true;
+  }
+#endif
+
+  return false;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Print a cs_sdm_t structure which is defined by block
@@ -111,9 +169,9 @@ cs_dbg_array_fprintf(FILE             *fp,
   for (cs_lnum_t i = 0; i < n_rows; i++) {
     for (cs_lnum_t j = i*n_cols; j < (i+1)*n_cols; j++) {
       if (fabs(array[j]) < thd)
-        fprintf(fout, "% -8.5e", 0.);
+        fprintf(fout, " % -8.5e", 0.);
       else
-        fprintf(fout, "% -8.5e", array[j]);
+        fprintf(fout, " % -8.5e", array[j]);
     }
     fprintf(fout, "\n");
   }
@@ -121,9 +179,9 @@ cs_dbg_array_fprintf(FILE             *fp,
   if (n_rows*n_cols < n_elts) {
     for (cs_lnum_t j = n_rows*n_cols; j < n_elts; j++) {
       if (fabs(array[j]) < thd)
-        fprintf(fout, "% -8.5e", 0.);
+        fprintf(fout, " % -8.5e", 0.);
       else
-        fprintf(fout, "% -8.5e", array[j]);
+        fprintf(fout, " % -8.5e", array[j]);
     }
     fprintf(fout, "\n");
   }
@@ -134,7 +192,45 @@ cs_dbg_array_fprintf(FILE             *fp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump an array of double into the listing
+ * \brief  In debug mode, print into a file the solution and its right-hand
+ *         side
+ *
+ * \param[in] eqname     name of the related equation
+ * \param[in] nt         number of time step
+ * \param[in] level      level of debug
+ * \param[in] sol        solution array
+ * \param[in] rhs        rhs array
+ * \param[in] size       size of the array to print
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_fprintf_system(const char        *eqname,
+                      int                nt,
+                      int                level,
+                      const cs_real_t   *sol,
+                      const cs_real_t   *rhs,
+                      cs_lnum_t          size)
+{
+  int  len = strlen(eqname) + strlen("-sol-.log") + 4 + 1;
+  char  *filename = NULL;
+
+  BFT_MALLOC(filename, len, char);
+
+  sprintf(filename, "%s-sol-%04d.log", eqname, nt);
+  if (sol != NULL && level > 2)
+    cs_dbg_array_fprintf(NULL, filename, 1e-16, size, sol, 6);
+
+  sprintf(filename, "%s-rhs-%04d.log", eqname, nt);
+  if (rhs != NULL && level > 3)
+    cs_dbg_array_fprintf(NULL, filename, 1e-16, size, rhs, 6);
+
+  BFT_FREE(filename);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump an array of double into the log
  *
  * \param[in] header     header message to write
  * \param[in] size       number of elements in array
@@ -170,7 +266,7 @@ cs_dbg_darray_to_listing(const char        *header,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump an array of integer into the listing
+ * \brief  In debug mode, dump an array of integer into the log
  *
  * \param[in] header     header message to write
  * \param[in] size       number of elements in array

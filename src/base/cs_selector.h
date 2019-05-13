@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -130,6 +130,39 @@ void
 cs_selector_get_cell_list(const char  *criteria,
                           cs_lnum_t   *n_cells,
                           cs_lnum_t    cell_list[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of cells verifying a given selection criteria.
+ *
+ * \param[in]   criteria    selection criteria string
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_cell_vertices_list(const char  *criteria,
+                                   cs_lnum_t   *n_vertices,
+                                   cs_lnum_t    vtx_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of vertices belonging to a given list of cells.
+ *
+ * \param[in]   criteria    selection criteria string
+ * \param[out]  n_vertices  number of selected vertices
+ * \param[out]  vtx_ids     list of selected vertices
+ *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_cell_vertices_list_by_ids(cs_lnum_t         n_cells,
+                                          const cs_lnum_t   cell_ids[],
+                                          cs_lnum_t        *n_vertices,
+                                          cs_lnum_t         vtx_ids[]);
 
 /*----------------------------------------------------------------------------
  * Fill lists of faces at the boundary of a set of cells verifying a given

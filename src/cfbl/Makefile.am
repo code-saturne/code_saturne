@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -30,10 +30,10 @@ else
 endif
 
 # Main part
-
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
@@ -64,7 +64,11 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_cf_thermo.h
+cs_cf_model.h \
+cs_cf_thermo.h \
+cs_hgn_thermo.h \
+cs_hgn_phase_thermo.h \
+cs_hgn_source_terms_step.h
 
 # Library source files
 
@@ -83,7 +87,12 @@ cfvarp.f90 \
 cfxtcl.f90 \
 cfmspr.f90 \
 cfmsfp.f90 \
-cs_cf_thermo.c
+cs_cf_model.c \
+cs_cf_thermo.c \
+cs_hgn_thermo.c \
+cs_hgn_phase_thermo.c \
+cs_hgn_source_terms_step.c
+
 libcscfbl_la_LDFLAGS = -no-undefined
 
 clean-local:

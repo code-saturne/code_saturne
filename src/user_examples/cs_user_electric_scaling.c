@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_physical_model.h"
 
@@ -102,7 +103,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
   const cs_real_3_t *cdgfac = (const cs_real_3_t *) mesh_quantities->i_face_cog;
 
   cs_elec_option_t *elec_opt = cs_get_glob_elec_option();
-  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+  const int kivisl = cs_field_key_id("diffusivity_id");
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -109,6 +109,22 @@ cs_axpy(cs_lnum_t         n,
 double
 cs_sum(cs_lnum_t         n,
        const cs_real_t  *x);
+
+/*----------------------------------------------------------------------------
+ * Return the weighted sum of a vector. For better precision, a superblock
+ * algorithm is used.
+ *
+ * \param[in]  n  size of array x
+ * \param[in]  w  array of floating-point weights
+ * \param[in]  x  array of floating-point values
+ *
+ * \return the resulting weighted sum
+ *----------------------------------------------------------------------------*/
+
+double
+cs_weighted_sum(cs_lnum_t         n,
+                const cs_real_t  *w,
+                const cs_real_t  *x);
 
 /*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y

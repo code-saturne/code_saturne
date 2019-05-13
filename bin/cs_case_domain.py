@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -42,6 +42,8 @@ import cs_xml_reader
 from cs_exec_environment import run_command, source_shell_script
 from cs_exec_environment import enquote_arg, separate_args
 from cs_exec_environment import source_syrthes_env
+
+from cs_mei_to_c import mei_to_c_interpreter
 
 #===============================================================================
 # Utility functions
@@ -351,9 +353,10 @@ class base_domain:
             debug_args += python_exec + ' '
         else:
             debug_args += 'python '
-        if self.package.name != 'neptune_cfd':
-            pkg_dir = self.package.get_dir('pkgpythondir')
-        dbg_wrapper_path = os.path.join(pkg_dir, 'cs_debug_wrapper.py')
+        cs_pkg_dir = self.package.get_dir('pkgpythondir')
+        if self.package.name == 'neptune_cfd':
+            cs_pkg_dir = os.path.join(cs_pkg_dir, '../code_saturne')
+        dbg_wrapper_path = os.path.join(cs_pkg_dir, 'cs_debug_wrapper.py')
         debug_args += dbg_wrapper_path + ' '
         for a in separate_args(debug_cmd):
             debug_args += enquote_arg(a) + ' '
@@ -394,6 +397,7 @@ class domain(base_domain):
         # Directories, and files in case structure
 
         self.restart_input = None
+        self.restart_mesh_input = None
         self.mesh_input = None
         self.partition_input = None
 
@@ -408,9 +412,14 @@ class domain(base_domain):
 
         # Solver options
 
+        self.preprocess_on_restart = False
         self.exec_solver = True
 
-        self.param = param
+        if param:
+            self.param = os.path.basename(param)
+        else:
+            self.param = None
+
         self.logging_args = logging_args
         self.solver_args = None
 
@@ -428,6 +437,38 @@ class domain(base_domain):
         # Adaptation using HOMARD
 
         self.adaptation = adaptation
+
+        # MEG expression generator
+        self.mci = None
+
+    #---------------------------------------------------------------------------
+
+    def __set_auto_restart__(self):
+        """
+        Select latest valid checkpoint directory for restart, based on name
+        """
+
+        self.restart_input = None
+
+        from cs_exec_environment import get_command_output
+
+        results_dir = os.path.abspath(os.path.join(self.result_dir, '..'))
+        results = os.listdir(results_dir)
+        results.sort(reverse=True)
+        for r in results:
+            m = os.path.join(results_dir, r, 'checkpoint', 'main')
+            if os.path.isfile(m):
+                try:
+                    cmd = self.package.get_io_dump()
+                    cmd += ' --location 0 ' + m
+                    res = get_command_output(cmd)
+                except Exception:
+                    print('checkpoint of result: ' + r + ' does not seem usable')
+                    continue
+                self.restart_input = os.path.join(results_dir, r, 'checkpoint')
+                break
+
+        return
 
     #---------------------------------------------------------------------------
 
@@ -551,12 +592,39 @@ class domain(base_domain):
         """
         # Check if there are files to compile in source path
 
+        needs_comp = False
+
         src_files = cs_compile.files_to_compile(self.src_dir)
 
         if self.exec_solver and len(src_files) > 0:
-            return True
-        else:
-            return False
+            needs_comp = True
+
+        if self.param != None:
+            from model.XMLengine import Case
+            from code_saturne.model.SolutionDomainModel import getRunType
+
+            fp = os.path.join(self.data_dir, self.param)
+            case = Case(package=self.package, file_name=fp)
+            case['xmlfile'] = fp
+            case.xmlCleanAllBlank(case.xmlRootNode())
+
+            prepro = (getRunType(case) != 'standard')
+            if case['package'].name == 'code_saturne':
+                from model.XMLinitialize import XMLinit
+            else:
+                from model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
+            XMLinit(case).initialize(prepro)
+            case.xmlSaveDocument()
+
+            case['case_path'] = self.exec_dir
+            self.mci = mei_to_c_interpreter(case)
+
+            if self.mci.has_meg_code():
+                needs_comp = True
+            else:
+                self.mci = None
+
+        return needs_comp
 
     #---------------------------------------------------------------------------
 
@@ -565,27 +633,31 @@ class domain(base_domain):
         Compile and link user subroutines if necessary
         """
         # Check if there are files to compile in source path
-
+        # or if MEG functions need to be generated
         src_files = cs_compile.files_to_compile(self.src_dir)
 
-        if len(src_files) > 0:
+        if len(src_files) > 0 or self.mci != None:
 
-            # Add header files to list so as not to forget to copy them
-
-            dir_files = os.listdir(self.src_dir)
-            src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
-                                     + fnmatch.filter(dir_files, '*.hxx')
-                                     + fnmatch.filter(dir_files, '*.hpp'))
-
-            exec_src = os.path.join(self.exec_dir, self.package.srcdir)
-
-            # Copy source files to execution directory
+            # Create the src folder
+            exec_src = os.path.join(self.exec_dir, 'src')
 
             make_clean_dir(exec_src)
-            for f in src_files:
-                src_file = os.path.join(self.src_dir, f)
-                dest_file = os.path.join(exec_src, f)
-                shutil.copy2(src_file, dest_file)
+
+            if len(src_files) > 0:
+                # Add header files to list so as not to forget to copy them
+                dir_files = os.listdir(self.src_dir)
+                src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
+                                         + fnmatch.filter(dir_files, '*.hxx')
+                                         + fnmatch.filter(dir_files, '*.hpp'))
+
+                # Copy source files to execution directory
+                for f in src_files:
+                    src_file = os.path.join(self.src_dir, f)
+                    dest_file = os.path.join(exec_src, f)
+                    shutil.copy2(src_file, dest_file)
+
+            if self.mci != None:
+                mci_state = self.mci.save_all_functions()
 
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')
@@ -609,7 +681,7 @@ class domain(base_domain):
             else:
                 # In case of error, copy source to results directory now,
                 # as no calculation is possible, then raise exception
-                for f in [self.package.srcdir, 'compile.log']:
+                for f in ['src', 'compile.log']:
                     self.copy_result(f)
                 self.error = 'compile or link'
 
@@ -620,16 +692,7 @@ class domain(base_domain):
         Copy data to the execution directory
         """
 
-        err_str = None
-
-        # If we are using a previous preprocessing, simply link to it here
-        if self.mesh_input:
-            mesh_input = os.path.expanduser(self.mesh_input)
-            if not os.path.isabs(mesh_input):
-                mesh_input = os.path.join(self.case_dir, mesh_input)
-            link_path = os.path.join(self.exec_dir, 'mesh_input')
-            self.purge_result(link_path) # in case of previous run here
-            self.symlink(mesh_input, link_path)
+        err_str = ""
 
         # Copy data files
 
@@ -658,6 +721,11 @@ class domain(base_domain):
 
         # Restart files
 
+        # Handle automatic case first
+
+        if self.restart_input == '*':
+            self.__set_auto_restart__()
+
         if self.restart_input != None:
 
             restart_input =  os.path.expanduser(self.restart_input)
@@ -665,12 +733,51 @@ class domain(base_domain):
                 restart_input = os.path.join(self.case_dir, restart_input)
 
             if not os.path.exists(restart_input):
-                err_str = restart_input + ' does not exist.\n\n'
+                err_str += restart_input + ' does not exist.\n\n'
             elif not os.path.isdir(restart_input):
-                err_str = restart_input + ' is not a directory.\n\n.'
+                err_str += restart_input + ' is not a directory.\n\n.'
             else:
                 self.symlink(restart_input,
                              os.path.join(self.exec_dir, 'restart'))
+
+            print(' Restart from ' + self.restart_input + '\n')
+
+        if self.restart_mesh_input != None and err_str == '':
+
+            restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
+            if not os.path.isabs(restart_mesh_input):
+                restart_mesh_input = os.path.join(self.case_dir,
+                                                  restart_mesh_input)
+
+            if not os.path.exists(restart_mesh_input):
+                err_str += restart_mesh_input + ' does not exist.\n\n'
+            elif not os.path.isfile(restart_mesh_input):
+                err_str += restart_mesh_input + ' is not a file.\n\n.'
+            else:
+                self.symlink(restart_mesh_input,
+                             os.path.join(self.exec_dir, 'restart_mesh_input'))
+
+            print(' Restart mesh ' + self.restart_mesh_input + '\n')
+
+        # Mesh input file
+
+        restart_input_mesh = None
+        if self.restart_input:
+            restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input')
+            if not os.path.exists(restart_input_mesh):
+                restart_input_mesh = None
+
+        if restart_input_mesh is None or self.preprocess_on_restart:
+            if self.mesh_input:
+                mesh_input = os.path.expanduser(self.mesh_input)
+                if not os.path.isabs(mesh_input):
+                    mesh_input = os.path.join(self.case_dir, mesh_input)
+                link_path = os.path.join(self.exec_dir, 'mesh_input')
+                self.purge_result(link_path) # in case of previous run here
+                self.symlink(mesh_input, link_path)
+        else:
+            # use mesh from restart, with no symbolic link
+            self.mesh_input = restart_input_mesh
 
         # Partition input files
 
@@ -683,15 +790,33 @@ class domain(base_domain):
             if os.path.exists(partition_input):
 
                 if not os.path.isdir(partition_input):
-                    err_str = partition_input + ' is not a directory.'
-                    raise RunCaseError(err_str)
+                    err_str += partition_input + ' is not a directory.\n\n'
                 else:
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
 
-        if err_str:
-            sys.stderr.write(err_str)
+        # Fixed parameter name
+
+        setup_ref = "setup.xml"
+        if self.param != None and self.param != "setup.xml":
+            link_path = os.path.join(self.exec_dir, setup_ref)
+            self.purge_result(link_path) # in case of previous run here
+            try:
+                os.symlink(self.param, link_path)
+            except Exception:
+                src_path = os.path.join(self.exec_dir, self.param)
+                shutil.copy2(src_path, link_path)
+
+        if len(err_str) > 0:
             self.error = 'data preparation'
+            sys.stderr.write(err_str)
+        else:
+            try:
+                link_path = os.path.join(self.exec_dir, "listing")
+                os.symlink("run_solver.log", link_path)
+            except Exception:
+                pass
+
 
     #---------------------------------------------------------------------------
 
@@ -789,6 +914,7 @@ class domain(base_domain):
                 cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
                 cmd = cmd + ['--out', os.path.join('mesh_input',
                                                    'mesh_%02d' % (mesh_id))]
+                cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
             else:
                 cmd = cmd + ['--log']
                 cmd = cmd + ['--out', 'mesh_input']
@@ -832,9 +958,6 @@ class domain(base_domain):
         # Build kernel command-line arguments
 
         args = ''
-
-        if self.param != None:
-            args += ' --param ' + enquote_arg(self.param)
 
         if self.logging_args != None:
             args += ' ' + self.logging_args
@@ -914,10 +1037,6 @@ class domain(base_domain):
                 purge_list.append(f)
         purge_list.extend(fnmatch.filter(dir_files, 'core*'))
 
-        f = 'scratch3.lag'
-        if f in dir_files:
-            purge_list.append(f)
-
         for f in purge_list:
             dir_files.remove(f)
             if purge:
@@ -928,7 +1047,7 @@ class domain(base_domain):
 
         # Copy user sources, compile log, and xml file if present
 
-        for f in [self.package.srcdir, 'compile.log', self.param]:
+        for f in ['src', 'compile.log', self.param]:
             if f in dir_files:
                 valid_dir = True
                 self.copy_result(f, purge)
@@ -1182,8 +1301,9 @@ class syrthes_domain(base_domain):
         if self.n_procs != None and self.n_procs != 1:
             args += ' -n ' + str(self.n_procs)
 
-        if self.n_procs_radiation > 0:
-            args += ' -r ' + str(self.n_procs_radiation)
+        if self.n_procs_radiation != None:
+            if self.n_procs_radiation > 0:
+                args += ' -r ' + str(self.n_procs_radiation)
 
         if part_tool_name:
             args += ' -t ' + part_tool_name
@@ -1537,7 +1657,6 @@ class aster_domain(base_domain):
 
 class cathare_domain(domain):
 
-
     #---------------------------------------------------------------------------
 
     def __init__(self,
@@ -1704,7 +1823,152 @@ class cathare_domain(domain):
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
 
+#-------------------------------------------------------------------------------
+
+# Coupling with a general Python-based code
+
+class python_domain(base_domain):
+
     #---------------------------------------------------------------------------
+
+    def __init__(self,
+                 package,
+                 cmd_line = None,
+                 name = None,
+                 script_name = 'partner_script.py',
+                 log_file = None,
+                 n_procs_weight = None,
+                 n_procs_min = 1,
+                 n_procs_max = None,
+                 n_threads = 1):
+
+        base_domain.__init__(self,
+                             package,
+                             name,
+                             n_procs_weight,
+                             n_procs_min,
+                             n_procs_max)
+
+        self.cmd_line = cmd_line
+        self.logfile  = log_file
+        if self.logfile == None:
+            self.logfile = 'python.log'
+
+        self.data_file = None
+
+        self.solver_path = 'python'
+        self.exec_solver = True
+        self.nthreads = n_threads
+
+        self.script_name = script_name
+
+    #---------------------------------------------------------------------------
+
+    def set_case_dir(self, case_dir, staging_dir = None):
+
+        base_domain.set_case_dir(self, case_dir, staging_dir)
+
+        self.data_dir = os.path.join(self.case_dir, "DATA")
+        self.src_dir  = os.path.join(self.case_dir, "SRC")
+        self.result_dir = os.path.join(self.case_dir, "RESU")
+
+    #---------------------------------------------------------------------------
+
+    def set_exec_dir(self, exec_dir):
+
+        if os.path.isabs(exec_dir):
+            self.exec_dir = exec_dir
+        else:
+            self.exec_dir = os.path.join(self.case_dir, 'RESU', exec_dir)
+
+        self.exec_dir = os.path.join(self.exec_dir, self.name)
+
+        if not os.path.isdir(self.exec_dir):
+            os.mkdir(self.exec_dir)
+
+    #---------------------------------------------------------------------------
+
+    def set_result_dir(self, name, given_dir = None):
+
+        if given_dir == None:
+            self.result_dir = os.path.join(self.result_dir,
+                                           'RESU_' + self.name,
+                                           name)
+        else:
+            self.result_dir = os.path.join(given_dir, self.name)
+
+        if not os.path.isdir(self.result_dir):
+            os.makedirs(self.result_dir)
+
+    #---------------------------------------------------------------------------
+
+    def prepare_data(self):
+        """
+        Copy data to run directory
+        """
+
+        dir_files = os.listdir(self.data_dir)
+
+        for f in dir_files:
+            src = os.path.join(self.data_dir, f)
+            if os.path.isfile(src):
+                shutil.copy2(src, os.path.join(self.exec_dir, f))
+
+    #---------------------------------------------------------------------------
+
+    def preprocess(self):
+        """
+        Preprocess dummy function: Does nothing for a standard python script
+        """
+
+        # Nothing to do
+
+    #---------------------------------------------------------------------------
+
+    def copy_results(self):
+        """
+        Copy results dummy function: Does nothing for a standard python script
+        """
+        # Nothing to do
+        pass
+
+    #---------------------------------------------------------------------------
+
+    def summary_info(self, s):
+        """
+        output summary data into file s
+        """
+
+        base_domain.summary_info(self, s)
+
+    #---------------------------------------------------------------------------
+
+    def solver_command(self, **kw):
+        """
+        Returns a tuple indicating the script's working directory,
+        executable path, and associated command-line arguments.
+        """
+
+        wd = enquote_arg(self.exec_dir)              # Working directory
+        # Executable
+        exec_path = enquote_arg(self.solver_path) \
+                  + ' ' + self.script_name
+
+        # Build kernel command-line arguments
+
+        args = ''
+
+        if self.data_file:
+            args += ' -d ' + enquote_arg(self.data_file)
+
+        args += ' -n ' + str(self.n_procs)
+
+        args += ' --name ' + enquote_arg(self.name)
+
+        # Output to a logfile
+        args += ' --log ' + enquote_arg(self.logfile)
+
+        return wd, exec_path, args
 
 #-------------------------------------------------------------------------------
 # End

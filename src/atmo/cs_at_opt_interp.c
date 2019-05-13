@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -920,7 +920,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
       }
     }
 
-    /* Reading the number of obs/times to print in the listing */
+    /* Reading the number of obs/times to print in the log */
     if (strncmp(line, "_n_log_data_", 12) == 0) {
       fscanf(fichier, "%i", &(oi->n_log_data));
       if (oi->n_log_data < 0)

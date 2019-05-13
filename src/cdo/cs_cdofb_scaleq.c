@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -47,9 +47,9 @@
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
-#include "cs_cdofb_priv.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
+#include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -67,7 +67,7 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdofb_scaleq.h"
@@ -82,7 +82,6 @@ BEGIN_C_DECLS
   \brief Build an algebraic CDO face-based system for unsteady
          convection-diffusion-reaction of scalar-valued equations with
          source terms
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -132,8 +131,8 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cb->adv_fluxes, n_fc, double);
   memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
 
-  BFT_MALLOC(cb->ids, n_fc, short int);
-  memset(cb->ids, 0, n_fc*sizeof(short int));
+  BFT_MALLOC(cb->ids, n_fc, int);
+  memset(cb->ids, 0, n_fc*sizeof(int));
 
   int  size = n_fc*(n_fc+1);
   BFT_MALLOC(cb->values, size, double);
@@ -161,7 +160,6 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      eqp           pointer to a cs_equation_param_t structure
  * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
  * \param[in, out] p_dir_values  pointer to the Dirichlet values to set
- * \param[in, out] p_neu_tags    pointer to the Neumann tags to set
  */
 /*----------------------------------------------------------------------------*/
 
@@ -170,8 +168,7 @@ _setup_bc(cs_real_t                     t_eval,
           const cs_mesh_t              *mesh,
           const cs_equation_param_t    *eqp,
           cs_equation_builder_t        *eqb,
-          cs_real_t                    *p_dir_values[],
-          short int                    *p_neu_tags[])
+          cs_real_t                    *p_dir_values[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
@@ -191,9 +188,6 @@ _setup_bc(cs_real_t                     t_eval,
                                    cs_cdofb_cell_bld[0], /* static variable */
                                    dir_values);
   *p_dir_values = dir_values;
-
-  /* Tag faces with a non-homogeneous Neumann BC */
-  *p_neu_tags = cs_equation_tag_neumann_face(quant, eqp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -206,7 +200,6 @@ _setup_bc(cs_real_t                     t_eval,
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         pointer to a cs_cdofb_scaleq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
- * \param[in]      neu_tags    definition id related to each Neumann face
  * \param[in]      field_tn    values of the field at the last computed time
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -221,7 +214,6 @@ _init_fb_cell_system(const cs_flag_t               cell_flag,
                      const cs_equation_builder_t  *eqb,
                      const cs_cdofb_scaleq_t      *eqc,
                      const cs_real_t               dir_values[],
-                     const short int               neu_tags[],
                      const cs_real_t               field_tn[],
                      cs_real_t                     t_eval,
                      cs_cell_sys_t                *csys,
@@ -248,17 +240,14 @@ _init_fb_cell_system(const cs_flag_t               cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY) {
-
-    /* Set the generic part */
-    cs_equation_init_cell_sys_bc(eqb, cm, csys);
+  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     cs_equation_fb_set_cell_bc(cm,
                                cs_shared_connect,
                                cs_shared_quant,
                                eqp,
+                               eqb->face_bc,
                                dir_values,
-                               neu_tags,
                                t_eval,
                                csys,
                                cb);
@@ -268,33 +257,11 @@ _init_fb_cell_system(const cs_flag_t               cell_flag,
 #endif
   } /* Border cell */
 
-  /* Set the diffusion property */
-  if (cs_equation_param_has_diffusion(eqp))
-    if (!(eqb->diff_pty_uniform))
-      cs_equation_set_diffusion_property_cw(eqp, cm, t_eval, cell_flag, cb);
-
-  /* Set the (linear) reaction property */
-  if (cs_equation_param_has_reaction(eqp)) {
-
-    /* Define the local reaction property */
-    cb->rpty_val = 0;
-    for (int r = 0; r < eqp->n_reaction_terms; r++)
-      if (eqb->reac_pty_uniform[r])
-        cb->rpty_val += cb->rpty_vals[r];
-      else
-        cb->rpty_val += cs_property_value_in_cell(cm,
-                                                  eqp->reaction_properties[r],
-                                                  t_eval);
-
-  }
-
-  if (cs_equation_param_has_time(eqp)) {
-    if (!(eqb->time_pty_uniform))
-      cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
-  }
+  /* Set the properties for this cell if not uniform */
+  cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-  if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
+  if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 }
 
@@ -325,6 +292,8 @@ _fb_advection_diffusion_reaction(double                         time_eval,
                                  cs_cell_builder_t             *cb)
 {
   CS_UNUSED(eqb);
+  CS_UNUSED(fm);
+  CS_UNUSED(time_eval);
 
   if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
                                                  * ============== */
@@ -337,7 +306,7 @@ _fb_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Local system after diffusion", csys);
 #endif
   }
@@ -353,7 +322,7 @@ _fb_advection_diffusion_reaction(double                         time_eval,
     cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Local system after advection", csys);
 #endif
   }
@@ -365,7 +334,7 @@ _fb_advection_diffusion_reaction(double                         time_eval,
     eqc->get_mass_matrix(eqc->hdg_mass, cm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm)) {
+    if (cs_dbg_cw_test(eqp, cm, csys)) {
       cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
     }
@@ -398,7 +367,7 @@ _fb_advection_diffusion_reaction(double                         time_eval,
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(cm))
+    if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump(">> Local system after reaction", csys);
 #endif
   }
@@ -429,9 +398,11 @@ _fb_apply_bc_partly(cs_real_t                      time_eval,
                     cs_cell_sys_t                 *csys,
                     cs_cell_builder_t             *cb)
 {
+  CS_UNUSED(time_eval);
+
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed BEFORE the static condensation */
-  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Neumann boundary conditions */
     if (csys->has_nhmg_neumann)
@@ -442,9 +413,9 @@ _fb_apply_bc_partly(cs_real_t                      time_eval,
        csys is updated inside (matrix and rhs) */
     if (cs_equation_param_has_diffusion(eqp)) {
 
-      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-          eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-        eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+      if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+          eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+        eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
 
@@ -455,7 +426,7 @@ _fb_apply_bc_partly(cs_real_t                      time_eval,
   } /* Boundary cell */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-  if (cs_dbg_cw_test(cm))
+  if (cs_dbg_cw_test(eqp, cm, csys))
     cs_cell_sys_dump(">> Local system matrix after BC & before condensation",
                      csys);
 #endif
@@ -484,15 +455,15 @@ _fb_apply_remaining_bc(const cs_equation_param_t     *eqp,
 {
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed AFTER the static condensation */
-  if (csys->cell_flag & CS_FLAG_BOUNDARY) {
+  if (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-        eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
 
       /* Enforced Dirichlet BCs for cells attached to the boundary
        * csys is updated inside (matrix and rhs). This is close to a strong
        * way to enforce Dirichlet BCs */
-      eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
+      eqc->enforce_dirichlet(eqp, cm, fm, cb, csys);
 
     }
 
@@ -501,112 +472,166 @@ _fb_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Perform the assembly step
+ *
+ * \param[in]      eqc    context for this kind of discretization
+ * \param[in]      cm     pointer to a cellwise view of the mesh
+ * \param[in]      csys   pointer to a cellwise view of the system
+ * \param[in]      rs     pointer to a cs_range_set_t structure
+ * \param[in, out] eqa    pointer to a cs_equation_assemble_t structure
+ * \param[in, out] mav    pointer to a cs_matrix_assembler_values_t structure
+ * \param[in, out] rhs    right-hand side array
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_assemble(const cs_cdofb_scaleq_t           *eqc,
+          const cs_cell_mesh_t              *cm,
+          const cs_cell_sys_t               *csys,
+          const cs_range_set_t              *rs,
+          cs_equation_assemble_t            *eqa,
+          cs_matrix_assembler_values_t      *mav,
+          cs_real_t                         *rhs)
+{
+  /* Matrix assembly */
+  eqc->assemble(csys, rs, eqa, mav);
+
+  /* RHS assembly */
+# pragma omp critical
+  {
+    for (short int f = 0; f < cm->n_fc; f++)
+      rhs[cm->f_ids[f]] += csys->rhs[f];
+  }
+
+  if (eqc->source_terms != NULL) { /* Source term */
+
+    /* Reset the value of the source term for the cell DoF
+       Source term is only hold by the cell DoF in face-based schemes */
+    eqc->source_terms[cm->c_id] = csys->source[cm->n_fc];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve a linear system arising from a scalar-valued CDO-Fb scheme
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      x0       initial guess for the linear system
- * \param[in]      rhs      pointer to a cs_mesh_t structure
+ * \param[in]      field_id id related to the variable field of this equation
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      xsol     pointer to an array storing the solution of
- *                          the linear system
+ * \param[in, out] x        solution of the linear system (in: initial guess)
+ * \param[in, out] b        right-hand side (scatter/gather if needed)
  *
  * \return the number of iterations of the linear solver
  */
 /*----------------------------------------------------------------------------*/
 
 static int
-_solve_fb_system(cs_sles_t                    *sles,
-                 const cs_matrix_t            *matrix,
-                 const cs_real_t              *x0,
-                 const cs_real_t              *rhs,
-                 const cs_equation_param_t    *eqp,
-                 cs_real_t                    *p_xsol[])
+_solve_fbs_system(cs_sles_t                    *sles,
+                  const cs_matrix_t            *matrix,
+                  const int                     field_id,
+                  const cs_equation_param_t    *eqp,
+                  cs_real_t                    *x,
+                  cs_real_t                    *b)
 {
-  cs_real_t  *x = NULL, *b = NULL;
-  int  n_iters = 0;
-  double  residual = DBL_MAX;
-
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  /* solving info */
+  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_solving_info_t sinfo;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
   cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+  cs_real_t  *xsol = NULL;
+
+  const cs_lnum_t  n_scatter_elts = n_faces;
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+
+  if (n_cols > n_scatter_elts) {
+    assert(cs_glob_n_ranks > 1);
+    BFT_MALLOC(xsol, n_cols, cs_real_t);
+    memcpy(xsol, x, n_scatter_elts*sizeof(cs_real_t));
+  }
+  else
+    xsol = x;
 
   /* Prepare solving (handle parallelism) */
-  cs_gnum_t  nnz = cs_equation_prepare_system(1,        /* stride */
-                                              n_faces,  /* n_scatter_elts */
-                                              x0,
-                                              rhs,
+  cs_gnum_t  nnz = cs_equation_prepare_system(1,            /* stride */
+                                              n_scatter_elts,
                                               matrix,
                                               rset,
-                                              &x, &b);
+                                              xsol, b);
 
   /* Solve the linear solver */
-  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
-  const cs_param_itsol_t  itsol_info = eqp->itsol_info;
+  sinfo.rhs_norm = 1.0; /* No renormalization by default (TODO) */
+  const cs_param_sles_t  sles_param = eqp->sles_param;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
-                                                    itsol_info.eps,
-                                                    r_norm,
-                                                    &n_iters,
-                                                    &residual,
+                                                    sles_param.eps,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
                                                     b,
-                                                    x,
+                                                    xsol,
                                                     0,      /* aux. size */
                                                     NULL);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
-  if (eqp->sles_verbosity > 0)
+  if (sles_param.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
                   " residual % -8.4e nnz %lu\n",
-                  eqp->name, code, n_iters, residual, nnz);
+                  eqp->name, code, sinfo.n_it, sinfo.res_norm, nnz);
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
-                         x,
-                         x);
+                         xsol, x);
 
-  }
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         b, b);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 3
-  cs_dbg_array_fprintf(NULL, "sol.log", 1e-16, n_faces, x, 6);
-  cs_dbg_array_fprintf(NULL, "rhs.log", 1e-16, n_faces, rhs, 6);
+  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
+                        CS_CDOFB_SCALEQ_DBG,
+                        x, b, n_faces);
 #endif
 
   /* Free what can be freed at this stage */
-  if (b != rhs)
-    BFT_FREE(b);
   cs_sles_free(sles);
 
-  /* Return pointer to the computed solution */
-  *p_xsol = x;
+  if (n_cols > n_scatter_elts)
+    BFT_FREE(xsol);
 
-  return n_iters;
+  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  return (sinfo.n_it);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update the variables related to CDO-Fb system after a resolution
  *
- * \param[in]      solu    array with the solution of the linear system
+ * \param[in, out] tce     pointer to a timer counter
  * \param[in, out] fld     pointer to a cs_field_t structure
  * \param[in, out] eqc     pointer to a context structure
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_update_fields(const cs_real_t         *solu,
+static inline void
+_update_fields(cs_timer_counter_t      *tce,
                cs_field_t              *fld,
                cs_cdofb_scaleq_t       *eqc)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  /* Set computed solution in builder->face_values */
-  memcpy(eqc->face_values, solu, quant->n_faces*sizeof(cs_real_t));
+  cs_timer_t  t0 = cs_timer_time();
 
   /* Copy current field values to previous values */
   cs_field_current_to_previous(fld);
@@ -616,8 +641,11 @@ _update_fields(const cs_real_t         *solu,
   cs_static_condensation_recover_scalar(cs_shared_connect->c2f,
                                         eqc->rc_tilda,
                                         eqc->acf_tilda,
-                                        solu,
+                                        eqc->face_values,
                                         fld->val);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(tce, &t0, &t1);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -811,7 +839,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
+  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
@@ -823,6 +851,13 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_faces; i++) eqc->face_values[i] = 0;
 
+  eqc->face_values_pre = NULL;
+  if (cs_equation_param_has_time(eqp)) {
+    BFT_MALLOC(eqc->face_values_pre, n_faces, cs_real_t);
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_faces; i++) eqc->face_values_pre[i] = 0;
+  }
+
   /* Store the last computed values of the field at cell centers and the data
      needed to compute the cell values from the face values.
      No need to synchronize all these quantities since they are only cellwise
@@ -833,25 +868,18 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cells);
   memset(eqc->acf_tilda, 0, sizeof(cs_real_t)*connect->c2f->idx[n_cells]);
 
-  /* Diffusion part */
-  /* -------------- */
-
+  /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
-  eqc->bdy_flux_op = NULL;
-  eqc->enforce_dirichlet = NULL;
-
   if (cs_equation_param_has_diffusion(eqp)) {
 
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
       eqc->get_stiffness_matrix = cs_hodge_fb_cost_get_stiffness;
-      eqc->bdy_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqc->get_stiffness_matrix = cs_hodge_fb_voro_get_stiffness;
-      eqc->bdy_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
       break;
 
     default:
@@ -861,11 +889,11 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
-  } /* Diffusion part */
+  } /* Diffusion */
 
   /* Dirichlet boundary condition enforcement */
   eqc->enforce_dirichlet = NULL;
-  switch (eqp->enforcement) {
+  switch (eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
     eqc->enforce_dirichlet = cs_cdo_diffusion_alge_dirichlet;
@@ -876,19 +904,13 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    if (cs_equation_param_has_diffusion(eqp) == false)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid choice of Dirichlet enforcement.\n"
-                " Diffusion term should be active.", __func__);
-    eqc->enforce_dirichlet = cs_cdofb_diffusion_weak_dirichlet;
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    if (cs_equation_param_has_diffusion(eqp) == false)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid choice of Dirichlet enforcement.\n"
-                " Diffusion term should be active.", __func__);
-    eqc->enforce_dirichlet = cs_cdofb_diffusion_wsym_dirichlet;
+    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_wsym_dirichlet;
     break;
 
   default:
@@ -898,8 +920,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Advection part */
-
+  /* Advection */
   eqc->adv_func = NULL;
   eqc->adv_func_bc = NULL;
 
@@ -917,27 +938,38 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     switch (eqp->adv_formulation) {
 
     case CS_PARAM_ADVECTION_FORM_CONSERV:
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of formulation for the advection scheme for"
-                " face-based discretization",
-                __func__);
+      switch (eqp->adv_scheme) {
+
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_upwcsv_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi;
+        }
+        else {
+          eqc->adv_func = cs_cdo_advection_fb_upwcsv;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc;
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid advection scheme for face-based discretization",
+                  __func__);
+
+      } /* Scheme */
       break; /* Conservative formulation */
 
     case CS_PARAM_ADVECTION_FORM_NONCONS:
       switch (eqp->adv_scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
-        if (!cs_equation_param_has_diffusion(eqp)){
-          eqc->adv_func = cs_cdo_advection_fb_upwnoc;
-          eqc->adv_func_bc = cs_cdo_advection_fb_bc;
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_upwnoc_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_wdi;
         }
         else {
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid choice for the advection scheme in face-based"
-                    " discretization.\n"
-                    " Non-conservative formulation, upwind and diffusion term",
-                    __func__);
-
+          eqc->adv_func = cs_cdo_advection_fb_upwnoc;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc;
         }
         break;
 
@@ -958,7 +990,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Reaction part */
+  /* Reaction */
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_COST) {
@@ -966,10 +998,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
 
-  } /* Reaction */
+  }
 
-  /* Time part */
-  eqc->apply_time_scheme = NULL;
+  /* Time */
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI) {
@@ -984,11 +1015,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       }
     }
 
-    eqc->apply_time_scheme = cs_cdo_time_get_scheme_function(eqb->sys_flag,
-                                                             eqp);
   }
 
-  /* Source term part */
+  /* Source term */
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -1006,6 +1035,10 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->hdg_mass.coef = 1.0; /* not useful in this case */
 
   eqc->get_mass_matrix = cs_hodge_fb_get_mass;
+
+  /* Assembly process */
+  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
+                                           CS_CDO_CONNECT_FACE_SP0);
 
   return eqc;
 }
@@ -1031,6 +1064,8 @@ cs_cdofb_scaleq_free_context(void   *data)
   /* Free temporary buffers */
   BFT_FREE(eqc->source_terms);
   BFT_FREE(eqc->face_values);
+  if (eqc->face_values_pre != NULL)
+    BFT_FREE(eqc->face_values_pre);
   BFT_FREE(eqc->rc_tilda);
   BFT_FREE(eqc->acf_tilda);
 
@@ -1041,83 +1076,107 @@ cs_cdofb_scaleq_free_context(void   *data)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         data structure
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of scalar-valued CDO-Fb schemes.
  *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdofb_scaleq_t structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_initialize_system(const cs_equation_param_t  *eqp,
-                                  cs_equation_builder_t      *eqb,
-                                  void                       *data,
-                                  cs_matrix_t               **system_matrix,
-                                  cs_real_t                 **system_rhs)
-{
-  assert(eqb != NULL);
-  assert(*system_matrix == NULL && *system_rhs == NULL);
-  CS_UNUSED(data);
-  CS_UNUSED(eqp);
-
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* Create the matrix related to the current algebraic system */
-  *system_matrix = cs_matrix_create(cs_shared_ms);
-
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  /* Allocate and initialize the related right-hand side */
-  BFT_MALLOC(*system_rhs, quant->n_faces, cs_real_t);
-# pragma omp parallel for if  (quant->n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < quant->n_faces; i++) (*system_rhs)[i] = 0.0;
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the boundary conditions known from the settings when the fields
- *         stem from a scalar CDO face-based scheme.
- *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval      time at which one evaluates BCs
- * \param[in, out] field_val   pointer to the values of the variable field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
-                           const cs_equation_param_t    *eqp,
-                           cs_equation_builder_t        *eqb,
-                           cs_real_t                     t_eval,
-                           cs_real_t                     field_val[])
+cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
+                            const int                     field_id,
+                            const cs_mesh_t              *mesh,
+                            const cs_equation_param_t    *eqp,
+                            cs_equation_builder_t        *eqb,
+                            void                         *context)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  cs_timer_t  t0 = cs_timer_time();
+  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_real_t  *c_vals = fld->val;
+  cs_real_t  *f_vals = eqc->face_values;
 
-  /* Dirichlet values at boundary faces are first computed */
+  /* By default, 0 is set as initial condition for the computational domain */
+  memset(f_vals, 0, quant->n_faces*sizeof(cs_real_t));
+  memset(c_vals, 0, quant->n_cells*sizeof(cs_real_t));
+
+  if (eqp->n_ic_defs > 0) {
+
+    /* Initialize values at mesh vertices */
+    cs_flag_t  f_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_face;
+    cs_flag_t  c_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
+
+    for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
+
+      /* Get and then set the definition of the initial condition */
+      const cs_xdef_t  *def = eqp->ic_defs[def_id];
+
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(f_dof_flag, def, f_vals);
+        cs_evaluate_potential_by_value(c_dof_flag, def, c_vals);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        {
+          const cs_param_dof_reduction_t  red = eqp->dof_reduction;
+          switch (red) {
+
+          case CS_PARAM_REDUCTION_DERHAM:
+            cs_evaluate_potential_by_analytic(f_dof_flag, def, t_eval, f_vals);
+            cs_evaluate_potential_by_analytic(c_dof_flag, def, t_eval, c_vals);
+            break;
+          case CS_PARAM_REDUCTION_AVERAGE:
+            cs_evaluate_average_on_faces_by_analytic(def, t_eval, f_vals);
+            cs_evaluate_average_on_cells_by_analytic(def, t_eval, c_vals);
+            break;
+
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      " %s: Incompatible reduction for equation %s.\n",
+                      __func__, eqp->name);
+            break;
+
+          } /* Switch on possible reduction types */
+
+        }
+        break;
+
+      case CS_XDEF_BY_QOV:      /* TODO */
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid way to initialize field values for eq. %s.\n",
+                  __func__, eqp->name);
+
+      } /* Switch on possible type of definition */
+
+    } /* Loop on definitions */
+
+  } /* Initial values to set */
+
+  /* Set the boundary values as initial values: Compute the values of the
+     Dirichlet BC */
+  const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
+
   cs_equation_compute_dirichlet_fb(mesh,
                                    quant,
                                    connect,
                                    eqp,
-                                   eqb->face_bc,
+                                   face_bc,
                                    t_eval,
                                    cs_cdofb_cell_bld[0],
-                                   field_val);
+                                   f_vals + quant->n_i_faces);
 
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1126,7 +1185,6 @@ cs_cdofb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
  *         convection/diffusion/reaction equation with a CDO-Fb scheme
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1136,8 +1194,7 @@ cs_cdofb_scaleq_set_dir_bc(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
-                                   const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -1147,36 +1204,37 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  time_eval = dt_cur; /* dummy variable */
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
-     argument) */
+  /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
 
-  _setup_bc(dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags);
+  /* First argument is set to t_cur even if this is a steady computation since
+   * one can call this function to compute a steady-state solution at each time
+   * step of an unsteady computation. */
+  _setup_bc(time_eval, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
   BFT_MALLOC(rhs, n_faces, cs_real_t);
-# pragma omp parallel for if  (n_faces > CS_THR_MIN)
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,   \
-         dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
+         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1190,6 +1248,7 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1214,7 +1273,7 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, neu_tags, fld->val, time_eval,
+                           dir_values, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1262,36 +1321,23 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix after static condensation",
                          csys);
 #endif
 
-      /* Remaing part of boundary conditions */
+      /* Remaining part of boundary conditions */
       _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      cs_equation_assemble_matrix(csys, rs, mav); /* Matrix assembly */
-
-      for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
-#       pragma omp atomic
-        rhs[cm->f_ids[f]] += csys->rhs[f];
-
-      if (eqc->source_terms != NULL) { /* Source term */
-
-        /* Reset the value of the source term for the cell DoF
-           Source term is only hold by the cell DoF in face-based schemes */
-        eqc->source_terms[c_id] = csys->source[cm->n_fc];
-
-      }
-
-      /* **********************  END OF ASSEMBLY PROCESS  ******************* */
+      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1301,7 +1347,6 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1309,24 +1354,19 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Now solve the system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-
-  _solve_fb_system(sles, matrix, eqc->face_values, rhs, eqp, &x_sol);
+  _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix,
+                    field_id,
+                    eqp,
+                    eqc->face_values,
+                    rhs);
 
   /* Update field */
-  t0 = cs_timer_time();
-
-  _update_fields(x_sol, fld, eqc);
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+  _update_fields(&(eqb->tce), fld, eqc);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1336,7 +1376,6 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
  *         implicit Euler scheme.
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1346,8 +1385,7 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
-                               const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -1357,25 +1395,29 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
   const cs_real_t  time_eval = t_cur + dt_cur;
+  const cs_real_t  inv_dtcur = 1./dt_cur;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   /* Sanity checks */
   assert(cs_equation_param_has_time(eqp) == true);
-  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
-     argument) */
-  cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
+  /* Store the current face values as previous */
+  memcpy(eqc->face_values_pre, eqc->face_values,
+         quant->n_faces*sizeof(cs_real_t));
 
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags);
+  /* Build an array storing the Dirichlet values at faces */
+  cs_real_t  *dir_values = NULL;
+
+  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1386,12 +1428,12 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
   for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,   \
-         dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
+         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1405,6 +1447,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1429,7 +1472,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, neu_tags, fld->val, time_eval,
+                           dir_values, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1471,7 +1514,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
                                                       or Hodge-Voronoi */
 
-        const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
+        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Simply add an entry in mat[cell, cell] */
         csys->rhs[cm->n_fc] += ptyc * csys->val_n[cm->n_fc];
@@ -1480,7 +1523,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
       }
       else { /* Use the mass matrix */
 
-        const double  tpty_coef = cb->tpty_val/dt_cur;
+        const double  tpty_coef = cb->tpty_val * inv_dtcur;
         const cs_sdm_t  *mass_mat = cb->hdg;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1509,38 +1552,25 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix after static condensation",
                          csys);
 #endif
 
-      /* Remaing part of BOUNDARY CONDITIONS
+      /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
 
       _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      cs_equation_assemble_matrix(csys, rs, mav); /* Matrix assembly */
-
-      for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
-#       pragma omp atomic
-        rhs[cm->f_ids[f]] += csys->rhs[f];
-
-      if (eqc->source_terms != NULL) { /* Source term */
-
-        /* Reset the value of the source term for the cell DoF
-           Source term is only hold by the cell DoF in face-based schemes */
-        eqc->source_terms[c_id] = csys->source[cm->n_fc];
-
-      }
-
-      /* **********************  END OF ASSEMBLY PROCESS  ******************* */
+      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1550,7 +1580,6 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1558,24 +1587,19 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Now solve the system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-
-  _solve_fb_system(sles, matrix, eqc->face_values, rhs, eqp, &x_sol);
+  _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix,
+                    field_id,
+                    eqp,
+                    eqc->face_values,
+                    rhs);
 
   /* Update field */
-  t0 = cs_timer_time();
-
-  _update_fields(x_sol, fld, eqc);
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+  _update_fields(&(eqb->tce), fld, eqc);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1585,7 +1609,6 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
  *         implicit/explicit theta scheme.
  *         One works cellwise and then process to the assembly
  *
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1595,8 +1618,7 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_theta(double                      dt_cur,
-                            const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
@@ -1606,9 +1628,16 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
-  const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
+  const cs_real_t  inv_dtcur = 1./dt_cur;
   const double  tcoef = 1 - eqp->theta;
+
+  /* Time_eval = (1-theta).t^n + theta.t^(n+1) = t^n + theta.dt
+   * since t^(n+1) = t^n + dt
+   */
+  const cs_real_t  time_eval = t_cur + eqp->theta*dt_cur;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
@@ -1620,18 +1649,20 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
 
   cs_timer_t  t0 = cs_timer_time();
 
+  /* Store the current face values as previous */
+  memcpy(eqc->face_values_pre, eqc->face_values,
+         quant->n_faces*sizeof(cs_real_t));
+
   /* Detect the first call (in this case, we compute the initial source term)*/
-  bool  compute_initial_source = false;
-  if (cs_shared_time_step->nt_cur == cs_shared_time_step->nt_prev)
+  _Bool  compute_initial_source = false;
+  if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
-  /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC (dt_cur is a dummy
-     argument) */
+  /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
-  short int  *neu_tags = NULL;
 
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &neu_tags);
+  /* Should not be t_eval since one sets the Dirichlet values */
+  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1642,12 +1673,12 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
   for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,     \
-         dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld, \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
+         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld,         \
          compute_initial_source)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1662,6 +1693,7 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     /* Store the shift to access border faces (first interior faces and
        then border faces: shift = n_i_faces */
@@ -1686,7 +1718,7 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, neu_tags, fld->val, time_eval,
+                           dir_values, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1766,7 +1798,7 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
        *  b) add to rhs mass_mat * p_n */
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
-        const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
+        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Only the cell row is involved in the time evolution */
         csys->rhs[cm->n_fc] += ptyc*csys->val_n[cm->n_fc];
@@ -1777,7 +1809,7 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
       }
       else { /* Use the mass matrix */
 
-        const double  tpty_coef = cb->tpty_val / dt_cur;
+        const double  tpty_coef = cb->tpty_val * inv_dtcur;
         const cs_sdm_t  *mass_mat = cb->hdg;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1806,35 +1838,25 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
                                        cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Local system matrix after static condensation",
                          csys);
 #endif
 
-      /* Remaing part of BOUNDARY CONDITIONS
+      /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
 
       _fb_apply_remaining_bc(eqp, eqc, cm, fm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
+      if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
 #endif
 
-      /* ************************* ASSEMBLY PROCESS ************************* */
+      /* ASSEMBLY PROCESS
+       * ================ */
 
-      cs_equation_assemble_matrix(csys, rs, mav); /* Matrix assembly */
-
-      for (short int f = 0; f < cm->n_fc; f++) /* Assemble RHS */
-#       pragma omp atomic
-        rhs[cm->f_ids[f]] += csys->rhs[f];
-
-      /* Reset the value of the source term for the cell DoF
-         Source term is only hold by the cell DoF in face-based schemes */
-      if (cs_equation_param_has_sourceterm(eqp))
-        eqc->source_terms[c_id] = csys->source[cm->n_fc];  /* Source term */
-
-      /* **********************  END OF ASSEMBLY PROCESS  ******************* */
+      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
@@ -1844,386 +1866,26 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Now solve the system */
-  cs_real_t  *x_sol = NULL;
-  cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
-
-  _solve_fb_system(sles, matrix, eqc->face_values, rhs, eqp, &x_sol);
+  /* Now solve the system. Overwrite face_values with the computed solution */
+  _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
+                    matrix,
+                    field_id,
+                    eqp,
+                    eqc->face_values,
+                    rhs);
 
   /* Update field */
-  t0 = cs_timer_time();
-
-  _update_fields(x_sol, fld, eqc);
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+  _update_fields(&(eqb->tce), fld, eqc);
 
   /* Free remaining buffers */
-  BFT_FREE(x_sol);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
-  cs_sles_free(sles);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO face-based scheme.
- *         One works cellwise and then process to the assembly
- *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      dt_cur     current value of the time step
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdofb_scaleq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             double                      dt_cur,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix)
-{
-  /* Sanity checks */
-  assert(rhs != NULL && matrix != NULL);
-
-  /* Test to remove */
-  if (eqp->flag & CS_EQUATION_CONVECTION)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Convection term is not handled yet.\n"));
-
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                " %s: Deprecated mode for building the system.\n", __func__);
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
-
-  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)data;
-
-  /* Dirichlet values at boundary faces are first computed */
-  cs_real_t  *dir_values = NULL;
-  BFT_MALLOC(dir_values, quant->n_b_faces, cs_real_t);
-  memset(dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
-
-  cs_equation_compute_dirichlet_fb(mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   t_cur + dt_cur,
-                                   cs_cdofb_cell_bld[0],
-                                   dir_values);
-
-  /* Tag faces with a non-homogeneous Neumann BC */
-  short int  *neu_tags = cs_equation_tag_neumann_face(quant, eqp);
-
-  /* No source term related to face DoFs. No update of the RHS. */
-
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
-         dir_values, neu_tags, field_val,                                \
-         cs_cdofb_cell_sys, cs_cdofb_cell_bld)
-  {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
-    const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
-
-    /* Each thread get back its related structures:
-       Get the cell-wise view of the mesh and the algebraic system */
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
-    cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-
-    /* Set inside the OMP section so that each thread has its own value */
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
-    /* Initialization of the values of properties */
-    cs_equation_init_properties(eqp, eqb, time_eval, cb);
-
-    /* --------------------------------------------- */
-    /* Main loop on cells to build the linear system */
-    /* --------------------------------------------- */
-
-#   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
-
-      /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
-
-      /* Set the local (i.e. cellwise) structures for the current cell */
-      _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, neu_tags, field_val, time_eval, // in
-                           csys, cb);                                   // out
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
-#endif
-
-      /* DIFFUSION TERM */
-      /* ============== */
-
-      if (cs_equation_param_has_diffusion(eqp)) {
-
-        /* Define the local stiffness matrix */
-        if (!(eqb->diff_pty_uniform))
-          cs_equation_set_diffusion_property_cw(eqp, cm, time_eval, cell_flag,
-                                                cb);
-
-        /* local matrix owned by the cellwise builder (store in cb->loc) */
-        eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
-
-        /* Add the local diffusion operator to the local system */
-        cs_sdm_add(csys->mat, cb->loc);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-        if (cs_dbg_cw_test(cm))
-          cs_cell_sys_dump("\n>> Local system after diffusion", csys);
-#endif
-      } /* End of diffusion */
-
-      /* SOURCE TERM */
-      /* =========== */
-
-      if (cs_equation_param_has_sourceterm(eqp)) {
-
-        /* Reset the local contribution */
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
-
-        /* Source term contribution to the algebraic system
-           If the equation is steady, the source term has already been computed
-           and is added to the right-hand side during its initialization. */
-        cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (cs_xdef_t *const *)eqp->source_terms,
-                                        cm,
-                                        eqb->source_mask,
-                                        eqb->compute_source,
-                                        time_eval,
-                                        NULL,  /* No input structure */
-                                        cb,    /* mass matrix is cb->hdg */
-                                        csys->source);
-
-        csys->rhs[cm->n_fc] += csys->source[cm->n_fc];
-
-        /* Reset the value of the source term for the cell DoF
-           Source term is only hold by the cell DoF in face-based schemes */
-        eqc->source_terms[c_id] = csys->source[cm->n_fc];
-
-      } /* End of term source contribution */
-
-      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
-       * Operations that have to be performed BEFORE the static condensation
-       */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
-
-        /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-           csys is updated inside (matrix and rhs) */
-        if (cs_equation_param_has_diffusion(eqp)) {
-
-          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-              eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
-
-        }
-
-        /* Neumann boundary conditions */
-        if (csys->has_nhmg_neumann)
-          for (short int f  = 0; f < cm->n_fc; f++)
-            csys->rhs[f] += csys->neu_values[f];
-
-      } /* Boundary cell */
-
-      /* UNSTEADY TERM + TIME SCHEME */
-      /* =========================== */
-
-      if (cs_equation_param_has_time(eqp)) {
-
-        /* Get the value of the time property */
-        double  tpty_val = 1/dt_cur;
-        if (eqb->time_pty_uniform)
-          tpty_val *= cb->tpty_val;
-        else
-          tpty_val *= cs_property_get_cell_value(c_id, time_eval,
-                                                 eqp->time_property);
-
-        /* Assign local matrix to a mass matrix to define */
-        cs_sdm_t  *mass_mat = cb->loc;
-        assert(mass_mat->n_rows == mass_mat->n_cols);
-        assert(mass_mat->n_rows == cm->n_fc + 1);
-
-        if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
-
-          /* Use a vector to deal with the diagonal matrix */
-          memset(mass_mat->val, 0, sizeof(cs_real_t)*(cm->n_fc + 1));
-          mass_mat->val[cm->n_fc] = cm->vol_c * tpty_val;
-
-        }
-        else {
-
-          memset(mass_mat->val, 0,
-                 sizeof(cs_real_t)*(cm->n_fc + 1)*(cm->n_fc + 1));
-
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Not implemented yet.", __func__);
-
-        }
-
-        /* Apply the time discretization to the local system.
-           Update csys (matrix and rhs) */
-        eqc->apply_time_scheme(eqp, tpty_val, mass_mat, eqb->sys_flag, cb,
-                               csys);
-
-      } /* END OF TIME CONTRIBUTION */
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
-#endif
-
-      /* Static condensation of the local system matrix of size n_fc + 1 into
-         a matrix of size n_fc.
-         Store data in rc_tilda and acf_tilda to compute the values at cell
-         centers after solving the system */
-      cs_static_condensation_scalar_eq(connect->c2f,
-                                       eqc->rc_tilda,
-                                       eqc->acf_tilda,
-                                       cb, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> Local system matrix after condensation", csys);
-#endif
-
-      /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
-       * Operations that have to be performed AFTER the static condensation
-       */
-      if (cell_flag & CS_FLAG_BOUNDARY) {
-
-        if (cs_equation_param_has_diffusion(eqp)) {
-
-          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-              eqp->enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
-
-            /* Weakly enforced Dirichlet BCs for cells attached to the boundary
-               csys is updated inside (matrix and rhs) */
-            eqc->enforce_dirichlet(eqp, cm, eqc->bdy_flux_op, fm, cb, csys);
-
-          }
-
-        } /* diffusion term */
-
-      } /* Boundary cell */
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
-      if (cs_dbg_cw_test(cm))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
-#endif
-
-      /* ASSEMBLY */
-      /* ======== */
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
-
-      /* Matrix assembly */
-      cs_equation_assemble_matrix(csys, rs, mav);
-
-      /* Assemble RHS */
-      for (short int f = 0; f < cm->n_fc; f++)
-#       pragma omp atomic
-        rhs[cm->f_ids[f]] += csys->rhs[f];
-
-    } /* Main loop on cells */
-
-  } /* OPENMP Block */
-
-  cs_matrix_assembler_values_done(mav); // optional
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-  cs_dbg_darray_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 8);
-#endif
-
-  /* Free temporary buffers and structures */
-  BFT_FREE(dir_values);
-  BFT_FREE(neu_tags);
-  cs_matrix_assembler_values_finalize(&mav);
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Store solution(s) of the linear system into a field structure
- *         Update extra-field values if required (for hybrid discretization)
- *
- * \param[in]      solu       solution array
- * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdofb_scaleq_t structure
- * \param[in, out] field_val  pointer to the current value of the field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
-                             const cs_real_t              *rhs,
-                             const cs_equation_param_t    *eqp,
-                             cs_equation_builder_t        *eqb,
-                             void                         *data,
-                             cs_real_t                    *field_val)
-{
-  CS_UNUSED(rhs);
-  CS_UNUSED(eqp);
-
-  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)data;
-  cs_timer_t  t0 = cs_timer_time();
-
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  /* Set computed solution in builder->face_values */
-  memcpy(eqc->face_values, solu, quant->n_faces*sizeof(cs_real_t));
-
-  /* Compute values at cells pc from values at faces pf
-     pc = acc^-1*(RHS - Acf*pf) */
-  cs_static_condensation_recover_scalar(cs_shared_connect->c2f,
-                                        eqc->rc_tilda,
-                                        eqc->acf_tilda,
-                                        solu,
-                                        field_val);
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2235,7 +1897,6 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
  * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] context   pointer to a scheme builder structure
- * \param[in]      dt_cur    current value of the time step
  *
  * \return a pointer to a \ref cs_equation_balance_t structure
  */
@@ -2244,29 +1905,26 @@ cs_cdofb_scaleq_update_field(const cs_real_t              *solu,
 cs_equation_balance_t *
 cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
-                        void                          *context,
-                        cs_real_t                      dt_cur)
+                        void                          *context)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+  const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
+  const cs_real_t  inv_dtcur = 1./dt_cur;
   const cs_real_t  time_eval = t_cur + 0.5*dt_cur;
 
   cs_timer_t  t0 = cs_timer_time();
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
-  cs_field_t  *bflux = cs_field_by_id(eqc->bflux_field_id);
 
   /* Allocate and initialize the structure storing the balance evaluation */
   cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_cell,
                                                           quant->n_cells);
 
-  cs_equation_balance_reset(eb);
-
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, pot, bflux,             \
-         eb, cs_cdofb_cell_bld)
+  shared(quant, connect, eqp, eqb, eqc, pot, eb, cs_cdofb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2276,7 +1934,6 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
 
@@ -2285,10 +1942,10 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     cs_real_t  _p_cur[10], _p_prev[10], _p_theta[10];
     cs_real_t  *p_cur = NULL, *p_prev = NULL, *p_theta = NULL;
 
-    if (connect->n_max_vbyc > 10) {
-      BFT_MALLOC(p_cur, connect->n_max_vbyc, cs_real_t);
-      BFT_MALLOC(p_prev, connect->n_max_vbyc, cs_real_t);
-      BFT_MALLOC(p_theta, connect->n_max_vbyc, cs_real_t);
+    if (connect->n_max_fbyc > 10) {
+      BFT_MALLOC(p_cur, connect->n_max_fbyc, cs_real_t);
+      BFT_MALLOC(p_prev, connect->n_max_fbyc, cs_real_t);
+      BFT_MALLOC(p_theta, connect->n_max_fbyc, cs_real_t);
     }
     else {
       p_cur = _p_cur;
@@ -2312,63 +1969,100 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
+      /* Initialize the properties at a cellwise level */
+      cs_equation_init_properties_cw(eqp, eqb, time_eval, cell_flag, cm, cb);
+
       /* Set the value of the current potential */
       for (short int f = 0; f < cm->n_fc; f++)
         p_cur[f] = eqc->face_values[cm->f_ids[f]];
       p_cur[cm->n_fc] = pot->val[cm->c_id];
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 3
-      if (cs_dbg_cw_test(cm)) cs_cell_mesh_dump(cm);
-#endif
+      /* Unsteady term + time scheme */
+      if (cs_equation_param_has_time(eqp)) {
+
+        /* Set the value of the current potential */
+        for (short int f = 0; f < cm->n_fc; f++)
+          p_prev[f] = eqc->face_values_pre[cm->f_ids[f]];
+        p_prev[cm->n_fc] = pot->val_pre[cm->c_id];
+
+        /* Get the value of the time property */
+        const double  tptyc = inv_dtcur * cb->tpty_val;
+
+        /* Assign local matrix to a mass matrix to define */
+        cs_sdm_t  *mass_mat = cb->loc;
+        assert(mass_mat->n_rows == mass_mat->n_cols);
+        assert(mass_mat->n_rows == cm->n_fc + 1);
+
+        if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG)
+          eb->unsteady_term[c_id] += tptyc * cm->vol_c *
+            (p_cur[cm->n_fc] - p_prev[cm->n_fc]);
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Not implemented yet.", __func__);
+
+      } /* End of time contribution */
 
       /* Set p_theta */
       switch (eqp->time_scheme) {
-      case CS_TIME_SCHEME_EXPLICIT:
+
+      case CS_TIME_SCHEME_EULER_EXPLICIT:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = p_prev[i];
         break;
-
       case CS_TIME_SCHEME_CRANKNICO:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = 0.5*(p_cur[i] + p_prev[i]);
         break;
-
       case CS_TIME_SCHEME_THETA:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = eqp->theta*p_cur[i] + (1-eqp->theta)*p_prev[i];
         break;
 
-      default:
+      default:                  /* Implicit */
         for (short int i = 0; i < cm->n_fc + 1; i++)
           p_theta[i] = p_cur[i];
         break;
 
       } /* Switch on time scheme */
 
-      /* DIFFUSION TERM */
-      if (cs_equation_param_has_diffusion(eqp)) {
+       /* Reaction term */
+      if (cs_equation_param_has_reaction(eqp)) {
 
-        /* Define the local stiffness matrix */
-        if (!(eqb->diff_pty_uniform))
-          cs_equation_set_diffusion_property_cw(eqp, cm, time_eval, cell_flag,
-                                                cb);
+        /* Define the local reaction property */
+        const double  rpty_val = cb->rpty_val * cm->vol_c;
+        eb->reaction_term[c_id] += rpty_val * p_theta[cm->n_fc];
+
+      } /* Reaction */
+
+      /* Diffusion term */
+      if (cs_equation_param_has_diffusion(eqp)) {
 
         /* local matrix owned by the cellwise builder (store in cb->loc) */
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         cs_real_t  *res = cb->values;
-        for (short int v = 0; v < cm->n_vc; v++)
-          res[v] = 0.;
-
+        memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
         cs_sdm_square_matvec(cb->loc, p_theta, res);
 
-        eb->diffusion_term[cm->c_id] = res[cm->n_fc];
+        eb->diffusion_term[cm->c_id] += res[cm->n_fc];
 
-      } /* END OF DIFFUSION */
+      } /* End of diffusion */
 
-      /* SOURCE TERM */
-      /* =========== */
+      /* Advection term */
+      if (cs_equation_param_has_convection(eqp)) {
 
+        /* Define the local advection matrix */
+        cs_cdofb_advection_build(eqp, cm, time_eval, eqc->adv_func, cb);
+
+        cs_real_t  *res = cb->values;
+        memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+        cs_sdm_square_matvec(cb->loc, p_theta, res);
+
+        eb->advection_term[cm->c_id] += res[cm->n_fc];
+
+      } /* End of advection */
+
+      /* Source term */
       if (cs_equation_param_has_sourceterm(eqp)) {
 
         /* Reset the local contribution */
@@ -2392,50 +2086,8 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       } /* End of term source contribution */
 
-      /* /\* UNSTEADY TERM + TIME SCHEME *\/ */
-      /* /\* =========================== *\/ */
 
-      /* if (cs_equation_param_has_time(eqp)) { */
-
-      /*   /\* Get the value of the time property *\/ */
-      /*   double  tpty_val = 1/dt_cur; */
-      /*   if (eqb->time_pty_uniform) */
-      /*     tpty_val *= time_pty_val; */
-      /*   else */
-      /*     tpty_val *= cs_property_get_cell_value(c_id, time_eval, */
-      /*                                            eqp->time_property); */
-
-      /*   /\* Assign local matrix to a mass matrix to define *\/ */
-      /*   cs_sdm_t  *mass_mat = cb->loc; */
-      /*   assert(mass_mat->n_rows == mass_mat->n_cols); */
-      /*   assert(mass_mat->n_rows == cm->n_fc + 1); */
-
-      /*   if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { */
-
-      /*     /\* Use a vector to deal with the diagonal matrix *\/ */
-      /*     memset(mass_mat->val, 0, sizeof(cs_real_t)*(cm->n_fc + 1)); */
-      /*     mass_mat->val[cm->n_fc] = cm->vol_c * tpty_val; */
-
-      /*   } */
-      /*   else { */
-
-      /*     memset(mass_mat->val, 0, */
-      /*            sizeof(cs_real_t)*(cm->n_fc + 1)*(cm->n_fc + 1)); */
-
-      /*     bft_error(__FILE__, __LINE__, 0, */
-      /*               "%s: Not implemented yet.", __func__); */
-
-      /*   } */
-
-      /*   /\* Apply the time discretization to the local system. */
-      /*      Update csys (matrix and rhs) *\/ */
-      /*   eqc->apply_time_scheme(eqp, tpty_val, mass_mat, eqb->sys_flag, cb, */
-      /*                          csys); */
-
-      /* } /\* END OF TIME CONTRIBUTION *\/ */
-
-
-    } // Main loop on cells
+    } /* Main loop on cells */
 
     if (p_cur != _p_cur) {
       BFT_FREE(p_cur);
@@ -2443,7 +2095,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       BFT_FREE(p_theta);
     }
 
-  } // OPENMP Block
+  } /* OPENMP Block */
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
     eb->balance[c_id] =
@@ -2455,6 +2107,146 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   return eb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the diffusive flux across each boundary face.
+ *         Case of scalar-valued CDO-Fb schemes
+ *
+ * \param[in]       t_eval    time at which one performs the evaluation
+ * \param[in]       eqp       pointer to a cs_equation_param_t structure
+ * \param[in]       pot_f     array of values at faces
+ * \param[in]       pot_c     array of values at cells
+ * \param[in, out]  eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out]  bflux     pointer to the values of the diffusive flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
+                                   const cs_equation_param_t   *eqp,
+                                   const cs_real_t             *pot_f,
+                                   const cs_real_t             *pot_c,
+                                   cs_equation_builder_t       *eqb,
+                                   cs_real_t                   *bflux)
+{
+  if (bflux == NULL)
+    return;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  if (cs_equation_param_has_diffusion(eqp) == false) {
+    memset(bflux, 0, quant->n_b_faces*sizeof(cs_real_t));
+
+    cs_timer_t  t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+    return;
+  }
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
+  shared(quant, connect, eqp, eqb, bflux, pot_c, pot_f,                 \
+         cs_cdofb_cell_bld)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
+    const cs_adjacency_t  *f2c = connect->f2c;
+    const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
+
+    cs_real_t  *pot = NULL;
+    BFT_MALLOC(pot, connect->n_max_fbyc + 1, cs_real_t); /* +1 for cell */
+
+    /* Each thread get back its related structures:
+       Get the cellwise view of the mesh and the algebraic system */
+    cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+
+    cs_flag_t  msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ;
+    cs_flag_t  add_flag = CS_CDO_LOCAL_DEQ;
+
+    if (eqb->diff_pty_uniform) /* c_id = 0, cell_flag = 0 */
+      cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+
+      const cs_lnum_t  f_id = bf_id + quant->n_i_faces;
+      const cs_lnum_t  c_id = f2c->ids[bf_id + fidx_shift];
+
+      switch (face_bc->flag[bf_id]) {
+
+      case CS_CDO_BC_HMG_NEUMANN:
+        bflux[bf_id] = 0.;
+        break;
+
+      case CS_CDO_BC_NEUMANN:
+        {
+          cs_real_t  *neu_values = cb->values;
+
+          /* Set the local mesh structure for the current cell */
+          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+
+          cs_equation_compute_neumann_fb(t_eval,
+                                         face_bc->def_ids[bf_id],
+                                         f,
+                                         quant,
+                                         eqp,
+                                         cm,
+                                         neu_values);
+
+          bflux[bf_id] = neu_values[f];
+        }
+        break;
+
+      default:
+        { /* Reconstruct a normal flux at the boundary face */
+
+          /* Set the local mesh structure for the current cell */
+          cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
+          if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
+#endif
+          if (!eqb->diff_pty_uniform)
+            cs_property_tensor_in_cell(cm,
+                                       eqp->diffusion_property,
+                                       t_eval,
+                                       eqp->diffusion_hodge.inv_pty,
+                                       cb->dpty_mat);
+
+          /* Define a local buffer keeping the value of the discrete potential
+             for the current cell */
+          for (short int ff = 0; ff < cm->n_fc; ff++)
+            pot[ff] = pot_f[cm->f_ids[ff]];
+          pot[cm->n_fc] = pot_c[c_id];
+
+          /* Compute the boundary flux and store it */
+          cs_cdo_diffusion_sfb_cost_flux(f, eqp, cm, pot, cb, bflux + bf_id);
+        }
+        break;
+
+      } /* End of switch */
+
+    } /* End of loop on boundary faces */
+
+    BFT_FREE(pot);
+
+  } /* End of OpenMP block */
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2476,7 +2268,7 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
                          cs_equation_builder_t      *eqb,
                          void                       *data)
 {
-  CS_UNUSED(eqname); // avoid a compilation warning
+  CS_UNUSED(eqname); /* avoid a compilation warning */
   CS_UNUSED(eqp);
 
   char *postlabel = NULL;
@@ -2496,12 +2288,12 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
                     postlabel,
                     field->dim,
                     true,
-                    true,                  // true = original mesh
+                    true,                  /* true = original mesh */
                     CS_POST_TYPE_cs_real_t,
-                    NULL,                  // values on cells
-                    NULL,                  // values at internal faces
-                    face_pdi + n_i_faces,  // values at border faces
-                    cs_shared_time_step);  // time step management structure
+                    NULL,                  /* values on cells */
+                    NULL,                  /* values at internal faces */
+                    face_pdi + n_i_faces,  /* values at border faces */
+                    cs_shared_time_step);  /* time step management structure */
 
 
   BFT_FREE(postlabel);

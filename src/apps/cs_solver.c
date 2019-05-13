@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -43,8 +43,6 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_selector.h"
-
 #include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_base_fortran.h"
@@ -68,6 +66,7 @@
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
 #include "cs_gui_radiative_transfer.h"
+#include "cs_gui_util.h"
 #include "cs_io.h"
 #include "cs_join.h"
 #include "cs_lagr.h"
@@ -85,6 +84,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_smoother.h"
+#include "cs_notebook.h"
 #include "cs_opts.h"
 #include "cs_param_cdo.h"
 #include "cs_parameters.h"
@@ -98,6 +98,7 @@
 #include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_restart.h"
+#include "cs_restart_map.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_sat_coupling.h"
@@ -201,6 +202,8 @@ cs_run(void)
 
   bft_printf("\n");
 
+  cs_base_update_status("initializing\n");
+
   /* Initialize random number generator
      (used in only some cases, but safe to do, and inexpensive) */
 
@@ -252,6 +255,10 @@ cs_run(void)
 
     cs_base_fortran_bft_printf_to_f();
 
+    const char default_restart_mesh[] = "restart_mesh_input";
+    if (cs_file_isreg(default_restart_mesh))
+      cs_restart_map_set_mesh_input(default_restart_mesh);
+
     cs_gui_init();
 
     CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
@@ -283,7 +290,7 @@ cs_run(void)
      may have the option of assigning a name to this instance. */
 
 #if defined(HAVE_MPI)
-  cs_coupling_discover_mpi_apps(opts.app_name);
+  cs_coupling_discover_mpi_apps(opts.app_name, NULL);
 #endif
 
   if (opts.app_name != NULL)
@@ -470,6 +477,10 @@ cs_run(void)
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
 
+  /* Finalize user extra operations */
+  if (opts.verif == false)
+    cs_user_extra_operations_finalize(cs_glob_domain);
+
   /* Final stage for CDO/HHO schemes */
 
   cs_cdo_finalize(cs_glob_domain);
@@ -559,6 +570,8 @@ cs_run(void)
 
   cs_base_time_summary();
   cs_base_mem_finalize();
+
+  cs_log_printf_flush(CS_LOG_N_TYPES);
 }
 
 /*============================================================================
@@ -629,13 +642,22 @@ main(int    argc,
 
   cs_base_error_init(opts.sig_defaults);
 
-  /* Open 'listing' (log) files */
+  /* Open 'run_solver.log' (log) files */
 
-  cs_base_fortran_bft_printf_set("listing", opts.ilisr0, opts.ilisrp);
+  cs_base_trace_set(opts.trace);
+  cs_base_fortran_bft_printf_set("run_solver", opts.logrp);
 
   /* Log-file header and command line arguments recap */
 
   cs_base_logfile_head(argc, argv);
+
+  /* Load setup parameters if present */
+
+  const char s_param[] = "setup.xml";
+  if (cs_file_isreg(s_param)) {
+    cs_gui_load_file(s_param);
+    cs_notebook_load_from_file();
+  }
 
   /* Running as a standalone SALOME component, load YACS component
      library and run yacsinit() component initialization and event loop,

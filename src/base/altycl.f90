@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -84,7 +84,7 @@ use entsor
 use parall
 use mesh
 use field
-use albase, only: fdiale
+use albase, only: fdiale, iale
 use cs_c_bindings
 
 !===============================================================================
@@ -110,6 +110,7 @@ double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 
 double precision, dimension(:,:), pointer :: disale
+double precision, allocatable, dimension(:,:) :: b_fluid_vel
 
 !===============================================================================
 
@@ -144,8 +145,32 @@ enddo
 !===============================================================================
 ! 2. Check the consistency of BC types (IALTYB) given in USALCL
 !===============================================================================
-!  (valeur 0 autorisee)
 
+! When using CDO solver, no need of checks.
+if (iale.eq.2) then
+
+  allocate(b_fluid_vel(3, nfabor))
+
+  do ifac = 1, nfabor
+    b_fluid_vel(1, ifac) = 0.d0
+    b_fluid_vel(2, ifac) = 0.d0
+    b_fluid_vel(3, ifac) = 0.d0
+  enddo
+
+  call cs_ale_update_bcs(ialtyb, b_fluid_vel)
+
+  ! Copy back to deprecated rcodcl
+  do ifac = 1, nfabor
+    rcodcl(ifac, iuma, 1) = b_fluid_vel(1, ifac)
+    rcodcl(ifac, ivma, 1) = b_fluid_vel(2, ifac)
+    rcodcl(ifac, iwma, 1) = b_fluid_vel(3, ifac)
+  enddo
+
+  goto 100
+
+endif
+
+!  (valeur 0 autorisee)
 do ifac = 1, nfabor
   if (ialtyb(ifac).ne.0      .and.                                &
       ialtyb(ifac).ne.ibfixe .and.                                &
@@ -356,6 +381,8 @@ endif
 ! 5. Fluid velocity BCs for walls and symmetries (due to mesh movment)
 !===============================================================================
 
+100  continue
+
 ! Pour les symetries on rajoute toujours la vitesse de maillage, car on
 !   ne conserve que la vitesse normale
 ! Pour les parois, on prend la vitesse de maillage si l'utilisateur n'a
@@ -368,7 +395,7 @@ do ifac = 1, nfabor
 
   if (ialtyb(ifac).eq.ivimpo) then
 
-    !Warning: only the normal component is kept in clsyvt
+    ! Warning: only the normal component is kept in clsyvt
     if (itypfb(ifac).eq.isymet) then
       rcodcl(ifac,iu,1) = rcodcl(ifac,iuma,1)
       rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)
@@ -407,7 +434,7 @@ do ifac = 1, nfabor
         rcodcz = rcodcl(ifac,iw,1)
         rcodsn = (rcodcl(ifac,iuma,1)-rcodcx)*rnx                 &
              +   (rcodcl(ifac,ivma,1)-rcodcy)*rny                 &
-             +   (rcodcl(ifac,ivma,1)-rcodcz)*rnz
+             +   (rcodcl(ifac,iwma,1)-rcodcz)*rnz
         rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
         rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
         rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz

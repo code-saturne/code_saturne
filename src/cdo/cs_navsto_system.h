@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,7 @@ BEGIN_C_DECLS
  *         with a specified coupling algorithm
  *
  * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      fb_type    type of boundary for each boundary face
  * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
  *                            structure cast on-the-fly
  *
@@ -72,6 +73,7 @@ BEGIN_C_DECLS
 
 typedef void *
 (cs_navsto_init_scheme_context_t)(const cs_navsto_param_t    *nsp,
+                                  cs_boundary_type_t         *fb_type,
                                   void                       *nscc);
 
 /*----------------------------------------------------------------------------*/
@@ -91,17 +93,22 @@ typedef void *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize field values (pressure, velocity or temperature)
- *         according to the model, the space discretization or the model
+ * \brief  According to the model, coupling algorithm and the space
+ *         discretization, initialize the field values which are not associated
+ *         to a \ref cs_equation_t structure (which manages the initialization)
  *
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]       nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts       pointer to a \ref cs_time_step_t structure
+ * \param[in, out]  field    pointer to a \ref cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_navsto_init_values_t)(const cs_navsto_param_t     *nsp,
-                          void                        *scheme_context);
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_time_step_t        *ts,
+                          cs_field_t                  *field);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -111,7 +118,6 @@ typedef void
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in]      dt_cur          current value of the time step
  * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -119,7 +125,6 @@ typedef void
 typedef void
 (cs_navsto_compute_t)(const cs_mesh_t              *mesh,
                       const cs_navsto_param_t      *nsp,
-                      double                        dt_cur,
                       void                         *scheme_context);
 
 /*=============================================================================
@@ -136,7 +141,12 @@ typedef struct {
   /*! \var param
    *  Set of parameters to handle the Navier-Stokes system
    */
-  cs_navsto_param_t  *param;
+  cs_navsto_param_t     *param;
+
+  /*! \var boundary_type
+   * Array storing the type of boundary for each boundary face
+   */
+  cs_boundary_type_t    *bf_type;
 
   /*!
    * @name Fields
@@ -149,46 +159,46 @@ typedef struct {
    *  Advection field, pointer to \ref cs_adv_field_t
    */
 
-  cs_adv_field_t     *adv_field;
+  cs_adv_field_t       *adv_field;
 
   /*! \var velocity
    *  Velocity, vector-valued, pointer to \ref cs_field_t
    */
 
-  cs_field_t         *velocity;
+  cs_field_t           *velocity;
 
   /*! \var velocity_divergence
    *  Divergence of the velocity fied, scalar-valued
    *  pointer to \ref cs_field_t
    */
 
-  cs_field_t         *velocity_divergence;
+  cs_field_t           *velocity_divergence;
 
   /*! \var pressure
    *  Pressure, scalar-valued, pointer to \ref cs_field_t
    */
 
-  cs_field_t         *pressure;
+  cs_field_t           *pressure;
 
   /*! \var temperature
    *  Temperature, scalar-var, pointer to \ref cs_field_t. NULL if no
    *  energy-like equation is defined
    */
 
-  cs_field_t         *temperature;
+  cs_field_t           *temperature;
 
   /*! \var coupling_context
    * Additional structure storing information according to the way equations
    * of model for the Navier-Stokes system are coupled and thus solved
    */
-  void               *coupling_context;
+  void                 *coupling_context;
 
   /*! \var scheme_context
    * Additional structure storing information according to the space
    * discretization scheme used for solving the model for the Navier-Stokes
    * system
    */
-  void               *scheme_context;
+  void                 *scheme_context;
 
   /*!
    * @}
@@ -222,9 +232,15 @@ typedef struct {
    */
   cs_navsto_init_values_t           *init_pressure;
 
+  /*! \var compute_steady
+   *  Pointer of functions related to resolution of the Navier-Stokes steady
+   *  system. Handle the build of the system and its resolution
+   */
+  cs_navsto_compute_t               *compute_steady;
+
   /*! \var compute
-   *  Pointer of functions related to resolution of the Navier-Stokes system
-   *  Handle the build of the system and its resolution
+   *  Pointer of functions related to resolution of the Navier-Stokes unsteady
+   *  system. Handle the build of the system and its resolution
    */
   cs_navsto_compute_t               *compute;
 
@@ -250,6 +266,7 @@ cs_navsto_system_is_activated(void);
 /*!
  * \brief  Allocate and initialize the Navier-Stokes (NS) system
  *
+ * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
  * \param[in] time_state     state of the time for the NS equations
  * \param[in] algo_coupling  algorithm used for solving the NS system
@@ -259,7 +276,8 @@ cs_navsto_system_is_activated(void);
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_system_t *
-cs_navsto_system_activate(cs_navsto_param_model_t        model,
+cs_navsto_system_activate(const cs_boundary_t           *boundaries,
+                          cs_navsto_param_model_t        model,
                           cs_navsto_param_time_state_t   time_state,
                           cs_navsto_param_coupling_t     algo_coupling);
 
@@ -274,13 +292,26 @@ cs_navsto_system_destroy(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Recover the structure storing the parameters for the Navier--Stokes
+ * \brief  Retrieve the structure storing the parameters for the Navier--Stokes
  *         system
+ *
+ * \return NULL or the pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
 cs_navsto_system_get_param(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to the equation related to the momentum equation
+ *
+ * \return NULL or the pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_navsto_system_get_momentum_eq(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -297,6 +328,7 @@ cs_navsto_system_init_setup(void);
 /*!
  * \brief  Last step of the setup of the Navier-Stokes system
  *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]  time_step  pointer to a cs_time_step_t structure
@@ -304,9 +336,19 @@ cs_navsto_system_init_setup(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_finalize_setup(const cs_cdo_connect_t     *connect,
+cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
+                                const cs_cdo_connect_t     *connect,
                                 const cs_cdo_quantities_t  *quant,
                                 const cs_time_step_t       *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the settings for SLES related to the Navier-Stokes system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -331,25 +373,40 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
  * \brief  Build, solve and update the Navier-Stokes system in case of a
  *         steady-state approach
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute_steady_state(const cs_mesh_t      *mesh);
+cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
+                                      const cs_time_step_t   *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build, solve and update the Navier-Stokes system
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      dt_cur     current value of the time step
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t              *mesh,
-                         double                        dt_cur);
+cs_navsto_system_compute(const cs_mesh_t         *mesh,
+                         const cs_time_step_t    *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations for the Navier-Stokes system
+ *
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_extra_op(const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!

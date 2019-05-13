@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -644,27 +644,6 @@ cs_timer_diff(const cs_timer_t  *t0,
                     + t1->cpu_nsec - t0->cpu_nsec;
 
   return retval;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add the the difference between 2 timers to a counter.
- *
- * \param[in, out]  tc  pointer to timer counter
- * \param[in]       t0  oldest timer value
- * \param[in]       t1 most recent timer value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_timer_counter_add_diff(cs_timer_counter_t  *tc,
-                          const cs_timer_t    *t0,
-                          const cs_timer_t    *t1)
-{
-  tc->wall_nsec +=    (t1->wall_sec - t0->wall_sec) * (long long)1000000000
-                     + t1->wall_nsec - t0->wall_nsec;
-  tc->cpu_nsec +=    (t1->cpu_sec - t0->cpu_sec) * (long long)1000000000
-                    + t1->cpu_nsec - t0->cpu_nsec;
 }
 
 /*----------------------------------------------------------------------------*/

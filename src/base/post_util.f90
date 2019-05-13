@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -81,8 +81,8 @@ integer ::         ifac, iloc, ivar
 integer ::         iel
 integer ::         iflmab
 
-double precision :: cpp   , srfbn , hext  , heq   , hbord2
-double precision :: flumab, diipbx, diipby, diipbz, tcel
+double precision :: cpp   , srfbn , heq
+double precision :: flumab, diipbx, diipby, diipbz
 
 double precision, allocatable, dimension(:) :: theipb
 double precision, allocatable, dimension(:,:) :: grad
@@ -178,12 +178,15 @@ if (iscalt.gt.0) then
   endif
 
   if (vcopt%icoupl.gt.0) then
-     call field_get_coupled_faces(ivarfl(ivar), cpl_faces)
+    call field_get_coupled_faces(ivarfl(ivar), cpl_faces)
     allocate(dist_theipb(nfabor))
     call cs_ic_field_dist_data_by_face_id(ivarfl(ivar), 1, theipb, dist_theipb)
   endif
 
   do iloc = 1, nfbrps
+
+    ifac = lstfbr(iloc)
+    iel = ifabor(ifac)
 
     if (iscacp(iscalt).eq.1) then
       if (icp.ge.0) then
@@ -292,10 +295,9 @@ integer ::         inc, iccocg
 integer ::         iel, ifac, iloc, ivar
 integer ::         ifcvsl, itplus, itstar
 
-double precision :: xvsl  , srfbn , heq   , phit
+double precision :: xvsl  , srfbn , heq
 double precision :: diipbx, diipby, diipbz
-double precision :: numer, denom, tcel
-double precision :: heqohint, phitohint
+double precision :: numer, denom
 
 double precision, allocatable, dimension(:) :: theipb
 double precision, allocatable, dimension(:,:) :: grad

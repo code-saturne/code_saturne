@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -229,10 +229,10 @@ cs_sdm_create_transpose(cs_sdm_t  *mat)
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create(int                n_max_blocks_by_row,
-                    int                n_max_blocks_by_col,
-                    const short int    max_row_block_sizes[],
-                    const short int    max_col_block_sizes[])
+cs_sdm_block_create(int          n_max_blocks_by_row,
+                    int          n_max_blocks_by_col,
+                    const int    max_row_block_sizes[],
+                    const int    max_col_block_sizes[])
 {
   cs_sdm_t  *m = NULL;
 
@@ -271,6 +271,48 @@ cs_sdm_block_create(int                n_max_blocks_by_row,
       p_val += _size;
 
     }
+  }
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Allocate and initialize a cs_sdm_t structure by block when the
+ *          block size is constant and equal to 3
+ *
+ * \param[in]  n_max_blocks_by_row    max number of blocks in a row
+ * \param[in]  n_max_blocks_by_col    max number of blocks in a column
+ *
+ * \return  a new allocated cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sdm_t *
+cs_sdm_block33_create(int      n_max_blocks_by_row,
+                      int      n_max_blocks_by_col)
+{
+  cs_sdm_t  *m = NULL;
+
+  if (n_max_blocks_by_row < 1 || n_max_blocks_by_col < 1)
+    return m;
+
+  m = _create_sdm(CS_SDM_BY_BLOCK,
+                  3*n_max_blocks_by_row,
+                  3*n_max_blocks_by_col);
+
+  /* Define the block description */
+  m->block_desc->n_max_blocks_by_row = n_max_blocks_by_row;
+  m->block_desc->n_max_blocks_by_col = n_max_blocks_by_col;
+  m->block_desc->n_row_blocks = n_max_blocks_by_row;
+  m->block_desc->n_col_blocks = n_max_blocks_by_col;
+  BFT_MALLOC(m->block_desc->blocks,
+             n_max_blocks_by_row*n_max_blocks_by_col, cs_sdm_t);
+
+  cs_real_t  *p_val = m->val;
+  for (int i = 0; i < n_max_blocks_by_row*n_max_blocks_by_col; i++) {
+    cs_sdm_map_array(3, 3, m->block_desc->blocks + i, p_val);
+      p_val += 9;
   }
 
   return m;
@@ -319,11 +361,11 @@ cs_sdm_free(cs_sdm_t  *mat)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_init(cs_sdm_t          *m,
-                  int                n_row_blocks,
-                  int                n_col_blocks,
-                  const short int    row_block_sizes[],
-                  const short int    col_block_sizes[])
+cs_sdm_block_init(cs_sdm_t      *m,
+                  int            n_row_blocks,
+                  int            n_col_blocks,
+                  const int      row_block_sizes[],
+                  const int      col_block_sizes[])
 {
   /* Sanity checks */
   assert(m != NULL && row_block_sizes != NULL && col_block_sizes != NULL);
@@ -360,6 +402,45 @@ cs_sdm_block_init(cs_sdm_t          *m,
       shift++;
 
     }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize the pattern of cs_sdm_t structure defined by 3x3 block
+ *          The matrix should have been allocated before calling this function
+ *
+ * \param[in, out] m
+ * \param[in]      n_row_blocks      number of blocks in a row
+ * \param[in]      n_col_blocks      number of blocks in a column
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block33_init(cs_sdm_t     *m,
+                    int           n_row_blocks,
+                    int           n_col_blocks)
+{
+  /* Sanity checks */
+  assert(m != NULL);
+  assert(m->flag & CS_SDM_BY_BLOCK);
+  assert(m->block_desc != NULL);
+  assert(n_row_blocks <= m->block_desc->n_max_blocks_by_row);
+  assert(n_col_blocks <= m->block_desc->n_max_blocks_by_col);
+
+  cs_sdm_block_t  *bd = m->block_desc;
+
+  bd->n_row_blocks = n_row_blocks;
+  bd->n_col_blocks = n_col_blocks;
+  m->n_rows = 3*n_row_blocks;
+  m->n_cols = 3*n_col_blocks;
+
+  memset(m->val, 0, m->n_rows*m->n_cols*sizeof(cs_real_t));
+
+  cs_real_t  *p_val = m->val;
+  for (int i = 0; i < bd->n_row_blocks*bd->n_col_blocks; i++) {
+    cs_sdm_map_array(3, 3, bd->blocks + i, p_val);
+    p_val += 9; /* Each 3x3 block has 9 entries */
   }
 }
 
@@ -600,8 +681,9 @@ cs_sdm_block_multiply_rowrow(const cs_sdm_t   *a,
 
   const cs_sdm_block_t  *a_desc = a->block_desc;
   const cs_sdm_block_t  *b_desc = b->block_desc;
-  const cs_sdm_block_t  *c_desc = c->block_desc; /* used in assert */
+  const cs_sdm_block_t  *c_desc = c->block_desc;
 
+  CS_UNUSED(c_desc);            /* Only in debug mode */
   assert(a_desc->n_col_blocks == b_desc->n_col_blocks &&
          a_desc->n_row_blocks == c_desc->n_row_blocks &&
          c_desc->n_col_blocks == b_desc->n_row_blocks);
@@ -714,9 +796,9 @@ cs_sdm_square_matvec(const cs_sdm_t    *mat,
 
   /* Increment mv */
   for (short int i = 0; i < n; i++) {
-    cs_real_t *m_i = mat->val + i*n;
+    const cs_real_t *m_i = mat->val + i*n;
     for (short int j = 1; j < n; j++)
-      mv[i] +=  m_i[j] * vec[j];
+      mv[i] += m_i[j] * vec[j];
   }
 
 }
@@ -881,9 +963,10 @@ cs_sdm_block_add_mult(cs_sdm_t        *mat,
   if (mat == NULL || add == NULL)
     return;
 
-  const cs_sdm_block_t  *add_desc = add->block_desc; /* used in assert */
+  const cs_sdm_block_t  *add_desc = add->block_desc;
   const cs_sdm_block_t  *mat_desc = mat->block_desc;
 
+  CS_UNUSED(add_desc);          /* Only in debug mode */
   assert(add_desc != NULL && mat_desc != NULL);
   assert(add_desc->n_row_blocks == mat_desc->n_row_blocks);
   assert(add_desc->n_col_blocks == mat_desc->n_col_blocks);
@@ -1020,7 +1103,8 @@ cs_sdm_square_add_transpose(cs_sdm_t  *mat,
                             cs_sdm_t  *tr)
 {
   /* Sanity check */
-  assert(mat != NULL && tr != NULL && tr->n_max_rows == mat->n_max_rows);
+  assert(mat != NULL && tr != NULL);
+  assert(mat->n_rows <= tr->n_max_cols && mat->n_cols <= tr->n_max_rows);
   assert(mat->n_rows == mat->n_cols);
 
   if (mat->n_rows < 1 || mat->n_cols < 1)
@@ -1047,6 +1131,38 @@ cs_sdm_square_add_transpose(cs_sdm_t  *mat,
 
     }
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the given matrix to two times its symmetric part
+ *          mat --> mat + mat_tr = 2*symm(mat)
+ *
+ * \param[in, out] mat   small dense matrix to transform
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_square_2symm(cs_sdm_t   *mat)
+{
+  /* Sanity check */
+  assert(mat != NULL);
+  assert(mat->n_rows == mat->n_cols);
+
+  if (mat->n_rows < 1)
+    return;
+
+  for (short int i = 0; i < mat->n_rows; i++) {
+
+    cs_real_t  *mi = mat->val + i*mat->n_cols;
+    for (short int j = i; j < mat->n_cols; j++) {
+      int  ji = j*mat->n_rows + i;
+      mi[j] += mat->val[ji];
+      mat->val[ji] = mi[j];
+    } /* col j */
+
+  } /* row i */
 
 }
 
@@ -1924,7 +2040,7 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
   cs_log_printf(CS_LOG_DEFAULT, " n_row_blocks: %d; n_col_blocks: %d\n",
                 n_b_rows, n_b_cols);
 
-  const char _sep[] = ".............";
+  const char _sep[] = "------------------------------------------------------";
   for (short int bi = 0; bi < n_b_rows; bi++) {
 
     const cs_sdm_t  *bi0 = blocks + bi*n_b_cols;

@@ -1,7 +1,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -225,7 +225,8 @@ FSI_SATURNE_i::init_service(const char * service_name) {
           create_calcium_port(this,(char *)"COLNOD",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"COLFAC",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"ICV",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"DONGEO",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"NB_DYN",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"NB_FOR",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
         }
       catch(const PortAlreadyDefined& ex)
         {

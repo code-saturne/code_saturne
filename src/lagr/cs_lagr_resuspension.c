@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,19 +50,23 @@
 
 #include "cs_base.h"
 #include "cs_math.h"
-#include "cs_prototypes.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 #include "bft_mem.h"
 #include "bft_error.h"
 
 #include "cs_physical_constants.h"
+#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_thermal_model.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_stat.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_adh.h"
+#include "cs_lagr_event.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -93,6 +97,63 @@ BEGIN_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a resulspension event
+ *
+ * TODO add additional info to events.
+ *
+ * \param[in]  events             pointer to events set
+ * \param[in]  particles          pointer to particle set
+ * \param[in]  p_id               particle id
+ * \param[in]  face_id            associated face id
+ * \param[in]  particle_velocity  velocity after event
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_resuspension_event(cs_lagr_event_set_t     *events,
+                        cs_lagr_particle_set_t  *particles,
+                        cs_lnum_t                p_id,
+                        cs_lnum_t                face_id,
+                        cs_real_t                particle_velocity[3])
+{
+  cs_lnum_t event_id = events->n_events;
+  if (event_id >= events->n_events_max) {
+    /* flush events */
+    cs_lagr_stat_update_event(events,
+                              CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+    events->n_events = 0;
+    event_id = 0;
+  }
+
+  cs_lagr_event_init_from_particle(events, particles, event_id, p_id);
+
+  cs_lagr_events_set_lnum(events,
+                          event_id,
+                          CS_LAGR_E_FACE_ID,
+                          face_id);
+
+  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                          event_id,
+                                          CS_LAGR_E_FLAG);
+
+  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
+                                              event_id,
+                                              CS_LAGR_E_VELOCITY);
+
+  *e_flag = *e_flag | CS_EVENT_RESUSPENSION;
+
+  for (int k = 0; k < 3; k++)
+    e_vel_post[k] = particle_velocity[k];
+
+  events->n_events += 1;
+}
+
+/*=============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -121,6 +182,16 @@ cs_lagr_resuspension(void)
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
 
+  cs_lagr_event_set_t  *events = NULL;
+
+  if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT)) {
+    events = cs_lagr_event_set_boundary_interaction();
+    /* Event set "expected" size: n boundary faces*2 */
+    cs_lnum_t events_min_size = mesh->n_b_faces * 2;
+    if (events->n_events_max < events_min_size)
+      cs_lagr_event_set_resize(events, events_min_size);
+  }
+
   /* ================================================================  */
   /* 1.    Resuspension sub model   */
   /* ================================================================  */
@@ -144,7 +215,7 @@ cs_lagr_resuspension(void)
 
     test_colli = 0;
 
-    cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+    cs_lnum_t iel = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
     cs_real_t temp;
 
@@ -159,7 +230,7 @@ cs_lagr_resuspension(void)
                           CS_TEMPERATURE_SCALE_KELVIN)
         temp = extra->scal_t->val[iel];
 
-      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
+      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
         cs_lnum_t mode = 1;
         CS_PROCF (usthht,USTHHT)(&mode, &(extra->scal_t->val[iel]), &temp);
@@ -170,11 +241,11 @@ cs_lagr_resuspension(void)
     else
       temp = cs_glob_fluid_properties->t0;
 
-    cs_lnum_t flag = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG);
+    cs_lnum_t flag = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_P_FLAG);
     cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;
 
     /* Treatment of internal deposition and user imposed motion */
-    if (flag == CS_LAGR_PART_IMPOSED_MOTION && face_id > -1) {
+    if ((flag & CS_LAGR_PART_IMPOSED_MOTION) && face_id > -1) {
 
       /* Reorient the face so that it is the outwarding normal */
       int reorient_face = 1;
@@ -210,22 +281,22 @@ cs_lagr_resuspension(void)
 
       /* Resuspension criterion: Fgrav + Fpres < 0 */
       if ((fgrav + fpres) < 0.) {
-        cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-            CS_LAGR_PART_IN_FLOW);
+        cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
         /* TODO: impose particle velocity? Do some stats? */
       }
     }
 
     /* Monolayer resuspension model */
-    if (face_id > 0 &&
-        bound_stat[face_id + n_faces * lag_bi->ihdepm] < diam_mean ) {
+    if ((    cs_glob_lagr_model->clogging == 0 && face_id > 0)
+         || (   cs_glob_lagr_model->clogging == 1 && face_id > 0
+             && bound_stat[face_id + n_faces * lag_bi->ihdepm] < diam_mean)) {
 
-      if (flag == CS_LAGR_PART_DEPOSITED)
+      if (flag & CS_LAGR_PART_DEPOSITED)
         /* The particle has just deposited     */
         /* The adhesion force is calculated    */
         cs_lagr_adh(ip, temp, &adhesion_energ);
 
-      else if (flag == CS_LAGR_PART_ROLLING) {
+      else if (flag & CS_LAGR_PART_ROLLING) {
 
         /* The particle is rolling   */
 
@@ -258,9 +329,7 @@ cs_lagr_resuspension(void)
               /* The particle is resuspended
                * with an angle (determined using the large-scale asperity radius) */
 
-
-              cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                        CS_LAGR_PART_IN_FLOW);
+              cs_lagr_particles_unset_flag(p_set, ip, CS_LAGR_PART_DEPOSITION_FLAGS);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
@@ -286,12 +355,12 @@ cs_lagr_resuspension(void)
               p_set->n_part_resusp += 1;
               p_set->weight_resusp += p_stat_weight;
 
-              if (lag_bi->iflmbd == 1) {
-
-                bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
-                bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
-                bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
-              }
+              if (events != NULL)
+                _add_resuspension_event(events,
+                                        p_set,
+                                        ip,
+                                        face_id,
+                                        part_vel);
 
             }
 
@@ -304,23 +373,14 @@ cs_lagr_resuspension(void)
 
           cs_lnum_t ii = 1;
           while (   ii <= ndiam
-                 && (  cs_lagr_particle_get_lnum(part, p_am,
-                                                 CS_LAGR_DEPOSITION_FLAG)
-                     == CS_LAGR_PART_ROLLING)) {
+                 && (cs_lagr_particles_get_flag(p_set, ip,
+                                                CS_LAGR_PART_ROLLING))) {
 
             cs_lagr_adh(ip, temp, &adhesion_energ);
 
             /* Reconstruct an estimate of the particle velocity   */
             /* at the current sub-time-step assuming linear variation  */
             /* (constant acceleration)   */
-
-            cs_real_t v_part_t    = cs_math_3_norm(prev_part_vel);
-            cs_real_t v_part_t_dt = cs_math_3_norm(part_vel);
-
-            cs_real_t sub_dt = cs_glob_lagr_time_step->dtp / ndiam;
-
-            cs_real_t v_part_inst =   v_part_t + sub_dt * (v_part_t_dt + v_part_t)
-                                    / cs_glob_lagr_time_step->dtp;
 
             if (   test_colli == 1
                 && cs_lagr_particle_get_lnum(part, p_am,
@@ -334,8 +394,8 @@ cs_lagr_resuspension(void)
                 /* The particle is resuspended    */
                 /* and its kinetic energy is totally converted   */
                 /* along the wall-normal distance */
-                cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                          CS_LAGR_PART_IN_FLOW);
+                cs_lagr_particles_unset_flag(p_set, ip,
+                                             CS_LAGR_PART_DEPOSITION_FLAGS);
                 cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
                 cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
                 cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
@@ -361,13 +421,12 @@ cs_lagr_resuspension(void)
                 p_set->n_part_resusp += 1;
                 p_set->weight_resusp += p_stat_weight;
 
-                if (lag_bi->iflmbd == 1) {
-
-                  bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
-                  bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
-                  bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
-
-                }
+                if (events != NULL)
+                  _add_resuspension_event(events,
+                                          p_set,
+                                          ip,
+                                          face_id,
+                                          part_vel);
 
               }
 
@@ -384,7 +443,8 @@ cs_lagr_resuspension(void)
 
       }
     } /* Enf of monolayer resuspension */
-    else {
+       else if (    cs_glob_lagr_model->clogging == 1
+                 && bound_stat[face_id + n_faces * lag_bi->ihdepm] >= diam_mean) {
 
       /* Treatment of multilayer resuspension */
 
@@ -401,16 +461,7 @@ cs_lagr_resuspension(void)
 
         /*  Mean distance between protruding clusters */
         cs_real_t cluster_spacing;
-        if (bound_stat[face_id + n_faces * lag_bi->inclg] < 0 ) {
-
-          bft_error(__FILE__, __LINE__, 0,
-                    _(" Error in %s: inclg < 0 \n"
-                      "Face number: %d, Particle number %d \n"),
-                    __func__,
-                    face_id, ip);
-
-        }
-        else if (bound_stat[face_id + n_faces * lag_bi->inclg] == 0)
+        if (bound_stat[face_id + n_faces * lag_bi->inclg] <= 0)
           cluster_spacing = sqrt(norm_face);
 
         else
@@ -424,9 +475,8 @@ cs_lagr_resuspension(void)
 
         cs_lnum_t ii = 1;
         while (   ii <= ndiam
-               && (   cs_lagr_particle_get_lnum(part, p_am,
-                                                CS_LAGR_DEPOSITION_FLAG)
-                   == CS_LAGR_PART_ROLLING)) {
+               && (cs_lagr_particles_get_flag(p_set, ip,
+                                              CS_LAGR_PART_ROLLING))) {
 
           /* Reconstruct an estimate of the kinetic energy   */
           /* at the current sub-time-step assuming a linear variation  */
@@ -471,8 +521,8 @@ cs_lagr_resuspension(void)
             /* The particle is resuspended    */
             /* and its kinetic energy is totally converted   */
             /* along the wall-normal distance */
-            cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                      CS_LAGR_PART_IN_FLOW);
+            cs_lagr_particles_unset_flag(p_set, ip,
+                                         CS_LAGR_PART_DEPOSITION_FLAGS);
             cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
             cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
             cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
@@ -496,13 +546,12 @@ cs_lagr_resuspension(void)
             p_set->n_part_resusp += 1;
             p_set->weight_resusp += p_stat_weight;
 
-            if (lag_bi->iflmbd == 1) {
-
-              bound_stat[lag_bi->ires   * n_faces + face_id] +=   p_stat_weight;
-              bound_stat[lag_bi->iflres * n_faces + face_id] +=   p_stat_weight * p_mass / norm_face;
-              bound_stat[lag_bi->iflm   * n_faces + face_id] += - p_stat_weight * p_mass / norm_face;
-
-            }
+            if (events != NULL)
+              _add_resuspension_event(events,
+                                      p_set,
+                                      ip,
+                                      face_id,
+                                      part_vel);
 
           }
 

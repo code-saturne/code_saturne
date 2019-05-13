@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -132,6 +132,8 @@ integer          idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 integer          dimrij, f_id
+integer          key_t_ext_id
+integer          iroext
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -168,6 +170,11 @@ type(var_cal_opt) :: vcopt_rij
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 ! Allocate work arrays
 allocate(w1(ncelet))
@@ -667,7 +674,7 @@ endif
 
 iconvp = vcopt_rij%iconv
 idiffp = vcopt_rij%idiff
-ndircp = ndircl(irij)
+ndircp = vcopt_rij%ndircl
 nswrsp = vcopt_rij%nswrsm
 nswrgp = vcopt_rij%nswrgr
 imligp = vcopt_rij%imligr

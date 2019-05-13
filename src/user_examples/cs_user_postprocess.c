@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -752,7 +752,7 @@ cs_user_postprocess_values(const char            *mesh_name,
     if (f != NULL)
       cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
-                        f->dim,                         /* var_name */
+                        f->name,                        /* var_name */
                         1,                              /* var_dim */
                         true,                           /* interlace, */
                         true,                           /* use_parent */
@@ -780,7 +780,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
         cs_post_write_var(mesh_id,
                           CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
-                          f->dim,                         /* var_name */
+                          f->name,                        /* var_name */
                           1,                              /* var_dim */
                           true,                           /* interlace, */
                           true,                           /* use_parent */

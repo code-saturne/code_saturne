@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -35,6 +35,7 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_local.h"
 #include "cs_defs.h"
+#include "cs_equation_param.h"
 #include "cs_math.h"
 
 /*----------------------------------------------------------------------------*/
@@ -58,24 +59,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #if defined(DEBUG) && !defined(NDEBUG)
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Function used to select which element deserves a dump or specific
- *          treatment during a debugging stage
- *
- * \param[in]  cm       pointer to a cs_cell_mesh_t  structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_dbg_cw_test(const cs_cell_mesh_t  *cm)
-{
-  if (cm->c_id == 0)
-    return true;
-  else
-    return false;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Check if there is no invalid setting for a homogeneous Dirichlet
@@ -104,6 +87,22 @@ cs_dbg_check_hmg_dirichlet_cw(const char           *fname,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Function used to select which element deserves a dump or specific
+ *          treatment during a debugging stage
+ *
+ * \param[in]  eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]  csys     pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+_Bool
+cs_dbg_cw_test(const cs_equation_param_t   *eqp,
+               const cs_cell_mesh_t        *cm,
+               const cs_cell_sys_t         *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Print a cs_sdm_t structure which is defined by block
  *          Print into the file f if given otherwise open a new file named
  *          fname if given otherwise print into the standard output
@@ -129,7 +128,29 @@ cs_dbg_array_fprintf(FILE             *fp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump an array of double into the listing
+ * \brief  In debug mode, print into a file the solution and its right-hand
+ *         side
+ *
+ * \param[in] eqname     name of the related equation
+ * \param[in] nt         number of time step
+ * \param[in] level      level of debug
+ * \param[in] sol        solution array
+ * \param[in] rhs        rhs array
+ * \param[in] size       size of the array to print
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_fprintf_system(const char        *eqname,
+                      int                nt,
+                      int                level,
+                      const cs_real_t   *sol,
+                      const cs_real_t   *rhs,
+                      cs_lnum_t          size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump an array of double into the log
  *
  * \param[in] header     header message to write
  * \param[in] size       number of elements in array
@@ -146,7 +167,7 @@ cs_dbg_darray_to_listing(const char        *header,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In debug mode, dump an array of integer into the listing
+ * \brief  In debug mode, dump an array of integer into the log
  *
  * \param[in] header     header message to write
  * \param[in] size       number of elements in array
@@ -186,7 +207,7 @@ cs_dbg_dump_linear_system(const char        *eqname,
                           const cs_lnum_t    col_id[],
                           const cs_real_t    xval[],
                           const cs_real_t    dval[]);
-#endif
+#endif  /* DEBUG */
 
 /*----------------------------------------------------------------------------*/
 

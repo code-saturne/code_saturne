@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -197,6 +197,7 @@ fvm_to_vtk_display_histogram_png(cs_real_t                   var_min,
 
 /*----------------------------------------------------------------------------*/
 
+END_C_DECLS
+
 #endif /* HAVE_CATALYST */
 
-END_C_DECLS

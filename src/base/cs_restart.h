@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,6 +36,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -48,24 +49,24 @@ BEGIN_C_DECLS
 
 /* Error codes */
 
-#define CS_RESTART_SUCCESS        0 /* Success */
-#define CS_RESTART_ERR_FILE_NUM  -1 /* No restart file for the given number */
-#define CS_RESTART_ERR_LOCATION  -2 /* Undefined location / incorrect size */
-#define CS_RESTART_ERR_VAL_TYPE  -3 /* Unknown or unexpected value type */
-#define CS_RESTART_ERR_N_VALS    -4 /* Number of values does not match */
-#define CS_RESTART_ERR_MODE      -5 /* Incompatible access mode */
-#define CS_RESTART_ERR_EXISTS    -6 /* Section not available */
+#define CS_RESTART_SUCCESS        0 /*!< Success */
+#define CS_RESTART_ERR_FILE_NUM  -1 /*!< No restart file for the given number */
+#define CS_RESTART_ERR_LOCATION  -2 /*!< Undefined location / incorrect size */
+#define CS_RESTART_ERR_VAL_TYPE  -3 /*!< Unknown or unexpected value type */
+#define CS_RESTART_ERR_N_VALS    -4 /*!< Number of values does not match */
+#define CS_RESTART_ERR_MODE      -5 /*!< Incompatible access mode */
+#define CS_RESTART_ERR_EXISTS    -6 /*!< Section not available */
 
 /*============================================================================
  * Local type definitions
  *============================================================================*/
 
-/* Read or write mode */
+/*! Read or write mode */
 
 typedef enum {
 
-  CS_RESTART_MODE_READ,         /* Read mode */
-  CS_RESTART_MODE_WRITE         /* Write mode */
+  CS_RESTART_MODE_READ,         /*!< Read mode */
+  CS_RESTART_MODE_WRITE         /*!< Write mode */
 
 } cs_restart_mode_t;
 
@@ -84,6 +85,95 @@ typedef enum {
 */
 
 typedef struct _cs_restart_t cs_restart_t;
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for modifying behavior when checking a section's
+ *        presence.
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * in general not be temporary.
+ *
+ * \param[in]       restart          associated restart file pointer
+ * \param[in, out]  context          pointer to optional (untyped) value or
+ *                                   structure.
+ * \param[in]       sec_name         section name
+ * \param[in]       location_id      id of corresponding location
+ * \param[in]       n_location_vals  number of values per location (interlaced)
+ * \param[in]       val_type         value type
+ *
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef int
+(cs_restart_check_section_t)(cs_restart_t           *restart,
+                             void                   *context,
+                             const char             *sec_name,
+                             int                     location_id,
+                             int                     n_location_vals,
+                             cs_restart_val_type_t   val_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for modifying behavior when reading a section.
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * in general not be temporary.
+ *
+ * \param[in]       restart          associated restart file pointer
+ * \param[in, out]  context          pointer to optional (untyped) value or
+ *                                   structure.
+ * \param[in]       sec_name         section name
+ * \param[in]       location_id      id of corresponding location
+ * \param[in]       n_location_vals  number of values per location (interlaced)
+ * \param[in]       val_type         value type
+ * \param[out]      val              array of values
+ *
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef int
+(cs_restart_read_section_t)(cs_restart_t           *restart,
+                            void                   *context,
+                            const char             *sec_name,
+                            int                     location_id,
+                            int                     n_location_vals,
+                            cs_restart_val_type_t   val_type,
+                            void                   *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for modifying behavior when writing a section.
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * in general not be temporary.
+ *
+ * \param[in]       restart          associated restart file pointer
+ * \param[in, out]  context          pointer to optional (untyped) value or
+ *                                   structure.
+ * \param[in]       sec_name         section name
+ * \param[in]       location_id      id of corresponding location
+ * \param[in]       n_location_vals  number of values per location (interlaced)
+ * \param[in]       val_type         value type
+ * \param[in]       val              array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_restart_write_section_t)(cs_restart_t           *restart,
+                             void                   *context,
+                             const char             *sec_name,
+                             int                     location_id,
+                             int                     n_location_vals,
+                             cs_restart_val_type_t   val_type,
+                             const void             *val);
 
 /*=============================================================================
  * Global variables
@@ -183,141 +273,173 @@ void CS_PROCF (indsui, INDSUI)
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Define default checkpoint interval.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define default checkpoint interval.
  *
- * parameters
- *   nt_interval <-- if > 0 time step interval for checkpoint
- *                   if 0, default of 4 checkpoints per run
- *                   if -1, checkpoint at end
- *                   if -2, no checkpointing
- *   t_interval  <-- if > 0, time value interval for checkpoint
- *   wt_interval <-- if > 0, wall-clock interval for checkpoints
- *----------------------------------------------------------------------------*/
+ * \param[in]  nt_interval  if > 0 time step interval for checkpoint
+ *                          if 0, default of 4 checkpoints per run
+ *                          if -1, checkpoint at end
+ *                          if -2, no checkpointing
+ * \param[in]  t_interval   if > 0, time value interval for checkpoint
+ * \param[in]  wt_interval  if > 0, wall-clock interval for checkpoints
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_checkpoint_set_defaults(int     nt_interval,
                                    double  t_interval,
                                    double  wt_interval);
 
-/*----------------------------------------------------------------------------
- * Define last forced checkpoint time step
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define checkpoint behavior for mesh.
  *
- * parameters
- *   nt_last <-- last time step for forced checkpoint
- *----------------------------------------------------------------------------*/
+ * If mesh checkpointing is active (default), upon writing the first
+ * checkpoint file of a computation, a mesh_output file is moved to
+ * checkpoint/mesh_input if present. If not present but a mesh_input
+ * file (or link to file) is present, a hard link to that file is
+ * added as checkpoint/mesh_input.
+ *
+ * A mesh_input directory is ignored, as it is normally only created when
+ * multiple input files are appended, which leads to the output and thus
+ * presence of a mesh_output file, unless explicitely deactivated by the
+ * user.
+ *
+ * \param[in]  mode  if 0, do not checkpoint mesh
+ *                   if 1, checkpoint mesh_output or mesh_input file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_checkpoint_set_mesh_mode(int  mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define last forced checkpoint time step.
+ *
+ * \param[in]  nt_last  last time step for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_checkpoint_set_last_ts(int  nt_last);
 
-/*----------------------------------------------------------------------------
- * Define next forced checkpoint time step
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define next forced checkpoint time step.
  *
- * parameters
- *   nt_next <-- next time step for forced checkpoint
- *----------------------------------------------------------------------------*/
+ * \param[in]  nt_next  next time step for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_checkpoint_set_next_ts(int  nt_next);
 
-/*----------------------------------------------------------------------------
- * Define next forced checkpoint time value
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define next forced checkpoint time value.
  *
- * parameters
- *   t_next <-- next time value for forced checkpoint
- *----------------------------------------------------------------------------*/
+ * \param[in]  t_next  next time value for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_checkpoint_set_next_tv(double  t_next);
 
-/*----------------------------------------------------------------------------
- * Define next forced checkpoint wall-clock time value
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define next forced checkpoint wall-clock time value.
  *
- * parameters
- *   wt_next <-- next wall-clock time value for forced checkpoint
- *----------------------------------------------------------------------------*/
+ * \param[in]  wt_next  next wall-clock time value for forced checkpoint
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_checkpoint_set_next_wt(double  wt_next);
 
-/*----------------------------------------------------------------------------
- * Check if checkpointing is recommended at a given time.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if checkpointing is recommended at a given time.
  *
- * parameters
- *   ts <-- time step status structure
+ * \param[in]  ts  time step status structure
  *
- * returns:
- *   true if checkpointing is recommended, 0 otherwise
- *----------------------------------------------------------------------------*/
+ * \return  true if checkpointing is recommended, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
 
 bool
 cs_restart_checkpoint_required(const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Indicate checkpointing has been done at a given time.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Indicate checkpointing has been done at a given time.
  *
  * This updates the status for future checks to determine
  * if checkpointing is recommended at a given time.
  *
- * parameters
- *   ts <-- time step status structure
- *----------------------------------------------------------------------------*/
+ * \param[in]  ts  time step status structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_checkpoint_done(const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Check if we have a restart directory.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if we have a restart directory.
  *
- * returns:
- *   1 if a restart directory is present, 0 otherwise.
- *----------------------------------------------------------------------------*/
+ * \return  1 if a restart directory is present, 0 otherwise
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_present(void);
 
-/*----------------------------------------------------------------------------
- * Initialize a restart file
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize a restart file.
  *
- * parameters:
- *   name <-- file name
- *   path <-- optional directory name for output
- *            (directory automatically created if necessary)
- *   mode <-- read or write
+ * \param[in]  name  file name
+ * \param[in]  path  optional directory name for output, or NULL for default
+ *                   (directory automatically created if necessary)
+ * \param[in]  mode  read or write
  *
- * returns:
- *   pointer to initialized restart file structure
- *----------------------------------------------------------------------------*/
+ * \return  pointer to initialized restart file structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_restart_t *
 cs_restart_create(const char         *name,
                   const char         *path,
                   cs_restart_mode_t   mode);
 
-/*----------------------------------------------------------------------------
- * Destroy structure associated with a restart file (and close the file).
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy structure associated with a restart file (and close the file).
  *
- * parameters:
- *   restart <-- pointer to restart file structure pointer
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  restart  pointer to restart file structure pointer
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_destroy(cs_restart_t  **restart);
 
-/*----------------------------------------------------------------------------
- * Check the locations associated with a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the locations associated with a restart file.
  *
  * For each type of entity, the corresponding flag is set to true if the
  * associated number of entities matches the current value (and so that we
  * consider the mesh locations are the same), false otherwise.
  *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   match_cell   <-- matching cells flag
- *   match_i_face <-- matching interior faces flag
- *   match_b_face <-- matching boundary faces flag
- *   match_vertex <-- matching vertices flag
- *----------------------------------------------------------------------------*/
+ * \param[out]  restart       associated restart file pointer
+ * \param[out]  match_cell    matching cells flag
+ * \param[out]  match_i_face  matching interior faces flag
+ * \param[out]  match_b_face  matching boundary faces flag
+ * \param[out]  match_vertex  matching vertices flag
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_check_base_location(const cs_restart_t  *restart,
@@ -326,19 +448,19 @@ cs_restart_check_base_location(const cs_restart_t  *restart,
                                bool                *match_b_face,
                                bool                *match_vertex);
 
-/*----------------------------------------------------------------------------
- * Add a location definition.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a location definition.
  *
- * parameters:
- *   restart        <-- associated restart file pointer
- *   location_name  <-- name associated with the location
- *   n_glob_ents    <-- global number of entities
- *   n_ents         <-- local number of entities
- *   ent_global_num <-- global entity numbers, or NULL
+ * \param[in]  restart         associated restart file pointer
+ * \param[in]  location_name   name associated with the location
+ * \param[in]  n_glob_ents     global number of entities
+ * \param[in]  n_ents          local number of entities
+ * \param[in]  ent_global_num  global entity numbers, or NULL
  *
- * returns:
- *   the location id assigned, or -1 in case of error
- *----------------------------------------------------------------------------*/
+ * \return  the location id assigned, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_add_location(cs_restart_t      *restart,
@@ -347,42 +469,154 @@ cs_restart_add_location(cs_restart_t      *restart,
                         cs_lnum_t          n_ents,
                         const cs_gnum_t   *ent_global_num);
 
-/*----------------------------------------------------------------------------
- * Return name of restart file
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a reference location definition with a private copy.
  *
- * parameters:
- *   restart <-- associated restart file pointer
+ * \param[in]  location_name   name associated with the location
+ * \param[in]  n_glob_ents     global number of entities
+ * \param[in]  n_ents          local number of entities
+ * \param[in]  ent_global_num  global entity numbers, or NULL
  *
- * returns:
- *   base name of restart file
- *----------------------------------------------------------------------------*/
+ * \return  the location id assigned, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_add_location_ref(const char       *location_name,
+                            cs_gnum_t         n_glob_ents,
+                            cs_lnum_t         n_ents,
+                            const cs_gnum_t  *ent_global_num);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Clear reference location definitions with a private copy.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_clear_locations_ref(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a context to restart section check operations.
+ *
+ * This context may be used by the \ref cs_restart_check_section_t,
+ * \ref cs_restart_read_section_t, and \ref cs_restart_write_section_t
+ * type functions.
+ *
+ * Note that the lifecycle of the data pointed to must be handled separately
+ * (and the pointer must remain valid until the matching restart structure
+ * is destroyed.
+ *
+ * \param[in]  context  pointer to associated data, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_set_context(void  *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a function to restart section check operations.
+ *
+ * This allows defining alternate operations when checking restart sections.
+ *
+ * \param[in]  func  associated function
+ *
+ * \return   pointer to previous function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_restart_check_section_t  *
+cs_restart_set_check_section_func(cs_restart_check_section_t  *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a function and its input to all restart section
+ *         read operations.
+ *
+ * This allows defining alternate operations when reading restart sections.
+ *
+ * \param[in]  func  associated function
+ *
+ * \return   pointer to previous function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_restart_read_section_t  *
+cs_restart_set_read_section_func(cs_restart_read_section_t  *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a function and its input to all restart section
+ *         write operations.
+ *
+ * This allows defining alternate operations when writing restart sections.
+ *
+ * \param[in]  func  associated hook function
+ *
+ * \return   pointer to previous function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_restart_write_section_t  *
+cs_restart_set_write_section_func(cs_restart_write_section_t  *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return name of restart file
+ *
+ * \param[in]  restart  associated restart file pointer
+ *
+ * \return  base name of restart file
+ */
+/*----------------------------------------------------------------------------*/
 
 const char *
 cs_restart_get_name(const cs_restart_t  *restart);
 
-/*----------------------------------------------------------------------------
- * Print the index associated with a restart file in read mode
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return local number of elements associated with a
+ *         given restart location.
  *
- * parameters:
- *   restart <-- associated restart file pointer
- *----------------------------------------------------------------------------*/
+ * \param[in]  restart      associated restart file pointer
+ * \param[in]  location_id  id of corresponding location
+ *
+ * \return  number of elements associated with location.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_restart_get_n_location_elts(const cs_restart_t  *restart,
+                               int                  location_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print the index associated with a restart file in read mode
+ *
+ * \param[in]  restart  associated restart file pointer
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_dump_index(const cs_restart_t  *restart);
 
-/*----------------------------------------------------------------------------
- * Check the presence of a given section in a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the presence of a given section in a restart file.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
+ * \param[in]  restart          associated restart file pointer
+ * \param[in]  sec_name         section name
+ * \param[in]  location_id      id of corresponding location
+ * \param[in]  n_location_vals  number of values per location (interlaced)
+ * \param[in]  val_type         value type
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_check_section(cs_restart_t           *restart,
@@ -391,20 +625,21 @@ cs_restart_check_section(cs_restart_t           *restart,
                          int                     n_location_vals,
                          cs_restart_val_type_t   val_type);
 
-/*----------------------------------------------------------------------------
- * Read a section from a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a section from a restart file.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
- *   val             --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   location_id      id of corresponding location
+ * \param[in]   n_location_vals  number of values per location (interlaced)
+ * \param[in]   val_type         value type
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_section(cs_restart_t           *restart,
@@ -414,17 +649,18 @@ cs_restart_read_section(cs_restart_t           *restart,
                         cs_restart_val_type_t   val_type,
                         void                   *val);
 
-/*----------------------------------------------------------------------------
- * Write a section to a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write a section to a restart file.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
- *   val             <-- array of values
- *----------------------------------------------------------------------------*/
+ * \param[in]  restart          associated restart file pointer
+ * \param[in]  sec_name         section name
+ * \param[in]  location_id      id of corresponding location
+ * \param[in]  n_location_vals  number of values per location (interlaced)
+ * \param[in]  val_type         value type
+ * \param[in]  val              array of values
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_write_section(cs_restart_t           *restart,
@@ -434,37 +670,38 @@ cs_restart_write_section(cs_restart_t           *restart,
                          cs_restart_val_type_t   val_type,
                          const void             *val);
 
-/*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read basic particles information from a restart file.
  *
  * This includes building a matching location and associated global numbering.
  *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   name         <-- name of particles set
- *   n_particles  --> number of particles, or NULL
+ * \param[in]   restart      associated restart file pointer
+ * \param[in]   name         name of particles set
+ * \param[out]  n_particles  number of particles, or NULL
  *
- * returns:
- *   the location id assigned to the particles, or -1 in case of error
- *----------------------------------------------------------------------------*/
+ * \return  the location id assigned to the particles, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_particles_info(cs_restart_t  *restart,
                                const char    *name,
                                cs_lnum_t     *n_particles);
 
-/*----------------------------------------------------------------------------
- * Read basic particles information from a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read basic particles information from a restart file.
  *
- * parameters:
- *   restart               <-- associated restart file pointer
- *   particles_location_id <-- location id of particles set
- *   particle_cell_id      --> local cell id to which particles belong
- *   particle_coords       --> local particle coordinates (interleaved)
+ * \param[in]   restart                associated restart file pointer
+ * \param[in]   particles_location_id  location id of particles set
+ * \param[out]  particle_cell_id       local cell id to which particles belong
+ * \param[out]  particle_coords        local particle coordinates (interleaved)
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_particles(cs_restart_t  *restart,
@@ -472,37 +709,39 @@ cs_restart_read_particles(cs_restart_t  *restart,
                           cs_lnum_t     *particle_cell_id,
                           cs_real_t     *particle_coords);
 
-/*----------------------------------------------------------------------------
- * Write basic particles information to a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write basic particles information to a restart file.
  *
  * This includes defining a matching location and associated global numbering,
  * then writing particle coordinates and cell ids.
  *
- * parameters:
- *   restart           <-- associated restart file pointer
- *   name              <-- name of particles set
- *   number_by_coords  <-- if true, numbering is based on current coordinates;
- *                         otherwise, it is simply based on local numbers,
- *                         plus the sum of particles on lower MPI ranks
- *   n_particles       <-- local number of particles
- *   particle_cell_num <-- local cell number (1 to n) to which particles
- *                         belong; 0 for untracked particles
- *   particle_coords   <-- local particle coordinates (interleaved)
+ * \param[in]  restart            associated restart file pointer
+ * \param[in]  name               name of particles set
+ * \param[in]  number_by_coords   if true, numbering is based on current
+ *                                coordinates; otherwise, it is simply based
+ *                                on local numbers, plus the sum of particles
+ *                                on lower MPI ranks
+ * \param[in]  n_particles        local number of particles
+ * \param[in]  particle_cell_id   local cell id (0 to n-1) to which particles
+ *                                belong
+ * \param[in]  particle_coords    local particle coordinates (interleaved)
  *
- * returns:
- *   the location id assigned to the particles
- *----------------------------------------------------------------------------*/
+ * \return  the location id assigned to the particles
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_write_particles(cs_restart_t     *restart,
                            const char       *name,
                            bool              number_by_coords,
                            cs_lnum_t         n_particles,
-                           const cs_lnum_t  *particle_cell_num,
+                           const cs_lnum_t  *particle_cell_id,
                            const cs_real_t  *particle_coords);
 
-/*----------------------------------------------------------------------------
- * Read a referenced location id section from a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a referenced location id section from a restart file.
  *
  * The section read from file contains the global ids matching the local
  * element ids of a given location. Global id's are transformed to local
@@ -511,17 +750,18 @@ cs_restart_write_particles(cs_restart_t     *restart,
  * In case global referenced ids read do not match those of local elements,
  * id_base - 1 is assigned to the corresponding local ids.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of location on which id_ref is defined
- *   ref_location_id <-- id of referenced location
- *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
- *   ref_id          --> array of location entity ids
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   location_id      id of location on which id_ref is defined
+ * \param[in]   ref_location_id  id of referenced location
+ * \param[in]   ref_id_base      base of location entity id numbers
+ *                               (usually 0 or 1)
+ * \param[out]  ref_id           array of location entity ids
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_ids(cs_restart_t     *restart,
@@ -531,20 +771,22 @@ cs_restart_read_ids(cs_restart_t     *restart,
                     cs_lnum_t         ref_id_base,
                     cs_lnum_t        *ref_id);
 
-/*----------------------------------------------------------------------------
- * Write a referenced location id section to a restart file.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Write a referenced location id section to a restart file.
  *
  * The section written to file contains the global ids matching the
  * local element ids of a given location.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of location on which id_ref is defined
- *   ref_location_id <-- id of referenced location
- *   ref_id_base     <-- base of location entity id numbers (usually 0 or 1)
- *   ref_id          <-- array of location entity ids
- *----------------------------------------------------------------------------*/
+ * \param[in]  restart          associated restart file pointer
+ * \param[in]  sec_name         section name
+ * \param[in]  location_id      id of location on which id_ref is defined
+ * \param[in]  ref_location_id  id of referenced location
+ * \param[in]  ref_id_base      base of location entity id numbers
+ *                              (usually 0 or 1)
+ * \param[in]  ref_id           array of location entity ids
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_write_ids(cs_restart_t           *restart,
@@ -554,21 +796,22 @@ cs_restart_write_ids(cs_restart_t           *restart,
                      cs_lnum_t               ref_id_base,
                      const cs_lnum_t        *ref_id);
 
-/*----------------------------------------------------------------------------
- * Read a section from a restart file, when that section may have used a
- * different name in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a section from a restart file, when that section may have used
+ *         a different name in a previous version.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val_type        <-- value type
- *   val             --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   location_id      id of corresponding location
+ * \param[in]   n_location_vals  number of values per location (interlaced)
+ * \param[in]   val_type         value type
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_section_compat(cs_restart_t           *restart,
@@ -579,48 +822,26 @@ cs_restart_read_section_compat(cs_restart_t           *restart,
                                cs_restart_val_type_t   val_type,
                                void                   *val);
 
-/*----------------------------------------------------------------------------
- * Read a cs_real_t section from a restart file, when that section may
- * have used a different name in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a cs_real_3_t vector section from a restart file, when that
+ *         section may have used a different name and been non-interleaved
+ *         in a previous version.
  *
- * parameters:
- *   restart         <-- associated restart file pointer
- *   sec_name        <-- section name
- *   location_id     <-- id of corresponding location
- *   n_location_vals <-- number of values per location (interlaced)
- *   val             --> array of values
+ * This function assumes a mesh-base location (i.e. location_id > 0)
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   old_name_x       old name, x component
+ * \param[in]   old_name_y       old name, y component
+ * \param[in]   old_name_y       old name, z component
+ * \param[in]   location_id      id of corresponding location
+ * \param[out]  val              array of values
+ *
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
-
-int
-cs_restart_read_real_t_compat(cs_restart_t  *restart,
-                              const char    *sec_name,
-                              const char    *old_name,
-                              int            location_id,
-                              int            n_location_vals,
-                              cs_real_t     *val);
-
-/*----------------------------------------------------------------------------
- * Read a cs_real_3_t vector section from a restart file, when that
- * section may have used a different name and been non-interleaved
- * in a previous version.
- *
- * This file assumes a mesh-base location (i.e. location_id > 0)
- *
- * parameters:
- *   restart     <-- associated restart file pointer
- *   sec_name    <-- section name
- *   old_name_x  <-- old name, x component
- *   old_name_y  <-- old name, y component
- *   old_name_y  <-- old name, z component
- *   location_id <-- id of corresponding location
- *   val         --> array of values
- *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
- *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
@@ -631,28 +852,29 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
                                 int            location_id,
                                 cs_real_3_t   *val);
 
-/*----------------------------------------------------------------------------
- * Read a cs_real_6_t vector section from a restart file, when that
- * section may have used a different name and been non-interleaved
- * in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a cs_real_6_t tensor section from a restart file, when that
+ *         section may have used a different name and been non-interleaved
+ *         in a previous version.
  *
- * This file assumes a mesh-base location (i.e. location_id > 0)
+ * This function assumes a mesh-base location (i.e. location_id > 0)
  *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   sec_name     <-- section name
- *   old_name_xx  <-- old name, xx component
- *   old_name_yy  <-- old name, yy component
- *   old_name_zz  <-- old name, zz component
- *   old_name_xy  <-- old name, xy component
- *   old_name_yz  <-- old name, xy component
- *   old_name_xz  <-- old name, xy component
- *   location_id  <-- id of corresponding location (> 0)
- *   val          --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   old_name_xx      old name, xx component
+ * \param[in]   old_name_yy      old name, yy component
+ * \param[in]   old_name_zz      old name, zz component
+ * \param[in]   old_name_xy      old name, xy component
+ * \param[in]   old_name_yz      old name, yz component
+ * \param[in]   old_name_xz      old name, xz component
+ * \param[in]   location_id      id of corresponding location
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
@@ -666,28 +888,29 @@ cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
                                 int            location_id,
                                 cs_real_6_t   *val);
 
-/*----------------------------------------------------------------------------
- * Read a cs_real_66_t vector section from a restart file, when that
- * section may have used a different name and been non-interleaved
- * in a previous version.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read a cs_real_66_t tensor section from a restart file, when that
+ *         section may have used a different name and been non-interleaved
+ *         in a previous version.
  *
- * This file assumes a mesh-base location (i.e. location_id > 0)
+ * This function assumes a mesh-base location (i.e. location_id > 0)
  *
- * parameters:
- *   restart      <-- associated restart file pointer
- *   sec_name     <-- section name
- *   old_name_xx  <-- old name, xx component
- *   old_name_yy  <-- old name, yy component
- *   old_name_zz  <-- old name, zz component
- *   old_name_xy  <-- old name, xy component
- *   old_name_yz  <-- old name, xy component
- *   old_name_xz  <-- old name, xy component
- *   location_id  <-- id of corresponding location (> 0)
- *   val          --> array of values
+ * \param[in]   restart          associated restart file pointer
+ * \param[in]   sec_name         section name
+ * \param[in]   old_name_xx      old name, xx component
+ * \param[in]   old_name_yy      old name, yy component
+ * \param[in]   old_name_zz      old name, zz component
+ * \param[in]   old_name_xy      old name, xy component
+ * \param[in]   old_name_yz      old name, yz component
+ * \param[in]   old_name_xz      old name, xz component
+ * \param[in]   location_id      id of corresponding location
+ * \param[out]  val              array of values
  *
- * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ * \return  0 (CS_RESTART_SUCCESS) in case of success,
  *          or error code (CS_RESTART_ERR_xxx) in case of error
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
@@ -701,12 +924,36 @@ cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
                                  int            location_id,
                                  cs_real_66_t  *val);
 
-/*----------------------------------------------------------------------------
- * Print statistics associated with restart files
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print statistics associated with restart files
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_restart_print_stats(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Checks if restart is done from a NCFD checkpoint file
+ *
+ * \return 0 if no, 1 if yes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_check_if_restart_from_ncfd(cs_restart_t *r);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Returns if restart is done from a NCFD checkpoint file
+ *
+ * \return 0 if no, 1 if yes
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_restart_is_from_ncfd(void);
 
 /*----------------------------------------------------------------------------*/
 

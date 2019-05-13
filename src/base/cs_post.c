@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1320,12 +1320,15 @@ static void
 _check_mesh_cat_id(cs_post_mesh_t  *post_mesh)
 {
   if (   post_mesh->cat_id == CS_POST_MESH_VOLUME
-      || post_mesh->cat_id == CS_POST_MESH_BOUNDARY) {
+      || post_mesh->cat_id == CS_POST_MESH_BOUNDARY
+      || post_mesh->cat_id == CS_POST_MESH_SURFACE) {
     const int *ef = post_mesh->ent_flag;
     if (ef[0] == 1 && ef[1] == 0 && ef[2] == 0)
       post_mesh->cat_id = CS_POST_MESH_VOLUME;
     else if (ef[0] == 0 && ef[1] == 0 && ef[2] == 1)
       post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
+    else if (ef[0] == 0 && (ef[1] == 1 || ef[2] == 1))
+      post_mesh->cat_id = CS_POST_MESH_SURFACE;
   }
 }
 
@@ -2990,7 +2993,8 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
   /*-------------------------------------*/
 
   if (   post_mesh->cat_id == CS_POST_MESH_VOLUME
-      || post_mesh->cat_id == CS_POST_MESH_BOUNDARY) {
+      || post_mesh->cat_id == CS_POST_MESH_BOUNDARY
+      || post_mesh->cat_id == CS_POST_MESH_SURFACE) {
 
     const char *name;
 
@@ -3000,6 +3004,8 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       mesh_cat_type = CS_MESH_LOCATION_CELLS;
     else if (post_mesh->cat_id == CS_POST_MESH_BOUNDARY)
       mesh_cat_type = CS_MESH_LOCATION_BOUNDARY_FACES;
+    else if (post_mesh->cat_id == CS_POST_MESH_SURFACE)
+      mesh_cat_type = CS_MESH_LOCATION_FACES;
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid type of mesh for the generic postprocessing of"
@@ -3033,6 +3039,11 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
           continue;
       }
 
+      else if (mesh_cat_type == CS_MESH_LOCATION_FACES) {
+        if (field_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
+
       if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION))
         continue;
 
@@ -3041,7 +3052,8 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
         name = f->name;
 
       if (   field_loc_type == CS_MESH_LOCATION_CELLS
-          || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
+          || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
+          || field_loc_type == CS_MESH_LOCATION_INTERIOR_FACES) {
 
         const cs_real_t *cell_val = NULL, *b_face_val = NULL;
 
@@ -3716,8 +3728,12 @@ cs_post_define_surface_mesh(int          mesh_id,
   }
 
   post_mesh->add_groups = (add_groups != 0) ? true : false;
-  if (auto_variables && post_mesh->ent_flag[1] == 0)
-    post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
+  if (auto_variables) {
+    if (post_mesh->ent_flag[1] == 0)
+      post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
+    else
+      post_mesh->cat_id = CS_POST_MESH_SURFACE;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

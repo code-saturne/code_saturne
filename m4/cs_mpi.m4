@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2018 EDF S.A.
+dnl Copyright (C) 1998-2019 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -386,14 +386,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
 
   # MPI libraries should now have been detected
 
-  if test "x$cs_have_mpi" = "xno"; then
-    if test "x$with_mpi" != "xcheck" ; then
-      AC_MSG_FAILURE([MPI support is requested, but test for MPI failed!])
-    else
-      AC_MSG_WARN([no MPI support])
-    fi
-    MPI_LIBS=""
-  else
+  if test "x$cs_have_mpi" != "xno"; then
     # Try to detect some MPI 2 features
     if test "x$mpi_io" = "xtrue"; then
       AC_MSG_CHECKING([for MPI I/O])
@@ -457,6 +450,15 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
       ;;
   esac
 
+fi
+
+if test "x$cs_have_mpi" = "xno" -a "x$with_mpi" != "xno"; then
+  if test "x$with_mpi" != "xcheck" ; then
+    AC_MSG_FAILURE([MPI support is requested, but test for MPI failed!])
+  else
+    AC_MSG_WARN([no MPI support])
+  fi
+  MPI_LIBS=""
 fi
 
 unset mpi_includedir

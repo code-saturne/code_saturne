@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1159,7 +1159,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
       BFT_REALLOC(mesh->cell_cells_lst, cell_cells_idx[n_cells], cs_lnum_t);
 
-      /* Output for listing */
+      /* Output for log */
 
 #if defined(HAVE_MPI)
 

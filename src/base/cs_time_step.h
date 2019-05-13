@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -67,6 +67,10 @@ typedef struct {
   double        t_cur;        /* current absolute time */
   double        t_max;        /* maximum absolute time */
 
+  double        dt[3];        /* n, n-1, and n-2 time steps */
+  double        dt_ref;       /* reference time step. */
+  double        dt_next;      /* next (predicted) time step. */
+
 } cs_time_step_t;
 
 
@@ -74,17 +78,6 @@ typedef struct {
 /*------------------------------*/
 
 typedef struct {
-
-
-  int       inpdt0; /* Indicator "zero time step"
-                       - 0: standard calculation
-                       - 1: to simulate no time step
-                       - for non-restarted computations: only resolution
-                       (Navier-Stokes, turbulence, scalars) is skipped
-                       - for restarted computations: resolution, computation
-                       of physical properties, and definition of boundary
-                       conditions is skipped (values are read from checkpoint
-                       file). */
 
   int       iptlro; /* Clip the time step with respect to the buoyant effects
                        - 0: false
@@ -95,8 +88,6 @@ typedef struct {
                        -  0: constant time step
                        -  1: time step constant in space but variable in time
                        -  2: variable time step in space and in time. */
-
-  double    dtref;  /* Reference time step. */
 
   double    coumax; /* Maximum Courant number (when idtvar is
                        different from 0). */

@@ -4,7 +4,7 @@
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -57,9 +57,8 @@
 #include "cs_restart.h"
 #include "cs_restart_default.h"
 #include "cs_thermal_model.h"
-#include "cs_parameters.h"
+#include "cs_parameters_check.h"
 
-#include "cs_prototypes.h"
 #include "cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
@@ -198,24 +197,17 @@ cs_rad_transfer_read(void)
   if (cs_glob_rad_transfer_params->restart < 1)
     return;
 
-  /* ====================================================================
-   * 1. LECTURE DU FICHIER SUITE
-   * ====================================================================   */
-
-  /* Ouverture  */
+  /* Open */
   cs_log_printf(CS_LOG_DEFAULT,
-                _("   ** INFORMATIONS SUR LE MODULE DE RAYONNEMENT\n"
-                  "      ------------------------------------------  \n"
-                  "    Lecture d''un fichier suite\n"));
+                _("    Reading radiative module restart file\n"));
 
-  cs_restart_t *rp = cs_restart_create("radiative_transfer", NULL, CS_RESTART_MODE_READ);
+  cs_restart_t *rp = cs_restart_create("radiative_transfer",
+                                       NULL,
+                                       CS_RESTART_MODE_READ);
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("\n"));
+  cs_log_printf(CS_LOG_DEFAULT, _("\n"));
 
-  /* Type de fichier suite     */
-  /*    Pourrait porter le numero de version si besoin. */
-  /*    On ne se sert pas de IVERS pour le moment  */
+  /* Restart file type; des not currently check/use the version number */
   int ivers;
   {
     char rubriq[64];
@@ -228,73 +220,31 @@ cs_rad_transfer_read(void)
                                          CS_TYPE_cs_int_t,
                                          &ivers);
     if (ierror != 0)
-      bft_error(__FILE__, __LINE__, 0,
-                "@\n"
-                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                "@\n"
-                "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-                "@    =========                                    RAYONNEMENT\n"
-                "@      TYPE DE FICHIER INCORRECT\n"
-                "@\n"
-                "@    Le fichier %13s ne semble pas etre un fichier\n"
-                "@      suite rayonnement.\n"
-                "@\n"
-                "@    Le calcul ne peut etre execute.\n"
-                "@\n"
-                "@    Verifier que le fichier suite utilise correspond bien\n"
-                "@        a un fichier suite rayonnement.\n"
-                "@\n"
-                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                "@\n",
-                "radiative_transfer");
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("while reading radiative restart data"),
+         _("\"%s\" does not seem to be a radiative checkpoint/restart file."),
+         cs_restart_get_name(rp));
   }
 
-  /*  Tests     */
-  int iok  = 0;
-
-  /* Dimensions des supports   */
+  /* Dimensions des supports */
   bool ncelok, nfaiok, nfabok, nsomok;
   cs_restart_check_base_location(rp, &ncelok, &nfaiok, &nfabok, &nsomok);
 
-  if (! ncelok) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "@\n"
-                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                  "@\n"
-                  "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-                  "@    =========   RAYONNEMENT\n"
-                  "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-                  "@\n"
-                  "@    Le nombre de cellules a ete modifie\n"
-                  "@\n"
-                  "@    Le calcul ne peut etre execute.\n"
-                  "@\n"
-                  "@\n"
-                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                  "@\n");
-    iok++;
-  }
+  if (! ncelok)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("while reading radiative restart data"),
+       _("The number of cells does not match the current mesh."));
 
-  if (! nfabok) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "@\n"
-                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                  "@\n"
-                  "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-                  "@    =========   RAYONNEMENT\n"
-                  "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-                  "@\n"
-                  "@    Le nombre de faces de bord a ete modifie\n"
-                  "@\n"
-                  "@    Le calcul ne peut etre execute.\n"
-                  "@\n"
-                  "@\n"
-                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                  "@\n");
-    iok++;
-  }
-  if (iok != 0)
-    cs_exit(1);
+  if (! nfabok)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("while reading radiative restart data"),
+       _("The number of boundary faces does not match the current mesh."));
+
+  /* stop the calculation if needed once all checks have been done */
+  cs_parameters_error_barrier();
 
   /* ---> Pour test ulterieur si pb : arret   */
   int ierror;
@@ -345,7 +295,7 @@ cs_rad_transfer_read(void)
 
   cs_restart_read_fields(rp, CS_RESTART_RAD_TRANSFER);
 
-  /* --> Si pb : arret    */
+  /* Stop in case of error */
 
   if (nberro != 0)
     bft_error(__FILE__, __LINE__, 0,

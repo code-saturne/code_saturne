@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -175,7 +175,8 @@ void CS_PROCF(cplact, CPLACT)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coupling_discover_mpi_apps(const char  *app_name)
+cs_coupling_discover_mpi_apps(const char  *app_name,
+                              const char  *forced_app_type)
 {
   int mpi_flag;
   int world_size;
@@ -209,12 +210,20 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
       bft_printf_flush();
     }
 
-    _cs_glob_coupling_mpi_app_world
-      = ple_coupling_mpi_set_create(_cs_coupling_sync_flag,
-                                    app_type,
-                                    app_name,
-                                    MPI_COMM_WORLD,
-                                    cs_glob_mpi_comm);
+    if (forced_app_type == NULL)
+      _cs_glob_coupling_mpi_app_world
+        = ple_coupling_mpi_set_create(_cs_coupling_sync_flag,
+                                      app_type,
+                                      app_name,
+                                      MPI_COMM_WORLD,
+                                      cs_glob_mpi_comm);
+    else
+      _cs_glob_coupling_mpi_app_world
+        = ple_coupling_mpi_set_create(_cs_coupling_sync_flag,
+                                      forced_app_type,
+                                      app_name,
+                                      MPI_COMM_WORLD,
+                                      cs_glob_mpi_comm);
 
     n_apps = ple_coupling_mpi_set_n_apps(_cs_glob_coupling_mpi_app_world);
     app_id = ple_coupling_mpi_set_get_app_id(_cs_glob_coupling_mpi_app_world);
@@ -442,7 +451,7 @@ cs_coupling_sync_apps(int      flags,
     }
     sync_flags = sync_flags | flags | stop_mask;
 
-    if (current_ts_id >= *max_ts_id)
+    if (current_ts_id >= *max_ts_id && *max_ts_id >= 0)
       sync_flags = sync_flags | PLE_COUPLING_STOP;
     else {
       sync_flags = sync_flags | PLE_COUPLING_NEW_ITERATION;
@@ -507,7 +516,7 @@ cs_coupling_sync_apps(int      flags,
       /* Handle time stepping behavior */
 
       if (app_status[i] & PLE_COUPLING_STOP) {
-        if (*max_ts_id > current_ts_id) {
+        if (*max_ts_id > current_ts_id || *max_ts_id < 0) {
           ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
           bft_printf
             (_("\nApplication \"%s\" (%s) requested calculation stop.\n"),
@@ -533,7 +542,7 @@ cs_coupling_sync_apps(int      flags,
       }
 
       if (app_status[i] & PLE_COUPLING_LAST) {
-        if (*max_ts_id > current_ts_id + 1) {
+        if (*max_ts_id > current_ts_id + 1 || *max_ts_id < 0) {
           ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
           bft_printf
             (_("\nApplication \"%s\" (%s) requested last iteration.\n"),

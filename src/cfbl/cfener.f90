@@ -1,8 +1,7 @@
 !-------------------------------------------------------------------------------
-
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -118,9 +117,10 @@ integer          f_id0  , ii, jj
 integer          iel1  , iel2
 integer          iterns
 
-double precision flux, flui, fluj, yip, yjp, gradnb, tip
+double precision flux, yip, yjp, gradnb, tip
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
+double precision normp
 
 double precision mk, cpk, cvk
 double precision rvoid(1)
@@ -149,6 +149,7 @@ double precision, dimension(:), pointer :: visct, cpro_cp, cpro_cv, cpro_viscls
 
 type(gas_mix_species_prop) :: s_k
 type(var_cal_opt) :: vcopt_u, vcopt_p, vcopt_e
+double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
 !===============================================================================
 
@@ -194,6 +195,16 @@ call field_get_val_prev_s(icrom, cromo)
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 
 call field_get_val_s(ivisct, visct)
+
+if (ippmod(icompf).gt.1) then
+  call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
+  call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
+  call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
+else
+  cvar_fracv => null()
+  cvar_fracm => null()
+  cvar_frace => null()
+endif
 
 call field_get_key_int(ivarfl(ivar), kimasf, iflmas)
 call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
@@ -723,7 +734,7 @@ endif
 
 iconvp = vcopt_e%iconv
 idiffp = vcopt_e%idiff
-ndircp = ndircl(ivar)
+ndircp = vcopt_e%ndircl
 nswrsp = vcopt_e%nswrsm
 nswrgp = vcopt_e%nswrgr
 imligp = vcopt_e%imligr
@@ -748,6 +759,7 @@ iswdyp = 0  ! no dynamic relaxation
 
 ! impose boundary convective at some faces (face indicator icvfli)
 icvflb = 1
+normp = -1.d0
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -759,7 +771,7 @@ call codits                                                      &
 ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  iwarnp ,                                                       &
+  iwarnp , normp  ,                                              &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   cvara_energ     , cvara_energ     ,                            &
@@ -805,11 +817,12 @@ endif
 
 ! Computation of P and T at cell centers
 call cs_cf_thermo_pt_from_de(cpro_cp, cpro_cv, crom, cvar_energ, cvar_pr, &
-                             cvar_tempk, vel, ncel)
+                             cvar_tempk, vel, &
+                             cvar_fracv, cvar_fracm, cvar_frace, ncel)
 
 33 continue
 ! Barotropic version
-if (ippmod(icompf) .eq. 1) then
+if (ippmod(icompf).eq.1) then
   do iel = 1, ncel
     cvar_energ(iel) = eint0
   enddo
@@ -845,6 +858,7 @@ if (allocated(w7)) deallocate(w7, w9)
 '   ** RESOLUTION FOR THE VARIABLE ',A8                        ,/,&
 '      ---------------------------                            ',/)
  1200 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+
 
 !----
 ! End

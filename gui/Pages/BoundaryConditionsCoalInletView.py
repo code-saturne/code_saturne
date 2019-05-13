@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -48,17 +48,17 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
 
 from code_saturne.Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
-import code_saturne.Pages.CoalCombustionModel as CoalCombustion
+import code_saturne.model.CoalCombustionModel as CoalCombustion
 
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.Boundary import Boundary
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.Boundary import Boundary
+from code_saturne.Pages.QMegEditorView import QMegEditorView
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -91,7 +91,7 @@ class ValueDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coals in a QTableView
@@ -105,19 +105,19 @@ class StandardItemModelCoal(QStandardItemModel):
                         self.tr("Temperature \n(K)")]
         self.setColumnCount(len(self.headers))
         self.dataCoal = []
-        self.__case = case
+        self.case = case
 
 
     def setBoundaryFromLabel(self, label):
-        self.modelBoundary = Boundary('coal_inlet', label, self.__case)
+        self.modelBoundary = Boundary('coal_inlet', label, self.case)
 
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataCoal[index.row()][index.column()])
-        return to_qvariant()
+            return self.dataCoal[index.row()][index.column()]
+        return None
 
 
     def flags(self, index):
@@ -131,8 +131,8 @@ class StandardItemModelCoal(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
-        return to_qvariant()
+            return self.headers[section]
+        return None
 
 
     def setData(self, index, value, role):
@@ -170,7 +170,7 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def __init__(self, case, coalNumber, coalClassesNumber):
         QStandardItemModel.__init__(self)
-        self.__case = case
+        self.case = case
         self.coalNumber = coalNumber
         self.coalClassesNumber = coalClassesNumber
 
@@ -188,21 +188,21 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def setBoundaryFromLabel(self, label):
         log.debug("setBoundaryFromLabel")
-        self.modelBoundary = Boundary('coal_inlet', label, self.__case)
+        self.modelBoundary = Boundary('coal_inlet', label, self.case)
 
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
             classe = index.row()
             coal   = index.column()
             if classe < self.coalClassesNumber[coal]:
                 try:
-                    return to_qvariant(self.ratio[coal][classe])
+                    return self.ratio[coal][classe]
                 except:
                     log.debug("ERROR no data for self.ratio[%i][%i] "%(coal, classe))
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -216,10 +216,10 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant("Coal" + " " + str(section+1))
+            return "Coal" + " " + str(section+1)
         if orientation == Qt.Vertical and role == Qt.DisplayRole:
-            return to_qvariant("Class" + " " + str(section+1))
-        return to_qvariant()
+            return "Class" + " " + str(section+1)
+        return None
 
 
     def setData(self, index, value, role):
@@ -275,11 +275,11 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         """
         Setup the widget
         """
-        self.__case = case
+        self.case = case
         self.__boundary = None
 
-        self.__case.undoStopGlobal()
-        self.notebook = NotebookModel(self.__case)
+        self.case.undoStopGlobal()
+        self.notebook = NotebookModel(self.case)
 
         # Connections
         self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)
@@ -328,7 +328,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         # Useful information about coals, classes, and ratios
 
-        mdl =  CoalCombustion.CoalCombustionModel(self.__case)
+        mdl =  CoalCombustion.CoalCombustionModel(self.case)
         if mdl.getCoalCombustionModel() != "off":
             self.__coalNumber = mdl.getCoalNumber()
             self.__coalClassesNumber = []
@@ -346,7 +346,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         # Coal table
 
-        self.__modelCoal = StandardItemModelCoal(self.__case)
+        self.__modelCoal = StandardItemModelCoal(self.case)
         self.tableViewCoal.setModel(self.__modelCoal)
         delegateValue = ValueDelegate(self.tableViewCoal)
         self.tableViewCoal.setItemDelegateForColumn(1, delegateValue)
@@ -354,7 +354,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         # Coal mass ratio table
 
-        self.__modelCoalMass = StandardItemModelCoalMass(self.__case,
+        self.__modelCoalMass = StandardItemModelCoalMass(self.case,
                                                          self.__coalNumber,
                                                          self.__coalClassesNumber)
         self.tableViewCoalMass.setModel(self.__modelCoalMass)
@@ -363,7 +363,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         for c in range(self.__modelCoalMass.columnCount()):
             self.tableViewCoalMass.setItemDelegateForColumn(c, delegateValueMass)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, b):
@@ -371,7 +371,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         Show the widget
         """
         label = b.getLabel()
-        self.__boundary = Boundary('coal_inlet', label, self.__case)
+        self.__boundary = Boundary('coal_inlet', label, self.case)
 
         # Initialize velocity
         choice = self.__boundary.getVelocityChoice()
@@ -559,12 +559,16 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = 'velocity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
@@ -659,12 +663,16 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.__case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = 'direction',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = 'formula',
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))

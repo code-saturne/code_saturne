@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -206,7 +206,7 @@ if (isuite.eq.0) then
   endif
 
   !===============================================================================
-  ! 4. Print to the listing to check the variables intialization
+  ! 4. Print to the log to check the variables intialization
   !===============================================================================
 
   write(nfecra, 200)

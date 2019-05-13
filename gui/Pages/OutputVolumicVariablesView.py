@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,15 +45,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
+from code_saturne.Base.QtPage import RegExpValidator, from_qvariant, to_text_string
 from code_saturne.Base.QtPage import ComboModel
-from code_saturne.Base.QtPage import PYQT_API_1
 from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
-from code_saturne.Pages.OutputControlModel import OutputControlModel
-from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-from code_saturne.Pages.TimeStepModel import TimeStepModel
+from code_saturne.model.OutputControlModel import OutputControlModel
+from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -113,7 +110,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     p_value = self.p_value
 
-            model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+            model.setData(index, p_value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -124,10 +121,11 @@ class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, name, label, listing, post, monitor):
+    def __init__(self, name, label, listing, post, monitor, value=None):
         self.name    = name
         self.label   = label
         self.status  = [listing, post, monitor]
+        self.value = value
 
     def __repr__(self):
         return "variable - %s %s // log %s // post %s // monitor %s"\
@@ -165,23 +163,23 @@ class TreeItem(object):
     def data(self, column, role):
         if self.item == None:
             if column == 0:
-                return to_qvariant(self.header)
+                return self.header
             else:
-                return to_qvariant()
+                return None
         else:
             if column == 0 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.label)
+                return self.item.label
             elif column == 1 and role == Qt.DisplayRole:
-                return to_qvariant(self.item.name)
+                return self.item.name
             elif column >= 2 and role == Qt.CheckStateRole:
                 value = self.item.status[column - 2]
                 if value == 'on':
-                    return to_qvariant(Qt.Checked)
+                    return Qt.Checked
                 elif value == 'onoff':
-                    return to_qvariant(Qt.PartiallyChecked)
+                    return Qt.PartiallyChecked
                 else:
-                    return to_qvariant(Qt.Unchecked)
-        return to_qvariant()
+                    return Qt.Unchecked
+        return None
 
     def parent(self):
         return self.parentItem
@@ -213,6 +211,29 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
             if tpe not in self.prtlist:
                 self.prtlist.append(tpe)
 
+        # Reordering categories order for NCFD multiphase solver
+        if 'Properties' in self.prtlist:
+
+            forced_position_labels = ['Properties',
+                                      'Variables',
+                                      'Time moments']
+
+            self.prtlist.sort()
+            rlist = []
+            rlist.append(self.prtlist.index('Properties'))
+            rlist.append(self.prtlist.index('Variables'))
+
+            for i in range(len(self.prtlist)):
+                if self.prtlist[i] not in forced_position_labels:
+#                if self.prtlist[i] != 'Properties' and self.prtlist[i] != 'Variables':
+                    rlist.append(i)
+
+            if 'Time moments' in self.prtlist:
+                rlist.append(self.prtlist.index('Time moments'))
+
+            self.prtlist = [self.prtlist[j] for j in rlist]
+
+
         self.rootItem = TreeItem(None, "ALL", None)
         self.parents = {0 : self.rootItem}
 
@@ -227,24 +248,24 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
 
         item = index.internalPointer()
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            return to_qvariant()
+            return None
 
         # StatusTips
         if role == Qt.StatusTipRole:
             if index.column() == 0:
-                return to_qvariant(self.tr("Variable/Scalar name"))
+                return self.tr("Variable/Scalar name")
             elif index.column() == 2:
-                return to_qvariant(self.tr("Print in listing"))
+                return self.tr("Print in listing")
             elif index.column() == 3:
-                return to_qvariant(self.tr("Post-processing"))
+                return self.tr("Post-processing")
             elif index.column() == 4:
-                return to_qvariant(self.tr("Monitoring"))
+                return self.tr("Monitoring")
 
         # Display
         if role == Qt.DisplayRole:
@@ -252,9 +273,9 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         elif role == Qt.CheckStateRole:
             return item.data(index.column(), role)
         #if role == Qt.TextAlignmentRole and index.column() > 1:
-        #    return to_qvariant(Qt.AlignHCenter)
+        #    return Qt.AlignHCenter
 
-        return to_qvariant()
+        return None
 
 
     def flags(self, index):
@@ -284,16 +305,16 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Output label"))
+                return self.tr("Output label")
             elif section == 1:
-                return to_qvariant(self.tr("Internal name"))
+                return self.tr("Internal name")
             elif section == 2:
-                return to_qvariant(self.tr("Print in\nlisting"))
+                return self.tr("Print in\nlisting")
             elif section == 3:
-                return to_qvariant(self.tr("Post-\nprocessing"))
+                return self.tr("Post-\nprocessing")
             elif section == 4:
-                return to_qvariant(self.tr("Monitoring"))
-        return to_qvariant()
+                return self.tr("Monitoring")
+        return None
 
 
     def index(self, row, column, parent = QModelIndex()):
@@ -359,17 +380,20 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 post = "off"
                 self.mdl.setPostStatus(name, post)
             else:
-                 post = self.mdl.getPostStatus(name)
+                post = self.mdl.getPostStatus(name)
 
-            if TimeStepModel(self.case).getTimePassing() in (0, 1):
-                if name == 'local_time_step':
-                    self.disabledItem.append((row, 3))
-                    self.disabledItem.append((row, 4))
+            if self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+                from code_saturne.model.TimeStepModel import TimeStepModel
+                if TimeStepModel(self.case).getTimePassing() in (0, 1):
+                    if name == 'local_time_step':
+                        self.disabledItem.append((row, 3))
+                        self.disabledItem.append((row, 4))
+                del TimeStepModel
 
             monitor = self.mdl.getMonitorStatus(name)
 
             # StandardItemModel data
-            item = item_class(name, label, printing, post, monitor)
+            item = item_class(name, label, printing, post, monitor, value)
             newItem = TreeItem(item, "", parentItem)
             parentItem.appendChild(newItem)
 
@@ -432,6 +456,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                     item.item.status[1] = "off"
             if item not in self.noderoot.values():
+
                 if c_id == 0:
                     self.mdl.setPrintingStatus(item.item.name, item.item.status[0])
                 elif c_id == 1:
@@ -486,6 +511,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.parent = parent
         self.case.undoStopGlobal()
         self.info_turb_name = []
+
         self.mdl = OutputVolumicVariablesModel(self.case)
 
         self.modelOutput = VolumicOutputStandardItemModel(parent, self.case, self.mdl)
@@ -503,42 +529,50 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.treeViewOutput.resizeColumnToContents(0)
         self.treeViewOutput.resizeColumnToContents(1)
 
-        self.correctionEstimator = ComboModel(self.comboBoxIescor, 3, 1)
-        self.correctionEstimator.addItem(self.tr("off"),                         '0')
-        self.correctionEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.correctionEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        self.driftEstimator = ComboModel(self.comboBoxIesder, 3, 1)
-        self.driftEstimator.addItem(self.tr("off"),                         '0')
-        self.driftEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.driftEstimator.addItem(self.tr("with volume contribution"), '2')
+        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
 
-        self.predictionEstimator = ComboModel(self.comboBoxIespre, 3, 1)
-        self.predictionEstimator.addItem(self.tr("off"),                         '0')
-        self.predictionEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.predictionEstimator.addItem(self.tr("with volume contribution"), '2')
+            self.groupBox_2.hide()
 
-        self.totalEstimator = ComboModel(self.comboBoxIestot, 3, 1)
-        self.totalEstimator.addItem(self.tr("off"),                         '0')
-        self.totalEstimator.addItem(self.tr("without volume contribution"), '1')
-        self.totalEstimator.addItem(self.tr("with volume contribution"), '2')
+        elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
 
-        self.comboBoxIescor.activated[str].connect(self.slotCorrectionEstimator)
-        self.comboBoxIesder.activated[str].connect(self.slotDriftEstimator)
-        self.comboBoxIespre.activated[str].connect(self.slotPredictionEstimator)
-        self.comboBoxIestot.activated[str].connect(self.slotTotalEstimator)
+            self.correctionEstimator = ComboModel(self.comboBoxIescor, 3, 1)
+            self.correctionEstimator.addItem(self.tr("off"),                         '0')
+            self.correctionEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.correctionEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIescor = self.mdl.getEstimatorModel("Correction")
-        self.correctionEstimator.setItem(str_model=modelIescor)
+            self.driftEstimator = ComboModel(self.comboBoxIesder, 3, 1)
+            self.driftEstimator.addItem(self.tr("off"),                         '0')
+            self.driftEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.driftEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIesder = self.mdl.getEstimatorModel("Drift")
-        self.driftEstimator.setItem(str_model=modelIesder)
+            self.predictionEstimator = ComboModel(self.comboBoxIespre, 3, 1)
+            self.predictionEstimator.addItem(self.tr("off"),                         '0')
+            self.predictionEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.predictionEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIespre = self.mdl.getEstimatorModel("Prediction")
-        self.predictionEstimator.setItem(str_model=modelIespre)
+            self.totalEstimator = ComboModel(self.comboBoxIestot, 3, 1)
+            self.totalEstimator.addItem(self.tr("off"),                         '0')
+            self.totalEstimator.addItem(self.tr("without volume contribution"), '1')
+            self.totalEstimator.addItem(self.tr("with volume contribution"), '2')
 
-        modelIestot = self.mdl.getEstimatorModel("Total")
-        self.totalEstimator.setItem(str_model=modelIestot)
+            self.comboBoxIescor.activated[str].connect(self.slotCorrectionEstimator)
+            self.comboBoxIesder.activated[str].connect(self.slotDriftEstimator)
+            self.comboBoxIespre.activated[str].connect(self.slotPredictionEstimator)
+            self.comboBoxIestot.activated[str].connect(self.slotTotalEstimator)
+
+            modelIescor = self.mdl.getEstimatorModel("Correction")
+            self.correctionEstimator.setItem(str_model=modelIescor)
+
+            modelIesder = self.mdl.getEstimatorModel("Drift")
+            self.driftEstimator.setItem(str_model=modelIesder)
+
+            modelIespre = self.mdl.getEstimatorModel("Prediction")
+            self.predictionEstimator.setItem(str_model=modelIespre)
+
+            modelIestot = self.mdl.getEstimatorModel("Total")
+            self.totalEstimator.setItem(str_model=modelIestot)
+
 
         self.case.undoStartGlobal()
 
@@ -559,6 +593,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.correctionEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Correction", model)
+        self.mdl.updateList()
 
         self.initializeView()
 
@@ -571,6 +606,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.driftEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Drift", model)
+        self.mdl.updateList()
 
         self.initializeView()
 
@@ -583,6 +619,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.predictionEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Prediction", model)
+        self.mdl.updateList()
 
         self.initializeView()
 
@@ -595,6 +632,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         model = self.totalEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Total", model)
+        self.mdl.updateList()
 
         self.initializeView()
 

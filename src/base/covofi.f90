@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -117,8 +117,10 @@ use cs_f_interfaces
 use atchem
 use darcy_module
 use cs_c_bindings
+use cs_cf_bindings
 use pointe, only: itypfb, pmapper_double_r1
 use atincl, only: kopint
+use cfpoin, only: hgn_relax_eq_st
 
 !===============================================================================
 
@@ -162,6 +164,8 @@ integer          icvflb, f_dim, iflwgr
 integer          icla
 integer          icrom_scal
 integer          key_buoyant_id, is_buoyant_fld
+integer          key_t_ext_id
+integer          iviext
 
 integer          ivoid(1)
 
@@ -169,10 +173,11 @@ double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
-double precision smbexp, dvar, cprovol, prod, expkdt
-double precision temp, idifftp, roskpl, kplskm, ctot_tmp
+double precision smbexp, dvar, cprovol, prod
+double precision temp, idifftp
 double precision turb_schmidt
 double precision xR, prdtl, alpha_theta
+double precision normp
 
 double precision rvoid(1)
 
@@ -236,10 +241,13 @@ iflid = ivarfl(ivar)
 call field_get_key_id("is_buoyant", key_buoyant_id)
 call field_get_key_int(iflid, key_buoyant_id, is_buoyant_fld)
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
 ! If the scalar is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
 ! otherwise it is outside of the loop and iterns = -1.
 if (  (is_buoyant_fld.eq. 1 .and. iterns.eq.-1) &
-  .or.(is_buoyant_fld.eq.-1 .and. iterns.ne.-1)) return
+  .or.(is_buoyant_fld.eq. 0 .and. iterns.ne.-1)) return
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -777,6 +785,7 @@ if (itspdv.eq.1) then
 
       ! Not extapolated value of the viscosity
       call field_get_val_s(ivisct, cpro_visct)
+      call field_get_key_int(ivisct, key_t_ext_id, iviext)
       if (iviext.gt.0) call field_get_val_prev_s(ivisct, cpro_visct)
 
       ! iscal is the variance of the scalar iiscav
@@ -956,9 +965,14 @@ if (st_prv_id .ge. 0) then
   enddo
 endif
 
+! Compressible algorithm
+! or Low Mach compressible algos with mass flux prediction
+if (ippmod(icompf).ge.0.or.(idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1)) then
+  pcrom => croma
+
 ! Low Mach compressible algos (conservative in time).
 ! Same algo. for Volume of Fluid method
-if ((idilat.gt.1 .or. ivofmt.ge.0 .or. ipredfl.eq.0).and.irovar.eq.1) then
+else if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
   if (iterns.eq.1) then
     call field_get_val_prev2_s(icrom_scal, pcrom)
   else
@@ -1241,7 +1255,7 @@ endif
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
 idftnp = vcopt%idften
-ndircp = ndircl(ivar)
+ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -1260,6 +1274,7 @@ extrap = vcopt%extrag
 relaxp = vcopt%relaxv
 ! all boundary convective flux with upwind
 icvflb = 0
+normp = -1.d0
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -1271,7 +1286,7 @@ call codits &
  ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   iwarnp ,                                                       &
+   iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    cvara_var       , cvar_var        ,                            &
@@ -1284,7 +1299,7 @@ call codits &
    xcpp   , rvoid  )
 
 !===============================================================================
-! 4. Writing and clipping
+! 4. clipping
 !===============================================================================
 
 call clpsca(iscal)
@@ -1299,6 +1314,12 @@ if (ippmod(idarcy).eq.1) then
   if (sorption_scal%imxsol.ge.0) then
     call cs_gwf_precipitation(ivarfl(ivar))
   endif
+endif
+
+! Return to equilibrium source term step for volume, mass, energy fractions
+! in the compressible homogeneous two-phase model
+if (ippmod(icompf).gt.1.and.hgn_relax_eq_st.ge.0) then
+  call cs_cf_hgn_source_terms_step
 endif
 
 if (idilat.ge.4.and.itspdv.eq.1) then

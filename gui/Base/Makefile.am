@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -39,16 +39,12 @@ endif
 PYFILES = \
 BrowserView.py \
 CommandMgrDialogView.py \
-Common.py \
-IdView.py \
+CompletionTextEditor.py \
 MainView.py \
+QFileEditor.py \
 QtCase.py \
 QtPage.py \
-Toolbox.py \
-XMLengine.py \
-XMLinitialize.py \
-XMLmodel.py \
-XMLvariables.py
+Toolbox.py
 
 if HAVE_QT5
   PYFILES += qt5/QtCore.py qt5/QtGui.py qt5/QtWidgets.py
@@ -62,7 +58,6 @@ UIFILES = \
 BrowserForm.ui \
 CommandMgrLinesDisplayedDialogForm.ui \
 CommandMgrDialogForm.ui \
-IdForm.ui \
 MainForm.ui \
 NewCaseDialogForm.ui
 
@@ -103,9 +98,12 @@ clean-local:
 # Install Python library
 
 basedir = $(pkgpythondir)/Base
+
 dist_base_PYTHON = \
 __init__.py \
-$(PYFILES)
+$(PYFILES) \
+icons/22x22/MONO-bulle-HD.png \
+icons/22x22/logoneptune.png
 
 nodist_base_PYTHON = \
 $(FORMS) \

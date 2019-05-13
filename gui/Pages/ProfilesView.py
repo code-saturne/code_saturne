@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -23,8 +23,6 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the 'Meshes and Enveloppe' page.
-
 This module contains the following classes:
 - ProfilesView
 """
@@ -47,14 +45,13 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.Base.QtPage import to_qvariant, from_qvariant
+from code_saturne.Base.QtPage import from_qvariant
 from code_saturne.Pages.ProfilesForm import Ui_ProfilesForm
-from code_saturne.Pages.ProfilesModel import ProfilesModel
+from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -80,12 +77,12 @@ class StandardItemModelProfile(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataProfile[index.row()][index.column()])
+            return self.dataProfile[index.row()][index.column()]
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def flags(self, index):
@@ -98,12 +95,12 @@ class StandardItemModelProfile(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Filename"))
+                return self.tr("Filename")
             elif section == 1:
-                return to_qvariant(self.tr("Variables"))
+                return self.tr("Variables")
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def setData(self, index, value, role):
@@ -407,7 +404,12 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         self.modelDrop.setStringList(liste)
 
-        self.pushButtonFormula.setStyleSheet("background-color: red")
+        exp = self.mdl.getFormula(self.label_select)
+        if exp:
+            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setToolTip(exp)
+        else:
+            self.pushButtonFormula.setStyleSheet("background-color: red")
 
 
     @pyqtSlot()

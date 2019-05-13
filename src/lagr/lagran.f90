@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -89,7 +89,7 @@ module lagran
 
   !> - 0: no head losses calculation for influence of the deposit on the flow
   !> - 1: head losses calculation for influence of the deposit on the flow
-  integer, save :: iflow
+  integer(c_int), pointer, save :: iflow
 
   !> - 0: no precipitation/dissolution model
   !> - 1: precipitation/dissolution model
@@ -168,11 +168,11 @@ module lagran
 
     ! Interface to C function returning particle attribute pointers
 
-    subroutine cs_f_lagr_params_pointers(p_iilagr, p_idepst, p_ipreci)         &
+    subroutine cs_f_lagr_params_pointers(p_iilagr, p_idepst, p_iflow, p_ipreci) &
       bind(C, name='cs_f_lagr_params_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_iilagr, p_idepst, p_ipreci
+      type(c_ptr), intent(out) :: p_iilagr, p_idepst, p_iflow, p_ipreci
     end subroutine cs_f_lagr_params_pointers
 
     subroutine cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,             &
@@ -299,7 +299,7 @@ contains
     type(c_ptr) :: p_iilagr
 
     ! lagr_params
-    type(c_ptr) :: p_idepst, p_ipreci
+    type(c_ptr) :: p_idepst, p_iflow, p_ipreci
 
     ! lagr_option_source_terms
     type(c_ptr) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsli, p_itske,     &
@@ -307,10 +307,11 @@ contains
                    p_itsmas, p_itsmv1, p_itsmv2, p_itsco
     integer(c_int) :: dim_itsmv1, dim_itsmv2
 
-    call cs_f_lagr_params_pointers(p_iilagr, p_idepst, p_ipreci)
+    call cs_f_lagr_params_pointers(p_iilagr, p_idepst, p_iflow, p_ipreci)
     call c_f_pointer(p_iilagr, iilagr)
     call c_f_pointer(p_idepst, idepst)
-    call c_f_pointer(p_ipreci , ipreci)
+    call c_f_pointer(p_iflow , iflow)
+    call c_f_pointer(p_ipreci, ipreci)
 
     call cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,           &
                                          p_ltsthe, p_itsli,            &

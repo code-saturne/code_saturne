@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -63,7 +63,6 @@
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_search.h"
 #include "cs_timer_stats.h"
@@ -72,10 +71,10 @@
 #include "cs_field_pointer.h"
 
 #include "cs_lagr_clogging.h"
+#include "cs_lagr_deposition_model.h"
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_dlvo.h"
 #include "cs_lagr_stat.h"
-#include "cs_lagr_geom.h"
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
 
@@ -351,7 +350,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
 
       cs_lnum_t p_id = p_s_id + i;
 
-      cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_NUM, c_id+1);
+      cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, c_id);
 
       cs_real_t *part_coord
         = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
@@ -540,7 +539,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       cs_lnum_t p_id = p_s_id + i;
 
-      cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_NUM, cell_id+1);
+      cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, cell_id);
 
       cs_real_t *part_coord
         = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
@@ -671,6 +670,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
     else if (extra->cvar_rij != NULL)
       cvar_rij = (const cs_real_6_t *) extra->cvar_rij->vals[time_id];
 
+    /* Deprecated irijco = 0 */
     else if (extra->cvar_r11 != NULL) {
       cvar_r11 = (const cs_real_t *)extra->cvar_r11->vals[time_id];
       cvar_r22 = (const cs_real_t *)extra->cvar_r22->vals[time_id];
@@ -718,7 +718,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
     unsigned char *particle = pset->p_buffer + p_am->extents * p_id;
 
-    cs_lnum_t iel  = cs_lagr_particle_get_cell_id(particle, p_am);
+    cs_lnum_t iel  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
     cs_lnum_t l_id = p_id - particle_range[0];
 
     cs_real_t  *vel_seen
@@ -731,6 +731,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
         w = cvar_k[iel];
       else if (cvar_rij != NULL)
         w = 0.5*(cvar_rij[iel][0] + cvar_rij[iel][1] + cvar_rij[iel][2]);
+      /* Deprecated irijco = 0 */
       else if (cvar_r11 != NULL)
         w = 0.5 * (cvar_r11[iel] + cvar_r22[iel] + cvar_r33[iel]);
     }
@@ -740,15 +741,16 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
     for (cs_lnum_t i = 0; i < 3; i++)
       vel_seen[i] = vel[iel][i] + vagaus[l_id][i] * tu;
 
-    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
+    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_P_FLAG, 0);
 
+    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
     cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TR_TRUNCATE, 0);
 
   }
 
   BFT_FREE(vagaus);
 
-  /* Compute velcocity fluctuation if deposition model is active */
+  /* Compute velocity fluctuation if deposition model is active */
 
   if (cs_glob_lagr_model->deposition == 1) {
 
@@ -758,7 +760,8 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
       unsigned char *particle = pset->p_buffer + p_am->extents * p_id;
 
-      cs_lnum_t iel = cs_lagr_particle_get_cell_id(particle, p_am);
+      cs_lnum_t iel  = cs_lagr_particle_get_lnum(particle, p_am,
+                                                 CS_LAGR_CELL_ID);
 
       /* Compute normalized wall-normal particle distance (y+) */
 
@@ -785,33 +788,37 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
           cs_lnum_t  *neighbor_face_id;
           cs_real_t  *particle_yplus;
 
-          if (cs_glob_lagr_model->deposition > 0) {
-            neighbor_face_id
-              = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
-            particle_yplus
-              = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
-          }
-          else {
-            neighbor_face_id = NULL;
-            particle_yplus = 0;  /* allow tests even without particle y+ */
-          }
+          neighbor_face_id
+            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+          particle_yplus
+            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
 
           cs_lagr_test_wall_cell(particle, p_am, visc_length,
                                  particle_yplus, neighbor_face_id);
 
+        }
+        else {
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID, -1);
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_YPLUS, 0.);
         }
 
       }
 
       if (yplus < cs_lagr_particle_get_real(particle, p_am, CS_LAGR_INTERF)) {
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 10);
+        cs_lagr_particle_set_lnum(particle,
+                                  p_am,
+                                  CS_LAGR_MARKO_VALUE,
+                                  CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF);
 
       }
 
       else if (yplus > 100.0) {
 
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, -1);
+        cs_lagr_particle_set_lnum(particle,
+                                  p_am,
+                                  CS_LAGR_MARKO_VALUE,
+                                  CS_LAGR_COHERENCE_STRUCT_BULK);
 
       }
 
@@ -821,13 +828,22 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
         cs_random_uniform(1, &random);
 
         if (random < 0.25)
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 12);
+          cs_lagr_particle_set_lnum(particle,
+                                    p_am,
+                                    CS_LAGR_MARKO_VALUE,
+                                    CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION);
 
         else if (random > 0.625)
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 1);
+          cs_lagr_particle_set_lnum(particle,
+                                    p_am,
+                                    CS_LAGR_MARKO_VALUE,
+                                    CS_LAGR_COHERENCE_STRUCT_SWEEP);
 
         else /* if ((random > 0.25) && (random < 0.625)) */
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, 3);
+          cs_lagr_particle_set_lnum(particle,
+                                    p_am,
+                                    CS_LAGR_MARKO_VALUE,
+                                    CS_LAGR_COHERENCE_STRUCT_EJECTION);
 
       }
 
@@ -840,10 +856,6 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
           vel_seen[i] = vel[iel][i];
 
       }
-
-      /* No deposited particles at the injection */
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                CS_LAGR_PART_IN_FLOW);
 
       /* Initialization of additional "pointers"
        * for the resuspension model              */

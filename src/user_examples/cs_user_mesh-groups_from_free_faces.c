@@ -10,7 +10,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,30 +46,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <ple_locator.h>
-
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
-#include "fvm_defs.h"
-#include "fvm_selector.h"
-
-#include "cs_base.h"
-#include "cs_mesh_boundary.h"
-#include "cs_coupling.h"
-#include "cs_join.h"
-#include "cs_join_perio.h"
-#include "cs_mesh.h"
-#include "cs_mesh_connect.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells.h"
-#include "cs_mesh_smoother.h"
-#include "cs_mesh_warping.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_preprocessor_data.h"
-#include "cs_selector.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -271,7 +248,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
  * the neighboring boundary faces that are missing such information. *
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void

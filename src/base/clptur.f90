@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -123,7 +123,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -147,21 +146,21 @@ implicit none
 
 integer          nscal, isvhb
 
-integer          icodcl(nfabor,nvar)
+integer, pointer, dimension(:,:) :: icodcl
 
-double precision rcodcl(nfabor,nvar,3)
-double precision velipb(nfabor,ndim), rijipb(nfabor,6)
-double precision visvdr(ncelet)
-double precision hbord(nfabor),theipb(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:,:) :: velipb
+double precision, pointer, dimension(:,:) :: rijipb
+double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
 ! Local variables
 
 integer          ifac, iel, isou, ii, jj, kk
-integer          iscal
+integer          iscal, clsyme
 integer          modntl
 integer          iuntur, f_dim
 integer          nlogla, nsubla, iuiptn
-integer          f_id_rough, f_id
+integer          f_id_rough, f_id, iustar
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -170,7 +169,7 @@ double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
 double precision uk, uet, nusury, yplus, dplus
-double precision sqrcmu, clsyme, ek
+double precision sqrcmu, ek
 double precision xnuii, xnuit, xmutlm
 double precision rcprod
 double precision hflui, hint, pimp, qimp
@@ -188,7 +187,7 @@ double precision rttb, alpha_rnn
 double precision roughness
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
 double precision, dimension(:), pointer :: bfpro_roughness
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
@@ -227,7 +226,7 @@ double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
 double precision, dimension(:,:), pointer :: coefa_rij, coefaf_rij, coefad_rij
 double precision, dimension(:,:,:), pointer :: coefb_rij, coefbf_rij, coefbd_rij
 
-double precision  pimp_lam, pimp_turb, gammap, fep, dep, falpg, falpv, ypsd
+double precision  pimp_lam, pimp_turb, gammap, fep, dep, falpg, falpv, ypsd, fct_bl
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -236,6 +235,37 @@ save             ntlast , iaff
 type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine clptur_scalar(iscal, isvhb, icodcl, rcodcl,        &
+                           byplus, bdplus, buk, hbord, theipb,  &
+                           tetmax , tetmin , tplumx , tplumn)
+
+    implicit none
+    integer          iscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:) :: byplus, bdplus, buk
+    double precision, pointer, dimension(:) :: hbord, theipb
+    double precision tetmax, tetmin, tplumx, tplumn
+
+  end subroutine clptur_scalar
+
+  subroutine clptur_vector(iscal, isvhb, icodcl, rcodcl,        &
+                           byplus, bdplus, buk)
+
+    implicit none
+    integer          iscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:) :: byplus, bdplus, buk
+
+  end subroutine clptur_vector
+
+ end interface
 
 !===============================================================================
 ! 1. Initializations
@@ -268,14 +298,13 @@ if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bfpro_roughness)
 if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
-uetbor => null()
+ustar => null()
 
-if (     (itytur.eq.4 .and. idries.eq.1) &
-    .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
-  call field_get_id_try('ustar', f_id)
-  if (f_id.ge.0) then
-    call field_get_val_s(f_id, uetbor)
-  endif
+! --- Save wall friction velocity
+
+call field_get_id_try('ustar', iustar)
+if (iustar.ge.0) then
+  call field_get_val_s(iustar, ustar)
 endif
 
 ! --- Gradient and flux boundary conditions
@@ -616,31 +645,9 @@ do ifac = 1, nfabor
       ty  = ty/txn
       tz  = tz/txn
 
-    elseif (itytur.eq.3) then
-
-      ! If the velocity is zero, vector T is normal and random;
-      ! we need it for the reference change for Rij, and we cancel the velocity.
-
-      txn0 = 0.d0
-
-      if (abs(rny).ge.epzero.or.abs(rnz).ge.epzero)then
-        rxnn = sqrt(rny**2+rnz**2)
-        tx  =  0.d0
-        ty  =  rnz/rxnn
-        tz  = -rny/rxnn
-      elseif (abs(rnx).ge.epzero.or.abs(rnz).ge.epzero)then
-        rxnn = sqrt(rnx**2+rnz**2)
-        tx  =  rnz/rxnn
-        ty  =  0.d0
-        tz  = -rnx/rxnn
-      else
-        write(nfecra,1000)ifac,rnx,rny,rnz
-        call csexit (1)
-      endif
-
     else
 
-      ! If the velocity is zero, and we are not using Reynolds Stresses,
+      ! If the velocity is zero,
       !  Tx, Ty, Tz is not used (we cancel the velocity), so we assign any
       !  value (zero for example)
 
@@ -681,37 +688,10 @@ do ifac = 1, nfabor
       eloglo(3,2) = -rnz
       eloglo(3,3) =  t2z
 
-      ! --> Commpute alpha(6,6)
+      ! Compute Reynolds stress transformation matrix
 
-      ! Let f be the center of the boundary faces and
-      !   I the center of the matching cell
-
-      ! We noteE Rg (resp. Rl) indexed by f or by I
-      !   the Reynolds Stress tensor in the global basis (resp. local)
-
-      ! The alpha matrix applied to the global vector in I'
-      !   (Rg11,I'|Rg22,I'|Rg33,I'|Rg12,I'|Rg13,I'|Rg23,I')t
-      !    must provide the values to prescribe to the face
-      !   (Rg11,f |Rg22,f |Rg33,f |Rg12,f |Rg13,f |Rg23,f )t
-      !    except for the Dirichlet boundary conditions (added later)
-
-      ! We define it by computing Rg,f as a function of Rg,I' as follows
-
-      !   RG,f = ELOGLO.RL,f.ELOGLOt (matrix products)
-
-      !                     | RL,I'(1,1)     B*U*.Uk     C*RL,I'(1,3) |
-      !      with    RL,f = | B*U*.Uk       RL,I'(2,2)       0        |
-      !                     | C*RL,I'(1,3)     0         RL,I'(3,3)   |
-
-      !             with    RL,I = ELOGLOt.RG,I'.ELOGLO
-      !                     B = 0
-      !              and    C = 0 at the wall (1 with symmetry)
-
-      ! We compute in fact  ELOGLO.projector.ELOGLOt
-
-      clsyme=0.d0
-      call clca66 (clsyme , eloglo , alpha)
-      !==========
+      clsyme = 0
+      call turbulence_bc_rij_transform(clsyme, eloglo, alpha)
 
     endif
 
@@ -777,23 +757,19 @@ do ifac = 1, nfabor
     yplumx = max(yplus-dplus,yplumx)
     yplumn = min(yplus-dplus,yplumn)
 
-    ! Sauvegarde de la vitesse de frottement et de la viscosite turbulente
-    ! apres amortissement de van Driest pour la LES
-    ! On n'amortit pas mu_t une seconde fois si on l'a deja fait
-    ! (car une cellule peut avoir plusieurs faces de paroi)
-    ! ou
-    ! Sauvegarde de la vitesse de frottement et distance a la paroi yplus
-    ! si le modele de depot de particules est active.
+    if (iustar.ge.0) then
+      ustar(ifac) = uet !TODO remove, this information is in cofaf cofbf
+    endif
 
+    ! save turbulent subgrid viscosity after van Driest damping in LES
+    ! care is taken to not dampen it twice at boundary cells having more
+    ! one boundary face
     if (itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac) = uet !TODO remove, this information is in cofaf cofbf
       if (visvdr(iel).lt.-900.d0) then
         visct(iel) = visct(iel)*(1.d0-exp(-(yplus-dplus)/cdries))**2
         visvdr(iel) = visct(iel)
         visctc      = visct(iel)
       endif
-    else if (iilagr.gt.0.and.idepst.gt.0) then
-      uetbor(ifac) = uet
     endif
 
     ! Save yplus if post-processed or condensation modelling
@@ -949,50 +925,174 @@ do ifac = 1, nfabor
     endif
 
     !===========================================================================
-    ! 4. Boundary conditions on k and espilon
+    ! 4. Boundary conditions on k and epsilon
     !===========================================================================
 
     if (itytur.eq.2) then
 
-      ! Dirichlet Boundary Condition on k
-      !----------------------------------
+      ! ==================================
+      ! Launder Sharma boundary conditions
+      ! ==================================
+      if(iturb.eq.22) then
 
-      if (iuntur.eq.1) then
-        pimp = uk**2/sqrcmu
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+        if (iwallf.eq.0) then
+          ! No wall functions forced by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+            pimp = uk**2/sqrcmu
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
+
+
+        ! Dirichlet Boundary Condition on epsilon tilda
+        !---------------------------------------------
+        pimp_lam = 0.d0
+
+        if (iwallf.eq.0) then
+          ! No wall functions forced by user
+          pimp = pimp_lam
+        else
+          ! Use of wall functions
+          if (yplus > epzero) then
+            pimp_turb = 5.d0*uk**4*romc/  &
+                        (xkappa*visclc*(yplus+dplus))
+
+            ! Blending function, from JF Wald PhD (2016)
+            fct_bl    = exp(-0.674d-3*(yplus+dplus)**3.d0)
+            pimp      = pimp_lam*fct_bl + pimp_turb*(1.d0-fct_bl)
+            fep = exp(-(yplus/4.d0)**1.5d0)
+            dep = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmae)/distbf
+
+        call set_dirichlet_scalar &
+               !====================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             pimp         , hint          , rinfin )
+
+
+      ! ===================================
+      ! Quadratic Baglietto k-epsilon model
+      ! ===================================
+      else if(iturb.eq.23) then
+
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+        if (iwallf.eq.0) then
+          ! No wall functions forces by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+            pimp = uk**2/sqrcmu
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
+
+        ! Dirichlet Boundary Condition on epsilon
+        !---------------------------------------
+        if(iwallf.ne.0) then
+
+          pimp_lam = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+
+          if (yplus > epzero) then
+            pimp_turb = 5.d0*uk**4*romc/        &
+                        (xkappa*visclc*(yplus+dplus))
+
+            ! Blending between wall and homogeneous layer
+            fep       = exp(-(yplus/4.d0)**1.5d0)
+            dep       = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
+          else
+            pimp = pimp_lam
+          end if
+
+        else
+
+          pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
+        end if
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             pimp          , hint           , rinfin )
+
+      ! ==============================================
+      ! k-epsilon and k-epsilon LP boundary conditions
+      ! ==============================================
       else
-        pimp = 0.d0
-      endif
-      hint = (visclc+visctc/sigmak)/distbf
 
-      call set_dirichlet_scalar &
-           !====================
-         ( coefa_k(ifac), coefaf_k(ifac),             &
-           coefb_k(ifac), coefbf_k(ifac),             &
-           pimp         , hint          , rinfin )
+        ! Dirichlet Boundary Condition on k
+        !----------------------------------
+
+        if (iuntur.eq.1) then
+          pimp = uk**2/sqrcmu
+        else
+          pimp = 0.d0
+        endif
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+             !====================
+           ( coefa_k(ifac), coefaf_k(ifac),             &
+             coefb_k(ifac), coefbf_k(ifac),             &
+             pimp         , hint          , rinfin )
 
 
-      ! Neumann Boundary Condition on epsilon
-      !--------------------------------------
+        ! Neumann Boundary Condition on epsilon
+        !--------------------------------------
 
-      hint = (visclc+visctc/sigmae)/distbf
+        hint = (visclc+visctc/sigmae)/distbf
 
-      ! If yplus=0, uiptn is set to 0 to avoid division by 0.
-      ! By the way, in this case: iuntur=0
-      if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
-        efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
-        pimp = distbf*4.d0*uk**5/           &
-            (xkappa*efvisc**2*(yplus+dplus)**2)
+        ! If yplus=0, uiptn is set to 0 to avoid division by 0.
+        ! By the way, in this case: iuntur=0
+        if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
+          efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
+          pimp = distbf*4.d0*uk**5/           &
+              (xkappa*efvisc**2*(yplus+dplus)**2)
 
-        qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
-      else
-        qimp = 0.d0
-      endif
+          qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
+        else
+          qimp = 0.d0
+        endif
 
-      call set_neumann_scalar &
-           !==================
-         ( coefa_ep(ifac), coefaf_ep(ifac),             &
-           coefb_ep(ifac), coefbf_ep(ifac),             &
-           qimp          , hint )
+        call set_neumann_scalar &
+             !==================
+           ( coefa_ep(ifac), coefaf_ep(ifac),             &
+             coefb_ep(ifac), coefbf_ep(ifac),             &
+             qimp          , hint )
+
+      end if
 
     !===========================================================================
     ! 5. Boundary conditions on Rij-epsilon
@@ -1617,22 +1717,16 @@ do iscal = 1, nscal
 
     if (f_dim.eq.1) then
 
-      call clptur_scalar &
-   ( iscal  , isvhb  , icodcl ,                                     &
-     rcodcl ,                                                       &
-     byplus , bdplus , buk    ,                                     &
-     hbord  , theipb ,                                              &
-     tetmax , tetmin , tplumx , tplumn )
-
+      call clptur_scalar(iscal, isvhb, icodcl, rcodcl,              &
+                         byplus, bdplus, buk,                       &
+                         hbord, theipb,                             &
+                         tetmax, tetmin, tplumx, tplumn)
 
     ! Vector field
     else
 
-      call clptur_vector &
-   ( iscal  , isvhb  , icodcl ,                                     &
-     rcodcl ,                                                       &
-     byplus , bdplus , buk    ,                                     &
-     hbord  )
+      call clptur_vector(iscal, isvhb, icodcl, rcodcl,              &
+                         byplus, bdplus, buk)
 
     endif
 
@@ -1664,7 +1758,7 @@ endif
 ! 9. Writings
 !===============================================================================
 
-!     Remarque : afin de ne pas surcharger les listings dans le cas ou
+!     Remarque : afin de ne pas surcharger les logs dans le cas ou
 !       quelques yplus ne sont pas corrects, on ne produit le message
 !       qu'aux deux premiers pas de temps ou le message apparait et
 !       aux deux derniers pas de temps du calcul, ou si IWARNI est >= 2
@@ -1705,11 +1799,11 @@ if (vcopt_u%iwarni.ge.0) then
     if (iturb.eq. 0) write(nfecra,2020)  ntlast,ypluli
     if (itytur.eq.5) write(nfecra,2030)  ntlast,ypluli
     ! No warnings in EBRSM
-    if (itytur.eq.2.or.iturb.eq.30.or.iturb.eq.31)                &
+    if ((itytur.eq.2.and.iturb.ne.22).or.iturb.eq.30.or.iturb.eq.31)   &
       write(nfecra,2040)  ntlast,ypluli
-    if (vcopt_u%iwarni.lt.2.and.iturb.ne.32) then
+    if (vcopt_u%iwarni.lt.2.and.(iturb.ne.32.and.iturb.ne.22)) then
       write(nfecra,2050)
-    elseif (iturb.ne.32) then
+    elseif (iturb.ne.32.and.iturb.ne.22) then
       write(nfecra,2060)
     endif
 
@@ -2040,7 +2134,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -2063,12 +2156,11 @@ implicit none
 ! Arguments
 
 integer          iscal, isvhb
+integer, pointer, dimension(:,:) :: icodcl
 
-integer          icodcl(nfabor,nvar)
-
-double precision rcodcl(nfabor,nvar,3)
-double precision byplus(nfabor), bdplus(nfabor)
-double precision hbord(nfabor), theipb(nfabor), buk(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:) :: byplus, bdplus, buk
+double precision, pointer, dimension(:) :: hbord, theipb
 double precision tetmax, tetmin, tplumx, tplumn
 
 ! Local variables
@@ -2746,8 +2838,7 @@ end subroutine
 subroutine clptur_vector &
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
-   byplus , bdplus , buk    ,                                     &
-   hbord  )
+   byplus , bdplus , buk )
 
 !===============================================================================
 ! Module files
@@ -2758,7 +2849,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -2782,12 +2872,10 @@ implicit none
 ! Arguments
 
 integer          iscal, isvhb
+integer, pointer, dimension(:,:) :: icodcl
 
-integer          icodcl(nfabor,nvar)
-
-double precision rcodcl(nfabor,nvar,3)
-double precision byplus(nfabor), bdplus(nfabor), buk(nfabor)
-double precision hbord(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:) :: byplus, bdplus, buk
 
 ! Local variables
 
@@ -2946,6 +3034,8 @@ do ifac = 1, nfabor
 
   ! Test on the presence of a smooth wall condition (start)
   if (icodcl(ifac,iu).eq.5) then
+
+    iel = ifabor(ifac)
 
     srfbnf = surfbn(ifac)
 

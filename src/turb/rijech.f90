@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -78,6 +78,8 @@ double precision smbr(ncelet)
 integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
 integer          inc   , iccocg, f_id
+integer          key_t_ext_id
+integer          iroext
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision vnk   , vnm   , vni   , vnj
@@ -99,6 +101,11 @@ double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 ! 1. Initialization
 !===============================================================================
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_int(icrom, key_t_ext_id, iroext)
+
 ! Allocate temporary arrays
 allocate(produk(ncelet), epsk(ncelet))
 allocate(w2(ncelet), w3(ncelet), w4(ncelet), w6(ncelet))
@@ -115,8 +122,6 @@ vni = 0.d0
 vnj = 0.d0
 vnk = 0.d0
 vnm = 0.d0
-
-! Memory
 
 call field_get_val_s(icrom, crom)
 if (isto2t.gt.0.and.iroext.gt.0) then
@@ -449,6 +454,8 @@ double precision smbr(6,ncelet)
 integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
 integer          inc   , iccocg, f_id
+integer          key_t_ext_id
+integer          iroext
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision vnk   , vnm   , vni   , vnj
@@ -469,6 +476,11 @@ double precision, allocatable, dimension(:,:,:) :: cvara_rij
 ! 1. Initialization
 !===============================================================================
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+call field_get_key_int(icrom, key_t_ext_id, iroext)
+
 ! Allocate temporary arrays
 allocate(produk(ncelet), epsk(ncelet))
 allocate(w6(ncelet))
@@ -486,8 +498,6 @@ vni = 0.d0
 vnj = 0.d0
 vnk = 0.d0
 vnm = 0.d0
-
-! Memory
 
 call field_get_val_s(icrom, crom)
 if (isto2t.gt.0.and.iroext.gt.0) then

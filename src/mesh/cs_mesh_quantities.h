@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -190,20 +190,6 @@ extern int cs_glob_porous_model;
 void
 CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra);
 
-/*----------------------------------------------------------------------------
- * Set porous model
- *
- * Fortran interface :
- *
- * subroutine compor (iporos)
- * *****************
- *
- * integer          iporos        : <-- : porous model
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -253,7 +239,7 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option);
  * Compute Fluid volumes and fluid surface in addition to cell volume and surfaces.
  *
  * parameters:
- *   porous_model <-- gradient option (Fortran iporos)
+ *   porous_model <-- porous model option (> 0 for porosity)
  *----------------------------------------------------------------------------*/
 
 void
@@ -331,6 +317,18 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 void
 cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
                                  cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
+ * Compute the total, min, and max fluid volumes of cells
+ *
+ * parameters:
+ *   mesh            <-- pointer to mesh structure
+ *   mesh_quantities <-> pointer to a mesh quantities structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_fluid_vol_reductions(const cs_mesh_t       *mesh,
+                                        cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Compute fluid section mesh quantities at the initial step

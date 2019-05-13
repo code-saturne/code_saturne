@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2134,6 +2134,8 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
                              float                   loc_tolerance,
                              int                     verbosity)
 {
+  CS_UNUSED(loc_tolerance);
+
   cs_sat_coupling_add(boundary_cpl_criteria,
                       volume_cpl_criteria,
                       boundary_loc_criteria,

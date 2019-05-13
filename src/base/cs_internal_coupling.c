@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2634,17 +2634,6 @@ cs_internal_coupling_setup(void)
       if (var_cal_opt.icoupl > 0) {
 
         if (coupling_id == 0) {
-          /* Definition of var_cal_opt options
-           * (needed for matrix.vector multiply) */
-          /* cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt); */
-
-          /* Check the case is without hydrostatic pressure */
-          cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-          if (stokes->iphydr == 1)
-            bft_error(__FILE__, __LINE__, 0,
-                      "Hydrostatic pressure "
-                      "not implemented with internal coupling.");
-
           /* Update user information */
           BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char);
           // FIXME:= Leaves the name of the first coupled scalar
@@ -2877,7 +2866,6 @@ void
 cs_ic_field_set_exchcoeff(const int         field_id,
                           const cs_real_t  *hbnd)
 {
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_field_t* f = cs_field_by_id(field_id);
@@ -2892,17 +2880,6 @@ cs_ic_field_set_exchcoeff(const int         field_id,
   const cs_lnum_t *faces_local = cpl->faces_local;
   cs_real_t *hint = f->bc_coeffs->hint;
   cs_real_t *hext = f->bc_coeffs->hext;
-
-  if (hint == NULL && n_b_faces > 0) {
-    BFT_REALLOC(f->bc_coeffs->hint, n_b_faces, cs_real_t);
-    BFT_REALLOC(f->bc_coeffs->hext, n_b_faces, cs_real_t);
-    hint = f->bc_coeffs->hint;
-    hext = f->bc_coeffs->hext;
-    for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-      hint[ii] = 0;
-      hext[ii] = 0;
-    }
-  }
 
   cs_real_t *hextloc = NULL;
   BFT_MALLOC(hextloc, n_local, cs_real_t);
@@ -2988,6 +2965,7 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
 void
 cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
 {
+  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3006,6 +2984,7 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
 void
 cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh)
 {
+  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/

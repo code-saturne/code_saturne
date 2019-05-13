@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -74,6 +74,9 @@ integer          nscal  , iappel
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
 integer          f_id
+integer          key_t_ext_id, icpext
+integer          iviext
+integer          iroext
 
 double precision flux   , theta  , viscos, varcp
 
@@ -86,6 +89,12 @@ double precision, dimension(:), pointer :: cproa_cp, cproa_visls, cproa_visct
 double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 
 !===============================================================================
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1. At the really beginning of the time step
@@ -128,12 +137,17 @@ if (iappel.eq.1) then
     enddo
   endif
 
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_current_to_previous(iviscl)
+  endif
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
     call field_current_to_previous(ivisct)
   endif
-  if (icpext.gt.0) then
-    if (icp.ge.0) then
+  if (icp.ge.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0) then
       call field_current_to_previous(icp)
     endif
   endif
@@ -146,13 +160,15 @@ if (iappel.eq.1) then
       ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (ivsext(iscal).gt.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iviext)
+        if (iviext.gt.0) then
           call field_current_to_previous(f_id)
         endif
       endif
       ! Densisty
       call field_get_key_int (ivarfl(isca(iscal)), kromsl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iroext)
         if (iroext.gt.0) then
           call field_current_to_previous(f_id)
         endif
@@ -181,22 +197,28 @@ elseif (iappel.eq.2) then
 
   if (initro.ne.1) then
     initro = 1
-    if (iroext.gt.0) then!FIXME rm this option
+    call field_get_key_int(icrom, key_t_ext_id, iroext)
+    if (iroext.gt.0) then
       call field_current_to_previous(icrom)
       call field_current_to_previous(ibrom)
     endif
   endif
   if (initvi.ne.1) then
     initvi = 1
+    call field_get_key_int(iviscl, key_t_ext_id, iviext)
     if (iviext.gt.0) then
       call field_current_to_previous(iviscl)
+    endif
+    call field_get_key_int(ivisct, key_t_ext_id, iviext)
+    if (iviext.gt.0) then
       call field_current_to_previous(ivisct)
     endif
   endif
   if (initcp.ne.1) then
     initcp = 1
-    if (icpext.gt.0) then
-      if (icp.gt.0) then
+    if (icp.gt.0) then
+      call field_get_key_int(icp, key_t_ext_id, icpext)
+      if (icpext.gt.0) then
         call field_current_to_previous(icp)
       endif
     endif
@@ -212,7 +234,8 @@ elseif (iappel.eq.2) then
         initvs(iscal) = 1
         call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
         if (f_id.ge.0.and.iscavr(iscal).le.0) then
-          if (ivsext(iscal).gt.0) then
+          call field_get_key_int(f_id, key_t_ext_id, iviext)
+          if (iviext.gt.0) then
             call field_current_to_previous(f_id)
           endif
         endif
@@ -230,25 +253,34 @@ elseif (iappel.eq.2) then
 !     On conserve les nouvelles valeurs dans l'ancien tableau pour
 !     retablir en fin de pas de temps
 
-  if (iviext.gt.0) then
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
+   if (iviext.gt.0) then
     call field_get_val_s(iviscl, cpro_viscl)
-    call field_get_val_s(ivisct, cpro_visct)
     call field_get_val_prev_s(iviscl, cproa_visls)
-    call field_get_val_prev_s(ivisct, cproa_visct)
     theta  = thetvi
     do iel = 1, ncel
       viscos = cpro_viscl(iel)
       cpro_viscl(iel) = (1.d0+theta) * cpro_viscl(iel)    &
            -       theta  * cproa_visls(iel)
       cproa_visls(iel) = viscos
+    enddo
+  endif
+
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_s(ivisct, cpro_visct)
+    call field_get_val_prev_s(ivisct, cproa_visct)
+    theta  = thetvi
+    do iel = 1, ncel
       viscos = cpro_visct(iel)
       cpro_visct(iel) = (1.d0+theta) * cpro_visct(iel)    &
            -       theta  * cproa_visct(iel)
       cproa_visct(iel) = viscos
     enddo
   endif
-  if (icpext.gt.0) then
-    if (icp.ge.0) then
+  if (icp.gt.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0) then
       call field_get_val_s(icp, cpro_cp)
       call field_get_val_prev_s(icp, cproa_cp)
       theta  = thetcp
@@ -269,7 +301,8 @@ elseif (iappel.eq.2) then
       ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (ivsext(iscal).gt.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iviext)
+        if (iviext.gt.0) then
           theta  = thetvs(iscal)
           call field_get_val_s(f_id, cpro_visls)
           call field_get_val_prev_s(f_id, cproa_visls)
@@ -408,18 +441,27 @@ elseif (iappel.eq.5) then
 ! 3.1 RETABLISSEMENT POUR LES PROPRIETES PHYSIQUES
 ! ================================================
 
+  call field_get_key_int(iviscl, key_t_ext_id, iviext)
   if (iviext.gt.0) then
     call field_get_val_s(iviscl, cpro_viscl)
-    call field_get_val_s(ivisct, cpro_visct)
     call field_get_val_prev_s(iviscl, cproa_visls)
-    call field_get_val_prev_s(ivisct, cproa_visct)
     do iel = 1, ncel
       cpro_viscl(iel) = cproa_visls(iel)
+    enddo
+  endif
+
+  call field_get_key_int(ivisct, key_t_ext_id, iviext)
+  if (iviext.gt.0) then
+    call field_get_val_s(ivisct, cpro_visct)
+    call field_get_val_prev_s(ivisct, cproa_visct)
+    do iel = 1, ncel
       cpro_visct(iel) = cproa_visct(iel)
     enddo
   endif
-  if (icpext.gt.0) then
-    if (icp.ge.0) then
+
+  if (icp.gt.0) then
+    call field_get_key_int(icp, key_t_ext_id, icpext)
+    if (icpext.gt.0) then
       call field_get_val_s(icp, cpro_cp)
       call field_get_val_prev_s(icp, cproa_cp)
       do iel = 1, ncel
@@ -436,7 +478,8 @@ elseif (iappel.eq.5) then
       ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
       if (f_id.ge.0.and.iscavr(iscal).le.0) then
-        if (ivsext(iscal).gt.0) then
+        call field_get_key_int(f_id, key_t_ext_id, iviext)
+        if (iviext.gt.0) then
           call field_get_val_s(f_id, cpro_visls)
           call field_get_val_prev_s(f_id, cproa_visls)
           do iel = 1, ncel

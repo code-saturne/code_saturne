@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -54,7 +54,6 @@
 
 #include "cs_physical_constants.h"
 #include "cs_random.h"
-#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -101,7 +100,7 @@ static const double _k_boltz = 1.38e-23;
  *   indint    <->    interface indicator
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   grpn      <--    wall-normal pressure gradient
+ *   force_pn  <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
@@ -131,7 +130,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                           cs_lnum_t *indint,
                           cs_real_t *gnorm,
                           cs_real_t *vnorm,
-                          cs_real_t *grpn,
+                          cs_real_t *force_pn,
                           cs_real_t *piiln);
 
 /*=============================================================================
@@ -139,7 +138,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Management of the ejection coherent structure (marko = 3)
+ * Management of the ejection coherent structure (marko = CS_LAGR_COHERENCE_STRUCT_EJECTION)
  *
  * parameters:
  *   marko     -->    state of the jump process
@@ -184,13 +183,13 @@ _dep_ejection(cs_lnum_t *marko,
   vvue0  = *vvue;
   vpart0 = *vpart;
 
-  /* Gravity and ormal fluid velocity added   */
+  /* Gravity and normal fluid velocity added   */
 
   *vvue  =  -*vstruc + *gnorm * taup + *vnorm;
   *vpart = vpart0 * exp ( -dtp / taup) + (1 - exp ( -dtp / taup)) * vvue0;
   *dx    =   vvue0 * dtp
-           + vvue0 * taup * (exp ( -dtp / taup) - 1)
-           + vpart0 * taup * (1 - exp ( -dtp / taup));
+           + vvue0 * taup * (exp ( -dtp / taup) - 1.)
+           + vpart0 * taup * (1. - exp ( -dtp / taup));
   ypaux  = *yplus - *dx / lvisq;
 
   /* --------------------------------------------------------
@@ -200,19 +199,19 @@ _dep_ejection(cs_lnum_t *marko,
   if (ypaux > *depint)
     *marko    =  -2;
   else if (ypaux < *dintrf)
-    *marko    = 0;
+    *marko    = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
   else {
 
     if (*unif1 < (dtp / *tstruc))
-      *marko  = 12;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION;
     else
-      *marko  = 3;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_EJECTION;
 
   }
 }
 
 /*-----------------------------------------------------------------------------
- * Management of the sweep coherent structure (marko = 1)
+ * Management of the sweep coherent structure (marko = CS_LAGR_COHERENCE_STRUCT_SWEEP)
  *
  * parameters:
  *   dx        <->    wall-normal displacement
@@ -238,7 +237,7 @@ _dep_ejection(cs_lnum_t *marko,
  *   kdifcl    <--    internal zone diffusion coefficient
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   grpn      <--    wall-normal pressure gradient
+ *   force_pn  <--    wall-normal particle force
  *   depint    <--    interface location near-wall/core-flow
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
@@ -268,7 +267,7 @@ _dep_sweep(cs_real_t *dx,
            cs_real_t *kdifcl,
            cs_real_t *gnorm,
            cs_real_t *vnorm,
-           cs_real_t *grpn,
+           cs_real_t *force_pn,
            cs_real_t *piiln)
 {
   /* -------------------------------------------------------
@@ -281,9 +280,11 @@ _dep_sweep(cs_real_t *dx,
 
   /*  Deposition submodel */
 
-  *vpart = vpart0 * exp ( -dtp / taup) + (1 - exp ( -dtp / taup)) * vvue0;
-  *dx    =   vvue0 * dtp + vvue0 * taup * (exp ( -dtp / taup) - 1)
-           + vpart0 * taup * (1 - exp ( -dtp / taup));
+  *vpart = vpart0 * exp ( -dtp / taup) + (1. - exp ( -dtp / taup)) * vvue0;
+  *dx    =   vvue0 * dtp + vvue0 * taup * (exp ( -dtp / taup) - 1.)
+           + vpart0 * taup * (1. - exp ( -dtp / taup));
+
+  /* Y+ at arrival */
   cs_real_t yplusa = *yplus - *dx / lvisq;
 
   /* --------------------------------------------------------
@@ -301,7 +302,7 @@ _dep_sweep(cs_real_t *dx,
     cs_real_t ypluss    = *yplus;
     *yplus    = *dintrf;
     *vvue     =  -*vstruc + *gnorm * taup + *vnorm;
-    *marko    = 0;
+    *marko    = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
     cs_lnum_t indint    = 1;
 
     _dep_inner_zone_diffusion(dx,
@@ -329,7 +330,7 @@ _dep_sweep(cs_real_t *dx,
                               &indint,
                               gnorm,
                               vnorm,
-                              grpn,
+                              force_pn,
                               piiln);
 
     indint  = 0;
@@ -338,7 +339,7 @@ _dep_sweep(cs_real_t *dx,
 
     if (yplusa > *dintrf) {
 
-      *marko  = 3;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_EJECTION;
       *vvue   =  -*vstruc + *gnorm * taup + *vnorm;
       _dep_ejection(marko,
                     depint,
@@ -364,15 +365,15 @@ _dep_sweep(cs_real_t *dx,
   else {
 
     if (*unif1 < (dtp / *tstruc))
-      *marko  = 12;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION;
     else
-      *marko  = 1;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_SWEEP;
 
   }
 }
 
 /*----------------------------------------------------------------------------
- * Management of the diffusion phases (marko = 2)
+ * Management of the diffusion phases (marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION)
  *
  * parameters:
  *   dx        -->    wall-normal displacement
@@ -387,7 +388,7 @@ _dep_sweep(cs_real_t *dx,
  *   ttotal    <->    tdiffu + tstruc
  *   vstruc    <--    coherent structure velocity
  *   romp      <--    particle density
- *   taup      <->    particle relaxation time
+ *   taup      -->    particle relaxation time
  *   kdif      <->    diffusion phase diffusion coefficient
  *   tlag2     <->    diffusion relaxation timescale
  *   lvisq     <--    wall-unit lengthscale
@@ -400,7 +401,7 @@ _dep_sweep(cs_real_t *dx,
  *   indint    <->    interface indicator
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   grpn      <--    wall-normal pressure gradient
+ *   force_pn  <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
@@ -430,10 +431,10 @@ _dep_diffusion_phases(cs_real_t *dx,
                       cs_lnum_t *indint,
                       cs_real_t *gnorm,
                       cs_real_t *vnorm,
-                      cs_real_t *grpn,
+                      cs_real_t *force_pn,
                       cs_real_t *piiln)
 {
-  cs_real_t  tci, force, aux1, aux2, aux3, aux4, aux5, aux6;
+  cs_real_t  tci, aux1, aux2, aux3, aux4, aux5, aux6;
   cs_real_t  aux7, aux8, aux9, aux10, aux11, aa, bb, cc, dd, ee, ter1x, ter2x;
   cs_real_t  ter3x, ter4x, ter5x, ter1f, ter2f, ter3f, ter1p, ter2p, ter3p;
   cs_real_t  ter4p, ter5p, gama2, omegam, omega2, p11, p21, p22, p31, p32;
@@ -445,14 +446,14 @@ _dep_diffusion_phases(cs_real_t *dx,
   cs_real_t vpart0 = *vpart;
 
   cs_real_t vvue0;
-  if (*marko == 12)
-    vvue0 = vagaus[3] * sqrt (pow (*kdif, 2) * *tlag2 / 2.0);
+  if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION)
+    vvue0 = vagaus[3] * sqrt (cs_math_pow2(*kdif) * *tlag2 / 2.0);
   else
     vvue0 = *vvue;
 
   tci = *piiln * *tlag2 + *vnorm;
 
-  force = (- *grpn / romp + *gnorm) * taup;
+  cs_real_t force = *force_pn;
 
   /* --> Coefficients and deterministic terms computation
    *     ------------------------------------------------    */
@@ -462,9 +463,9 @@ _dep_diffusion_phases(cs_real_t *dx,
   aux3 = *tlag2 / (*tlag2 - taup);
   aux4 = *tlag2 / (*tlag2 + taup);
   aux5 = *tlag2 * (1.0 - aux2);
-  aux6 = pow (*kdif, 2) * *tlag2;
+  aux6 = cs_math_pow2(*kdif) * *tlag2;
   aux7 = *tlag2 - taup;
-  aux8 = pow (*kdif, 2) * pow (aux3, 2);
+  aux8 = cs_math_pow2(*kdif) * cs_math_pow2(aux3);
 
   /* --> terms for the trajectory   */
   aa     = taup * (1.0 - aux1);
@@ -475,7 +476,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   ter3x  = cc * tci;
   ter4x  = (dtl - aa) * force;
 
-  /* --> vu fluid terms   */
+  /* --> seen fluid terms   */
   ter1f  = vvue0 * aux2;
   ter2f  = tci * (1.0 - aux2);
 
@@ -501,7 +502,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   if (CS_ABS(gama2) > cs_math_epzero) {
 
     p21  = omegam / sqrt (gama2);
-    p22  = omega2 - pow (p21, 2);
+    p22  = omega2 - cs_math_pow2(p21);
     p22  = sqrt (CS_MAX(0.0, p22));
 
   }
@@ -514,11 +515,11 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   ter5x  = p21 * vagaus[0] + p22 * vagaus[1];
 
-  /* --> vu fluid integral     */
+  /* vu fluid integral */
   p11    = sqrt (gama2 * aux6);
   ter3f  = p11 * vagaus[0];
 
-  /* --> particles velocity Integral     */
+  /* particles velocity Integral */
   aux9   = 0.5 * *tlag2 * (1.0 - aux2 * aux2);
   aux10  = 0.5 * taup * (1.0 - aux1 * aux1);
   aux11  = taup * *tlag2 * (1.0 - aux1 * aux2) / (taup + *tlag2);
@@ -527,7 +528,9 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   gagam  = (aux9 - aux11) * (aux8 / aux3);
 
-  gaome  = ((*tlag2 - taup) * (aux5 - aa) - *tlag2 * aux9 - taup * aux10 + (*tlag2 + taup) * aux11) * aux8;
+  gaome  =    ((*tlag2 - taup) * (aux5 - aa)
+            - *tlag2 * aux9 - taup * aux10
+            + (*tlag2 + taup) * aux11) * aux8;
 
   if (p11 > cs_math_epzero)
     p31  = gagam / p11;
@@ -539,7 +542,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   else
     p32  = 0.0;
 
-  p33    = grga2 - pow (p31, 2) - pow (p32, 2);
+  p33    = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
   p33    = sqrt (CS_MAX(0.0, p33));
   ter5p  = p31 * vagaus[0] + p32 * vagaus[1] + p33 * vagaus[2];
 
@@ -547,13 +550,13 @@ _dep_diffusion_phases(cs_real_t *dx,
    * 3. Writings finalization
    * ====================================================================*/
 
-  /* --> trajectory  */
+  /* trajectory */
   *dx = ter1x + ter2x + ter3x + ter4x + ter5x;
 
-  /* --> vu fluid velocity     */
+  /* seen fluid velocity */
   *vvue = ter1f + ter2f + ter3f;
 
-  /* --> particles velocity    */
+  /* particles velocity */
   *vpart = ter1p + ter2p + ter3p + ter4p + ter5p;
   yplusa = *yplus - *dx / lvisq;
 
@@ -562,15 +565,25 @@ _dep_diffusion_phases(cs_real_t *dx,
    * -------------------------------------------------- */
 
   if (yplusa > *depint)
-    *marko    =  -2;
+    *marko =  -2;
+  /* The particle enters the inner zone */
   else if (yplusa < *dintrf) {
 
-    *marko = 0;
-    *vvue  = sqrt (pow ((*kdifcl), 2) * *tlag2 / 2.0) * sqrt (2.0 * cs_math_pi) * 0.5;
+    /* In that case, we change the tag indint so that the diffusion phase
+     * will not call */
+    *indint = 1;
+    *marko = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
+    *vvue  =   sqrt(cs_math_pow2((*kdifcl)) * *tlag2 / 2.0)
+             * sqrt(2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
     dxaux  = *dx;
+    /* Warning, in the local referenceframe, the normal is outwaring */
     *vpart = (*yplus - yplusa) * lvisq / dtl;
+
+    /* Remaining time */
     dtp1   = dtl * (*dintrf - yplusa) / (*yplus - yplusa);
+
+    /* Y+ is overwriten at the interface */
     *yplus = *dintrf;
     _dep_inner_zone_diffusion(dx,
                               vvue,
@@ -597,7 +610,7 @@ _dep_diffusion_phases(cs_real_t *dx,
                               indint,
                               gnorm,
                               vnorm,
-                              grpn,
+                              force_pn,
                               piiln);
 
     *dx  = dxaux + *dx;
@@ -609,19 +622,19 @@ _dep_diffusion_phases(cs_real_t *dx,
 
       if (*unif2 < 0.5) {
 
-        *marko = 1;
+        *marko = CS_LAGR_COHERENCE_STRUCT_SWEEP;
         *vvue  = *vstruc + *gnorm * taup + *vnorm;
 
       }
       else {
 
-        *marko = 3;
+        *marko = CS_LAGR_COHERENCE_STRUCT_EJECTION;
         *vvue  =  -*vstruc + *gnorm * taup + *vnorm;
 
       }
     }
     else
-      *marko = 2;
+      *marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION;
 
   }
 }
@@ -654,7 +667,7 @@ _dep_diffusion_phases(cs_real_t *dx,
  *   indint    <->    interface indicator
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   grpn      <--    wall-normal pressure gradient
+ *   force_pn  <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
@@ -684,14 +697,14 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                           cs_lnum_t *indint,
                           cs_real_t *gnorm,
                           cs_real_t *vnorm,
-                          cs_real_t *grpn,
+                          cs_real_t *force_pn,
                           cs_real_t *piiln)
 {
   cs_real_t vagaus[3], vagausbr[2];
   cs_random_normal(3, vagaus);
   cs_random_normal(2, vagausbr);
 
-  cs_real_t force  = *gnorm * taup;
+  cs_real_t force = *force_pn;
   cs_real_t vvue0  = *vvue;
   cs_real_t vpart0 = *vpart;
 
@@ -700,15 +713,17 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
     argt = cs_math_pi * *yplus / 5.0;
     kaux = *kdifcl * 0.5 * (1.0 - cos (argt));
-    tci  =  -pow (*tlag2, 2) * 0.5 * pow (*kdifcl, 2) * cs_math_pi * sin (argt)
+    tci  = *piiln * *tlag2 -cs_math_pow2(*tlag2)
+           * 0.5 * cs_math_pow2(*kdifcl) * cs_math_pi * sin (argt)
            * (1.0 - cos (argt)) / (2.0 * 5.0) / lvisq;
 
   }
   else {
 
     kaux      = *kdifcl;
-    /* Interpolation of the decreasing normal fluid velocity around zero:     */
-    tci  = *vnorm * *yplus / *dintrf;
+    /* Interpolation of the decreasing normal fluid velocity around zero:
+     * tci here is Tci * T_lag */
+    tci = *piiln * *tlag2 + *vnorm * *yplus / *dintrf;
 
   }
 
@@ -716,7 +731,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    *  Brownian motion
    * -----------------------------------------------    */
 
-  cs_real_t mpart    = 4.0 / 3.0 * cs_math_pi * pow (*rpart, 3) * romp;
+  cs_real_t mpart    = 4.0 / 3.0 * cs_math_pi * cs_math_pow3(*rpart) * romp;
   cs_real_t kdifbr   = sqrt (2.0 * _k_boltz * tempf / (mpart * taup));
   cs_real_t kdifbrtp = kdifbr * taup;
 
@@ -727,18 +742,18 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t tlmtp  = *tlag2 - taup;
   cs_real_t tlptp  = *tlag2 + taup;
   cs_real_t tltp   = *tlag2 * taup;
-  cs_real_t tl2    = pow (*tlag2, 2);
-  cs_real_t tp2    = pow (taup, 2);
+  cs_real_t tl2    = cs_math_pow2(*tlag2);
+  cs_real_t tp2    = cs_math_pow2(taup);
   cs_real_t thet   = *tlag2 / tlmtp;
-  cs_real_t the2   = pow (thet, 2);
-  cs_real_t etl    = exp ( -dtstl);
-  cs_real_t etp    = exp ( -dtstp);
+  cs_real_t the2   = cs_math_pow2(thet);
+  cs_real_t etl    = exp (-dtstl);
+  cs_real_t etp    = exp (-dtstp);
   cs_real_t l1l    = 1.0 - etl;
   cs_real_t l1p    = 1.0 - etp;
   cs_real_t l2l    = 1.0 - etl * etl;
   cs_real_t l2p    = 1.0 - etp * etp;
   cs_real_t l3     = 1.0 - etl * etp;
-  cs_real_t kaux2  = pow (kaux, 2);
+  cs_real_t kaux2  = cs_math_pow2(kaux);
   cs_real_t k2the2 = kaux2 * the2;
   cs_real_t aa1    = taup * l1p;
   cs_real_t bb1    = thet * (*tlag2 * l1l - aa1);
@@ -750,9 +765,10 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    * Auxiliary terms for Brownian motion
    * -------------------------------------------------- */
 
-  cs_real_t xiubr  = 0.5 * pow ((kdifbrtp * l1p), 2);
+  cs_real_t xiubr  = 0.5 * cs_math_pow2((kdifbrtp * l1p));
   cs_real_t ucarbr = kdifbrtp * kdifbr * 0.5 * l2p;
-  cs_real_t xcarbr = pow (kdifbrtp, 2) * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
+  cs_real_t xcarbr =   cs_math_pow2(kdifbrtp)
+                     * (dtl - l1p * (2.0 + l1p) * 0.5 * taup);
   cs_real_t ubr    = sqrt (CS_MAX(ucarbr, 0.0));
 
   /* ---------------------------------------------------
@@ -768,17 +784,18 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    * ---------------------------------------------------*/
 
   cs_real_t pgam2  = 0.5 * kaux2 * *tlag2 * l2l;
-  cs_real_t ggam2  = the2 * pgam2 + k2the2 * (  l3 * ( -2 * tltp / tlptp)
-                                              + l2p * (taup * 0.5));
-  cs_real_t ome2   = k2the2 * ( dtl * pow (tlmtp, 2) + l2l * (tl2 * *tlag2 * 0.5)
+  cs_real_t ggam2  = the2 * pgam2
+                     + k2the2 * (  l3 * (-2. * tltp / tlptp)
+                                 + l2p * (taup * 0.5));
+  cs_real_t ome2   = k2the2 * ( dtl * cs_math_pow2(tlmtp) + l2l * (tl2 * *tlag2 * 0.5)
                                + l2p * (tp2 * taup * 0.5)
                                + l1l * ( -2.0 * tl2 * tlmtp)
                                + l1p * (2.0 * tp2 * tlmtp)
-                               + l3 * ( -2.0 * (pow (tltp, 2)) / tlptp));
+                               + l3 * ( -2.0 * (cs_math_pow2(tltp)) / tlptp));
 
   cs_real_t pgagga = thet * (pgam2 - kaux2 * tltp / tlptp * l3);
-  cs_real_t pgaome = thet * *tlag2 * ( -pgam2 + kaux2 * (  l1l * tlmtp
-                                                         + l3 * tp2 /  tlptp));
+  cs_real_t pgaome = thet * *tlag2 * (-pgam2 + kaux2 * (  l1l * tlmtp
+                                                        + l3 * tp2 /  tlptp));
   cs_real_t ggaome = k2the2 * (  tlmtp * ( *tlag2 * l1l + l1p * ( -taup))
                                + l2l * ( -tl2 * 0.5)
                                + l2p * ( -tp2 * 0.5) + l3 * tltp);
@@ -797,7 +814,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   else
     p21  = 0.0;
 
-  cs_real_t p22 = sqrt (CS_MAX (0.0, ggam2 - pow (p21, 2)));
+  cs_real_t p22 = sqrt (CS_MAX (0.0, ggam2 - cs_math_pow2(p21)));
 
   /*  P31, P32 and P33 computations */
   cs_real_t p31;
@@ -828,7 +845,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   else
     p21br = 0.0;
 
-  cs_real_t p22br  = sqrt (CS_MAX (xcarbr - pow (p21br, 2), 0.0));
+  cs_real_t p22br  = sqrt (CS_MAX (xcarbr - cs_math_pow2(p21br), 0.0));
 
   /* ----------------------------------------------------------
    *  The random terms are consequently:
@@ -852,25 +869,33 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   *vvue  = *vvue + terf;
   *vpart = *vpart + terp + terpbr;
   *dx    = *dx + terx + terxbr;
+  /* Predicted arrival y+ */
   cs_real_t yplusa = *yplus - *dx / lvisq;
 
   if ((yplusa * lvisq) < *rpart) {
 
-    *dx  = *dx + 2 * *rpart;
+    *dx  = *dx + 2. * *rpart;
     return;
 
   }
 
+  /* The particle leaves the inner zone */
   if ((yplusa > *dintrf) && (*indint != 1)) {
 
-    *marko = 2;
-    *vvue  =  -sqrt(pow ((*kdifcl * (*ttotal / *tdiffu)), 2) * *tlag2 / 2.0)
+    *marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION;
+    *vvue  =  -sqrt(cs_math_pow2((*kdifcl * (*ttotal / *tdiffu))) * *tlag2 / 2.0)
              * sqrt (2.0 * cs_math_pi) * 0.5;
     *dx   *= (*dintrf - *yplus) / (yplusa - *yplus);
-    *vpart = (*yplus - yplusa) * lvisq / dtl;
     cs_real_t dxaux  = *dx;
+    /* Warning, in the local referenceframe, the normal is outwaring */
+    *vpart = (*yplus - yplusa) * lvisq / dtl;
+
+    /* Remaining time */
     cs_real_t dtp1   = dtl * (*dintrf - yplusa) / (*yplus - yplusa);
+
+    /* Y+ is overwriten at the interface */
     *yplus = *dintrf;
+
     _dep_diffusion_phases(dx,
                           vvue,
                           vpart,
@@ -896,7 +921,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                           indint,
                           gnorm,
                           vnorm,
-                          grpn,
+                          force_pn,
                           piiln);
 
     *dx  = dxaux + *dx;
@@ -913,7 +938,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
         cs_real_t argtn1  = cs_math_pi * yplusa / 5.0;
         kauxn1  = *kdifcl * 0.5 * (1.0 - cos (argtn1));
-        tcin1   =  cs_math_sq(*tlag2) * 0.5 * cs_math_sq(*kdifcl)
+        tcin1   =  cs_math_pow2(*tlag2) * 0.5 * cs_math_pow2(*kdifcl)
                    * cs_math_pi * sin (argtn1) * (1.0 - cos (argtn1))
                    / (2.0 * 5.0) / lvisq;
       }
@@ -949,7 +974,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
        * --------------------------------------------------*/
 
       cs_real_t ketoi   = (a22 * kaux + b22 * kauxn1) / l2l;
-      cs_real_t ketoi2  = pow (ketoi, 2);
+      cs_real_t ketoi2  = cs_math_pow2(ketoi);
 
       /* --------------------------------------------------
        *  Correlation matrix computation
@@ -973,7 +998,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
       else
         p21 = 0.0;
 
-      p22 = sqrt (CS_MAX (0.0, ggam2 - pow (p21, 2)));
+      p22 = sqrt (CS_MAX (0.0, ggam2 - cs_math_pow2(p21)));
 
       /* ----------------------------------------------------------
        *  The random terms are:
@@ -1019,7 +1044,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
  *   enertur   <--    turbulent kinetic energy
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   grpn      <--    wall-normal pressure gradient
+ *   force_pn  <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *   depint    <--    interface location near-wall/core-flow
  *----------------------------------------------------------------------------*/
@@ -1041,7 +1066,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                    cs_real_t *enertur,
                    cs_real_t *gnorm,
                    cs_real_t *vnorm,
-                   cs_real_t *grpn,
+                   cs_real_t *force_pn,
                    cs_real_t *piiln,
                    cs_real_t *depint)
 {
@@ -1070,7 +1095,8 @@ cs_lagr_deposition(cs_real_t  dtp,
      * Kdif is roughly equal to sqrt(k/(4*pi)) in the core flow (which is the
      * theoretical value of the standard Langevin model with a C0 = 2.1) such as:
      *    flux_langevin = sig / sqrt(2*pi)  = v' / sqrt(2*pi)
-     * and (v') = k * C0 /( 1 + 3*C0/2 ) = approx. k/2 (see Minier & Pozorski, 1999) */
+     * and (v') = k * C0 /( 1 + 3*C0/2 ) = approx. k/2
+     * (see Minier & Pozorski, 1999) */
 
   cs_real_t tt = (sqrt(cs_math_pi * rapkvp) * tstruc);
 
@@ -1085,7 +1111,7 @@ cs_lagr_deposition(cs_real_t  dtp,
 
   /* Ratios computation of the flux to determine the kdifcl value */
 
-  cs_real_t ectype = sqrt (pow (kdif, 2) * tlag2 / 2.0);
+  cs_real_t ectype = sqrt (cs_math_pow2(kdif) * tlag2 / 2.0);
   cs_real_t paux   = sqrt (cs_math_pi / 2.0) * tstruc * vstruc / (ectype * tdiffu);
   paux   = paux / (1.0 + paux);
   cs_real_t kdifcl = kdif * (tdiffu / ttotal);
@@ -1095,51 +1121,56 @@ cs_lagr_deposition(cs_real_t  dtp,
 
   cs_lnum_t indint = 0;
 
-  /* ====================================================================   */
-  /* 2. Treatment of the 'degenerated' cases (marko = 10, 20, 30) */
-  /* ====================================================================   */
+  /* ==================================================================== */
+  /* 2. Treatment of the 'degenerated' cases
+   * (marko =
+   *   CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF,
+   *   CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP,
+   *   CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION) */
+  /* ==================================================================== */
 
   cs_real_t unif1;
-  if (*marko == 10) {
+  if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF) {
 
-    *marko    = 0;
+    *marko    = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF;
     *vvue     = 0.0;
 
   }
-  else if (*marko == 20) {
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_SWEEP) {
 
     cs_random_uniform(1, &unif1);
 
     if (unif1 < paux)
-      *marko  = 1;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_SWEEP;
 
     else
-      *marko  = 12;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION;
 
   }
-  else if (*marko == 30) {
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_EJECTION) {
 
     cs_random_uniform(1, &unif1);
 
     if (unif1 < 0.5)
-      *marko  = 1;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_SWEEP;
 
     else
-      *marko  = 3;
+      *marko  = CS_LAGR_COHERENCE_STRUCT_EJECTION;
 
   }
 
   /* ====================================================================
    * 2. Call of different subroutines given the value of marko
-   *   marko = 1 --> sweep phase
-   *   marko = 2 or 12 --> diffusion phase
-   *   marko = 3 --> ejection phase
-   *   marko = 0 --> inner-zone diffusion
+   *   marko = CS_LAGR_COHERENCE_STRUCT_SWEEP --> sweep phase
+   *   marko = CS_LAGR_COHERENCE_STRUCT_DIFFUSION
+   *         or CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION --> diffusion phase
+   *   marko = CS_LAGR_COHERENCE_STRUCT_EJECTION --> ejection phase
+   *   marko = CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF --> inner-zone diffusion
    * =====================================================================  */
 
   cs_real_t rpart = *diamp * 0.5;
 
-  if (*marko == 1)
+  if (*marko == CS_LAGR_COHERENCE_STRUCT_SWEEP)
     _dep_sweep(dx,
                vvue,
                vpart,
@@ -1164,10 +1195,11 @@ cs_lagr_deposition(cs_real_t  dtp,
                &kdifcl,
                gnorm,
                vnorm,
-               grpn,
+               force_pn,
                piiln);
 
-  else if (*marko == 2 || *marko == 12)
+  else if (   *marko == CS_LAGR_COHERENCE_STRUCT_DIFFUSION
+           || *marko == CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION)
     _dep_diffusion_phases(dx,
                           vvue,
                           vpart,
@@ -1193,10 +1225,10 @@ cs_lagr_deposition(cs_real_t  dtp,
                           &indint,
                           gnorm,
                           vnorm,
-                          grpn,
+                          force_pn,
                           piiln);
 
-  else if (*marko == 3)
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_EJECTION)
     _dep_ejection(marko,
                   depint,
                   dtp,
@@ -1213,7 +1245,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                   gnorm,
                   vnorm);
 
-  else if (*marko == 0)
+  else if (*marko == CS_LAGR_COHERENCE_STRUCT_INNER_ZONE_DIFF)
     _dep_inner_zone_diffusion(dx,
                               vvue,
                               vpart,
@@ -1239,7 +1271,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                               &indint,
                               gnorm,
                               vnorm,
-                              grpn,
+                              force_pn,
                               piiln);
 }
 

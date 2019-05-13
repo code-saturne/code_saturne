@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -130,7 +130,6 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_physprop(mbrom, izfppp)
 endif
 
-
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
 !      des particules de charbon
 
@@ -143,7 +142,6 @@ endif
 if (ippmod(icfuel).ge.0) then
   call cs_fuel_physprop(mbrom, izfppp)
 endif
-
 
 ! ---> Physique particuliere : Versions electriques
 !          Effet Joule
@@ -162,13 +160,13 @@ endif
 ! ---> Aerorefrigerants
 
 if (ippmod(iaeros).ge.0) then
-   call ctphyv
+  call ctphyv
 endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
 
 if (ippmod(iatmos).ge.1) then
-   call atphyv()
+  call atphyv
 endif
 
 !----
@@ -177,7 +175,6 @@ endif
 
 return
 end subroutine cs_physical_properties1
-
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -261,7 +258,6 @@ endif
 if (ippmod(idarcy).ge.1) then
   call cs_gwf_delay_update
 endif
-
 
 !----
 ! End

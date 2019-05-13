@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -210,6 +210,12 @@ class Parser:
         if sol_domain_node == None:
             return
 
+        # Check whether additionnal preprocessing is done upn restart
+
+        val = getDataFromNode(sol_domain_node, 'preprocess_on_restart')
+        if val in ('yes', 'on'):
+            self.dict['preprocess_on_restart'] = True
+
         # Get mesh_input if available; in this case, no mesh
         # import will be necessary, so we are done.
 
@@ -292,13 +298,24 @@ class Parser:
         if not calc_node:
             return
 
-        node = getChildNode(calc_node, 'start_restart')
-        if node != None:
-            node = getChildNode(node, 'restart')
-        if node != None:
-            path = str(node.getAttribute('path'))
-            if path:
-                self.dict['restart_input'] = path
+        is_restart = False
+
+        sr_node = getChildNode(calc_node, 'start_restart')
+
+        if sr_node != None:
+            node = getChildNode(sr_node, 'restart')
+            if node != None:
+                path = str(node.getAttribute('path'))
+                if path:
+                    self.dict['restart_input'] = path
+                    is_restart = True
+
+        if sr_node != None:
+            node = getChildNode(sr_node, 'restart_mesh')
+            if node != None:
+                path = str(node.getAttribute('path'))
+                if path:
+                    self.dict['restart_mesh_input'] = path
 
         node = getChildNode(calc_node, 'partitioning')
         if node != None:
@@ -322,12 +339,10 @@ class Parser:
         if log_node != None:
             attr = str(log_node.getAttribute('main'))
             if attr == 'stdout':
-                logging_args += '--log 0 '
+                logging_args += '--trace '
             attr = str(log_node.getAttribute('parallel'))
-            if attr == 'stdout':
-                logging_args += '--logp 0'
-            elif attr == 'listing':
-                logging_args += '--logp 1'
+            if attr == 'listing':
+                logging_args += '--logp'
         logging_args.strip()
 
         if logging_args:

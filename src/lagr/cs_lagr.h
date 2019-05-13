@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -82,35 +82,39 @@ typedef void
 
 typedef enum {
 
-  CS_LAGR_BC_UNDEFINED,
-  CS_LAGR_INLET,
-  CS_LAGR_OUTLET,
-  CS_LAGR_REBOUND,
-  CS_LAGR_DEPO1,
-  CS_LAGR_DEPO2,
-  CS_LAGR_FOULING,
-  CS_LAGR_JBORD1,
-  CS_LAGR_JBORD2,
-  CS_LAGR_JBORD3,
-  CS_LAGR_JBORD4,
-  CS_LAGR_JBORD5,
-  CS_LAGR_DEPO_DLVO,
-  CS_LAGR_SYM
+  CS_LAGR_BC_UNDEFINED,  /*!< undefined conditions */
+  CS_LAGR_SYM,           /*!< symmetry */
+  CS_LAGR_INLET,         /*!< inlet */
+  CS_LAGR_OUTLET,        /*!< outlet */
+  CS_LAGR_REBOUND,       /*!< elastic rebound */
+  CS_LAGR_DEPO1,         /*!< immediate deposition and elimination */
+  CS_LAGR_DEPO2,         /*!< deposition */
+  CS_LAGR_DEPO_DLVO,     /*!< deposition based on DLVO theory */
+  CS_LAGR_FOULING,       /*!< fouling (combustion) */
+  CS_LAGR_BC_USER        /*!< user-defined */
 
 } cs_lagr_bc_type_t;
 
-/*! Lagrangian deposition state */
+  /*! Lagrangian module status.
+     the different values correspond to the following coupling:
+     - CS_LAGR_OFF: Lagrangian module off
+     - CS_LAGR_ONEWAY_COUPLING: Lagrangian two-phase flow in one-way coupling
+         (no influence of the particles on the continuous phase)
+     - CS_LAGR_TWOWAY_COUPLING: Lagrangian two-phase flow with two-way coupling
+         (influence of the particles on the dynamics of the continuous phase).
+         Dynamics, temperature and mass may be coupled independently.
+     - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
+         continuous phase. This option
+         only only be used in case of a calculation restart. All the
+         Eulerian fields are frozen (including the scalar fields).
+         This option automatically implies \ref iccvfg = 1 */
 
 typedef enum {
-
-  CS_LAGR_PART_IN_FLOW        = 0,
-  CS_LAGR_PART_DEPOSITED      = 1,
-  CS_LAGR_PART_ROLLING        = 2,
-  CS_LAGR_PART_TO_DELETE      = 3,
-  CS_LAGR_PART_NO_MOTION      = 10,
-  CS_LAGR_PART_IMPOSED_MOTION = 11
-
-} cs_lagr_deposition_state_t;
+  CS_LAGR_OFF = 0,
+  CS_LAGR_ONEWAY_COUPLING = 1,
+  CS_LAGR_TWOWAY_COUPLING = 2,
+  CS_LAGR_FROZEN_CONTINUOUS_PHASE = 3
+} cs_lagr_module_status_t;
 
 /*! Fixed maximum sizes */
 /*----------------------*/
@@ -143,14 +147,14 @@ typedef struct {
 typedef struct {
 
   /*! Lagrangian module status.
-     the different values correspond to the following coupling:
-     - 0: Lagrangian module off
-     - 1: Lagrangian two-phase flow in one-way coupling (no influence of
-          the particles on the continuous phase)
-     - 2 Lagrangian two-phase flow with two-way coupling (influence of
-         the particles on the dynamics of the continuous phase). Dynamics,
-         temperature and mass may be coupled independently.
-     - 3 Lagrangian two-phase flow on frozen continuous phase. This option
+     - CS_LAGR_OFF: Lagrangian module off
+     - CS_LAGR_ONEWAY_COUPLING: Lagrangian two-phase flow in one-way coupling
+         (no influence of the particles on the continuous phase)
+     - CS_LAGR_TWOWAY_COUPLING: Lagrangian two-phase flow with two-way coupling
+         (influence of the particles on the dynamics of the continuous phase).
+         Dynamics, temperature and mass may be coupled independently.
+     - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
+         continuous phase. This option
          only only be used in case of a calculation restart. All the
          Eulerian fields are frozen (including the scalar fields).
          This option automatically implies \ref iccvfg = 1 */
@@ -163,7 +167,9 @@ typedef struct {
       (starting respectively from the iterations \ref nstist)
       and calculate time-averaged two-way coupling source terms (from the
       time step \ref nstits).
-      Useful if \ref iilagr=1 or \ref iilagr=2 (if \ref iilagr=3,
+      Useful if \ref iilagr = CS_LAGR_ONEWAY_COUPLING
+      or \ref iilagr = CS_LAGR_TWOWAY_COUPLING
+      (if \ref iilagr = CS_LAGR_FROZEN_CONTINUOUS_PHASE,
       then \ref isttio=1 automatically) */
   int  isttio;
 
@@ -273,7 +279,19 @@ typedef struct {
   int  precipitation;
   int  fouling;
 
+  /*! - 0: no agglomeration model
+      - 1: agglomeration model used */
+  int agglomeration;
+
+  /*! - 0: no fragmentation model
+      - 1: fragmentation model used */
+  int fragmentation;
+
   int  n_stat_classes;
+
+  /*! number of aggregates that form the particle */
+  int n_particle_aggregates;
+
   int  n_user_variables;
 
 } cs_lagr_model_t;
@@ -296,6 +314,9 @@ typedef struct {
 
   /*! total number of particles*/
   cs_gnum_t   n_g_new;
+
+  /*! number of merged particles*/
+  cs_gnum_t   n_g_merged;
 
   /*! number of exited particles*/
   cs_gnum_t   n_g_exit;
@@ -427,6 +448,28 @@ typedef struct {
 
 } cs_lagr_clogging_model_t;
 
+/*! Parameters of the particle agglomeration model */
+/* ------------------------------------------ */
+
+typedef struct {
+
+  cs_real_t          scalar_kernel;
+  cs_real_t          base_diameter;
+  cs_real_t          (*function_kernel)(cs_lnum_t, cs_lnum_t);
+
+} cs_lagr_agglomeration_model_t;
+
+/*! Parameters of the particle fragmentation model */
+/* ------------------------------------------ */
+
+typedef struct {
+
+  cs_real_t          scalar_kernel;
+  cs_real_t          base_diameter;
+  cs_real_t          (*function_kernel)(cs_lnum_t);
+
+} cs_lagr_fragmentation_model_t;
+
 /*! Parameters of the particle consolidation model */
 /* ----------------------------------------------- */
 
@@ -492,6 +535,8 @@ typedef struct {
 
   int         cluster;              /*!< statistical cluster id */
 
+  int         particle_aggregate;
+
   cs_real_t   velocity_magnitude;   /*!< particle velocity magnitude */
   cs_real_t   velocity[3];          /*!< particle velocity components */
 
@@ -521,11 +566,11 @@ typedef struct {
 
   /*! activation (=1) or not (=0) of the two-way coupling on the dynamics
     of the continuous phase.
-    Useful if \ref iilagr = 2 and \ref iccvfg = 0 */
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and \ref iccvfg = 0 */
   int  ltsdyn;
 
   /*! activation (=1) or not (=0) of the two-way coupling on the mass.
-    Useful if \ref iilagr = 2, \ref physical_model = 1 and \ref impvar = 1 */
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING, \ref physical_model = 1 and \ref impvar = 1 */
   int  ltsmas;
 
   /*  if \ref physical_model = 1 and \ref itpvar = 1, \ref ltsthe
@@ -533,7 +578,7 @@ typedef struct {
    if \ref physical_model = 2, \ref ltsthe activates (=1) or not (=0) the
    two-way coupling on the eulerian variables related to pulverised
    coal combustion.
-   Useful if \ref iilagr = 2 */
+   Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING */
   int  ltsthe;
 
   /*! implicit source term for the continuous phase velocity and
@@ -579,7 +624,7 @@ typedef struct {
     steady state (transition period) and the averages appearing in the source
     terms are reinitialized at each time step, as it is the case for unsteady
     flows (\ref isttio=0).
-    Useful if \ref iilagr = 2 and \ref isttio = 1 */
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and \ref isttio = 1 */
   int  nstits;
 
   /*! number of time steps for source terms accumulations */
@@ -638,35 +683,31 @@ typedef struct {
 
 typedef struct {
 
-  /*  activates (=1) or not (=0) the option of coal particle fouling.
-   It then is necessary to specify the domain boundaries
-   on which fouling may take place. Useful if \ref physical_model = 2*/
+  /* Activates (=1) or not (=0) the option of coal particle fouling.
+     It then is necessary to specify the domain boundaries
+     on which fouling may take place. Useful if \ref physical_model = 2*/
   int  iencra;
 
-  /*  encrustation data*/
+  /* encrustation data*/
   int  npencr;
   // TODO cf particles->n_part_fou in cs_lagr_tracking.c
 
-  /*  encrustation data*/
-//TODO
-  cs_real_t  *enc1;//ncharm2
-  /*  encrustation data*/
-//TODO
-  cs_real_t  *enc2;//ncharm2
+  /* encrustation data*/
+  cs_real_t  *enc1;  // size: ncharm2
+  /* encrustation data*/
+  cs_real_t  *enc2;  // size: ncharm2
 
-  /*  limit temperature (in degree Celsius) below which the coal particles do
-   not cause any fouling (if the fouling model is activated).
-   Useful if \ref physical_model = 2 and \ref iencra = 1*/
-//TODO
-  cs_real_t  *tprenc;//ncharm2
+  /* Limit temperature (in degree Celsius) below which the coal particles do
+     not cause any fouling (if the fouling model is activated).
+     Useful if \ref physical_model = 2 and \ref iencra = 1*/
+  cs_real_t  *tprenc; // size: ncharm2
 
-  /*  ash critical viscosity in \f$ kg.m^{-1}.s^{-1} \f$, in the fouling model
-   cf J.D. Watt et T. Fereday (J.Inst.Fuel, Vol.42-p99).
-   Useful if \ref physical_model = 2 and \ref iencra = 1*/
-//TODO
-  cs_real_t  *visref;//ncharm2
+  /* Ash critical viscosity in \f$ kg.m^{-1}.s^{-1} \f$, in the fouling model
+     cf J.D. Watt et T. Fereday (J.Inst.Fuel, Vol.42-p99).
+     Useful if \ref physical_model = 2 and \ref iencra = 1*/
+  cs_real_t  *visref;  // size: ncharm2
 
-  /*  encrustation data */
+  /* encrustation data */
   cs_real_t  dnpenc;
 
 } cs_lagr_encrustation_t;
@@ -714,11 +755,7 @@ typedef struct {
 
 typedef struct {
 
-  /*! number of additional user data to record for the calculation
-    of additional boundary statistics in \ref bound_stat */
-  int  nusbor;
-
-  /*! number of iterations during which steady boundary statistics have
+  /*! Number of iterations during which steady boundary statistics have
     been accumulated.
     Useful if \ref isttio=1 and \ref nstist inferior
     or equal to the current time step.
@@ -736,95 +773,16 @@ typedef struct {
 
   /*! activation (=1) or not (=0) of the recording of the number of
     particle/boundary interactions, and of the calculation of the associated
-    boundary statistics.
-    \ref has_part_impact_nbr is set to 1 when using the particulate average
-    \ref imoybr = 2. */
+    boundary statistics. */
   int  has_part_impact_nbr;
-
-  /*!  activation (=1) or not (=0) of the recording of the particulate mass flow
-    related to the particle/boundary interactions, and of the calculation of
-    the associated boundary statistics.
-    \ref has_part_impact_nbr is set to 1 when using \ref iflmbd=1.
-   */
-  int  iflmbd;
-
-  /*!  activation (=1) or not (=0) of the recording of the angle between a
-    particle trajectory and a boundary face involved in a particle/boundary
-    interaction, and of the calculation of the associated boundary statistics. */
-  int  iangbd;
-
-  /*!  activation (=1) or not (=0) of the recording of the velocity of a particle
-    involved in a particle/boundary interaction, and of the calculation of
-    the associated boundary statistics. */
-  int  ivitbd;
 
   /*!  activation (=1) or not (=0) of the recording of clogging parameters
     involved in a particle/boundary interaction, and of the calculation of
     the associated boundary statistics. */
   int  iclgst;
 
-  /*! flag for number of recorded particle/boundary interactions with fouling */
-  int  iencnbbd;
-
-  /*! flag for mass of fouled coal particles */
-  int  iencmabd;
-
-  /*! flag for diameter of fouled coal particles */
-  int  iencdibd;
-
-  /*! flag for coke fraction of fouled coal particles */
-  int  iencckbd;
-
   /*!  id for number of particle/boundary interactions */
   int  inbr;
-
-  /*!  id for particle mass flow at the boundary faces */
-  int  iflm;
-
-  /*!  id for mean interaction angle with the boundary faces */
-  int  iang;
-
-  /*!  id for mean interaction velocity with the boundary faces */
-  int  ivit;
-
-  /*!  id for number of resuspended particles */
-  int  ires;
-
-  /*!  id for mass flow of resuspended particles at the boundary faces */
-  int  iflres;
-
-  /*! flag for number of recorded particle/boundary interactions with fouling */
-  int  iencnb;
-
-  /*! id for mass of fouled coal particles */
-  int  iencma;
-
-  /*! id for diameter of fouled coal particles */
-  int  iencdi;
-
-  /*! id for coke fraction of fouled coal particles */
-  int  iencck;
-
-  /*!  supplementary user boundary statistics */
-  int  *iusb;
-
-  /*! the recordings in \ref bound_stat at every particle/boundary interaction are
-      cumulated values (possibly reset to zero at every iteration in the
-      unsteady case). They must therefore be divided by a quantity to
-      get boundary statistics. The user can choose between two average types:
-      - = 0: no average is applied to the recorded cumulated values.
-      - = 1: a time-average is calculated. The cumulated value
-             is divided by the physical duration in the case of steady
-             averages (\ref isttio=1). The cumulated value is divided by the
-             value of the last time step in the case of unsteady averages
-             (\ref isttio=0), and also in the case of steady averages while the
-             absolute iteration number is inferior to \ref nstist.
-      - = 2: a particulate average is calculated. The cumulated value is divided
-             by the number of particle/boundary interactions (in terms of
-             statistical weight) recorded in \ref bound_stat "bound_stat"(nfabor,inbr).
-             This average can only be calculated when \ref has_part_impact_nbr = 1.
-             Only the cumulated value is recorded in the restart file. */
-  int  *imoybr;
 
   /*! id for number of deposited particles */
   int  inclg;
@@ -905,7 +863,7 @@ typedef struct {
      ----------------- */
 
   /* wall ustar */
-  cs_real_t *uetbor;
+  cs_field_t *ustar;
 
   /* Fluid density */
   cs_field_t *cromf;
@@ -957,6 +915,12 @@ typedef struct {
 
   /* Reynolds Stress Tensor */
   cs_field_t *cvar_rij;
+
+  /* Total pressure gradient */
+  cs_real_3_t *grad_pr;
+
+  /* velocity gradient */
+  cs_real_33_t *grad_vel;
 
 } cs_lagr_extra_module_t;
 
@@ -1031,6 +995,10 @@ extern cs_lagr_specific_physics_t            *cs_glob_lagr_specific_physics;
 extern cs_lagr_reentrained_model_t           *cs_glob_lagr_reentrained_model;
 extern cs_lagr_precipitation_model_t         *cs_glob_lagr_precipitation_model;
 extern cs_lagr_clogging_model_t              *cs_glob_lagr_clogging_model;
+
+extern cs_lagr_agglomeration_model_t         *cs_glob_lagr_agglomeration_model;
+extern cs_lagr_fragmentation_model_t         *cs_glob_lagr_fragmentation_model;
+
 extern cs_lagr_consolidation_model_t         *cs_glob_lagr_consolidation_model;
 extern cs_lagr_time_step_t                   *cs_glob_lagr_time_step;
 extern cs_lagr_source_terms_t                *cs_glob_lagr_source_terms;
@@ -1045,9 +1013,6 @@ extern cs_lagr_coal_comb_t                   *cs_glob_lagr_coal_comb;
 extern const cs_lagr_zone_data_t             *cs_glob_lagr_boundary_conditions;
 extern const cs_lagr_zone_data_t             *cs_glob_lagr_volume_conditions;
 extern cs_lagr_internal_condition_t          *cs_glob_lagr_internal_conditions;
-
-/* Unit normals and offsets of boundary faces */
-extern cs_real_4_t   *cs_glob_lagr_b_u_normal;
 
 /* Projection matrices for global to local coordinates on boundary faces */
 extern cs_real_33_t  *cs_glob_lagr_b_face_proj;

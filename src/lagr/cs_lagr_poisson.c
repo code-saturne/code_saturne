@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -324,6 +324,7 @@ _lageqp(cs_real_t   *vitessel,
   var_cal_opt.iwarni = 2;  /* quasi-debug at this stage, TODO clean */
   var_cal_opt.iconv  = 0;  /* no convection, pure diffusion here */
   var_cal_opt.istat  = -1;
+  var_cal_opt.ndircl = 1;
   var_cal_opt.idifft = -1;
   var_cal_opt.isstpc = 0;
   var_cal_opt.nswrgr = 10000;
@@ -335,9 +336,9 @@ _lageqp(cs_real_t   *vitessel,
                                      1,            /* external sub-iteration? */
                                      -1,           /* field_id (not a field) */
                                      "PoissonL",   /* name */
-                                     1,            /* ndircp */
                                      0,            /* iescap */
                                      0,            /* imucpp */
+                                     -1,           /* normp */
                                      &var_cal_opt,
                                      phia, phia,
                                      coefap, coefbp,
@@ -411,12 +412,14 @@ cs_lagr_poisson(const int  itypfb[])
 
   cs_field_t *mean_vel
     = cs_lagr_stat_get_moment(stat_type,
+                              CS_LAGR_STAT_GROUP_PARTICLE,
                               CS_LAGR_MOMENT_MEAN,
                               0,
                               -1);
 
   cs_field_t *mean_fv
     = cs_lagr_stat_get_moment(CS_LAGR_STAT_VOLUME_FRACTION,
+                              CS_LAGR_STAT_GROUP_PARTICLE,
                               CS_LAGR_MOMENT_MEAN,
                               0,
                               -1);
@@ -491,7 +494,7 @@ cs_lagr_poisson(const int  itypfb[])
   for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
     unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-    cs_lnum_t      iel  = cs_lagr_particle_get_cell_id(part, p_am);
+    cs_lnum_t      iel  = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
     if (iel >= 0) {
 

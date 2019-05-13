@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -501,10 +501,37 @@ cs_property_finalize_setup(void)
         pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
     }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Property \"%s\" exists with no definition.",
-                __func__, pty->name);
+    else {
+
+      switch (pty->type) {
+
+      case CS_PROPERTY_ISO:
+        cs_property_def_iso_by_value(pty, NULL, 1.0);
+        break;
+      case CS_PROPERTY_ORTHO:
+        {
+          cs_real_t unity[3] =  {1, 1, 1};
+          cs_property_def_ortho_by_value(pty, NULL, unity);
+        }
+        break;
+      case CS_PROPERTY_ANISO:
+        {
+          cs_real_t unity[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+          cs_property_def_aniso_by_value(pty, NULL, unity);
+        }
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
+                  __func__);
+      }
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %s: Property \"%s\" exists with no definition.\n"
+                    "     Switch to unity by default.", __func__, pty->name);
+
+    }
 
   } /* Loop on properties */
 
@@ -666,6 +693,74 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
+cs_property_def_by_time_func(cs_property_t      *pty,
+                             const char         *zname,
+                             cs_time_func_t     *func,
+                             void               *input)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  int  new_id = _add_new_def(pty);
+  int  z_id = cs_get_vol_zone_id(zname);
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  meta_flag = 0; /* metadata */
+  cs_xdef_time_func_input_t  def_input = {.input = input,
+                                          .func = func};
+
+  /* Default initialization */
+  int  dim = 0;
+  pty->get_eval_at_cell[new_id] = NULL;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_by_time_func;
+
+  switch (pty->type) {
+
+  case CS_PROPERTY_ISO:
+    dim = 1;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_at_cells_by_time_func;
+    break;
+  case CS_PROPERTY_ORTHO:
+    dim = 3;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_vector_at_cells_by_time_func;
+    break;
+  case CS_PROPERTY_ANISO:
+    dim = 9;
+    pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_at_cells_by_time_func;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
+              __func__);
+  }
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_TIME_FUNCTION,
+                                        dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        &def_input);
+
+  pty->defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_property_t structure thanks to an analytic function in
+ *         a subdomain attached to the mesh location named ml_name
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       zname    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]       func     pointer to a cs_analytic_func_t function
+ * \param[in]       input    NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
                             const char           *zname,
                             cs_analytic_func_t   *func,
@@ -757,6 +852,8 @@ cs_property_def_by_func(cs_property_t         *pty,
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
+ *                            (true or false)
  * \param[in]       index     optional pointer to the array index
  *
  * \return a pointer to the resulting cs_xdef_t structure
@@ -767,6 +864,7 @@ cs_xdef_t *
 cs_property_def_by_array(cs_property_t    *pty,
                          cs_flag_t         loc,
                          cs_real_t        *array,
+                         _Bool             is_owner,
                          cs_lnum_t        *index)
 {
   int  id = _add_new_def(pty);
@@ -792,6 +890,7 @@ cs_property_def_by_array(cs_property_t    *pty,
   cs_xdef_array_input_t  input = {.stride = dim,
                                   .loc = loc,
                                   .values = array,
+                                  .is_owner = is_owner,
                                   .index = index };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
@@ -1265,47 +1364,50 @@ cs_property_log_setup(void)
     return;
   assert(_properties != NULL);
 
-  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, "\tSummary of the definition of properties\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_properties             %d\n",
-                _n_properties);
+  cs_log_printf(CS_LOG_SETUP, "\nSummary of the definition of properties\n");
+  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+
+  char  prefix[256];
 
   for (int i = 0; i < _n_properties; i++) {
 
     bool  is_uniform = false, is_steady = true;
     const cs_property_t  *pty = _properties[i];
 
+    if (pty == NULL)
+      continue;
+    assert(strlen(pty->name) < 200); /* Check that prefix is large enough */
+
     if (pty->state_flag & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
     if (pty->state_flag & CS_FLAG_STATE_STEADY) is_steady = true;
 
-    cs_log_printf(CS_LOG_SETUP, "\n <pty> %s uniform [%s], steady [%s], ",
+    cs_log_printf(CS_LOG_SETUP, "\n  * %s | Uniform %s Steady %s\n",
                   pty->name,
                   cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
 
     switch(pty->type) {
     case CS_PROPERTY_ISO:
-      cs_log_printf(CS_LOG_SETUP, "type: isotropic\n");
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: isotropic\n", pty->name);
       break;
     case CS_PROPERTY_ORTHO:
-      cs_log_printf(CS_LOG_SETUP, "type: orthotropic\n");
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: orthotropic\n", pty->name);
       break;
     case CS_PROPERTY_ANISO:
-      cs_log_printf(CS_LOG_SETUP, "type: anisotropic\n");
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: anisotropic\n", pty->name);
       break;
     default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of property."));
+      bft_error(__FILE__, __LINE__, 0, _("%s: Invalid type of property."),
+                __func__);
       break;
     }
 
-    cs_log_printf(CS_LOG_SETUP, "       %s> n_subdomains    %d\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Number of definitions: %d\n\n",
                   pty->name, pty->n_definitions);
 
-    for (int j = 0; j < pty->n_definitions; j++)
-      cs_xdef_log(pty->defs[j]);
-
-    cs_log_printf(CS_LOG_SETUP, " </pty>\n");
+    for (int j = 0; j < pty->n_definitions; j++) {
+      sprintf(prefix, "        Definition %4d", j);
+      cs_xdef_log(prefix, pty->defs[j]);
+    }
 
   } /* Loop on properties */
 

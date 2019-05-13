@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -154,7 +154,7 @@ _mesh_file_info_t  *_mesh_file_info = NULL;
  *   min_size <-- minimum data size
  *
  * returns:
- *   the data size requirde including alignment
+ *   the data size required including alignment
  *----------------------------------------------------------------------------*/
 
 static inline size_t
@@ -172,6 +172,7 @@ static void
 _set_default_input_if_needed(void)
 {
   const char input_default[] = "mesh_input";
+  const char cp_input_default[] = "restart/mesh_input";
 
   if (_n_mesh_files == 0) {
 
@@ -195,6 +196,9 @@ _set_default_input_if_needed(void)
       }
       BFT_FREE(dir_files);
     }
+
+    else if (cs_file_isreg(cp_input_default))
+      cs_preprocessor_data_add_file(cp_input_default, 0, NULL, NULL);
 
     else
       bft_error(__FILE__, __LINE__, 0,

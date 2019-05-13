@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -108,8 +108,10 @@ module ppincl
   !>      - ippmod(ieljou) = 4 use of complex potential and specific boundary conditions
   !>  for transformers.
   !>      - ippmod(ieljou) =-1 module not activated
-  !>   - Compressible module: indicator ippmod(icompf)
-  !>      - ippmod(icompf) = 0 module activated
+  !>   - compressible flow module: indicator ippmod(icompf)
+  !>      - ippmod(icompf) = 2 module activated: homogeneous two phase model
+  !>      - ippmod(icompf) = 1 module activated: single phase model
+  !>      - ippmod(icompf) = 0 module activated: single phase barotropic model
   !>      - ippmod(icompf) =-1 module not activated
   !>   - atmospheric flow module: indicator ippmod(iatmos)
   !>      - ippmod(iatmos) =-1 module not activated
@@ -202,8 +204,10 @@ module ppincl
   integer ::  icfuel
 
   !> pointer to specify compressible module with indicator ippmod(icompf)
-  !> - ippmod(icompf) = 0 module activated
-  !> - ippmod(icompf) =-1 module not activated
+  !>      - ippmod(icompf) = 2 module activated: homogeneous two phase model
+  !>      - ippmod(icompf) = 1 module activated: single phase model
+  !>      - ippmod(icompf) = 0 module activated: single phase barotropic model
+  !>      - ippmod(icompf) =-1 module not activated
   integer ::  icompf
 
   !> pointer to specify atmospheric flow module with indicator ippmod(iatmos)
@@ -554,6 +558,25 @@ module ppincl
 
   !> temperature deduced from the specific total energy
   integer, save :: itempk
+
+  !> \defgroup comp_homogeneous Homogeneous two-phase flow model
+
+  !> \addtogroup comp_homogeneous
+  !> \{
+
+  !> \anchor ifracv
+  !> homogeneous model, volume fraction \f$ \alpha \f$
+  integer, save :: ifracv
+
+  !> \anchor ifracm
+  !> homogeneous model, mass fraction \f$ y \f$
+  integer, save :: ifracm
+
+  !> \anchor ifrace
+  !> homogeneous model, energy fraction \f$ z \f$
+  integer, save :: ifrace
+
+  !> \}
 
   !> \defgroup comp_properties Physical properties
 

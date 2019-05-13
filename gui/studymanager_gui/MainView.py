@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -30,9 +30,9 @@ informations in the XML document, which reflets the treated case.
 This module defines the following classes:
 - MainView
 
-    @copyright: 1998-2017 EDF S.A., France
+    @copyright: 1998-2019 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
-    @license: GNU GPL v2, see COPYING for details.
+    @license: GNU GPL v2 or later, see COPYING for details.
 """
 
 #-------------------------------------------------------------------------------
@@ -71,14 +71,12 @@ except:
     sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
     from code_saturne.studymanager_gui.MainForm import Ui_MainForm
 
-from code_saturne.Base.IdView import IdView
-from code_saturne.Base import XMLengine
-from code_saturne.Base.XMLmodel import *
-from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.Common import XML_DOC_VERSION
+from code_saturne.model import XMLengine
+from code_saturne.model.XMLmodel import *
+from code_saturne.model.Common import XML_DOC_VERSION, GuiParam
 from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
 from code_saturne.studymanager_gui.BrowserView import BrowserView
-from code_saturne.studymanager_gui.XMLinitialize import *
+from code_saturne.studymanager.cs_studymanager_xml_init import smgr_xml_init
 
 try:
     import code_saturne.Pages
@@ -86,7 +84,7 @@ except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from code_saturne.Pages.WelcomeView import WelcomeView
-from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
@@ -115,7 +113,7 @@ class MainView(object):
         """
         Factory
         """
-        return MainViewSaturne.__new__(MainViewSaturne, cmd_package, cmd_case)
+        return MainViewSmgr.__new__(MainViewSmgr, cmd_package, cmd_case)
 
 
     @staticmethod
@@ -132,9 +130,12 @@ class MainView(object):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
-        self.setWindowTitle(self.package.code_name + " STUDYMANAGER GUI" + " - " + self.package.version)
+        iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
+        iconpath = os.path.join(iconpath, "Base", "MONO-bulle-HD.png")
+        icon = QIcon(QPixmap(iconpath))
+        self.setWindowIcon(icon)
 
-        self.Id = IdView()
+        self.setWindowTitle(self.package.code_name + " studymanager")
 
         self.dockWidgetBrowser.setWidget(self.Browser)
 
@@ -401,15 +402,15 @@ class MainView(object):
         """
         Public slot.
 
-        create new Code_Saturne case
+        create new Code_Saturne studymanager parameter file
         """
         if not hasattr(self, 'case'):
             self.case = XMLengine.Case(package=self.package, studymanager=True)
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
+
             title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" STUDYMANAGER GUI") \
-                     + " - " + self.package.version
+                     " - " + self.tr(self.package.code_name) + self.tr(" studymanager")
             self.setWindowTitle(title)
 
             self.Browser.configureTree(self.case)
@@ -584,10 +585,9 @@ class MainView(object):
         """
         private method
 
-        update the Study Identity dock widget
+        update the XML file name
         """
         file_name = XMLengine._encode(self.case['xmlfile'])
-        self.Id.setXMLFileName(file_name)
 
 
     def fileSave(self):
@@ -696,7 +696,6 @@ class MainView(object):
         self.page = self.Browser.display(self,
                                          self.case,
                                          self.statusbar,
-                                         self.Id,
                                          self.Browser)
 
         if self.page is not None:
@@ -723,7 +722,7 @@ class MainView(object):
               self.package.bugreport + "\n\n"               +\
               "Please visit our site:\n"                    +\
               self.package.url
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name + ' study manager', msg)
 
 
     def displayLicence(self):
@@ -732,7 +731,8 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
+        QMessageBox.about(self, self.package.code_name + ' study manager',
+                          cs_info.licence_text)
 
 
     def displayConfig(self):
@@ -741,7 +741,7 @@ class MainView(object):
 
         configuration information window
         """
-        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
+        QMessageBox.about(self, self.package.code_name + ' study manager', "see config.py") # TODO
 
 
     def setColor(self):
@@ -817,13 +817,13 @@ class MainView(object):
         return text
 
 #-------------------------------------------------------------------------------
-# Main Window for Code_Saturne
+# Main Window for studymanager
 #-------------------------------------------------------------------------------
 
-class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
+class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
 
     def __new__(cls, cmd_package = None, cmd_case = ""):
-        return super(MainViewSaturne, cls). __new__(cls, cmd_package, cmd_case)
+        return super(MainViewSmgr, cls). __new__(cls, cmd_package, cmd_case)
 
 
     def __init__(self,
@@ -832,7 +832,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         Initializes a Main Window for a new document:
           1. finish the Main Window layout
-          2. connection betwenn signal and slot
+          2. connection between signal and slot
           3. Ctrl+C signal handler
           4. create some instance variables
           5. restore system settings
@@ -886,7 +886,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        XMLinit(self.case).initialize()
+        smgr_xml_init(self.case).initialize()
 
 
     def displayCSManual(self):
@@ -905,7 +905,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the tutorial for Code_Saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.name + ' Interface', msg)
+        QMessageBox.about(self, self.package.name + ' study manager', msg)
 
 
     def displayCSTheory(self):

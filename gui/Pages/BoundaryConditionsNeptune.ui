@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BoundaryConditions</class>
+ <widget class="QWidget" name="BoundaryConditions">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>251</width>
+    <height>498</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Boundary conditions</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QTreeView" name="treeViewBoundaries">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>150</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QTableView" name="tableViewFields">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>150</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="BoundaryConditionsPressureView" name="PressureWidget" native="true"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="BoundaryConditionsFractionView" name="FractionWidget" native="true"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="BoundaryConditionsVelocityInletView" name="VelocityWidget" native="true"/>
+      </item>
+      <item row="5" column="0">
+       <widget class="BoundaryConditionsTurbulenceInletView" name="TurbulenceWidget" native="true"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="BoundaryConditionsEnergyView" name="EnergyWidget" native="true"/>
+      </item>
+      <item row="7" column="0">
+       <widget class="BoundaryConditionsNonCondensableView" name="NonCondensableWidget" native="true"/>
+      </item>
+      <item row="8" column="0">
+       <widget class="BoundaryConditionsInterfacialAreaView" name="InterfacialAreaWidget" native="true"/>
+      </item>
+      <item row="9" column="0">
+       <widget class="BoundaryConditionsScalarView" name="ScalarWidget" native="true"/>
+      </item>
+      <item row="10" column="0">
+       <widget class="BoundaryConditionsWallView" name="WallWidget" native="true"/>
+      </item>
+      <item row="11" column="0">
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <spacer>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>16</width>
+       <height>16</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>BoundaryConditionsVelocityInletView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsVelocityInletViewNeptune.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsTurbulenceInletView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsTurbulenceInletViewNeptune.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsNonCondensableView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsNonCondensableView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsEnergyView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsEnergyView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsInterfacialAreaView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsInterfacialAreaView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsScalarView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsScalarViewNeptune.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsPressureView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsPressureViewNeptune.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsFractionView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsFractionView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsWallView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsWallView.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

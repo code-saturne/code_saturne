@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -61,19 +61,15 @@
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_physical_constants.h"
+#include "cs_prototypes.h"
 #include "cs_time_step.h"
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_random.h"
-#include "cs_prototypes.h"
-
-#include "cs_gui_particles.h"
-#include "cs_gui_util.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
-#include "cs_lagr_geom.h"
 #include "cs_lagr_new.h"
 #include "cs_lagr_precipitation_model.h"
 #include "cs_lagr_prototypes.h"
@@ -348,6 +344,18 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
                   "  for zone %d and set %d."),
                 (int)zis->cluster,
                 (int)cs_glob_lagr_model->n_stat_classes,
+                z_id,
+                set_id);
+  }
+
+  if (cs_glob_lagr_model->n_particle_aggregates > 0) {
+    if (zis->particle_aggregate < 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian module: \n"
+                  "  number of particles = %d is either not defined (negative)\n"
+                  "  or smaller than 1 than \n"
+                  "  for zone %d and set %d."),
+                (int)zis->particle_aggregate,
                 z_id,
                 set_id);
   }
@@ -648,7 +656,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+      cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
+                                                     CS_LAGR_CELL_ID);
 
       /* Random value associated with each particle */
 
@@ -745,6 +754,10 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
       if (cs_glob_lagr_model->n_stat_classes > 0)
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_STAT_CLASS,
                                   zis->cluster);
+
+      if (cs_glob_lagr_model->n_particle_aggregates > 0)
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_PARTICLE_AGGREGATE,
+                                  zis->particle_aggregate);
 
       /* used for 2nd order only */
       if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)
@@ -1076,6 +1089,8 @@ cs_lagr_injection(int        time_id,
                   const int  itypfb[],
                   cs_real_t  vislen[])
 {
+  CS_UNUSED(itypfb);
+
   cs_real_t dnbpnw_preci = 0.;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
@@ -1108,7 +1123,7 @@ cs_lagr_injection(int        time_id,
 
     for (int z_id = 0; z_id < zd->n_zones; z_id++) {
 
-      if (zd->zone_type[z_id] > CS_LAGR_SYM)
+      if (zd->zone_type[z_id] > CS_LAGR_BC_USER)
         bft_error(__FILE__, __LINE__, 0,
                   _("Lagrangian boundary zone %d nature %d is unknown."),
                   z_id + 1,
@@ -1322,7 +1337,15 @@ cs_lagr_injection(int        time_id,
                                   time_id,
                                   vislen);
 
-        /* advanced user modification */
+        /* Advanced user modification:
+
+           WARNING: the user may change the particle coordinates but is
+           prevented from changing the previous location (otherwise, if
+           the particle is not in the same cell anymore, it would be lost).
+
+           Moreover, a precaution has to be taken when calling
+           "current to previous" in the tracking stage.
+        */
 
         {
           cs_lnum_t *particle_face_ids = NULL;
@@ -1332,21 +1355,104 @@ cs_lagr_injection(int        time_id,
                                                        z_elt_ids,
                                                        elt_particle_idx);
 
+          cs_lnum_t *saved_cell_id;
+          cs_real_3_t *saved_coords;
+          BFT_MALLOC(saved_cell_id, n_inject, cs_lnum_t);
+          BFT_MALLOC(saved_coords, n_inject, cs_real_3_t);
+
+          for (cs_lnum_t i = 0; i < n_inject; i++) {
+            cs_lnum_t p_id = particle_range[0] + i;
+
+            saved_cell_id[i] = cs_lagr_particles_get_lnum(p_set,
+                                                           p_id,
+                                                           CS_LAGR_CELL_ID);
+            const cs_real_t *p_coords
+              = cs_lagr_particles_attr_const(p_set,
+                                             p_id,
+                                             CS_LAGR_COORDS);
+            for (cs_lnum_t j = 0; j < 3; j++)
+              saved_coords[i][j] = p_coords[j];
+          }
+
           cs_user_lagr_in(p_set,
                           zis,
                           particle_range,
                           particle_face_ids,
                           vislen);
 
+          /* For safety, build values at previous time step, but reset saved values
+             for previous cell number and particle coordinates */
+
+          for (cs_lnum_t i = 0; i < n_inject; i++) {
+            cs_lnum_t p_id = particle_range[0] + i;
+
+            cs_lagr_particles_current_to_previous(p_set, p_id);
+
+            cs_lagr_particles_set_lnum_n(p_set,
+                                         p_id,
+                                         1,
+                                         CS_LAGR_CELL_ID,
+                                         saved_cell_id[i]);
+            cs_real_t *p_coords
+              = cs_lagr_particles_attr_n(p_set,
+                                         p_id,
+                                         1,
+                                         CS_LAGR_COORDS);
+            for (cs_lnum_t j = 0; j < 3; j++)
+              p_coords[j] = saved_coords[i][j];
+          }
+
+          BFT_FREE(saved_coords);
+          BFT_FREE(saved_cell_id);
+
+          /* Add particle tracking events for boundary injection */
+
+          if (   particle_face_ids != NULL
+              && cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT)) {
+
+            cs_lagr_event_set_t  *events
+              = cs_lagr_event_set_boundary_interaction();
+
+            /* Event set "expected" size: n boundary faces*2 */
+            cs_lnum_t events_min_size = mesh->n_b_faces * 2;
+            if (events->n_events_max < events_min_size)
+              cs_lagr_event_set_resize(events, events_min_size);
+
+            for (cs_lnum_t i = 0; i < n_inject; i++) {
+              cs_lnum_t p_id = particle_range[0] + i;
+
+              cs_lnum_t event_id = events->n_events;
+              events->n_events += 1;
+
+              if (event_id >= events->n_events_max) {
+                /* flush events */
+                cs_lagr_stat_update_event(events,
+                                          CS_LAGR_STAT_GROUP_TRACKING_EVENT);
+                events->n_events = 0;
+                event_id = 0;
+              }
+
+              cs_lagr_event_init_from_particle(events, p_set, event_id, p_id);
+
+              cs_lnum_t face_id = particle_face_ids[i];
+              cs_lagr_events_set_lnum(events,
+                                      event_id,
+                                      CS_LAGR_E_FACE_ID,
+                                      face_id);
+
+              cs_lnum_t *e_flag = cs_lagr_events_attr(events,
+                                                      event_id,
+                                                      CS_LAGR_E_FLAG);
+
+              *e_flag = *e_flag | CS_EVENT_INFLOW;
+
+            }
+
+          }
+
           BFT_FREE(particle_face_ids);
+
         }
-
-        /* for safety, build values at previous time step */
-
-        for (cs_lnum_t p_id = particle_range[0];
-             p_id < particle_range[1];
-             p_id++)
-          cs_lagr_particles_current_to_previous(p_set, p_id);
 
         /* check some particle attributes consistency */
 

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -206,31 +206,31 @@ cs_balance_scalar(int                idtvar,
   cs_var_cal_opt_t var_cal_opt_loc;
 
   if (f_id < 0) {
-    var_cal_opt_loc.iwarni = var_cal_opt->iwarni;
-    var_cal_opt_loc.iconv  = var_cal_opt->iconv;
-    var_cal_opt_loc.istat  = -1;
-    var_cal_opt_loc.idiff  = var_cal_opt->idiff;
-    var_cal_opt_loc.idifft = -1;
-    var_cal_opt_loc.idften = -1;
-    var_cal_opt_loc.iswdyn = -1;
-    var_cal_opt_loc.ischcv = var_cal_opt->ischcv;
-    var_cal_opt_loc.isstpc = var_cal_opt->isstpc;
-    var_cal_opt_loc.nswrgr = var_cal_opt->nswrgr;
-    var_cal_opt_loc.nswrsm = -1;
-    var_cal_opt_loc.imrgra = var_cal_opt->imrgra;
-    var_cal_opt_loc.imligr = var_cal_opt->imligr;
-    var_cal_opt_loc.ircflu = var_cal_opt->ircflu;
-    var_cal_opt_loc.iwgrec = 0;
-    var_cal_opt_loc.icoupl = -1;
-    var_cal_opt_loc.thetav = var_cal_opt->thetav;
-    var_cal_opt_loc.blencv = var_cal_opt->blencv;
-    var_cal_opt_loc.blend_st = 0.;
-    var_cal_opt_loc.epsilo = -1.;
-    var_cal_opt_loc.epsrsm = -1.;
-    var_cal_opt_loc.epsrgr = var_cal_opt->epsrgr;
-    var_cal_opt_loc.climgr = var_cal_opt->climgr;
-    var_cal_opt_loc.extrag = var_cal_opt->extrag;
-    var_cal_opt_loc.relaxv = var_cal_opt->relaxv;
+    var_cal_opt_loc.iwarni   = var_cal_opt->iwarni;
+    var_cal_opt_loc.iconv    = var_cal_opt->iconv;
+    var_cal_opt_loc.istat    = -1; /* unused in balance */
+    var_cal_opt_loc.idiff    = var_cal_opt->idiff;
+    var_cal_opt_loc.idifft   = -1; /* unused in balance */
+    var_cal_opt_loc.idften   = var_cal_opt->idften;
+    var_cal_opt_loc.iswdyn   = -1; /* unused in balance */
+    var_cal_opt_loc.ischcv   = var_cal_opt->ischcv;
+    var_cal_opt_loc.isstpc   = var_cal_opt->isstpc;
+    var_cal_opt_loc.nswrgr   = var_cal_opt->nswrgr;
+    var_cal_opt_loc.nswrsm   = -1; /* unused in balance */
+    var_cal_opt_loc.imrgra   = var_cal_opt->imrgra;
+    var_cal_opt_loc.imligr   = var_cal_opt->imligr;
+    var_cal_opt_loc.ircflu   = var_cal_opt->ircflu;
+    var_cal_opt_loc.iwgrec   = 0;  /* require field id */
+    var_cal_opt_loc.icoupl   = -1; /* require field id */
+    var_cal_opt_loc.thetav   = var_cal_opt->thetav;
+    var_cal_opt_loc.blencv   = var_cal_opt->blencv;
+    var_cal_opt_loc.blend_st = var_cal_opt->blend_st;
+    var_cal_opt_loc.epsilo   = -1.; /* unused in balance */
+    var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
+    var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
+    var_cal_opt_loc.climgr   = var_cal_opt->climgr;
+    var_cal_opt_loc.extrag   = var_cal_opt->extrag;
+    var_cal_opt_loc.relaxv   = var_cal_opt->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);
     int k_id = cs_field_key_id("var_cal_opt");
@@ -460,29 +460,30 @@ cs_balance_vector(int                  idtvar,
   cs_var_cal_opt_t var_cal_opt_loc;
 
   if (f_id < 0) {
-    var_cal_opt_loc.iwarni = var_cal_opt->iwarni;
-    var_cal_opt_loc.iconv  = var_cal_opt->iconv;
-    var_cal_opt_loc.istat  = -1;
-    var_cal_opt_loc.idiff  = var_cal_opt->idiff;
-    var_cal_opt_loc.idifft = -1;
-    var_cal_opt_loc.idften = var_cal_opt->idften;
-    var_cal_opt_loc.iswdyn = -1;
-    var_cal_opt_loc.ischcv = var_cal_opt->ischcv;
-    var_cal_opt_loc.isstpc = var_cal_opt->isstpc;
-    var_cal_opt_loc.nswrgr = var_cal_opt->nswrgr;
-    var_cal_opt_loc.nswrsm = -1;
-    var_cal_opt_loc.imrgra = var_cal_opt->imrgra;
-    var_cal_opt_loc.imligr = var_cal_opt->imligr;
-    var_cal_opt_loc.ircflu = var_cal_opt->ircflu;
-    var_cal_opt_loc.iwgrec = 0;
-    var_cal_opt_loc.thetav = var_cal_opt->thetav;
-    var_cal_opt_loc.blencv = var_cal_opt->blencv;
-    var_cal_opt_loc.blend_st = 0.;
-    var_cal_opt_loc.epsilo = -1.;
-    var_cal_opt_loc.epsrsm = -1.;
-    var_cal_opt_loc.epsrgr = var_cal_opt->epsrgr;
-    var_cal_opt_loc.climgr = var_cal_opt->climgr;
-    var_cal_opt_loc.extrag = -1.;
+    var_cal_opt_loc.iwarni   = var_cal_opt->iwarni;
+    var_cal_opt_loc.iconv    = var_cal_opt->iconv;
+    var_cal_opt_loc.istat    = -1; /* unused in balance */
+    var_cal_opt_loc.idiff    = var_cal_opt->idiff;
+    var_cal_opt_loc.idifft   = -1; /* unused in balance */
+    var_cal_opt_loc.idften   = var_cal_opt->idften;
+    var_cal_opt_loc.iswdyn   = -1; /* unused in balance */
+    var_cal_opt_loc.ischcv   = var_cal_opt->ischcv;
+    var_cal_opt_loc.isstpc   = var_cal_opt->isstpc;
+    var_cal_opt_loc.nswrgr   = var_cal_opt->nswrgr;
+    var_cal_opt_loc.nswrsm   = -1; /* unused in balance */
+    var_cal_opt_loc.imrgra   = var_cal_opt->imrgra;
+    var_cal_opt_loc.imligr   = var_cal_opt->imligr;
+    var_cal_opt_loc.ircflu   = var_cal_opt->ircflu;
+    var_cal_opt_loc.iwgrec   = 0;  /* require field id */
+    var_cal_opt_loc.icoupl   = -1; /* require field id */
+    var_cal_opt_loc.thetav   = var_cal_opt->thetav;
+    var_cal_opt_loc.blencv   = var_cal_opt->blencv;
+    var_cal_opt_loc.blend_st = var_cal_opt->blend_st;
+    var_cal_opt_loc.epsilo   = -1.; /* unused in balance */
+    var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
+    var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
+    var_cal_opt_loc.climgr   = var_cal_opt->climgr;
+    var_cal_opt_loc.extrag = -1.;   /* unused in balance */
     var_cal_opt_loc.relaxv = var_cal_opt->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);
@@ -563,7 +564,6 @@ cs_balance_vector(int                  idtvar,
                                             cofbfv,
                                             i_visc,
                                             b_visc,
-                                            secvif,
                                             viscel,
                                             weighf,
                                             weighb,
@@ -682,29 +682,30 @@ cs_balance_tensor(int                 idtvar,
   cs_var_cal_opt_t var_cal_opt_loc;
 
   if (f_id < 0) {
-    var_cal_opt_loc.iwarni = var_cal_opt->iwarni;
-    var_cal_opt_loc.iconv  = var_cal_opt->iconv;
-    var_cal_opt_loc.istat  = -1;
-    var_cal_opt_loc.idiff  = var_cal_opt->idiff;
-    var_cal_opt_loc.idifft = -1;
-    var_cal_opt_loc.idften = idftnp;
-    var_cal_opt_loc.iswdyn = -1;
-    var_cal_opt_loc.ischcv = var_cal_opt->ischcv;
-    var_cal_opt_loc.isstpc = var_cal_opt->isstpc;
-    var_cal_opt_loc.nswrgr = var_cal_opt->nswrgr;
-    var_cal_opt_loc.nswrsm = -1;
-    var_cal_opt_loc.imrgra = var_cal_opt->imrgra;
-    var_cal_opt_loc.imligr = var_cal_opt->imligr;
-    var_cal_opt_loc.ircflu = var_cal_opt->ircflu;
-    var_cal_opt_loc.iwgrec = 0;
-    var_cal_opt_loc.thetav = var_cal_opt->thetav;
-    var_cal_opt_loc.blencv = var_cal_opt->blencv;
-    var_cal_opt_loc.blend_st = 0.;
-    var_cal_opt_loc.epsilo = -1.;
-    var_cal_opt_loc.epsrsm = -1.;
-    var_cal_opt_loc.epsrgr = var_cal_opt->epsrgr;
-    var_cal_opt_loc.climgr = var_cal_opt->climgr;
-    var_cal_opt_loc.extrag = -1.;
+    var_cal_opt_loc.iwarni   = var_cal_opt->iwarni;
+    var_cal_opt_loc.iconv    = var_cal_opt->iconv;
+    var_cal_opt_loc.istat    = -1; /* unused in balance */
+    var_cal_opt_loc.idiff    = var_cal_opt->idiff;
+    var_cal_opt_loc.idifft   = -1; /* unused in balance */
+    var_cal_opt_loc.idften   = var_cal_opt->idften;
+    var_cal_opt_loc.iswdyn   = -1; /* unused in balance */
+    var_cal_opt_loc.ischcv   = var_cal_opt->ischcv;
+    var_cal_opt_loc.isstpc   = var_cal_opt->isstpc;
+    var_cal_opt_loc.nswrgr   = var_cal_opt->nswrgr;
+    var_cal_opt_loc.nswrsm   = -1; /* unused in balance */
+    var_cal_opt_loc.imrgra   = var_cal_opt->imrgra;
+    var_cal_opt_loc.imligr   = var_cal_opt->imligr;
+    var_cal_opt_loc.ircflu   = var_cal_opt->ircflu;
+    var_cal_opt_loc.iwgrec   = 0;  /* require field id */
+    var_cal_opt_loc.icoupl   = -1; /* require field id */
+    var_cal_opt_loc.thetav   = var_cal_opt->thetav;
+    var_cal_opt_loc.blencv   = var_cal_opt->blencv;
+    var_cal_opt_loc.blend_st = var_cal_opt->blend_st;
+    var_cal_opt_loc.epsilo   = -1.; /* unused in balance */
+    var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
+    var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
+    var_cal_opt_loc.climgr   = var_cal_opt->climgr;
+    var_cal_opt_loc.extrag = -1.;   /* unused in balance */
     var_cal_opt_loc.relaxv = var_cal_opt->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);

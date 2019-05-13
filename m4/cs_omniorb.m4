@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2018 EDF S.A.
+dnl Copyright (C) 1998-2019 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -221,6 +221,11 @@ then
   OMNIORB_IDLPYFLAGS_1='-bpython -nf '
   OMNIORB_IDLPYFLAGS_2=" -I${OMNIORB_ROOT}/idl"
   OMNIORB_IDLPYFLAGS=${OMNIORB_IDLPYFLAGS_1}${OMNIORB_IDLPYFLAGS_2}
+  for p in `cut -d: -f 1- --output-delimiter=$'\n' <<<"$PYTHONPATH"`; do
+    if test -f $p/omniidl_be/python.py; then
+      OMNIORB_IDLPYFLAGS="${OMNIORB_IDLPYFLAGS} -p ${p}"
+    fi
+  done
 
   AC_SUBST(OMNIORB_IDLCXXFLAGS)
   AC_SUBST(OMNIORB_IDLPYFLAGS)

@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -49,6 +49,7 @@
 #include "bft_printf.h"
 
 #include "cs_blas.h"
+#include "cs_boundary.h"
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_log.h"
@@ -463,7 +464,7 @@ cs_walldistance_setup(void)
 
   /* Add boundary conditions */
   cs_real_t  zero_value = 0.;
-  const char  bc_zone_name[] = "cs_domain_boundary_walls";
+  const char  bc_zone_name[] = CS_BOUNDARY_WALLS_NAME;
 
   cs_equation_add_bc_by_value(eqp,
                               CS_PARAM_BC_DIRICHLET,
@@ -517,6 +518,8 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *cdoq)
 {
+  CS_UNUSED(time_step);
+
   /* First step:
      Solve the equation related to the definition of the wall distance. */
 
@@ -527,13 +530,11 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
 
   else { /* Deprecated */
 
-    double  dt_cur = 0.;  /* Wall distance is a steady-stae equation */
-
     /* Sanity check */
     assert(cs_equation_is_steady(eq));
 
     /* Define the algebraic system */
-    cs_equation_build_system(mesh, time_step, dt_cur, eq);
+    cs_equation_build_system(mesh, eq);
 
     /* Solve the algebraic system */
     cs_equation_solve_deprecated(eq);

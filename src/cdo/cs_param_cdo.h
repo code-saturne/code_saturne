@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,6 +41,12 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Specifications for OpenMP loops */
+#define CS_CDO_OMP_CHUNK_SIZE     128
+#define CS_CDO_OMP_SCHEDULE       schedule(static, CS_CDO_OMP_CHUNK_SIZE)
+#define CS_CDO_OMP_SYNC_SECTIONS  0 /* > 0 --> critical sections
+                                       otherwise atomic sections */
+
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
    matrices */
@@ -50,10 +56,6 @@ BEGIN_C_DECLS
    the bit mask (can be changed if needed by changing the definition of
    the type cs_mask_t) */
 #define CS_CDO_N_MAX_REACTIONS  8 // Max number of reaction terms in an equation
-
-/* Specifications for open mp loops */
-#define CS_CDO_OMP_CHUNK_SIZE  128
-#define CS_CDO_OMP_SCHEDULE  schedule(static, CS_CDO_OMP_CHUNK_SIZE)
 
 #define CS_ALL_FACES   0        /* All faces: interior + border */
 #define CS_BND_FACES   1        /* Boundary faces */
@@ -71,6 +73,17 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/* OpenMP STRATEGY FOR THE ASSEMBLY STEP */
+/* ===================================== */
+
+typedef enum {
+
+  CS_PARAM_ASSEMBLE_OMP_ATOMIC,
+  CS_PARAM_ASSEMBLE_OMP_CRITICAL,
+  CS_PARAM_ASSEMBLE_OMP_N_STRATEGIES
+
+} cs_param_assemble_omp_strategy_t;
 
 /* DISCRETE HODGE OPERATORS */
 /* ======================== */
@@ -119,10 +132,11 @@ typedef struct {
  * Global variables
  *============================================================================*/
 
-/* Separation lines: long, medium, short */
-extern const char lsepline[80];
-extern const char msepline[60];
-extern const char ssepline[40];
+/* Separation lines: header1, header2 (compatible with markdown), other */
+extern const char h1_sep[80];
+extern const char h2_sep[80];
+extern const char sepline[80];
+extern const char msepline[50];
 
 /* Activation of the CDO/HHO module */
 extern int  cs_param_cdo_mode;
@@ -156,6 +170,19 @@ cs_param_hodge_get_algo_name(const cs_param_hodge_t   h_info);
 
 const char *
 cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Output the settings related to a cs_param_hodge_t structure
+ *
+ * \param[in] prefix    optional string
+ * \param[in] hp        a cs_param_hodge_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_hodge_log(const char               *prefix,
+                   const cs_param_hodge_t    hp);
 
 /*----------------------------------------------------------------------------*/
 

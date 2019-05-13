@@ -1,7 +1,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -105,73 +105,6 @@ dinorm(double *vect1,
   }
   norme = sqrt(norme/nbpts);
   return norme;
-}
-
-/*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
- * number of points.
- *----------------------------------------------------------------------------*/
-
-void
-alldyn(void)
-{
-  /* Local variables */
-  int k;
-
-  xast =(double *)calloc(3*nb_dyn,sizeof(double));
-  xvast=(double *)calloc(3*nb_dyn,sizeof(double));
-  xvasa=(double *)calloc(3*nb_dyn,sizeof(double));
-  xastp=(double *)calloc(3*nb_dyn,sizeof(double));
-
-  for (k = 0; k < nb_dyn; k++) {
-
-    xast[3*k]   = 0.;
-    xast[3*k+1] = 0.;
-    xast[3*k+2] = 0.;
-
-    xvast[3*k]   = 0.;
-    xvast[3*k+1] = 0.;
-    xvast[3*k+2] = 0.;
-
-    xvasa[3*k]   = 0.;
-    xvasa[3*k+1] = 0.;
-    xvasa[3*k+2] = 0.;
-
-    xastp[3*k]   = 0.;
-    xastp[3*k+1] = 0.;
-    xastp[3*k+2] = 0.;
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (double) based on the 'nb_for'
- * number of points.
- *----------------------------------------------------------------------------*/
-
-void
-allfor(void)
-{
-  /* Local variables */
-  int k;
-
-  foras =(double *)calloc(3*nb_for,sizeof(double));
-  foaas =(double *)calloc(3*nb_for,sizeof(double));
-  fopas =(double *)calloc(3*nb_for,sizeof(double));
-
-  for (k = 0; k < nb_for; k++) {
-
-    foras[3*k]   = 0.;
-    foras[3*k+1] = 0.;
-    foras[3*k+2] = 0.;
-
-    foaas[3*k]   = 0.;
-    foaas[3*k+1] = 0.;
-    foaas[3*k+2] = 0.;
-
-    fopas[3*k]   = 0.;
-    fopas[3*k+1] = 0.;
-    fopas[3*k+2] = 0.;
-  }
 }
 
 /*----------------------------------------------------------------------------

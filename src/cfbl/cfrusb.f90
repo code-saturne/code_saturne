@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -84,7 +84,6 @@ double precision bc_en(nfabor), bc_pr(nfabor), bc_vel(3,nfabor)
 
 integer          iel, l_size
 integer          ien
-integer          iflmab
 
 double precision und, uni, rund, runi, cd, ci, cd2(1), ci2(1)
 double precision rrus, runb
@@ -93,10 +92,13 @@ double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_pr, cvar_en, cpro_cp, cpro_cv
+double precision, dimension(:), pointer :: rvoid
 
 double precision cpi(1), cvi(1)
 
 !===============================================================================
+
+rvoid => null()
 
 !===============================================================================
 ! 0. INITIALISATION
@@ -151,11 +153,12 @@ runi  = crom(iel)     *uni
 
 l_size = 1
 
-
 call cs_cf_thermo_c_square(cpi, cvi, &
-                           bc_pr(ifac:ifac), brom(ifac:ifac), cd2, l_size)
+                           bc_pr(ifac:ifac), brom(ifac:ifac), &
+                           rvoid, rvoid, rvoid, cd2, l_size)
 call cs_cf_thermo_c_square(cpi, cvi, &
-                           cvar_pr(iel:iel), crom(iel:iel), ci2, l_size)
+                           cvar_pr(iel:iel), crom(iel:iel), &
+                           rvoid, rvoid, rvoid, ci2, l_size)
 
 cd    = sqrt(cd2(1))
 ci    = sqrt(ci2(1))

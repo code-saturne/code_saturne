@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -31,9 +31,9 @@
 
 #include "cs_defs.h"
 #include "cs_hodge.h"
-#include "cs_cdo_diffusion.h"
 #include "cs_cdo_advection.h"
-#include "cs_cdo_time.h"
+#include "cs_equation_assemble.h"
+#include "cs_equation_bc.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -76,22 +76,25 @@ struct _cs_cdovb_t {
   /* Array for extra-operations */
   cs_real_t   *cell_values;     /* NULL if not requested */
 
+  /* Assembly process */
+  cs_equation_assembly_t   *assemble;
+
+  /* Boundary conditions */
+  cs_flag_t                *vtx_bc_flag;
+  cs_cdo_enforce_bc_t      *enforce_dirichlet;
+  cs_cdo_enforce_bc_t      *enforce_robin_bc;
+  cs_cdo_enforce_bc_t      *enforce_sliding;
+
   /* Pointer of function to build the diffusion term */
-  cs_hodge_t                      *get_stiffness_matrix;
-  cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
-  cs_cdo_diffusion_flux_trace_t   *bdy_flux_op;
-  cs_flag_t                       *vtx_bc_flag;
+  cs_hodge_t               *get_stiffness_matrix;
 
   /* Pointer of function to build the advection term */
-  cs_cdo_advection_t              *get_advection_matrix;
-  cs_cdo_advection_bc_t           *add_advection_bc;
-
-  /* Pointer of function to apply the time scheme */
-  cs_cdo_time_scheme_t            *apply_time_scheme;
+  cs_cdovb_advection_t     *get_advection_matrix;
+  cs_cdovb_advection_bc_t  *add_advection_bc;
 
   /* If one needs to build a local hodge op. for time and reaction */
-  cs_param_hodge_t                 hdg_mass;
-  cs_hodge_t                      *get_mass_matrix;
+  cs_param_hodge_t          hdg_mass;
+  cs_hodge_t               *get_mass_matrix;
 
 };
 

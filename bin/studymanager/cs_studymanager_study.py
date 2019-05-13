@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -45,6 +45,9 @@ import cs_create
 from cs_create import set_executable
 import cs_runcase
 
+from code_saturne.model import XMLengine
+from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
+
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2
 
@@ -55,6 +58,7 @@ except Exception:
     pass
 
 from studymanager.cs_studymanager_run import run_studymanager_command
+from studymanager.cs_studymanager_xml_init import smgr_xml_init
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -70,6 +74,80 @@ log.setLevel(logging.NOTSET)
 def nodot(item):
     return item[0] != '.'
 
+#-------------------------------------------------------------------------------
+
+def create_base_xml_file(filepath, pkg):
+    """Create studymanager XML file.
+    """
+
+    filename = os.path.basename(filepath)
+    if os.path.isfile(filepath):
+        print("Can not create XML file of parameter:\n" \
+              + filepath + " already exists.")
+        sys.exit(1)
+
+    # using xml engine from Code_Saturne GUI
+    smgr = XMLengine.Case(package=pkg, studymanager=True)
+    smgr['xmlfile'] = filename
+    pm = PathesModel(smgr)
+
+    # empty repo and dest
+    pm.setRepositoryPath('')
+    pm.setDestinationPath('')
+
+    return smgr
+
+#-------------------------------------------------------------------------------
+
+def init_xml_file_with_study(smgr, studyp):
+    """Initialize XML file with study content and save it.
+    """
+
+    smgr_node = smgr.xmlGetNode('studymanager')
+
+    studyd = os.path.basename(studyp)
+    st_node = smgr_node.xmlInitChildNode('study', label = studyd)
+    st_node['status'] = "on"
+
+    cases = []
+    for elt in os.listdir(studyp):
+        eltd = os.path.join(studyp, elt)
+        if os.path.isdir(eltd):
+            if isCase(eltd):
+                cases.append(elt)
+
+    cases.sort()
+    for case in cases:
+        c_node = st_node.xmlInitChildNode("case", label = case)
+        c_node['status']  = "on"
+        c_node['compute'] = "on"
+        c_node['post']    = "on"
+
+    smgr.xmlSaveDocument()
+
+#-------------------------------------------------------------------------------
+
+def isStudy(dirpath):
+    """Try to determine if dirpath is a Code_Saturne study directory.
+    """
+
+    postd = os.path.join(dirpath, 'POST')
+    meshd = os.path.join(dirpath, 'MESH')
+    is_study = os.path.isdir(postd) and os.path.isdir(meshd)
+
+    return is_study
+
+#-------------------------------------------------------------------------------
+
+def isCase(dirpath):
+    """Try to determine if dirpath is a Code_Saturne case directory.
+    """
+
+    datad = os.path.join(dirpath, 'DATA')
+    scriptd = os.path.join(dirpath, 'SCRIPTS')
+    is_case = os.path.isdir(datad) and os.path.isdir(scriptd)
+
+    return is_case
 
 #===============================================================================
 # Case class
@@ -99,7 +177,7 @@ class Case(object):
 
         self.is_compiled= "not done"
         self.is_run     = "not done"
-        self.is_time    = "not done"
+        self.is_time    = None
         self.is_plot    = "not done"
         self.is_compare = "not done"
         self.threshold  = "default"
@@ -160,12 +238,12 @@ class Case(object):
         # 1) Load the xml file of parameters in order to update it
         #    with the __backwardCompatibility method.
 
-        from Base.XMLengine import Case
+        from model.XMLengine import Case
 
         if self.exe == "code_saturne":
-            from Base.XMLinitialize import XMLinit
+            from model.XMLinitialize import XMLinit as solver_xml_init
         elif self.exe == "neptune_cfd":
-            from core.XMLinitialize import XMLinit
+            from model.XMLinitializeNeptune import XMLinit as solver_xml_init
 
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)
@@ -185,8 +263,9 @@ class Case(object):
 
                     case['xmlfile'] = fp
                     case.xmlCleanAllBlank(case.xmlRootNode())
-                    XMLinit(case).initialize()
+                    solver_xml_init(case).initialize()
                     case.xmlSaveDocument()
+
 
         # 2) Create RESU and SRC directory if needed
         if not xmlonly:
@@ -411,7 +490,8 @@ class Case(object):
 
     def run(self):
         """
-        Run the case a thread.
+        Check if a run with same result subdirectory name exists
+        and launch run if not.
         """
         home = os.getcwd()
         if self.subdomains:
@@ -424,15 +504,11 @@ class Case(object):
             run_dir = os.path.join(self.__dest, self.label, self.resu, run_id)
 
             if os.path.isdir(run_dir):
-                print("Warning: the directory %s already exists in the destination." % run_dir)
-
                 if os.path.isfile(os.path.join(run_dir, "error")):
                     self.is_run = "KO"
-                    self.is_time = 0.
                     error = 1
                 else:
                     self.is_run = "OK"
-                    self.is_time = 0.
                     error = 0
                 os.chdir(home)
 
@@ -442,7 +518,6 @@ class Case(object):
             run_id, run_dir = self.__suggest_run_id()
 
             while os.path.isdir(run_dir):
-                time.sleep(5)
                 run_id, run_dir = self.__suggest_run_id()
 
         self.run_id  = run_id
@@ -817,6 +892,7 @@ class Study(object):
                                        [],   # syrthes cases
                                        None, # aster cases
                                        None, # cathare case
+                                       None, # python case
                                        None, # copy
                                        False,# import_only
                                        False,# use ref
@@ -1015,48 +1091,114 @@ class Studies(object):
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         """
 
-        f = options.filename
-        if f == None:
-            print("A file of parameters must be specified for studymanager to run.\n"
-                  "See help message and use '--file' or '-f' option.")
+        # try to determine if current directory is a study one
+        cwd = os.getcwd()
+        is_study = isStudy(cwd)
+        studyd = None
+        studyp = None
+        if is_study:
+            # default study directory is current one
+            studyp = cwd
+
+        smgr = None
+
+        # Create file of parameters
+
+        filename = options.filename
+        if options.create_xml and is_study:
+            if filename == None:
+                studyd = os.path.basename(studyp)
+                filename = "smgr_" + studyd + ".xml"
+
+            filepath = os.path.join(studyp, filename)
+            smgr = create_base_xml_file(filepath, pkg)
+
+            init_xml_file_with_study(smgr, studyp)
+
+        elif options.create_xml and not is_study:
+            print("Can not create XML file of parameter:\n" \
+                  + "current directory is not a study.")
+            sys.exit(1)
+
+        if filename == None:
+            print("A file of parameters must be specified or created " \
+                  "for studymanager to run.\n"
+                  "See help message and use '--file' or '--create-xml' option.")
             sys.exit(1)
 
         # create a first xml parser only for
         #   the repository verification and
         #   the destination creation
 
-        if os.path.isfile(options.filename):
-            self.__parser = Parser(f)
+        if os.path.isfile(filename):
+            self.__parser = Parser(filename)
         else:
             print("Specified XML parameter file for studymanager does not exist.")
             sys.exit(1)
 
-        # Test if the repository exists
+        # call smgr xml backward compatibility
 
+        if not smgr:
+            smgr = XMLengine.Case(package=pkg, file_name=filename, studymanager=True)
+            smgr['xmlfile'] = filename
+
+        # minimal modification of xml for now
+        smgr_xml_init(smgr).initialize(reinit_indices = False)
+        smgr.xmlSaveDocument(prettyString=False)
+
+        self.__xmlupdate = options.update_xml
+
+        # set repository
         if len(options.repo_path) > 0:
             self.__parser.setRepository(options.repo_path)
         self.__repo = self.__parser.getRepository()
-        if not os.path.isdir(self.__repo):
-            msg="Studies.__init__() >> self.__repo = {0}\n".format(self.__repo)
-            sys.exit(msg+"Error: repository path is not valid.\n")
+        if self.__repo:
+            if not os.path.isdir(self.__repo):
+                msg="Studies.__init__() >> self.__repo = {0}\n".format(self.__repo)
+                sys.exit(msg+"Error: repository path is not valid.\n")
+        else: # default value
+            # if current directory is a study
+            # set repository as directory containing the study
+            if is_study:
+                studyd = os.path.basename(studyp)
+                self.__parser.setRepository(os.path.join(studyp,".."))
+                self.__repo = self.__parser.getRepository()
+            else:
+                msg="Parser.getRepository() >> No repository set.\n"
+                msg+="Add a path to the *.xml file or use the command "
+                msg+="line argument.\n"
+                sys.exit(msg)
+
+        # set destination
+        if self.__xmlupdate:
+            self.__dest = self.__repo
+        else:
+            if len(options.dest_path) > 0:
+                self.__parser.setDestination(options.dest_path)
+            self.__dest = self.__parser.getDestination()
+            if not self.__dest: # default value
+                # if current directory is a study
+                # set destination as a directory "../RUN_(study_name)
+                if is_study and studyd != None:
+                    self.__parser.setDestination(os.path.join(studyp,
+                                                              "../RUN_"+studyd))
+                    self.__dest = self.__parser.getDestination()
+                else:
+                    msg="Parser.getDestination() >> No destination set.\n"
+                    msg+="Add a path to the *.xml file or use the command "
+                    msg+="line argument.\n"
+                    sys.exit(msg)
 
         # create if necessary the destination directory
 
-        if len(options.dest_path) > 0:
-            self.__parser.setDestination(options.dest_path)
-        self.__xmlupdate = options.update_xml
-        if not self.__xmlupdate:
-            self.__dest = self.__parser.getDestination()
-        else:
-            self.__dest = self.__repo
         if not os.path.isdir(self.__dest):
             os.makedirs(self.__dest)
 
         # copy the xml file of parameters for update and restart
 
-        file = os.path.join(self.__dest, os.path.basename(f))
+        file = os.path.join(self.__dest, os.path.basename(filename))
         try:
-            shutil.copyfile(f, file)
+            shutil.copyfile(filename, file)
         except:
             pass
 
@@ -1074,6 +1216,7 @@ class Studies(object):
             self.__plotter = None
 
         # create list of restricting and excluding tags
+
         self.__with_tags = None
         if options.with_tags:
             with_tags = re.split(',', options.with_tags)
@@ -1102,6 +1245,7 @@ class Studies(object):
                 print(" >> Append study ", l)
 
         # start the report
+
         self.report = os.path.join(self.__dest, "report.txt")
         self.reportFile = open(self.report, mode='w')
         self.reportFile.write('\n')
@@ -1122,6 +1266,7 @@ class Studies(object):
         self.__pdflatex    = not options.disable_pdflatex
 
         # in case of restart
+
         iok = 0
         for l, s in self.studies:
             for case in s.cases:
@@ -1165,8 +1310,6 @@ class Studies(object):
     def reporting(self, msg, stdout=True, report=True, status=False):
         """
         Write message on standard output and/or in report.
-        http://www.developpez.net/forums/d651999/autres-langages/python-zope/general-python/console-ecrire-ligne-precedente/
-        Carriage return "chr(13)" renvoi en debut de ligne et line feed "chr(10)" effectue un saut de ligne.
         @type l: C{String}
         @param l: the sentence to be written.
         """
@@ -1217,7 +1360,9 @@ class Studies(object):
         Create all studies and all cases.
         """
         for l, s in self.studies:
-            self.reporting("  o Create study " + l)
+            create_msg = "  o Create study " + l
+            dest = True
+            self.report_action_location(create_msg, dest)
             log_lines = s.create_cases()
             for line in log_lines:
                 self.reporting(line)
@@ -1286,6 +1431,7 @@ class Studies(object):
                     cmd = os.path.join(filePath, label[i])
 
                 if os.path.isfile(cmd):
+                    sc_name = os.path.basename(cmd)
                     # ensure script is executable
                     set_executable(cmd)
 
@@ -1293,12 +1439,21 @@ class Studies(object):
                     cmd += " -c " + os.path.join(self.__dest, l, case.label)
                     repbase = os.getcwd()
                     os.chdir(os.path.join(self.__dest, l, "MESH"))
+
                     # Prepro external script might need pythondir and pkgpythondir
                     pdir = case.pkg.get_dir('pythondir')
                     pdir = pdir + ":" + case.pkg.get_dir('pkgpythondir')
                     retcode, t = run_studymanager_command(cmd, self.__log, pythondir = pdir)
+                    stat = "FAILED" if retcode != 0 else "OK"
+
                     os.chdir(repbase)
-                    self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
+
+                    self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
+                                   stdout=True, report=False)
+
+                    self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
+                                   stdout=False, report=True)
+
                 else:
                     self.reporting('    - script %s not found' % cmd)
 
@@ -1312,7 +1467,7 @@ class Studies(object):
         the run of the case is also repeated.
         """
         for l, s in self.studies:
-            self.reporting("  o Script prepro and run of study: " + l)
+            self.reporting("  o Prepro scripts and runs for study: " + l)
             for case in s.cases:
                 self.prepro(l, s, case)
                 if self.__running:
@@ -1337,14 +1492,19 @@ class Studies(object):
                         self.reporting('    - running %s ...' % case.label,
                                        stdout=True, report=False, status=True)
                         error = case.run()
+                        if case.is_time:
+                            is_time = "%s s" % case.is_time
+                        else:
+                            is_time = "existed already"
+
                         if not error:
                             if not case.run_id:
                                 self.reporting("    - run %s --> Warning suffix"
                                                " is not read" % case.label)
 
-                            self.reporting('    - run %s --> OK (%s s) in %s' \
+                            self.reporting('    - run %s --> OK (%s) in %s' \
                                            % (case.label, \
-                                              case.is_time, \
+                                              is_time, \
                                               case.run_id))
                             self.__parser.setAttribute(case.node,
                                                        "compute",
@@ -1362,10 +1522,13 @@ class Studies(object):
                                     self.__parser.setAttribute(n, "dest", case.run_id)
                         else:
                             if not case.run_id:
-                                self.reporting('    - run %s --> FAILED' % case.label)
+                                self.reporting('    - run %s --> FAILED (%s)' \
+                                               % (case.label, is_time))
                             else:
-                                self.reporting('    - run {0} --> FAILED in {1}'.format(case.label,
-                                                                                        case.run_id))
+                                self.reporting('    - run %s --> FAILED (%s) in %s' \
+                                               % (case.label, \
+                                                  is_time, \
+                                                  case.run_id))
 
                         self.__log.flush()
 
@@ -1554,6 +1717,7 @@ class Studies(object):
                     if script[i] and case.is_run != "KO":
                         cmd = os.path.join(self.__dest, l, "POST", label[i])
                         if os.path.isfile(cmd):
+                            sc_name = os.path.basename(cmd)
                             # ensure script is executable
                             set_executable(cmd)
 
@@ -1565,7 +1729,13 @@ class Studies(object):
                                 d = os.path.join(self.__dest, l, case.label, "RESU", dest[i])
                                 cmd += " -d " + d
                             retcode, t = run_studymanager_command(cmd, self.__log)
-                            self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
+                            stat = "FAILED" if retcode != 0 else "OK"
+
+                            self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
+                                           stdout=True, report=False)
+
+                            self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
+                                           stdout=True, report=False)
                         else:
                             self.reporting('    - script %s not found' % cmd)
 
@@ -1613,13 +1783,14 @@ class Studies(object):
                                        stdout=True, report=False, status=True)
 
                         retcode, t = run_studymanager_command(cmd, self.__log)
+                        stat = "FAILED" if retcode != 0 else "OK"
 
-                        self.reporting('    - postpro %s --> OK (%s s)' \
-                                       % (sc_name, t),
+                        self.reporting('    - postpro %s --> %s (%s s)' \
+                                       % (stat, sc_name, t),
                                        stdout=True, report=False)
 
-                        self.reporting('    - postpro %s --> OK (%s s)' \
-                                       % (cmd, t),
+                        self.reporting('    - postpro %s --> %s (%s s)' \
+                                       % (stat, cmd, t),
                                        stdout=False, report=True)
                     else:
                         self.reporting('    - postpro %s not found' % cmd)

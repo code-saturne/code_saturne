@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -80,8 +80,7 @@ log.setLevel(logging.NOTSET)
 # Global definitions
 #-------------------------------------------------------------------------------
 __MODULE_NAME__ = "CFDSTUDY"
-studyId = salome.myStudyId
-d_activation = {}
+
 
 # Desktop manager: instance of CFDSTUDYGUI_DesktopMgr class to store the SALOME Workspace
 _DesktopMgr = CFDSTUDYGUI_DesktopMgr.CFDSTUDYGUI_DesktopMgr()
@@ -133,13 +132,16 @@ def windows():
     return winMap
 
 
-def closeStudy(aStudyId) :
+def closeStudy() :
     """
     This method is called when salome study is closed (Salome desktop button File -> close -> close w/o saving button) and Salome Main window desktop is already available
     """
+    log.debug("closeStudy")
     if salome_version.getVersion() >= '7.5.0' :
-        CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
-
+        dsk = sgPyQt.getDesktop()
+        CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(dsk)
+        ActionHandler = _DesktopMgr.getActionHandler(dsk)
+        ActionHandler._SolverGUI.resizeObjBrowserDock()
 
 def views():
     """
@@ -171,15 +173,14 @@ def setWorkSpace(ws):
 
     dsk = sgPyQt.getDesktop()
     _DesktopMgr.setWorkspace(dsk, ws)
-    ActionHandler = _DesktopMgr.getActionHandler(dsk)
-    ActionHandler.connectSolverGUI()
+    #MPActionHandler = _DesktopMgr.getActionHandler(dsk)
+    #MPActionHandler.connectSolverGUI()
 
 def createPreferences():
     """
     Manages the preferences QDialog of the module.
     """
     log.debug("createPreferences")
-    sgPyQt = CFDSTUDYGUI_DataModel.sgPyQt
     genTab = sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_GEN_GROUP"))
     EditorField = str(ObjectTR.tr("EDITOR"))
     editorGroup = sgPyQt.addPreference(EditorField,genTab)
@@ -205,68 +206,62 @@ def activate():
     @return: C{True} only if the activation is successful.
     """
     log.debug("activate")
-    global d_activation, studyId
     dsk = sgPyQt.getDesktop()
-    studyId = sgPyQt.getStudyId()
     dsk.setTabPosition(Qt.RightDockWidgetArea,QTabWidget.South)
     dsk.setTabPosition(Qt.LeftDockWidgetArea,QTabWidget.South)
 
-    if salome_version.getVersion() <= '7.4.0' :
-        if salome.myStudy.FindComponent(__MODULE_NAME__) == None :
-            CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
-            log.debug("activate ->  CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases = %s" % CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases)
-    # instance of the CFDSTUDYGUI_ActionsHandler class for the current desktop
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
 
-    if studyId not in list(d_activation.keys()):
-        d_activation[studyId] = 1
+    env_saturne, mess1 = CheckCFD_CodeEnv(CFD_Saturne)
+    env_neptune, mess2 = CheckCFD_CodeEnv(CFD_Neptune)
 
-    if d_activation[studyId] == 1:
-        d_activation[studyId] = 0
-        env_saturne, mess1 = CheckCFD_CodeEnv(CFD_Saturne)
-        env_neptune, mess2 = CheckCFD_CodeEnv(CFD_Neptune)
+    log.debug("activate -> env_saturne = %s" % env_saturne)
+    log.debug("activate -> env_neptune = %s" % env_neptune)
 
-        log.debug("activate -> env_saturne = %s" % env_saturne)
-        log.debug("activate -> env_neptune = %s" % env_neptune)
+    if not env_saturne and not env_neptune:
+        QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                             "Error", mess1, QMessageBox.Ok, 0)
+        QMessageBox.critical(ActionHandler.dskAgent().workspace(),
+                             "Error", mess2, QMessageBox.Ok, 0)
+        return False
 
-        if not env_saturne and not env_neptune:
-            QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 "Error", mess1, QMessageBox.Ok, 0)
-            QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 "Error", mess2, QMessageBox.Ok, 0)
-            d_activation[studyId] = 1
+    if env_neptune:
+        if mess2 != "":
+            mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
+            cfdstudyMess.aboutMessage(mess)
             return False
+        else:
+            ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, env_neptune)
 
-        if env_neptune:
-            if mess2 != "":
-                mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
-                cfdstudyMess.aboutMessage(mess)
-                d_activation[studyId] = 1
-                return False
-            else:
-                ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, env_neptune)
-
-        elif env_saturne:
-            if mess1 != "":
-                mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
-                cfdstudyMess.aboutMessage(mess)
-                d_activation[studyId] = 1
-                return False
-            else:
-                ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
+    elif env_saturne:
+        if mess1 != "":
+            mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
+            cfdstudyMess.aboutMessage(mess)
+            return False
+        else:
+            ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
 
     ActionHandler._SalomeSelection.currentSelectionChanged.connect(ActionHandler.updateActions)
 
     ActionHandler.connectSolverGUI()
-    ActionHandler.updateObjBrowser()
 
     # Hide the Python Console window layout
     for dock in sgPyQt.getDesktop().findChildren(QDockWidget):
         dockTitle = dock.windowTitle()
         log.debug("activate -> QDockWidget: %s" % dockTitle)
+        if "Object Browser" in str(dockTitle):
+            dock.raise_()
+            dock.show()
+            if dsk.dockWidgetArea(dock) == 0:
+                dsk.addDockWidget(Qt.LeftDockWidgetArea,dock)
         if dockTitle in ("Python Console", "Console Python",  "Message Window"):
             dock.setVisible(False)
-
+            dock.hide()
+#MP Analyser si on peut faire expand sur les case dans OB
+#    ob = sgPyQt.getObjectBrowser()
+#    if ob != None:
+#        ob.expandAll()
+#        ob.expandToDepth(2)
     return True
 
 
@@ -293,6 +288,10 @@ def deactivate():
     ActionHandler._SalomeSelection.currentSelectionChanged.disconnect(ActionHandler.updateActions)
 
     ActionHandler.disconnectSolverGUI()
+    ob = sgPyQt.getObjectBrowser()
+    if ob != None:
+        ob.collapseAll()
+
 
 
 def createPopupMenu(popup, context):
@@ -328,8 +327,8 @@ def createPopupMenu(popup, context):
                             dictSobj[sobj] = id
 
         if dictSobj != {}:
-            if CFDSTUDYGUI_DataModel.isASmeshListObject(dictSobj.keys()) :
-                for sobj in dictSobj.keys():
+            if CFDSTUDYGUI_DataModel.isASmeshListObject(list(dictSobj.keys())) :
+                for sobj in list(dictSobj.keys()):
                     if sobj.GetFatherComponent().GetName() == "Mesh":
                         if CFDSTUDYGUI_DataModel.getMeshFromMesh(sobj) == None:
                             meshGroupObject,group = CFDSTUDYGUI_DataModel.getMeshFromGroup(sobj)
@@ -342,9 +341,9 @@ def createPopupMenu(popup, context):
                             ActionHandler.customPopup(id, popup)
                             popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
 
-            elif CFDSTUDYGUI_DataModel.isACFDSTUDYListObject(dictSobj.keys()):
-                if CFDSTUDYGUI_DataModel.hasTheSameType(dictSobj.keys()):
-                    for sobj in dictSobj.keys():
+            elif CFDSTUDYGUI_DataModel.isACFDSTUDYListObject(list(dictSobj.keys())):
+                if CFDSTUDYGUI_DataModel.hasTheSameType(list(dictSobj.keys())):
+                    for sobj in list(dictSobj.keys()):
                         id = dictSobj[sobj]
                         ActionHandler.customPopup(id, popup)
                         fathername = sobj.GetFather().GetName()

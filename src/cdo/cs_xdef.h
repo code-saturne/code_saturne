@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -73,7 +73,7 @@ BEGIN_C_DECLS
  *
  * \var CS_XDEF_BY_TIME_FUNCTION
  * Definition relying on a function for setting the time step (see
- * \ref cs_timestep_func_t)
+ * \ref cs_time_func_t)
  *
  * \var CS_XDEF_BY_VALUE
  * Simple definition by a constant value
@@ -153,7 +153,7 @@ typedef struct {
    * \var input
    * Pointer to a structure cast on-the-fly according to the type of description
    * May be set to NULL or \ref cs_xdef_array_input_t or
-   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_timestep_input_t
+   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_time_func_input_t
    */
 
   int                    dim;
@@ -178,22 +178,29 @@ typedef struct {
 typedef struct {
 
   /*! * \var stride
-   * stride to access the array values
+   * Stride to access the array values
    *
    * \var loc
-   * flag to know where are defined array values
+   * Flag to know where are defined array values
    *
    * \var values
-   * array values
+   * Array values
    *
    * \var index
-   * optional index for accessing to the values
+   * Optional index for accessing to the values. One assumes that the lifecycle
+   * of this buffer is managed outside (pointer to a cs_adjacency_t stored
+   * either in the \ref cs_cdo_connect_t struct. or the \ref cs_mesh_t struct.
+   *
+   * \var is_owner
+   * If true the lifecycle of the values is managed by the cs_xdef_t structure.
+   * Otherwise, the lifecycle is managed by the calling code.
    */
 
   int           stride;
   cs_flag_t     loc;
   cs_real_t    *values;
   cs_lnum_t    *index;
+  _Bool         is_owner;
 
 } cs_xdef_array_input_t;
 
@@ -218,7 +225,7 @@ typedef struct {
 } cs_xdef_analytic_input_t;
 
 /*!
- * \struct cs_xdef_timestep_input_t
+ * \struct cs_xdef_time_func_input_t
  * \brief Input structure when a time step function is used for the definition
  */
 
@@ -229,12 +236,12 @@ typedef struct {
    * used in the function
    *
    * \var func
-   * \ref cs_timestep_func_t to call
+   * \ref cs_time_func_t to call
    */
   void                *input;
-  cs_timestep_func_t  *func;
+  cs_time_func_t  *func;
 
-} cs_xdef_timestep_input_t;
+} cs_xdef_time_func_input_t;
 
 /*============================================================================
  * Public function prototypes
@@ -473,14 +480,16 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Output the settings related to a a cs_xdef_t structure
+ * \brief  Output the settings related to a cs_xdef_t structure
  *
- * \param[in] d    pointer to a cs_xdef_t structure
+ * \param[in] prefix    optional string
+ * \param[in] d         pointer to a cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(cs_xdef_t     *d);
+cs_xdef_log(const char          *prefix,
+            const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 

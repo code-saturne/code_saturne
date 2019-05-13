@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -34,15 +34,17 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/atmo \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/elec \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/rayt \
@@ -73,7 +75,7 @@ AM_LDFLAGS =
 EXTRA_DIST = cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
 cs_user_initialization.f90  \
-cs_user_parameters.f90 cs_user_physical_properties.f90
+cs_user_parameters.f90 cs_user_physical_properties.f90 cs_user_porosity.f90
 
 # Library source files
 
@@ -82,13 +84,13 @@ cs_user_1d_wall_thermal.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.c \
 cs_user_boundary_mass_source_terms.f90 \
-cs_user_cdo_extra_op.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_gwf.c \
 cs_user_head_losses.c \
+cs_user_hgn.c \
 cs_user_initialization.c \
 cs_user_lagr_model.c \
 cs_user_lagr_particle.c \
@@ -111,7 +113,6 @@ cs_user_turbomachinery.c \
 cs_user_zones.c \
 cs_user_boundary_conditions_ale.f90 \
 usatch.f90 \
-usctdz.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90

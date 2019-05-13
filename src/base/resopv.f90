@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -197,6 +197,7 @@ double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
 double precision cfl, kpdc, rho, pimp, bpmasf
+double precision normp
 
 type(solving_info) sinfo
 type(var_cal_opt) :: vcopt_p, vcopt_u
@@ -801,7 +802,7 @@ endif
 
 iconvp = vcopt_p%iconv
 idiffp = vcopt_p%idiff
-ndircp = ndircl(ipr)
+ndircp = vcopt_p%ndircl
 
 thetap = 1.d0
 imucpp = 0
@@ -951,7 +952,7 @@ inc    = 1
 ! BCs will be taken into account after in idilat>=4
 if (idilat.ge.4) inc = 0
 iflmb0 = 1
-if (iale.eq.1) iflmb0 = 0
+if (iale.ge.1) iflmb0 = 0
 nswrgp = vcopt_u%nswrgr
 imligp = vcopt_u%imligr
 iwarnp = vcopt_p%iwarni
@@ -1224,7 +1225,7 @@ if (idilat.ge.4) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.ge.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -1273,7 +1274,7 @@ if (idilat.ge.4) then
   init   = 0
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.ge.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -1387,7 +1388,7 @@ endif
 init   = 1
 inc    = 1
 iflmb0 = 1
-if (iale.eq.1) iflmb0 = 0
+if (iale.ge.1) iflmb0 = 0
 nswrgp = 1
 imligp = vcopt_u%imligr
 iwarnp = vcopt_p%iwarni
@@ -1960,7 +1961,7 @@ if (idilat.eq.5) then
   init   = 1
   inc    = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.ge.1) iflmb0 = 0
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -2140,6 +2141,7 @@ if (idilat.eq.5) then
   thetap = vcopt_p%thetav
   ! all boundary convective flux with upwind
   icvflb = 0
+  normp = -1.d0
   ! ivar = 0
   nomva0 = "Pr compress"
 
@@ -2152,7 +2154,7 @@ if (idilat.eq.5) then
    ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-     iwarnp ,                                                       &
+     iwarnp , normp  ,                                              &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
      dphi   , dphi   ,                                              &

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -108,10 +108,10 @@ use entsor
 use parall
 use cstphy
 use mesh
-use optcal, only:iporos
 
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
 implicit none
 
 ! Arguments
@@ -145,7 +145,23 @@ double precision, dimension(nfabo2), target :: srfbn2, sffbn2, distb2
 
 ! Local variables
 
+integer(c_int), pointer :: iporo2
+type(c_ptr) :: c_iporos
+
 !===============================================================================
+
+interface
+
+  ! Interface to C function retrieving pointers to mesh quantity options
+
+  subroutine cs_f_mesh_quantities_get_pointers(iporos)  &
+    bind(C, name='cs_f_mesh_quantities_get_pointers')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), intent(out) :: iporos
+  end subroutine cs_f_mesh_quantities_get_pointers
+
+end interface
 
 !===============================================================================
 ! 1. Update number of cells, faces, and vertices
@@ -199,8 +215,11 @@ xyzcen => xyzce2(1:3,1:ncelet)
 ! 4. Define pointers on mesh quantities
 !===============================================================================
 
+call cs_f_mesh_quantities_get_pointers(c_iporos)
+call c_f_pointer(c_iporos, iporo2)
+
 isympa => isymp2(1:nfabor)
-if (iporos.eq.0) then
+if (iporo2.eq.0) then
   isolid_0 => isoli2(1:1)
 else
   isolid_0 => isoli2(1:ncelet)

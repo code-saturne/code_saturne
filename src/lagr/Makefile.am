@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -56,9 +56,12 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_lagr.h \
 cs_lagr_clogging.h \
+cs_lagr_agglo.h \
+cs_lagr_fragmentation.h \
 cs_lagr_head_losses.h \
 cs_lagr_roughness.h \
 cs_lagr_dlvo.h \
+cs_lagr_event.h \
 cs_lagr_extract.h \
 cs_lagr_injection.h \
 cs_lagr_geom.h \
@@ -83,16 +86,20 @@ cs_lagr_sde.h \
 cs_lagr_sde_model.h \
 cs_lagr_lec.h \
 cs_lagr_log.h \
-cs_lagr_prototypes.h
+cs_lagr_prototypes.h \
+cs_lagr_headers.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcslagr.la
 libcslagr_la_SOURCES = \
 cs_lagr_clogging.c \
+cs_lagr_agglo.c \
+cs_lagr_fragmentation.c \
 cs_lagr_roughness.c \
 cs_lagr.c \
 cs_lagr_dlvo.c \
+cs_lagr_event.c \
 cs_lagr_extract.c \
 cs_lagr_injection.c \
 cs_lagr_post.c \

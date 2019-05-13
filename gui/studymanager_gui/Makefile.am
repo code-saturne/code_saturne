@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -43,10 +43,8 @@ ManageCasesModel.py \
 ManageCasesView.py \
 ManagePlotterModel.py \
 ManagePlotterView.py \
-PathesModel.py \
 PathesView.py \
-Toolbox.py \
-XMLinitialize.py
+Toolbox.py
 
 #if HAVE_QT5
 #  PYFILES += qt5/QtCore.py qt5/QtGui.py qt5/QtWidgets.py

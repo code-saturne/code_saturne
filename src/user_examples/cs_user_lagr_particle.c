@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -58,6 +58,7 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_notebook.h"
 #include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
@@ -75,7 +76,6 @@
 #include "cs_lagr_particle.h"
 #include "cs_lagr_stat.h"
 #include "cs_lagr_sde.h"
-#include "cs_lagr_geom.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -284,23 +284,19 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 
         unsigned char *part = p_set->p_buffer + p_am->extents * npt;
 
-        cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+        cs_lnum_t iel = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
-        if( iel >= 0 ) {
+        const cs_real_t *part_coords
+          = cs_lagr_particle_attr_const(part, p_am, CS_LAGR_COORDS);
+        const cs_real_t *prev_part_coords
+          = cs_lagr_particle_attr_n_const(part, p_am, 1, CS_LAGR_COORDS);
 
-          const cs_real_t *part_coords
-            = cs_lagr_particle_attr_const(part, p_am, CS_LAGR_COORDS);
-          const cs_real_t *prev_part_coords
-            = cs_lagr_particle_attr_n_const(part, p_am, 1, CS_LAGR_COORDS);
-
-          if (    part_coords[0] > zz[iplan]
-              && prev_part_coords[0] <= zz[iplan])
-            _m_flow[iplan] +=  cs_lagr_particle_get_real(part, p_am,
-                                                        CS_LAGR_STAT_WEIGHT)
-                             * cs_lagr_particle_get_real(part, p_am,
-                                                         CS_LAGR_MASS);
-
-        }
+        if (    part_coords[0] > zz[iplan]
+            && prev_part_coords[0] <= zz[iplan])
+          _m_flow[iplan] +=  cs_lagr_particle_get_real(part, p_am,
+                                                       CS_LAGR_STAT_WEIGHT)
+                           * cs_lagr_particle_get_real(part, p_am,
+                                                       CS_LAGR_MASS);
 
       }
 
@@ -412,7 +408,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     for (int attr_id = CS_LAGR_USER;
          attr_id < CS_LAGR_USER + cs_glob_lagr_model->n_user_variables;
          attr_id++) {
-      cs_real_t *user_var = cs_lagr_particle_attr(particles, p_id, attr_id);
+      cs_real_t *user_var = cs_lagr_particles_attr(particles, p_id, attr_id);
       *user_var = 0.;
     }
 
@@ -710,30 +706,26 @@ cs_user_lagr_sde(const cs_real_t  dt[],
     for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
       unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-      cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+      cs_lnum_t iel = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
 
       cs_real_t *usr_var
         = cs_lagr_particle_attr_n(part, p_am, 0, CS_LAGR_USER);
       cs_real_t *prev_usr_var
         = cs_lagr_particle_attr_n(part, p_am, 1, CS_LAGR_USER);
 
-      if (iel >= 0) {
+      /* Characteristic time tca of the differential equation,
+         This example must be adapted to the case */
+      tcarac[npt] = 1.0;
 
-        /* Characteristic time tca of the differential equation,
-           This example must be adapted to the case */
-        tcarac[npt] = 1.0;
+      /* Prediction at the first substep;
+         This example must be adapted to the case */
+      if (cs_glob_lagr_time_step->nor == 1)
+        pip[npt] = prev_usr_var[i];
 
-        /* Prediction at the first substep;
-           This example must be adapted to the case */
-        if (cs_glob_lagr_time_step->nor == 1)
-          pip[npt] = prev_usr_var[i];
-
-        /* Correction at the second substep;
-           This example must be adapted to the case */
-        else
-          pip[npt] = usr_var[i];
-
-      }
+      /* Correction at the second substep;
+         This example must be adapted to the case */
+      else
+        pip[npt] = usr_var[i];
 
     }
 

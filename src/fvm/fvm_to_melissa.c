@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -171,16 +171,11 @@ _write_block_doubles_l(size_t             n_values,
 
   if (c->writer->time_stamp > 0) {
 #if defined(HAVE_MPI)
-    melissa_send(&(c->writer->time_stamp),
-                 c->name,
-                 values,
-                 &c->writer->rank,
-                 &c->writer->simu_id);
+    melissa_send(c->name,
+                 values);
 #else
-    melissa_send_no_mpi(&(c->writer->time_stamp),
-                        c->name,
-                        values,
-                        &c->writer->simu_id);
+    melissa_send_no_mpi(c->name,
+                        values);
 #endif
   }
 }
@@ -234,11 +229,8 @@ _field_output_g(void           *context,
   }
 
   if (c->writer->time_stamp > 0) {
-    melissa_send(&(c->writer->time_stamp),
-                 c->name,
-                 buffer,
-                 &c->writer->rank,
-                 &c->writer->simu_id);
+    melissa_send(c->name,
+                 buffer);
   }
 }
 

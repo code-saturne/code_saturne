@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -66,8 +66,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private variables
  *============================================================================*/
-
-static const double  cs_hho_builder_pena_coef = 1e13;
 
 /*============================================================================
  * Private function prototypes
@@ -647,10 +645,9 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
 {
   const cs_basis_func_t  *cbf = hhob->cell_basis;
   const short int  cs = cbf->size;
-  const short int  cs_kp1 = cbf_kp1->size;
   const short int  gs = hhob->grad_basis->size - 1;
 
-  assert(gs + 1 == cs_kp1);
+  assert(gs + 1 == cbf_kp1->size);
 
   cs_sdm_t  *mcg = cb->hdg;
 
@@ -682,7 +679,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; // #vertices (=#edges)
@@ -769,15 +766,15 @@ cs_hho_builder_create(int     order,
   b->cell_basis = cs_basis_func_create(cell_basis_flag, order, 3);
   b->grad_basis = cs_basis_func_grad_create(b->cell_basis);
 
-  const short int fbs = b->face_basis[0]->size;
-  const short int cbs = b->cell_basis->size;
-  const short int gbs = b->grad_basis->size - 1;
+  const int  fbs = b->face_basis[0]->size;
+  const int  cbs = b->cell_basis->size;
+  const int  gbs = b->grad_basis->size - 1;
 
   /* Reconstruction operator for the gradient of the potential.
      Store the transposed matrix for a more convenient manipulation */
-  short int  *block_size = NULL;
-  BFT_MALLOC(block_size, n_fc + 1, short int);
-  for (short int f = 0; f < n_fc; f++) {
+  int  *block_size = NULL;
+  BFT_MALLOC(block_size, n_fc + 1, int);
+  for (int f = 0; f < n_fc; f++) {
     block_size[f] = fbs;
   }
   block_size[n_fc] = cbs;
@@ -904,7 +901,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  const short int  gs = hhob->grad_basis->size - 1;
+  const int  gs = hhob->grad_basis->size - 1;
   cs_sdm_t  *stiffness = cb->hdg, *rhs_t = cb->aux;
   cs_sdm_square_init(gs, stiffness);
 
@@ -912,8 +909,8 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
      The right-hand side is a matrix since we are building an operator
      We define its transposed version to have a more convenient access to its
      columns */
-  short int  tots = 0;
-  for (short int f = 0; f < cm->n_fc; f++) {
+  int  tots = 0;
+  for (int f = 0; f < cm->n_fc; f++) {
     cb->ids[f] = hhob->face_basis[f]->size;
     tots += hhob->face_basis[f]->size;
   }
@@ -930,7 +927,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
   /* Pre-compute tensor x outward normal */
   cs_real_3_t  *kappa_nfc = cb->vectors;
   cs_real_3_t  *gpts = cb->vectors + cm->n_fc;
-  for (short int f = 0; f < cm->n_fc; f++) {
+  for (int f = 0; f < cm->n_fc; f++) {
     _mv3((const cs_real_t (*)[3])cb->dpty_mat, cm->face[f].unitv, kappa_nfc[f]);
     kappa_nfc[f][0] *= cm->f_sgn[f];
     kappa_nfc[f][1] *= cm->f_sgn[f];
@@ -978,7 +975,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
       const cs_basis_func_t  *fbf = hhob->face_basis[f];
       const cs_real_t  *knfc = (const cs_real_t *)(kappa_nfc[f]);
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; // #vertices (=#edges)
@@ -1141,16 +1138,16 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
                       CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
   const cs_basis_func_t  *cbf = hhob->cell_basis;
-  const short int  cs = cbf->size;
-  const short int  gs = hhob->grad_basis->size - 1;
-  const short int  fs = hhob->face_basis[0]->size;
+  const int  cs = cbf->size;
+  const int  gs = hhob->grad_basis->size - 1;
+  const int  fs = hhob->face_basis[0]->size;
 
   cs_sdm_t  *rhs_t = cb->aux;
   cs_sdm_t  *gop_t = hhob->grad_reco_op;
 
   /* Initialize the matrix related to the diffusion term */
-  short int  tots = 0;
-  for (short int f = 0; f < cm->n_fc; f++) {
+  int  tots = 0;
+  for (int f = 0; f < cm->n_fc; f++) {
     assert(fs == hhob->face_basis[f]->size);
     cb->ids[f] = fs;
     tots += fs;
@@ -1189,7 +1186,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
                                                    cbf->dim);
   cs_basis_func_copy_setup(cbf, cbf_kp1);
 
-  const short int  cs_kp1 = cbf_kp1->size;
+  const int  cs_kp1 = cbf_kp1->size;
 
   /* M_cg is stored in cb->hdg (temporary matrix) */
   cs_sdm_t  *m_cg = _compute_mcg(cm, cbf_kp1, cb, hhob);
@@ -1218,7 +1215,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
   assert(hhob->grad_reco_op->block_desc->n_row_blocks == cm->n_fc + 1);
 
   /* Blocks related to faces (b < n_fc) or cell (b == n_fc) */
-  for (short int b = 0; b < cm->n_fc + 1; b++) {
+  for (int b = 0; b < cm->n_fc + 1; b++) {
 
     const cs_sdm_t  *gb = cs_sdm_get_block(hhob->grad_reco_op, b, 0);
 
@@ -1227,18 +1224,18 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
     assert(mb->n_rows == gb->n_rows); /* sanity check */
 
-    for (short int j = 0; j < mb->n_rows; j++) { /* Works column by column */
+    for (int j = 0; j < mb->n_rows; j++) { /* Works column by column */
 
       /* Extract column array (easy since we have stored the transposed) */
       const cs_real_t  *const gb_j = gb->val + j*gs;
 
       /* Compute the "j"th column array of M_cg * GradOp  */
-      for (short int i = 0; i < cs; i++) {
+      for (int i = 0; i < cs; i++) {
 
         /* Equivalent to a part of the matrix-matrix computation */
         const cs_real_t  *const m_cg_i = m_cg->val + i*gs;
         array[i] = 0;
-        for (short int k = 0; k < gs; k++)
+        for (int k = 0; k < gs; k++)
           array[i] += gb_j[k] * m_cg_i[k];
 
       }
@@ -1247,7 +1244,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
          The transposed of M_ccgg is stored */
       cs_real_t  *mb_j = mb->val + j*cs;
       cbf->project(cbf, array, mb_j);
-      for (short int i = 0; i < cs; i++)
+      for (int i = 0; i < cs; i++)
         mb_j[i] *= -1;
 
       if (b == cm->n_fc) /* cell block */
@@ -1267,20 +1264,20 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
   assert(m_ccgg->block_desc->n_row_blocks == cm->n_fc + 1);
 
-  for (short int f = 0; f < cm->n_fc; f++) {
+  for (int f = 0; f < cm->n_fc; f++) {
 
     cs_basis_func_t  *fbf = hhob->face_basis[f];
 
     /* --1-- Build M_fc and M_fg (stored in cb->hdg) */
     cs_sdm_t  *mf_cg = cb->hdg;
-    const short int  m_sizes[3] = {1, cs-1, cs_kp1 - cs};
+    const int  m_sizes[3] = {1, cs-1, cs_kp1 - cs};
     cs_sdm_block_init(mf_cg, 1, 3, &fs, m_sizes);
 
     const cs_quant_t  pfq = cm->face[f];
     const int  start = cm->f2e_idx[f];
     const int  end = cm->f2e_idx[f+1];
-    const short int n_vf = end - start; // #vertices (=#edges)
-    const short int *f2e_ids = cm->f2e_ids + start;
+    const int  n_vf = end - start; // #vertices (=#edges)
+    const short int  *f2e_ids = cm->f2e_ids + start;
 
     switch(n_vf){
 
@@ -1298,10 +1295,10 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
       {
         const double  *tef = cm->tef + start;
 
-        for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+        for (int e = 0; e < n_vf; e++) { /* Loop on face edges */
 
           // Edge-related variables
-          const short int e0  = f2e_ids[e];
+          const int  e0  = f2e_ids[e];
           const double  *xv0 = cm->xv + 3*cm->e2v_ids[2*e0];
           const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
@@ -1323,7 +1320,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
     cs_sdm_block_init(bf_t_mff,  cm->n_fc + 1, 1, cb->ids, &fs);
 
     /* --2-- Compute blocks related to faces (b < n_fc) or cell (b == n_fc) */
-    for (short int b = 0; b < cm->n_fc + 1; b++) {
+    for (int b = 0; b < cm->n_fc + 1; b++) {
 
       const cs_sdm_t  *mb = cs_sdm_get_block(m_ccgg, b, 0);
       const cs_sdm_t  *gb = cs_sdm_get_block(hhob->grad_reco_op, b, 0);
@@ -1334,7 +1331,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
       assert(bfb->n_rows == gb->n_rows); /* sanity check */
       assert(mb->n_rows == gb->n_rows); /* sanity check */
 
-      for (short int j = 0; j < mb->n_rows; j++) { /* Works column by column */
+      for (int j = 0; j < mb->n_rows; j++) { /* Works column by column */
 
         /* Extract column array (easy since we have stored the transposed) */
         const cs_real_t  *const mb_j = mb->val + j*cs;
@@ -1343,15 +1340,15 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
         /* Compute the "j"th column array of M_fg * GradOp
            Compute the "j"th column array of M_fc * M_ccgg */
-        for (short int i = 0; i < fs; i++) {
+        for (int i = 0; i < fs; i++) {
 
           /* Optimized way to perform a matrix-matrix computation */
           array[i] = m0->val[i] * mb_j[0];
           const cs_real_t  *const mk_i = mk->val + i*m_sizes[1];
-          for (short int k = 0; k < m_sizes[1]; k++)
+          for (int k = 0; k < m_sizes[1]; k++)
             array[i] += (gb_j1[k] + mb_j[k+1]) * mk_i[k];
           const cs_real_t  *const mkp1_i = mkp1->val + i*m_sizes[2];
-          for (short int k = 0; k < m_sizes[2]; k++)
+          for (int k = 0; k < m_sizes[2]; k++)
             array[i] += gb_j2[k] * mkp1_i[k];
 
         }
@@ -1379,10 +1376,10 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
     /* Update the upper right part of the matrix storing the stabilization
        The lower left part is set by symmetry */
     assert(bf_t_mff->block_desc->n_col_blocks == 1);
-    for (short int bi = 0; bi < cm->n_fc + 1; bi++) {
+    for (int bi = 0; bi < cm->n_fc + 1; bi++) {
       const cs_sdm_t  *bmff_i0 = cs_sdm_get_block(bf_t_mff, bi, 0);
 
-      for (short int bj = bi; bj < cm->n_fc + 1; bj++) {
+      for (int bj = bi; bj < cm->n_fc + 1; bj++) {
         const cs_sdm_t  *bf_j0 = cs_sdm_get_block(hhob->bf_t, bj, 0);
 
         cs_sdm_t  *js_ij = cs_sdm_get_block(hhob->jstab, bi, bj);
@@ -1516,7 +1513,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_onethird * cm->hfc[f];
+      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; // #vertices (=#edges)
@@ -1702,7 +1699,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_onethird * cm->hfc[f];
+        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int n_vf = end - start; // #vertices (=#edges)

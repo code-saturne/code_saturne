@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1382,6 +1382,27 @@ _ensure_init_weight_accumulator(cs_time_moment_wa_t  *mwa)
 }
 
 /*----------------------------------------------------------------------------
+ * Reset weight accumulator
+ *
+ * parameters:
+ *   mwa <-- moment weight accumulator
+ *----------------------------------------------------------------------------*/
+
+static void
+_reset_weight_accumulator(cs_time_moment_wa_t  *mwa)
+{
+  if (mwa->location_id == CS_MESH_LOCATION_NONE)
+    mwa->val0 = 0.;
+  else {
+    assert(mwa->val != NULL);
+
+    cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
+    for (cs_lnum_t i = 0; i < n_w_elts; i++)
+      mwa->val[i] = 0.;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Update weight accumulator
  *
  * parameters:
@@ -1860,6 +1881,74 @@ cs_time_moment_is_active(int  moment_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reset a time moment.
+ *        Current iteration is set as starting time step for current moment.
+ *
+ * \param[in]   moment_id  id of associated moment
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_moment_reset(int   moment_id)
+{
+  const cs_time_step_t  *ts = cs_glob_time_step;
+
+  cs_time_moment_t *mt = _moment + moment_id;
+  cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
+
+  /* set current iteration as starting time step for current moment */
+  mt->nt_cur = -1;
+  mwa->nt_start = ts->nt_cur;
+  mwa->t_start = -1.;
+
+  cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+  cs_lnum_t nd = n_elts * mt->dim;
+
+  cs_real_t *restrict val = mt->val;
+  if (mt->f_id > -1) {
+    cs_field_t *f = cs_field_by_id(mt->f_id);
+    val = f->val;
+  }
+
+  for (cs_lnum_t i = 0; i < nd; i++) {
+    /* reset moment values */
+    val[i] = 0.;
+  }
+
+  _reset_weight_accumulator(mwa);
+
+  /* sub-moments (means for variance) */
+
+  if (mt->l_id > -1) {
+    int l_id = mt->l_id;
+
+    mt = _moment + l_id;
+    mwa = _moment_wa + mt->wa_id;
+
+    mt->nt_cur = -1;
+    mwa->nt_start = ts->nt_cur;
+    mwa->t_start = -1.;
+
+    n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
+    nd = n_elts * mt->dim;
+
+    val = mt->val;
+    if (mt->f_id > -1) {
+      cs_field_t *f = cs_field_by_id(mt->f_id);
+      val = f->val;
+    }
+
+    for (cs_lnum_t i = 0; i < nd; i++) {
+      /* reset moment values */
+      val[i] = 0.;
+    }
+
+    _reset_weight_accumulator(mwa);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Map time step values array for temporal moments.
  *
  * If this function is not called, the field referenced by field pointer
@@ -1901,12 +1990,14 @@ cs_time_moment_update_all(void)
 
     cs_time_moment_wa_t *mwa = _moment_wa + i;
 
+    /* start time step equal to current iteration */
     if (mwa->t_start < 0. && mwa->nt_start <= ts->nt_cur)
       mwa->t_start = _t_prev_iter;
-    else if (mwa->nt_start < 0 && mwa->t_start <= ts->t_cur)
+    /* start time value in interval [t_prev-0.01*dt^(n-1), t_cur-0.01*dt^n[ */
+    else if (mwa->nt_start < 0 && mwa->t_start < ts->t_cur - 0.01*dt_val[0])
       mwa->nt_start = ts->nt_cur;
 
-    if (mwa->nt_start <= ts->nt_cur)
+    if (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur)
       active_moments = true;
 
   }
@@ -2004,7 +2095,7 @@ cs_time_moment_update_all(void)
               for (cs_lnum_t l = 0; l < 3; l++) {
                 cs_lnum_t jl = je*6 + l, jml = je*3 + l;
                 delta[l]   = x[jml] - m[jml];
-                r[l] = delta[l] * (w[k] / (fmax(wa_sum_n, 1e-100)));
+                r[l] = delta[l] * (w[k] / wa_sum_n);
                 m_n[l] = m[jml] + r[l];
                 delta_n[l] = x[jml] - m_n[l];
                 val[jl] =   (val[jl]*wa_sum[k] + (w[k]*delta[l]*delta_n[l]))
@@ -2035,7 +2126,7 @@ cs_time_moment_update_all(void)
               const cs_lnum_t k = (j*wa_stride) / mt->dim;
               double wa_sum_n = w[k] + wa_sum[k];
               double delta = x[j] - m[j];
-              double r = delta * (w[k] / (fmax(wa_sum_n, 1e-100)));
+              double r = delta * (w[k] / wa_sum_n);
               double m_n = m[j] + r;
               val[j] = (val[j]*wa_sum[k] + (w[k]*delta*(x[j]-m_n))) / wa_sum_n;
               m[j] += r;

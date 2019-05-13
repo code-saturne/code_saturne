@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -115,6 +115,7 @@ integer          imvis1, f_id0, idtcfl
 integer          f_id
 
 double precision thetv, relaxp, hint
+double precision normp
 
 double precision rvoid(1)
 
@@ -136,6 +137,7 @@ double precision, dimension(:), pointer :: cvar_pr, cvara_pr, cpro_cp, cpro_cv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: cpro_divq
+double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
 type(var_cal_opt) :: vcopt_p
 
@@ -178,9 +180,20 @@ call field_get_val_prev_s(icrom, rhopre)
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
+
 call field_get_label(ivarfl(ipr), chaine)
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
+if (ippmod(icompf).gt.1) then
+  call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
+  call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
+  call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
+else
+  cvar_fracv => null()
+  cvar_fracm => null()
+  cvar_frace => null()
+endif
 
 if(vcopt_p%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
@@ -246,7 +259,8 @@ endif
 
 allocate(c2(ncelet))
 
-call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, c2, ncel)
+call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, &
+                           cvar_fracv, cvar_fracm, cvar_frace, c2, ncel)
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) + vcopt_p%istat*(cell_f_vol(iel)/(dt(iel)*c2(iel)))
@@ -325,7 +339,7 @@ call viscfa                                                                    &
 istatp = vcopt_p%istat
 iconvp = vcopt_p%iconv
 idiffp = vcopt_p%idiff
-ndircp = ndircl(ipr)
+ndircp = vcopt_p%ndircl
 nswrsp = vcopt_p%nswrsm
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr
@@ -346,12 +360,13 @@ extrap = vcopt_p%extrag
 relaxp = vcopt_p%relaxv
 thetv  = vcopt_p%thetav
 icvflb = 0
+normp = -1.d0
 
 call codits                                                                    &
 ( idtvar , init   , ivarfl(ipr)     , iconvp , idiffp , ndircp ,               &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                                 &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
-  iwarnp ,                                                                     &
+  iwarnp , normp  ,                                                            &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                        &
   relaxp , thetv  ,                                                            &
   cvara_pr        , cvara_pr        ,                                          &
@@ -455,10 +470,6 @@ if (igrdpp.gt.0) then
   endif
 
 endif
-
-! There are no clippings on density because we consider that pressure
-! and energy have been checked and are correct so that the density
-! is also correct through the state law or the linearized law.
 
 deallocate(c2)
 deallocate(viscf, viscb)

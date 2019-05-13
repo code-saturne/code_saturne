@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -51,6 +51,7 @@ def coupling(package,
     use_syrthes = False
     use_neptune = False
     use_cathare = False
+    use_py_code = False
 
     # Use alternate compute (back-end) package if defined
 
@@ -65,8 +66,9 @@ def coupling(package,
     syr_domains = []
     nep_domains = []
     cat_domains = []
-    ast_domain = None
+    ast_domain = []
     fsi_coupler = None
+    py_domains = []
 
     if domains == None:
         raise RunCaseError('No domains defined.')
@@ -139,7 +141,7 @@ def coupling(package,
 
         elif (d.get('solver') == 'Code_Aster' or d.get('solver') == 'Aster'):
 
-            if ast_domain:
+            if len(ast_domain) > 0:
                 err_str = 'Only 1 Code_Aster domain is currently handled\n'
                 raise RunCaseError(err_str)
 
@@ -154,7 +156,7 @@ def coupling(package,
                 err_str += ' script = ' + d.get('script') + '\n'
                 raise RunCaseError(err_str)
 
-            ast_domain = dom
+            ast_domain.append(dom)
 
         elif (d.get('coupler') == 'FSI_coupler'):
 
@@ -215,6 +217,25 @@ def coupling(package,
             use_cathare = True
             cat_domains.append(dom)
 
+        elif (d.get('solver') == 'PYTHON_CODE'):
+            # Generic Code_Saturne/Python Script coupling
+            # The python script can contain any MPI compatible code or supevisor
+
+            try:
+                dom = python_domain(package,
+                                    name = d.get('domain'),
+                                    cmd_line = d.get('command_line'),
+                                    script_name = d.get('py_code'))
+
+            except Exception:
+                err_str = 'Cannot create Python code domain.\n'
+                err_str += ' domain = ' + d.get('domain') + '\n'
+                err_str += ' script = ' + d.get('script') + '\n'
+                raise RunCaseError(err_str)
+
+            use_py_code = True
+            py_domains.append(dom)
+
         else:
             err_str = 'Unknown code type : ' + d.get('solver') + '.\n'
             raise RunCaseError(err_str)
@@ -261,7 +282,8 @@ domains = [
              domains = sat_domains + nep_domains + cat_domains,
              syr_domains = syr_domains,
              ast_domain = ast_domain,
-             fsi_coupler = fsi_coupler)
+             fsi_coupler = fsi_coupler,
+             py_domains = py_domains)
 
     if verbose:
         msg = ' Coupling execution between: \n'
@@ -276,6 +298,8 @@ domains = [
             msg += '                  [1 coupler(s)];\n'
         if use_cathare == True:
             msg += '   o CATHARE2     [' + str(len(cat_domains)) + ' domain(s)];\n'
+        if use_py_code == True:
+            msg += '   o Python Script  [' + str(len(py_domains)) + ' domain(s)];\n'
         sys.stdout.write(msg+'\n')
 
     return c

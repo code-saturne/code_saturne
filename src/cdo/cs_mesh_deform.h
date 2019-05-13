@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -113,6 +113,10 @@ cs_mesh_deform_setup(cs_domain_t  *domain);
  * displacement will really be used, as defined by
  * \ref cs_mesh_deform_define_dirichlet_bc_zones.
  *
+ * When calling this function multiple times for different vertex sets,
+ * the most recently defined values are used for vertices belonging to
+ * multiple sets.
+ *
  * \param[in]  n_vertices         number of vertices at which to prescribe
  *                                displacements
  * \param[in]  vertex_ids         ids of vertices at which to prescribe
@@ -126,6 +130,32 @@ void
 cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
                                       const cs_lnum_t    vertex_ids[],
                                       const cs_real_3_t  displacement[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a fixed displacement vector for given vertices.
+ *
+ * This displacement is enforced at all given vertices, including interior
+ * vertices.
+ *
+ * If this function is called multiple times, the previous definitions
+ * are overwritten, so all displacements of this type must be defined
+ * in a single call to this function.
+ *
+ * \param[in]  n_vertices         number of vertices at which to prescribe
+ *                                displacements
+ * \param[in]  vertex_ids         ids of vertices at which to prescribe
+ *                                displacements, or NULL if
+ *                                [0, ... n_vertices-1]
+ * \param[in]  displacement       pointer to prescribed displacements,
+ *                                or NULL for no displacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_deform_force_displacements(cs_lnum_t          n_vertices,
+                                   const cs_lnum_t    vertex_ids[],
+                                   const cs_real_3_t  displacement[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

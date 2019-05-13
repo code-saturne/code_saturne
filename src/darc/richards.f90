@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -309,7 +309,7 @@ endif
 
 iconvp = 0 ! no convection
 idiffp = 1 ! diffusion
-ndircp = ndircl(ipr) ! no diagonal stepped aside
+ndircp = vcopt_p%ndircl ! no diagonal stepped aside
 thetap = 1.d0 ! implicit scheme
 imucpp = 0 ! do not multiply the convectiv term by anything
 

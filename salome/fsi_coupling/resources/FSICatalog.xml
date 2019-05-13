@@ -232,11 +232,6 @@
                           <inParameter-dependency>I</inParameter-dependency>
                        </inParameter>
                        <inParameter>
-                          <inParameter-name>NTCHRO</inParameter-name>
-                          <inParameter-type>CALCIUM_integer</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
                           <inParameter-name>ICVEXT</inParameter-name>
                           <inParameter-type>CALCIUM_integer</inParameter-type>
                           <inParameter-dependency>I</inParameter-dependency>
@@ -254,6 +249,16 @@
                        <outParameter>
                           <outParameter-name>ALMAXI</outParameter-name>
                           <outParameter-type>CALCIUM_double</outParameter-type>
+                          <outParameter-dependency>I</outParameter-dependency>
+                       </outParameter>
+                       <outParameter>
+                          <outParameter-name>NB_DYN</outParameter-name>
+                          <outParameter-type>CALCIUM_integer</outParameter-type>
+                          <outParameter-dependency>I</outParameter-dependency>
+                       </outParameter>
+                       <outParameter>
+                          <outParameter-name>NB_FOR</outParameter-name>
+                          <outParameter-type>CALCIUM_integer</outParameter-type>
                           <outParameter-dependency>I</outParameter-dependency>
                        </outParameter>
                        <outParameter>
@@ -278,11 +283,6 @@
                        </outParameter>
                        <outParameter>
                           <outParameter-name>ICV</outParameter-name>
-                          <outParameter-type>CALCIUM_integer</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>DONGEO</outParameter-name>
                           <outParameter-type>CALCIUM_integer</outParameter-type>
                           <outParameter-dependency>I</outParameter-dependency>
                        </outParameter>
@@ -380,7 +380,12 @@
                           <inParameter-dependency>I</inParameter-dependency>
                        </inParameter>
                        <inParameter>
-                          <inParameter-name>DONGEO</inParameter-name>
+                          <inParameter-name>NB_FOR</inParameter-name>
+                          <inParameter-type>CALCIUM_integer</inParameter-type>
+                          <inParameter-dependency>I</inParameter-dependency>
+                       </inParameter>
+                       <inParameter>
+                          <inParameter-name>NB_DYN</inParameter-name>
                           <inParameter-type>CALCIUM_integer</inParameter-type>
                           <inParameter-dependency>I</inParameter-dependency>
                        </inParameter>
@@ -446,16 +451,6 @@
                        </outParameter>
                        <outParameter>
                           <outParameter-name>ICVAST</outParameter-name>
-                          <outParameter-type>CALCIUM_integer</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>NB_DYN</outParameter-name>
-                          <outParameter-type>CALCIUM_integer</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>NB_FOR</outParameter-name>
                           <outParameter-type>CALCIUM_integer</outParameter-type>
                           <outParameter-dependency>I</outParameter-dependency>
                        </outParameter>

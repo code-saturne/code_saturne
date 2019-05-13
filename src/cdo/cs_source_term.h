@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -290,6 +290,29 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
 
 void
 cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a vector-valued density defined at dual cells by a value.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_real_t                  time_eval,
                              cs_cell_builder_t         *cb,

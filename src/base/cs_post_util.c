@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -426,7 +426,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
   cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
 
   cs_real_t *total_pressure = cs_field_by_name("total_pressure")->val;
-  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(u)->val;
+  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *density = CS_F_(rho)->val;
 
   cs_real_t pabs_in = 0.;
@@ -672,22 +672,24 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 /*!
  * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
  *
- * \param[in]  n_loc_cells   number of cells
- * \param[in]  cell_ids      list of cells (0 to n-1)
- * \param[out] rst           Reynolds stresses stored as vector
- *                           [r11,r22,r33,r12,r23,r13]
+ * \param[in]  n_cells     number of cells
+ * \param[in]  cell_ids    list of cells (0 to n-1) containing given coordinates
+ * \param[in]  coords      coordinates
+ * \param[out] rst         Reynolds stresses stored as vector
+ *                         [r11,r22,r33,r12,r23,r13]
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
-                              const cs_lnum_t  cell_ids[],
-                              cs_real_6_t      rst[])
+cs_post_evm_reynolds_stresses(cs_lnum_t          n_cells,
+                              const cs_lnum_t    cell_ids[],
+                              const cs_real_3_t *coords,
+                              cs_real_6_t       *rst)
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-  cs_real_33_t *gradv;
+  const cs_real_3_t *cell_cen =
+    (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
 
   if (   turb_model->itytur != 2
       && turb_model->itytur != 6
@@ -696,24 +698,52 @@ cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
               _("This post-processing utility function is only available for "
                 "Eddy Viscosity Models."));
 
+  /* velocity gradient */
+
+  cs_real_33_t *gradv;
   BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
   bool use_previous_t = false;
   int inc = 1;
-  cs_field_gradient_vector(CS_F_(u),
+  cs_field_gradient_vector(CS_F_(vel),
                            use_previous_t,
                            inc,
                            gradv);
 
+  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &var_cal_opt);
+
+  /* turbulent kinetic energy gradient for reconstruction */
+
+  cs_real_3_t *gradk;
+  if (var_cal_opt.ircflu > 0 && coords != NULL) {
+    BFT_MALLOC(gradk, n_cells_ext, cs_real_3_t);
+    bool recompute_cocg = true;
+    cs_field_gradient_scalar(CS_F_(k),
+                             use_previous_t,
+                             inc,
+                             recompute_cocg,
+                             gradk);
+  }
+
   /* Compute Reynolds stresses */
+
   const cs_real_t d2s3 = 2./3.;
-  for (cs_lnum_t iloc = 0; iloc < n_loc_cells; iloc++) {
+  for (cs_lnum_t iloc = 0; iloc < n_cells; iloc++) {
     cs_lnum_t iel = cell_ids[iloc];
 
     cs_real_t divu = gradv[iel][0][0] + gradv[iel][1][1] + gradv[iel][2][2];
     cs_real_t nut = CS_F_(mu_t)->val[iel]/CS_F_(rho)->val[iel];
-    cs_real_t xdiag = d2s3*(CS_F_(k)->val[iel] + nut*divu);
+    cs_real_t xk = CS_F_(k)->val[iel];
 
+    if (var_cal_opt.ircflu > 0 && coords != NULL) {
+      for (int ii = 0; ii < 3; ii++) {
+        xk += (coords[iloc][ii] - cell_cen[iel][ii])*gradk[iel][ii];
+      }
+    }
+
+    cs_real_t xdiag = d2s3*(xk+ nut*divu);
     rst[iloc][0] =  xdiag - 2.*nut*gradv[iel][0][0];
     rst[iloc][1] =  xdiag - 2.*nut*gradv[iel][1][1];
     rst[iloc][2] =  xdiag - 2.*nut*gradv[iel][2][2];
@@ -723,6 +753,7 @@ cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
   }
 
   BFT_FREE(gradv);
+  if (var_cal_opt.ircflu > 0 && coords != NULL) BFT_FREE(gradk);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -757,7 +788,7 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
 
   bool use_previous_t = false;
   int inc = 1;
-  cs_field_gradient_vector(CS_F_(u),
+  cs_field_gradient_vector(CS_F_(vel),
                            use_previous_t,
                            inc,
                            gradv);

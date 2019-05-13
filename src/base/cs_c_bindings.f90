@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -82,6 +82,8 @@ module cs_c_bindings
     integer(c_int) :: iwarni
     integer(c_int) :: iconv
     integer(c_int) :: istat
+    integer(c_int) :: idircl
+    integer(c_int) :: ndircl
     integer(c_int) :: idiff
     integer(c_int) :: idifft
     integer(c_int) :: idften
@@ -155,8 +157,8 @@ module cs_c_bindings
     bind(C, name='cs_max_limiter_building')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int),value :: f_id
-      integer(c_int),value :: inc
+      integer(c_int), value :: f_id
+      integer(c_int), value :: inc
       real(c_double), dimension(*) , intent(in) :: rovsdt
     end subroutine max_limiter_building
 
@@ -658,6 +660,25 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute matrix \f$ \tens{alpha} \f$ used in the computation of the
+    !>        Reynolds stress tensor boundary conditions.
+    !>
+    !> \param[in]      is_sym  Constant c in description above
+    !>                         (1 at a symmetry face, 0 at a wall face)
+    !> \param[in]      p_lg    change of basis matrix (local to global)
+    !> \param[out]     alpha   transformation matrix
+
+    subroutine turbulence_bc_rij_transform(is_sym, p_lg, alpha)                &
+      bind(C, name='cs_turbulence_bc_rij_transform')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: is_sym
+      real(c_double), dimension(3,3), intent(in) :: p_lg
+      real(c_double), dimension(6,6), intent(out) :: alpha
+    end subroutine turbulence_bc_rij_transform
+
+    !---------------------------------------------------------------------------
+
     !> \brief Set inlet boundary condition values for turbulence variables based
     !>        on a diameter \f$ D_H \f$ and the reference velocity
     !>        \f$ U_{ref} \f$
@@ -750,10 +771,31 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Set inlet boundary condition values for turbulence variables based
+    !>        on given k and epsilon values only if not initialized already.
+    !>
+    !> \param[in]     face_id       boundary face id
+    !> \param[in]     k             turbulent kinetic energy
+    !> \param[in]     epsilon       turbulent dissipation
+    !> \param[out]    rcodcl        boundary condition values
+
+    subroutine turbulence_bc_set_uninit_inlet_k_eps(face_num,                  &
+                                                    k, eps,                    &
+                                                    rcodcl)                    &
+      bind(C, name='cs_f_turbulence_bc_set_uninit_inlet_k_eps')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: face_num
+      real(c_double), value :: k, eps
+      real(kind=c_double), dimension(*) :: rcodcl
+    end subroutine turbulence_bc_set_uninit_inlet_k_eps
+
+    !---------------------------------------------------------------------------
+
     !> \brief  General user parameters
 
     subroutine user_parameters()  &
-      bind(C, name='cs_user_parameters')
+      bind(C, name='cs_user_parameters_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_parameters
@@ -763,7 +805,7 @@ module cs_c_bindings
     !> \brief  General user parameters
 
     subroutine user_porosity()  &
-      bind(C, name='cs_user_porosity')
+      bind(C, name='cs_user_porosity_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_porosity
@@ -996,6 +1038,26 @@ module cs_c_bindings
       integer(c_int), value :: boundary_projection
     end subroutine cs_bad_cells_regularisation_sym_tensor
 
+    !---------------------------------------------------------------------------
+
+    !> Interface to C function defining turbulence model through the GUI.
+
+    subroutine cs_gui_turb_model()  &
+      bind(C, name='cs_gui_turb_model')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_turb_model
+
+    !---------------------------------------------------------------------------
+
+    !> Interface to C function defining reference length and reference velocity
+    !> for the initialization of the turbulence variables through the GUI.
+
+    subroutine cs_gui_turb_ref_values()  &
+      bind(C, name='cs_gui_turb_ref_values')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_turb_ref_values
 
     !---------------------------------------------------------------------------
 
@@ -1011,11 +1073,10 @@ module cs_c_bindings
 
     ! Interface to C function selecting specific physical models.
 
-    subroutine cs_gui_physical_model_select(ieos)  &
+    subroutine cs_gui_physical_model_select()  &
       bind(C, name='cs_gui_physical_model_select')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(out) :: ieos
     end subroutine cs_gui_physical_model_select
 
     !---------------------------------------------------------------------------
@@ -1175,6 +1236,27 @@ module cs_c_bindings
       type(c_ptr), value :: val
       integer(c_int) :: error
     end function cs_restart_read_section_compat
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function which checks if the restart is from NEPTUNE_CFD
+    function cs_restart_check_if_restart_from_ncfd(r) result(flag) &
+      bind(C, name='cs_restart_check_if_restart_from_ncfd')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(c_int) :: flag
+    end function cs_restart_check_if_restart_from_ncfd
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function which returns if the restart is from NEPTUNE_CFD
+    function cs_restart_is_from_ncfd() result(flag) &
+      bind(C, name='cs_restart_is_from_ncfd')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int) :: flag
+    end function cs_restart_is_from_ncfd
 
     !---------------------------------------------------------------------------
 
@@ -1531,8 +1613,14 @@ module cs_c_bindings
 
     ! Interface to C user function for extra operations
 
+    subroutine user_extra_operations_initialize()  &
+      bind(C, name='cs_user_extra_operations_initialize_wrapper')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine user_extra_operations_initialize
+
     subroutine user_extra_operations()  &
-      bind(C, name='cs_user_extra_operations')
+      bind(C, name='cs_user_extra_operations_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_extra_operations
@@ -1542,10 +1630,20 @@ module cs_c_bindings
     ! Interface to C user function for initialization
 
     subroutine user_initialization()  &
-      bind(C, name='cs_user_initialization')
+      bind(C, name='cs_user_initialization_wrapper')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_initialization
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C user function for user arrays
+
+    subroutine cs_gui_user_arrays()  &
+      bind(C, name='cs_gui_user_arrays')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_user_arrays
 
     !---------------------------------------------------------------------------
 
@@ -1584,8 +1682,8 @@ module cs_c_bindings
     ! Interface to C function cs_equation_iterative_solve_scalar
 
     subroutine cs_equation_iterative_solve_scalar(idtvar, iterns,             &
-                                                  f_id, name, ndircp,         &
-                                                  iescap, imucpp,             &
+                                                  f_id, name,                 &
+                                                  iescap, imucpp, normp,      &
                                                   vcopt, pvara, pvark,        &
                                                   coefap, coefbp, cofafp,     &
                                                   cofbfp, i_massflux,         &
@@ -1598,7 +1696,8 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_scalar')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, iterns, f_id, ndircp, iescap, imucpp
+      integer(c_int), value :: idtvar, iterns, f_id, iescap, imucpp
+      real(kind=c_double), value :: normp
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
@@ -1619,7 +1718,7 @@ module cs_c_bindings
     ! Interface to C function cs_equation_iterative_solve_vector
 
     subroutine cs_equation_iterative_solve_vector(idtvar, iterns,             &
-                                                  f_id, name, ndircp,         &
+                                                  f_id, name,                 &
                                                   ivisep, iescap,             &
                                                   vcopt, pvara, pvark,        &
                                                   coefav, coefbv, cofafv,     &
@@ -1633,7 +1732,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_vector')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, iterns, f_id, ndircp, iescap, ivisep
+      integer(c_int), value :: idtvar, iterns, f_id, iescap, ivisep
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefav
@@ -1654,7 +1753,7 @@ module cs_c_bindings
 
     ! Interface to C function cs_equation_iterative_solve_tensor
 
-    subroutine cs_equation_iterative_solve_tensor(idtvar, f_id, name, ndircp, &
+    subroutine cs_equation_iterative_solve_tensor(idtvar, f_id, name,         &
                                                   vcopt, pvara, pvark,        &
                                                   coefats, coefbts, cofafts,  &
                                                   cofbfts, i_massflux,        &
@@ -1666,7 +1765,7 @@ module cs_c_bindings
       bind(C, name='cs_equation_iterative_solve_tensor')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: idtvar, f_id, ndircp
+      integer(c_int), value :: idtvar, f_id
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefats
@@ -2242,6 +2341,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Set porosity model.
+
+    subroutine cs_mesh_quantities_set_porous_model(iporos)   &
+      bind(C, name='cs_mesh_quantities_set_porous_model')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), value :: iporos
+    end subroutine cs_mesh_quantities_set_porous_model
+
+    !---------------------------------------------------------------------------
+
     ! Read turbomachinery metadata from restart file.
 
     subroutine turbomachinery_restart_read(r)  &
@@ -2318,6 +2428,96 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_parameters_set_n_buoyant_scalars
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating mesh quantities in the ALE framework.
+
+    subroutine cs_ale_update_mesh_quantities(min_vol, max_vol, tot_vol)   &
+      bind(C, name='cs_ale_update_mesh_quantities')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), intent(inout) :: min_vol, max_vol, tot_vol
+    end subroutine cs_ale_update_mesh_quantities
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating the mesh in the ALE framework.
+
+    subroutine cs_ale_update_mesh(itrale, xyzno0)   &
+      bind(C, name='cs_ale_update_mesh')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: itrale
+      real(kind=c_double), dimension(*), intent(in) :: xyzno0
+    end subroutine cs_ale_update_mesh
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating BCs in ALE framework.
+
+    subroutine cs_ale_update_bcs(ialtyb, b_fluid_vel)   &
+      bind(C, name='cs_ale_update_bcs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), dimension(*), intent(in) :: ialtyb
+      real(kind=c_double), dimension(*), intent(in) :: b_fluid_vel
+    end subroutine cs_ale_update_bcs
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function solving mesh velocity in ALE framework.
+
+    subroutine cs_ale_solve_mesh_velocity(iterns, impale, ialtyb)   &
+      bind(C, name='cs_ale_solve_mesh_velocity')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iterns
+      integer(c_int), dimension(*), intent(in) :: impale, ialtyb
+    end subroutine cs_ale_solve_mesh_velocity
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Binding to cs_ale_activate
+
+    subroutine cs_ale_activate()  &
+      bind(C, name='cs_ale_activate')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_ale_activate
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to get the cs_glob_ale option
+
+    subroutine cs_f_ale_get_pointers(iale) &
+      bind(C, name='cs_f_ale_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iale
+    end subroutine cs_f_ale_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function computing total, min, and max cell fluid volumes
+
+    subroutine cs_f_mesh_quantities_fluid_vol_reductions()  &
+      bind(C, name='cs_f_mesh_quantities_fluid_vol_reductions')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_mesh_quantities_fluid_vol_reductions
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function to get notebook parameter value
+
+    function cs_f_notebook_parameter_value_by_name(name) result(val) &
+        bind(C, name='cs_notebook_parameter_value_by_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
+      real(kind=c_double) :: val
+    end function cs_f_notebook_parameter_value_by_name
 
     !---------------------------------------------------------------------------
 
@@ -2565,7 +2765,7 @@ contains
   !> \param[in]   f_id     field id
   !> \param[in]   k_value  structure associated with key
 
-  subroutine field_set_key_struct_var_cal_opt (f_id, k_value)
+  subroutine field_set_key_struct_var_cal_opt(f_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2744,7 +2944,7 @@ contains
   !> \param[in]   f_id     field id
   !> \param[out]  k_value  integer value associated with key id for this field
 
-  subroutine field_get_key_struct_var_cal_opt (f_id, k_value)
+  subroutine field_get_key_struct_var_cal_opt(f_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2789,7 +2989,7 @@ contains
   !> \param[in]   f_id     field id
   !> \param[out]  k_value  integer value associated with key id for this field
 
-  subroutine field_get_key_struct_solving_info (f_id, k_value)
+  subroutine field_get_key_struct_solving_info(f_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -4251,6 +4451,7 @@ contains
   !>                                 \f$ \delta \varia^k \f$  and
   !>                                 \f$ \delta \varia^{k-1} \f$
   !> \param[in]     iwarnp        verbosity
+  !> \param[in]     normp         (optional) norm residual
   !> \param[in]     blencp        fraction of upwinding
   !> \param[in]     epsilp        precision pour resol iter
   !> \param[in]     epsrsp        relative precision for the iterative process
@@ -4315,7 +4516,8 @@ contains
   subroutine codits (idtvar, iterns,                                           &
                      f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,           &
                      nswrgp, imligp, ircflp, ischcp, isstpp, iescap, imucpp,   &
-                     idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
+                     idftnp, iswdyp, iwarnp, normp,                            &
+                     blencp, epsilp, epsrsp, epsrgp,                           &
                      climgp, extrap, relaxp, thetap, pvara, pvark, coefap,     &
                      coefbp, cofafp, cofbfp, i_massflux, b_massflux, i_viscm,  &
                      b_viscm, i_visc, b_visc, viscel, weighf, weighb, icvflb,  &
@@ -4333,6 +4535,7 @@ contains
     integer, intent(in) :: idtvar, iterns, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
     integer, intent(in) :: iescap, imucpp, idftnp, iswdyp, iwarnp
+    double precision, intent(in) :: normp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
     double precision, intent(in) :: extrap, relaxp, thetap
     real(kind=c_double), dimension(*), intent(in) :: pvara, pvark, coefap
@@ -4361,6 +4564,7 @@ contains
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
+    vcopt%ndircl = ndircp
     vcopt%idiff  = idiffp
     vcopt%idifft = -1
     vcopt%idften = idftnp
@@ -4384,8 +4588,8 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_scalar(idtvar, iterns,                    &
-                                            f_id, c_name, ndircp,              &
-                                            iescap, imucpp, c_k_value,         &
+                                            f_id, c_name,                      &
+                                            iescap, imucpp, normp, c_k_value,  &
                                             pvara, pvark,                      &
                                             coefap, coefbp, cofafp, cofbfp,    &
                                             i_massflux, b_massflux,            &
@@ -4598,6 +4802,7 @@ contains
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
+    vcopt%ndircl = ndircp
     vcopt%idiff  = idiffp
     vcopt%idifft = -1
     vcopt%idften = idftnp
@@ -4621,7 +4826,7 @@ contains
     vcopt%relaxv = relaxp
 
     call cs_equation_iterative_solve_vector(idtvar, iterns,                    &
-                                            f_id, c_name, ndircp,              &
+                                            f_id, c_name,                      &
                                             ivisep, iescap, c_k_value,         &
                                             pvara, pvark,                      &
                                             coefav, coefbv, cofafv, cofbfv,    &
@@ -4820,6 +5025,7 @@ contains
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
+    vcopt%ndircl = ndircp
     vcopt%idiff  = idiffp
     vcopt%idifft = -1
     vcopt%idften = idftnp
@@ -4842,7 +5048,7 @@ contains
     vcopt%extrag = 0
     vcopt%relaxv = relaxp
 
-    call cs_equation_iterative_solve_tensor(idtvar, f_id, c_name, ndircp,      &
+    call cs_equation_iterative_solve_tensor(idtvar, f_id, c_name,              &
                                             c_k_value,                         &
                                             pvara, pvark,                      &
                                             coefats, coefbts, cofafts, cofbfts,&
@@ -5258,6 +5464,32 @@ contains
 
   !=============================================================================
 
+  !> \brief Return notebook parameter value
+
+  !> \param[in]     name      name of the notebook parameter
+  !> \result        val
+
+  function notebook_parameter_value_by_name(name) result(val)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+    double precision :: val
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    real(kind=c_double) :: c_val
+
+    c_name = trim(name)//c_null_char
+
+    c_val = cs_f_notebook_parameter_value_by_name(c_name)
+    val = c_val
+
+  end function notebook_parameter_value_by_name
 
   !=============================================================================
 

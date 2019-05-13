@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,7 @@
 /*----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -51,28 +52,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_selector.h"
-
-#include "cs_post.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -100,17 +80,56 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is called at the end of each time step.
+ * \brief Initialize variables.
  *
- * It has a very general purpose, although it is recommended to handle
- * mainly postprocessing or data-extraction type operations.
+ * This function is called at beginning of the computation
+ * (restart or not) before the time step loop.
+ *
+ * This is intended to initialize or modify (when restarted)
+ * variable and time step values.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(void)
+cs_user_extra_operations_initialize(cs_domain_t     *domain)
 {
+  CS_UNUSED(domain);
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of each time step.
+ *
+ * It has a very general purpose, although it is recommended to handle
+ * mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations(cs_domain_t     *domain)
+{
+  CS_UNUSED(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called at the end of the calculation.
+ *
+ * It has a very general purpose, although it is recommended to handle
+ * mainly postprocessing or data-extraction type operations.
+
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_finalize(cs_domain_t     *domain)
+{
+  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

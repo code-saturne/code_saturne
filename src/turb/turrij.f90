@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -106,12 +106,14 @@ double precision, dimension(:), pointer :: bromo, cromo
 
 ! Local variables
 
-integer          ifac  , iel   , ivar  , isou  , ii
+integer          ifac  , iel   , ivar  , isou
 integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          nswrgp, imligp
 integer          f_id0 , f_id
 integer          iprev
+integer          key_t_ext_id
+integer          iroext
 double precision epsrgp, climgp, extrap
 double precision rhothe
 double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
@@ -139,6 +141,7 @@ double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
 double precision, dimension(:,:), pointer :: lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_produc
+double precision, dimension(:), pointer :: cpro_beta
 
 type(var_cal_opt) :: vcopt
 
@@ -196,6 +199,9 @@ if(vcopt%iwarni.ge.1) then
     write(nfecra,1002)
   endif
 endif
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1.1 Advanced init for EBRSM
@@ -458,7 +464,6 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
 
   call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
-  iprev = 1
   inc = 1
   iccocg = 1
 
@@ -479,42 +484,67 @@ else if (igrari.eq.1) then
   ! Allocate a temporary array for the gradient calculation
   allocate(gradro(3,ncelet))
 
-  ! Boundary conditions: Dirichlet romb
-  ! We use viscb to store the relative coefficient of rom
-  ! We impose in Dirichlet (coefa) the value romb
+  ! Boussinesq approximation, only for the thermal scalar for the moment
+  if (idilat.eq.0)  then
 
-  do ifac = 1, nfabor
-    viscb(ifac) = 0.d0
-  enddo
+    iccocg = 1
+    inc = 1
 
-  ! The choice below has the advantage to be simple
-  call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+    ! Use the current value...
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 0, imrgra, inc, iccocg, &
+                               gradro)
 
-  nswrgp = vcopt%nswrgr
-  imligp = vcopt%imligr
-  iwarnp = vcopt%iwarni
-  epsrgp = vcopt%epsrgr
-  climgp = vcopt%climgr
-  extrap = vcopt%extrag
+    !FIXME make it dependant on the scalar and use is_buoyant field
+    call field_get_val_s(ibeta, cpro_beta)
 
-  f_id0 = -1
-  iccocg = 1
+    ! gradro stores: - beta grad(T)
+    ! grad(rho) and grad(T) have opposite signs
+    do iel = 1, ncel
+      gradro(1, iel) = - ro0 * cpro_beta(iel) * gradro(1, iel)
+      gradro(2, iel) = - ro0 * cpro_beta(iel) * gradro(2, iel)
+      gradro(3, iel) = - ro0 * cpro_beta(iel) * gradro(3, iel)
+    enddo
 
-  ! If we extrapolate the source terms and rho, we use cpdt rho^n
-  if(isto2t.gt.0.and.iroext.gt.0) then
-    call field_get_val_prev_s(icrom, cromo)
-    call field_get_val_prev_s(ibrom, bromo)
   else
-    call field_get_val_s(icrom, cromo)
-    call field_get_val_s(ibrom, bromo)
+
+    ! Boundary conditions: Dirichlet romb
+    ! We use viscb to store the relative coefficient of rom
+    ! We impose in Dirichlet (coefa) the value romb
+
+    do ifac = 1, nfabor
+      viscb(ifac) = 0.d0
+    enddo
+
+    ! The choice below has the advantage to be simple
+    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+
+    nswrgp = vcopt%nswrgr
+    imligp = vcopt%imligr
+    iwarnp = vcopt%iwarni
+    epsrgp = vcopt%epsrgr
+    climgp = vcopt%climgr
+    extrap = vcopt%extrag
+
+    f_id0 = -1
+    iccocg = 1
+
+    call field_get_key_int(icrom, key_t_ext_id, iroext)
+    ! If we extrapolate the source terms and rho, we use cpdt rho^n
+    if(isto2t.gt.0.and.iroext.gt.0) then
+      call field_get_val_prev_s(icrom, cromo)
+      call field_get_val_prev_s(ibrom, bromo)
+    else
+      call field_get_val_s(icrom, cromo)
+      call field_get_val_s(ibrom, bromo)
+    endif
+
+    call gradient_s                                                 &
+      ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,       &
+      iwarnp , epsrgp , climgp , extrap ,                           &
+      cromo  , bromo  , viscb           ,                           &
+      gradro )
+
   endif
-
-  call gradient_s                                                 &
- ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , epsrgp , climgp , extrap ,                            &
-   cromo  , bromo  , viscb           ,                            &
-   gradro )
-
 endif
 
 !===============================================================================

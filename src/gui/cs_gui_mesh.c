@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -57,7 +57,6 @@
 #include "cs_mesh_smoother.h"
 #include "cs_mesh_boundary.h"
 #include "cs_mesh_extrude.h"
-#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -592,6 +591,38 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
     bft_printf("--n_layers  = %i\n", n_layers);
     bft_printf("--thickness = %f\n", thickness);
     bft_printf("--reason    = %f\n", reason);
+#endif
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Define mesh save behavior trough the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mesh_save_if_modified(cs_mesh_t  *mesh)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  const char path0[] = "solution_domain/save_mesh_if_modified";
+
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+
+  if (tn == NULL)
+    return;
+
+  const char *s = cs_tree_node_get_value_str(tn);
+  if (s != NULL) {
+
+    if (!strcmp(s, "no"))
+      mesh->save_if_modified = 0;
+    else if (!strcmp(s, "yes"))
+      mesh->save_if_modified = 1;
+
+#if _XML_DEBUG_
+    bft_printf("==> %s\n", __func__);
+    bft_printf("--save_mesh_if_modified = %s\n", s);
 #endif
   }
 }

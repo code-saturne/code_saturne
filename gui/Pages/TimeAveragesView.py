@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -46,13 +46,12 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import LABEL_LENGTH_MAX
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator
-from code_saturne.Base.QtPage import ComboModel, to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import ComboModel, from_qvariant, to_text_string
 from code_saturne.Pages.TimeAveragesForm import Ui_TimeAveragesForm
-from code_saturne.Pages.StartRestartModel import StartRestartModel
-from code_saturne.Pages.TimeAveragesModel import TimeAveragesModel
+from code_saturne.model.StartRestartModel import StartRestartModel
+from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -108,7 +107,7 @@ class LabelDelegate(QItemDelegate):
 
             if p_value and p_value != self.old_p_value:
                 self.mdl.setName(self.old_p_value, p_value)
-                model.setData(index, to_qvariant(p_value), Qt.DisplayRole)
+                model.setData(index, p_value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for the start type
@@ -147,7 +146,7 @@ class StartTypeDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(txt), Qt.DisplayRole)
+                model.setData(idx, txt, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -186,7 +185,7 @@ class StartValueDelegate(QItemDelegate):
                 value = from_qvariant(editor.text(), int)
             else:
                 value = from_qvariant(editor.text(), float)
-            model.setData(index, to_qvariant(value), Qt.DisplayRole)
+            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -230,7 +229,7 @@ class RestartTypeDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+                model.setData(idx, value, Qt.DisplayRole)
 
 
     def tr(self, text):
@@ -260,12 +259,12 @@ class StandardItemModelAverage(QStandardItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return to_qvariant()
+            return None
         if role == Qt.DisplayRole:
-            return to_qvariant(self.dataAverage[index.row()][index.column()])
+            return self.dataAverage[index.row()][index.column()]
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def flags(self, index):
@@ -281,10 +280,10 @@ class StandardItemModelAverage(QStandardItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return to_qvariant(self.headers[section])
+            return self.headers[section]
         elif role == Qt.TextAlignmentRole:
-            return to_qvariant(Qt.AlignCenter)
-        return to_qvariant()
+            return Qt.AlignCenter
+        return None
 
 
     def setData(self, index, value, role):

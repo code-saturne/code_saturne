@@ -4,7 +4,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -132,8 +132,8 @@ allocate(xcp(ncel))
 !===============================================================================
 
 !< [example_1]
-! The balance is not valid if inpdt0=1
-if (inpdt0.eq.0) then
+! The balance is not valid before running at least one time step.
+if (ntcabs.eq.ntpabs) then
 
   ! 2.1 Initialization
   ! ==================
@@ -479,7 +479,7 @@ if (inpdt0.eq.0) then
 
   if (ncetsm.gt.0) then
     do ieltsm = 1, ncetsm
-      ! depending on the type of injection we use the 'smacell' value
+      ! depending on the type of injection we use the 'smacel' value
       ! or the ambient temperature
       iel = icetsm(ieltsm)
       xgamma = smacel(ieltsm,ipr)
@@ -550,7 +550,7 @@ if (inpdt0.eq.0) then
    '---','------',                                                    &
    '------------------------------------------------------------')
 
-endif ! End of test on inpdt0
+endif ! End of test on first time step
 !< [example_1]
 
 !< [finalize]

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -86,6 +86,8 @@ double precision secvif(nfac), secvib(nfabor)
 ! Local variables
 
 integer          iel, ifac, ii, jj
+integer          key_t_ext_id
+integer          iviext
 
 double precision d2s3m, secvsi, secvsj, pnd
 
@@ -113,6 +115,9 @@ if (ippmod(icompf).ge.0) then
   endif
 endif
 
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
 !===============================================================================
 ! 2. Computation of the second viscosity: lambda = K -2/3 mu
 !===============================================================================
@@ -122,6 +127,7 @@ endif
 d2s3m = -2.d0/3.d0
 
 ! Laminar viscosity
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
 if(isno2t.gt.0 .and. iviext.gt.0) then
   call field_get_val_prev_s(iviscl, cproa_viscl)
   do iel = 1, ncel
@@ -147,6 +153,7 @@ if (ippmod(icompf).ge.0) then
 endif
 
 ! Turbulent viscosity (if not in Rij or LES)
+call field_get_key_int(ivisct, key_t_ext_id, iviext)
 if (itytur.ne.3 .and. itytur.ne.4) then
   if(isno2t.gt.0 .and. iviext.gt.0) then
     call field_get_val_prev_s(ivisct, cproa_visct)

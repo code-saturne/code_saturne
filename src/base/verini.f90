@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -62,6 +62,7 @@ use mesh
 use field
 use turbomachinery
 use cs_c_bindings
+use cfpoin
 
 !===============================================================================
 
@@ -78,8 +79,12 @@ integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
 integer          f_id, n_fields
 integer          indest, iiidef, istop
-integer          kscmin, kscmax, ifcvsl
+integer          kscmin, kscmax
 integer          keyvar, keysca
+integer          key_t_ext_id, icpext
+integer          iviext
+integer          iroext
+integer          ivisext
 double precision scmaxp, scminp
 double precision turb_schmidt
 
@@ -105,6 +110,17 @@ call field_get_key_id("variable_id", keyvar)
 ! Key ids for clippings
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
+
+if (icp.ge.0) then
+  call field_get_key_int(icp, key_t_ext_id, icpext)
+else
+  icpext = 0
+endif
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
+call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 !===============================================================================
 ! 1. ENTREES SORTIES entsor : formats 1000
@@ -137,12 +153,6 @@ if (nscapp.lt.0.or.nscapp.gt.nscamx) then
 endif
 if (nvar.lt.0.or.nvar.gt.nvarmx) then
   write(nfecra,2000)'NVAR  ',nvarmx,nvar
-  iok = iok + 1
-endif
-
-!     Extrap de rho : necessairement rho variable
-if (irovar.eq.0.and.iroext.gt.0) then
-  write(nfecra,2005)iroext,irovar
   iok = iok + 1
 endif
 
@@ -202,8 +212,12 @@ do iscal = 1, nscal
   if (isso2t(iscal).ne.isno2t) then
     write(nfecra,2133) iscal,isso2t(iscal),isno2t
   endif
-  if (ivsext(iscal).ne.iviext) then
-    write(nfecra,2134) iscal,ivsext(iscal),iviext
+  call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
+  if (f_id.ge.0.and.iscavr(iscal).le.0) then
+    call field_get_key_int(f_id, key_t_ext_id, ivisext)
+    if (ivisext.ne.iviext) then
+      write(nfecra,2134) iscal,ivisext,iviext
+    endif
   endif
 enddo
 
@@ -213,22 +227,6 @@ if (ischtp.eq.2.and.vcopt%ibdtso.gt.1) then
   write(nfecra,1135)
   iok = iok + 1
 endif
-
-!     Test du theta de la diffusivite des scalaires et de Cp : ils doivent etre
-!       variables en (en espace) si on les extrapole (en temps) (...)
-if ( icpext.gt.0 .and. icp.lt.0 ) then
-  write(nfecra,2135) icpext, icp
-  iok = iok + 1
-endif
-do iscal = 1, nscal
-  if (ivsext(iscal).gt.0) then
-    call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-    if (ifcvsl.lt.0) then
-      write(nfecra,2136) iscal, ivsext(iscal), ifcvsl
-      iok = iok + 1
-    endif
-  endif
-enddo
 
 !     Pour les tests suivants : Utilise-t-on un estimateur d'erreur ?
 indest = 0
@@ -240,7 +238,7 @@ do iest = 1, nestmx
 enddo
 
 !     Estimateurs incompatibles avec calcul a champ de vitesse
-!       fige (on ne fait rien, sauf ecrire des betises dans le listing)
+!       fige (on ne fait rien, sauf ecrire des betises dans le log)
 if (indest.eq.1.and.iccvfg.eq.1) then
   write(nfecra,2137)
   iok = iok + 1
@@ -379,10 +377,9 @@ if (ippmod(iphpar).ge.1) then
       (thetcp .gt.0.d0).or.                                &
       (icpext .gt.0   )) istop = 1
   do iscal = 1, nscal
-    if ((    thetss(iscal)       .gt.0.d0 ).or.            &
-        (    isso2t(iscal)       .gt.0    ).or.            &
-        (    thetvs(iscal).gt.0.d0 ).or.                   &
-        (    ivsext(iscal).gt.0    )    ) istop = 1
+    if ((thetss(iscal)       .gt.0.d0 ).or.            &
+        (isso2t(iscal)       .gt.0    ).or.            &
+        (thetvs(iscal).gt.0.d0 )) istop = 1
   enddo
 
   if (istop.ne.0) then
@@ -423,24 +420,6 @@ if (iirayo.gt.0) then
     endif
   endif
 endif
-
-! --- Solveurs iteratifs
-
-! Il n'y a pas besoin de test sur les epsilons
-!   Ce sont simplement des reels
-!   Une valeur negative indique qu'on veut atteindre
-!   le nombre d'iterations maximal
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    if (idircl(ii).ne.0.and.idircl(ii).ne.1) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2401) chaine(1:16),ii,idircl(ii)
-      iok = iok + 1
-    endif
-  endif
-enddo
 
 ! --- Suite de calcul
 
@@ -581,19 +560,6 @@ if (ineedy.eq.1) then
 
   if (abs(icdpar).ne.1) then
     write(nfecra,2700) icdpar
-    iok = iok + 1
-  endif
-  if (ntcmxy.lt.1) then
-    write(nfecra,3100) 'NTCMXY',ntcmxy
-    iok = iok + 1
-  endif
-
-  if (coumxy.le.0.d0) then
-    write(nfecra,2740) 'COUMXY',coumxy
-    iok = iok + 1
-  endif
-  if (yplmxy.le.0.d0) then
-    write(nfecra,2740) 'YPLMXY',yplmxy
     iok = iok + 1
   endif
 
@@ -808,15 +774,10 @@ if (irangp.ge.0.and.ineedy.eq.1.and.abs(icdpar).eq.2) then
 endif
 
 !===============================================================================
-! 6. METHODE ALE (albase, alstru) : formats 7000
+! 6. METHODE ALE (albase, alstru)
 !===============================================================================
 
-if (iale.ne.0 .and. iale.ne.1) then
-  write(nfecra,7000)iale
-  iok = iok + 1
-endif
-
-if (iale.eq.1) then
+if (iale.ge.1) then
 
   if (nalinf.lt.0) then
     write(nfecra,7010)nalinf
@@ -863,7 +824,7 @@ if (ippmod(icompf).ge.0) then
     write(nfecra,8020) viscv0
     iok = iok + 1
   endif
-  if (ieos.lt.1.or.ieos.gt.3) then
+  if (ieos.lt.1.or.ieos.gt.4) then
     write(nfecra,8030) 'IEOS (Equation of state. )',ieos
     iok = iok + 1
   endif
@@ -957,24 +918,6 @@ endif
 '@',    a6,' DOIT ETRE UN ENTIER',                              /,&
 '@      STRICTEMENT POSITIF ET INFERIEUR OU EGAL A', i10,       /,&
 '@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2005 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    ON DEMANDE UNE EXTRAPOLATION TEMPORELLE DE RHO AVEC',     /,&
-'@      IROEXT = ', i10,                                        /,&
-'@    CECI EST INCOMPATIBLE AVEC RHO CONSTANT',                 /,&
-'@      IROVAR = ', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute',                            /,&
 '@',                                                            /,&
@@ -1084,56 +1027,6 @@ endif
 '@',                                                            /,&
 '@  Il est conseille de verifier les parametres donnes via',    /,&
 '@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2135 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX INCOMPATIBLE POUR LE SCHEMA EN TEMPS',               /,&
-'@',                                                            /,&
-'@     La  chaleur massique est extrapolee en temps avec',      /,&
-'@       ICPEXT = ', i10,                                       /,&
-'@     Pour cela, elle doit etre variable, or',                 /,&
-'@       ICP    = ', i10,                                       /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute',                             /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@    - desactiver le choix d''extrapolation de Cp en temps',   /,&
-'@      ou',                                                    /,&
-'@    - imposer Cp variable',                                   /,&
-'@         (et le renseigner alors via l''interface ou usphyv)',/,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2136 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX INCOMPATIBLE POUR LE SCHEMA EN TEMPS',               /,&
-'@',                                                            /,&
-'@   Scalaire ISCAL = ', i10,                                   /,&
-'@     La  diffusivite      est extrapolee en temps avec',      /,&
-'@       IVSEXT(ISCAL) = ', i10,                                /,&
-'@     Pour cela, elle doit etre variable, or',                 /,&
-'@       scalar_diffusivity_id = ', i10, ' pour ce champ.'      /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute',                             /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@    - desactiver le choix d''extrapolation en temps',         /,&
-'@                                     de la diffusivite',      /,&
-'@      ou',                                                    /,&
-'@    - imposer la diffusivite variable',                       /,&
-'@         (et le renseigner alors via l''interface ou usphyv)',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1410,25 +1303,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2401 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IDIRCL(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  IDIRCL(I) indique si le code doit decaler la diagonale de', /,&
-'@    la matrice de la variable I en l''absence de Dirichlet',  /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2420 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1606,39 +1480,6 @@ endif
 '@  IL VAUT ICI',  i10,                                         /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2740 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN REEL STRICTEMENT POSITIF.',           /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
- 3100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER STRICTEMENT POSITIF',          /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
@@ -1920,23 +1761,6 @@ endif
 '@    le parallelisme.',                                        /,&
 '@',                                                            /,&
 '@  Utiliser ICDPAR = 1 ou -1.',                                /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 7000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    INDICATEUR DE METHODE ALE',                               /,&
-'@',                                                            /,&
-'@  IALE DOIT VALOIR 0 OU 1',                                   /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface ou usipph.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -2238,24 +2062,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2005 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    TEMPORAL EXTRAPOLATION OF DENSITY RHO REQUESTED,',        /,&
-'@      BUT IROEXT = ', i10,                                    /,&
-'@    THIS IS INCOMPATIBLE WITH RHO = CONSTANT',                /,&
-'@      IROVAR = ', i10,                                        /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2125 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2300,7 +2106,7 @@ endif
 '@',                                                            /,&
 '@     TIME-SCHEME FOR VELOCITY IS FIRST ORDER',                /,&
 '@       (THETAV = ', e10.2, ')',                               /,&
-'@     CERTAIN TERMS ARE HOWEVER SECOND ORDER IN TIME WITH',    /,&
+'@     SOME TERMS ARE HOWEVER SECOND ORDER IN TIME WITH',       /,&
 '@       THE FOLLOWING SETTINGS:',                              /,&
 '@',                                                            /,&
 '@ parameters       ISTMPF ISNO2T ISTO2T IROEXT IVIEXT ICPEXT', /,&
@@ -2324,7 +2130,7 @@ endif
 '@',                                                            /,&
 '@     TIME-SCHEME FOR VELOCITY IS SECOND ORDER',               /,&
 '@       (THETAV = ', e10.2, ')',                               /,&
-'@     CERTAIN TERMS ARE HOWEVER FIRST ORDER IN TIME  WITH',    /,&
+'@     SOME TERMS ARE HOWEVER FIRST ORDER IN TIME  WITH',       /,&
 '@       THE FOLLOWING SETTINGS:',                              /,&
 '@',                                                            /,&
 '@ parameters       ISTMPF ISNO2T ISTO2T IROEXT IVIEXT ICPEXT', /,&
@@ -2375,54 +2181,6 @@ endif
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2135 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME',            /,&
-'@',                                                            /,&
-'@     Specific heat is extrapolated in time with',             /,&
-'@       ICPEXT = ', i10,                                       /,&
-'@    in which case it should be variable, or',                 /,&
-'@       ICP    = ', i10,                                       /,&
-'@',                                                            /,&
-'@  Computation will NOT go on',                                /,&
-'@',                                                            /,&
-'@  Verify   the parameters',                                   /,&
-'@    - deactivate xtrapolation of Cp in time',                 /,&
-'@      or',                                                    /,&
-'@    - define Cp as variable',                                 /,&
-'@         (define its variation law in the GUI ou usphyv)',    /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2136 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME',            /,&
-'@',                                                            /,&
-'@   Scalar   ISCAL = ', i10,                                   /,&
-'@    Diffusivity   is extrapolated in time wih',               /,&
-'@       IVSEXT(ISCAL) = ', i10,                                /,&
-'@     it should thus be a variable, or',                       /,&
-'@       scalar_diffusivity_id = ', i10, ' for this field.'     /,&
-'@',                                                            /,&
-'@ Computation will  NOT  proceed',                             /,&
-'@',                                                            /,&
-'@  Verify the parameters',                                     /,&
-'@    - deactivate intepolation in time',                       /,&
-'@                                     for diffusivity',        /,&
-'@      or',                                                    /,&
-'@    - impose diffusivite variable',                           /,&
-'@         (define its variation law in the GUI ou usphyv)',    /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -2696,25 +2454,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2401 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IDIRCL(',i10,   ') MUST BE AN INTEGER EQUAL  0  OR 1',    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  IDIRCL(I) tells if the diagonal of the matrix for variable',/,&
-'@  I should be shifted in the absence of Dirichlet condition', /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2420 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2892,39 +2631,6 @@ endif
 '@  IL IS EQUAL',  i10,                                         /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2740 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE   A  STRICTLY POSITIVE REAL.',             /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
- 3100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER  STRICTLY  POSITIVE',           /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
@@ -3205,23 +2911,6 @@ endif
 '@    ICDPAR = ', i10, ' does not allow for parallel computing', /,&
 '@',                                                            /,&
 '@  Use ICDPAR = 1 or -1.',                                     /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 7000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    FLAG FOR ALE  METHOD',                                    /,&
-'@',                                                            /,&
-'@  IALE should be = 0 or 1',                                   /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  Verify   the parameters given  in   interface or usipph.',  /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -200,17 +200,14 @@ void CS_PROCF (csdatadir, CSDATADIR)
  *
  * parameters:
  *   log_name    <-- base file name for log, or NULL for stdout
- *   r0_log_flag <-- redirection for rank 0 log;
- *                   0: not redirected; 1: redirected to <log_name> file
  *   rn_log_flag <-- redirection for ranks > 0 log:
- *                   0: not redirected; 1: redirected to <log_name>_n*" file;
- *                   2: redirected to "/dev/null" (suppressed)
+ *                   false:  to "/dev/null" (suppressed)
+ *                   true: redirected to <log_name>_n*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
 cs_base_fortran_bft_printf_set(const char  *log_name,
-                               int          r0_log_flag,
-                               int          rn_log_flag);
+                               bool         rn_log_flag);
 
 /*----------------------------------------------------------------------------
  * Switch bft_printf() mechanism to C output.
@@ -229,6 +226,28 @@ cs_base_fortran_bft_printf_to_c(void);
 
 void
 cs_base_fortran_bft_printf_to_f(void);
+
+/*----------------------------------------------------------------------------
+ * Wrappers for Fortran C
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_extra_operations_initialize_wrapper(void);
+
+void
+cs_user_extra_operations_wrapper(void);
+
+void
+cs_user_initialization_wrapper(void);
+
+void
+cs_user_parameters_wrapper(void);
+
+void
+cs_user_finalize_setup_wrapper(void);
+
+void
+cs_user_porosity_wrapper(void);
 
 /*----------------------------------------------------------------------------*/
 

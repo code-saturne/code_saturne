@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2018 EDF S.A.
+% Copyright (C) 1998-2019 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -54,7 +54,7 @@ for further details.
 
 Figure \ref{Base_Clsyvt_fig_facesym} presents the notations used at the face.
 The local coordinate system is defined from the normal at the face and
-the velocity at $I'$ :\\
+the velocity at $I'$:\\
 $\bullet\ \displaystyle\vect{t}
 =\frac{1}{|\vect{u}_{I',\tau}|}\vect{u}_{I',\tau}$ is the first
 vector of the local coordinate system.\\
@@ -73,10 +73,10 @@ Here, $\vect{n}$ is the normalized normal vector to the boundary face
 in the sense of  \CS ({\em i.e.}
 directed towards the outside of the computational domain)
 and $\vect{u}_{I',\tau}$ is the projection of the velocity at $I'$
-in the plane of the face :
+in the plane of the face:
 $\vect{u}_{I',\tau}=\vect{u}_{I'}-(\vect{u}_{I'}.\vect{n})\vect{n}$.\\
 If $\vect{u}_{I',\tau}=\vect{0}$, the direction of $\vect{t}$ in the plane
-normal to $\vect{n}$ is irrelevant. thus it is defined as :
+normal to $\vect{n}$ is irrelevant. thus it is defined as:
 $\displaystyle\vect{t}=\frac{1}{\sqrt{n_y^2+n_z^2}}(n_z\vect{e}_y-n_y\vect{e}_z)$
 where
 $\displaystyle\vect{t}=\frac{1}{\sqrt{n_x^2+n_z^2}}(n_z\vect{e}_x-n_x\vect{e}_z)$
@@ -84,7 +84,7 @@ along the non-zero components of $\vect{n}$ (components in the global
 coordinate system $(\vect{e}_x,\vect{e}_y,\vect{e}_z)$).
 
 
-For sake of clarity, the following notations will be used :\\
+For sake of clarity, the following notations will be used:\\
 $\bullet\ $The general coordinate system will write
 $\mathcal{R}=(\vect{e}_x,\vect{e}_y,\vect{e}_z)$.\\
 $\bullet\ $The local coordinate system will write
@@ -110,7 +110,7 @@ t_z & -n_z & b_z
 ($\matt{P}$ being orthogonal, $\matt{P}^{-1}=\,^t\matt{P}$).
 
 In particular, we have for any vector $\vect{u}$
-and for any second order tensor $\tens{R}$ :\\
+and for any second order tensor $\tens{R}$:\\
 \begin{equation}
 \left\{\begin{array}{l}
 \mat{U} = \matt{P}\,.\,\hat{\mat{U}}\\
@@ -120,7 +120,7 @@ and for any second order tensor $\tens{R}$ :\\
 
 \minititre{Treatment of the velocity}
 In the local coordinate system, the boundary conditions for $\vect{u}$
-naturally write :\\
+naturally write:\\
 \begin{equation}
 \left\{\begin{array}{lcl}
 u_{F,t} & = & u_{I',t}\\
@@ -158,7 +158,7 @@ $\matt{A}=\matt{P}\,.\,\left[
 \right]\,.\,^t\matt{P}\qquad$ (matrix in the coordinate system $\mathcal{R}$
 of the projector orthogonal to the face).
 
-The boundary conditions for  $\vect{u}$ thus write :
+The boundary conditions for  $\vect{u}$ thus write:
 \begin{equation}
 \mat{U}_F = \matt{A}\,.\,\mat{U}_{I'}
 \end{equation}
@@ -214,7 +214,7 @@ and
 \end{equation}
 
 Two functions $q$ and $r$ from $\{1,2,3,4,5,6,7,8,9\}$ to
-$\{1,2,3\}$ are defined. Their values are given in the following table :
+$\{1,2,3\}$ are defined. Their values are given in the following table:
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
 \hline
@@ -227,7 +227,7 @@ $r(i)$&1&2&3&1&2&3&1&2&3\\
 \end{tabular}
 \end{center}
 $i\longmapsto (q(i),r(i))$ is then a bijection from $\{1,2,3,4,5,6,7,8,9\}$
-to $\{1,2,3\}^2$, and we have :
+to $\{1,2,3\}^2$, and we have:
 \begin{equation}
 \left\{\begin{array}{l}
 \comp{R}_{ij}=\comp{S}_{3(i-1)+j}\\
@@ -235,23 +235,22 @@ to $\{1,2,3\}^2$, and we have :
 \end{array}\right.
 \end{equation}
 
-Using equation \ref{Base_Clsyvt_eq_chgtrepR}, we thus have :
+Using equation \ref{Base_Clsyvt_eq_chgtrepR}, we thus have:
 \begin{eqnarray}
 \comp{S}_{F,i} & = & \comp{R}_{F,q(i)r(i)} =
 \sum_{(m,n)\in\{1,2,3\}^2}\comp{P}_{q(i)m}\hat{\comp{R}}_{F,mn}\comp{P}_{r(i)n}\nonumber\\
 &=&\sum_{j=1}^9\comp{P}_{q(i)q(j)}\hat{\comp{R}}_{F,q(j)r(j)}\comp{P}_{r(i)r(j)}
-\quad\text{(d'apr\`es la bijectivit\'e de $(q,r)$)}\nonumber\\
+\quad\text{(because $i->(q(i),r(i))$ is bijective)}\nonumber\\
 &=&\sum_{j=1}^9\comp{P}_{q(i)q(j)}\comp{P}_{r(i)r(j)}\hat{\comp{S}}_{F,j}
 \end{eqnarray}
 
 Or
 \begin{equation}
-\mat{S}_{F}=\matt{A}\,.\,\hat{\mat{S}}_F\quad\text{avec }
+\mat{S}_{F}=\matt{A}\,.\,\hat{\mat{S}}_F\quad\text{ with }
 \comp{A}_{ij}=\comp{P}_{q(i)q(j)}\comp{P}_{r(i)r(j)}
 \end{equation}
 
 It can be shown that $\matt{A}$ is an orthogonal matrix (see Annexe A).
-
 
 In the local coordinate system, the boundary conditions of $\tens{R}$
 write naturally\footnote{cf. Davroux A., Archambeau F., {\em Le
@@ -294,45 +293,44 @@ or
 For the symmetry faces which are treated by \fort{clsyvt}, the
 coefficient $B$ is 1. However a similar treatment is applied in
 \fort{clptur} for the wall faces, and in this $B$ is zero. This
-parameter has to be specified when \fort{clca66} is called
+parameter has to be specified when \code{cs\_turbulence\_bc\_rij\_transform} is called
 (see \S\ref{Base_Clsyvt_prg_meo}).
 
 Back in the global coordinate system, the following formulae is
-finally obtained~:
+finally obtained:
 \begin{equation}
-\label{Base_Clsyvt_eq_clsurS}
+\label{eq:base:clsyvt:cl_s}
 \mat{S}_F=\matt{C}\,.\,\mat{S}_{I'}\qquad
 \text{avec }\matt{C}=\matt{A}\,.\,\matt{B}\,.\,^t\matt{A}
 \end{equation}
 
-It can be shown that the components of the matrix $\matt{C}$ are :
+It can be shown that the components of the matrix $\matt{C}$ are:
 \begin{equation}
 \comp{C}_{ij}=\sum_{k=1}^9
 \comp{P}_{q(i)q(k)}\comp{P}_{r(i)r(k)}\comp{P}_{q(j)q(k)}\comp{P}_{r(j)r(k)}
 (\delta_{k1}+B\delta_{k3}+\delta_{k5}+B\delta_{k7}+\delta_{k9})
 \end{equation}
 
-To conclude, it can be noted that, due to the symmetries of the tensor  $\tens{R}$,
- the matrix $\mat{S}$.
-Thus only the simplified matrices
+To conclude, it can be noted thatthe tensor  $\tens{R}$ is symmetric.
+Thus only the simplified matrices (stored by increasing diagonal)
 $\mat{S}^\prime$ and $\hat{\mat{S}}^\prime$ will be used:
 \begin{equation}
 \mat{S}^\prime=\,^t[\comp{R}_{11},\comp{R}_{22},\comp{R}_{33},
-\comp{R}_{12},\comp{R}_{13},\comp{R}_{23}]
+\comp{R}_{12},\comp{R}_{23},\comp{R}_{13}]
 \end{equation}
 \begin{equation}
 \hat{\mat{S}}^\prime=\,^t[\hat{\comp{R}}_{11},\hat{\comp{R}}_{22},\hat{\comp{R}}_{33},
-\hat{\comp{R}}_{12},\hat{\comp{R}}_{13},\hat{\comp{R}}_{23}]
+\hat{\comp{R}}_{12},\hat{\comp{R}}_{23},\hat{\comp{R}}_{13}]
 \end{equation}
 
 By gathering different lines of matrix $\matt{C}$, equation
-\ref{Base_Clsyvt_eq_clsurS} is transformed into the final equation~:
+\eqref{eq:base:clsyvt:cl_s} is transformed into the final equation:
 \begin{equation}
 \mat{S}_F^\prime=\matt{D}\,.\,\mat{S}_{I'}^\prime
 \end{equation}
 
 The computation of the matrix $\matt{D}$ is performed in the subroutine
-\fort{clca66}. The methodology is described in annexe B.
+\code{cs\_turbulence\_bc\_rij\_transform}. The methodology is described in annexe B.
 
 From $\matt{D}$, the coefficients of the boundary conditions can be
  partially implicited ($\var{ICLSYR}=1$) or totally explicited
@@ -386,10 +384,10 @@ With the $R_{ij}-\varepsilon$ model (\var{ITURB}=30 or 31), the vectors
 They are stored in \var{(TX,TY,TZ)} and
 \var{(T2X,T2Y,T2Z)}, respectively.\\
 The transform matrix $\matt{P}$ is then calculated and stored in the array \var{ELOGLO}.\\
-The subroutine \fort{clca66} is then called to calculate the reduced
-matrix $\matt{D}$. It is stored in \var{ALPHA}. \fort{clca66} is called
+The subroutine \code{cs\_turbulence\_bc\_rij\_transform} is then called to calculate the reduced
+matrix $\matt{D}$. It is stored in \var{ALPHA}. \code{cs\_turbulence\_bc\_rij\_transform} is called
 with a parameter \var{CLSYME} which is 1, and which corresponds to the parameter
-$\omega$ of equation \ref{Base_Clsyvt_eq_clRij}.
+$B$ of equation \ref{Base_Clsyvt_eq_clRij}.
 
 
 \etape{Filling the arrays \var{COEFA} and \var{COEFB}}
@@ -411,7 +409,7 @@ are filled. They contain the same values as \var{COEFA} and
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \minititre{Proof of the orthogonality of matrix $\matt{A}$}
 
-All the notations used in paragraphe 2 are kept. We have :
+All the notations used in paragraphe 2 are kept. We have:
 \begin{eqnarray}
 (^t\matt{A}\,.\,\matt{A})_{ij}
 & = & \sum_{k=1}^9\comp{A}_{ki}\comp{A}_{kj}\nonumber\\
@@ -419,7 +417,7 @@ All the notations used in paragraphe 2 are kept. We have :
 \comp{P}_{q(k)q(i)}\comp{P}_{r(k)r(i)}\comp{P}_{q(k)q(j)}\comp{P}_{r(k)r(j)}
 \end{eqnarray}
 When $k$ varies from 1 to 3, $q(k)$ remains equal to 1 and $r(k)$ varies from 1
-to 3. We thus have :
+to 3. We thus have:
 \begin{eqnarray}
 \sum_{k=1}^3
 \comp{P}_{q(k)q(i)}\comp{P}_{r(k)r(i)}\comp{P}_{q(k)q(j)}\comp{P}_{r(k)r(j)}
@@ -431,7 +429,7 @@ to 3. We thus have :
 orthogonality of $\matt{P}$)}\nonumber
 \end{eqnarray}
 Likewise for $k$ varying from 4 to 6 or from 7 to 9, $q(k)$ being 2 or 3, respectively,
- we obtain :
+ we obtain:
 \begin{eqnarray}
 (^t\matt{A}\,.\,\matt{A})_{ij}
 &=&
@@ -458,7 +456,7 @@ $\matt{A}\,.\,^t\matt{A}=\matt{Id}$. Thus $\matt{A}$ is an orthogonal matrix.
 
 The relation between the matrices of dimension $9\times1$
 of the components of $\tens{R}$ in the coordinate system $\mathcal{R}$ at $F$ and at $I'$
-(matrices $\mat{S}_F$ and $\mat{S}_{I'}$) :
+(matrices $\mat{S}_F$ and $\mat{S}_{I'}$):
 \begin{equation}
 \mat{S}_F=\matt{C}\,.\,\mat{S}_{I'}
 \end{equation}
@@ -466,18 +464,18 @@ with
 \begin{equation}
 \comp{C}_{ij}=\sum_{k=1}^9
 \comp{P}_{q(i)q(k)}\comp{P}_{r(i)r(k)}\comp{P}_{q(j)q(k)}\comp{P}_{r(j)r(k)}
-(\delta_{k1}+\omega\delta_{k3}+\delta_{k5}+\omega\delta_{k7}+\delta_{k9})
+(\delta_{k1}+B \delta_{k3}+\delta_{k5}+B \delta_{k7}+\delta_{k9})
 \end{equation}
 
 To transform $\mat{S}$ into the matrix $6\times 1$ $\mat{S}^\prime$,
 the function $s$ from $\{1,2,3,4,5,6,7,8,9\}$ to
-$\{1,2,3,4,5,6\}$ is defined. It takes the following values :
+$\{1,2,3,4,5,6\}$ is defined. It takes the following values:
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
 \hline
 $i$&1&2&3&4&5&6&7&8&9\\
 \hline
-$s(i)$&1&4&5&4&2&6&5&6&3\\
+$s(i)$&1&4&6&4&2&5&6&5&3\\
 \hline
 \end{tabular}
 \end{center}
@@ -489,35 +487,35 @@ $s(m)=i$ and sum all the $\comp{C}_{mn}$ to have $s(n)=j$. The choice of $m$
 is irrelevent. We can also compute the sum over all $m$ so that  $s(m)=i$ and then
 divide by the number of such values of $m$. We will use this method.
 
-We define $N(i)$ the number of integers between 1 and 9 so that $s(m)=i$.
-According to the preceeding, we thus have
+We define $N(i)$ the number of integers $m$ between 1 and 9 so that $s(m)=i$ ($N(i)$ is equal to $1$ or $2$).
+According to what preceeds we have
 
 \begin{eqnarray}
-\comp{D}_{ij}&=&\frac{1}{N(i)}\sum_{s(m)=i \atop s(n)=j}\comp{C}_{mn}\nonumber\\
+\comp{D}_{ij}&=&\frac{1}{N(i)}\sum_{s(m)=i \atop s(n)=j}\comp{C}_{mn}\\
 &=&\frac{1}{N(i)}\sum_{{s(m)=i \atop s(n)=j}\atop 1\leqslant k\leqslant 9}
 \comp{P}_{q(m)q(k)}\comp{P}_{r(m)r(k)}\comp{P}_{q(n)q(k)}\comp{P}_{r(n)r(k)}
-(\delta_{k1}+\omega\delta_{k3}+\delta_{k5}+\omega\delta_{k7}+\delta_{k9})
+(\delta_{k1}+B \delta_{k3}+\delta_{k5}+B\delta_{k7}+\delta_{k9})\nonumber
 \end{eqnarray}
 
 \vspace{1cm}
-$\bullet\ ${\sc First case} : $i\leqslant 3$ and $j\leqslant 3$\\
+$\bullet\ ${\sc First case}: $i\leqslant 3$ and $j\leqslant 3$\\
 In this case, we have $N(i)=N(j)=1$. Additionally, if $s(m)=i$ and $s(n)=j$,
 then $q(m)=r(m)=i$ and $q(n)=r(n)=j$. Thus \\
 \begin{equation}
 \comp{D}_{ij}=\sum_{k=1}^9
 \comp{P}_{iq(k)}\comp{P}_{ir(k)}\comp{P}_{jq(k)}\comp{P}_{jr(k)}
-(\delta_{k1}+\omega\delta_{k3}+\delta_{k5}+\omega\delta_{k7}+\delta_{k9})
+(\delta_{k1}+ B\delta_{k3}+\delta_{k5}+ B\delta_{k7}+\delta_{k9})
 \end{equation}
 When $k$ belongs to $\{1,5,9\}$, $q(k)=r(k)$ belongs to $\{1,2,3\}$. And for $k=3$ or
 $k=7$, $q(k)=1$ and $r(k)=3$, or the inverse (and for $k$ even the
-the sum of Kronecker symbol is zero). Finally we have :
+the sum of Kronecker symbol is zero). Finally we have:
 \begin{equation}
 \comp{D}_{ij}=\sum_{k=1}^3\comp{P}_{ik}^2\comp{P}_{jk}^2
-+2\omega\comp{P}_{j1}\comp{P}_{i3}\comp{P}_{i1}\comp{P}_{j3}
++2 B\comp{P}_{j1}\comp{P}_{i3}\comp{P}_{i1}\comp{P}_{j3}
 \end{equation}
 
 \vspace{1cm}
-$\bullet\ ${\sc Second case} : $i\leqslant 3$ and $j\geqslant 4$\\
+$\bullet\ ${\sc Second case}: $i\leqslant 3$ and $j\geqslant 4$\\
 Again we have $N(i)=1$, and if $s(m)=i$ then $q(m)=r(m)=i$.\\
 On the contrary, we have $N(j)=2$, the two possibilities being $m_1$ and $m_2$.\\
 \begin{itemize}
@@ -525,38 +523,38 @@ On the contrary, we have $N(j)=2$, the two possibilities being $m_1$ and $m_2$.\
 $q(m_1)=r(m_2)=1$ and $r(m_1)=q(m_2)=2$. We then have
 $m=1$ and $n=2$.
 
-\item[-] if $j=5$, then $m_1=3$ and $m_2=7$,
+\item[-] if $j=5$, then $m_1=6$ and $m_2=8$,
 $q(m_1)=r(m_2)=1$ and $r(m_1)=q(m_2)=3$. We then have
 $m=1$ and $n=3$.
 
-\item[-] if $j=6$, then $m_1=6$ and $m_2=8$,
+\item[-] if $j=6$, then $m_1=3$ and $m_2=7$,
 $q(m_1)=r(m_2)=2$ and $r(m_1)=q(m_2)=3$. We then have
 $m=2$ and $n=3$.
 \end{itemize}
 
-And we have :
+And we have:
 \begin{equation}
 \comp{D}_{ij}=\sum_{k=1}^9
 \comp{P}_{iq(k)}\comp{P}_{ir(k)}\left[
 \comp{P}_{mq(k)}\comp{P}_{nr(k)}+\comp{P}_{nq(k)}\comp{P}_{mr(k)}\right]
-(\delta_{k1}+\omega\delta_{k3}+\delta_{k5}+\omega\delta_{k7}+\delta_{k9})
+(\delta_{k1}+B \delta_{k3}+\delta_{k5}+B \delta_{k7}+\delta_{k9})
 \end{equation}
 
-But when $k$ is in $\{1,5,9\}$, $q(k)=r(k)$ is in $\{1,2,3\}$. Thus :
+But when $k$ is in $\{1,5,9\}$, $q(k)=r(k)$ is in $\{1,2,3\}$. Thus:
 \begin{equation}
 \comp{D}_{ij}=2\sum_{k=1}^3
 \comp{P}_{ik}^2\comp{P}_{mk}\comp{P}_{nk}
-+\omega\sum_{k=1}^9
++B \sum_{k=1}^9
 \comp{P}_{iq(k)}\comp{P}_{ir(k)}\left[
 \comp{P}_{mq(k)}\comp{P}_{nr(k)}+\comp{P}_{nq(k)}\comp{P}_{mr(k)}\right]
 (\delta_{k3}+\delta_{k7})
 \end{equation}
 
-And for $k=3$ or $k=7$, $q(k)=1$ and $r(k)=3$, or the opposite. We finally have :
+And for $k=3$ or $k=7$, $q(k)=1$ and $r(k)=3$, or the opposite. We finally have:
 \begin{equation}
 \comp{D}_{ij}=2\left[\sum_{k=1}^3
 \comp{P}_{ik}^2\comp{P}_{mk}\comp{P}_{nk}
-+\omega\comp{P}_{i1}\comp{P}_{i3}\left(
++B\comp{P}_{i1}\comp{P}_{i3}\left(
 \comp{P}_{m1}\comp{P}_{n3}+\comp{P}_{n1}\comp{P}_{m3}\right)
 \right]
 \end{equation}
@@ -564,51 +562,49 @@ with $(m,n)=(1,2)$ if $j=4$, $(m,n)=(1,3)$ if $j=5$ and $(m,n)=(2,3)$ if
 $j=6$.
 
 \vspace{1cm}
-$\bullet\ ${\sc Third case} : $i\geqslant 4$ and $j\leqslant 3$\\
+$\bullet\ ${\sc Third case}: $i\geqslant 4$ and $j\leqslant 3$\\
 By symmetry of $\matt{C}$, we obtain a result which is the symmetric of
-the second case, except that $N(i)$ is now 2. Thus :
+the second case, except that $N(i)$ is now 2. Thus:
 \begin{equation}
 \comp{D}_{ij}=\sum_{k=1}^3
 \comp{P}_{jk}^2\comp{P}_{mk}\comp{P}_{nk}
-+\omega\comp{P}_{j1}\comp{P}_{j3}\left(
++B\comp{P}_{j1}\comp{P}_{j3}\left(
 \comp{P}_{m1}\comp{P}_{n3}+\comp{P}_{n1}\comp{P}_{m3}\right)
 \end{equation}
-with $(m,n)=(1,2)$ if $i=4$, $(m,n)=(1,3)$ if $i=5$ and $(m,n)=(2,3)$ if
+with $(m,n)=(1,2)$ if $i=4$, $(m,n)=(2,3)$ if $i=5$ and $(m,n)=(1,3)$ if
 $i=6$.
 
 \vspace{1cm}
-$\bullet\ ${\sc Fourth case} : $i\geqslant 4$ and $j\geqslant 4$\\
+$\bullet\ ${\sc Fourth case}: $i\geqslant 4$ and $j\geqslant 4$\\
 Then $N(i)=N(j)=2$.\\
-We have $(m,n)=(1,2)$ if $i=4$, $(m,n)=(1,3)$ if $i=5$ and
-$(m,n)=(2,3)$ if $i=6$. Likewise we define $m^\prime$ and
-$n^\prime$ as a function of $j$. We then obtain :
+We have $(m,n)=(1,2)$ if $i=4$, $(m,n)=(2,3)$ if $i=5$ and
+$(m,n)=(1,3)$ if $i=6$. Likewise we define $m^\prime$ and
+$n^\prime$ as a function of $j$. We then obtain:
 \begin{eqnarray}
 \comp{D}_{ij}&=&\frac{1}{2}\sum_{k=1}^9
 \left(\comp{P}_{mq(k)}\comp{P}_{nr(k)}+\comp{P}_{nq(k)}\comp{P}_{mr(k)}\right)
 \left(\comp{P}_{m^\prime q(k)}\comp{P}_{n^\prime r(k)}
 +\comp{P}_{n^\prime q(k)}\comp{P}_{m^\prime r(k)}\right)\nonumber\\
 &&\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\times
-(\delta_{k1}+\omega\delta_{k3}+\delta_{k5}+\omega\delta_{k7}+\delta_{k9})\nonumber\\
+(\delta_{k1}+B \delta_{k3}+\delta_{k5}+B \delta_{k7}+\delta_{k9})\nonumber\\
 &=&\frac{1}{2}\left[
 \sum_{k=1}^3 4\comp{P}_{mk}\comp{P}_{nk}
 \comp{P}_{m^\prime k}\comp{P}_{n^\prime k}
-+2\omega\left(\comp{P}_{m1}\comp{P}_{n3}+\comp{P}_{n1}\comp{P}_{m3}\right)
++2 B \left(\comp{P}_{m1}\comp{P}_{n3}+\comp{P}_{n1}\comp{P}_{m3}\right)
 \left(\comp{P}_{m^\prime 1}\comp{P}_{n^\prime 3}
 +\comp{P}_{n^\prime 1}\comp{P}_{m^\prime 3}\right)\right]
 \end{eqnarray}
 
-and finally :
+and finally:
 \begin{equation}
 \comp{D}_{ij}=
 2\sum_{k=1}^3  \comp{P}_{mk}\comp{P}_{nk}
 \comp{P}_{m^\prime k}\comp{P}_{n^\prime k}
-+\omega\left(\comp{P}_{m1}\comp{P}_{n3}+\comp{P}_{n1}\comp{P}_{m3}\right)
++B \left(\comp{P}_{m1}\comp{P}_{n3}+\comp{P}_{n1}\comp{P}_{m3}\right)
 \left(\comp{P}_{m^\prime 1}\comp{P}_{n^\prime 3}
 +\comp{P}_{n^\prime 1}\comp{P}_{m^\prime 3}\right)
 \end{equation}
-with $(m,n)=(1,2)$ if $i=4$, $(m,n)=(1,3)$ if $i=5$ and $(m,n)=(2,3)$ if
+with $(m,n)=(1,2)$ if $i=4$, $(m,n)=(2,3)$ if $i=5$ and $(m,n)=(1,3)$ if
 $i=6$\\
-and $(m^\prime ,n^\prime )=(1,2)$ if $j=4$, $(m^\prime ,n^\prime )=(1,3)$
-if $j=5$ and $(m^\prime ,n^\prime )=(2,3)$ if $j=6$.
-
-
+and $(m^\prime ,n^\prime )=(1,2)$ if $j=4$, $(m^\prime ,n^\prime )=(2,3)$
+if $j=5$ and $(m^\prime ,n^\prime )=(1,3)$ if $j=6$.

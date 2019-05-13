@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -48,9 +48,8 @@
 
 #include "fvm_selector.h"
 
-#include "mei_evaluate.h"
-
 #include "cs_base.h"
+#include "cs_cf_model.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
 #include "cs_gui_variables.h"
@@ -58,7 +57,6 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_elec_model.h"
 #include "cs_gwf_physical_properties.h"
@@ -569,24 +567,21 @@ void CS_PROCF (uicpi1, UICPI1) (double *const srrom,
  *
  * Fortran Interface:
  *
- * SUBROUTINE UICPI2 (Toxy, Tfuel)
- * *****************
- * DOUBLE PRECISION Toxy   <--   Oxidant temperature
- * DOUBLE PRECISION Tfuel  <--   Fuel temperature
+ * Toxy   <--   Oxidant temperature
+ * Tfuel  <--   Fuel temperature
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel)
 {
-  cs_gui_reference_initialization("oxydant_temperature", toxy);
-  cs_gui_reference_initialization("fuel_temperature", tfuel);
+  cs_gui_fluid_properties_value("reference_oxydant_temperature", toxy);
+  cs_gui_fluid_properties_value("reference_fuel_temperature", tfuel);
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--toxy  = %f\n", *toxy);
   bft_printf("--tfuel  = %f\n", *tfuel);
 #endif
 }
-
 
 /*----------------------------------------------------------------------------
  * Atmospheric flows: read of meteorological file of data
@@ -1010,11 +1005,11 @@ void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
        QPR =  % of free nitrogen during devolatilization
             / % of density freed during devolatilization */
 
-    const char path_nox[] = "nox_formation";
-    cs_tree_node_t *tn_nox = cs_tree_get_node(tn, path_nox);
-
-    cs_gui_node_get_status_int(tn_sf, ieqnox);
+    cs_gui_node_get_child_status_int(tn_sf, "NOx_formation", ieqnox);
     if (*ieqnox) {
+
+      const char path_nox[] = "nox_formation";
+      cs_tree_node_t *tn_nox = cs_tree_get_node(tn, path_nox);
 
       if (tn_nox == NULL)
         bft_error(__FILE__, __LINE__, 0, _("Missing %s child for node %s."),
@@ -1255,13 +1250,10 @@ void CS_PROCF (uidai1, UIDAI1) (int  *permeability,
 
 /*-----------------------------------------------------------------------------
  * Activate specific physical models based on XML settings.
- *
- * parameters:
- *   ieos    --> compressible
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_physical_model_select(cs_int_t  *ieos)
+cs_gui_physical_model_select(void)
 {
   if (!cs_gui_file_is_loaded())
     return;
@@ -1371,7 +1363,8 @@ cs_gui_physical_model_select(cs_int_t  *ieos)
     else if (cs_gui_strcmp(vars->model, "compressible_model")) {
       if (cs_gui_strcmp(vars->model_value, "constant_gamma")) {
         cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 0;
-        *ieos = 1;
+        cs_cf_model_t *cf_mdl = cs_get_glob_cf_model();
+        cf_mdl->ieos = 1;
       }
       else
         bft_error(__FILE__, __LINE__, 0,

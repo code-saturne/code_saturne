@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -86,6 +86,67 @@ typedef void *
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the variable field values related to an equation
+ *
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_init_values_t)(cs_real_t                     t_eval,
+                            const int                     field_id,
+                            const cs_mesh_t              *mesh,
+                            const cs_equation_param_t    *eqp,
+                            cs_equation_builder_t        *eqb,
+                            void                         *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve a linear system within the CDO framework
+ *
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] eqc        pointer to a scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_solve_t)(const cs_mesh_t            *mesh,
+                      const int                   field_id,
+                      const cs_equation_param_t  *eqp,
+                      cs_equation_builder_t      *eqb,
+                      void                       *eqc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the Dirichlet boundary stemming from the settings.
+ *
+ * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
+ * \param[in, out] field_val   pointer to the values of the variable field
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_set_dir_bc_t)(cs_real_t                     t_eval,
+                           const cs_mesh_t              *mesh,
+                           const cs_equation_param_t    *eqp,
+                           cs_equation_builder_t        *eqb,
+                           void                         *context,
+                           cs_real_t                     field_val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         builder structure
@@ -107,30 +168,10 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the Dirichlet boundary stemming from the settings.
- *
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval      time at which one evaluates BCs
- * \param[in, out] field_val   pointer to the values of the variable field
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_set_dir_bc_t)(const cs_mesh_t              *mesh,
-                           const cs_equation_param_t    *eqp,
-                           cs_equation_builder_t        *eqb,
-                           cs_real_t                     t_eval,
-                           cs_real_t                     field_val[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build a linear system within the CDO framework
  *
  * \param[in]      m          pointer to a \ref cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
- * \param[in]      dt_cur     current value of the time step
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] data       pointer to a scheme builder structure
@@ -142,33 +183,11 @@ typedef void
 typedef void
 (cs_equation_build_system_t)(const cs_mesh_t            *mesh,
                              const cs_real_t            *field_val,
-                             double                      dt_cur,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
                              void                       *data,
                              cs_real_t                  *rhs,
                              cs_matrix_t                *matrix);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build and solve a linear system within the CDO framework
- *
- * \param[in]      dt_cur     current value of the time step
- * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
- * \param[in]      field_id   id related to the variable field of this equation
- * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] eqc        pointer to a scheme context structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_solve_t)(double                      dt_cur,
-                      const cs_mesh_t            *mesh,
-                      const int                   field_id,
-                      const cs_equation_param_t  *eqp,
-                      cs_equation_builder_t      *eqb,
-                      void                       *eqc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -217,7 +236,6 @@ typedef void
  * \param[in]      eqp             pointer to a \ref cs_equation_param_t
  * \param[in, out] eqb             pointer to a \ref cs_equation_builder_t
  * \param[in, out] context         pointer to a scheme builder structure
- * \param[in]      dt_cur          current value of the time step
  *
  * \return a pointer to a cs_equation_balance_t structure
  */
@@ -226,57 +244,7 @@ typedef void
 typedef cs_equation_balance_t *
 (cs_equation_get_balance_t)(const cs_equation_param_t    *eqp,
                             cs_equation_builder_t        *eqb,
-                            void                         *context,
-                            cs_real_t                     dt_cur);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the diffusive and convective flux across a list of faces
- *
- * \param[in]       normal     indicate in which direction flux is > 0
- * \param[in]       pdi        pointer to an array of field values
- * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to data specific for this scheme
- * \param[in, out]  d_flux     pointer to the value of the diffusive flux
- * \param[in, out]  c_flux     pointer to the value of the convective flux
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_flux_plane_t)(const cs_real_t             normal[],
-                           const cs_real_t            *pdi,
-                           int                         ml_id,
-                           const cs_equation_param_t  *eqp,
-                           cs_equation_builder_t      *eqb,
-                           void                       *data,
-                           double                     *d_flux,
-                           double                     *c_flux);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Cellwise computation of the diffusive flux across all faces.
- *         Primal or dual faces are considered according to the space scheme
- *
- * \param[in]       fvals       pointer to an array of field values
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to a generic data structure
- * \param[in, out]  location    where the flux is defined
- * \param[in, out]  diff_flux   pointer to the value of the diffusive flux
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_cell_difflux_t)(const cs_real_t            *fvals,
-                             const cs_equation_param_t  *eqp,
-                             cs_real_t                   t_eval,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_flag_t                   location,
-                             cs_real_t                  *d_flux);
+                            void                         *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -388,17 +356,12 @@ struct _cs_equation_t {
   /* Pointer to functions (see prototypes just above) */
   cs_equation_init_context_t       *init_context;
   cs_equation_free_context_t       *free_context;
-  cs_equation_initialize_system_t  *initialize_system;
-  cs_equation_set_dir_bc_t         *set_dir_bc;
-  cs_equation_build_system_t       *build_system;
-  cs_equation_prepare_solve_t      *prepare_solving;
-  cs_equation_update_field_t       *update_field;
+
+  cs_equation_init_values_t        *init_field_values;
   cs_equation_solve_t              *solve_steady_state;
   cs_equation_solve_t              *solve;
 
   cs_equation_get_balance_t        *compute_balance;
-  cs_equation_flux_plane_t         *compute_flux_across_plane;
-  cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;
   cs_equation_restart_t            *read_restart;
   cs_equation_restart_t            *write_restart;
@@ -407,9 +370,16 @@ struct _cs_equation_t {
   cs_equation_get_values_t         *get_cell_values;
   cs_equation_get_values_t         *get_vertex_values;
 
-  /* Timer statistic for a "light" profiling */
-  int     main_ts_id;   /* Id of the main timer states structure related
-                           to this equation */
+  /* Deprecated functions --> use rather solve() and solve_steady_state() */
+  cs_equation_initialize_system_t  *initialize_system;
+  cs_equation_set_dir_bc_t         *set_dir_bc;
+  cs_equation_build_system_t       *build_system;
+  cs_equation_prepare_solve_t      *prepare_solving;
+  cs_equation_update_field_t       *update_field;
+
+  /* Timer statistic for a coarse profiling */
+  int     main_ts_id;   /* Id of the main timer stats for this equation */
+
 };
 
 /*============================================================================

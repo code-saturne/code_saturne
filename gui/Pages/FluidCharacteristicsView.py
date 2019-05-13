@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -72,6 +72,7 @@ if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
    except Exception:  # CoolProp might be available but not its Python bindings
 
       if cs_config.config().libs['coolprop'].have != "gui_only":
+         """
          import traceback
          exc_info = sys.exc_info()
          bt = traceback.format_exception(*exc_info)
@@ -80,6 +81,8 @@ if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
          del exc_info
          print("Warning: CoolProp Python bindings not available or usable")
          print("         list of fluids based on CoolProp 5.1.1")
+         """
+         pass
       else:
          coolprop_warn = True
 
@@ -124,18 +127,15 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
-from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
-from code_saturne.Pages.CompressibleModel import CompressibleModel
-from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
-from code_saturne.Pages.GasCombustionModel import GasCombustionModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.NotebookModel import NotebookModel
+from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.ThermalScalarModel import ThermalScalarModel
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.Pages.QMegEditorView import QMegEditorView
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -279,40 +279,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if cfg.libs['freesteam'].have != "no":
             self.freesteam = 1
 
-        if CompressibleModel(self.case).getCompressibleModel() != 'off':
-            self.lst = [('density', 'Rho'),
-                        ('molecular_viscosity', 'Mu'),
-                        ('specific_heat', 'Cp'),
-                        ('thermal_conductivity', 'Al'),
-                        ('volume_viscosity', 'Viscv0'),
-                        ('dynamic_diffusion', 'Diftl0')]
-        elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off' or \
-             GasCombustionModel(self.case).getGasCombustionModel() != 'off':
-            self.lst = [('density', 'Rho'),
-                        ('molecular_viscosity', 'Mu'),
-                        ('specific_heat', 'Cp'),
-                        ('dynamic_diffusion', 'Diftl0')]
-        else:
-            self.lst = [('density', 'Rho'),
-                        ('molecular_viscosity', 'Mu'),
-                        ('specific_heat', 'Cp'),
-                        ('thermal_conductivity', 'Al')]
-
-        self.list_scalars = []
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
-        mdl = self.m_th.getThermalScalarModel()
-
-        if mdl == "temperature_celsius":
-            self.list_scalars.append((s, self.tr("Thermal scalar: temperature (C)")))
-        elif mdl == "temperature_kelvin":
-            self.list_scalars.append((s, self.tr("Thermal scalar: temperature (K)")))
-        elif mdl != "off":
-            self.list_scalars.append((s, self.tr("Thermal scalar")))
-
-        self.m_sca = DefineUserScalarsModel(self.case)
-        for s in self.m_sca.getUserScalarNameList():
-            self.list_scalars.append((s, self.tr("Additional scalar")))
+        tsm = self.mdl.tsm
 
         # Particular Widget initialization taking into account of "Calculation Features"
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = self.mdl.getThermoPhysicalModel()
@@ -332,48 +301,54 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelPhas     = ComboModel(self.comboBoxPhas,     2, 1)
 
         self.modelRho.addItem(self.tr('constant'), 'constant')
-        self.modelRho.addItem(self.tr('variable'), 'variable')
+        self.modelRho.addItem(self.tr('user law'), 'user_law')
         self.modelRho.addItem(self.tr('material law'), 'thermal_law')
         if mdl_atmo != 'off':
-            self.modelRho.addItem(self.tr('defined in atphyv'), 'variable')
+            self.modelRho.addItem(self.tr('defined in atphyv'), 'predefined_law')
         elif mdl_joule == 'arc':
-            self.modelRho.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelRho.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        elif mdl_comp != 'off':
+            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
+        elif mdl_gas != 'off' or mdl_coal != 'off':
+            self.modelRho.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelMu.addItem(self.tr('constant'), 'constant')
-        self.modelMu.addItem(self.tr('variable'), 'variable')
+        self.modelMu.addItem(self.tr('user law'), 'user_law')
         self.modelMu.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
-            self.modelMu.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelMu.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
-        self.modelCp.addItem(self.tr('variable'), 'variable')
+        self.modelCp.addItem(self.tr('user law'), 'user_law')
         self.modelCp.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
-            self.modelCp.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelCp.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelAl.addItem(self.tr('constant'), 'constant')
-        self.modelAl.addItem(self.tr('variable'), 'variable')
+        self.modelAl.addItem(self.tr('user law'), 'user_law')
         self.modelAl.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
-            self.modelAl.addItem(self.tr('defined in elphyv'), 'variable')
+            self.modelAl.addItem(self.tr('defined in elphyv'), 'predefined_law')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
-        self.modelDiff.addItem(self.tr('variable'), 'variable')
+        self.modelDiff.addItem(self.tr('user law'), 'user_law')
 
         self.modelViscv0.addItem(self.tr('constant'), 'constant')
-        self.modelViscv0.addItem(self.tr('variable'), 'variable')
+        self.modelViscv0.addItem(self.tr('user law'), 'user_law')
         self.modelViscv0.addItem(self.tr('material law'), 'thermal_law')
 
         self.modelDiftl0.addItem(self.tr('constant'), 'constant')
-        self.modelDiftl0.addItem(self.tr('variable'), 'variable')
+        self.modelDiftl0.addItem(self.tr('user law'), 'user_law')
         self.modelDiftl0.addItem(self.tr('material law'), 'thermal_law')
+        if mdl_gas != 'off' or mdl_coal != 'off':
+            self.modelDiftl0.addItem(self.tr('predefined law'), 'predefined_law')
 
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
 
         self.scalar = ""
-        scalar_list = self.m_sca.getUserScalarNameList()
-        for s in self.m_sca.getScalarsVarianceList():
+        scalar_list = self.mdl.m_sca.getUserScalarNameList()
+        for s in self.mdl.m_sca.getScalarsVarianceList():
             if s in scalar_list: scalar_list.remove(s)
 
         if scalar_list != []:
@@ -382,6 +357,26 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 self.modelNameDiff.addItem(scalar)
 
         # Validators
+
+        validatorP0 = DoubleValidator(self.lineEditP0, min=0.0)
+        self.lineEditP0.setValidator(validatorP0)
+
+        validatorT0 = DoubleValidator(self.lineEditT0,  min=0.0)
+        validatorT0.setExclusiveMin(True)
+        self.lineEditT0.setValidator(validatorT0)
+
+        validatorOxydant = DoubleValidator(self.lineEditOxydant,  min=0.0)
+        validatorOxydant.setExclusiveMin(True)
+        self.lineEditOxydant.setValidator(validatorOxydant)
+
+        validatorFuel = DoubleValidator(self.lineEditFuel,  min=0.0)
+        validatorFuel.setExclusiveMin(True)
+        self.lineEditFuel.setValidator(validatorFuel)
+
+        validatorMM = DoubleValidator(self.lineEditMassMolar, min=0.0)
+        validatorMM.setExclusiveMin(True)
+        self.lineEditMassMolar.setValidator(validatorMM)
+
         validatorRho    = DoubleValidator(self.lineEditRho,    min = 0.0)
         validatorMu     = DoubleValidator(self.lineEditMu,     min = 0.0)
         validatorCp     = DoubleValidator(self.lineEditCp,     min = 0.0)
@@ -404,6 +399,85 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditDiff.setValidator(validatorDiff)
         self.lineEditViscv0.setValidator(validatorViscv0)
         self.lineEditDiftl0.setValidator(validatorDiftl0)
+
+        # Connections
+
+        self.lineEditP0.textChanged[str].connect(self.slotPressure)
+        self.lineEditT0.textChanged[str].connect(self.slotTemperature)
+        self.lineEditOxydant.textChanged[str].connect(self.slotTempOxydant)
+        self.lineEditFuel.textChanged[str].connect(self.slotTempFuel)
+        self.lineEditMassMolar.textChanged[str].connect(self.slotMassemol)
+
+        self.comboBoxRho.currentIndexChanged[str].connect(self.slotStateRho)
+        self.comboBoxMu.currentIndexChanged[str].connect(self.slotStateMu)
+        self.comboBoxCp.currentIndexChanged[str].connect(self.slotStateCp)
+        self.comboBoxAl.currentIndexChanged[str].connect(self.slotStateAl)
+        self.comboBoxDiff.currentIndexChanged[str].connect(self.slotStateDiff)
+        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
+        self.comboBoxViscv0.currentIndexChanged[str].connect(self.slotStateViscv0)
+        self.comboBoxMaterial.activated[str].connect(self.slotMaterial)
+        self.comboBoxMethod.activated[str].connect(self.slotMethod)
+        self.comboBoxPhas.activated[str].connect(self.slotPhas)
+        self.lineEditRho.textChanged[str].connect(self.slotRho)
+        self.lineEditMu.textChanged[str].connect(self.slotMu)
+        self.lineEditCp.textChanged[str].connect(self.slotCp)
+        self.lineEditAl.textChanged[str].connect(self.slotAl)
+        self.lineEditDiff.textChanged[str].connect(self.slotDiff)
+        self.lineEditDiftl0.textChanged[str].connect(self.slotDiftl0)
+        self.lineEditViscv0.textChanged[str].connect(self.slotViscv0)
+        self.pushButtonRho.clicked.connect(self.slotFormulaRho)
+        self.pushButtonMu.clicked.connect(self.slotFormulaMu)
+        self.pushButtonCp.clicked.connect(self.slotFormulaCp)
+        self.pushButtonAl.clicked.connect(self.slotFormulaAl)
+        self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
+        self.pushButtonViscv0.clicked.connect(self.slotFormulaViscv0)
+
+        self.initializeWidget()
+
+        self.case.undoStartGlobal()
+
+
+    def initializeWidget(self):
+        """
+        """
+        mdls = self.mdl.getThermoPhysicalModel()
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = mdls
+
+        self.groupBoxMassMolar.hide()
+
+        if mdl_atmo != "off":
+            self.labelInfoT0.hide()
+        elif mdl_comp != "off" or mdl_coal != "off":
+            m = self.mdl.getMassemol()
+            self.lineEditMassMolar.setText(str(m))
+            self.groupBoxMassMolar.show()
+
+        if mdl_thermal != "off":
+            t = self.mdl.getTemperature()
+            self.lineEditT0.setText(str(t))
+            if mdl_thermal == "temperature_celsius":
+                self.labelUnitT0.setText("\xB0 C")
+
+            if self.mdl.getMaterials() != "user_material":
+                self.labelInfoT0.hide()
+        else:
+            self.groupBoxTemperature.hide()
+
+        if mdl_gas == 'd3p':
+            self.groupBoxTempd3p.show()
+            t_oxy  = self.mdl.getTempOxydant()
+            t_fuel = self.mdl.getTempFuel()
+            self.lineEditOxydant.setText(str(t_oxy))
+            self.lineEditFuel.setText(str(t_fuel))
+        else:
+            self.groupBoxTempd3p.hide()
+
+        darc = GroundwaterModel(self.case).getGroundwaterModel()
+        if darc != 'off':
+            self.groupBoxPressure.hide()
+        else:
+            p = self.mdl.getPressure()
+            self.lineEditP0.setText(str(p))
 
         if (self.freesteam == 1 or EOS == 1 or coolprop_fluids):
             self.tables = True
@@ -442,41 +516,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.modelMaterial.setItem(str_model=material)
             self.updateMethod()
 
-        # Connections
-        self.comboBoxRho.activated[str].connect(self.slotStateRho)
-        self.comboBoxMu.activated[str].connect(self.slotStateMu)
-        self.comboBoxCp.activated[str].connect(self.slotStateCp)
-        self.comboBoxAl.activated[str].connect(self.slotStateAl)
-        self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
-        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
-        self.comboBoxViscv0.activated[str].connect(self.slotStateViscv0)
-        self.comboBoxMaterial.activated[str].connect(self.slotMaterial)
-        self.comboBoxMethod.activated[str].connect(self.slotMethod)
-        self.comboBoxPhas.activated[str].connect(self.slotPhas)
-        self.lineEditRho.textChanged[str].connect(self.slotRho)
-        self.lineEditMu.textChanged[str].connect(self.slotMu)
-        self.lineEditCp.textChanged[str].connect(self.slotCp)
-        self.lineEditAl.textChanged[str].connect(self.slotAl)
-        self.lineEditDiff.textChanged[str].connect(self.slotDiff)
-        self.lineEditDiftl0.textChanged[str].connect(self.slotDiftl0)
-        self.lineEditViscv0.textChanged[str].connect(self.slotViscv0)
-        self.pushButtonRho.clicked.connect(self.slotFormulaRho)
-        self.pushButtonMu.clicked.connect(self.slotFormulaMu)
-        self.pushButtonCp.clicked.connect(self.slotFormulaCp)
-        self.pushButtonAl.clicked.connect(self.slotFormulaAl)
-        self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
-        self.pushButtonViscv0.clicked.connect(self.slotFormulaViscv0)
-
-        self.initializeWidget()
-
-        self.case.undoStartGlobal()
-
-
-    def initializeWidget(self):
-        """
-        """
-        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = self.mdl.getThermoPhysicalModel()
-
         #compressible
         self.groupBoxViscv0.hide()
 
@@ -487,18 +526,20 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.groupBoxDiff.hide()
         else :
             self.groupBoxDiff.show()
-            self.lineEditDiff.setText(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
+            self.lineEditDiff.setText(str(self.mdl.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
 
-            diff_choice =  self.m_sca.getScalarDiffusivityChoice(self.scalar)
+            diff_choice =  self.mdl.m_sca.getScalarDiffusivityChoice(self.scalar)
             self.modelDiff.setItem(str_model=diff_choice)
             self.modelNameDiff.setItem(str_model=str(self.scalar))
-            if diff_choice  != 'variable':
+            if diff_choice  != 'user_law':
+                self.pushButtonDiff.hide()
                 self.pushButtonDiff.setEnabled(False)
                 self.pushButtonDiff.setStyleSheet("background-color: None")
             else:
+                self.pushButtonDiff.show()
                 self.pushButtonDiff.setEnabled(True)
-                name = self.m_sca.getScalarDiffusivityName(self.scalar)
-                exp = self.m_sca.getDiffFormula(self.scalar)
+                name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+                exp = self.mdl.m_sca.getDiffFormula(self.scalar)
                 if exp:
                     self.pushButtonDiff.setStyleSheet("background-color: green")
                     self.pushButtonDiff.setToolTip(exp)
@@ -506,7 +547,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     self.pushButtonDiff.setStyleSheet("background-color: red")
 
         # Standard Widget initialization
-        for tag, symbol in self.lst:
+        for tag, symbol in self.mdl.lst:
             __model  = getattr(self, "model"      + symbol)
             __line   = getattr(self, "lineEdit"   + symbol)
             __button = getattr(self, "pushButton" + symbol)
@@ -515,11 +556,17 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             if tag != 'dynamic_diffusion':
                 __labelv = getattr(self, "labelVar"   + symbol)
                 c = self.mdl.getPropertyMode(tag)
+                if c not in __model.getItems():
+                    c = 'constant'
+                    self.mdl.setPropertyMode(tag, c)
+
                 __model.setItem(str_model=c)
-                if c == 'variable':
+                if c == 'user_law':
+                    __button.show()
                     __button.setEnabled(True)
                     __label.setText(self.tr("Reference value"))
                 else:
+                    __button.hide()
                     __button.setEnabled(False)
                     __label.setText(self.tr("Reference value"))
                 if c == 'thermal_law':
@@ -542,15 +589,15 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.getInitialValue(tag)
             __line.setText(str(self.mdl.getInitialValue(tag)))
 
-        # no 'thermal_conductivity' if not Joule and not Thermal scalar and not
-        if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off' and\
-           CompressibleModel(self.case).getCompressibleModel() == 'off':
+        # If no thermal scalar, hide specific heat and thermal conductivity.
+        if mdl_thermal == 'off':
+            self.groupBoxCp.hide()
             self.groupBoxAl.hide()
 
         if mdl_gas != 'off' or mdl_coal != 'off':
             self.groupBoxDiftl0.show()
 
-        for tag, symbol in self.lst:
+        for tag, symbol in self.mdl.lst:
             __model  = getattr(self, "model" + symbol)
             __line   = getattr(self, "lineEdit" + symbol)
             __button = getattr(self, "pushButton" + symbol)
@@ -560,17 +607,19 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             # Gas or coal combustion
             if mdl_gas != 'off' or mdl_coal != 'off':
                 if tag == 'density':
-                    __model.setItem(str_model='variable')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
-                    self.mdl.setPropertyMode(tag, 'variable')
+                    __button.hide()
+                    self.mdl.setPropertyMode(tag, 'predefined_law')
                     __label.setText(self.tr("Calculation by\n perfect gas law"))
                     __line.setText(str(""))
                     __line.setEnabled(False)
                 elif tag == 'dynamic_diffusion':
-                    __model.setItem(str_model='variable')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
                 else:
                     __model.setItem(str_model='constant')
                     self.mdl.setPropertyMode(tag, 'constant')
@@ -578,51 +627,54 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             # Joule
             if mdl_joule == 'arc':
                 __model.disableItem(str_model='constant')
-                __model.disableItem(str_model='variable')
-                __model.setItem(str_model='variable')
+                __model.disableItem(str_model='predefined_law')
+                __model.setItem(str_model='predefined_law')
                 __combo.setEnabled(False)
                 __button.setEnabled(False)
-                self.mdl.setPropertyMode(tag, 'variable')
+                __button.hide()
+                self.mdl.setPropertyMode(tag, 'predefined_law')
             if mdl_joule == 'joule':
-                __model.setItem(str_model='variable')
+                __model.setItem(str_model='user_law')
                 __model.disableItem(str_model='constant')
-                self.mdl.setPropertyMode(tag, 'variable')
+                self.mdl.setPropertyMode(tag, 'user_law')
 
             # Atmospheric Flows
             if mdl_atmo != 'off':
                 if tag == 'density':
                     __model.disableItem(str_model='constant')
-                    __model.disableItem(str_model='variable')
-                    __model.setItem(str_model='variable')
+                    __model.disableItem(str_model='predefined_law')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
 
             # Compressible Flows
             if mdl_comp != 'off':
+                self.groupBoxViscv0.show()
                 if tag == 'density':
-                    __model.setItem(str_model='variable')
+                    __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
                     __combo.hide()
                     __button.hide()
-                    self.mdl.setPropertyMode(tag, 'variable')
+                    self.mdl.setPropertyMode(tag, 'predefined_law')
                     __line.setEnabled(True)
-                self.groupBoxViscv0.hide()
                 if tag == 'specific_heat':
                     __model.setItem(str_model='constant')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
+                    __button.hide()
                     self.mdl.setPropertyMode(tag, 'constant')
                     self.groupBoxCp.setTitle('Isobaric specific heat')
 
                 if tag == 'volume_viscosity':
                     __combo.setEnabled(True)
                     c = self.mdl.getPropertyMode(tag)
-                    if c == 'variable':
+                    if c == 'predefined_law':
                         __button.setEnabled(True)
                     else:
                         __button.setEnabled(False)
-                self.groupBoxViscv0.show()
             else:
                 if tag == 'specific_heat':
                     self.groupBoxCp.setTitle('Specific heat')
@@ -632,7 +684,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         add/suppress thermo tables for each properties
         """
-        for tag, symbol in self.lst:
+        for tag, symbol in self.mdl.lst:
             __model  = getattr(self, "model" + symbol)
             if self.mdl.getMaterials() == "user_material":
                 __model.disableItem(str_model='thermal_law')
@@ -686,6 +738,56 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         # update lineEditReference
         self.lineEditReference.setText(self.mdl.getReference())
+
+
+    @pyqtSlot(str)
+    def slotPressure(self,  text):
+        """
+        Input PRESS.
+        """
+        if self.lineEditP0.validator().state == QValidator.Acceptable:
+            p = from_qvariant(text, float)
+            self.mdl.setPressure(p)
+
+
+    @pyqtSlot(str)
+    def slotTemperature(self,  text):
+        """
+        Input TEMPERATURE.
+        """
+        if self.lineEditT0.validator().state == QValidator.Acceptable:
+            t = from_qvariant(text, float)
+            self.mdl.setTemperature(t)
+
+
+    @pyqtSlot(str)
+    def slotTempOxydant(self,  text):
+        """
+        Input oxydant TEMPERATURE.
+        """
+        if self.lineEditOxydant.validator().state == QValidator.Acceptable:
+            t = from_qvariant(text, float)
+            self.mdl.setTempOxydant(t)
+
+
+    @pyqtSlot(str)
+    def slotTempFuel(self,  text):
+        """
+        Input fuel TEMPERATURE.
+        """
+        if self.lineEditFuel.validator().state == QValidator.Acceptable:
+            t = from_qvariant(text, float)
+            self.mdl.setTempFuel(t)
+
+
+    @pyqtSlot(str)
+    def slotMassemol(self,  text):
+        """
+        Input Mass molar.
+        """
+        if self.lineEditMassMolar.validator().state == QValidator.Acceptable:
+            m = from_qvariant(text, float)
+            self.mdl.setMassemol(m)
 
 
     @pyqtSlot(str)
@@ -778,20 +880,22 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         choice = self.modelDiff.dicoV2M[str(text)]
         log.debug("slotStateDiff -> %s" % (text))
 
-        if choice != 'variable':
+        if choice != 'user_law':
             self.pushButtonDiff.setEnabled(False)
             self.pushButtonDiff.setStyleSheet("background-color: None")
+            self.pushButtonDiff.hide()
         else:
+            self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
-            name = self.m_sca.getScalarDiffusivityName(self.scalar)
-            exp = self.m_sca.getDiffFormula(self.scalar)
+            name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+            exp = self.mdl.m_sca.getDiffFormula(self.scalar)
             if exp:
                 self.pushButtonDiff.setStyleSheet("background-color: green")
                 self.pushButtonDiff.setToolTip(exp)
             else:
                 self.pushButtonDiff.setStyleSheet("background-color: red")
 
-        self.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
+        self.mdl.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
 
 
     @pyqtSlot(str)
@@ -802,19 +906,21 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         choice = self.modelNameDiff.dicoV2M[str(text)]
         log.debug("slotStateDiff -> %s" % (text))
         self.scalar = str(text)
-        self.lineEditDiff.setText(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
+        self.lineEditDiff.setText(str(self.mdl.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
 
-        mdl = self.m_sca.getScalarDiffusivityChoice(self.scalar)
+        mdl = self.mdl.m_sca.getScalarDiffusivityChoice(self.scalar)
 
         self.modelDiff.setItem(str_model=mdl)
 
-        if  mdl!= 'variable':
+        if  mdl!= 'user_law':
+            self.pushButtonDiff.hide()
             self.pushButtonDiff.setEnabled(False)
             self.pushButtonDiff.setStyleSheet("background-color: None")
         else:
+            self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
-            name = self.m_sca.getScalarDiffusivityName(self.scalar)
-            exp = self.m_sca.getDiffFormula(self.scalar)
+            name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+            exp = self.mdl.m_sca.getDiffFormula(self.scalar)
             if exp:
                 self.pushButtonDiff.setStyleSheet("background-color: green")
                 self.pushButtonDiff.setToolTip(exp)
@@ -837,11 +943,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         choice = __model.dicoV2M[text]
         log.debug("__changeChoice -> %s, %s" % (text, choice))
 
-        if choice != 'variable':
+        if choice != 'user_law':
+            __button.hide()
             __button.setEnabled(False)
             __button.setStyleSheet("background-color: None")
         else:
             __button.setEnabled(True)
+            __button.show()
             exp = None
             if sym == "Rho":
                 exp = self.mdl.getFormula('density')
@@ -854,8 +962,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             elif sym == "Al":
                 exp = self.mdl.getFormula('thermal_conductivity')
             elif sym == "Diff":
-                name = self.m_sca.getScalarDiffusivityName(self.scalar)
-                exp = self.m_sca.getDiffFormula(self.scalar)
+                name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
+                exp = self.mdl.m_sca.getDiffFormula(self.scalar)
 
             if exp:
                 __button.setStyleSheet("background-color: green")
@@ -913,7 +1021,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditViscv0.validator().state == QValidator.Acceptable:
             viscv0 = from_qvariant(text, float)
-            self.mdl.setInitialValueVolumicViscosity(viscv0)
+            self.mdl.setInitialValueVolumeViscosity(viscv0)
 
 
     @pyqtSlot(str)
@@ -943,7 +1051,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditDiff.validator().state == QValidator.Acceptable:
             diff = from_qvariant(text, float)
-            self.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
+            self.mdl.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
 
 
     @pyqtSlot()
@@ -951,8 +1059,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for density
         """
-        exp = self.mdl.getFormula('density')
-        req = [('density', 'Density')]
+        exp, req, sca, symbols_rho = self.mdl.getFormulaRhoComponents();
+
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
@@ -966,23 +1074,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.density
 
-        symbols_rho = []
-        for s in self.list_scalars:
-           symbols_rho.append(s)
-        rho0_value = self.mdl.getInitialValueDensity()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
-        symbols_rho.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
-        symbols_rho.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'density',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_rho,
+                                known_fields  = sca,
+                                examples      = exa)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
-
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_rho,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -996,8 +1097,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for molecular viscosity
         """
-        exp = self.mdl.getFormula('molecular_viscosity')
-        req = [('molecular_viscosity', 'Molecular Viscosity')]
+
+        exp, req, sca, symbols_mu = self.mdl.getFormulaMuComponents()
+
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
@@ -1011,30 +1113,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.molecular_viscosity
 
-        symbols_mu = []
-        for s in self.list_scalars:
-           symbols_mu.append(s)
-        mu0_value = self.mdl.getInitialValueViscosity()
-        rho0_value = self.mdl.getInitialValueDensity()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
-        symbols_mu.append(('mu0', 'Viscosity (reference value) = ' + str(mu0_value)))
-        symbols_mu.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
-        symbols_mu.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-        symbols_mu.append(('rho', 'Density'))
-        if CompressibleModel(self.case).getCompressibleModel() == 'on':
-            symbols_mu.append(('T', 'Temperature'))
-            ref_temperature = ReferenceValuesModel(self.case).getTemperature()
-            symbols_mu.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'molecular_viscosity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_mu,
+                                known_fields  = sca,
+                                examples      = exa)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_mu.append((nme, 'value (notebook) = ' + str(val)))
-
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_mu,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
@@ -1048,27 +1136,20 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for specific heat
         """
-        exp = self.mdl.getFormula('specific_heat')
-        req = [('specific_heat', 'Specific heat')]
+        exp, req, sca, symbols_cp = self.mdl.getFormulaCpComponents()
+
         exa = FluidCharacteristicsView.specific_heat
 
-        symbols_cp = []
-        for s in self.list_scalars:
-           symbols_cp.append(s)
-        cp0_value = self.mdl.getInitialValueHeat()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
-        symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
-        symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'specific_heat',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_cp,
+                                known_fields  = sca,
+                                examples      = exa)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
-
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_cp,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
@@ -1082,29 +1163,20 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for volumic viscosity
         """
-        exp = self.mdl.getFormula('volume_viscosity')
-        req = [('volume_viscosity', 'Volumic viscosity')]
+        exp, req, sca, symbols_viscv0 = self.mdl.getFormulaViscv0Components()
+
         exa = FluidCharacteristicsView.volume_viscosity
-        symbols_viscv0 = []
-        for s in self.list_scalars:
-           symbols_viscv0.append(s)
-        viscv0_value = self.mdl.getInitialValueVolumicViscosity()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
-        ref_temperature = ReferenceValuesModel(self.case).getTemperature()
-        symbols_viscv0.append(('viscv0', 'Volumic viscosity (reference value) = '+str(viscv0_value)+' J/kg/K'))
-        symbols_viscv0.append(('p0', 'Reference pressure = '+str(ref_pressure)+' Pa'))
-        symbols_viscv0.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
-        symbols_viscv0.append(('T', 'Temperature'))
 
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_viscv0.append((nme, 'value (notebook) = ' + str(val)))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'volume_viscosity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_viscv0,
+                                known_fields  = sca,
+                                examples      = exa)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_viscv0,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
@@ -1118,8 +1190,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for thermal conductivity
         """
-        exp = self.mdl.getFormula('thermal_conductivity')
-        req = [('thermal_conductivity', 'Thermal conductivity')]
+        exp, req, sca, symbols_al = self.mdl.getFormulaAlComponents()
+
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
@@ -1131,23 +1203,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         else:
             exa = FluidCharacteristicsView.thermal_conductivity
 
-        symbols_al = []
-        for s in self.list_scalars:
-           symbols_al.append(s)
-        lambda0_value = self.mdl.getInitialValueCond()
-        ref_pressure = ReferenceValuesModel(self.case).getPressure()
-        symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
-        symbols_al.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = 'thermal_conductivity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_al,
+                                known_fields  = sca,
+                                examples      = exa)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols_al.append((nme, 'value (notebook) = ' + str(val)))
-
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbols_al,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
@@ -1161,30 +1226,26 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         User formula for the diffusion coefficient
         """
-        name = self.m_sca.getScalarDiffusivityName(self.scalar)
-        exp = self.m_sca.getDiffFormula(self.scalar)
-        req = [(str(name), str(self.scalar)+'diffusion coefficient')]
+        exp, req, sca, sym = self.mdl.getFormulaDiffComponents(self.scalar)
+
         exa = ''
-        sym = [('x','cell center coordinate'),
-               ('y','cell center coordinate'),
-               ('z','cell center coordinate'),]
-        sym.append((str(self.scalar),str(self.scalar)))
-        diff0_value = self.m_sca.getScalarDiffusivityInitialValue(self.scalar)
-        sym.append((str(name)+'_ref', str(self.scalar)+' diffusion coefficient (reference value) = '+str(diff0_value)+' m^2/s'))
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+        dname = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = 'all_cells',
+                                variable_name = dname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
-            self.m_sca.setDiffFormula(self.scalar, str(result))
+            self.mdl.m_sca.setDiffFormula(self.scalar, str(result))
             self.pushButtonDiff.setToolTip(result)
             self.pushButtonDiff.setStyleSheet("background-color: green")
 
@@ -1194,6 +1255,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         Translation
         """
         return text
+
 
 #-------------------------------------------------------------------------------
 # End

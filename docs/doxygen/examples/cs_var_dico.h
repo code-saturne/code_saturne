@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -156,13 +156,13 @@
       <tt>cp = CS_F_(cp)->val[cell_id]</tt> \n\n
       <tt>temp = CS_F_(t)->val[cell_id]</tt> \n\n
      - For multidimensional arrays:\n\n
-      <tt>uz = CS_F_(u)->val[3*cell_id + 2]</tt>\n\n
+      <tt>uz = CS_F_(vel)->val[3*cell_id + 2]</tt>\n\n
       These arrays can also be casted as follows (for a 3-D array):\n\n
-      <tt>\ref cs_real_3_t *cvar_vel = (\ref cs_real_3_t *)CS_F_(u)->val</tt> \n\n
+      <tt>\ref cs_real_3_t *cvar_vel = (\ref cs_real_3_t *)CS_F_(vel)->val</tt> \n\n
       The cell value can then be accessed as : \n\n
       <tt>ux = cvar_vel[cell_id][0]</tt>\n\n
      .
-      <b>\c u, \c p, or \c cp </b> are defined in \ref cs_field_pointer.h. \n
+      <b>\c vel, \c p, or \c cp </b> are defined in \ref cs_field_pointer.h. \n
     - Indexed variables (such as user scalars) and indexed properties
       are accessed as: \n
       <tt>\ref CS_FI_(name,ii-1)->val[cell_id]</tt>.\n
@@ -196,7 +196,7 @@
   Fortran code                             | C code                       | Description
   ------------------------------------------------ | ---------------------------- | ------------
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ipr), cvar_pr)       | CS_F_(p)->val       | Pressure
-  call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iu), cvar_vel)       | CS_F_(u)->val       | Velocity
+  call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iu), cvar_vel)       | CS_F_(vel)->val     | Velocity
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val  | Void fraction for cavitation modelling
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val       | Turbulent kinetic energy \f$ k \f$
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iep ), cvar_eps)     | CS_F_(eps)->val     | Turbulent dissipation \f$ \varepsilon \f$
@@ -208,7 +208,7 @@
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir13), cvar_r13)     | CS_F_(r13)->val     | Reynolds stress component \f$ R_{xz} \f$
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iphi), cvar_phi)     | CS_F_(phi)->val     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ifb ), cvar_fb )     | CS_F_(f_bar)->val   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ial ), cvar_al )     | CS_F_(alpha)->val   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
+  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ial ), cvar_al )     | CS_F_(alp_bl)->val  | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iomg), cvar_omg)     | CS_F_(omg)->val     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref inusa), cvar_nusa)   | CS_F_(nusa)->val    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
   call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iuma), cvar_mesh_v)  | CS_F_(mesh_u)->val  | Mesh velocity
@@ -293,7 +293,7 @@
 
   Fortran code                                                                   | C code                        | Description
   ------------------------------------------------------------------------------ | ----------------------------- | ------------
-  <tt> call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ienerg "ienerg"), cvar_energ) | CS_F_(energy)->val   | Total energy
+  <tt> call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ienerg "ienerg"), cvar_energ) | CS_F_(e_tot)->val   | Total energy
   call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::itempk "itempk"), cvar_tempk)      | CS_F_(t_kelvin)->val | Temperature, in Kelvin </tt>
 
 
@@ -303,10 +303,10 @@
 
   Fortran code                                                                  | C code                             | Description
   ----------------------------------------------------------------------------- | ---------------------------------- | ------------
-  <tt> call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotr "ipotr"), cvar_potr)   | CS_F_(potr)->val          | Electric potential, real part
-  call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipoti "ipoti"), cvar_poti)        | CS_F_(poti)->val          | Electric potential, imaginary part
-  call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotva "ipotva(1)"), cvar_potva1) \n call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotva "ipotva(2")), cvar_potva2) \n call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::ipotva "ipotva(3)"), cvar_potva3) | CS_F_(potva)->val | Vector potential
-  call \ref field::field_get_val_s "field_get_val_s"(\ref isca(\ref ppincl::iycoel "iycoel"(iesp)), cvar_ycoel(iesp)) | \ref CS_FI_(ycoel,iesp-1)->val | Constituent mass fraction </tt>
+  <tt> call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("elec_pot_r", cvar_potr)   | CS_F_(potr)->val          | Electric potential, real part
+  call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("elec_pot_i", cvar_poti)        | CS_F_(poti)->val          | Electric potential, imaginary part
+  call \ref field::field_get_val_v_by_name "field_get_val_v_by_name"("vec_potential", cvar_potva)    | CS_F_(potva)->val         | Vector potential
+  call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("esl_fraction_01", cvar_ycoel_01) | \ref CS_FI_(ycoel,iesp-1)->val | Constituent mass fraction </tt>
 
 
   \subsection cs_var_dico_cogz Gas combustion
@@ -345,6 +345,40 @@
   \ref CS_F_(fnet)->val             | Boundary radiative flux
   \ref CS_F_(fconv)->val            | Boundary radiative convective flux
   \ref CS_F_(hconv)->val            | Radiative exchange coefficient </tt>
+
+
+  \subsection cs_var_dico_multiphase Eulerian-Eulerian multiphase flows
+
+  Defined in\ref cs_field_pointer.h.
+
+  C code                            | Description
+  --------------------------------- | ------------
+  \ref CS_FI_(yf_ncond,inc)->val    | Non-condensable gas mass fractions
+  \ref CS_FI_(qp,ip)->val           | Particles turbulent kinetic energy Q2
+  \ref CS_FI_(qfp,ip)->val          | Covariance of the turbulent Q12
+  \ref CS_FI_(qfpxx,ip)->val        | XX component of qfp
+  \ref CS_FI_(qfpxy,ip)->val        | XY component of qfp
+  \ref CS_FI_(qfpxz,ip)->val        | XZ component of qfp
+  \ref CS_FI_(qfpyx,ip)->val        | YX component of qfp
+  \ref CS_FI_(qfpyy,ip)->val        | YY component of qfp
+  \ref CS_FI_(qfpyz,ip)->val        | YZ component of qfp
+  \ref CS_FI_(qfpzx,ip)->val        | ZX component of qfp
+  \ref CS_FI_(qfpzy,ip)->val        | ZY component of qfp
+  \ref CS_FI_(qfpzz,ip)->val        | ZZ component of qfp
+  \ref CS_FI_(gamma,ip)->val        | Interfacial mass transfer
+  \ref CS_FI_(ia,ip)->val           | Interfacial area
+  \ref CS_FI_(x2,ip)->val           | Droplets x2
+  \ref CS_FI_(d32,ip)->val          | Droplets Sauter mean diameter
+  \ref CS_FI_(drag,ipcpl)->val      | Drag between phases
+  \ref CS_FI_(ad_mass,ip)->val      | Added mass
+  \ref CS_FI_(th_diff,ip)->val      | Thermal diffusivity
+  \ref CS_FI_(th_diff_t,ip)->val    | Turbulent thermal diffusivity
+  \ref CS_FI_(drho_dp,ip)->val      | dRho over dP
+  \ref CS_FI_(drho_dh,ip)->val      | dRho over dH
+  \ref CS_FI_(tau12_t,ip)->val      | Turbulent tau12 for particles
+  \ref CS_FI_(lift,ip)->val         | Particles lift
+  \ref CS_FI_(disp_t,ip)->val       | Particles turbulent dispersion
+  \ref CS_FI_(drift_vel,ip)->val    | Particles drift velocity
 
 */
 // _____________________________________________________________________________

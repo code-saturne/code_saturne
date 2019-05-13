@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -59,7 +59,9 @@ cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_time.h \
 cs_cdofb_ac.h \
+cs_cdofb_monolithic.h \
 cs_cdofb_navsto.h \
+cs_cdofb_predco.h \
 cs_cdofb_priv.h \
 cs_cdofb_scaleq.h \
 cs_cdofb_uzawa.h \
@@ -70,14 +72,14 @@ cs_cdovb_vecteq.h \
 cs_cdovcb_scaleq.h \
 cs_dbg.h \
 cs_domain.h \
-cs_domain_boundary.h \
 cs_domain_op.h \
 cs_domain_setup.h \
 cs_equation.h \
-cs_equation_priv.h \
+cs_equation_assemble.h \
 cs_equation_bc.h \
 cs_equation_common.h \
 cs_equation_param.h \
+cs_equation_priv.h \
 cs_evaluate.h \
 cs_flag.h \
 cs_gwf.h \
@@ -99,13 +101,13 @@ cs_quadrature.h \
 cs_reco.h \
 cs_scheme_geometry.h \
 cs_sdm.h \
-cs_sla.h \
 cs_source_term.h \
 cs_static_condensation.h \
 cs_walldistance.h \
 cs_xdef.h \
 cs_xdef_cw_eval.h \
-cs_xdef_eval.h
+cs_xdef_eval.h \
+cs_cdo_headers.h
 
 # Library source files
 
@@ -122,7 +124,9 @@ cs_cdo_main.c \
 cs_cdo_quantities.c \
 cs_cdo_time.c \
 cs_cdofb_ac.c \
+cs_cdofb_monolithic.c \
 cs_cdofb_navsto.c \
+cs_cdofb_predco.c \
 cs_cdofb_scaleq.c \
 cs_cdofb_uzawa.c \
 cs_cdofb_vecteq.c \
@@ -131,10 +135,10 @@ cs_cdovb_vecteq.c \
 cs_cdovcb_scaleq.c \
 cs_dbg.c \
 cs_domain.c \
-cs_domain_boundary.c \
 cs_domain_op.c \
 cs_domain_setup.c \
 cs_equation.c \
+cs_equation_assemble.c \
 cs_equation_bc.c \
 cs_equation_common.c \
 cs_equation_param.c \
@@ -159,7 +163,6 @@ cs_quadrature.c \
 cs_reco.c \
 cs_scheme_geometry.c \
 cs_sdm.c \
-cs_sla.c \
 cs_source_term.c \
 cs_static_condensation.c \
 cs_walldistance.c \

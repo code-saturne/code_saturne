@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,7 +50,6 @@
 
 #include "cs_base.h"
 #include "cs_math.h"
-#include "cs_prototypes.h"
 
 #include "bft_mem.h"
 #include "bft_error.h"
@@ -592,7 +591,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
 
   else
-    cs_lagr_particle_set_real(p_set, p_am, CS_LAGR_ADHESION_FORCE, -fadhes);
+    cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, -fadhes);
 
   /* The interaction should be negative to prevent reentrainment (attraction) */
   if (*adhesion_energ >= 0.0)

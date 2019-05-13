@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -30,7 +30,7 @@ m4_define([cs_licence_c_comment],
 [/*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -82,6 +82,20 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 #------------------------------------------------------------------------------
 # Checks for programs.
 #------------------------------------------------------------------------------
+
+AC_ARG_WITH(shell-env,
+            [AS_HELP_STRING([--with-shell-env],
+                            [source given or detected shell environment)])],
+            [if test "x$with_shell_env" = "x"; then
+               shell_env=auto
+             elif test -f "$with_shell_env"; then
+               shell_env="$with_shell_env"
+             fi],
+            [shell_env=no]
+)
+AC_SUBST(shell_env)
+
+AM_CONDITIONAL(HAVE_SHELL_LAUNCHER, [test "${shell_env}" != no])
 
 # Check for environment modules
 #------------------------------
@@ -274,7 +288,7 @@ fi
 
 case "$host_os" in
   linux*)
-    CPPFLAGS="${CPPFLAGS} -D_POSIX_SOURCE"
+    CPPFLAGS="${CPPFLAGS} -D_POSIX_C_SOURCE=200809L"
     ;;
   darwin*)
     CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"
@@ -521,7 +535,7 @@ AM_PATH_PYTHON(["2.6"])
 # On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
 # It seems better to use the standard way of installing Python modules,
 # as it is on Unix systems (whichever is chosen, Python modules will be
-# freezed by cx_freeze for Windows packaging).
+# frozen by cx_freeze for Windows packaging).
 # So, we choose to override some Python paths.
 if test "$host_os" = mingw32 ; then
 
@@ -551,39 +565,23 @@ fi
 # Checks for additional version information.
 #------------------------------------------------------------------------------
 
-AC_ARG_ENABLE(cs_use_revision, [AS_HELP_STRING([--disable-revision],
-                                               [disable Subversion or Git revision info])],
-  [
-    case "${enableval}" in
-      yes) cs_use_revision=yes ;;
-      no)  cs_use_revision=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-revision]) ;;
-    esac
-  ],
-  [ cs_use_revision=yes ]
-)
+# Define the different version numbers where needed
 
-cs_src_revision=""
-if test "x$cs_use_revision" = "xyes" ; then
-  if test -d ${srcdir}/.svn -o -d ${srcdir}/.git ; then
-    cs_src_revision=`$PYTHON ${srcdir}/build-aux/cs_version.py --revision-only`
-  elif test -f ${srcdir}/build-aux/version ; then
-    cs_src_revision=`cat ${srcdir}/build-aux/version`
-  fi
-fi
-
-AC_DEFINE_UNQUOTED([CS_REVISION], ["$cs_src_revision"], [Subversion / Git revision string])
-AC_SUBST(cs_src_revision)
-
-# Define the different version numbers for later use
-
-cs_version=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
-cs_version_full=`$PYTHON ${srcdir}/build-aux/cs_version.py --full`
-cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
-
-AC_SUBST(cs_version)
-AC_SUBST(cs_version_full)
-AC_SUBST(cs_version_short)
+case "$host_os" in
+  mingw* | cygwin)
+    cs_version=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
+    cs_version_full=`$PYTHON ${srcdir}/build-aux/cs_version.py --full`
+    cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
+    AC_SUBST(cs_version)
+    AC_SUBST(cs_version_full)
+    AC_SUBST(cs_version_short)
+    AM_SUBST_NOTMAKE(cs_version)
+    AM_SUBST_NOTMAKE(cs_version_full)
+    AM_SUBST_NOTMAKE(cs_version_short)
+    ;;
+  *)
+    ;;
+esac
 
 #------------------------------------------------------------------------------
 # Optional shared library and plugin support
@@ -666,7 +664,6 @@ CS_AC_TEST_MEDCOUPLING
 CS_AC_TEST_CATALYST
 CS_AC_TEST_MELISSA
 CS_AC_TEST_PETSC
-CS_AC_TEST_VOFI
 
 CS_AC_TEST_DOCS
 
@@ -873,11 +870,15 @@ sys.stdout.write(path)]"
     AC_PATH_PROGS([LRELEASE], [lrelease-qt4 lrelease])
   fi
 
-  # lrelease not currently used, so not an issue if missing
+  # lrelease only used for CFDSTUDY, so not an issue in most cases if missing
 
   if test "x$PYUIC4" = "x" -o "x$PYRCC4" = "x" ; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
     cs_have_gui=no
+  fi
+
+  if test "x$LRELEASE" = "x" -a "$cs_have_salome_gui" =  "yes" ; then
+    AC_MSG_ERROR([cannot find lrelease, required for CFDSTUDY (Salome) GUI])
   fi
 
 fi
@@ -965,7 +966,7 @@ AC_CHECK_FUNCS([mkdir chdir stat dup2 access])
 AC_CHECK_FUNCS([snprintf])
 AC_CHECK_FUNCS([getcwd sleep])
 AC_CHECK_FUNCS([getpwuid geteuid])
-AC_CHECK_FUNCS([uname])
+AC_CHECK_FUNCS([uname, linkat])
 AC_CHECK_FUNCS([clock_gettime clock_getcpuclockid])
 AC_CHECK_FUNCS([getrusage gettimeofday sbrk sysinfo])
 AC_CHECK_FUNCS([posix_memalign])
@@ -1161,6 +1162,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  src/turb/Makefile src/alge/Makefile src/mesh/Makefile
                  src/user/Makefile src/user_examples/Makefile
+                 src/meg/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  salome/fsi_coupling/Makefile
@@ -1274,7 +1276,6 @@ echo " Melissa (in-situ statistics) support: "$cs_have_melissa""
 if (test x$cs_have_melissa = xyes) ; then
   echo "   Melissa as plugin: "$cs_have_plugin_melissa""
 fi
-echo " Vofi (VoF initialization) support: "$cs_have_vofi""
 echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
@@ -1282,7 +1283,7 @@ echo " PETSc support: "$cs_have_petsc""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support: "$cs_have_dlloader""
-if (test x$cs_env_modules != x) ; then
+if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""
 fi
 echo

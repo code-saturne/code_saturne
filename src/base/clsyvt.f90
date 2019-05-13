@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -89,7 +89,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -105,25 +104,25 @@ implicit none
 
 integer          nscal
 
-integer          icodcl(nfabor,nvar)
+integer, pointer, dimension(:,:) :: icodcl
 
-double precision rcodcl(nfabor,nvar,3)
-double precision velipb(nfabor,ndim), rijipb(nfabor,6)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:,:) :: velipb
+double precision, pointer, dimension(:,:) :: rijipb
 
 ! Local variables
 
 integer          ifac, ii, isou
-integer          iel, f_dim
-integer          iscal , ivar
+integer          iel, f_dim, clsyme
+integer          iscal , ivar, idftnp
 
 double precision rnx, rny, rnz, rxnn
 double precision upx, upy, upz, usn
 double precision tx, ty, tz, txn, t2x, t2y, t2z
-double precision clsyme
 double precision eloglo(3,3), alpha(6,6)
 double precision srfbnf, rcodcn, hint, visclc, visctc, distbf
 double precision cpp
-double precision vismsh(3), hintv(3)
+double precision hintv(6), rnn(6), htnn(6)
 double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 
@@ -149,7 +148,7 @@ double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: cpro_visma_s
 double precision, dimension(:,:), pointer :: cpro_visma_v
 
-type(var_cal_opt) :: vcopt_rij
+type(var_cal_opt) :: vcopt_uma, vcopt_rij
 
 !===============================================================================
 
@@ -303,7 +302,7 @@ do ifac = 1, nfabor
     !   TX a partir de la vitesse tangentielle absolue car l'orientation
     !   de TX et T2X est sans importance pour les symetries)
     rcodcn = 0.d0
-    if (iale.eq.1) then
+    if (iale.ge.1) then
       rcodcn = rcodcl(ifac,iu,1)*rnx                           &
              + rcodcl(ifac,iv,1)*rny                           &
              + rcodcl(ifac,iw,1)*rnz
@@ -333,26 +332,15 @@ do ifac = 1, nfabor
 
       else
 
-        ! If the velocity is zero, vector T is normal and random;
-        !   we need it for the reference change for Rij, and we cancel the velocity.
+        ! If the velocity is zero,
+        !  Tx, Ty, Tz is not used (we cancel the velocity), so we assign any
+        !  value (zero for example)
 
-        if(abs(rny).ge.epzero.or.abs(rnz).ge.epzero)then
-          rxnn = sqrt(rny**2+rnz**2)
-          tx  =  0.d0
-          ty  =  rnz/rxnn
-          tz  = -rny/rxnn
-        elseif(abs(rnx).ge.epzero.or.abs(rnz).ge.epzero)then
-          rxnn = sqrt(rnx**2+rnz**2)
-          tx  =  rnz/rxnn
-          ty  =  0.d0
-          tz  = -rnx/rxnn
-        else
-          write(nfecra,1000)ifac,rnx,rny,rnz
-          call csexit (1)
-        endif
+        tx  = 0.d0
+        ty  = 0.d0
+        tz  = 0.d0
 
       endif
-
 
       ! --> T2 = RN X T (where X is the cross product)
 
@@ -379,37 +367,10 @@ do ifac = 1, nfabor
       eloglo(3,2) = -rnz
       eloglo(3,3) =  t2z
 
-      ! --> Commpute alpha(6,6)
+      ! Compute Reynolds stress transformation matrix
 
-      ! Let f be the center of the boundary faces and
-      !   I the center of the matching cell
-
-      ! We noteE Rg (resp. Rl) indexed by f or by I
-      !   the Reynolds Stress tensor in the global basis (resp. local)
-
-      ! The alpha matrix applied to the global vector in I'
-      !   (Rg11,I'|Rg22,I'|Rg33,I'|Rg12,I'|Rg13,I'|Rg23,I')t
-      !    must provide the values to prescribe to the face
-      !   (Rg11,f |Rg22,f |Rg33,f |Rg12,f |Rg13,f |Rg23,f )t
-      !    except for the Dirichlet boundary conditions (added later)
-
-      ! We define it by computing Rg,f as a function of Rg,I' as follows
-
-      !   RG,f = ELOGLO.RL,f.ELOGLOt (matrix products)
-
-      !                     | RL,I'(1,1)     B*U*.Uk     C*RL,I'(1,3) |
-      !      with    RL,f = | B*U*.Uk       RL,I'(2,2)       0        |
-      !                     | C*RL,I'(1,3)     0         RL,I'(3,3)   |
-
-      !             with    RL,I = ELOGLOt.RG,I'.ELOGLO
-      !                     B = 0
-      !              and    C = 0 at the wall (1 with symmetry)
-
-      ! We compute in fact  ELOGLO.projector.ELOGLOt
-
-      clsyme=1.d0
-      call clca66 ( clsyme , eloglo , alpha )
-      !==========
+      clsyme = 1
+      call turbulence_bc_rij_transform(clsyme, eloglo, alpha)
 
     endif
 
@@ -669,9 +630,12 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
-  if (iortvm.eq.0) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt_uma)
+  idftnp = vcopt_uma%idften
+
+  if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
-  else
+  else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
     call field_get_val_v(ivisma, cpro_visma_v)
   endif
 
@@ -689,19 +653,16 @@ if (iale.eq.1) then
       srfbnf = surfbn(ifac)
 
       ! --- Physical properties
-      if (iortvm.eq.0) then
-        vismsh(1) = cpro_visma_s(iel)
-        vismsh(2) = cpro_visma_s(iel)
-        vismsh(3) = cpro_visma_s(iel)
-      else
-        vismsh(1) = cpro_visma_v(1,iel)
-        vismsh(2) = cpro_visma_v(2,iel)
-        vismsh(3) = cpro_visma_v(3,iel)
+      if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
+        do ii = 1, 3
+          hintv(ii) = cpro_visma_s(iel)/distbf
+          hintv(ii+3) = 0.d0
+        enddo
+      else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
+        do ii = 1, 6
+          hintv(ii) = cpro_visma_v(ii,iel)/distbf
+        enddo
       endif
-
-      hintv(1) = vismsh(1)/distbf
-      hintv(2) = vismsh(2)/distbf
-      hintv(3) = vismsh(3)/distbf
 
       ! Unit normal
       rnx = surfbo(1,ifac)/srfbnf
@@ -731,16 +692,23 @@ if (iale.eq.1) then
       cfaale(2,ifac) = 0.d0
       cfaale(3,ifac) = 0.d0
 
-      cfbale(1,1,ifac) = hintv(1)*rnx**2
-      cfbale(2,2,ifac) = hintv(2)*rny**2
-      cfbale(3,3,ifac) = hintv(3)*rnz**2
+      rnn(1) = rnx**2
+      rnn(2) = rny**2
+      rnn(3) = rnz**2
+      rnn(4) = rnx*rny
+      rnn(5) = rny*rnz
+      rnn(6) = rnx*rnz
 
-      cfbale(1,2,ifac) = hintv(1)*rnx*rny
-      cfbale(2,1,ifac) = hintv(2)*rny*rnx
-      cfbale(1,3,ifac) = hintv(1)*rnx*rnz
-      cfbale(3,1,ifac) = hintv(3)*rnz*rnx
-      cfbale(2,3,ifac) = hintv(2)*rny*rnz
-      cfbale(3,2,ifac) = hintv(3)*rnz*rny
+      call symmetric_matrix_product(hintv, rnn, htnn)
+      cfbale(1,1,ifac) = htnn(1)
+      cfbale(2,2,ifac) = htnn(2)
+      cfbale(3,3,ifac) = htnn(3)
+      cfbale(1,2,ifac) = htnn(4)
+      cfbale(2,1,ifac) = htnn(4)
+      cfbale(1,3,ifac) = htnn(6)
+      cfbale(3,1,ifac) = htnn(6)
+      cfbale(2,3,ifac) = htnn(5)
+      cfbale(3,2,ifac) = htnn(5)
 
     endif
   enddo

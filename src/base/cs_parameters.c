@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -121,9 +121,8 @@ BEGIN_C_DECLS
         extended support of the neighboring cells.
   \var  cs_space_disc_t::iflxmw
         method to compute interior mass flux due to ALE mesh velocity
-        - 1: based on cell center mesh velocity
         - 0: based on nodes displacement
-
+        - 1: based on cell center mesh velocity
 */
 
 /*----------------------------------------------------------------------------*/
@@ -137,7 +136,7 @@ BEGIN_C_DECLS
         \anchor iwarni
         \ref iwarni characterises the level of detail of the outputs for a
         variable. The quantity of information increases with its value.
-        Impose the value 0 or 1 for a reasonable listing size. Impose the
+        Impose the value 0 or 1 for a reasonable log size. Impose the
         value 2 to get a maximum quantity of information, in case of problem
         during the execution.
 
@@ -156,6 +155,27 @@ BEGIN_C_DECLS
         \ref cs_var_cal_opt_t::istat "istat" is set to 0 for the pressure
         (variable \ref ipr) or f in v2f modelling (variable \ref ifb) and
         set to 1 for the other unknowns.
+
+  \var  cs_var_cal_opt_t::idircl
+        \anchor idircl
+        indicates whether the diagonal of the matrix should be slightly
+        shifted or not if there is no Dirichlet boundary condition and
+        if \ref cs_var_cal_opt_t::istat "istat" = 0.
+         - 0: false
+         - 1: true
+        Indeed, in such a case, the matrix for the general
+        advection/diffusion equation is singular. A slight shift in the
+        diagonal will make it invertible again.\n By default, \ref idircl
+        is set to 1 for all the unknowns, except \f$\overline{f}\f$ in v2f
+        modelling, since its equation contains another diagonal term
+        that ensures the regularity of the matrix.
+        \remark
+        the code computes automatically for each variable the number of Dirichlet
+        BCs
+
+  \var  cs_var_cal_opt_t::ndircl
+        \anchor ndircl
+        number of Dirichlet BCs
 
   \var  cs_var_cal_opt_t::idiff
         \anchor idiff
@@ -190,6 +210,7 @@ BEGIN_C_DECLS
         - 0: Second Order Linear Upwind
         - 1: Centered \n
         - 2: Second Order with upwind-gradient reconstruction (SOLU) \n
+        - 3: Blending between Second Order Linear Upwind and Centered scheme \n
         Useful for all the unknowns variables which are convected
         (\ref iconv = 1) and for which a second-order scheme is used
         (\ref blencv > 0).
@@ -475,6 +496,8 @@ static cs_var_cal_opt_t _var_cal_opt =
   .iwarni = 0,
   .iconv  = 1,
   .istat  = 1,
+  .idircl = 1,
+  .ndircl = 0,
   .idiff  = 1,
   .idifft = 1,
   .idften = CS_ISOTROPIC_DIFFUSION,
@@ -507,7 +530,7 @@ static cs_space_disc_t  _space_disc =
   .imvisf = 0,
   .imrgra = 0,
   .anomax = -1e12*10.,
-  .iflxmw = 1
+  .iflxmw = 0
 };
 
 const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
@@ -599,6 +622,8 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iwarni", _t->iwarni);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iconv ", _t->iconv );
   cs_log_printf(CS_LOG_SETUP, fmt_i, "istat ", _t->istat );
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idircl", _t->idircl);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ndircl", _t->ndircl);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idiff ", _t->idiff );
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idifft", _t->idifft);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idften", _t->idften);
@@ -893,19 +918,23 @@ cs_parameters_set_n_buoyant_scalars(void)
 void
 cs_parameters_define_field_keys(void)
 {
-  cs_field_define_key_int("inner_mass_flux_id", -1, 0);
-  cs_field_define_key_int("boundary_mass_flux_id", -1, 0);
+  cs_field_define_key_int("inner_mass_flux_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("boundary_mass_flux_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
   cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */
 
-  cs_field_define_key_int("scalar_diffusivity_id", -1, CS_FIELD_VARIABLE);
-  cs_field_define_key_double("scalar_diffusivity_ref",
+  cs_field_define_key_int("diffusion_coef_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_double("diffusion_coef_ref",
+                             -1.e12*10., CS_FIELD_VARIABLE);
+  cs_field_define_key_int("diffusivity_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_double("diffusivity_ref",
                              -1.e12*10., CS_FIELD_VARIABLE); /* visls0(iscal) */
+  cs_field_define_key_int("turbulent_diffusivity_id", -1, CS_FIELD_VARIABLE);
 
-  cs_field_define_key_int("scalar_density_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("density_id", -1, CS_FIELD_VARIABLE);
 
-  /* is the field buoyant? -1 if not, 1 if yes */
+  /* is the field buoyant? 0 if not, 1 if yes */
   cs_field_define_key_int("is_buoyant", 0, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);
@@ -913,7 +942,7 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("alpha_turbulent_flux_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_double("turbulent_schmidt",
-                             -1.e12*10., CS_FIELD_VARIABLE); /* sigmas(iscal) */
+                             1., CS_FIELD_VARIABLE); /* sigmas(iscal) */
 
   cs_field_define_key_int("gradient_weighting_id", -1, CS_FIELD_VARIABLE);
 
@@ -934,15 +963,31 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("boundary_value_id", -1, 0);
 
   cs_field_define_key_int("convection_limiter_id", -1, 0);
+  cs_field_define_key_int("diffusion_limiter_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("coupling_entity", -1, 0);
 
-  cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
-  cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
+  /*! Is the field time-extrapolated?
+   * -1: default automatic value
+   *  0: "standard" first-order: the value calculated at
+   *     the beginning of the current time step (from the
+   *     variables known at the end of the previous time step) is used
+   *  1: second-order: the physical property \f$\phi\f$ is
+   *     extrapolated according to the formula
+   *     \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$ being
+   *     given by the value of 0.5
+   *  2: first-order: the physical property \f$\phi\f$ is
+   *     extrapolated at $n+1$ according to the same formula
+   *     as when = 1 but with \f$\theta\f$ = 1
+   */
+  cs_field_define_key_int("time_extrapolated", -1, 0);
 
   cs_field_define_key_int("measures_set_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("opt_interp_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("opt_interp_analysis_id", -1, CS_FIELD_VARIABLE);
+
+  cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
+  cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
 
   /* Bounds of a given scalar which won't be used in clipping */
 
@@ -966,7 +1011,7 @@ cs_parameters_define_field_keys(void)
                              CS_FIELD_VARIABLE);
 
   /* Structure containing the solving info of the field variables
-     (used for listing, not setup, so set NULL setup logging function) */
+     (used for log, not setup, so set NULL setup logging function) */
   cs_field_define_key_struct("solving_info",
                              &_solving_info,
                              NULL,

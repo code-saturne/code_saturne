@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -291,11 +291,11 @@ _get_proj_quantities(cs_lnum_t                f_id,
   } /* Loop on face edges */
 
   projq.p1  *=  0.5;
-  projq.pa  *=  cs_math_onesix;
-  projq.pb  *= -cs_math_onesix;
-  projq.pab *=  cs_math_one24;
-  projq.pa2 *=  cs_math_onetwelve;
-  projq.pb2 *= -cs_math_onetwelve;
+  projq.pa  *=  cs_math_1ov6;
+  projq.pb  *= -cs_math_1ov6;
+  projq.pab *=  cs_math_1ov24;
+  projq.pa2 *=  cs_math_1ov12;
+  projq.pb2 *= -cs_math_1ov12;
 
   return  projq;
 }
@@ -858,40 +858,6 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the area of the triangle of base given by q (related to a
- *         segment) with apex located at xa
- *
- * \param[in]  qa   pointer to a cs_quant_t structure related to a segment
- * \param[in]  xb   coordinates of the apex to consider
- *
- * \return the value the area of the triangle
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_compute_area_from_quant(const cs_quant_t   qa,
-                           const cs_real_t   *xb)
-{
-  double  xab[3], xab_un[3], cp[3];
-  xab[0] = xb[0] - qa.center[0];
-  xab[1] = xb[1] - qa.center[1];
-  xab[2] = xb[2] - qa.center[2];
-
-  const double  xab_len = cs_math_3_norm(xab);
-  const double  inv_len = 1/xab_len;
-
-  xab_un[0] = inv_len * xab[0];
-  xab_un[1] = inv_len * xab[1];
-  xab_un[2] = inv_len * xab[2];
-
-  cs_math_3_cross_product(xab_un, qa.unitv, cp);
-
-  /* tab = ||(qb.center -xa) x qb||/2 */
-  return 0.5 * xab_len * qa.meas * cs_math_3_norm(cp);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the type of algorithm to use for computing the cell center
  *
  * \param[in]  algo     type of algorithm
@@ -965,9 +931,6 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
   switch (cs_cdo_quantities_cc_algo) {
 
   case CS_CDO_QUANTITIES_MEANV_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " -cdo- Cell.Center.Algo >> Vertices.MeanValue\n");
-
     /* Copy cell volumes */
     memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
 
@@ -976,17 +939,12 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
     break;
 
   case CS_CDO_QUANTITIES_BARYC_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " -cdo- Cell.Center.Algo >> Mirtich\n");
     /* Compute (real) the barycentric centers and cell volumes */
     _mirtich_algorithm(m, mq, topo, cdoq);
     break;
 
 
   case CS_CDO_QUANTITIES_SATURNE_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " -cdo- Cell.Center.Algo >> Original\n");
-
     /* Copy cell volumes and cell centers */
     memcpy(cdoq->cell_centers, mq->cell_cen, 3*n_cells*sizeof(cs_real_t));
     memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
@@ -994,7 +952,8 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Unkwown algorithm for cell center computation\n"));
+              _("%s: Unkwown algorithm for cell center computation\n"),
+              __func__);
 
   } /* switch according to cs_cdo_quantities_cc_algo */
 
@@ -1014,12 +973,16 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
 #     pragma omp parallel for if (cdoq->n_edges > CS_THR_MIN)
       for (cs_lnum_t e = 0; e < cdoq->n_edges; e++) {
 
-        cs_gnum_t  v1 = m->global_vtx_num[e2v_ids[2*e]];
-        cs_gnum_t  v2 = m->global_vtx_num[e2v_ids[2*e+1]];
-        if (v1 < v2)
-          e2v_gnum[2*e] = v1, e2v_gnum[2*e+1] = v2;
+        const cs_lnum_t  ee = 2*e;
+        const cs_lnum_t  *_e2v = e2v_ids + ee;
+        const cs_gnum_t  gv1 = m->global_vtx_num[_e2v[0]];
+        const cs_gnum_t  gv2 = m->global_vtx_num[_e2v[1]];
+        cs_gnum_t  *_e2v_gnum = e2v_gnum + ee;
+        assert(gv1 > 0 && gv2 > 0);
+        if (gv1 < gv2)
+          _e2v_gnum[0] = gv1, _e2v_gnum[1] = gv2;
         else
-          e2v_gnum[2*e+1] = v2, e2v_gnum[2*e+1] = v1;
+          _e2v_gnum[1] = gv2, _e2v_gnum[0] = gv1;
 
       }
 
@@ -1047,7 +1010,7 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
       BFT_FREE(order_couples);
       fvm_io_num_destroy(edge_io_num);
 
-    } // parallel run
+    } /* parallel run */
 
   }
   else /* Not used by the numerical scheme */
@@ -1168,6 +1131,27 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
 void
 cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 {
+  cs_log_printf(CS_LOG_SETUP, "\n## CDO quantities settings\n");
+
+  switch (cs_cdo_quantities_cc_algo) {
+
+  case CS_CDO_QUANTITIES_MEANV_CENTER:
+    cs_log_printf(CS_LOG_SETUP,
+                  " * Cell.Center.Algo: Vertices.MeanValue\n");
+    break;
+  case CS_CDO_QUANTITIES_BARYC_CENTER:
+    cs_log_printf(CS_LOG_SETUP,
+                  " * Cell.Center.Algo: Mirtich\n");
+    break;
+  case CS_CDO_QUANTITIES_SATURNE_CENTER:
+    cs_log_printf(CS_LOG_SETUP,
+                  " * Cell.Center.Algo: Original\n");
+    break;
+
+  default:
+    break;
+  } /* switch according to cs_cdo_quantities_cc_algo */
+
   cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
 
   /* Information about activated flags */
@@ -1311,9 +1295,143 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the area of the triangles with basis each edge of the face
+ *         and apex the face center.
+ *         Case of interior faces.
+ *         Storage in agreement with the if2v adjacency structure
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       f_id      interior face id
+ * \param[in, out]  tef       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_i_tef(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     f_id,
+                                cs_real_t                     tef[])
+{
+  if (tef == NULL) return;
+
+  const cs_real_t  *xf = cdoq->i_face_center + 3*f_id;
+  const cs_lnum_t  *idx = connect->if2v->idx + f_id;
+  const cs_lnum_t  *ids = connect->if2v->ids + idx[0];
+  const int  n_ef = idx[1] - idx[0]; /* n_ef = n_vf */
+
+  cs_lnum_t  _v0, _v1;
+  for (int  e = 0; e < n_ef; e++) { /* Compute */
+
+    if (e < n_ef - 1)
+      _v0 = ids[e], _v1 = ids[e+1];
+    else
+      _v0 = ids[n_ef-1], _v1 = ids[0];
+
+    tef[e] = cs_math_surftri(cdoq->vtx_coord + 3*_v0,
+                             cdoq->vtx_coord + 3*_v1,
+                             xf);
+
+  } /* Loop on face edges */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the area of the triangles with basis each edge of the face
+ *         and apex the face center.
+ *         Case of boundary faces.
+ *         Storage in agreement with the bf2v adjacency structure
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       bf_id     border face id
+ * \param[in, out]  tef       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_b_tef(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     bf_id,
+                                cs_real_t                     tef[])
+{
+  if (tef == NULL) return;
+
+  const cs_real_t  *xf = cdoq->b_face_center + 3*bf_id;
+  const cs_lnum_t  *idx = connect->bf2v->idx + bf_id;
+  const cs_lnum_t  *ids = connect->bf2v->ids + idx[0];
+  const int  n_ef = idx[1] - idx[0]; /* n_ef = n_vf */
+
+  cs_lnum_t  _v0, _v1;
+  for (int  e = 0; e < n_ef; e++) { /* Compute */
+
+    if (e < n_ef - 1)
+      _v0 = ids[e], _v1 = ids[e+1];
+    else
+      _v0 = ids[n_ef-1], _v1 = ids[0];
+
+    tef[e] = cs_math_surftri(cdoq->vtx_coord + 3*_v0,
+                             cdoq->vtx_coord + 3*_v1,
+                             xf);
+
+  } /* Loop on face edges */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the weight related to each vertex of a face. This weight
  *         ensures a 2nd order approximation if the face center is the face
- *         barycenter
+ *         barycenter.
+ *         Case of interior faces.
+ *
+ * \param[in]       connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       f_id      interior face id
+ * \param[in, out]  wvf       quantities to compute (pre-allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_i_wvf(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     f_id,
+                                cs_real_t                     wvf[])
+{
+  if (wvf == NULL) return;
+
+  const cs_real_t  *xf = cdoq->i_face_center + 3*f_id;
+  const cs_lnum_t  *idx = connect->if2v->idx + f_id;
+  const cs_lnum_t  *ids = connect->if2v->ids + idx[0];
+  const int  n_vf = idx[1] - idx[0];
+
+  for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] = 0.; /* Init */
+
+  int  _v0, _v1;
+  for (cs_lnum_t  v = 0; v < n_vf; v++) { /* Compute */
+
+    if (v < n_vf - 1)
+      _v0 = v, _v1 = v+1;
+    else
+      _v0 = n_vf-1, _v1 = 0;
+
+    const double  tef = cs_math_surftri(cdoq->vtx_coord + 3*ids[_v0],
+                                        cdoq->vtx_coord + 3*ids[_v1],
+                                        xf);
+    wvf[_v0] += tef;
+    wvf[_v1] += tef;
+
+  } /* Loop on face vertices */
+
+  const cs_real_t  coef = 0.5/cdoq->i_face_surf[f_id];
+  for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] *= coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the weight related to each vertex of a face. This weight
+ *         ensures a 2nd order approximation if the face center is the face
+ *         barycenter.
+ *         Case of boundary faces.
  *
  * \param[in]       connect   pointer to a cs_cdo_connect_t structure
  * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
@@ -1323,12 +1441,12 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_compute_wvf(const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *cdoq,
-                              cs_lnum_t                     bf_id,
-                              cs_real_t                     wvf[])
+cs_cdo_quantities_compute_b_wvf(const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *cdoq,
+                                cs_lnum_t                     bf_id,
+                                cs_real_t                     wvf[])
 {
-  assert(wvf != NULL);
+  if (wvf == NULL) return;
 
   const cs_real_t  *xf = cdoq->b_face_center + 3*bf_id;
   const cs_lnum_t  *idx = connect->bf2v->idx + bf_id;
@@ -1425,11 +1543,11 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
                        const cs_cdo_quantities_t   *cdoq)
 {
   cs_nvec3_t  nv;
-  const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
-  if (bf_id > -1)  /* Border face */
-    cs_nvec3(cdoq->b_face_normal + 3*bf_id, &nv);
-  else             /* Interior face */
+
+  if (f_id < cdoq->n_i_faces)  /* Interior face */
     cs_nvec3(cdoq->i_face_normal + 3*f_id, &nv);
+  else  /* Border face */
+    cs_nvec3(cdoq->b_face_normal + 3*(f_id - cdoq->n_i_faces), &nv);
 
   return nv;
 }

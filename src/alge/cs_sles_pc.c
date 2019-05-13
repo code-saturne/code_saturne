@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -402,6 +402,41 @@ _sles_pc_poly_setup(void               *context,
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_rows; i++)
     c->_ad_inv[i] = 1.0 / c->_ad_inv[i];
+}
+
+/*----------------------------------------------------------------------------
+ * Function for setup when poly_degree < 0
+ *
+ * parameters:
+ *   context   <-> pointer to preconditioner context
+ *   name      <-- pointer to name of associated linear system
+ *   a         <-- matrix
+ *   verbosity <-- associated verbosity
+ *----------------------------------------------------------------------------*/
+
+static void
+_sles_pc_poly_setup_none(void               *context,
+                         const char         *name,
+                         const cs_matrix_t  *a,
+                         int                 verbosity)
+{
+  CS_UNUSED(name);
+  CS_UNUSED(verbosity);
+
+  cs_sles_pc_poly_t  *c = context;
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+
+  c->n_rows = cs_matrix_get_n_rows(a)*db_size[0];
+  c->n_cols = cs_matrix_get_n_columns(a)*db_size[0];
+
+  c->a = a;
+
+  c->ad_inv = NULL;
+  c->_ad_inv = NULL;
+
+  c->n_aux = 0;
+  c->aux = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -993,7 +1028,7 @@ cs_sles_pc_none_create(void)
 
   cs_sles_pc_t *pc = cs_sles_pc_define(pcp,
                                        _sles_pc_poly_get_type,
-                                       _sles_pc_poly_setup,
+                                       _sles_pc_poly_setup_none,
                                        NULL,
                                        _sles_pc_poly_apply_none,
                                        _sles_pc_poly_free,

@@ -50,10 +50,8 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Base.Toolbox           import GuiParam
 from code_saturne.Base.QtPage            import ComboModel, from_qvariant, DoubleValidator
 from code_saturne.Pages.GroundwaterForm  import Ui_GroundwaterForm
-from code_saturne.Pages.GroundwaterModel import GroundwaterModel
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-
-from code_saturne.Pages.QMeiEditorView   import QMeiEditorView
+from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 
 #-------------------------------------------------------------------------------
 # log config

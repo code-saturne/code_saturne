@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -40,7 +40,6 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/rayt \
@@ -72,6 +71,8 @@ $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
+EXTRA_DIST = cs_version.h.in
+
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
@@ -86,6 +87,7 @@ cs_base.h \
 cs_base_fortran.h \
 cs_block_dist.h \
 cs_block_to_part.h \
+cs_boundary.h \
 cs_boundary_conditions.h \
 cs_boundary_zone.h \
 cs_calcium.h \
@@ -96,11 +98,11 @@ cs_defs.h \
 cs_equation_iterative_solve.h \
 cs_ext_neighborhood.h \
 cs_fan.h \
-cs_file.h \
 cs_field.h \
 cs_field_default.h \
 cs_field_pointer.h \
 cs_field_operator.h \
+cs_file.h \
 cs_flag_check.h \
 cs_fp_exception.h \
 cs_gas_mix.h \
@@ -118,6 +120,7 @@ cs_map.h \
 cs_math.h \
 cs_measures_util.h \
 cs_rank_neighbors.h \
+cs_notebook.h \
 cs_numbering.h \
 cs_opts.h \
 cs_order.h \
@@ -140,6 +143,7 @@ cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
 cs_restart_default.h \
+cs_restart_map.h \
 cs_rotation.h \
 cs_sat_coupling.h \
 cs_search.h \
@@ -160,7 +164,9 @@ cs_tree.h \
 cs_turbomachinery.h \
 cs_volume_zone.h \
 cs_wall_functions.h \
-cs_zone.h
+cs_zone.h \
+cs_base_headers.h \
+cs_headers.h
 
 # Library source files
 
@@ -206,8 +212,6 @@ libcscore_la_LIBADD = libcscorep.la $(top_builddir)/src/fvm/libfvm.la
 
 libcsbase_la_SOURCES = \
 addfld.f90 \
-alelav.f90 \
-alemav.f90 \
 altycl.f90 \
 b_t_to_h.f90 \
 b_h_to_t.f90 \
@@ -217,8 +221,6 @@ caltri.f90 \
 catsma.f90 \
 catsmv.f90 \
 catsmt.f90 \
-cdomod.f90 \
-clca66.f90 \
 clpsca.f90 \
 clptrg.f90 \
 clptur.f90 \
@@ -240,6 +242,7 @@ cs_ale.c \
 cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \
+cs_boundary.c \
 cs_boundary_conditions.c \
 cs_boundary_zone.c \
 cs_calcium.c \
@@ -270,6 +273,7 @@ cs_interpolate.c \
 csinit.f90 \
 cs_log_iteration.c \
 cs_log_setup.c \
+cs_notebook.c \
 cs_numbering.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \
@@ -294,6 +298,7 @@ cs_range_set.c \
 cs_resource.c \
 cs_restart.c \
 cs_restart_default.c \
+cs_restart_map.c \
 cs_rotation.c \
 cs_sat_coupling.c \
 cs_search.c \
@@ -355,7 +360,6 @@ precli.f90 \
 predfl.f90 \
 predvv.f90 \
 prehyd.f90 \
-prmoy0.f90 \
 pthrbm.f90 \
 resopv.f90 \
 resvoi.f90 \
@@ -389,16 +393,26 @@ libcsrenumber_la_LDFLAGS = -no-undefined
 lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
 
-if HAVE_PARAMEDMEM
+if HAVE_MEDCOUPLING
 
 pkginclude_HEADERS += \
-cs_paramedmem_coupling.hxx \
-cs_medcoupling_remapper.hxx \
 cs_medcoupling_utils.hxx
+
+if HAVE_MEDCOUPLING_LOADER
+pkginclude_HEADERS += \
+cs_medcoupling_remapper.hxx
+endif
+
+if HAVE_PARAMEDMEM
+pkginclude_HEADERS += cs_paramedmem_coupling.hxx
+if HAVE_MEDCOUPLING_LOADER
+pkginclude_HEADERS += cs_paramedmem_remapper.hxx
+endif
+endif
 
 if HAVE_PLUGIN_MEDCOUPLING
 
-cs_paramedmem_la_CPPFLAGS = \
+cs_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
@@ -409,19 +423,31 @@ $(MEDCOUPLING_CPPFLAGS) \
 $(MED_CPPFLAGS) \
 $(HDF5_CPPFLAGS) \
 $(MPI_CPPFLAGS)
-pkglib_LTLIBRARIES += cs_paramedmem.la
-cs_paramedmem_la_SOURCES = \
-cs_paramedmem_coupling.cxx \
-cs_medcoupling_remapper.cxx \
+pkglib_LTLIBRARIES += cs_medcoupling.la
+
+cs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx
-cs_paramedmem_la_LDFLAGS = -module -avoid-version
-cs_paramedmem_la_LIBADD = \
+
+if HAVE_MEDCOUPLING_LOADER
+cs_medcoupling_la_SOURCES += \
+cs_medcoupling_remapper.cxx
+endif
+
+if HAVE_PARAMEDMEM
+cs_medcoupling_la_SOURCES += cs_paramedmem_coupling.cxx
+if HAVE_MEDCOUPLING_LOADER
+cs_medcoupling_la_SOURCES += cs_paramedmem_remapper.cxx
+endif
+endif
+
+cs_medcoupling_la_LDFLAGS = -module -avoid-version
+cs_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
 
 else
 
-libcs_paramedmem_la_CPPFLAGS = \
+libcs_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
@@ -432,15 +458,27 @@ $(MEDCOUPLING_CPPFLAGS) \
 $(MED_CPPFLAGS) \
 $(HDF5_CPPFLAGS) \
 $(MPI_CPPFLAGS)
-libcs_paramedmem_la_SOURCES = \
-cs_paramedmem_coupling.cxx \
-cs_medcoupling_remapper.cxx \
+
+libcs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx
-libcs_paramedmem_la_LIBADD = \
+
+if HAVE_MEDCOUPLING_LOADER
+libcs_medcoupling_la_SOURCES += \
+cs_medcoupling_remapper.cxx
+endif
+
+if HAVE_PARAMEDMEM
+libcs_medcoupling_la_SOURCES += cs_paramedmem_coupling.cxx
+if HAVE_MEDCOUPLING_LOADER
+libcs_medcoupling_la_SOURCES += cs_paramedmem_remapper.cxx
+endif
+endif
+
+libcs_medcoupling_la_LIBADD = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
-noinst_LTLIBRARIES += libcs_paramedmem.la
-libcsbase_la_LIBADD += libcs_paramedmem.la
+noinst_LTLIBRARIES += libcs_medcoupling.la
+libcsbase_la_LIBADD += libcs_medcoupling.la
 
 endif
 

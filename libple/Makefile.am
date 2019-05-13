@@ -2,7 +2,7 @@
 #   This file is part of the "Parallel Location and Exchange" library,
 #   intended to provide mesh or particle-based code coupling services.
 #
-#   Copyright (C) 2005-2018  EDF S.A.
+#   Copyright (C) 2005-2019  EDF S.A.
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Lesser General Public
@@ -34,7 +34,7 @@ AUX_DIST = build-aux/compile \
 
 MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
-SUBDIRS = src tests doc po
+SUBDIRS = src pyple tests doc po
 
 EXTRA_DIST = m4/ple_config_info.m4 \
              m4/ple_config_publ.m4 \
@@ -46,8 +46,8 @@ EXTRA_DIST = m4/ple_config_info.m4 \
              sbin/clean \
              sbin/rmb
 
-# One adds the examples sub-directories and get rid of the .svn
-# directories with a dist-hook. The reason for this trick is that
+# One adds the examples sub-directories with a dist-hook.
+# The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples
 
@@ -90,7 +90,3 @@ install-tests:
 
 uninstall-tests:
 	@cd tests ; $(MAKE) uninstall-tests
-
-dist-hook:
-	-rm -rf `find $(distdir)/examples -name .svn`
-

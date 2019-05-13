@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +34,6 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_cdovb_priv.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
@@ -55,9 +54,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Algebraic system for CDO vertex-based discretization */
-typedef struct _cs_cdovb_t cs_cdovb_vecteq_t;
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -77,7 +73,7 @@ cs_cdovb_vecteq_is_initialized(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief    Allocate work buffer and general structures related to CDO
- *           vertex-based schemes
+ *           vector-valued vertex-based schemes
  *           Set shared pointers.
  *
  * \param[in]  quant       additional mesh quantities struct.
@@ -151,6 +147,29 @@ cs_cdovb_vecteq_free_context(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the initial values of the variable field taking into account
+ *         the boundary conditions.
+ *         Case of vector-valued CDO-Vb schemes.
+ *
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      field_id   id related to the variable field of this equation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
+                            const int                     field_id,
+                            const cs_mesh_t              *mesh,
+                            const cs_equation_param_t    *eqp,
+                            cs_equation_builder_t        *eqb,
+                            void                         *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
  *         builder structure
@@ -175,47 +194,43 @@ cs_cdovb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
  * \brief  Set the boundary conditions known from the settings when the fields
  *         stem from a vector CDO vertex-based scheme.
  *
+ * \param[in]      t_eval      time at which one evaluates BCs
  * \param[in]      mesh        pointer to a cs_mesh_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval      time at which one evaluates BCs
+ * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
  * \param[in, out] field_val   pointer to the values of the variable field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_set_dir_bc(const cs_mesh_t              *mesh,
+cs_cdovb_vecteq_set_dir_bc(cs_real_t                     t_eval,
+                           const cs_mesh_t              *mesh,
                            const cs_equation_param_t    *eqp,
                            cs_equation_builder_t        *eqb,
-                           cs_real_t                     t_eval,
+                           void                         *context,
                            cs_real_t                     field_val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system arising from a vector convection/diffusion
- *         equation with a CDO vertex-based scheme.
- *         One works cellwise and then process to the assembly
+ * \brief  Build and solve the linear system arising from a vector steady-state
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme.
+ *         One works cellwise and then process to the assembly.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the vertex field
- * \param[in]      dt_cur     current value of the time step
+ * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdovcb_vecteq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_build_system(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             double                      dt_cur,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix);
+cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
+                                   const int                   field_id,
+                                   const cs_equation_param_t  *eqp,
+                                   cs_equation_builder_t      *eqb,
+                                   void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -271,54 +286,6 @@ cs_cdovb_vecteq_get_vertex_values(void      *context);
 
 cs_real_t *
 cs_cdovb_vecteq_get_cell_values(void      *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the diffusive and convective flux across a list of faces
- *
- * \param[in]       normal     indicate in which direction flux is > 0
- * \param[in]       pdi        pointer to an array of field values
- * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to data specific for this scheme
- * \param[in, out]  d_flux     pointer to the value of the diffusive flux
- * \param[in, out]  c_flux     pointer to the value of the convective flux
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_vecteq_compute_flux_across_plane(const cs_real_t             normal[],
-                                          const cs_real_t            *pdi,
-                                          int                         ml_id,
-                                          const cs_equation_param_t  *eqp,
-                                          cs_equation_builder_t      *eqb,
-                                          void                       *data,
-                                          double                     *d_flux,
-                                          double                     *c_flux);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Cellwise computation of the diffusive flux
- *
- * \param[in]       values      discrete values for the potential
- * \param[in]       eqp         pointer to a cs_equation_param_t structure
- * \param[in]       t_eval      time at which one performs the evaluation
- * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out]  data        pointer to cs_cdovb_vecteq_t structure
- * \param[in, out]  location    where the flux is defined
- * \param[in, out]  diff_flux   value of the diffusive flux
-  */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_vecteq_cellwise_diff_flux(const cs_real_t             *values,
-                                   const cs_equation_param_t   *eqp,
-                                   cs_real_t                    t_eval,
-                                   cs_equation_builder_t       *eqb,
-                                   void                        *data,
-                                   cs_flag_t                    location,
-                                   cs_real_t                   *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -55,13 +55,10 @@ typedef struct {
 
   /* Redirection of standard output */
 
-  cs_int_t       ilisr0;        /* Redirection for rank 0
-                                   (0: not redirected;
-                                   1: redirected to "listing" file) */
-  cs_int_t       ilisrp;        /* Redirection for ranks > 0
-                                   (0: not redirected;
-                                   1: redirected to "listing_n*" file;
-                                   2: redirected to "/dev/null", suppressed) */
+  bool           trace;         /* Trace progress to stdout */
+  bool           logrp;         /* Redirection for ranks > 0
+                                   (false: to "/dev/null", suppressed)
+                                    true: to "run_solver_n*.log" file) */
 
   /* Signal handling */
 

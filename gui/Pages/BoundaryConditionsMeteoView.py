@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -46,13 +46,13 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Pages.BoundaryConditionsMeteoForm import Ui_BoundaryConditionsMeteoForm
-from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.Boundary import Boundary
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.Boundary import Boundary
+from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -84,23 +84,23 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         """
         Setup the widget.
         """
-        self.__case = case
+        self.case = case
         self.velocityWidget = velocityWidget
         self.turbulenceWidget = turbulenceWidget
         self.scalarsWidget = scalarsWidget
         self.__boundary = None
 
-        sca_mo  = DefineUserScalarsModel(self.__case)
+        sca_mo  = DefineUserScalarsModel(self.case)
         self.species_list = sca_mo.getUserScalarNameList()
 
-        self.__case.undoStopGlobal()
+        self.case.undoStopGlobal()
 
-        self.__model = AtmosphericFlowsModel(self.__case)
+        self.__model = AtmosphericFlowsModel(self.case)
 
         self.checkBoxReadData.clicked[bool].connect(self.__slotReadData)
         self.checkBoxAutoNature.clicked[bool].connect(self.__slotAutoNature)
 
-        self.__case.undoStartGlobal()
+        self.case.undoStartGlobal()
 
 
     def showWidget(self, b):
@@ -114,7 +114,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
 
             label = b.getLabel()
             nature = "meteo_" + b.getNature()
-            self.__boundary = Boundary(nature, label, self.__case)
+            self.__boundary = Boundary(nature, label, self.case)
 
             if self.__boundary.getMeteoDataStatus() == 'on':
                 self.checkBoxReadData.setChecked(True)

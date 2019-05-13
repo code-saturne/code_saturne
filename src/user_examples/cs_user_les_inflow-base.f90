@@ -12,7 +12,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -139,7 +139,7 @@ subroutine cs_user_les_inflow_define &
 !         for Batten : number of Fourier modes of the turbulent fluctuations
 !         for SEM    : number of synthetic eddies building the fluctuations
 
-!     * iverbo indicates the verbosity level (listing)
+!     * iverbo indicates the verbosity level (log)
 
 !          0  no specific output
 !         > 0 additionnal output (only for SEM)
@@ -262,7 +262,7 @@ if (nument.eq.1) then
   ! 2000 synthetic eddies contribute to the turbulent fluctuations
   nelent = 2000
 
-  ! Details concerning SEM in the listing
+  ! Details concerning SEM in the log
   iverbo = 1
 
   ! 2. Data relative to the LES inflow boundary faces

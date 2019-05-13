@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -469,11 +469,9 @@ _field_pointer_properties_map_electric_arcs(void)
 
 void
 CS_PROCF (elini1, ELINI1) (cs_real_t *visls0,
-                           cs_real_t *diftl0,
-                           cs_int_t  *idircl,
-                           cs_int_t  *isca)
+                           cs_real_t *diftl0)
 {
-  cs_electrical_model_specific_initialization(visls0, diftl0, idircl, isca);
+  cs_electrical_model_specific_initialization(visls0, diftl0);
 }
 
 void
@@ -652,9 +650,7 @@ cs_electrical_model_finalize(void)
 
 void
 cs_electrical_model_specific_initialization(cs_real_t  *visls0,
-                                            cs_real_t  *diftl0,
-                                            int        *idircl,
-                                            int        *isca)
+                                            cs_real_t  *diftl0)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -670,7 +666,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   var_cal_opt.istat  = 0;
   var_cal_opt.idiff  = 1;
   var_cal_opt.idifft = 0;
-  idircl[isca[id] - 1] = 1;
 
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
@@ -685,7 +680,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     var_cal_opt.istat  = 0;
     var_cal_opt.idiff  = 1;
     var_cal_opt.idifft = 0;
-    idircl[isca[id] - 1] = 1;
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
@@ -697,7 +691,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     var_cal_opt.istat  = 0;
     var_cal_opt.idiff  = 1;
     var_cal_opt.idifft = 0;
-    idircl[isca[id] - 1] = 1;
     visls0[id  ] = 1.;
     cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
   }
@@ -1057,7 +1050,7 @@ cs_elec_physical_properties(const cs_mesh_t             *mesh,
   int nt_cur = cs_glob_time_step->nt_cur;
   int isrrom = 0;
   cs_lnum_t  n_cells = mesh->n_cells;
-  const int keysca = cs_field_key_id("scalar_diffusivity_id");
+  const int keysca = cs_field_key_id("diffusivity_id");
   int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
   cs_field_t *c_prop = NULL;
   if (diff_id > -1)
@@ -1374,17 +1367,14 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 {
   cs_lnum_t  n_cells   = mesh->n_cells;
   cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const int keysca  = cs_field_key_id("scalar_diffusivity_id");
-
-  cs_halo_type_t halo_type;
-  cs_gradient_type_t gradient_type;
+  const int keysca  = cs_field_key_id("diffusivity_id");
 
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  /* if listing printing is needed */
+  /* if log printing is needed */
   int modntl = 0;
-  //TODO : control listing output
+  //TODO : control log output
 
   /* Reconstructed value */
   cs_real_3_t *grad;
@@ -1777,7 +1767,7 @@ cs_elec_add_variable_fields(void)
 
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
-  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+  const int kivisl = cs_field_key_id("diffusivity_id");
 
   const cs_data_elec_t  *e_props = cs_glob_elec_properties; /* local name */
 

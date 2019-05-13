@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -122,7 +122,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -137,6 +136,7 @@ use field
 use lagran
 use turbomachinery
 use cs_c_bindings
+use atincl, only: itotwt, iliqwt, modsedi, moddep
 
 !===============================================================================
 
@@ -146,19 +146,20 @@ implicit none
 
 integer          nscal, isvhb
 
-integer          icodcl(nfabor,nvar)
+integer, pointer, dimension(:,:) :: icodcl
 
-double precision rcodcl(nfabor,nvar,3)
-double precision velipb(nfabor,ndim), rijipb(nfabor,6)
-double precision visvdr(ncelet)
-double precision hbord(nfabor),theipb(nfabor)
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:,:) :: velipb
+double precision, pointer, dimension(:,:) :: rijipb
+double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 
 ! Local variables
 
 integer          ifac, iel, isou, ii, jj, kk
-integer          iscal
+integer          iscal, clsyme
 integer          modntl
-integer          iuntur, iuiptn, f_id
+integer          iuntur, iuiptn, f_id, iustar
+integer          kdflim
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -167,9 +168,9 @@ double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
 double precision uk, uet, yplus, uplus, phit
-double precision gredu
+double precision gredu, temp
 double precision cfnnu, cfnns, cfnnk, cfnne
-double precision sqrcmu, clsyme, ek
+double precision sqrcmu, ek
 double precision xmutlm
 double precision rcprod, rcflux
 double precision hflui, hint, pimp, qimp
@@ -178,23 +179,32 @@ double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf
 double precision cofimp
-double precision distb0, rugd  , rugt  , ydep
+double precision distb0, rugd  , ydep
 double precision dsa0
 double precision rinfiv(3)
 double precision visci(3,3), fikis, viscis, distfi
-double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
+double precision fcoefa(6), fcoefb(6), fcofaf(6)
+double precision fcofbf(6), fcofad(6), fcofbd(6)
+
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
-double precision rttb, alpha_rnn
+double precision rttb, alpha_rnn, liqwt, totwt
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
-double precision, dimension(:), allocatable :: byplus, buk, buet, bcfnns
+double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
+double precision, dimension(:), allocatable :: byplus, buk
+double precision, dimension(:), allocatable, target :: buet, bcfnns_loc
 
-double precision, dimension(:), pointer :: cvar_k
+double precision, dimension(:), pointer :: cvar_k, bcfnns
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvara_nusa
+
+double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
+double precision, dimension(:), pointer :: cpro_rugt
+double precision, dimension(:), pointer :: cpro_diff_lim_k
+double precision, dimension(:), pointer :: cpro_diff_lim_eps
+double precision, dimension(:), pointer :: cpro_diff_lim_rij
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -231,9 +241,29 @@ data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
 
 type(var_cal_opt) :: vcopt
-type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
+type(var_cal_opt) :: vcopt_rij, vcopt_ep
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
+                           byplus, buk, buet, bcfnns, hbord, theipb,  &
+                           tetmax , tetmin , tplumx , tplumn)
+
+    implicit none
+    integer          iscal, isvhb
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+    double precision, dimension(:) :: byplus, buk, buet, bcfnns
+    double precision, pointer, dimension(:) :: hbord, theipb
+    double precision tetmax, tetmin, tplumx, tplumn
+
+  end subroutine clptrg_scalar
+
+ end interface
 
 !===============================================================================
 ! 1. Initializations
@@ -243,7 +273,6 @@ type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
 
 ek = 0.d0
 phit = 0.d0
-rugt = 0.d0
 uiptn = 0.d0
 
 rinfiv(1) = rinfin
@@ -255,7 +284,7 @@ uet = 1.d0
 utau = 1.d0
 sqrcmu = sqrt(cmu)
 
-! --- Correction factors for stratification (used in atmospheric version)
+! --- Correction factors for stratification (used in atmospheric models)
 cfnnu=1.d0
 cfnns=1.d0
 cfnnk=1.d0
@@ -276,14 +305,17 @@ if (iyplbr.ge.0) then
 endif
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
-uetbor => null()
+! Diffusion limiter
+call field_get_key_id("diffusion_limiter_id", kdflim)
 
-if (     (itytur.eq.4 .and. idries.eq.1) &
-    .or. (iilagr.ge.1 .and. idepst.gt.0) ) then
-  call field_get_id_try('ustar', f_id)
-  if (f_id.ge.0) then
-    call field_get_val_s(f_id, uetbor)
-  endif
+! --- Store wall friction velocity
+
+call field_get_id_try('ustar', iustar)
+if (iustar.ge.0) then !TODO remove, this information is in cofaf cofbf
+  call field_get_val_s(iustar, ustar)
+else
+  allocate(buet(nfabor))
+  ustar => buet
 endif
 
 ! --- Gradient and flux Boundary Conditions
@@ -298,6 +330,14 @@ if (ik.gt.0) then
   call field_get_coefb_s(ivarfl(ik), coefb_k)
   call field_get_coefaf_s(ivarfl(ik), coefaf_k)
   call field_get_coefbf_s(ivarfl(ik), coefbf_k)
+
+  ! Diffuion limiter
+  call field_get_key_int(ivarfl(ik), kdflim, f_id)
+  if (f_id.ge.0) then
+    call field_get_val_s(f_id, cpro_diff_lim_k)
+  else
+    cpro_diff_lim_k => null()
+  endif
 else
   coefa_k => null()
   coefb_k => null()
@@ -310,6 +350,13 @@ if (iep.gt.0) then
   call field_get_coefb_s(ivarfl(iep), coefb_ep)
   call field_get_coefaf_s(ivarfl(iep), coefaf_ep)
   call field_get_coefbf_s(ivarfl(iep), coefbf_ep)
+  ! Diffuion limiter
+  call field_get_key_int(ivarfl(iep), kdflim, f_id)
+  if (f_id.ge.0) then
+    call field_get_val_s(f_id, cpro_diff_lim_eps)
+  else
+    cpro_diff_lim_eps => null()
+  endif
 else
   coefa_ep => null()
   coefb_ep => null()
@@ -369,6 +416,13 @@ if (itytur.eq.3) then! Also have boundary conditions for the momentum equation
     coefbf_r23 => null()
     coefad_r23 => null()
     coefbd_r23 => null()
+    ! Diffuion limiter
+    call field_get_key_int(ivarfl(irij), kdflim, f_id)
+    if (f_id.ge.0) then
+      call field_get_val_s(f_id, cpro_diff_lim_rij)
+    else
+      cpro_diff_lim_rij => null()
+    endif
 
   else
 
@@ -549,8 +603,31 @@ endif
 ! Pointers to specific fields
 allocate(byplus(nfabor))
 allocate(buk(nfabor))
-allocate(buet(nfabor))
-allocate(bcfnns(nfabor))
+
+call field_get_id_try("non_neutral_scalar_correction", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, bcfnns)
+else
+  allocate(bcfnns_loc(nfabor))
+  bcfnns => bcfnns_loc
+endif
+
+cvar_t => null()
+cvar_totwt => null()
+cpro_liqwt => null()
+cpro_rugt => null()
+
+if (ippmod(iatmos).ge.1) then
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+    call field_get_val_s(iliqwt, cpro_liqwt)
+
+    if (modsedi.eq.1.and.moddep.gt.0) then
+      call field_get_val_s_by_name('boundary_thermal_roughness', cpro_rugt)
+    endif
+  endif
+endif
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -622,31 +699,9 @@ do ifac = 1, nfabor
       ty  = ty/txn
       tz  = tz/txn
 
-    elseif (itytur.eq.3) then
-
-      ! If the velocity is zero, vector T is normal and random;
-      ! we need it for the reference change for Rij, and we cancel the velocity.
-
-      txn0 = 0.d0
-
-      if (abs(rny).ge.epzero.or.abs(rnz).ge.epzero)then
-        rxnn = sqrt(rny**2+rnz**2)
-        tx  =  0.d0
-        ty  =  rnz/rxnn
-        tz  = -rny/rxnn
-      elseif (abs(rnx).ge.epzero.or.abs(rnz).ge.epzero)then
-        rxnn = sqrt(rnx**2+rnz**2)
-        tx  =  rnz/rxnn
-        ty  =  0.d0
-        tz  = -rnx/rxnn
-      else
-        write(nfecra,1000)ifac,rnx,rny,rnz
-        call csexit (1)
-      endif
-
     else
 
-      ! If the velocity is zero, and we are not using Reynolds Stresses,
+      ! If the velocity is zero,
       !  Tx, Ty, Tz is not used (we cancel the velocity), so we assign any
       !  value (zero for example)
 
@@ -687,37 +742,10 @@ do ifac = 1, nfabor
       eloglo(3,2) = -rnz
       eloglo(3,3) =  t2z
 
-      ! --> Commpute alpha(6,6)
+      ! Compute Reynolds stress transformation matrix
 
-      ! Let f be the center of the boundary faces and
-      !   I the center of the matching cell
-
-      ! We noteE Rg (resp. Rl) indexed by f or by I
-      !   the Reynolds Stress tensor in the global basis (resp. local)
-
-      ! The alpha matrix applied to the global vector in I'
-      !   (Rg11,I'|Rg22,I'|Rg33,I'|Rg12,I'|Rg13,I'|Rg23,I')t
-      !    must provide the values to prescribe to the face
-      !   (Rg11,f |Rg22,f |Rg33,f |Rg12,f |Rg13,f |Rg23,f )t
-      !    except for the Dirichlet boundary conditions (added later)
-
-      ! We define it by computing Rg,f as a function of Rg,I' as follows
-
-      !   RG,f = ELOGLO.RL,f.ELOGLOt (matrix products)
-
-      !                     | RL,I'(1,1)     B*U*.Uk     C*RL,I'(1,3) |
-      !      with    RL,f = | B*U*.Uk       RL,I'(2,2)       0        |
-      !                     | C*RL,I'(1,3)     0         RL,I'(3,3)   |
-
-      !             with    RL,I = ELOGLOt.RG,I'.ELOGLO
-      !                     B = 0
-      !              and    C = 0 at the wall (1 with symmetry)
-
-      ! We compute in fact  ELOGLO.projector.ELOGLOt
-
-      clsyme=0.d0
-      call clca66 (clsyme , eloglo , alpha)
-      !==========
+      clsyme = 0
+      call turbulence_bc_rij_transform(clsyme, eloglo, alpha)
 
     endif
 
@@ -789,13 +817,27 @@ do ifac = 1, nfabor
       ! Compute reduced gravity for non horizontal walls :
       gredu = gx*rnx + gy*rny + gz*rnz
 
+      temp = cvar_t(iel)
+      totwt = 0.d0
+      liqwt = 0.d0
+
+      if (ippmod(iatmos).eq.2) then
+        totwt = cvar_totwt(iel)
+        liqwt = cpro_liqwt(iel)
+
+        if (modsedi.eq.1.and.moddep.gt.0) then
+          cpro_rugt(ifac) = rcodcl(ifac,iv,3)
+        endif
+      endif
+
       call atmcls &
       !==========
-    ( ifac   , iel    ,                                              &
+    ( ifac   ,                                                       &
       utau   , yplus  ,                                              &
       uet    ,                                                       &
       gredu  ,                                                       &
       cfnnu  , cfnns  , cfnnk  , cfnne  ,                            &
+      temp   , totwt  , liqwt  ,                                     &
       icodcl , rcodcl )
 
     endif
@@ -811,24 +853,16 @@ do ifac = 1, nfabor
     yplumx = max(yplus,yplumx)
     yplumn = min(yplus,yplumn)
 
-    ! Sauvegarde de la vitesse de frottement et de la viscosite turbulente
-    ! apres amortissement de van Driest pour la LES
-    ! On n'amortit pas mu_t une seconde fois si on l'a deja fait
-    ! (car une cellule peut avoir plusieurs faces de paroi)
-    ! ou
-    ! Sauvegarde de la vitesse de frottement et distance a la paroi yplus
-    ! si le modele de depot de particules est active.
-
+    ! save turbulent subgrid viscosity after van Driest damping in LES
+    ! care is taken to not dampen it twice at boundary cells having more
+    ! one boundary face
     if (itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac) = uet !TODO remove, this information is in cofaf cofbf
       if (visvdr(iel).lt.-900.d0) then
         ! FIXME amortissement de van Driest a revoir en rugueux :
         ! visct(iel) = visct(iel)*(1.d0-exp(-yplus/cdries))**2
         visvdr(iel) = visct(iel)
         visctc      = visct(iel)
       endif
-    else if (iilagr.gt.0.and.idepst.gt.0) then
-      uetbor(ifac) = uet
     endif
 
     ! Save yplus if post-processed
@@ -970,7 +1004,7 @@ do ifac = 1, nfabor
     endif
 
     !===========================================================================
-    ! 4. Boundary conditions on k and espilon
+    ! 4. Boundary conditions on k and epsilon
     !===========================================================================
 
     ydep = distbf*0.5d0+rugd
@@ -990,6 +1024,9 @@ do ifac = 1, nfabor
            pimp         , hint          , rinfin )
 
 
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_k)) cpro_diff_lim_k(ifac) = 0.d0
+
       ! Neumann Boundary Condition on epsilon
       !--------------------------------------
 
@@ -1003,6 +1040,9 @@ do ifac = 1, nfabor
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
+
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
 
     !===========================================================================
     ! 5. Boundary conditions on Rij-epsilon
@@ -1189,6 +1229,9 @@ do ifac = 1, nfabor
         enddo
       endif
 
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_rij)) cpro_diff_lim_rij(ifac) = 0.d0
+
       ! ---> Epsilon
 
       ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
@@ -1253,6 +1296,9 @@ do ifac = 1, nfabor
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
+
+      ! No diffusion reconstruction when using wall functions
+      if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
 
     !===========================================================================
     ! 6a.Boundary conditions on k, epsilon, f_bar and phi in the phi_Fbar model
@@ -1426,7 +1472,7 @@ do ifac = 1, nfabor
 
     byplus(ifac) = yplus
     buk(ifac) = uk
-    buet(ifac) = uet
+    ustar(ifac) = uet
     bcfnns(ifac) = cfnns
 
   endif
@@ -1445,13 +1491,10 @@ do iscal = 1, nscal
 
   if (iscavr(iscal).le.0) then
 
-    call clptrg_scalar &
-    !=================
- ( iscal  , isvhb  , icodcl ,                                     &
-   rcodcl ,                                                       &
-   byplus , buk    , buet   , bcfnns ,                            &
-   hbord  , theipb ,                                              &
-   tetmax , tetmin , tplumx , tplumn )
+    call clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
+                       byplus, buk, ustar, bcfnns,                &
+                       hbord, theipb,                             &
+                       tetmax, tetmin, tplumx, tplumn)
 
   endif
 
@@ -1477,14 +1520,14 @@ endif
 
 deallocate(byplus)
 deallocate(buk)
-deallocate(buet)
-deallocate(bcfnns)
+if (allocated(buet)) deallocate(buet)
+if (allocated(bcfnns_loc)) deallocate(bcfnns_loc)
 
 !===============================================================================
 ! 9. Writings
 !===============================================================================
 
-!     Remarque : afin de ne pas surcharger les listings dans le cas ou
+!     Remarque : afin de ne pas surcharger les logs dans le cas ou
 !       quelques yplus ne sont pas corrects, on ne produit le message
 !       qu'aux deux premiers pas de temps ou le message apparait et
 !       aux deux derniers pas de temps du calcul, ou si IWARNI est >= 2
@@ -1668,7 +1711,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -1691,13 +1733,10 @@ implicit none
 ! Arguments
 
 integer          iscal, isvhb
-
-integer          icodcl(nfabor,nvar)
-
-double precision rcodcl(nfabor,nvar,3)
-double precision byplus(nfabor)
-double precision hbord(nfabor), theipb(nfabor)
-double precision buk(nfabor), buet(nfabor), bcfnns(nfabor)
+integer, pointer, dimension(:,:) :: icodcl
+double precision, pointer, dimension(:,:,:) :: rcodcl
+double precision, dimension(:) :: byplus, buk, buet, bcfnns
+double precision, pointer, dimension(:) :: hbord, theipb
 double precision tetmax, tetmin, tplumx, tplumn
 
 ! Local variables

@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -131,9 +131,7 @@ extern const cs_real_t cs_elec_epszer;
 
 void
 CS_PROCF (elini1, ELINI1) (cs_real_t       *visls0,
-                           cs_real_t       *diftl0,
-                           cs_int_t        *idircl,
-                           cs_int_t        *isca);
+                           cs_real_t       *diftl0);
 
 void
 CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel);
@@ -202,9 +200,7 @@ cs_electrical_model_finalize(void);
 
 void
 cs_electrical_model_specific_initialization(cs_real_t    *visls0,
-                                            cs_real_t    *diftl0,
-                                            int          *idircl,
-                                            int          *isca);
+                                            cs_real_t    *diftl0);
 
 /*----------------------------------------------------------------------------
  * Read properties file

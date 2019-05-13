@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,7 +46,6 @@
 
 #include "cs_base.h"
 #include "cs_mesh_location.h"
-#include "cs_prototypes.h"
 
 #include "cs_parameters.h"
 #include "cs_time_step.h"
@@ -180,7 +179,7 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
 
   char var_name[64];
   int  component_id;
-  char var_name_component[64];
+  char var_name_component[96];
 
   for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
 
@@ -209,11 +208,11 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
              component_id < options->attr_output[attr_id];
              component_id++) {
           snprintf(var_name_component,
-                   63,
+                   95,
                    "%s_layer_%2.2i",
                    var_name,
                    component_id+1);
-          var_name_component[63] = '\0';
+          var_name_component[95] = '\0';
           cs_post_write_particle_values(mesh_id,
                                         CS_POST_WRITER_ALL_ASSOCIATED,
                                         attr_id,
@@ -297,51 +296,14 @@ _cs_lagr_post(void                  *input,
 
       const cs_real_t *_b_stats = bound_stat + nfabor*irf;
 
-      if (lagr_b->imoybr[irf] > 1) {
+      const cs_real_t *_f_count = bound_stat + nfabor*lagr_b->inbr;
 
-        const cs_real_t *_f_count = NULL;
-
-        if (lagr_b->imoybr[irf] == 3)
-          _f_count = bound_stat + nfabor*lagr_b->iencnb;
-
-        else if (lagr_b->imoybr[irf] == 2)
-          _f_count = bound_stat + nfabor*lagr_b->inbr;
-
-        for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          cs_lnum_t f_id = b_face_ids[i];
-          if (_f_count[f_id] > seuilf)
-            val[i] = _b_stats[f_id] / _f_count[f_id];
-          else
-            val[i] = 0.;
-        }
-
-      }
-      else if (lagr_b->imoybr[irf] == 1) {
-
-        cs_real_t  tstatp = lagr_b->tstatp;
-
-        for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          cs_lnum_t f_id = b_face_ids[i];
-          if (tstatp > 0)
-            val[i] = _b_stats[f_id] / tstatp;
-          else
-            val[i] = _b_stats[f_id];
-        }
-
-      }
-
-      else {
-
-        const cs_real_t *_f_count = bound_stat + nfabor*lagr_b->inbr;
-
-        for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          cs_lnum_t f_id = b_face_ids[i];
-          if (_f_count[f_id] > seuilf)
-            val[i] = _b_stats[f_id];
-          else
-            val[i] = 0.;
-        }
-
+      for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+        cs_lnum_t f_id = b_face_ids[i];
+        if (_f_count[f_id] > seuilf)
+          val[i] = _b_stats[f_id];
+        else
+          val[i] = 0.;
       }
 
       cs_post_write_var(mesh_id,

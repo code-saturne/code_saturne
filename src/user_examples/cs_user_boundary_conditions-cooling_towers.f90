@@ -4,7 +4,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -165,6 +165,8 @@ do ilelt = 1, nlelt
   itypfb(ifac) = isolib
 
   ! Precribe a pressure profile for all faces
+  ! Warning: the pressure has to be specified in term of TOTAL pressure
+  ! i.e. including ro0.g.z...
   icodcl(ifac,ipr) = 1
   rcodcl(ifac,ipr,1) =                                      &
     ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1))                     &

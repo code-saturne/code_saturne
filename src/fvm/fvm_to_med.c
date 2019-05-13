@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1012,33 +1012,16 @@ _get_datatypes(const cs_datatype_t    input_cs_datatype,
     break;
 
   case CS_INT32:
-    if (med_int_sizeof == 4) {
-      *output_cs_datatype = CS_INT32;
-      *med_datatype = MED_INT32;
-      *data_sizeof = med_int_sizeof;
-    }
-    else if (med_int_sizeof == 8) {
-      *output_cs_datatype = CS_INT64;
-      *med_datatype = MED_INT64;
-      *data_sizeof = med_int_sizeof;
-    }
-    else
-      assert(0);
+    *output_cs_datatype = CS_INT32;
+    *med_datatype = MED_INT32;
+    *data_sizeof = 4;
     break;
 
   case CS_INT64:
-    if (med_int_sizeof == 4) {
-      *output_cs_datatype = CS_INT32;
-      *med_datatype = MED_INT32;
-      *data_sizeof = med_int_sizeof;
-    }
-    else if (med_int_sizeof == 8) {
-      *output_cs_datatype = CS_INT64;
-      *med_datatype = MED_INT64;
-      *data_sizeof = med_int_sizeof;
-    }
-    else
-      assert(0);
+    *output_cs_datatype = CS_INT32;
+    *med_datatype = MED_INT32;
+    *data_sizeof = 4;
+    assert(0);
     break;
 
   case CS_UINT32:

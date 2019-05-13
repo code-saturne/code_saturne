@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -293,7 +293,7 @@ cs_field_pointer_map_base(void)
 
   cs_field_pointer_map(CS_ENUMF_(p),
                        cs_field_by_name_try("pressure"));
-  cs_field_pointer_map(CS_ENUMF_(u),
+  cs_field_pointer_map(CS_ENUMF_(vel),
                        cs_field_by_name_try("velocity"));
 
   cs_field_pointer_map(CS_ENUMF_(k),
@@ -311,7 +311,7 @@ cs_field_pointer_map_base(void)
 
   cs_field_pointer_map(CS_ENUMF_(phi), cs_field_by_name_try("phi"));
   cs_field_pointer_map(CS_ENUMF_(f_bar), cs_field_by_name_try("f_bar"));
-  cs_field_pointer_map(CS_ENUMF_(alpha), cs_field_by_name_try("alpha"));
+  cs_field_pointer_map(CS_ENUMF_(alp_bl), cs_field_by_name_try("alpha"));
 
   cs_field_pointer_map(CS_ENUMF_(omg), cs_field_by_name_try("omega"));
   cs_field_pointer_map(CS_ENUMF_(nusa), cs_field_by_name_try("nu_tilda"));
@@ -471,7 +471,7 @@ cs_field_pointer_map_coal_combustion(int  n_coals,
 void
 cs_field_pointer_map_compressible(void)
 {
-  cs_field_pointer_map(CS_ENUMF_(energy),
+  cs_field_pointer_map(CS_ENUMF_(e_tot),
                        cs_field_by_name_try("total_energy"));
 
   cs_field_pointer_map(CS_ENUMF_(t_kelvin),
@@ -482,8 +482,21 @@ cs_field_pointer_map_compressible(void)
   cs_field_pointer_map(CS_ENUMF_(t),
                        cs_field_by_name_try("temperature"));
 
+  /* map volume specific heat if it is non constant */
+
   cs_field_pointer_map(CS_ENUMF_(cv),
                        cs_field_by_name_try("specific_heat_const_vol"));
+
+  /* map fractions for homogeneous two phase model */
+
+  cs_field_pointer_map(CS_ENUMF_(volume_f),
+                       cs_field_by_name_try("volume_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(mass_f),
+                       cs_field_by_name_try("mass_fraction"));
+
+  cs_field_pointer_map(CS_ENUMF_(energy_f),
+                       cs_field_by_name_try("energy_fraction"));
 }
 
 /*----------------------------------------------------------------------------*/

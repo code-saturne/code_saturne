@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -107,7 +107,7 @@ cs_lagr_print(cs_real_t ttcabs)
 
   if (   cs_glob_rank_id <= 0
       && flal == NULL && _ipass == 1)
-    flal = fopen("listla","w");
+    flal = fopen("lagrangian.log","w");
 
   /* ====================================================================   */
   /* 2. OUVERTURE DU FICHIER DE STOCKAGE */
@@ -130,29 +130,30 @@ cs_lagr_print(cs_real_t ttcabs)
                 "# column  4: inst. number of particles (weighted)\n"
                 "# column  5: inst. number of injected particles\n"
                 "# column  6: inst. number of injected particles (weighted)\n"
-                "# column  7: inst. number of exited, or deposited and removed particles\n"
-                "# column  8: inst. number of exited, or deposited and removed particles (weighted)\n"
-                "# column  9: inst. number of deposited particles\n"
-                "# column 10: inst. number of deposited particles (weighted)\n");
+                "# column  7: inst. number of merged particles\n"
+                "# column  8: inst. number of exited, or deposited and removed particles\n"
+                "# column  9: inst. number of exited, or deposited and removed particles (weighted)\n"
+                "# column 10: inst. number of deposited particles\n"
+                "# column 11: inst. number of deposited particles (weighted)\n");
 
         if (   lagr_model->physical_model == 2
             && lagr_model->fouling == 1)
           fprintf(flal,
-                  "# column 11: inst. number of fouled particles (coal)\n"
-                  "# column 12: inst. number of fouled particles (coal, weighted)\n"
-                  "# column 13: inst. number of lost particles\n"
+                  "# column 12: inst. number of fouled particles (coal)\n"
+                  "# column 13: inst. number of fouled particles (coal, weighted)\n"
+                  "# column 14: inst. number of lost particles\n"
                   "#\n");
 
         else if (lagr_model->resuspension > 0)
           fprintf(flal,
-                  "# column 11: inst. number of resuspended particles\n"
-                  "# column 12: inst. number of resuspended particles (weighted)\n"
-                  "# column 13: inst. number of lost particles\n"
+                  "# column 12: inst. number of resuspended particles\n"
+                  "# column 13: inst. number of resuspended particles (weighted)\n"
+                  "# column 14: inst. number of lost particles\n"
                   "#\n");
 
         else
           fprintf(flal,
-                  "# column 11: inst. number of lost particles\n"
+                  "# column 12: inst. number of lost particles\n"
                   "#\n");
 
       }
@@ -163,11 +164,12 @@ cs_lagr_print(cs_real_t ttcabs)
 
       if (   lagr_model->physical_model == 2
           && lagr_model->fouling == 1)
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
                 (unsigned long long)(pc->n_g_new), pc->w_new,
+                (unsigned long long)(pc->n_g_merged),
                 (unsigned long long)(pc->n_g_exit - pc->n_g_fouling),
                 pc->w_exit - pc->w_fouling,
                 (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
@@ -175,22 +177,24 @@ cs_lagr_print(cs_real_t ttcabs)
                 (unsigned long long)(pc->n_g_failed));
 
       else if (lagr_model->resuspension > 0)
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
                 (unsigned long long)(pc->n_g_new), pc->w_new,
+                (unsigned long long)(pc->n_g_merged),
                 (unsigned long long)(pc->n_g_exit), pc->w_exit,
                 (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
                 (unsigned long long)(pc->n_g_resuspended), pc->w_resuspended,
                 (unsigned long long)(pc->n_g_failed));
 
       else
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
+        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %8llu %11.4E %8llu %11.4E %8llu\n",
                 cs_glob_time_step->nt_cur,
                 ttcabs,
                 (unsigned long long)(pc->n_g_total), pc->w_total,
                 (unsigned long long)(pc->n_g_new), pc->w_new,
+                (unsigned long long)(pc->n_g_merged),
                 (unsigned long long)(pc->n_g_exit),
                 pc->w_exit,
                 (unsigned long long)(pc->n_g_deposited), pc->w_deposited,

@@ -7,7 +7,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -48,6 +48,7 @@
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_math.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
@@ -314,6 +315,64 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
   /*! [lagr_bc_define_injection_2] */
 
   /* same procedure for additional injections at other zones or sets... */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handling of a particle interaction with a boundary of type
+ *        \ref CS_LAGR_BC_USER.
+ *
+ * In this example, the particle is simply deposited and marked for
+ * elimination.
+ *
+ * \param[in, out]  particles       pointer to particle set
+ * \param[in]       p_id            particle id
+ * \param[in]       face_id         boundary face id
+ * \param[in]       face_norm       unit face (or face subdivision) normal
+ * \param[in]       c_intersect     coordinates of intersection with the face
+ * \param[in]       t_intersect     relative distance (in [0, 1]) of the
+ *                                  intersection point with the face relative
+ *                                  to the initial trajectory segment
+ * \param[in]       b_zone_id       boundary zone id of the matching face
+ * \param[in, out]  event_flag      event flag in case events are available
+ * \param[in, out]  tracking_state  particle tracking state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
+                                  cs_lnum_t                  p_id,
+                                  cs_lnum_t                  face_id,
+                                  const cs_real_t            face_norm[3],
+                                  const cs_real_t            c_intersect[3],
+                                  cs_real_t                  t_intersect,
+                                  int                        b_zone_id,
+                                  int                       *event_flag,
+                                  cs_lagr_tracking_state_t  *tracking_state)
+{
+  /* Update deposition-related counter */
+
+# pragma omp atomic
+  particles->n_part_dep += 1;
+
+# pragma omp atomic
+  particles->weight_dep += cs_lagr_particle_get_real(particles,
+                                                     p_id,
+                                                     CS_LAGR_STAT_WEIGHT);
+
+  /* Mark particle as deposited and update its coordinates */
+
+  cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
+
+  cs_real_t  *particle_coord
+    = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
+  for (int k = 0; k < 3; k++)
+    particle_coord[k] = c_intersect[k];
+
+  /* Update event and particle state */
+
+  *event_flag = *event_flag | (CS_EVENT_OUTFLOW | CS_EVENT_DEPOSITION);
+  *tracking_state = CS_LAGR_PART_OUT;
 }
 
 /*----------------------------------------------------------------------------*/

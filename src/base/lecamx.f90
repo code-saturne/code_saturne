@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2019 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -106,7 +106,6 @@ integer          iel   , ifac, ii, istr, nlfld, iscal
 integer          iz, kk
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
-integer          jortvm
 integer          ierror, itysup, nbval
 integer          nberro, inierr, ivers(1)
 integer          ilu   , ierrch
@@ -114,10 +113,10 @@ integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
 integer          jale, jcavit, jvolfl
 integer          f_id, iflmas, iflmab, iflvoi, iflvob
+integer          key_t_ext_id, icpext
+integer          iviext
 integer          ival(1), ngbstr(2)
 double precision rval(1), tmpstr(27)
-
-character(len=80) :: fname
 
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 
@@ -129,12 +128,11 @@ double precision, dimension(:,:), pointer :: disale
 
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
-double precision, allocatable, dimension(:) :: vismbf
 
 !===============================================================================
 
 !===============================================================================
-! 0. INITIALISATION
+! 0. Initialisation
 !===============================================================================
 
 !  ---> Banniere
@@ -155,6 +153,9 @@ cindff='YYYY'
 cindfm='YYYY'
 cindfc='YY'
 cindfl='YYYY'
+
+! Time extrapolation?
+call field_get_key_id("time_extrapolated", key_t_ext_id)
 
 !===============================================================================
 ! 1. OUVERTURE DU FICHIER SUITE AUXILIAIRE
@@ -213,17 +214,17 @@ jale = ival(1)
 nberro=nberro+ierror
 
 ! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
-!       -> on n'affiche le message que si IALE=1 (sinon RAS)
+!       -> on n'affiche le message que si IALE>=1 (sinon RAS)
 if (nberro.ne.0) then
-  if (iale.eq.1) write(nfecra,9210)
+  if (iale.ge.1) write(nfecra,9210)
   jale = 0
 endif
 
 ! ---> Pas d'iteration d'initialisation si suite de calcul ALE
 if (italin.eq.-999) then
-  if (iale.eq.1 .and. jale.eq.1) then
+  if (iale.ge.1 .and. jale.ge.1) then
     italin = 0
-  else if (iale.eq.1) then
+  else if (iale.ge.1) then
     italin = 1
   else
     italin = 0
@@ -373,8 +374,8 @@ endif
 !     La viscosite moleculaire est egalement lue pour le modele de cavitation
 !     Si on reussit, on l'indique
 
-if (    iviext.gt.0                   &
-    .or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+call field_get_key_int(iviscl, key_t_ext_id, iviext)
+if (iviext.gt.0.or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
 
   inierr = 0
 
@@ -386,8 +387,11 @@ if (    iviext.gt.0                   &
     nberro = nberro+ierror
     inierr = inierr+ierror
   endif
+endif
 
-  !         Viscosite turbulente ou de sous-maille - cellules
+call field_get_key_int(ivisct, key_t_ext_id, iviext)
+if (iviext.gt.0.or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
+  ! Viscosite turbulente ou de sous-maille - cellules
   if (iviext.gt.0) then
     call restart_read_field_vals(rp, ivisct, 0, ierror)
     nberro = nberro+ierror
@@ -410,21 +414,25 @@ endif
 !        et quand l'utilisateur peut s'en servir pour passer
 !        de H a T, comme en effet Joule par exemple).
 
-if ((icpext.gt.0.and.icp.ge.0).or.                &
-     (ippmod(ieljou).ge.1.and.icp.ge.0)) then
+if (icp.ge.0) then
 
-  inierr = 0
+  call field_get_key_int(icp, key_t_ext_id, icpext)
 
-  ! Chaleur massique - cellules
-  call restart_read_field_vals(rp, icp, 0, ierror)
-  nberro = nberro+ierror
-  inierr = inierr+ierror
+  if (icpext.gt.0.or.ippmod(ieljou).ge.1) then
 
-  ! Si on a initialise Cp, on l'indique (pour schtmp)
-  if (inierr.eq.0) then
-    initcp = 1
+    inierr = 0
+
+    ! Chaleur massique - cellules
+    call restart_read_field_vals(rp, icp, 0, ierror)
+    nberro = nberro+ierror
+    inierr = inierr+ierror
+
+    ! Si on a initialise Cp, on l'indique (pour schtmp)
+    if (inierr.eq.0) then
+      initcp = 1
+    endif
+
   endif
-
 endif
 
 !     Si on a des scalaires, on lit a diffusivite
@@ -433,7 +441,7 @@ endif
 !       (et qu'elle est variable, et que le scalaire n'est pas une variance)
 
 nlfld = 0
-call restart_read_linked_fields(rp, oflmap, "scalar_diffusivity_id", nlfld)
+call restart_read_linked_fields(rp, oflmap, "diffusivity_id", nlfld)
 
 !     Si erreur, on previent mais pas stop :
 !       auparavant on n'avait pas stocke les prop phy
@@ -690,7 +698,7 @@ nberro = 0
 !   Si on arrive a la lire, on note qu'elle est a jour (sauf si ALE).
 
 if (ineedy.eq.1) then
-  if (icdpar.gt.0 .or. inpdt0.eq.1) then
+  if (icdpar.gt.0) then
     if (nfabok.eqv..true.) then
       call field_get_id('wall_distance', f_id)
       call restart_read_field_vals(rp, f_id, 0, ierror)
@@ -802,7 +810,7 @@ endif
 ! 13.  DEPLACEMENT AUX NOEUDS EN ALE
 !===============================================================================
 
-if (iale.eq.1 .and. jale.eq.1) then
+if (iale.ge.1 .and. jale.ge.1) then
   nberro = 0
 
   itysup = 4

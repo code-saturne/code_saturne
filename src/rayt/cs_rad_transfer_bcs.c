@@ -4,7 +4,7 @@
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -54,10 +54,11 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
-#include "cs_thermal_model.h"
 #include "cs_prototypes.h"
+#include "cs_thermal_model.h"
 #include "cs_boundary_conditions.h"
 #include "cs_physical_constants.h"
 
@@ -913,6 +914,8 @@ cs_rad_transfer_bcs(int         nvar,
   if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
     cs_field_t *f_temp = CS_F_(t);
+    if (f_temp == NULL)
+      f_temp = CS_FI_(t,0);
 
     if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
@@ -1193,7 +1196,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
   cs_real_t onedpi  = 1.0 / cs_math_pi;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_real_3_t *b_face_normal = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  cs_real_3_t *b_face_normal
+    = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
 
   /* Initialization */
 
