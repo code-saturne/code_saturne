@@ -2735,7 +2735,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
       formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
-        if (*idarcy == 0) {
+        if (*idarcy == -1) {
           cs_real_t *st_vals = cs_meg_source_terms(z,
                                                    f->name,
                                                    "scalar_source_term");
