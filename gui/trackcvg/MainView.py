@@ -564,7 +564,7 @@ class MainView(object):
         self.lineEditTime.setValidator(validator)
 
         # connections
-        self.fileCloseAction.triggered.connect(self.close)
+        self.fileCloseAction.triggered.connect(self.caseClose)
         self.fileQuitAction.triggered.connect(self.fileQuit)
         self.actionSave_state.triggered.connect(self.SaveState)
         self.actionLoad_state.triggered.connect(self.LoadState)
@@ -657,7 +657,8 @@ class MainView(object):
 
         # gestion des figures
         l = QVBoxLayout(self.widget)
-        self.dc = MyMplCanvas(self.widget, subplotNb=self.subplotNumber, width=5, height=4, dpi=50)
+        self.dc = MyMplCanvas(self.widget, subplotNb=self.subplotNumber,
+                              width=5, height=4, dpi=50)
         l.addWidget(self.dc)
 
         # this is the Navigation widget
@@ -670,6 +671,32 @@ class MainView(object):
         self.updateView()
 
 
+    def caseClose(self):
+        """
+        public slot
+
+        try to quit all the current MainWindow
+        """
+        if self.caseName != None:
+            title = self.tr("Close Case")
+            msg   = self.tr("Save current state?")
+            reply = QMessageBox.question(self, title, msg,
+                                         QMessageBox.Yes | QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.SaveState()
+
+        self.toolButtonDir.setStyleSheet("background-color: red")
+        self.lineEditCase.setText("")
+        self.caseName = None
+        self.fileList = []
+        self.listingVariable = []
+        self.listFileProbes = {}
+        self.modelCases = CaseStandardItemModel(self.parent, [], [])
+        self.treeViewDirectory.setModel(self.modelCases)
+        self.modelCases.dataChanged.connect(self.treeViewChanged)
+        self.updateView()
+
+
     def closeEvent(self, event):
         """
         public slot
@@ -677,19 +704,14 @@ class MainView(object):
         try to quit all the current MainWindow
         """
         if self.caseName != None:
-            title = self.tr("Quit")
-            msg   = self.tr("Save current state?")
-            reply = QMessageBox.question(self, title, msg,
-                                         QMessageBox.Yes | QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.SaveState()
+            self.caseClose()
 
-            settings = QSettings()
+        settings = QSettings()
 
-            settings.setValue("MainWindow/Geometry",
-                              self.saveGeometry())
-            settings.setValue("MainWindow/State",
-                              self.saveState())
+        settings.setValue("MainWindow/Geometry",
+                          self.saveGeometry())
+        settings.setValue("MainWindow/State",
+                          self.saveState())
 
         event.accept()
 
@@ -903,6 +925,14 @@ class MainView(object):
 
 
     def slotOpenCase(self):
+
+        # Save previous case before switching
+
+        if self.caseName != None:
+            self.caseClose()
+
+        # Load new case
+
         title = self.tr("Choose a result directory")
 
         path = os.getcwd()
@@ -1190,6 +1220,9 @@ class MainView(object):
     def slotRefresh(self):
         """
         """
+        if not self.caseName:
+            return
+
         name = os.path.join(self.caseName, 'control_file')
         ficIn= open(name, 'w')
         ficIn.write('flush\n')
