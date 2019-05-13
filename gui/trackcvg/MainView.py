@@ -348,8 +348,10 @@ class CaseStandardItemModel(QAbstractItemModel):
             else:
                 item.item.status = "off"
             if item in self.noderoot.values():
-                (name, name_long, status, subplot_id, probes_number) = self.lst[index.row()]
-                self.lst[index.row()] = (name, name_long, item.item.status, subplot_id, probes_number)
+                (name, name_long, status,
+                 subplot_id, probes_number) = self.lst[index.row()]
+                self.lst[index.row()] = (name, name_long, item.item.status,
+                                         subplot_id, probes_number)
                 for it in self.lstFileProbes[name]:
                     it.status = item.item.status
             else:
@@ -369,15 +371,19 @@ class CaseStandardItemModel(QAbstractItemModel):
                 for (name, name_long, status, subplot_id, probes_number) in self.lst:
                     nm, ext = os.path.splitext(name)
                     if nm == item.parentItem.item.name:
-                        self.lst[idx] = (name, name_long, item.parentItem.item.status, subplot_id, probes_number)
+                        self.lst[idx] = (name, name_long,
+                                         item.parentItem.item.status,
+                                         subplot_id, probes_number)
                     idx = idx + 1
 
         elif index.column() == 2:
             v = from_qvariant(value, int)
             item.item.subplot_id = v
             if item in self.noderoot.values():
-                (name, name_long, status, subplot_id, probes_number) = self.lst[index.row()]
-                self.lst[index.row()] = (name, name_long, status, item.item.subplot_id, probes_number)
+                (name, name_long, status,
+                 subplot_id, probes_number) = self.lst[index.row()]
+                self.lst[index.row()] = (name, name_long, status,
+                                         item.item.subplot_id, probes_number)
                 for it in self.lstFileProbes[name]:
                     it.subplot_id = item.item.subplot_id
             else:
@@ -392,7 +398,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 for (name, name_long, status, subplot_id, probes_number) in self.lst:
                     nm, ext = os.path.splitext(name)
                     if nm == item.parentItem.item.name:
-                        self.lst[idx] = (name, name_long, status, subplotid, probes_number)
+                        self.lst[idx] = (name, name_long, status,
+                                         subplotid, probes_number)
                     idx = idx + 1
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
@@ -457,14 +464,16 @@ class MyMplCanvas(FigureCanvas):
 
                 lbl = name + "_s" + str(j)
 
-                self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe, label = lbl)
+                self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe,
+                                                            label = lbl)
                 self.axes[lstProbes[j].subplot_id - 1].legend(loc="upper left",
                                                               bbox_to_anchor=(1.02,1.0),
                                                               borderaxespad=0.0,
                                                               ncol=1,
                                                               fancybox=True,
                                                               shadow=True,
-                                                              prop={'size':'medium', 'style': 'italic'})
+                                                              prop={'size':'medium',
+                                                                    'style': 'italic'})
 
 
     def update_figure_listing(self, name, data, nb_probes, lstProbes):
@@ -475,14 +484,16 @@ class MyMplCanvas(FigureCanvas):
 
                 lbl = "t res. " + name[j]
 
-                self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe, label = lbl)
+                self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe,
+                                                            label = lbl)
                 self.axes[lstProbes[j].subplot_id - 1].legend(loc="upper left",
                                                               bbox_to_anchor=(1.02,1.0),
                                                               borderaxespad=0.0,
                                                               ncol=1,
                                                               fancybox=True,
                                                               shadow=True,
-                                                              prop={'size':'medium', 'style': 'italic'})
+                                                              prop={'size':'medium',
+                                                                    'style': 'italic'})
 
 
 
@@ -636,7 +647,9 @@ class MainView(object):
         self.lineEditTime.setText(str(self.timeRefresh))
 
         # treeViewDirectory
-        self.modelCases = CaseStandardItemModel(self.parent, self.fileList, self.listFileProbes)
+        self.modelCases = CaseStandardItemModel(self.parent,
+                                                self.fileList,
+                                                self.listFileProbes)
         self.treeViewDirectory.setModel(self.modelCases)
         self.treeViewDirectory.setAlternatingRowColors(True)
         self.treeViewDirectory.setSelectionBehavior(QAbstractItemView.SelectItems)
@@ -771,7 +784,8 @@ class MainView(object):
 
         configuration information window
         """
-        QMessageBox.about(self, self.package.code_name + ' convergence plot', "see config.py")
+        QMessageBox.about(self, self.package.code_name + ' convergence plot',
+                          "see config.py")
 
 
     def setColor(self):
@@ -990,21 +1004,28 @@ class MainView(object):
                 if name == 'residuals.csv':
                     data = self.ReadCsvFile(fle, probes_number)
                     if status == "on" or status == "onoff":
-                        self.dc.update_figure_listing(self.listingVariable, data, probes_number, self.listFileProbes[name])
+                        self.dc.update_figure_listing(self.listingVariable,
+                                                      data,
+                                                      probes_number,
+                                                      self.listFileProbes[name])
                 elif name == 'residuals.dat':
                     data = self.ReadDatFile(fle, probes_number)
                     if status == "on" or status == "onoff":
-                        self.dc.update_figure_listing(self.listingVariable, data, probes_number, self.listFileProbes[name])
+                        self.dc.update_figure_listing(self.listingVariable,
+                                                      data, probes_number,
+                                                      self.listFileProbes[name])
                 elif ext == ".csv":
                     data = self.ReadCsvFile(fle, probes_number)
                     nm, ext = os.path.splitext(name)
                     nm = nm[7:]
-                    self.dc.update_figure(nm, data, probes_number, self.listFileProbes[name])
+                    self.dc.update_figure(nm, data, probes_number,
+                                          self.listFileProbes[name])
                 elif ext == ".dat":
                     data = self.ReadDatFile(fle, probes_number)
                     nm, ext = os.path.splitext(name)
                     nm = nm[7:]
-                    self.dc.update_figure(nm, data, probes_number, self.listFileProbes[name])
+                    self.dc.update_figure(nm, data, probes_number,
+                                          self.listFileProbes[name])
         self.dc.drawFigure()
 
 
@@ -1121,15 +1142,12 @@ class MainView(object):
         """
         ficIn= open(name, 'r')
         lst = []
-        if self.package.name == 'code_saturne':
-            line  = ficIn.readline()
-            line = line.strip('\n')
-            line = line.lstrip()
-            content = line.split(',')
-            for el in content[1:]:
-                lst.append(el)
-        elif self.package.name == 'neptune_cfd':
-            print("to complete")
+        line  = ficIn.readline()
+        line = line.strip('\n')
+        line = line.lstrip()
+        content = line.split(',')
+        for el in content[1:]:
+            lst.append(el)
         ficIn.close()
         return lst
 
@@ -1139,14 +1157,11 @@ class MainView(object):
         """
         ficIn= open(name, 'r')
         lst = []
-        if self.package.name == 'code_saturne':
-            line  = ficIn.readline()
-            line = line.lstrip()
-            content = line.split()
-            for el in content[1:]:
-                lst.append(el)
-        elif self.package.name == 'neptune_cfd':
-            print("to complete")
+        line  = ficIn.readline()
+        line = line.lstrip()
+        content = line.split()
+        for el in content[1:]:
+            lst.append(el)
         ficIn.close()
         return lst
 
