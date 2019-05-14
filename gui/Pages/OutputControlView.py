@@ -1524,9 +1524,18 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Monitoring points initialisation
 
         if self.case['salome'] and not self.case['probes']:
-            from SalomeActors import ProbeActors
-            self.case['probes'] = ProbeActors()
-            self.case['probes'].setTableView(self.tableViewPoints)
+            try:
+                from SalomeActors import ProbeActors
+                self.case['probes'] = ProbeActors()
+                self.case['probes'].setTableView(self.tableViewPoints)
+            except Exception:
+                import traceback
+                import sys
+                exc_info = sys.exc_info()
+                bt = traceback.format_exception(*exc_info)
+                for l in bt:
+                    print(l.rstrip())
+                pass
 
         self.groupBoxProbesDisplay.setChecked(False)
         self.groupBoxProbesDisplay.setEnabled(False)
