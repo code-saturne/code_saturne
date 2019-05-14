@@ -680,16 +680,21 @@ def tokenize(segments):
             comments.append(s)
             continue
 
+        last_sep_in_sep2 = False
         for i, c in enumerate(s0):
-            if c in whitespace:
+            if last_sep_in_sep2:
+                last_sep_in_sep2 = False
+                pass
+            elif c in whitespace:
                 if (not prv in whitespace) and (s_id < i):
                     tokens.append((s0[s_id:i], s[1], s[2]+s_id))
                 s_id = i+1
             elif s0[i:i+2] in sep2:
+                last_sep_in_sep2 = True
                 if (not prv in whitespace) and (s_id < i):
                     tokens.append((s0[s_id:i], s[1], s[2]+s_id))
                 tokens.append((s0[i:i+2], s[1], s[2]+i))
-                s_id = i+1
+                s_id = i+2
             elif c in sep1:
                 # special case: e+ or e- might not be a sparator
                 is_exp = False
