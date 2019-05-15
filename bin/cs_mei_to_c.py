@@ -87,7 +87,7 @@ END_C_DECLS
 
 _function_header = { \
 'vol':"""void
-cs_meg_volume_function(cs_field_t       *f,
+cs_meg_volume_function(cs_field_t       *f[],
                        const cs_zone_t  *vz)
 {
 """,
@@ -121,7 +121,7 @@ _function_names = {'vol':'cs_meg_volume_function.c',
                    'src':'cs_meg_source_terms.c',
                    'ini':'cs_meg_initialization.c'}
 
-_block_comments = {'vol':'User defined formula for variable %s over zone %s',
+_block_comments = {'vol':'User defined formula for variable(s) %s over zone %s',
                    'bnd':'User defined formula for "%s" over BC=%s',
                    'src':'User defined source term for %s over zone %s',
                    'ini':'User defined initialization for variable %s over zone %s'}
@@ -155,6 +155,75 @@ _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
 #===============================================================================
 # Utility functions
 #===============================================================================
+
+#---------------------------------------------------------------------------
+def create_req_field(name, dim=0):
+
+    r = {'name':name,
+         'dim':dim,
+         'components':[]}
+
+    return r
+
+def rfield_add_comp(rf, c):
+
+    rf['components'].append(c)
+    rf['dim'] += 1
+
+def split_req_components(req_list):
+    """
+    Look at a list of field names used in the formula.
+    Check if its a component (f[X], f[XY], ..) or a field (f).
+    return a list with it
+    """
+    req_fields = []
+    for r in req_list:
+
+        rf = r
+        if bool(re.search('\[[A-Za-z0-9]\]', r)):
+            rf = re.sub('\[[A-Za-z0-9]\]', '', r)
+        elif bool(re.search('\[[A-Za-z0-9][A-Za-z0-9]\]', r)):
+            rf = re.sub('\[[A-Za-z0-9][A-Za-z0-9]\]', '', r)
+
+        if rf == r:
+            req_fields.append(create_req_field(r,1))
+
+        else:
+            new_field = True
+            for f in req_fields:
+                if f['name'] == rf:
+                    rfield_add_comp(f,r)
+                    new_field = False
+                    break
+
+            if new_field:
+                req_fields.append(create_req_field(rf))
+                rfield_add_comp(req_fields[-1], r)
+
+    return req_fields
+
+def get_req_field_info(req_fields, r):
+
+    for i in range(len(req_fields)):
+        if req_fields[i]['dim'] == 1:
+            if req_fields[i]['name'] == r:
+                return i, -1, req_fields[i]['dim']
+
+        else:
+            if r in req_fields[i]['components']:
+                return i, req_fields[i]['components'].index(r), req_fields[i]['dim']
+
+    return None, None, None
+
+def dump_req_fields(req_fields):
+
+    print("===========================")
+    for f in req_fields:
+        print("Name: %s" % (f['name']))
+        print("Dim: %d" % (f['dim']))
+        print(f['components'])
+        print("===========================")
+
 
 #---------------------------------------------------------------------------
 
@@ -841,6 +910,10 @@ def parse_gui_expression(expression,
 
     if_open = 0
 
+    if func_type == 'vol':
+        req_fields = split_req_components(req)
+#        dump_req_fields(req_fields)
+
     # ------------------------------------
     # Parse the Mathematical expression and generate the C block code
 
@@ -910,7 +983,14 @@ def parse_gui_expression(expression,
 
                 elif lf[0].strip() in req:
                     if func_type == 'vol':
-                        new_v = 'f->val[c_id]'
+                        fid, fcomp, fdim = get_req_field_info(req_fields, lf[0].strip())
+                        if fid == None:
+                            raise Exception("Uknown field: %s" %(lf[0].strip()))
+
+                        if fcomp < 0:
+                            new_v = 'f[%d]->val[c_id]' % (fid)
+                        else:
+                            new_v = 'f[%d]->val[c_id*%d + %d]' % (fid, fdim, fcomp)
 
                     elif func_type == 'bnd':
                         ir = req.index(lf[0].strip())
@@ -1083,9 +1163,6 @@ class mei_to_c_interpreter:
         else:
             required = func_params['req']
 
-        if len(required) > 1:
-            raise Exception("Received more than one argument in write_cell_block function")
-
         zone, name = func_key.split('::')
         exp_lines_comp = func_params['lines']
 
@@ -1204,8 +1281,12 @@ class mei_to_c_interpreter:
             usr_defs += parsed_exp[1]
 
         # Write the block
-        usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(vz->name, "%s") == 0) {\n' \
-                % (name, zone)
+        nsplit = name.split('+')
+        usr_blck = tab + 'if (strcmp(f[0]->name, "%s") == 0 &&\n' % (nsplit[0])
+        for i in range(1,len(nsplit)):
+            usr_blck += tab + '    strcmp(f[%d]->name, "%s") == 0 &&\n' % (i, nsplit[i])
+
+        usr_blck += tab + '    strcmp(vz->name, "%s") == 0) {\n' % (zone)
 
         usr_blck += usr_defs + '\n'
 
@@ -1639,6 +1720,7 @@ class mei_to_c_interpreter:
     def generate_volume_code(self):
 
         from code_saturne.model.LocalizationModel import LocalizationModel
+        from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
         if self.pkg_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
                 import FluidCharacteristicsModel
@@ -1662,6 +1744,24 @@ class mei_to_c_interpreter:
                         fcm.getFormulaComponents('scalar_diffusivity', s)
                         self.init_block('vol', 'all_cells', dname,
                                         exp, req, sym, sca)
+
+            # GroundWater Flows Law
+            vlm = LocalizationModel('VolumicZone', self.case)
+            glm = GroundwaterLawModel(self.case)
+
+            for zone in vlm.getZones():
+                z_id = str(zone.getCodeNumber())
+                zone_name = zone.getLabel()
+                nature_list = zone.getNatureList()
+
+                if "groundwater_law" in nature_list:
+                    if zone.getNature()['groundwater_law'] == 'on':
+                        if glm.getGroundwaterLawModel(z_id) == 'user':
+                            exp, req, sym = glm.getGroundwaterLawFormulaComponents(z_id)
+                            self.init_block('vol', zone_name,
+                                            'capacity+saturation+permeability',
+                                            exp, req, sym, [])
+
 
         else:
             from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
@@ -1734,10 +1834,13 @@ class mei_to_c_interpreter:
                 nature_list = zone.getNatureList()
                 if 'porosity' in nature_list:
                     if zone.getNature()['porosity'] == 'on':
+                        fname = 'porosity'
+                        if prm.getPorosityModel(z_id) == 'anisotropic':
+                            fname += '+tensorial_porosity'
                         exp, req, known_fields, sym = \
                         prm.getPorosityFormulaComponents(z_id)
 
-                        self.init_block('vol', zone_name, 'porosity',
+                        self.init_block('vol', zone_name, fname,
                                         exp, req, sym, known_fields)
 
 
@@ -2359,6 +2462,7 @@ class mei_to_c_interpreter:
             code_to_write += _function_header[func_type]
             for key in self.funcs[func_type].keys():
                 zone_name, var_name = key.split('::')
+                var_name = var_name.replace("+", ", ")
                 m1 = _block_comments[func_type] % (var_name, zone_name)
                 m2 = '/*-' + '-'*len(m1) + '-*/\n'
                 m1 = '/* ' + m1 + ' */\n'
