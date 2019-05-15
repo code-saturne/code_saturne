@@ -44,16 +44,17 @@ import SMESH
 import CFDSTUDYGUI_DataModel
 
 try:
-    from vtkmodules.libvtkRenderingCorePython import *
-    from vtkmodules.libvtkFiltersSourcesPython import *
+    from vtkmodules.vtkRenderingCorePython import *
+    from vtkmodules.vtkFiltersSourcesPython import *
 except:
     try:
-        from libvtkRenderingCorePython import *
-        from libvtkFiltersSourcesPython import *
+        from vtkRenderingCorePython import *
+        from vtkFiltersSourcesPython import *
     except:
+        # for compatibility with salome 7.2
         try:
-            from vtkRenderingCorePython import *
-            from vtkFiltersSourcesPython import *
+            from libvtkRenderingCorePython import *
+            from libvtkFiltersSourcesPython import *
         except:
             # for compatibility with salome 6.6
             try:
