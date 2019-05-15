@@ -180,12 +180,12 @@ class PorosityModel(Variables, Model):
             formula = """porosity=1.;"""
         else:
             formula = """porosity=1.;
-porosity[XX]=1.;
-porosity[YY]=1.;
-porosity[ZZ]=1.;
-porosity[XY]=0.;
-porosity[XZ]=0.;
-porosity[YZ]=0.;"""
+tensorial_porosity[XX]=1.;
+tensorial_porosity[YY]=1.;
+tensorial_porosity[ZZ]=1.;
+tensorial_porosity[XY]=0.;
+tensorial_porosity[XZ]=0.;
+tensorial_porosity[YZ]=0.;"""
 
         return formula
 
@@ -199,12 +199,12 @@ porosity[YZ]=0.;"""
             req = [('porosity', 'Porosity')]
         else:
             req = [('porosity', 'Porosity'),
-                   ('porosity[XX]', 'Porosity'),
-                   ('porosity[YY]', 'Porosity'),
-                   ('porosity[ZZ]', 'Porosity'),
-                   ('porosity[XY]', 'Porosity'),
-                   ('porosity[XZ]', 'Porosity'),
-                   ('porosity[YZ]', 'Porosity')]
+                   ('tensorial_porosity[XX]', 'Tensor Porosity'),
+                   ('tensorial_porosity[YY]', 'Tensor Porosity'),
+                   ('tensorial_porosity[ZZ]', 'Tensor Porosity'),
+                   ('tensorial_porosity[XY]', 'Tensor Porosity'),
+                   ('tensorial_porosity[XZ]', 'Tensor Porosity'),
+                   ('tensorial_porosity[YZ]', 'Tensor Porosity')]
 
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),

@@ -1664,6 +1664,22 @@ class XMLinit(Variables):
                 else:
                     nodep['choice'] = 'predefined_law'
 
+        # For porosity, rename porosity[XX] as tensorial_porosity[XX], ..
+        porosity_rename = {'porosity[XX]':'tensorial_porosity[XX]',
+                           'porosity[YY]':'tensorial_porosity[YY]',
+                           'porosity[ZZ]':'tensorial_porosity[ZZ]',
+                           'porosity[XY]':'tensorial_porosity[XY]',
+                           'porosity[XZ]':'tensorial_porosity[XZ]',
+                           'porosity[YZ]':'tensorial_porosity[YZ]'}
+        node_poro = XMLThermoPhysicalNode.xmlGetNode('porosities')
+        for n in node_poro.xmlGetNodeList('porosity'):
+            nf = n.xmlGetNode('formula')
+            if nf != None:
+                f = n.xmlGetString('formula')
+                for k in porosity_rename.keys():
+                    f = f.replace(k, porosity_rename[k])
+                nf.xmlSetTextNode(f)
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

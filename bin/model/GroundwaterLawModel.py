@@ -46,6 +46,7 @@ from code_saturne.model.XMLmodel import ModelTest
 from code_saturne.model.LocalizationModel import LocalizationModel, VolumicLocalizationModel, Zone
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # GroundwaterLaw model class
@@ -314,6 +315,42 @@ saturation = 1.;
 permeability=1.;"""
 
         return formula
+
+
+    @Variables.noUndo
+    def getGroundwaterLawFormulaComponents(self, zoneid):
+        """
+        Public method.
+        Return formula, required symbols and available symbols.
+        """
+
+        exp = self.getGroundwaterLawFormula(zoneid)
+        if exp == None:
+            exp = self.getDefaultGroundwaterLawFormula()
+
+        if GroundwaterModel(self.case).getPermeabilityType() == 'anisotropic':
+            req = [('capacity',     'Capacity'),
+                   ('saturation',   'Saturation'),
+                   ('permeability[XX]', 'Permeability'),
+                   ('permeability[YY]', 'Permeability'),
+                   ('permeability[ZZ]', 'Permeability'),
+                   ('permeability[XY]', 'Permeability'),
+                   ('permeability[XZ]', 'Permeability'),
+                   ('permeability[YZ]', 'Permeability')]
+        else:
+            req = [('capacity',     'Capacity'),
+                   ('saturation',   'Saturation'),
+                   ('permeability', 'Permeability')]
+
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate')]
+
+        for (nme, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+
+        return exp, req, sym
 
 
     @Variables.noUndo
