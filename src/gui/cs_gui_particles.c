@@ -400,7 +400,7 @@ cs_gui_particles_model(void)
         cs_lagr_stat_activate_attr(CS_LAGR_RESIDENCE_TIME);
 
       flag = 0;
-      _get_stats_post(tn_vs, "Part_stat_weight", &flag);
+      _get_stats_post(tn_vs, "Part_statis_weight", &flag);
       if (flag)
         cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
 
