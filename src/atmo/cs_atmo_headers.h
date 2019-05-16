@@ -34,6 +34,7 @@
 #include "cs_at_data_assim.h"
 #include "cs_at_opt_interp.h"
 #include "cs_at_plugin.h"
+#include "cs_atmo.h"
 
 /*----------------------------------------------------------------------------*/
 

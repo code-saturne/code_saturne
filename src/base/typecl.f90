@@ -120,7 +120,7 @@ integer          ifadir
 integer          iut  , ivt   , iwt, ialt, iscal
 integer          keyvar, keycpl
 integer          iivar, icpl
-integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus
+integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus, f_id_z_ground
 
 double precision pref
 double precision flumbf, flumty(ntypmx)
@@ -166,6 +166,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 call field_get_key_id("variable_id", keyvar)
 
 call field_get_id_try("wall_yplus", f_id_yplus)
+call field_get_id_try("z_ground", f_id_z_ground)
 
 ! Number of fields
 call field_get_n_fields(nfld)
@@ -1300,8 +1301,9 @@ do ivar = 1, nvar
       else if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
         flumbf = bmasfl(ifac)
-        ! Outgoing flux or yplus
-        if (flumbf.ge.-epzero.or. ivarfl(ivar).eq.f_id_yplus) then
+        ! Outgoing flux or yplus or z_ground
+        if (flumbf.ge.-epzero.or. ivarfl(ivar).eq.f_id_yplus &
+          .or.ivarfl(ivar).eq.f_id_z_ground) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
           rcodcl(ifac,ivar,2) = rinfin
@@ -1384,7 +1386,8 @@ do ivar = 1, nvar
 
         flumbf = bmasfl(ifac)
         ! Outgoing flux or yplus
-        if (flumbf.ge.-epzero.or. ivarfl(ivar).eq.f_id_yplus) then
+        if (flumbf.ge.-epzero.or. ivarfl(ivar).eq.f_id_yplus &
+          .or.ivarfl(ivar).eq.f_id_z_ground) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
           rcodcl(ifac,ivar,2) = rinfin

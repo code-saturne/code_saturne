@@ -340,6 +340,9 @@ double precision, save:: w1ini
 !> Water content of the second ground reservoir
 double precision, save:: w2ini
 
+!> Do we compute z ground every where?
+logical(c_bool), pointer, save :: compute_z_ground
+
 !  -------------------------------------------------------------------------------
 ! 4.0 Microphysics parameterization options
 !  -------------------------------------------------------------------------------
@@ -384,6 +387,28 @@ integer, save :: kopint
 !> \}
 
 contains
+
+  !=============================================================================
+
+  !> \brief Map fortran to C variables
+
+  subroutine atmo_init
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    implicit none
+
+    ! Local variables
+    type(c_ptr) :: c_compute_z_ground
+
+    call cs_f_atmo_get_pointers(c_compute_z_ground)
+
+    call c_f_pointer(c_compute_z_ground, compute_z_ground)
+
+    return
+
+  end subroutine atmo_init
 
   !=============================================================================
 !> \brief Initialisation of meteo data

@@ -300,6 +300,11 @@ else
   frcxt => rvoid2
 endif
 
+! Compute z ground everywhere
+if (ippmod(iatmos).ne.-1) then
+  call cs_atmo_z_ground_compute()
+endif
+
 !===============================================================================
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
 !===============================================================================

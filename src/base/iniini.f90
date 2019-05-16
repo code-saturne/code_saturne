@@ -31,6 +31,7 @@ subroutine iniini
 ! Module files
 !===============================================================================
 
+use atincl
 use paramx
 use cstnum
 use dimens
@@ -138,6 +139,7 @@ iporf = -1
 ! 1. Map Fortran pointers to C global data
 !===============================================================================
 
+call atmo_init
 call time_step_init
 call time_step_options_init
 call thermal_model_init

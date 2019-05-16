@@ -35,6 +35,7 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
@@ -57,6 +58,7 @@ pkginclude_HEADERS = \
 cs_at_plugin.h \
 cs_at_opt_interp.h \
 cs_at_data_assim.h \
+cs_atmo.h \
 cs_atmo_headers.h
 
 # Library source files
@@ -90,6 +92,7 @@ compute_siream.f90 \
 cs_at_plugin.c \
 cs_at_opt_interp.c \
 cs_at_data_assim.c \
+cs_atmo.c \
 cs_at_source_terms.f90 \
 etheq.f90  \
 intprf.f90 \
