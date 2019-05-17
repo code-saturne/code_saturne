@@ -1747,7 +1747,7 @@ class mei_to_c_interpreter:
 
             # GroundWater Flows Law
             vlm = LocalizationModel('VolumicZone', self.case)
-            glm = GroundwaterLawModel(self.case)
+            glm = None
 
             for zone in vlm.getZones():
                 z_id = str(zone.getCodeNumber())
@@ -1755,6 +1755,8 @@ class mei_to_c_interpreter:
                 nature_list = zone.getNatureList()
 
                 if "groundwater_law" in nature_list:
+                    if not glm:
+                        glm = GroundwaterLawModel(self.case)
                     if zone.getNature()['groundwater_law'] == 'on':
                         if glm.getGroundwaterLawModel(z_id) == 'user':
                             exp, req, sym = glm.getGroundwaterLawFormulaComponents(z_id)
@@ -1763,7 +1765,7 @@ class mei_to_c_interpreter:
                                             exp, req, sym, [])
 
 
-        else:
+        elif self.pkg_name == 'neptune_cfd':
             from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
             from code_saturne.model.MainFieldsModel import MainFieldsModel
 
