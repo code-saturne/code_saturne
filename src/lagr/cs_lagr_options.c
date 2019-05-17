@@ -360,8 +360,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
        lagr_time_scheme->iilagr);
 
   if (lagr_time_scheme->iilagr != CS_LAGR_OFF
-      && (   cs_glob_time_step->is_local
-          || cs_glob_time_step->is_variable)) {
+      && (   cs_glob_time_step->is_local)) {
 
     bft_printf("@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
