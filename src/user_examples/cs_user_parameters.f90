@@ -1252,6 +1252,9 @@ implicit none
 
 imeteo = 1
 
+! Automatique open boundary conditions
+iatmst = 1
+
 !!! For radiative model or chemistry
 
 ! Time of the simulation
