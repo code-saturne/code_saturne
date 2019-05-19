@@ -54,7 +54,7 @@ from code_saturne.Base.QtPage import ComboModel, IntValidator, from_qvariant
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath
 from code_saturne.Pages.StartRestartForm import Ui_StartRestartForm
 from code_saturne.Pages.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
-from code_saturne.model.StartRestartModel import StartRestartModel
+from code_saturne.model.StartRestartModel import StartRestartModel, getRestartInfo
 
 #-------------------------------------------------------------------------------
 # log config
@@ -279,9 +279,59 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         else:
             self.checkBox.setChecked(False)
 
+        self.updateRestartTimes()
         self.updateRestartMeshView()
 
         self.case.undoStartGlobal()
+
+
+    def updateRestartTimes(self):
+        """
+        Update information on restart times
+        """
+
+        # FIXME: ensure correct path is used in coupling situations;
+        # currently, if in doubt, leave it empty (we prefer to have
+        # no information than false information)
+        restart_dir = None
+        restart_path = None
+
+        if self.restart_path == '*':
+            d = os.path.join(os.path.split(self.case['case_path'])[0],
+                             'RESU_COUPLING')
+            if not os.path.isdir(d):
+                restart_dir = os.path.join(self.case['case_path'], 'RESU')
+            if os.path.isdir(restart_dir):
+                restart_path = '*'
+            else:
+                restart_dir = None
+        elif self.restart_path:
+            if os.path.isabs(self.restart_path):
+                restart_path = self.restart_path
+            else:
+                restart_path = os.path.join(self.case['case_path'],
+                                            self.restart_path)
+
+        rinfo = getRestartInfo(self.case['package'],
+                               restart_dir,
+                               restart_path)
+
+        self.lineEdit.setEnabled(self.restart_path != '*')
+        self.lineEdit.setFrame(self.restart_path != '*')
+
+        if rinfo:
+            self.lineEdit.setText(rinfo[0])
+            self.labelIteration.show()
+            self.labelTime.show()
+            self.lineEditIteration.show()
+            self.lineEditTime.show()
+            self.lineEditIteration.setText(str(rinfo[1]))
+            self.lineEditTime.setText(str(rinfo[2]))
+        else:
+            self.labelIteration.hide()
+            self.labelTime.hide()
+            self.lineEditIteration.hide()
+            self.lineEditTime.hide()
 
 
     def updateRestartMeshView(self):
@@ -345,6 +395,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.restart_path = RelOrAbsPath(dir_path, self.case['case_path'])
             self.model.setRestartPath(self.restart_path)
             self.lineEdit.setText(self.restart_path)
+            self.updateRestartTimes()
 
             log.debug("slotSearchRestartDirectory-> %s" % self.restart_path)
 
@@ -416,18 +467,16 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             if self.restart_path == '*':
                 self.radioButtonYes.setChecked(False)
                 self.radioButtonAuto.setChecked(True)
-                self.labelRestartDir.hide()
-                self.lineEdit.hide()
+                self.labelRestartDir.setEnabled(False)
                 self.toolButton.hide()
+                self.updateRestartTimes()
             else:
                 self.radioButtonYes.setChecked(True)
                 self.radioButtonAuto.setChecked(False)
-                self.labelRestartDir.show()
-                self.lineEdit.show()
+                self.labelRestartDir.setEnabled(True)
                 self.toolButton.show()
             self.radioButtonNo.setChecked(False)
             self.frameRestart.show()
-            self.lineEdit.setText(self.restart_path)
         else:
             self.model.setRestartPath(None)
             self.model.setRestartMeshPath(None)
@@ -437,6 +486,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.checkBoxRestartMesh.setChecked(False)
             self.frameRestart.hide()
             self.lineEdit.setText("")
+            self.updateRestartTimes()
 
         self.updateRestartMeshView()
 

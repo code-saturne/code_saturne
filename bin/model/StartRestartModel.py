@@ -46,6 +46,81 @@ from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
+# Get info on a given restart path
+#-------------------------------------------------------------------------------
+
+def getRestartInfo(package, results_dir=None, restart_path='*'):
+    """
+    Return a tuple (path, number of time steps, time value) or None
+    describing the current restart selection.
+    """
+
+    restart_input = None
+
+    from cs_exec_environment import get_command_output, assemble_args
+
+    nt_names = ('nbre_pas_de_temps', 'ntcabs')
+    t_names = ('instant_precedent', 'ttcabs')
+
+    results = []
+
+    if results_dir and restart_path == '*':
+        results = os.listdir(results_dir)
+        results.sort(reverse=True)
+    elif restart_path:
+        results = [restart_path,]
+
+    io_dump = package.get_io_dump()
+
+    for r in results:
+        if restart_path == '*':
+            m = os.path.join(results_dir, r, 'checkpoint', 'main')
+        else:
+            m = os.path.join(r, 'main')
+        if os.path.isfile(m):
+            if True: # try:
+                nt = -1
+                for name in nt_names:
+                    cmd = [io_dump, '-e', '--section']
+                    cmd.append(name)
+                    cmd.append(m)
+                    cmd_str = assemble_args(cmd)
+                    res = get_command_output(cmd_str)
+                    if res:
+                        nt = -1
+                        try:
+                            nt = int(res.strip())
+                            break
+                        except Exception:
+                            pass
+                t = -1
+                for name in t_names:
+                    cmd = [io_dump, '-e', '--section']
+                    cmd.append(name)
+                    cmd.append(m)
+                    cmd_str = assemble_args(cmd)
+                    res = get_command_output(cmd_str)
+                    if res:
+                        t = -1
+                        try:
+                            t = float(res.strip())
+                            break
+                        except Exception:
+                            pass
+
+                return (m, nt, t)
+
+            elif False: # except Exception:
+                d = os.path.split(m)[0]
+                print('checkpoint: ' + d + ' does not seem usable')
+                continue
+            restart_input = os.path.join(results_dir, r, 'checkpoint')
+            break
+
+    return None
+
+
+#-------------------------------------------------------------------------------
 # Start-Restart model class
 #-------------------------------------------------------------------------------
 
