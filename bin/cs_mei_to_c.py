@@ -151,6 +151,7 @@ _pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
 _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
                     'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
 
+_ref_turb_values = {'uref', 'almax'}
 
 #===============================================================================
 # Utility functions
@@ -1207,6 +1208,11 @@ class mei_to_c_interpreter:
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
                     elif sn in _pkg_fluid_prop_dict[self.pkg_name].keys():
                         if len(name.split("_")) > 1:
                             try:
@@ -1373,6 +1379,11 @@ class mei_to_c_interpreter:
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
             for nb in self.notebook.keys():
                 if nb in line_comp and nb not in known_symbols:
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
@@ -1512,6 +1523,11 @@ class mei_to_c_interpreter:
                                 % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
                     elif sn in known_fields.keys():
                         l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n'
                         l = l % (sn, known_fields[sn])
@@ -1620,6 +1636,11 @@ class mei_to_c_interpreter:
                     elif sn in self.notebook.keys():
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
                                 % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 

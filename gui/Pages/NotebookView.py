@@ -67,7 +67,8 @@ forbidden_labels = ['temperature', 'pressure', 'density', 'specific_heat',
                     'molecular_viscosty', 'thermal_conductivity',
                     'rho', 'rho0', 'ro0', 'mu', 'mu0', 'viscl0',
                     'p0', 'cp0', 'cp', 'lambda0',
-                    'enthalpy', 'volume_fraction', 'vol_f']
+                    'enthalpy', 'volume_fraction', 'vol_f',
+                    'uref', 'almax']
 
 #-------------------------------------------------------------------------------
 # item class
