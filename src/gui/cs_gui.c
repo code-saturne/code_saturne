@@ -2760,7 +2760,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
                            "thermophysical_models/source_terms/thermal_formula");
       char z_id_str[32];
       snprintf(z_id_str, 31, "%d", z->id);
-      while (tn != NULL){
+      while (tn != NULL) {
 
         const char *name = cs_gui_node_get_tag(tn, "name");
         const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
