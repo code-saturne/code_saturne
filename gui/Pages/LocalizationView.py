@@ -561,7 +561,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
 
         editor = QLineEdit(parent)
 
-        # Auto completion for selection criteria!
+        # Autocompletion for selection criteria!
         comp_list = ['all[]']
         if self.mdl._typeZone == 'BoundaryZone':
             comp_list += ['normal[x, y, z, epsilon]']
@@ -586,7 +586,9 @@ class LocalizationSelectorDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        # This line is used to avoid an overlay of old and new text
         editor.setAutoFillBackground(True)
+
         self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         editor.setText(self.value)
 
