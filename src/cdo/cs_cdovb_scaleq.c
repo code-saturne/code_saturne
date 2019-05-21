@@ -1262,7 +1262,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
           cs_base_warn(__FILE__, __LINE__);
           cs_log_printf(CS_LOG_DEFAULT,
                         "%s: A better choice for the reduction of the source"
-                        " term is on primal entities.");
+                        " term is on primal entities.", __func__);
         }
 
       } /* Loop on the definitions of source terms */
