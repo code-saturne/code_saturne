@@ -915,6 +915,86 @@ cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  LU factorization of a small dense 3x3 matrix.
+ *
+ * \param[in]      m        pointer to a cs_sdm_t structure
+ * \param[in, out] facto    compact storage of coefficients for the LU
+ *                          factorization
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_33_lu_compute(const cs_sdm_t   *m,
+                     cs_real_t         facto[9]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  LU factorization of a small dense matrix. Small means that the
+ *         number m->n_rows is less than 100 for instance.
+ *
+ * \param[in]      m        pointer to a cs_sdm_t structure
+ * \param[in, out] facto    compact storage of coefficients for the LU
+ *                          factorization (should be allocated to the right
+ *                          size, i.e. m->n_rows*m->n_rows)
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_lu_compute(const cs_sdm_t   *m,
+                  cs_real_t         facto[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a system A.sol = rhs using a LU factorization of A (a small
+ *         3x3 dense matrix).
+ *
+ * \param[in]       facto    compact storage of coefficients for the LU
+ *                           factorization (should be allocated to the right
+ *                           size, i.e. n_rows*n_rows)
+ * \param[in]       rhs      right-hand side
+ * \param[in, out]  sol      solution
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_33_lu_solve(const cs_real_t    facto[9],
+                   const cs_real_t    rhs[3],
+                   cs_real_t          sol[3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a system A.sol = rhs using a LU factorization of A (a small
+ *         dense matrix).
+ *
+ * \param[in]       n_rows   dimension of the system to solve
+ * \param[in]       facto    compact storage of coefficients for the LU
+ *                           factorization (should be allocated to the right
+ *                           size, i.e. n_rows*n_rows)
+ * \param[in]       rhs      right-hand side
+ * \param[in, out]  sol      solution
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_lu_solve(cs_lnum_t          n_rows,
+                const cs_real_t    facto[],
+                const cs_real_t   *rhs,
+                cs_real_t         *sol);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  LDL^T: Modified Cholesky decomposition of a 3x3 SPD matrix.
  *         For more reference, see for instance
  *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
