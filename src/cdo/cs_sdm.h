@@ -260,8 +260,7 @@ cs_sdm_create_copy(const cs_sdm_t   *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define a new matrix by adding the given matrix with its transpose.
- *          Keep the transposed matrix for a future use.
+ * \brief   Define a new matrix which is its transpose.
  *
  * \param[in] mat   local matrix to transpose
  *
@@ -557,7 +556,7 @@ cs_sdm_copy_block(const cs_sdm_t       *m,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  transpose and copy a matrix into another one already shaped
- *          sub-matrix starting from (r_id, c_id)
+ *         sub-matrix starting from (r_id, c_id)
  *
  * \param[in]      m      pointer to cs_sdm_t structure
  * \param[in, out] mt     matrix to update with the transposed of m
