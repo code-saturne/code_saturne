@@ -83,6 +83,8 @@ _test_sdm(FILE  *out)
     const int  max_size = 6;
     cs_sdm_t  *m = cs_sdm_square_create(max_size);
 
+    /* 3 x 3 matrix */
+
     cs_sdm_square_init(3, m);
     m->val[0] = 2, m->val[1] = -1, m->val[2] = 0;
     m->val[3] =-1, m->val[4] =  2, m->val[5] =-1;
@@ -92,7 +94,7 @@ _test_sdm(FILE  *out)
 
     /* Compute the L.D.L^T decomposition and then solve */
     cs_real_6_t  sol, tmp;
-    cs_real_t  facto[21];
+    cs_real_t  facto[36];
 
     cs_sdm_33_ldlt_compute(m, facto);
     cs_sdm_33_ldlt_solve(facto, b, sol);
@@ -108,6 +110,20 @@ _test_sdm(FILE  *out)
 
     fprintf(out, " Solution l.d.l^T:    % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2]);
+
+    cs_sdm_33_lu_compute(m, facto);
+    cs_sdm_33_lu_solve(facto, b, sol);
+
+    fprintf(out, " Solution l.u 33:     % .4e % .4e % .4e\n",
+            sol[0], sol[1], sol[2]);
+
+    cs_sdm_lu_compute(m, facto);
+    cs_sdm_lu_solve(3, facto, b, sol);
+
+    fprintf(out, " Solution l.u:        % .4e % .4e % .4e\n",
+            sol[0], sol[1], sol[2]);
+
+    /* 4 x 4 matrix */
 
     cs_sdm_square_init(4, m);
     m->val[ 0] = 2, m->val[ 1] = -1, m->val[ 2] = 0, m->val[ 3] = 0;
@@ -129,6 +145,14 @@ _test_sdm(FILE  *out)
 
     fprintf(out, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2], sol[3]);
+
+    cs_sdm_lu_compute(m, facto);
+    cs_sdm_lu_solve(4, facto, b, sol);
+
+    fprintf(out, " Solution l.u:        % .4e % .4e % .4e % .4e\n",
+            sol[0], sol[1], sol[2], sol[3]);
+
+    /* 6 x 6 matrix */
 
     cs_sdm_square_init(6, m);
     cs_real_t *a = m->val;
@@ -152,6 +176,12 @@ _test_sdm(FILE  *out)
     cs_sdm_ldlt_solve(6, facto, b, sol);
 
     fprintf(out, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e % .4e % .4e\n",
+            sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
+
+    cs_sdm_lu_compute(m, facto);
+    cs_sdm_lu_solve(6, facto, b, sol);
+
+    fprintf(out, " Solution l.u:        % .4e % .4e % .4e % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
 
     m = cs_sdm_free(m);
