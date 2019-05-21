@@ -184,8 +184,7 @@ cs_sdm_create_copy(const cs_sdm_t   *m)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define a new matrix by adding the given matrix with its transpose.
- *          Keep the transposed matrix for a future use.
+ * \brief   Define a new matrix which is its transpose.
  *
  * \param[in] mat   local matrix to transpose
  *
