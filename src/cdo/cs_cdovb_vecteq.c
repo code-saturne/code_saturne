@@ -1266,48 +1266,6 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         builder structure
- *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdovb_vecteq_t structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
-                                  cs_equation_builder_t      *eqb,
-                                  void                       *data,
-                                  cs_matrix_t               **system_matrix,
-                                  cs_real_t                 **system_rhs)
-{
-  CS_UNUSED(eqp);
-
-  if (data == NULL)
-    return;
-  assert(*system_matrix == NULL && *system_rhs == NULL);
-
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)data;
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* Create the matrix related to the current algebraic system */
-  *system_matrix = cs_matrix_create(cs_shared_ms);
-
-  /* Allocate and initialize the related right-hand side */
-  BFT_MALLOC(*system_rhs, eqc->n_dofs, cs_real_t);
-#pragma omp parallel for if  (eqc->n_dofs > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) (*system_rhs)[i] = 0.0;
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the boundary conditions known from the settings when the fields
  *         stem from a vector CDO vertex-based scheme.
  *
