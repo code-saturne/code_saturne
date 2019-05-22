@@ -228,7 +228,7 @@ if(vcopt_e%iwarni.ge.1) then
 endif
 
 ! Barotropic version
-if (ippmod(icompf) .eq. 1) goto 33
+if (ippmod(icompf).eq.1) goto 33
 
 !===============================================================================
 ! 2. Source terms
@@ -330,7 +330,7 @@ do ifac = 1, nfabor
   if (icvfli(ifac).eq.0) then
     iel = ifabor(ifac)
     bprtfl(ifac) = - bmasfl(ifac)                                            &
-                    * (coefa_p(ifac) + coefb_p(ifac)*cvar_pr(iel))          &
+                    * (coefa_p(ifac) + coefb_p(ifac)*cvar_pr(iel))           &
                     / brom(ifac)
   else
     bprtfl(ifac) = 0.d0

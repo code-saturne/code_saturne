@@ -452,7 +452,9 @@ endif
 ! 3. Pressure resolution and computation of mass flux for compressible flow
 !===============================================================================
 
-if (ippmod(icompf).ge.0) then
+! Note, for the compressible algorithm written in pressure increment,
+! this step is performed in the same time as the incompressible algorithm
+if (ippmod(icompf).ge.0.and.ippmod(icompf).ne.3) then
 
   if(vcopt_p%iwarni.ge.1) then
     write(nfecra,1080)
@@ -873,7 +875,7 @@ endif
 ! Allocate temporary arrays for the pressure resolution
 allocate(phi(ncelet))
 
-if (ippmod(icompf).lt.0) then
+if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
   call resopv &
 ( nvar   , iterns , ncetsm , nfbpcd , ncmast ,                   &
@@ -906,7 +908,7 @@ endif
 ! 9. Update of the fluid velocity field
 !===============================================================================
 
-if (ippmod(icompf).lt.0) then
+if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
   ! irevmc = 0: Update the velocity with the pressure gradient.
 

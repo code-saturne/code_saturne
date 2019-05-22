@@ -120,7 +120,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb, b_head_loss, gamcav, dgdpca
+use pointe, only: itypfb, b_head_loss, gamcav, dgdpca, rvoid1
 use albase
 use parall
 use period
@@ -134,6 +134,7 @@ use cavitation
 use vof
 use cs_f_interfaces
 use cs_c_bindings
+use cs_cf_bindings
 use cs_tagms, only:s_metal
 
 !===============================================================================
@@ -246,6 +247,10 @@ double precision, allocatable, dimension(:,:) :: trav
 double precision, dimension(:,:), pointer :: cpro_poro_div_duq
 double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 double precision, dimension(:), allocatable, target :: cpro_rho_tc, bpro_rho_tc
+
+double precision, allocatable, dimension(:) :: c2
+double precision, dimension(:), pointer :: cpro_cp, cpro_cv
+double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
 !===============================================================================
 
@@ -736,6 +741,34 @@ if (idilat.eq.3) then
   enddo
 endif
 
+if (ippmod(icompf).eq.3) then
+
+  cvar_fracv => null()
+  cvar_fracm => null()
+  cvar_frace => null()
+
+  if (icp.ge.0) then
+    call field_get_val_s(icp, cpro_cp)
+  else
+    cpro_cp => rvoid1 !FIXME why we don't use a constant value?
+  endif
+
+  if (icv.ge.0) then
+    call field_get_val_s(icv, cpro_cv)
+  else
+    cpro_cv => rvoid1!FIXME why we don't use a constant value?
+  endif
+
+  allocate(c2(ncelet))
+
+  call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, &
+                             cvar_fracv, cvar_fracm, cvar_frace, c2, ncel)
+
+  do iel = 1, ncel
+    rovsdt(iel) = rovsdt(iel) + vcopt_p%istat*(cell_f_vol(iel)/(dt(iel)*c2(iel)))
+  enddo
+endif
+
 ! ---> Face diffusivity
 if (vcopt_p%idiff.ge.1) then
 
@@ -1195,7 +1228,7 @@ nswmpr = vcopt_p%nswrsm
 ! --- Variables are set to 0
 !       phi        is the increment of the pressure
 !       dphi       is the increment of the increment between sweeps
-!       cpro_divu       is the initial divergence of the predicted mass flux
+!       cpro_divu  is the initial divergence of the predicted mass flux
 
 do iel = 1, ncel
   phi(iel)  = 0.d0
@@ -1301,7 +1334,7 @@ endif
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    cpro_divu(iel) = cpro_divu(iel) -cell_f_vol(iel)*smacel(ii,ipr)
+    cpro_divu(iel) = cpro_divu(iel) - cell_f_vol(iel)*smacel(ii,ipr)
   enddo
 endif
 
@@ -1331,7 +1364,7 @@ endif
 
 
 ! --- Source term associated to the mass aggregation
-if (idilat.eq.2.or.idilat.eq.3) then
+if ((idilat.eq.2.or.idilat.eq.3).and.ippmod(icompf).ne.3) then
 
   ! Add source term
   do iel = 1, ncel
@@ -1892,7 +1925,19 @@ endif
 ! Update density (which is coherent with the mass)
 !-------------------------------------------------
 
-if (irovar.eq.1) then
+if (ippmod(icompf).eq.3) then
+  do iel = 1, ncel
+    cpro_rho_mass(iel) = crom_eos(iel) + phi(iel)/c2(iel)
+    crom_eos(iel) = cpro_rho_mass(iel)
+  enddo
+
+  do ifac = 1, nfabor
+    bpro_rho_mass(ifac) = brom_eos(ifac)
+  enddo
+
+  deallocate(c2)
+
+else if (irovar.eq.1) then
   do iel = 1, ncelet
     cpro_rho_mass(iel) = crom_eos(iel)
   enddo

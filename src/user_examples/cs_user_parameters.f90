@@ -238,6 +238,7 @@ endif
 !        if =  0   module activated
 !        if =  1   barotropic version
 !        if =  2   homogeneous two phase model
+!        if =  3   in pressure increment
 
 if (ixmlpu.eq.0) then
 
