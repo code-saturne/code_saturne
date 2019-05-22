@@ -316,7 +316,6 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      field_id id related to the variable field of this equation
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in, out] x        solution of the linear system (in: initial guess)
  * \param[in, out] b        right-hand side (scatter/gather if needed)
@@ -328,7 +327,6 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
 int
 cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
                              const cs_matrix_t            *matrix,
-                             const int                     field_id,
                              const cs_equation_param_t    *eqp,
                              cs_real_t                    *x,
                              cs_real_t                    *b);

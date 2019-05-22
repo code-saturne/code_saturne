@@ -441,7 +441,6 @@ cs_cdofb_vecteq_diffusion(double                         time_eval,
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      field_id id related to the variable field of this equation
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in, out] x        solution of the linear system (in: initial guess)
  * \param[in, out] b        right-hand side (scatter/gather if needed)
@@ -453,7 +452,6 @@ cs_cdofb_vecteq_diffusion(double                         time_eval,
 int
 cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
                              const cs_matrix_t            *matrix,
-                             const int                     field_id,
                              const cs_equation_param_t    *eqp,
                              cs_real_t                    *x,
                              cs_real_t                    *b)
@@ -461,20 +459,21 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_lnum_t  n_scatter_elts = 3*n_faces;
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
 
   /* solving info */
+  const int  field_id = cs_sles_get_f_id(sles);
+  assert(field_id > -1);
   cs_field_t  *fld = cs_field_by_id(field_id);
   cs_solving_info_t sinfo;
   cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 
   sinfo.n_it = 0;
   sinfo.res_norm = DBL_MAX;
-  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+
+  /* Set xsol */
   cs_real_t  *xsol = NULL;
-
-  const cs_lnum_t  n_scatter_elts = 3*n_faces;
-  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
-
   if (n_cols > n_scatter_elts) {
     assert(cs_glob_n_ranks > 1);
     BFT_MALLOC(xsol, n_cols, cs_real_t);
@@ -484,6 +483,7 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
     xsol = x;
 
   /* Prepare solving (handle parallelism) */
+  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
   cs_gnum_t  nnz = cs_equation_prepare_system(1,            /* stride */
                                               n_scatter_elts,
                                               matrix,
@@ -711,7 +711,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_real_t *face_val = eqc->face_values;
   cs_sles_t *sles = cs_sles_find_or_add(field_id, NULL);
 
-  cs_cdofb_vecteq_solve_system(sles, matrix, field_id, eqp, face_val, rhs);
+  cs_cdofb_vecteq_solve_system(sles, matrix, eqp, face_val, rhs);
 
   /* Update field */
   cs_timer_t  t3 = cs_timer_time();
@@ -930,7 +930,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
   cs_real_t *face_val = eqc->face_values;
   cs_sles_t *sles = cs_sles_find_or_add(field_id, NULL);
 
-  cs_cdofb_vecteq_solve_system(sles, matrix, field_id, eqp, face_val, rhs);
+  cs_cdofb_vecteq_solve_system(sles, matrix, eqp, face_val, rhs);
 
   cs_timer_t  t3 = cs_timer_time();
 
@@ -1190,7 +1190,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
   cs_real_t  *face_val = eqc->face_values;
   cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
 
-  cs_cdofb_vecteq_solve_system(sles, matrix, field_id, eqp, face_val, rhs);
+  cs_cdofb_vecteq_solve_system(sles, matrix, eqp, face_val, rhs);
 
   cs_timer_t  t3 = cs_timer_time();
 

@@ -518,7 +518,6 @@ _assemble(const cs_cdofb_scaleq_t           *eqc,
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      field_id id related to the variable field of this equation
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in, out] x        solution of the linear system (in: initial guess)
  * \param[in, out] b        right-hand side (scatter/gather if needed)
@@ -530,7 +529,6 @@ _assemble(const cs_cdofb_scaleq_t           *eqc,
 static int
 _solve_fbs_system(cs_sles_t                    *sles,
                   const cs_matrix_t            *matrix,
-                  const int                     field_id,
                   const cs_equation_param_t    *eqp,
                   cs_real_t                    *x,
                   cs_real_t                    *b)
@@ -538,20 +536,11 @@ _solve_fbs_system(cs_sles_t                    *sles,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-
-  /* solving info */
-  cs_field_t  *fld = cs_field_by_id(field_id);
-  cs_solving_info_t sinfo;
-  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
-
-  sinfo.n_it = 0;
-  sinfo.res_norm = DBL_MAX;
-  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
-  cs_real_t  *xsol = NULL;
-
   const cs_lnum_t  n_scatter_elts = n_faces;
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
 
+  /* Set xsol */
+  cs_real_t  *xsol = NULL;
   if (n_cols > n_scatter_elts) {
     assert(cs_glob_n_ranks > 1);
     BFT_MALLOC(xsol, n_cols, cs_real_t);
@@ -560,7 +549,18 @@ _solve_fbs_system(cs_sles_t                    *sles,
   else
     xsol = x;
 
+  /* solving info */
+  const int  field_id = cs_sles_get_f_id(sles);
+  assert(field_id > -1);
+  cs_field_t  *fld = cs_field_by_id(field_id);
+
+  cs_solving_info_t sinfo;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
+
   /* Prepare solving (handle parallelism) */
+  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   cs_gnum_t  nnz = cs_equation_prepare_system(1,            /* stride */
                                               n_scatter_elts,
                                               matrix,
@@ -1356,7 +1356,6 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   /* Now solve the system */
   _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
                     matrix,
-                    field_id,
                     eqp,
                     eqc->face_values,
                     rhs);
@@ -1589,7 +1588,6 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   /* Now solve the system */
   _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
                     matrix,
-                    field_id,
                     eqp,
                     eqc->face_values,
                     rhs);
@@ -1875,7 +1873,6 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   /* Now solve the system. Overwrite face_values with the computed solution */
   _solve_fbs_system(cs_sles_find_or_add(field_id, NULL),
                     matrix,
-                    field_id,
                     eqp,
                     eqc->face_values,
                     rhs);
