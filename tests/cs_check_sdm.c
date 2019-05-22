@@ -220,8 +220,7 @@ _test_sdm(FILE  *out)
   {
     fprintf(out, "\n Test copy (block version)\n");
 
-    short int  bsize[3] = {2, 2, 3};
-
+    int  bsize[3] = {2, 2, 3};
     cs_sdm_t  *mb = cs_sdm_block_create(3, 3, bsize, bsize);
 
     /* Set values */
