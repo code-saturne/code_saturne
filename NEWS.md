@@ -3,6 +3,11 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix momentum conservation for the variable density deprecated algorithm
+  with mass flux prediction (option idilat>=2, ipredfl=1). The density
+  which is coherent with the mass balance needs to be updated right after
+  mass flux prediction step.
+
 - Fix possible memory corruption in mesh refinement.
 
 - Run script: fix overwriting of preprocessing mesh orientation output

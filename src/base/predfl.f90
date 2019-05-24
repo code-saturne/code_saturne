@@ -109,7 +109,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
 integer          ibsize, iesize, iphydp
-integer          imucpp, f_id0
+integer          imucpp, f_id0, f_id
 double precision residu
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
@@ -124,6 +124,8 @@ double precision, allocatable, dimension(:) :: cfapot, cfbpot
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
+double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
+double precision, dimension(:), pointer :: brom_eos, crom_eos
 
 type(var_cal_opt) :: vcopt
 
@@ -424,6 +426,27 @@ call itrmas &
    viscf  , viscb  ,                                                           &
    dt     ,                                                                    &
    imasfl , bmasfl )
+
+! Update density (which is coherent with the mass)
+!-------------------------------------------------
+
+if (irovar.eq.1) then
+  call field_get_val_s(icrom, crom_eos)
+  call field_get_val_s(ibrom, brom_eos)
+
+  call field_get_id("density_mass", f_id)
+  call field_get_val_s(f_id, cpro_rho_mass)
+  call field_get_id("boundary_density_mass", f_id)
+  call field_get_val_s(f_id, bpro_rho_mass)
+
+  do iel = 1, ncelet
+    cpro_rho_mass(iel) = crom_eos(iel)
+  enddo
+
+  do ifac = 1, nfabor
+    bpro_rho_mass(ifac) = brom_eos(ifac)
+  enddo
+endif
 
 !===============================================================================
 ! 6. Free solver setup
