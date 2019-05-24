@@ -130,6 +130,11 @@ Bug fixes:
 - Compressible: fix density time scheme in transported passive scalar/vector
   balance to ensure conservativity with compressible algorithm.
 
+- Fix momentum conservation for the variable density deprecated algorithm
+  with mass flux prediction (option idilat>=2, ipredfl=1). The density
+  which is coherent with the mass balance needs to be updated right after
+  mass flux prediction step.
+
 - Fixes for time scheme of density in unsteady term of momentum, transported
   scalars / vectors balances.
   * Use density at time n in momentum balance unsteady term if mass flux is
