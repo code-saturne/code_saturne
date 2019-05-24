@@ -22,6 +22,13 @@ Architectural changes:
   has loaded the default API, so compatibility with Salome
   versions 7 or older is dropped.
 
+Bug fixes:
+
+- Fix momentum conservation for the variable density deprecated algorithm
+  with mass flux prediction (option idilat>=2, ipredfl=1). The density
+  which is coherent with the mass balance needs to be updated right after
+  mass flux prediction step.
+
 Release 6.0.0 (unreleased)
 --------------------------
 
