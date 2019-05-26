@@ -400,6 +400,30 @@ _log_setup_start_time(int     nt_start,
     cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to time step values.
+ *
+ * \return pointer to time step values
+ */
+/*----------------------------------------------------------------------------*/
+
+static const cs_real_t *
+_dt_val(void)
+{
+  const cs_real_t *dt_val;
+  const cs_field_t *f = cs_field_by_name_try("dt");
+
+  if (_p_dt != NULL)
+    dt_val = _p_dt;
+  else if (f != NULL)
+    dt_val = f->val;
+  else
+    dt_val = &(cs_glob_time_step->dt_ref);
+
+  return dt_val;
+}
+
 /*----------------------------------------------------------------------------
  * Particle data function computing unit value for mesh-based data
  *
@@ -532,15 +556,64 @@ _bdy_mass_flux_update(const void                 *input,
   assert(location_id == CS_MESH_LOCATION_BOUNDARY_FACES);
 
   const int *filter = (const int *)input;
+  const cs_real_t *dt_val = _dt_val();
 
-  if (class_id == 0) {
+  /* Local time step */
 
-    for (cs_lnum_t ev_id = 0; ev_id < events->n_events; ev_id++) {
+  if (cs_glob_time_step->is_local) {
 
-      cs_lnum_t face_id = cs_lagr_events_get_lnum(events, ev_id,
-                                                  CS_LAGR_E_FACE_ID);
+    const cs_lnum_t *b_face_cells = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
 
-      if (face_id > -1) {
+    if (class_id == 0) {
+
+      for (cs_lnum_t ev_id = 0; ev_id < events->n_events; ev_id++) {
+
+        cs_lnum_t face_id = cs_lagr_events_get_lnum(events, ev_id,
+                                                    CS_LAGR_E_FACE_ID);
+
+        if (face_id > -1) {
+
+          int flag = cs_lagr_events_get_lnum(events, ev_id,
+                                             CS_LAGR_E_FLAG);
+
+          int sign = 0;
+          if (flag & filter[0])
+            sign -= 1;
+          if (flag & filter[1])
+            sign += 1;
+
+          if (sign == 0)
+            continue;
+
+          cs_real_t p_weight = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_STAT_WEIGHT);
+
+          cs_real_t cur_mass = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_MASS);
+
+          cs_real_t face_area = cs_glob_mesh_quantities->b_face_surf[face_id];
+
+          cs_lnum_t c_id = b_face_cells[face_id];
+
+          vals[face_id] += sign * (   p_weight *cur_mass
+                                   / (face_area * dt_val[c_id]));
+
+        }
+
+      }
+
+    }
+    else {
+
+      assert(events->e_am->displ[CS_LAGR_STAT_CLASS] > 0);
+
+      for (cs_lnum_t ev_id = 0; ev_id < events->n_events; ev_id++) {
+
+        int e_class = cs_lagr_events_get_lnum(events, ev_id,
+                                              CS_LAGR_STAT_CLASS);
+
+        if (e_class != class_id)
+          continue;
 
         int flag = cs_lagr_events_get_lnum(events, ev_id,
                                            CS_LAGR_E_FLAG);
@@ -554,59 +627,114 @@ _bdy_mass_flux_update(const void                 *input,
         if (sign == 0)
           continue;
 
-        cs_real_t p_weight = cs_lagr_events_get_real(events, ev_id,
-                                                     CS_LAGR_STAT_WEIGHT);
+        cs_lnum_t face_id = cs_lagr_events_get_lnum(events, ev_id,
+                                                    CS_LAGR_E_FACE_ID);
 
-        cs_real_t cur_mass = cs_lagr_events_get_real(events, ev_id,
-                                                     CS_LAGR_MASS);
+        if (face_id > -1) {
 
-        cs_real_t face_area = cs_glob_mesh_quantities->b_face_surf[face_id];
+          cs_real_t p_weight = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_STAT_WEIGHT);
 
-        vals[face_id] += sign * (p_weight *cur_mass / face_area);
+          cs_real_t cur_mass = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_MASS);
+
+          cs_real_t face_area = cs_glob_mesh_quantities->b_face_surf[face_id];
+
+          cs_lnum_t c_id = b_face_cells[face_id];
+
+          vals[face_id] += sign * (   p_weight *cur_mass
+                                   / (face_area * dt_val[c_id]));
+
+        }
 
       }
 
     }
 
   }
+
+  /* Constant time step */
+
   else {
 
-    assert(events->e_am->displ[CS_LAGR_STAT_CLASS] > 0);
+    if (class_id == 0) {
 
-    for (cs_lnum_t ev_id = 0; ev_id < events->n_events; ev_id++) {
+      for (cs_lnum_t ev_id = 0; ev_id < events->n_events; ev_id++) {
 
-      int e_class = cs_lagr_events_get_lnum(events, ev_id,
-                                            CS_LAGR_STAT_CLASS);
+        cs_lnum_t face_id = cs_lagr_events_get_lnum(events, ev_id,
+                                                    CS_LAGR_E_FACE_ID);
 
-      if (e_class != class_id)
-        continue;
+        if (face_id > -1) {
 
-      int flag = cs_lagr_events_get_lnum(events, ev_id,
-                                         CS_LAGR_E_FLAG);
+          int flag = cs_lagr_events_get_lnum(events, ev_id,
+                                             CS_LAGR_E_FLAG);
 
-      int sign = 0;
-      if (flag & filter[0])
-        sign -= 1;
-      if (flag & filter[1])
-        sign += 1;
+          int sign = 0;
+          if (flag & filter[0])
+            sign -= 1;
+          if (flag & filter[1])
+            sign += 1;
 
-      if (sign == 0)
-        continue;
+          if (sign == 0)
+            continue;
 
-      cs_lnum_t face_id = cs_lagr_events_get_lnum(events, ev_id,
-                                                  CS_LAGR_E_FACE_ID);
+          cs_real_t p_weight = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_STAT_WEIGHT);
 
-      if (face_id > -1) {
+          cs_real_t cur_mass = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_MASS);
 
-        cs_real_t p_weight = cs_lagr_events_get_real(events, ev_id,
-                                                     CS_LAGR_STAT_WEIGHT);
+          cs_real_t face_area = cs_glob_mesh_quantities->b_face_surf[face_id];
 
-        cs_real_t cur_mass = cs_lagr_events_get_real(events, ev_id,
-                                                     CS_LAGR_MASS);
+          vals[face_id] += sign * (   p_weight *cur_mass
+                                   / (face_area * dt_val[0]));
 
-        cs_real_t face_area = cs_glob_mesh_quantities->b_face_surf[face_id];
+        }
 
-        vals[face_id] += sign * (p_weight *cur_mass / face_area);
+      }
+
+    }
+    else {
+
+      assert(events->e_am->displ[CS_LAGR_STAT_CLASS] > 0);
+
+      for (cs_lnum_t ev_id = 0; ev_id < events->n_events; ev_id++) {
+
+        int e_class = cs_lagr_events_get_lnum(events, ev_id,
+                                              CS_LAGR_STAT_CLASS);
+
+        if (e_class != class_id)
+          continue;
+
+        int flag = cs_lagr_events_get_lnum(events, ev_id,
+                                           CS_LAGR_E_FLAG);
+
+        int sign = 0;
+        if (flag & filter[0])
+          sign -= 1;
+        if (flag & filter[1])
+          sign += 1;
+
+        if (sign == 0)
+          continue;
+
+        cs_lnum_t face_id = cs_lagr_events_get_lnum(events, ev_id,
+                                                    CS_LAGR_E_FACE_ID);
+
+        if (face_id > -1) {
+
+          cs_real_t p_weight = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_STAT_WEIGHT);
+
+          cs_real_t cur_mass = cs_lagr_events_get_real(events, ev_id,
+                                                       CS_LAGR_MASS);
+
+          cs_real_t face_area = cs_glob_mesh_quantities->b_face_surf[face_id];
+
+          vals[face_id] += sign * (   p_weight *cur_mass
+                                   / (face_area * dt_val[0]));
+
+        }
 
       }
 
@@ -1280,30 +1408,6 @@ _prepare_mesh_stat(cs_lagr_mesh_stat_t  *ms)
     }
 
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointer to time step values.
- *
- * \return pointer to time step values
- */
-/*----------------------------------------------------------------------------*/
-
-static const cs_real_t *
-_dt_val(void)
-{
-  const cs_real_t *dt_val;
-  const cs_field_t *f = cs_field_by_name_try("dt");
-
-  if (_p_dt != NULL)
-    dt_val = _p_dt;
-  else if (f != NULL)
-    dt_val = f->val;
-  else
-    dt_val = &(cs_glob_time_step->dt_ref);
-
-  return dt_val;
 }
 
 /*----------------------------------------------------------------------------
@@ -2781,7 +2885,8 @@ _cs_lagr_stat_update_all(void)
                   mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
 
                 /* update weight sum with new particle weight */
-                const cs_real_t wa_sum_n = CS_MAX(p_weight + l_wa_sum[cell_id], 1e-100);
+                const cs_real_t wa_sum_n = CS_MAX(p_weight + l_wa_sum[cell_id],
+                                                  1e-100);
 
                 if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
 

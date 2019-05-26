@@ -133,7 +133,8 @@ _lagr_min_max_boundary_stats(int         s_id,
                              cs_real_t  *gmin,
                              cs_real_t  *gmax)
 {
-  cs_lagr_boundary_interactions_t *lagr_bd_i = cs_glob_lagr_boundary_interactions;
+  cs_lagr_boundary_interactions_t *lagr_bd_i
+    = cs_glob_lagr_boundary_interactions;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   /* Initializations */
