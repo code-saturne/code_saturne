@@ -1015,6 +1015,13 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
+    case CS_PARAM_HODGE_ALGO_OCS2:
+      eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ;
+      eqc->get_stiffness_matrix = cs_hodge_vb_ocs2_get_aniso_stiffness;
+      eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
+      break;
+
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;

@@ -153,6 +153,24 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build a local stiffness matrix using the Orthogonal
+ *          Consistent/Sub-Stabilization decomposition (OCS2) with a
+ *          subdivision of pvol_{e,c}.
+ *          Case of anisotropic material property
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_param_hodge_t    h_info,
+                                     const cs_cell_mesh_t     *cm,
+                                     cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local stiffness matrix using the Voronoi algorithm
  *          The computed matrix is stored in cb->loc
  *          Case of CDO vertex-based schemes
@@ -299,6 +317,25 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
 
 void
 cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell using the Orthogonal
+ *          Consistent/Sub-Stabilization decomposition (OCS2) with a
+ *          subdivision of pvol_{e,c}.
+ *          Hodge op. from primal edges to dual faces.
+ *          This function is specific for vertex-based schemes
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_epfd_ocs2_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb);
 
