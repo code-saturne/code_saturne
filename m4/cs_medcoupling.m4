@@ -91,7 +91,7 @@ if test "x$with_medcoupling" != "xno" ; then
 
   # First check for MEDCoupling file support
 
-  CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${CPPFLAGS}"
+  CPPFLAGS="${MPI_CPPFLAGS} ${MEDCOUPLING_CPPFLAGS} ${MED_CPPFLAGS} ${HDF5_CPPFLAGS} ${CPPFLAGS}"
 
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 [[#include <MEDCouplingFieldDouble.hxx>
