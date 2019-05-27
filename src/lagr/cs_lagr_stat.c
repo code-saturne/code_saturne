@@ -1382,6 +1382,8 @@ _prepare_mesh_stat(cs_lagr_mesh_stat_t  *ms)
       cs_field_allocate_values(f);
       cs_field_set_values(f, 0.);
     }
+    else if (ms->group > CS_LAGR_STAT_GROUP_PARTICLE)
+      cs_field_set_values(f, 0.);
   }
 
   /* reset weight accumulator values*/
