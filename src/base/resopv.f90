@@ -750,13 +750,13 @@ if (ippmod(icompf).eq.3) then
   if (icp.ge.0) then
     call field_get_val_s(icp, cpro_cp)
   else
-    cpro_cp => rvoid1 !FIXME why we don't use a constant value?
+    cpro_cp => null()
   endif
 
   if (icv.ge.0) then
     call field_get_val_s(icv, cpro_cv)
   else
-    cpro_cv => rvoid1!FIXME why we don't use a constant value?
+    cpro_cv => null()
   endif
 
   allocate(c2(ncelet))

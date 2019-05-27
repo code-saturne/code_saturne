@@ -315,7 +315,7 @@ cs_cf_thermo_gamma(cs_real_t *cp,
 
   /* single ideal gas - constant gamma
      or ideal gas mix - gamma for the mixture */
-  if (ieos == 1 || ieos == 3) {
+  if (ieos == CS_EOS_IDEAL_GAS || ieos == CS_EOS_GAS_MIX) {
     for (cs_lnum_t ii = 0; ii < l_size; ii++) {
       gamma[ii] = cp[ii]/cv[ii];
       if (gamma[ii] < 1.)
@@ -328,7 +328,7 @@ cs_cf_thermo_gamma(cs_real_t *cp,
     }
   }
   /* stiffened gas - constant gamma (parameter of the law) */
-  else if (ieos == 2) {
+  else if (ieos == CS_EOS_STIFFENED_GAS) {
     for (cs_lnum_t ii = 0; ii < l_size; ii++)
       gamma[ii] = cs_glob_cf_model->gammasg;
   }
