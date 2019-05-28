@@ -115,6 +115,31 @@ typedef enum {
  * multigrid iteration and the block 11 is an approximation of the Schur
  * complement preconditionned with a minres. The main iterative solver is a
  * flexible GMRES. Available choice when a monolithic approach is used.
+ *
+ * \var CS_NAVSTO_SLES_GKB
+ * Associated keyword: "gkb"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a Golub-Kahan
+ * bi-diagonalization. One assumes that the saddle-point system is symmetric.
+ * By default, the block A_{00} may be augmented (this is not the default
+ * choice) and is solved with a conjuguate gradient algorithm preconditionned
+ * with a multigrid. The residual is computed in the energy norm. This option is
+ * only available with the support to the PETSc library up to now.
+ *
+ * * \var CS_NAVSTO_SLES_GKB_GMRES
+ * Associated keyword: "gkb_gmres"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a Golub-Kahan
+ * bi-diagonalization (GKB) as preconditionner of a flexible GMRES solver. The
+ * GKB algorithm is solved with a reduced tolerance as well as the CG+Multigrid
+ * used as an inner solver in the GKB algorithm. One assumes that the
+ * saddle-point system is symmetric. The residual for the GKB part is computed
+ * in the energy norm. This option is only available with the support to the
+ * PETSc library up to now.
  */
 
 typedef enum {
@@ -124,6 +149,8 @@ typedef enum {
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
+  CS_NAVSTO_SLES_GKB_GMRES,
+  CS_NAVSTO_SLES_GKB,
 
   CS_NAVSTO_SLES_N_TYPES
 
