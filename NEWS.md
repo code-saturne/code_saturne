@@ -155,6 +155,9 @@ Numerics:
 
 Architectural changes:
 
+- Scripts: add library dependency paths to LD_LIBRARY_PATH for better
+  robustness when "rpath" does not have priority.
+
 - Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
 
 - Handle mathematical expression in GUI by generating corresponding C code

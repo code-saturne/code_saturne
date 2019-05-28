@@ -1314,11 +1314,9 @@ $appli/salome kill `cat $port_log`
                                                    'LD_LIBRARY_PATH',
                                                    salome_libdir)
 
-        # Handle rcfile and environment modules if used
+        # Handle environment modules if used
 
-        rcfile = cs_exec_environment.get_rcfile(self.package_compute)
-
-        if rcfile or self.package_compute.config.env_modules != "no":
+        if self.package_compute.config.env_modules != "no":
             cs_exec_environment.write_script_comment(s, \
                'Load environment if this script is run directly.\n')
             s.write('if test "$CS_ENVIRONMENT_SET" != "true" ; then\n')
@@ -1326,15 +1324,23 @@ $appli/salome kill `cat $port_log`
                 s.write('  module purge\n')
                 for m in self.package_compute.config.env_modules.strip().split():
                     s.write('  module load ' + m + '\n')
-            if rcfile:
-                s.write('  source ' + rcfile + '\n')
             s.write('fi\n\n')
+
+        # Add additional library search paths in case DT_RUNPATH
+        # is used instead of DT_RPATH in ELF library
+
+        add_lib_dirs = get_ld_library_path_additions(self.package)
+        while add_lib_dirs:
+            d = add_lib_dirs.pop()
+            cs_exec_environment.write_prepend_path(s,
+                                                   'LD_LIBRARY_PATH',
+                                                   d)
 
         # Add paths for plugins or dynamic library dependencies
 
-        plugin_lib_dirs, plugin_pythonpath_dirs, plugin_env_vars \
+        lib_dirs, plugin_pythonpath_dirs, plugin_env_vars \
             = self.package_compute.config.get_run_environment_dependencies()
-        for d in plugin_lib_dirs:
+        for d in lib_dirs:
             cs_exec_environment.write_prepend_path(s,
                                                    'LD_LIBRARY_PATH',
                                                    d)
@@ -1357,6 +1363,18 @@ $appli/salome kill `cat $port_log`
             cs_exec_environment.write_export_env(s, v, plugin_env_vars[v])
 
         s.write('\n')
+
+        # Handle rcfile if used
+
+        rcfile = cs_exec_environment.get_rcfile(self.package_compute)
+
+        if rcfile and rcfile != "no":
+            cs_exec_environment.write_script_comment(s, \
+               'Load environment if this script is run directly.\n')
+            s.write('if test "$CS_ENVIRONMENT_SET" != "true" ; then\n')
+            if rcfile:
+                s.write('  source ' + rcfile + '\n')
+            s.write('fi\n\n')
 
         # Handle OpenMP if needed
 
