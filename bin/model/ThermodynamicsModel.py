@@ -90,6 +90,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         default['user_property']        = "constant"
         default['thetisClipping']       = "on"
         default['cathareClipping']      = "on"
+        default['propertyChoice']       = "constant"
 
         return default
 
@@ -481,11 +482,15 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                             'specific_heat', 'thermal_conductivity', 'surface_tension'))
         node = self.XMLNodeproperty.xmlGetNode('property', field_id = fieldId, name=tag)
 
+        c = None
         if node:
-            c = node['choice']
-            self.isInList(c, ('constant', 'user_law', 'table_law'))
-        else:
-            c = None
+            if node['choice'] != "" and node['choice'] != None:
+                c = node['choice']
+                self.isInList(c, ('constant', 'user_law', 'table_law'))
+
+        if c != None:
+            c = self.defaultValues()['propertyChoice']
+            self.setPropertyMode(fieldId, tag, c)
 
         return c
 
