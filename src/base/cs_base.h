@@ -523,6 +523,19 @@ cs_base_get_dl_function_pointer(void        *handle,
 #endif /* defined(HAVE_DLOPEN) */
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump a stack trace to a file
+ *
+ * \param[in]  f         pointer to file in which to dump trace
+ * \param[in]  lv_start  start level in stack trace
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_backtrace_dump(FILE  *f,
+                       int    lv_start);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
