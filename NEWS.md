@@ -151,6 +151,9 @@ Numerics:
 
 Architectural changes:
 
+- Scripts: add library dependency paths to LD_LIBRARY_PATH for better
+  robustness when "rpath" does not have priority.
+
 - Allow sourcing environment before launching with the
   --with-shell-env configure option.
 
