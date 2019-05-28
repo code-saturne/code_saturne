@@ -466,11 +466,17 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "upper_schur_gmres") == 0) {
       nsp->sles_strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GMRES;
     }
+    else if (strcmp(val, "gkb_gmres") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_GKB_GMRES;
+    }
+    else if (strcmp(val, "gkb") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_GKB;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-                  " Choice between hho_{p0, p1, p2} or cdo_fb"),
+                  " Choice between \"no_block\", \"block_amg_cg\"..."),
                 __func__, _val);
     }
     break;
