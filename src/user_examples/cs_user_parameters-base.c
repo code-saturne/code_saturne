@@ -342,6 +342,19 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_stokes_model] */
 
+  /* Example: Change options relative to the PISO-like sub-iterations
+   * over prediction-correction.
+   * - nterup: number of sub-iterations (default 1)
+   * - epsup: relative precision (default 10e-5)
+   *------------------------------------*/
+
+  /*! [param_piso] */
+  {
+    cs_piso_t *piso = cs_get_glob_piso();
+    piso->nterup = 3;
+  }
+  /*! [param_piso] */
+
   /* Example: activate the porous model
    * - 0 No porosity taken into account (Default)
    * - 1 Porosity taken into account
