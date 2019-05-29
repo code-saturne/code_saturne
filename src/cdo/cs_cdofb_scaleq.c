@@ -889,6 +889,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
+    /* If necessary, enrich the mesh flag to account for the property */
+    const cs_xdef_t *dff_def = eqp->diffusion_property->defs[0];
+    if (dff_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      eqb->msh_flag |= cs_quadrature_get_flag(dff_def->qtype,
+                                              CS_FLAG_CELL | CS_FLAG_PRIMAL);
+
   } /* Diffusion */
 
   /* Dirichlet boundary condition enforcement */
@@ -926,11 +932,11 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_convection(eqp)) {
 
-    cs_xdef_type_t  adv_deftype =
-      cs_advection_field_get_deftype(eqp->adv_field);
-
-    if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
-      eqb->msh_flag |= CS_CDO_LOCAL_FEQ;
+    const cs_xdef_t *adv_def = eqp->adv_field->definition;
+    if (adv_def != NULL && /* If linked to a NS equation, it might be null */
+        adv_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      eqb->msh_flag |= cs_quadrature_get_flag(adv_def->qtype,
+                                              CS_FLAG_FACE | CS_FLAG_PRIMAL);
 
     /* Boundary conditions for advection */
     eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ;
@@ -998,6 +1004,13 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
 
+    /* If necessary, enrich the mesh flag to account for the property */
+    for (short int ir = 0; ir < eqp->n_reaction_terms; ir++) {
+      const cs_xdef_t *rea_def = eqp->reaction_properties[ir]->defs[0];
+      if (rea_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+        eqb->msh_flag |= cs_quadrature_get_flag(rea_def->qtype,
+                                                CS_FLAG_FACE | CS_FLAG_PRIMAL);
+    } /* Loop on ir */
   }
 
   /* Time */
@@ -1538,6 +1551,11 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
         cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
 
       }
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system matrix after time treatment",
+                         csys);
+#endif
 
       /* STATIC CONDENSATION
        * ===================
