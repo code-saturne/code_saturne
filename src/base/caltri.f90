@@ -490,6 +490,11 @@ call iniva0(nscal)
 ! Compute the porosity if needed
 if (iporos.ge.1) then
 
+  ! Compute porosity from scan
+  if (compute_porosity_from_scan) then
+    call cs_compute_porosity_from_scan()
+  endif
+
   if (iihmpr.eq.1) then
     call uiporo
   endif

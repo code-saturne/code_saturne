@@ -2376,6 +2376,31 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute the porosity from scan
+    !>  module).
+
+    subroutine cs_compute_porosity_from_scan() &
+      bind(C, name='cs_compute_porosity_from_scan')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_compute_porosity_from_scan
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Return pointers
+
+    !> \param[out]   compute_porosity_from_scan  Pointer to
+    !>                                           compute_porosity_from_scan
+
+    subroutine cs_f_porosity_from_scan_get_pointer(compute_porosity_from_scan) &
+      bind(C, name='cs_f_porosity_from_scan_get_pointer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: compute_porosity_from_scan
+    end subroutine cs_f_porosity_from_scan_get_pointer
+
+    !---------------------------------------------------------------------------
+
     ! Read turbomachinery metadata from restart file.
 
     subroutine turbomachinery_restart_read(r)  &

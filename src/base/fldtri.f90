@@ -275,6 +275,16 @@ if (f_id.ne.-1) then
   endif
 endif
 
+call field_get_id_try("porosity_w_field", f_id)
+
+if (f_id.ne.-1) then
+  if (ipass .eq. 1) then
+    call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
+    call field_init_bc_coeffs(f_id)
+  endif
+endif
+
+
 ! User variables
 !---------------
 

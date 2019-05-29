@@ -441,6 +441,44 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   call field_set_key_int(iflid, keydri, iscdri)
 endif
 
+
+if (compute_porosity_from_scan) then
+  f_name  = 'porosity_w_field'
+  f_label = 'Porosity w'
+  call add_variable_field(f_name, f_label, 1, ivar, iloc1)
+  iflid = ivarfl(ivar)
+
+  ! Elliptic equation (no convection, no time term)
+  call field_get_key_struct_var_cal_opt(iflid, vcopt)
+  vcopt%iconv = 1
+  vcopt%blencv= 0.d0 ! Pure upwind
+  vcopt%istat = 0
+  vcopt%nswrsm = 1
+  vcopt%idiff  = 0
+  vcopt%idifft = 0
+  vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
+  call field_set_key_struct_var_cal_opt(iflid, vcopt)
+
+  ! Activate the drift for all scalars with key "drift" > 0
+  iscdri = 1
+
+  ! GNU function to return the value of iscdri
+  ! with the bit value of iscdri at position
+  ! 'DRIFT_SCALAR_ADD_DRIFT_FLUX' set to one
+  iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+  iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)
+
+  call field_set_key_int(iflid, keydri, iscdri)
+
+  f_name  = 'nb_scan_points'
+  f_label = 'Scan points number'
+  call add_property_field(f_name, f_label, 1, .false., iflid)
+
+  call field_set_key_int(iflid, keyvis, POST_ON_LOCATION)
+  call field_set_key_int(iflid, keylog, 1)
+endif
+
 !===============================================================================
 ! 3. Additional postprocessing fields
 !===============================================================================

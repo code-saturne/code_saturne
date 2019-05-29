@@ -150,6 +150,7 @@ call turb_model_constants_init
 call wall_functions_init
 call stokes_options_init
 call physical_constants_init
+call porosity_from_scan_init
 call fluid_properties_init
 call space_disc_options_init
 call piso_options_init

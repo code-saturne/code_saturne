@@ -133,6 +133,19 @@ module pointe
 
   !=============================================================================
 
+  !> \defgroup porosity_from_scan Porosity from scan module parameters
+
+  !> \addtogroup porosity_from_scan
+  !> \{
+
+  !> Activate the computation
+  logical(c_bool), pointer, save :: compute_porosity_from_scan
+
+  !> \}
+
+
+  !=============================================================================
+
   !... Auxiliaires
   !> \addtogroup auxiliary
   !> \{
@@ -580,6 +593,28 @@ contains
     return
 
   end subroutine init_1d_wall_thermal
+
+  !=============================================================================
+
+  !> \brief Allocate the cs_glob_porosity_from_scan structure.
+
+  subroutine porosity_from_scan_init
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+
+    implicit none
+
+    ! Local variables
+    type(c_ptr) :: c_compute_from_scan
+
+    call cs_f_porosity_from_scan_get_pointer(c_compute_from_scan)
+
+    call c_f_pointer(c_compute_from_scan, compute_porosity_from_scan)
+
+    return
+
+  end subroutine porosity_from_scan_init
 
   !=============================================================================
 
