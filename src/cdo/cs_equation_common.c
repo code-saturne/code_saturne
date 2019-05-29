@@ -599,7 +599,7 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
   memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
 
   /* Build x_vals */
-  for (short int i = 0; i < csys->n_dofs; i++) {
+  for (int i = 0; i < csys->n_dofs; i++) {
     if (csys->intern_forced_ids[i] > -1)
       x_vals[i] = eqp->enforced_dof_values[csys->intern_forced_ids[i]];
   }
@@ -608,14 +608,14 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
   cs_sdm_matvec(csys->mat, x_vals, ax);
 
   /* Second pass: Replace the block of enforced DoFs by a diagonal block */
-  for (short int i = 0; i < csys->n_dofs; i++) {
+  for (int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->intern_forced_ids[i] > -1) {
 
       /* Reset row i */
       memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
       /* Reset column i */
-      for (short int j = 0; j < csys->n_dofs; j++)
+      for (int j = 0; j < csys->n_dofs; j++)
         csys->mat->val[i + csys->n_dofs*j] = 0;
       csys->mat->val[i*(1 + csys->n_dofs)] = 1;
 
@@ -625,6 +625,104 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
     } /* DoF associated to a Dirichlet BC */
     else
       csys->rhs[i] -= ax[i];  /* Update RHS */
+
+  } /* Loop on degrees of freedom */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account the enforcement of internal DoFs. Case of matrices
+ *          defined by blocks. Apply an algebraic manipulation.
+ *
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
+ *          |------------| --> |------------| and |--| --> |-------------|
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aei  | Aee |     |  0   |  Id |     |be|     |   x_enf     |
+ *
+ * where x_enf is the value of the enforcement for the selected internal DoFs
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforced_internal_block_dofs(const cs_equation_param_t       *eqp,
+                                         cs_cell_builder_t               *cb,
+                                         cs_cell_sys_t                   *csys)
+{
+  /* Enforcement of the Dirichlet BCs */
+  if (csys->has_internal_enforcement == false)
+    return;  /* Nothing to do */
+
+  double  *x_vals = cb->values;
+  double  *ax = cb->values + csys->n_dofs;
+
+  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+
+  /* Build x_vals */
+  for (int i = 0; i < csys->n_dofs; i++) {
+    if (csys->intern_forced_ids[i] > -1)
+      x_vals[i] = eqp->enforced_dof_values[csys->intern_forced_ids[i]];
+  }
+
+  /* Contribution of the DoFs which are enforced */
+  cs_sdm_block_matvec(csys->mat, x_vals, ax);
+
+  /* Define the new right-hand side (rhs) */
+  for (int i = 0; i < csys->n_dofs; i++) {
+    if (csys->intern_forced_ids[i] > -1)
+      csys->rhs[i] = x_vals[i];
+    else
+      csys->rhs[i] -= ax[i];  /* Update RHS */
+  }
+
+  const cs_sdm_block_t  *bd = csys->mat->block_desc;
+
+  /* Second pass: Replace the block of enforced DoFs by a diagonal block */
+  int s = 0;
+  for (int ii = 0; ii < bd->n_row_blocks; ii++) {
+
+    cs_sdm_t  *db = cs_sdm_get_block(csys->mat, ii, ii);
+    const int  bsize = db->n_rows*db->n_cols;
+
+    if (csys->intern_forced_ids[s] > -1) {
+
+      /* Identity for the diagonal block */
+      memset(db->val, 0, sizeof(cs_real_t)*bsize);
+      for (int i = 0; i < db->n_rows; i++) {
+        db->val[i*(1+db->n_rows)] = 1;
+        assert(csys->intern_forced_ids[s+i] > -1);
+      }
+
+      /* Reset column and row block jj < ii */
+      for (int jj = 0; jj < ii; jj++) {
+
+        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, ii, jj);
+        memset(bij->val, 0, sizeof(cs_real_t)*bsize);
+
+        cs_sdm_t  *bji = cs_sdm_get_block(csys->mat, jj, ii);
+        memset(bji->val, 0, sizeof(cs_real_t)*bsize);
+
+      }
+
+      /* Reset column and row block jj < ii */
+      for (int jj = ii+1; jj < db->n_rows; jj++) {
+
+        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, ii, jj);
+        memset(bij->val, 0, sizeof(cs_real_t)*bsize);
+
+        cs_sdm_t  *bji = cs_sdm_get_block(csys->mat, jj, ii);
+        memset(bji->val, 0, sizeof(cs_real_t)*bsize);
+
+      }
+
+    } /* DoF associated to an enforcement of their values*/
+
+    s += db->n_rows;
 
   } /* Loop on degrees of freedom */
 

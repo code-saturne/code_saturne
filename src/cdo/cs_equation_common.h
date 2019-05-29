@@ -496,6 +496,30 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Take into account the enforcement of internal DoFs. Case of matrices
+ *          defined by blocks. Apply an algebraic manipulation.
+ *
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
+ *          |------------| --> |------------| and |--| --> |-------------|
+ *          |      |     |     |      |     |     |  |     |             |
+ *          | Aei  | Aee |     |  0   |  Id |     |be|     |   x_enf     |
+ *
+ * where x_enf is the value of the enforcement for the selected internal DoFs
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforced_internal_block_dofs(const cs_equation_param_t       *eqp,
+                                         cs_cell_builder_t               *cb,
+                                         cs_cell_sys_t                   *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve a pointer to a buffer of size at least the 2*n_cells
  *         The size of the temporary buffer can be bigger according to the
  *         numerical settings

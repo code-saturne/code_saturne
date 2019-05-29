@@ -586,7 +586,7 @@ _vbv_enforce_values(const cs_equation_param_t     *eqp,
   /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
   if (csys->has_internal_enforcement) {
 
-    cs_equation_enforced_internal_dofs(eqp, cb, csys);
+    cs_equation_enforced_internal_block_dofs(eqp, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
