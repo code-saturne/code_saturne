@@ -635,6 +635,7 @@ _upper_schur_gmres_hook(void     *context,
   ISDestroy(&isv);
 }
 
+#if PETSC_VERSION_GE(3,11,0)
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
@@ -822,6 +823,7 @@ _gkb_gmres_hook(void     *context,
   ISDestroy(&isp);
   ISDestroy(&isv);
 }
+#endif  /* GKB available only if version >= 3.11 */
 #endif  /* HAVE_PETSC */
 
 /*----------------------------------------------------------------------------*/
@@ -1800,6 +1802,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          (void *)mom_eqp);
     break;
 
+#if PETSC_VERSION_GE(3,11,0)    /* Golub-Kahan Bi-diagonalization */
   case CS_NAVSTO_SLES_GKB:
     cs_sles_petsc_init();
     cs_sles_petsc_define(field_id,
@@ -1817,6 +1820,16 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          _gkb_gmres_hook,
                          (void *)mom_eqp);
     break;
+#else
+  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " PETSc 3.11.x or greater is required with this option.\n",
+              __func__, mom_eqp->name);
+    break;
+#endif
+
 #else
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
