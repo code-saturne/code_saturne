@@ -1415,6 +1415,9 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_HIGHER:
     {
+      assert(cs_flag_test(cm->flag,
+                          CS_FLAG_COMP_EV |CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
+
       cs_real_t  w[3];
       cs_real_3_t  gpts[3];
       cs_real_t _val[9];   /* The flux is vector-valued: 9 = 3*3 */
@@ -1454,6 +1457,9 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_HIGHEST:
     {
+      assert(cs_flag_test(cm->flag,
+                          CS_FLAG_COMP_EV |CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
+
       /* Four values by triangle --> 4 Gauss points
        * The flux returns by the analytic function is a vector. So the
        * size of _val is 12=4*3
@@ -1588,6 +1594,8 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_HIGHER:
     {
+      assert(cs_flag_test(cm->flag,
+                          CS_FLAG_COMP_EV| CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
       cs_real_t  w[3];
       cs_real_3_t  gpts[3], _val;
       cs_real_33_t  _eval[3];
@@ -1629,6 +1637,8 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
   case CS_QUADRATURE_HIGHEST:
     {
+      assert(cs_flag_test(cm->flag,
+                          CS_FLAG_COMP_EV| CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
       /* Four values by triangle --> 4 Gauss points
        * The flux returns by the analytic function is a 3x3 tensor. */
       cs_real_t  w[4];
