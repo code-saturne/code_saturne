@@ -281,8 +281,10 @@ _physical_property(cs_field_t          *c_prop,
     tn = cs_tree_get_node(tn, "formula");
     law = cs_tree_node_get_value_str(tn);
 
-    if (law != NULL)
-      cs_meg_volume_function(c_prop, z);
+    if (law != NULL) {
+      cs_field_t *fmeg[1] = {c_prop};
+      cs_meg_volume_function(fmeg, z);
+    }
 
   }
   else if (cs_gui_strcmp(prop_choice, "thermal_law")) {
@@ -2512,60 +2514,15 @@ void CS_PROCF(uiporo, UIPORO)(void)
       const char *formula = cs_tree_node_get_child_value_str(tn_zp, "formula");
 
       if (formula != NULL) {
-        ev_formula = mei_tree_new(formula);
-        mei_tree_insert(ev_formula,"x",0.0);
-        mei_tree_insert(ev_formula,"y",0.0);
-        mei_tree_insert(ev_formula,"z",0.0);
-
-        /* add variable from notebook */
-        cs_gui_add_notebook_variables(ev_formula);
-
-        /* try to build the interpreter */
-        if (mei_tree_builder(ev_formula))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not interpret expression: %s\n %i"),
-                    ev_formula->string, mei_tree_builder(ev_formula));
-
         if (cs_gui_strcmp(mdl, "anisotropic")) {
-          const char *symbols[] = {"porosity",
-                                   "porosity[XX]",
-                                   "porosity[YY]",
-                                   "porosity[ZZ]",
-                                   "porosity[XY]",
-                                   "porosity[YZ]",
-                                   "porosity[XZ]"};
-          if (mei_tree_find_symbols(ev_formula, 7, symbols))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n %s\n"),
-                      "porosity, porosity[XX], porosity[YY], porosity[ZZ]",
-                      "          porosity[XY], porosity[XZ] or porosity[YZ]");
-        }
-        else {
-          const char *symbols[] = {"porosity"};
-          if (mei_tree_find_symbols(ev_formula, 1, symbols))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"),
-                      "porosity");
+          cs_field_t *fmeg[2] = {fporo, ftporo};
+          cs_meg_volume_function(fmeg, z);
+
+        } else {
+          cs_field_t *fmeg[1] = {fporo};
+          cs_meg_volume_function(fmeg, z);
         }
 
-        for (cs_lnum_t i = 0; i < n_cells; i++) {
-          cs_lnum_t iel = cell_ids[i];
-          mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-          mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-          mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_evaluate(ev_formula);
-          porosi[iel] = mei_tree_lookup(ev_formula,"porosity");
-          if (cs_gui_strcmp(mdl, "anisotropic")) {
-            porosf[iel][0] = mei_tree_lookup(ev_formula, "porosity[XX]");
-            porosf[iel][1] = mei_tree_lookup(ev_formula, "porosity[YY]");
-            porosf[iel][2] = mei_tree_lookup(ev_formula, "porosity[ZZ]");
-            porosf[iel][3] = mei_tree_lookup(ev_formula, "porosity[XY]");
-            porosf[iel][4] = mei_tree_lookup(ev_formula, "porosity[YZ]");
-            porosf[iel][5] = mei_tree_lookup(ev_formula, "porosity[XZ]");
-          }
-        }
-
-        mei_tree_destroy(ev_formula);
       }
     }
   }
@@ -2740,7 +2697,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
       formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
-        if (*idarcy == 0) {
+        if (*idarcy == -1) {
           cs_real_t *st_vals = cs_meg_source_terms(z,
                                                    f->name,
                                                    "scalar_source_term");
@@ -2808,7 +2765,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
                            "thermophysical_models/source_terms/thermal_formula");
       char z_id_str[32];
       snprintf(z_id_str, 31, "%d", z->id);
-      while (tn != NULL){
+      while (tn != NULL) {
 
         const char *name = cs_gui_node_get_tag(tn, "name");
         const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
@@ -3662,85 +3619,15 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
           }
         }
 
-      }
+      } else {
       /* user law for permeability */
-      else {
-
         const char *formula
           = cs_tree_node_get_child_value_str(tn_zl, "formula");
 
         if (formula != NULL) {
-          ev_formula = mei_tree_new(formula);
-          mei_tree_insert(ev_formula,"x",0.0);
-          mei_tree_insert(ev_formula,"y",0.0);
-          mei_tree_insert(ev_formula,"z",0.0);
-
-          /* add variable from notebook */
-          cs_gui_add_notebook_variables(ev_formula);
-
-          /* try to build the interpreter */
-          if (mei_tree_builder(ev_formula))
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interpret expression: %s\n %i"),
-                      ev_formula->string, mei_tree_builder(ev_formula));
-
-          if (*permeability == 0) {
-            const char *symbols[] = {"capacity",
-                                     "saturation"
-                                     "permeability"};
-            if (mei_tree_find_symbols(ev_formula, 3, symbols))
-                bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not find the required symbol: %s\n"),
-                          "capacity, saturation or permeability");
-          }
-          else {
-            const char *symbols[] = {"capacity",
-                                     "saturation",
-                                     "permeability[XX]",
-                                     "permeability[YY]",
-                                     "permeability[ZZ]",
-                                     "permeability[XY]",
-                                     "permeability[XZ]",
-                                     "permeability[YZ]"};
-            if (mei_tree_find_symbols(ev_formula, 8, symbols))
-              bft_error
-                (__FILE__, __LINE__, 0,
-                 _("Error: can not find the required symbol: %s\n %s\n %s\n"),
-                 "capacity, saturation,",
-                 "          permeability[XX], permeability[YY], permeability[ZZ]",
-                 "          permeability[XY], permeability[YZ] or permeability[XZ]");
-          }
-
-          for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-            cs_lnum_t iel = cell_ids[icel];
-            mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-            mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-            mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-            mei_evaluate(ev_formula);
-
-            capacity_field[iel] = mei_tree_lookup(ev_formula,"capacity");
-            saturation_field[iel] = mei_tree_lookup(ev_formula,"saturation");
-            if (*permeability == 1) {
-              permeability_field_v[iel][0] = mei_tree_lookup(ev_formula,
-                                                             "permeability[XX]");
-              permeability_field_v[iel][1] = mei_tree_lookup(ev_formula,
-                                                             "permeability[YY]");
-              permeability_field_v[iel][2] = mei_tree_lookup(ev_formula,
-                                                             "permeability[ZZ]");
-              permeability_field_v[iel][3] = mei_tree_lookup(ev_formula,
-                                                             "permeability[XY]");
-              permeability_field_v[iel][4] = mei_tree_lookup(ev_formula,
-                                                             "permeability[YZ]");
-              permeability_field_v[iel][5] = mei_tree_lookup(ev_formula,
-                                                             "permeability[XZ]");
-            }
-            else
-              permeability_field[iel] = mei_tree_lookup(ev_formula,
-                                                        "permeability");
-          }
-          mei_tree_destroy(ev_formula);
+          cs_field_t *fmeg[3] = {fcapacity, fsaturation, fpermeability};
+          cs_meg_volume_function(fmeg, z);
         }
-
       }
 
       const int kivisl = cs_field_key_id("diffusivity_id");

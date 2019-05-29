@@ -963,6 +963,7 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("boundary_value_id", -1, 0);
 
   cs_field_define_key_int("convection_limiter_id", -1, 0);
+  cs_field_define_key_int("diffusion_limiter_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("coupling_entity", -1, 0);
 

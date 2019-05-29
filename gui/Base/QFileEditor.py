@@ -330,7 +330,8 @@ class QFileEditor(QMainWindow):
     """
 
     # ---------------------------------------------------------------
-    def __init__(self, parent=None, case_dir=None, readOnly=False, noOpen=False):
+    def __init__(self, parent=None, case_dir=None,
+                 readOnly=False, noOpen=False, useHighlight=True):
         super(QFileEditor, self).__init__(parent)
         self.setGeometry(50, 50, 500, 300)
 
@@ -345,6 +346,9 @@ class QFileEditor(QMainWindow):
 
         self.readOnly = readOnly
         self.readerMode = readOnly
+
+        # Activate text highlight
+        self.useHighlight = useHighlight
 
         self.opened = False
         self.saved  = True
@@ -448,6 +452,20 @@ class QFileEditor(QMainWindow):
         # Editor
         self.textEdit = self._initFileEditor()
 
+        # Settings
+        settings = QtCore.QSettings()
+
+        try:
+            # API 2
+            self.restoreGeometry(settings.value("MainWindow/Geometry", QtCore.QByteArray()))
+            self.restoreState(settings.value("MainWindow/State", QtCore.QByteArray()))
+        except:
+            # API 1
+            self.recentFiles = settings.value("RecentFiles").toStringList()
+            self.restoreGeometry(settings.value("MainWindow/Geometry").toByteArray())
+            self.restoreState(settings.value("MainWindow/State").toByteArray())
+
+
         # file attributes
         self.filename = ""
 
@@ -521,6 +539,9 @@ class QFileEditor(QMainWindow):
         tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         tree.customContextMenuRequested.connect(self.explorerContextMenu)
 
+        # Double click
+        tree.doubleClicked.connect(self._explorerDoubleClick)
+
         return tree;
     # ---------------------------------------------------------------
 
@@ -547,10 +568,15 @@ class QFileEditor(QMainWindow):
         _deleteAction.setText('Remove from SRC')
         _deleteAction.triggered.connect(self._removeSelectedFile)
 
+        _undraftAction = QAction(self.explorer.model())
+        _undraftAction.setText('Move to SRC')
+        _undraftAction.triggered.connect(self._unDraftSelectedFile)
+
         self._explorerActions = {'edit':_editAction,
                                  'view':_viewAction,
                                  'copy':_copyAction,
-                                 'remove':_deleteAction}
+                                 'remove':_deleteAction,
+                                 'undraft':_undraftAction}
     # ---------------------------------------------------------------
 
 
@@ -663,14 +689,46 @@ class QFileEditor(QMainWindow):
 
 
     # ---------------------------------------------------------------
-    def explorerContextMenu(self, position):
+    def _unDraftSelectedFile(self):
         """
-        Custom menu for the mouse right-click.
-        Depends on whether the file is in the SRC, SRC/subfolder
-        or RESU/subfolder.
-        Possible actions are 'edit', 'view' and 'copy' (to SRC)
+        Move a file from DRAFT to the SRC folder
         """
 
+        title = "Move to SRC"
+        question = "Move file %s from DRAFT to SRC folder ?" % (self._currentSelection['filename'])
+
+        choice = QMessageBox.question(self,
+                                      title,
+                                      question,
+                                      QMessageBox.Yes | QMessageBox.No)
+
+        if choice == QMessageBox.Yes:
+            fn = os.path.join(self.case_dir,
+                              self._currentSelection['subpath'],
+                              self._currentSelection['filename'])
+
+            fn2 = os.path.join(self.case_dir, self._currentSelection['filename'])
+
+            if os.path.exists(fn2):
+                q = 'A file named %s allready exists in SRC\nDo you want to overwrite it?' % (self._currentSelection['filename'])
+                choice2 = QMessageBox.question(self, '', q,
+                                               QMessageBox.Yes | QMessageBox.No)
+
+                if choice2 == QMessageBox.No:
+                    return
+
+            shutil.move(fn, fn2)
+
+        else:
+            pass
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _updateCurrentSelection(self):
+        """
+        Update the current selection
+        """
         # Find file position (SRC, REFERENCE, EXAMPLES, other)
         path2file = ''
         for idx in self.explorer.selectedIndexes():
@@ -693,6 +751,48 @@ class QFileEditor(QMainWindow):
                                   'filedir' :ps,
                                   'origdir' :pe}
 
+        return
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def _explorerDoubleClick(self):
+        """
+        Double click action
+        """
+
+        self._updateCurrentSelection()
+
+        clicked = os.path.join(self._currentSelection['subpath'],
+                               self._currentSelection['filename'])
+
+        edit_list = ['SRC']
+
+        if not os.path.isdir(clicked):
+            if self._currentSelection['filedir'] in edit_list:
+                self._editSelectedFile()
+            else:
+                self._viewSelectedFile()
+
+    # ---------------------------------------------------------------
+
+
+    # ---------------------------------------------------------------
+    def explorerContextMenu(self, position):
+        """
+        Custom menu for the mouse right-click.
+        Depends on whether the file is in the SRC, SRC/subfolder
+        or RESU/subfolder.
+        Possible actions are 'edit', 'view' and 'copy' (to SRC)
+        """
+
+        self._updateCurrentSelection()
+
+        path2file = self._currentSelection['subpath']
+        fname     = self._currentSelection['filename']
+        pe        = self._currentSelection['origdir']
+        ps        = self._currentSelection['filedir']
+
         self._contextMenu = QMenu()
         if pe == 'RESU':
             self._contextMenu.addAction(self._explorerActions['view'])
@@ -701,9 +801,12 @@ class QFileEditor(QMainWindow):
                 if ps == 'SRC':
                     self._contextMenu.addAction(self._explorerActions['edit'])
                     self._contextMenu.addAction(self._explorerActions['remove'])
-                else:
+                elif ps in ['EXAMPLES', 'REFERENCES']:
                     self._contextMenu.addAction(self._explorerActions['view'])
                     self._contextMenu.addAction(self._explorerActions['copy'])
+                elif ps in ['DRAFT']:
+                    self._contextMenu.addAction(self._explorerActions['view'])
+                    self._contextMenu.addAction(self._explorerActions['undraft'])
 
         self._contextMenu.exec_(self.explorer.viewport().mapToGlobal(position))
     # ---------------------------------------------------------------
@@ -763,7 +866,8 @@ class QFileEditor(QMainWindow):
 
         self.opened = True
         self.updateFileState(False)
-        hl = QtextHighlighter(self.textEdit)
+        if self.useHighlight:
+            hl = QtextHighlighter(self.textEdit)
         self.textEdit.show()
     # ---------------------------------------------------------------
 
@@ -838,14 +942,29 @@ class QFileEditor(QMainWindow):
         """
         Close the editor
         """
-        choice = QMessageBox.question(self, 'Built-in editor',
-                                      "Exit text editor?",
-                                      QMessageBox.Yes | QMessageBox.No)
+        if self.opened == True:
+            choice = QMessageBox.question(self, 'Built-in editor',
+                                          "Exit text editor?",
+                                          QMessageBox.Yes | QMessageBox.No)
+        else:
+            choice = QMessageBox.Yes
+
         if choice == QMessageBox.Yes:
             self.closeOpenedFile()
+
+            settings = QtCore.QSettings()
+            settings.setValue("MainWindow/Geometry",
+                              self.saveGeometry())
+
             self.close()
         else:
             pass
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def closeEvent(self, event):
+
+        self.closeApplication()
     # ---------------------------------------------------------------
 
 

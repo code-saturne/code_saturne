@@ -285,7 +285,7 @@ _cs_lagr_post(void                  *input,
     const cs_lagr_boundary_interactions_t
       *lagr_b = cs_glob_lagr_boundary_interactions;
 
-    cs_real_t  seuilf = cs_glob_lagr_stat_options->threshold;
+    cs_real_t  threshold = cs_glob_lagr_stat_options->threshold;
 
     cs_real_t *val;
     BFT_MALLOC(val, nfabor, cs_real_t);
@@ -300,7 +300,7 @@ _cs_lagr_post(void                  *input,
 
       for (cs_lnum_t i = 0; i < n_b_faces; i++) {
         cs_lnum_t f_id = b_face_ids[i];
-        if (_f_count[f_id] > seuilf)
+        if (_f_count[f_id] > threshold)
           val[i] = _b_stats[f_id];
         else
           val[i] = 0.;

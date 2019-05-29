@@ -148,13 +148,16 @@ m4/cs_zlib.m4
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples extras patches
 
-nodist_pkginclude_HEADERS = cs_config.h
+nodist_pkginclude_HEADERS = \
+cs_config.h \
+cs_version.h
 
 DISTCLEANFILES = \
 bin/code_saturne \
 bin/cs_package.py \
 extras/salome/fsi_appli_config.xml \
-cs_config.h
+cs_config.h \
+cs_version.h
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -199,10 +202,6 @@ edit_package = sed \
 	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
 	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
 	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
-	-e 's|@cs_src_revision[@]|$(cs_src_revision)|g' \
-	-e 's|@cs_version[@]|$(cs_version)|g' \
-	-e 's|@cs_version_full[@]|$(cs_version_full)|g' \
-	-e 's|@cs_version_short[@]|$(cs_version_short)|g' \
 	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
 	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
 
@@ -227,30 +226,35 @@ bin/code_saturne: Makefile
 	test -f ./$@.$(LAUNCHER_EXT).in || srcdir=$(srcdir)/; \
 	$(edit_launcher) $${srcdir}$@.$(LAUNCHER_EXT).in >$@.tmp
 	mv $@.tmp $@
+	${top_srcdir}/build-aux/cs_version.py --replace $@ $@
 
 if HAVE_SHELL_LAUNCHER
-bin/code_saturne.py: Makefile
+bin/code_saturne.py: Makefile $(srcdir)/bin/code_saturne.py.in
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
-	$(edit_python) $${srcdir}$@.in >$@.tmp
+	$(edit_python) $${srcdir}$@.in >$@.tmp;
 	mv $@.tmp $@
-bin/code_saturne.py: $(srcdir)/bin/code_saturne.py.in
 endif
 
-bin/cs_package.py: Makefile
+bin/cs_package.py: Makefile $(srcdir)/bin/cs_package.py.in
 	rm -f $@ $@.tmp
 	$(MKDIR_P) bin
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
 	$(edit_package) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace $@ $@
 
 bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
-bin/cs_package.py: $(srcdir)/bin/cs_package.py.in
 
-BUILT_SOURCES = bin/cs_package.py
+cs_version.h: Makefile $(top_srcdir)/src/base/cs_version.h.in
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
+
+BUILT_SOURCES = \
+bin/cs_package.py \
+cs_version.h
 
 CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
@@ -496,8 +500,13 @@ update-copyright:
 dist-hook:
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --full > $(distdir)/build-aux/version
 
-clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
+# Additional local targets
+
+all-local:
+	@$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
+	@if test -f bin/cs_package.py; then \
+	  $(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace bin/cs_package.py bin/cs_package.py; \
+	fi
 
 install-data-local:
 	@$(NORMAL_INSTALL)

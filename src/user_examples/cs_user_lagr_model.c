@@ -343,17 +343,16 @@ cs_user_lagr_model(void)
   /* Volume statistics
      ----------------- */
 
-  /* Threshold for the management of volume statistics
-     -------------------------------------------------
-     * the value of the seuil variable is a statistical weight.
+  /* Threshold for the use of volume statistics
+     ------------------------------------------
+     * the value of the threshold variable is a statistical weight.
      * each cell of the mesh contains a statistical weight
      (sum of the statistical weights of all the particles
-     located in the cell); seuil is the minimal value from
+     located in the cell); threshold is the minimal value under
      which the contribution in statistical weight of a particle
-     is not taken into account anymore in the full model
-     of turbulent dispersion, in the resolution of the
-     Poisson equation of correction of the mean velocities, and
-     in the writing of the log and post-processing. */
+     is ignored in the full model of turbulent dispersion and in the
+     resolution of the Poisson equation for the correction of the
+     mean velocities. */
 
   cs_glob_lagr_stat_options->threshold = 0.0;
 

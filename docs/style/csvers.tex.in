@@ -23,4 +23,3 @@
 \newcommand{\CS}{%
   {\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
 \newcommand{\verscs}{@VERSION@\xspace}
-\newcommand{\revscs}{@cs_src_revision@\xspace}

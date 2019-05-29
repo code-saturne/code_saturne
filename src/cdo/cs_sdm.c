@@ -184,8 +184,7 @@ cs_sdm_create_copy(const cs_sdm_t   *m)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define a new matrix by adding the given matrix with its transpose.
- *          Keep the transposed matrix for a future use.
+ * \brief   Define a new matrix which is its transpose.
  *
  * \param[in] mat   local matrix to transpose
  *
@@ -1324,6 +1323,184 @@ cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
   cs_real_t *q2 = Qt + 6;
   for (int k = 0; k < 3; k++)
     q2[k] = tmp.unitv[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  LU factorization of a small dense 3x3 matrix.
+ *
+ * \param[in]      m        pointer to a cs_sdm_t structure
+ * \param[in, out] facto    compact storage of coefficients for the LU
+ *                          factorization
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_33_lu_compute(const cs_sdm_t   *m,
+                     cs_real_t         facto[9])
+{
+  /* Sanity check */
+  assert(m != NULL && facto != NULL);
+  assert(m->n_cols == m->n_rows);
+
+  /* j=0: first row */
+  const cs_real_t  d00 = m->val[0];
+  if (fabs(d00) < cs_math_zero_threshold)
+    bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
+  const cs_real_t  invd00 = 1./d00;
+
+  facto[0] = d00, facto[1] = m->val[1], facto[2] = m->val[2];     /* 1st row */
+  facto[3] =  m->val[3]*invd00;                                   /* L10 */
+  facto[4] =  m->val[4] - facto[3]*facto[1];                      /* U11 */
+  facto[5] =  m->val[5] - facto[3]*facto[2];                      /* U12 */
+  facto[6] =  m->val[6]*invd00;                                   /* L20 */
+  facto[7] = (m->val[7] - facto[6]*m->val[1])/facto[4];           /* L21 */
+  facto[8] =  m->val[8] - facto[6]*m->val[2] - facto[7]*facto[5]; /* U22 */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  LU factorization of a small dense matrix. Small means that the
+ *         number m->n_rows is less than 100 for instance.
+ *
+ * \param[in]      m        pointer to a cs_sdm_t structure
+ * \param[in, out] facto    compact storage of coefficients for the LU
+ *                          factorization (should be allocated to the right
+ *                          size, i.e. m->n_rows*m->n_rows)
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_lu_compute(const cs_sdm_t   *m,
+                  cs_real_t         facto[])
+{
+  /* Sanity check */
+  assert(m != NULL && facto != NULL);
+  assert(m->n_cols == m->n_rows);
+
+  const cs_lnum_t  n = m->n_rows;
+
+  /* Initialization */
+  memcpy(facto, m->val, n*n*sizeof(cs_real_t));
+
+  /* Each step work on a smaller block */
+  for (cs_lnum_t k = 0; k < n-1; k++) {
+
+    /* Pivot */
+    cs_real_t  pivot = facto[k*(n+1)];
+    if (fabs(pivot) < cs_math_zero_threshold)
+      bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
+    const cs_real_t  invp = 1./pivot;
+
+    for (cs_lnum_t i = k+1; i < m->n_rows; i++) { /* Loop on rows */
+
+      cs_real_t  *pr_fact = facto + (i-1)*n;
+      cs_real_t  *cr_fact = pr_fact + n;
+
+      /* L-part: lower part of the (i,i-1) entry */
+      cr_fact[k] *= invp;
+      const double  lval = cr_fact[k];
+
+      /* U-part */
+      for (cs_lnum_t j = k+1; j < n; j++) {
+        cr_fact[j] -= lval*pr_fact[j];
+
+      } /* Loop on j (columns) */
+
+    } /* Loop on i (rows) */
+
+  } /* Loop on k (block size) */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a system A.sol = rhs using a LU factorization of A (a small
+ *         3x3 dense matrix).
+ *
+ * \param[in]       facto    compact storage of coefficients for the LU
+ *                           factorization (should be allocated to the right
+ *                           size, i.e. n_rows*n_rows)
+ * \param[in]       rhs      right-hand side
+ * \param[in, out]  sol      solution
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_33_lu_solve(const cs_real_t    facto[9],
+                   const cs_real_t    rhs[3],
+                   cs_real_t          sol[3])
+{
+  /* Sanity check */
+  assert(facto != NULL && rhs != NULL && sol != NULL);
+
+  /* Forward pass */
+  sol[0] = rhs[0];
+  sol[1] = rhs[1] - facto[3]*sol[0];
+  sol[2] = rhs[2] - facto[6]*sol[0] - facto[7]*sol[1];
+
+  /* Backward pass */
+  sol[2] = sol[2]/facto[8];
+  sol[1] = (sol[1] - facto[5]*sol[2])/facto[4];
+  sol[0] = (sol[0] - facto[2]*sol[2] - facto[1]*sol[1])/facto[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a system A.sol = rhs using a LU factorization of A (a small
+ *         dense matrix).
+ *
+ * \param[in]       n_rows   dimension of the system to solve
+ * \param[in]       facto    compact storage of coefficients for the LU
+ *                           factorization (should be allocated to the right
+ *                           size, i.e. n_rows*n_rows)
+ * \param[in]       rhs      right-hand side
+ * \param[in, out]  sol      solution
+ *
+ * \note: facto stores L the lower triangular matrix (without its diagonal
+ *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_lu_solve(cs_lnum_t          n_rows,
+                const cs_real_t    facto[],
+                const cs_real_t   *rhs,
+                cs_real_t         *sol)
+{
+  /* Sanity check */
+  assert(facto != NULL && rhs != NULL && sol != NULL);
+
+  /* Forward pass: L.y = rhs (sol stores the values for y) */
+  for (cs_lnum_t  i = 0; i < n_rows; i++) {
+
+    sol[i] = rhs[i];
+    const cs_real_t  *_fact = facto + i*n_rows;
+    for (cs_lnum_t j = 0; j < i; j++) {
+      sol[i] -= sol[j]*_fact[j];
+    }
+
+  }
+
+  /* Backward pass: U.sol = y */
+  for (cs_lnum_t i = n_rows-1; i >= 0; i--) { /* Loop on rows */
+    for (cs_lnum_t j = n_rows-1; j > i; j--) { /* Loop on columns */
+
+      sol[i] -= sol[j]*facto[i*n_rows + j];
+
+    }
+    sol[i] /= facto[i*(n_rows + 1)];
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

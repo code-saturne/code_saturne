@@ -52,7 +52,7 @@ from code_saturne.Base.QtPage import ComboModel, DoubleValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.GroundwaterLawForm import Ui_GroundwaterLawForm
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
@@ -685,40 +685,19 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
 
-        exp = self.mdl.getGroundwaterLawFormula(name)
-
-        if exp == None:
-            exp = self.getDefaultGroundwaterLawFormula(choice)
-
-        if GroundwaterModel(self.case).getPermeabilityType() == 'anisotropic':
-            req = [('capacity',     'Capacity'),
-                   ('saturation',   'Saturation'),
-                   ('permeability[XX]', 'Permeability'),
-                   ('permeability[YY]', 'Permeability'),
-                   ('permeability[ZZ]', 'Permeability'),
-                   ('permeability[XY]', 'Permeability'),
-                   ('permeability[XZ]', 'Permeability'),
-                   ('permeability[YZ]', 'Permeability')]
-        else:
-            req = [('capacity',     'Capacity'),
-                   ('saturation',   'Saturation'),
-                   ('permeability', 'Permeability')]
+        exp, req, sym = self.mdl.getGroundwaterLawFormulaComponents(name)
 
         exa = """#example: \n""" + self.mdl.getDefaultGroundwaterLawFormula()
 
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = label,
+                                variable_name = 'capacity+saturation+permeability',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
 
-        for (nme, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
-
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormula -> %s" % str(result))

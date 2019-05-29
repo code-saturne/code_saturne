@@ -83,6 +83,7 @@ implicit none
 
 integer          ii, ivar
 integer          iflid, kcvlim, ifctsl, clip_id
+integer          kdflim
 integer          kturt, kfturt, kislts, keyvar, kclipp, kfturt_alpha
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
@@ -465,8 +466,10 @@ do f_id = 0, nfld - 1
 
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
+    call field_get_key_int(f_id, kcvlim, ifctsl)
+
     ! Beta limiter or Roe-Sweby limiter
-    if (vcopt%isstpc.eq.2 .or. vcopt%isstpc.eq.3) then
+    if (vcopt%isstpc.eq.2 .or. vcopt%isstpc.eq.3.or.ifctsl.ne.-1) then
       ! Now create matching field
       ! Build name and label
       call field_get_name(f_id, f_name)
@@ -474,7 +477,7 @@ do f_id = 0, nfld - 1
       call field_get_dim(f_id, f_dim)
       name = trim(f_name) // '_conv_lim'
 
-      if (vcopt%isstpc.eq.2) then
+      if (vcopt%isstpc.eq.2.or.ifctsl.ne.-1) then
         ityloc = 1 ! cells
       else
         ityloc = 2 ! Interior faces
@@ -485,6 +488,40 @@ do f_id = 0, nfld - 1
       call field_set_key_int(ifctsl, keylog, 1)
 
       call field_set_key_int(f_id, kcvlim, ifctsl)
+    endif
+  endif
+enddo
+
+! Diffusion limiter
+
+call field_get_key_id("diffusion_limiter_id", kdflim)
+
+itycat = FIELD_PROPERTY
+
+do f_id = 0, nfld - 1
+
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+
+    call field_get_key_int(f_id, kdflim, ifctsl)
+
+    if (ifctsl.ne.-1) then
+      ! Now create matching field
+      ! Build name and label
+      call field_get_name(f_id, f_name)
+
+      call field_get_dim(f_id, f_dim)
+      name = trim(f_name) // '_diff_lim'
+
+      ityloc = 1 ! cells
+
+      call field_create(name, itycat, ityloc, f_dim, inoprv, ifctsl)
+      call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
+      call field_set_key_int(ifctsl, keylog, 1)
+
+      call field_set_key_int(f_id, kdflim, ifctsl)
     endif
   endif
 enddo

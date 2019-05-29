@@ -1440,10 +1440,23 @@ class Studies(object):
                     repbase = os.getcwd()
                     os.chdir(os.path.join(self.__dest, l, "MESH"))
 
-                    # Prepro external script might need pythondir and pkgpythondir
-                    pdir = case.pkg.get_dir('pythondir')
-                    pdir = pdir + ":" + case.pkg.get_dir('pkgpythondir')
-                    retcode, t = run_studymanager_command(cmd, self.__log, pythondir = pdir)
+                    # Prepro external script often need install python directory
+                    # and package python directory: code_saturne or neptune_cfd
+                    p_dir = case.pkg.get_dir('pythondir')
+                    pkg_dir = case.pkg.get_dir('pkgpythondir')
+                    p_dirs = p_dir + ":" + pkg_dir
+
+                    # if package is neptune_cfd, prepro script often needs
+                    # code_saturne package python directory
+                    cs_pkg_dir = None
+                    if case.pkg.name == 'neptune_cfd':
+                        cs_pkg_dir = os.path.join(pkg_dir, '../code_saturne')
+                        cs_pkg_dir = os.path.normpath(cs_pkg_dir)
+                        p_dirs = p_dirs + ":" + cs_pkg_dir
+
+                    retcode, t = run_studymanager_command(cmd,
+                                                          self.__log,
+                                                          pythondir = p_dirs)
                     stat = "FAILED" if retcode != 0 else "OK"
 
                     os.chdir(repbase)

@@ -309,24 +309,6 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_cell_sys_t           *csys,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise system into the global algebraic system.
- *         Case of a block 3x3 entries.
- *
- * \param[in]      csys     cellwise view of the algebraic system
- * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
- * \param[in, out] mav      pointer to a matrix assembler structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_assemble_block33_matrix(const cs_cell_sys_t              *csys,
-                                    const cs_range_set_t             *rset,
-                                    cs_equation_assemble_t           *eqa,
-                                    cs_matrix_assembler_values_t     *mav);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assemble a cellwise system into the global algebraic system.
  *         Case of a block NxN entries. Expand each row.
  *         Sequential run without openMP threading.
  *

@@ -712,31 +712,31 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     switch (boundaries->types[b_id]) {
     case CS_BOUNDARY_WALL:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                     "Wall", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_SLIDING_WALL:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                     "Sliding_wall", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_INLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                     "Inlet", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_OUTLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                     "Outlet", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_PRESSURE_INLET_OUTLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                     "Pressure Inlet/Outlet", z->name, boundary_fluxes[b_id]);
       break;
     case CS_BOUNDARY_SYMMETRY:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                     "Symmetry", z->name, boundary_fluxes[b_id]);
       break;
     default:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                     "Other", z->name, boundary_fluxes[b_id]);
       break;
 
@@ -748,13 +748,13 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   switch (boundaries->default_type) {
 
   case CS_BOUNDARY_SYMMETRY:
-    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                   "Symmetry", "Default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
     break;
 
   case CS_BOUNDARY_WALL:
-    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -5.3e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
                   "Wall", "Default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
     break;

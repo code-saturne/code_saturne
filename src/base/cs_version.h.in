@@ -1,8 +1,8 @@
-#ifndef __CS_ATMO_HEADERS_H__
-#define __CS_ATMO_HEADERS_H__
+#ifndef __CS_VERSION_H__
+#define __CS_VERSION_H__
 
 /*============================================================================
- * Global Code_Saturne headers file for easier include
+ * Base version numbering
  *============================================================================*/
 
 /*
@@ -25,17 +25,20 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-/*----------------------------------------------------------------------------
- * Local headers
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
-#include "cs_measures_util.h"
+/*============================================================================
+ * Version and revision string macros
+ *============================================================================*/
 
-#include "cs_at_data_assim.h"
-#include "cs_at_opt_interp.h"
-#include "cs_at_plugin.h"
-#include "cs_atmo.h"
+#define CS_VERSION  "@cs_version@"
+
+#define CS_REVISION "@cs_revision@"
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_ATMO_HEADERS_H__ */
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* __CS_VERSION_H__ */

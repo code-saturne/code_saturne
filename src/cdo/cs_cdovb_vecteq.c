@@ -684,7 +684,6 @@ _vbv_sync_sles_normalization(const cs_equation_param_t    *eqp,
  *
  * \param[in, out] sles      pointer to a cs_sles_t structure
  * \param[in]      matrix    pointer to a cs_matrix_t structure
- * \param[in]      field_id id related to the variable field of this equation
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      rhs_norm  quantity used for the RHS normalization
  * \param[in, out] x         solution of the linear system (in: initial guess)
@@ -697,7 +696,6 @@ _vbv_sync_sles_normalization(const cs_equation_param_t    *eqp,
 static int
 _vbv_solve_system(cs_sles_t                    *sles,
                   const cs_matrix_t            *matrix,
-                  const int                     field_id,
                   const cs_equation_param_t    *eqp,
                   const cs_real_t               rhs_norm,
                   cs_real_t                    *x,
@@ -706,20 +704,11 @@ _vbv_solve_system(cs_sles_t                    *sles,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
-
-  /* solving info */
-  cs_field_t  *fld = cs_field_by_id(field_id);
-  cs_solving_info_t sinfo;
-  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
-
-  sinfo.n_it = 0;
-  sinfo.res_norm = DBL_MAX;
-  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
-  cs_real_t  *xsol = NULL;
-
   const cs_lnum_t  n_scatter_elts = 3*n_vertices;
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
 
+  /* Set xsol */
+  cs_real_t  *xsol = NULL;
   if (n_cols > n_scatter_elts) {
     assert(cs_glob_n_ranks > 1);
     BFT_MALLOC(xsol, n_cols, cs_real_t);
@@ -728,7 +717,18 @@ _vbv_solve_system(cs_sles_t                    *sles,
   else
     xsol = x;
 
+  /* solving info */
+  const int  field_id = cs_sles_get_f_id(sles);
+  assert(field_id > -1);
+  cs_field_t  *fld = cs_field_by_id(field_id);
+
+  cs_solving_info_t sinfo;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
+
   /* Prepare solving (handle parallelism) */
+  cs_range_set_t  *rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
   cs_gnum_t  nnz = cs_equation_prepare_system(1,            /* stride */
                                               n_scatter_elts,
                                               matrix,
@@ -1266,48 +1266,6 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         builder structure
- *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to cs_cdovb_vecteq_t structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_vecteq_initialize_system(const cs_equation_param_t  *eqp,
-                                  cs_equation_builder_t      *eqb,
-                                  void                       *data,
-                                  cs_matrix_t               **system_matrix,
-                                  cs_real_t                 **system_rhs)
-{
-  CS_UNUSED(eqp);
-
-  if (data == NULL)
-    return;
-  assert(*system_matrix == NULL && *system_rhs == NULL);
-
-  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)data;
-  cs_timer_t  t0 = cs_timer_time();
-
-  /* Create the matrix related to the current algebraic system */
-  *system_matrix = cs_matrix_create(cs_shared_ms);
-
-  /* Allocate and initialize the related right-hand side */
-  BFT_MALLOC(*system_rhs, eqc->n_dofs, cs_real_t);
-#pragma omp parallel for if  (eqc->n_dofs > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++) (*system_rhs)[i] = 0.0;
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the boundary conditions known from the settings when the fields
  *         stem from a vector CDO vertex-based scheme.
  *
@@ -1539,7 +1497,6 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   /* Now solve the system (sles freed inside) */
   _vbv_solve_system(cs_sles_find_or_add(field_id, NULL),
                     matrix,
-                    field_id,
                     eqp,
                     rhs_norm,
                     fld->val, rhs);

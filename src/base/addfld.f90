@@ -49,6 +49,7 @@ subroutine addfld
 ! Module files
 !===============================================================================
 
+use atincl, only: compute_z_ground
 use paramx
 use dimens
 use optcal
@@ -345,7 +346,7 @@ if (idries.eq.-1) then
 endif
 
 ! Wall distance for some turbulence models
-! and for Lagragian multilayer deposition
+! and for Lagrangian multilayer deposition
 
 if ( iturb.eq.23.or.                                &
      (iturb.eq.30.and.irijec.eq.1).or.              &
@@ -408,6 +409,36 @@ if (ineedy.eq.1) then
 
   endif
 
+endif
+
+if (ippmod(iatmos).ge.0.and.compute_z_ground) then
+  f_name  = 'z_ground'
+  f_label = 'Z ground'
+  call add_variable_field(f_name, f_label, 1, ivar, iloc1)
+  iflid = ivarfl(ivar)
+
+  ! Elliptic equation (no convection, no time term)
+  call field_get_key_struct_var_cal_opt(iflid, vcopt)
+  vcopt%iconv = 1
+  vcopt%blencv= 0.d0 ! Pure upwind
+  vcopt%istat = 0
+  vcopt%nswrsm = 1
+  vcopt%idiff  = 0
+  vcopt%idifft = 0
+  vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
+  call field_set_key_struct_var_cal_opt(iflid, vcopt)
+
+  ! Activate the drift for all scalars with key "drift" > 0
+  iscdri = 1
+
+  ! GNU function to return the value of iscdri
+  ! with the bit value of iscdri at position
+  ! 'DRIFT_SCALAR_ADD_DRIFT_FLUX' set to one
+  iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+  iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)
+
+  call field_set_key_int(iflid, keydri, iscdri)
 endif
 
 !===============================================================================

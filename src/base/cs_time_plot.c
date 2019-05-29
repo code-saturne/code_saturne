@@ -1051,6 +1051,10 @@ cs_time_plot_init_probe(const char             *plot_name,
     break;
   }
 
+  cs_time_plot_flush(p); /* Flush after creation so plot tools can start
+                            analyzing file immediately, while computation
+                            is running */
+
   return p;
 }
 

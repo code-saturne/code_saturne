@@ -2449,11 +2449,11 @@ _exchange_particles(const cs_halo_t         *halo,
 
       n_recv_particles += lag_halo->send_count[local_rank_id];
 
-      for (cs_lnum_t i = 0; i < lag_halo->send_count[local_rank_id]; i++)
+      for (cs_lnum_t i = 0; i < lag_halo->send_count[local_rank_id]; i++) {
         memcpy(particles->p_buffer + tot_extents*(recv_shift + i),
                lag_halo->send_buf + tot_extents*(send_shift + i),
                tot_extents);
-
+      }
     }
   }
 
@@ -2764,10 +2764,11 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
     else if (cur_part_state < CS_LAGR_PART_OUT) {
 
-      if (particle_count < i)
+      if (particle_count < i) {
         memcpy(particles->p_buffer + p_am->extents*particle_count,
                particles->p_buffer + p_am->extents*i,
                p_am->extents);
+      }
 
       particle_count += 1;
       tot_weight += cur_part_stat_weight;

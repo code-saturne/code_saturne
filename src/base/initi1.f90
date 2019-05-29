@@ -130,7 +130,7 @@ call lagopt(isuite, iccvfg, iscalt, dtref)
 ! Additional fields if not in CDO mode only
 
 if (icdo.lt.2) then
-   call addfld
+  call addfld
 endif
 
 ! Time moments

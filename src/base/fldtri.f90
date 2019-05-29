@@ -38,12 +38,8 @@ subroutine fldtri
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 !__________________.____._____.________________________________________________.
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -262,6 +258,15 @@ if (f_id.ne.-1) then
 endif
 
 call field_get_id_try("wall_yplus", f_id)
+
+if (f_id.ne.-1) then
+  if (ipass .eq. 1) then
+    call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
+    call field_init_bc_coeffs(f_id)
+  endif
+endif
+
+call field_get_id_try("z_ground", f_id)
 
 if (f_id.ne.-1) then
   if (ipass .eq. 1) then

@@ -27,6 +27,7 @@ import os
 import re
 
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.SolutionDomainModel import getRunType
 
 #===============================================================================
 # Code block templates
@@ -86,7 +87,7 @@ END_C_DECLS
 
 _function_header = { \
 'vol':"""void
-cs_meg_volume_function(cs_field_t       *f,
+cs_meg_volume_function(cs_field_t       *f[],
                        const cs_zone_t  *vz)
 {
 """,
@@ -120,7 +121,7 @@ _function_names = {'vol':'cs_meg_volume_function.c',
                    'src':'cs_meg_source_terms.c',
                    'ini':'cs_meg_initialization.c'}
 
-_block_comments = {'vol':'User defined formula for variable %s over zone %s',
+_block_comments = {'vol':'User defined formula for variable(s) %s over zone %s',
                    'bnd':'User defined formula for "%s" over BC=%s',
                    'src':'User defined source term for %s over zone %s',
                    'ini':'User defined initialization for variable %s over zone %s'}
@@ -150,10 +151,80 @@ _pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
 _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
                     'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
 
+_ref_turb_values = {'uref', 'almax'}
 
 #===============================================================================
 # Utility functions
 #===============================================================================
+
+#---------------------------------------------------------------------------
+def create_req_field(name, dim=0):
+
+    r = {'name':name,
+         'dim':dim,
+         'components':[]}
+
+    return r
+
+def rfield_add_comp(rf, c):
+
+    rf['components'].append(c)
+    rf['dim'] += 1
+
+def split_req_components(req_list):
+    """
+    Look at a list of field names used in the formula.
+    Check if its a component (f[X], f[XY], ..) or a field (f).
+    return a list with it
+    """
+    req_fields = []
+    for r in req_list:
+
+        rf = r
+        if bool(re.search('\[[A-Za-z0-9]\]', r)):
+            rf = re.sub('\[[A-Za-z0-9]\]', '', r)
+        elif bool(re.search('\[[A-Za-z0-9][A-Za-z0-9]\]', r)):
+            rf = re.sub('\[[A-Za-z0-9][A-Za-z0-9]\]', '', r)
+
+        if rf == r:
+            req_fields.append(create_req_field(r,1))
+
+        else:
+            new_field = True
+            for f in req_fields:
+                if f['name'] == rf:
+                    rfield_add_comp(f,r)
+                    new_field = False
+                    break
+
+            if new_field:
+                req_fields.append(create_req_field(rf))
+                rfield_add_comp(req_fields[-1], r)
+
+    return req_fields
+
+def get_req_field_info(req_fields, r):
+
+    for i in range(len(req_fields)):
+        if req_fields[i]['dim'] == 1:
+            if req_fields[i]['name'] == r:
+                return i, -1, req_fields[i]['dim']
+
+        else:
+            if r in req_fields[i]['components']:
+                return i, req_fields[i]['components'].index(r), req_fields[i]['dim']
+
+    return None, None, None
+
+def dump_req_fields(req_fields):
+
+    print("===========================")
+    for f in req_fields:
+        print("Name: %s" % (f['name']))
+        print("Dim: %d" % (f['dim']))
+        print(f['components'])
+        print("===========================")
+
 
 #---------------------------------------------------------------------------
 
@@ -559,7 +630,7 @@ def rebuild_text(expressions, comments,
 
     # operators adding spacing or not (minimalist prettyfier).
     spacing_operators = ('+', '-', '*', '%', '/', '=', '>', '<',
-                         '==', '>=', '<=')
+                         '==', '>=', '<=', 'if', 'then', 'else')
     no_spacing_operators = ('^', '**')
 
     for i, e in enumerate(expressions):
@@ -665,7 +736,7 @@ def tokenize(segments):
     sep2 = ('<=', '>=', '!=', '||', '&&', '+=', '-=', '*=', '/=', '**')
     sep1 = ('=', '(', ')', ';', ',', ':', '[', ']', '{', '}',
             '+', '-', '*', '/', '<', '>',  '^', '%', '!', '?')
-    digits = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+    digits_p = ('.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
     tokens = []
     comments = []
@@ -680,7 +751,9 @@ def tokenize(segments):
             continue
 
         for i, c in enumerate(s0):
-            if c in whitespace:
+            if s_id > i:
+                continue
+            elif c in whitespace:
                 if (not prv in whitespace) and (s_id < i):
                     tokens.append((s0[s_id:i], s[1], s[2]+s_id))
                 s_id = i+1
@@ -688,13 +761,13 @@ def tokenize(segments):
                 if (not prv in whitespace) and (s_id < i):
                     tokens.append((s0[s_id:i], s[1], s[2]+s_id))
                 tokens.append((s0[i:i+2], s[1], s[2]+i))
-                s_id = i+1
+                s_id = i+2
             elif c in sep1:
-                # special case: e+ or e- might not be a sparator
+                # special case: e+ or e- might not be a separator
                 is_exp = False
                 if c in ('+', '-'):
                     if s0[i-1:i+1] in ('e+', 'e-', 'E+', 'E-'):
-                        if s0[i-2:i-1] in digits and s0[i+1:i+2] in digits:
+                        if s0[i-2:i-1] in digits_p and s0[i+1:i+2] in digits_p:
                             is_exp = True
                 if not is_exp:
                     if (not prv in whitespace) and (s_id < i):
@@ -838,6 +911,10 @@ def parse_gui_expression(expression,
 
     if_open = 0
 
+    if func_type == 'vol':
+        req_fields = split_req_components(req)
+#        dump_req_fields(req_fields)
+
     # ------------------------------------
     # Parse the Mathematical expression and generate the C block code
 
@@ -907,7 +984,14 @@ def parse_gui_expression(expression,
 
                 elif lf[0].strip() in req:
                     if func_type == 'vol':
-                        new_v = 'f->val[c_id]'
+                        fid, fcomp, fdim = get_req_field_info(req_fields, lf[0].strip())
+                        if fid == None:
+                            raise Exception("Uknown field: %s" %(lf[0].strip()))
+
+                        if fcomp < 0:
+                            new_v = 'f[%d]->val[c_id]' % (fid)
+                        else:
+                            new_v = 'f[%d]->val[c_id*%d + %d]' % (fid, fdim, fcomp)
 
                     elif func_type == 'bnd':
                         ir = req.index(lf[0].strip())
@@ -1080,9 +1164,6 @@ class mei_to_c_interpreter:
         else:
             required = func_params['req']
 
-        if len(required) > 1:
-            raise Exception("Received more than one argument in write_cell_block function")
-
         zone, name = func_key.split('::')
         exp_lines_comp = func_params['lines']
 
@@ -1124,6 +1205,11 @@ class mei_to_c_interpreter:
                     elif sn in self.notebook.keys():
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
                                 % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
@@ -1201,8 +1287,12 @@ class mei_to_c_interpreter:
             usr_defs += parsed_exp[1]
 
         # Write the block
-        usr_blck = tab + 'if (strcmp(f->name, "%s") == 0 && strcmp(vz->name, "%s") == 0) {\n' \
-                % (name, zone)
+        nsplit = name.split('+')
+        usr_blck = tab + 'if (strcmp(f[0]->name, "%s") == 0 &&\n' % (nsplit[0])
+        for i in range(1,len(nsplit)):
+            usr_blck += tab + '    strcmp(f[%d]->name, "%s") == 0 &&\n' % (i, nsplit[i])
+
+        usr_blck += tab + '    strcmp(vz->name, "%s") == 0) {\n' % (zone)
 
         usr_blck += usr_defs + '\n'
 
@@ -1289,6 +1379,11 @@ class mei_to_c_interpreter:
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
             for nb in self.notebook.keys():
                 if nb in line_comp and nb not in known_symbols:
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
@@ -1428,6 +1523,11 @@ class mei_to_c_interpreter:
                                 % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
                     elif sn in known_fields.keys():
                         l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n'
                         l = l % (sn, known_fields[sn])
@@ -1539,6 +1639,11 @@ class mei_to_c_interpreter:
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
                     elif sn in _pkg_fluid_prop_dict[self.pkg_name].keys():
                         if len(name.split("_")) > 1:
                             try:
@@ -1636,6 +1741,7 @@ class mei_to_c_interpreter:
     def generate_volume_code(self):
 
         from code_saturne.model.LocalizationModel import LocalizationModel
+        from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
         if self.pkg_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
                 import FluidCharacteristicsModel
@@ -1660,7 +1766,27 @@ class mei_to_c_interpreter:
                         self.init_block('vol', 'all_cells', dname,
                                         exp, req, sym, sca)
 
-        else:
+            # GroundWater Flows Law
+            vlm = LocalizationModel('VolumicZone', self.case)
+            glm = None
+
+            for zone in vlm.getZones():
+                z_id = str(zone.getCodeNumber())
+                zone_name = zone.getLabel()
+                nature_list = zone.getNatureList()
+
+                if "groundwater_law" in nature_list:
+                    if not glm:
+                        glm = GroundwaterLawModel(self.case)
+                    if zone.getNature()['groundwater_law'] == 'on':
+                        if glm.getGroundwaterLawModel(z_id) == 'user':
+                            exp, req, sym = glm.getGroundwaterLawFormulaComponents(z_id)
+                            self.init_block('vol', zone_name,
+                                            'capacity+saturation+permeability',
+                                            exp, req, sym, [])
+
+
+        elif self.pkg_name == 'neptune_cfd':
             from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
             from code_saturne.model.MainFieldsModel import MainFieldsModel
 
@@ -1731,10 +1857,13 @@ class mei_to_c_interpreter:
                 nature_list = zone.getNatureList()
                 if 'porosity' in nature_list:
                     if zone.getNature()['porosity'] == 'on':
+                        fname = 'porosity'
+                        if prm.getPorosityModel(z_id) == 'anisotropic':
+                            fname += '+tensorial_porosity'
                         exp, req, known_fields, sym = \
                         prm.getPorosityFormulaComponents(z_id)
 
-                        self.init_block('vol', zone_name, 'porosity',
+                        self.init_block('vol', zone_name, fname,
                                         exp, req, sym, known_fields)
 
 
@@ -2285,10 +2414,11 @@ class mei_to_c_interpreter:
 
         retcode = False
 
-        for func_type in self.funcs.keys():
-            if len(self.funcs[func_type].keys()) > 0:
-                retcode = True
-                break
+        if getRunType(self.case) == 'standard':
+            for func_type in self.funcs.keys():
+                if len(self.funcs[func_type].keys()) > 0:
+                    retcode = True
+                    break
 
         return retcode
 
@@ -2341,6 +2471,10 @@ class mei_to_c_interpreter:
         file2write = _function_names[func_type]
         self.delete_file(file2write)
 
+        # Check if it is a standard computation
+        if getRunType(self.case) != 'standard':
+            return 0
+
         # Generate the functions code if needed
         code_to_write = ''
         if len(self.funcs[func_type].keys()) > 0:
@@ -2351,6 +2485,7 @@ class mei_to_c_interpreter:
             code_to_write += _function_header[func_type]
             for key in self.funcs[func_type].keys():
                 zone_name, var_name = key.split('::')
+                var_name = var_name.replace("+", ", ")
                 m1 = _block_comments[func_type] % (var_name, zone_name)
                 m2 = '/*-' + '-'*len(m1) + '-*/\n'
                 m1 = '/* ' + m1 + ' */\n'

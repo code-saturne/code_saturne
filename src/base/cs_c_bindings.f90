@@ -2133,6 +2133,30 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Return pointers to atmo includes
+
+    !> \param[out]   compute_z_ground     Pointer to compute_z_ground
+
+    subroutine cs_f_atmo_get_pointers(compute_z_ground) &
+      bind(C, name='cs_f_atmo_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: compute_z_ground
+    end subroutine cs_f_atmo_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Compute the relative ground elevation (mainly for the atmospheric
+    !>  module).
+
+    subroutine cs_atmo_z_ground_compute() &
+      bind(C, name='cs_atmo_z_ground_compute')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_z_ground_compute
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for cooling tower
 
     subroutine cs_ctwr_field_pointer_map()  &
@@ -2143,7 +2167,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for Cooling towers
+    ! Interface to C function for cooling towers
 
     subroutine cs_ctwr_init_field_vars(rho0, t0, p0, molmassrat)           &
       bind(C, name='cs_ctwr_init_field_vars')
@@ -2154,7 +2178,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for Cooling towers
+    ! Interface to C function for cooling towers
 
     subroutine cs_ctwr_restart_field_vars(rho0, t0, p0, humidity0, molmassrat)  &
       bind(C, name='cs_ctwr_restart_field_vars')
@@ -2165,7 +2189,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for Cooling towers
+    ! Interface to C function for cooling towers
 
     subroutine cs_ctwr_phyvar_update(rho0, t0, p0, molmassrat)             &
       bind(C, name='cs_ctwr_phyvar_update')
@@ -2176,7 +2200,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for Cooling towers
+    ! Interface to C function for cooling towers
 
     subroutine cs_ctwr_init_flow_vars(liq_mass_flow)                         &
       bind(C, name='cs_ctwr_init_flow_vars')
@@ -2187,7 +2211,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for Cooling towers
+    ! Interface to C function for cooling towers
 
     subroutine cs_ctwr_bulk_mass_source_term(p0, molmassrat,                 &
                                              mass_source)                    &
@@ -2200,7 +2224,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for Cooling towers
+    ! Interface to C function for cooling towers
 
     subroutine cs_ctwr_source_term(f_id, p0, molmassrat,           &
                                    exp_st, imp_st)                 &

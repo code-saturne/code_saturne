@@ -219,6 +219,9 @@ class PorosityView(QWidget, Ui_PorosityForm):
         label, name, local = self.modelPorosity.getItem(self.entriesNumber)
 
         choice = self.mdl.getPorosityModel(name)
+        fname = 'porosity'
+        if choice == 'anisotropic':
+            fname += '+tensorial_porosity'
 
         exp, req, sca, sym = self.mdl.getPorosityFormulaComponents(name)
 
@@ -227,12 +230,16 @@ class PorosityView(QWidget, Ui_PorosityForm):
 
         exa = """#example: \n""" + self.mdl.getDefaultPorosityFormula(choice)
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = label,
+                                variable_name = fname,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                known_fields  = sca,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaPorosity -> %s" % str(result))

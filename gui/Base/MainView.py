@@ -885,7 +885,32 @@ class MainView(object):
 
         from code_saturne.Base.QFileEditor import QFileEditor
 
+        # We do several checks:
+        # - Has a case structure been initialized ?
+        # - Does the xml file exists ?
+        # - Is the xml file within a DATA folder ?
+        #
+        # Only if all of these tests are passed do we open the file editor.
+        open_editor = True
         if not hasattr(self, 'case'):
+            open_editor = False
+        else:
+            if not hasattr(self, 'IdPthMdl'):
+                self.IdPthMdl = IdentityAndPathesModel(self.case)
+            fic = self.IdPthMdl.getXmlFileName()
+            if not fic:
+                open_editor = False
+            else:
+                file_dir = os.path.split(fic)[0]
+                if file_dir:
+                    if not os.path.basename(file_dir) == "DATA":
+                        open_editor = False
+
+        if not open_editor:
+            title = self.tr("WARNING")
+            msg   = self.tr("Warning: you can only manage user files for a "\
+                            "Code_Saturne CASE with an xml file.")
+            QMessageBox.warning(self, title, msg)
             return
 
         fileEditor = QFileEditor(parent=self,
@@ -902,13 +927,39 @@ class MainView(object):
 
         from code_saturne.Base.QFileEditor import QFileEditor
 
+        # We do several checks:
+        # - Has a case structure been initialized ?
+        # - Does the xml file exists ?
+        # - Is the xml file within a DATA folder ?
+        #
+        # Only if all of these tests are passed do we open the file editor.
+        open_viewer = True
         if not hasattr(self, 'case'):
+            open_viewer = False
+        else:
+            if not hasattr(self, 'IdPthMdl'):
+                self.IdPthMdl = IdentityAndPathesModel(self.case)
+            fic = self.IdPthMdl.getXmlFileName()
+            if not fic:
+                open_viewer = False
+            else:
+                file_dir = os.path.split(fic)[0]
+                if file_dir:
+                    if not os.path.basename(file_dir) == "DATA":
+                        open_viewer = False
+
+        if not open_viewer:
+            title = self.tr("WARNING")
+            msg   = self.tr("Warning: you can only view log files for a "\
+                            "Code_Saturne CASE with an xml file.")
+            QMessageBox.warning(self, title, msg)
             return
 
         fileViewer = QFileEditor(parent=self,
                                  case_dir=self.case['case_path']+'/RESU',
                                  readOnly=True,
-                                 noOpen=True)
+                                 noOpen=True,
+                                 useHighlight=False)
         fileViewer.show()
 
 
@@ -1356,7 +1407,8 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name, "see COPYING file") # TODO
+        QMessageBox.about(self, self.package.code_name,
+                          cs_info.licence_text)
 
 
     def displayConfig(self):

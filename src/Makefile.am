@@ -134,7 +134,8 @@ base/ptrglo.lo: base/paramx.lo base/dimens.lo base/mesh.lo base/numvar.lo \
  base/optcal.lo base/parall.lo base/period.lo base/mesh.lo base/field.lo
 base/rotation.lo: base/paramx.lo
 base/turbomachinery.lo:  base/mesh.lo base/cstphy.lo base/cplsat.lo
-atmo/atincl.lo: pprt/ppppar.lo pprt/ppincl.lo base/mesh.lo atmo/atsoil.lo
+atmo/atincl.lo: pprt/ppppar.lo pprt/ppincl.lo base/mesh.lo atmo/atsoil.lo \
+ base/cs_c_bindings.lo
 atmo/atchem.lo: pprt/ppppar.lo base/mesh.lo base/entsor.lo base/numvar.lo
 atmo/atimbr.lo: base/cstphy.lo base/entsor.lo atmo/atincl.lo
 atmo/siream.lo: pprt/ppppar.lo

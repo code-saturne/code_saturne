@@ -285,6 +285,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.mdl.setEnergyModel(self.zone, self.currentid, model)
 
         if model != "hsat_P":
+            self.pushButtonEnergy.setEnabled(True)
             exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
             if exp:
                 if (model == 'enthalpy' and 'temperature' in exp):
@@ -297,6 +298,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             else:
                 self.pushButtonEnergy.setStyleSheet("background-color: red")
         else:
+            self.pushButtonEnergy.setEnabled(False)
             self.pushButtonEnergy.setStyleSheet("background-color: None")
 
 
