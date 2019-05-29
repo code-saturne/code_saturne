@@ -111,16 +111,16 @@ cs_user_extra_operations(cs_domain_t     *domain)
   cs_lnum_t n_faces;
   cs_lnum_t *face_list;
 
-  int cell_id, cell_id1, cell_id2, face_id;
+  cs_lnum_t cell_id, cell_id1, cell_id2, face_id;
   int nt_cur = domain->time_step->nt_cur;
 
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
-  const int n_cells = m->n_cells;
-  const int n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_faces = m->n_i_faces;
-  const int n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
