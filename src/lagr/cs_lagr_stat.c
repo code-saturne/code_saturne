@@ -294,7 +294,8 @@ static cs_lagr_stat_options_t _lagr_stat_options
 
 cs_lagr_stat_options_t *cs_glob_lagr_stat_options = &_lagr_stat_options;
 
-/* Event filters for boundary mass flow */
+/* Event filters for boundary mass flow:
+ * First component counted negative, second component counted positive */
 
 static int _bdy_mass_flux_filter[2]
 = {CS_EVENT_INFLOW | CS_EVENT_RESUSPENSION,

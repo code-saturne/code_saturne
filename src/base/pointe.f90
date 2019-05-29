@@ -115,7 +115,6 @@ module pointe
 
   !=============================================================================
 
-  !... Parametres du module thermique 1D
   !> \defgroup thermal_1D Thermal 1D module parameters
 
   !> \addtogroup thermal_1D
