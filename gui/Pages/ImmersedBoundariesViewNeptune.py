@@ -283,6 +283,9 @@ class StandardItemModelFSI(QStandardItemModel):
         row = self.rowCount()
         self.setRowCount(row-1)
 
+    def getItem(self, row):
+        return self.dataFSI[row]
+
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
@@ -310,6 +313,11 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.modelFSI = StandardItemModelFSI(self.ibm)
         self.tableViewFSI.setModel(self.modelFSI)
 
+        for obj in range(1,self.ibm.getNumberOfFSIObjects()+1):
+            self.modelFSI.addItem(self.ibm.getObjectName(obj),
+                                  self.ibm.getObjectMotion(obj),
+                                  self.ibm.getObjectInteraction(obj))
+
         if QT_API == "PYQT4":
             self.tableViewFSI.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableViewFSI.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
@@ -332,7 +340,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
         self.checkBoxActivate.stateChanged.connect(self.slotCheckActivate)
 
-        self.tableViewFSI.clicked.connect(self.slotChangedSelection)
+        self.tableViewFSI.clicked[QModelIndex].connect(self.slotChangedSelection)
 
 
         for ind in ['Explicit', 'MEDCoupling']:
@@ -342,12 +350,43 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.pushButtonAddFSI.clicked.connect(self.slotAddFSI)
         self.pushButtonDeleteFSI.clicked.connect(self.slotDeleteFSI)
 
+        self.pushButtonExplicit.clicked.connect(self.slotExplicitFormula)
+
+        validatorDensity = DoubleValidator(self.lineEditObjDensity, min = 0.0)
+        self.lineEditObjDensity.setValidator(validatorDensity)
+        self.lineEditObjDensity.textChanged[str].connect(self.slotObjDensity)
+
+        validatorStiffness = DoubleValidator(self.lineEditObjStiffness, min = 0.0)
+        self.lineEditObjStiffness.setValidator(validatorStiffness)
+        self.lineEditObjStiffness.textChanged[str].connect(self.slotObjStiffness)
+
+        validatorDamping = DoubleValidator(self.lineEditObjDamping, min = 0.0)
+        self.lineEditObjDamping.setValidator(validatorDamping)
+        self.lineEditObjDamping.textChanged[str].connect(self.slotObjDamping)
+
+        self.lineEditXInit.textChanged[str].connect(self.slotObjXinit)
+        self.lineEditYInit.textChanged[str].connect(self.slotObjYinit)
+        self.lineEditZInit.textChanged[str].connect(self.slotObjZinit)
+
+        self.lineEditXEq.textChanged[str].connect(self.slotObjXeq)
+        self.lineEditYEq.textChanged[str].connect(self.slotObjYeq)
+        self.lineEditZEq.textChanged[str].connect(self.slotObjZeq)
+
+        self.lineEditVelXInit.textChanged[str].connect(self.slotObjVelXinit)
+        self.lineEditVelYInit.textChanged[str].connect(self.slotObjVelYinit)
+        self.lineEditVelZInit.textChanged[str].connect(self.slotObjVelZinit)
+
+        self.lineEditAccXInit.textChanged[str].connect(self.slotObjAccXinit)
+        self.lineEditAccYInit.textChanged[str].connect(self.slotObjAccYinit)
+        self.lineEditAccZInit.textChanged[str].connect(self.slotObjAccZinit)
+
         # Check for MEDCoupling presence
         import cs_config
         cfg = cs_config.config()
         self.has_medcoupling = cfg.libs['medcoupling'].have == 'yes'
         # deactivated for the moment
         self.has_medcoupling = False
+
         self.radioButtonMEDCoupling.setEnabled(self.has_medcoupling)
         if self.ibm.getMethod() == 'medcoupling' and self.has_medcoupling == False:
             self.setMethod('explicit')
@@ -372,7 +411,8 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.case.undoStartGlobal()
 
 
-    def slotChangedSelection(self, text=None):
+    @pyqtSlot("QModelIndex")
+    def slotChangedSelection(self, index):
         """
         detect change in selection and update view
         """
@@ -407,12 +447,16 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
     def updatePageView(self):
 
         if self.ibm.getOnOff() == 'off':
+            self.checkBoxActivate.setChecked(False)
             self.groupBoxMethod.hide()
             self.groupBoxObjects.hide()
             self.groupBoxExplicit.hide()
             self.groupBoxMEDCoupling.hide()
+            self.radioButtonExplicit.setChecked(False)
+            self.radioButtonMEDCoupling.setChecked(False)
 
         else:
+            self.checkBoxActivate.setChecked(True)
             self.groupBoxMethod.show()
             self.groupBoxObjects.show()
 
@@ -427,18 +471,56 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                     self.groupBoxExplicit.show()
                     self.groupBoxMEDCoupling.hide()
                     self.radioButtonExplicit.setChecked(True)
+                    self.radioButtonMEDCoupling.setChecked(False)
                 elif self.ibm.getMethod() == 'medcoupling':
                     self.groupBoxExplicit.hide()
                     self.groupBoxMEDCoupling.show()
+                    self.radioButtonExplicit.setChecked(False)
                     self.radioButtonMEDCoupling.setChecked(True)
                 else:
+                    self.radioButtonExplicit.setChecked(False)
+                    self.radioButtonMEDCoupling.setChecked(False)
                     self.groupBoxExplicit.hide()
                     self.groupBoxMEDCoupling.hide()
 
                 if self.ibm.getObjectMotion(self.current_obj) == 'moving':
                     self.groupBoxObjProperties.show()
+                    # Set correct values for each slot
+                    self.lineEditObjDensity.setText(str(
+                            self.ibm.getObjectDensity(self.current_obj)))
+
+                    self.lineEditObjStiffness.setText(str(
+                            self.ibm.getObjectStiffness(self.current_obj)))
+
+                    self.lineEditObjDamping.setText(str(
+                            self.ibm.getObjectDamping(self.current_obj)))
+
+                    x0,y0,z0 = self.ibm.getObjectInitPosition(self.current_obj)
+                    self.lineEditXInit.setText(x0)
+                    self.lineEditYInit.setText(y0)
+                    self.lineEditZInit.setText(z0)
+
+                    xe,ye,ze = self.ibm.getObjectEqPosition(self.current_obj)
+                    self.lineEditXEq.setText(xe)
+                    self.lineEditYEq.setText(ye)
+                    self.lineEditZEq.setText(ze)
+
+                    vx,vy,vz = self.ibm.getObjectInitVel(self.current_obj)
+                    self.lineEditVelXInit.setText(vx)
+                    self.lineEditVelYInit.setText(vy)
+                    self.lineEditVelZInit.setText(vz)
+
+                    ax,ay,az = self.ibm.getObjectInitAcc(self.current_obj)
+                    self.lineEditAccXInit.setText(ax)
+                    self.lineEditAccYInit.setText(ay)
+                    self.lineEditAccZInit.setText(az)
                 else:
                     self.groupBoxObjProperties.hide()
+
+            else:
+                self.groupBoxExplicit.hide()
+                self.groupBoxMEDCoupling.hide()
+                self.groupBoxObjProperties.hide()
 
 
     @pyqtSlot()
@@ -482,6 +564,143 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         Translation
         """
         return text
+
+    @pyqtSlot()
+    def slotExplicitFormula(self):
+        """
+        Explicit formula for variable porosity
+        """
+
+        objId = self.current_obj
+
+        exp, req, sym = self.ibm.getFormulaPorosityComponents(objId)
+        exa = ""
+
+        name = self.ibm.getObjectName(objId)
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'var_poro',
+                                zone_name     = name,
+                                variable_name = 'porosity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                known_fields  = [],
+                                examples      = exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotExplicitFormula -> %s" % str(result))
+            self.ibm.setExplicitFormula(str(objId), 'porosity', result)
+            self.pushButtonExplicit.setStyleSheet("background-color: green")
+            self.pushButtonExplicit.setToolTip(exp)
+
+
+    @pyqtSlot(str)
+    def slotObjDensity(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectDensity(num, val)
+
+
+    @pyqtSlot(str)
+    def slotObjStiffness(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectStiffness(num, val)
+
+
+    @pyqtSlot(str)
+    def slotObjDamping(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectDamping(num, val)
+
+
+    @pyqtSlot(str)
+    def slotObjXinit(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitPosition(num, xini=val)
+
+
+    @pyqtSlot(str)
+    def slotObjYinit(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitPosition(num, yini=val)
+
+
+    @pyqtSlot(str)
+    def slotObjZinit(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitPosition(num, zini=val)
+
+
+    @pyqtSlot(str)
+    def slotObjXeq(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectEqPosition(num, xeq=val)
+
+
+    @pyqtSlot(str)
+    def slotObjYeq(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectEqPosition(num, yeq=val)
+
+
+    @pyqtSlot(str)
+    def slotObjZeq(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectEqPosition(num, zeq=val)
+
+
+    @pyqtSlot(str)
+    def slotObjVelXinit(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitVel(num, vx=val)
+
+
+    @pyqtSlot(str)
+    def slotObjVelYinit(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitVel(num, vy=val)
+
+
+    @pyqtSlot(str)
+    def slotObjVelZinit(self, text):
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitVel(num, vz=val)
+
+
+    @pyqtSlot(str)
+    def slotObjAccXinit(self, text):
+
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitAcc(num, ax=val)
+
+    @pyqtSlot(str)
+    def slotObjAccYinit(self, text):
+
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitAcc(num, ay=val)
+
+    @pyqtSlot(str)
+    def slotObjAccZinit(self, text):
+
+        num = self.tableViewFSI.currentIndex().row() + 1
+        val = float(text)
+        self.ibm.setObjectInitAcc(num, az=val)
+
 
 #-------------------------------------------------------------------------------
 # End
