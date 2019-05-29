@@ -479,5 +479,106 @@ cs_quadrature_tet_15pts(const cs_real_3_t   v1,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the flags adapted to the given quadrature type \p qtype and the
+ *         location on which the quadrature should be performed
+ *
+ * \param[in] qtype    \ref cs_quadrature_type_t
+ * \param[in] loc      It could be \ref CS_FLAG_CELL, \ref CS_FLAG_FACE or
+ *                     \ref CS_FLAG_EDGE plus \ref CS_FLAG_PRIMAL or
+ *                     \ref CS_FLAG_DUAL
+ *
+ * \return  metadata stored in a \ref cs_flag_t to build a \ref cs_cell_mesh_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
+                       const cs_flag_t            loc)
+{
+  cs_flag_t ret_flag = 0;
+
+  /* If necessary, enrich the mesh flag to account for the property */
+  switch (qtype) {
+
+  case CS_QUADRATURE_HIGHER:
+  case CS_QUADRATURE_HIGHEST:
+    ret_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ;
+    /* No break, pass to the following too */
+  case CS_QUADRATURE_BARY_SUBDIV:
+    ret_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+    break;
+
+  default:
+    /* Nothing to do */
+    break;
+
+  } /* Switch */
+
+  if (cs_flag_test(loc, CS_FLAG_CELL | CS_FLAG_PRIMAL)) {
+
+    switch (qtype) {
+
+    case CS_QUADRATURE_HIGHER:
+    case CS_QUADRATURE_HIGHEST:
+      ret_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_HFQ;
+      /* No break, pass to the following too */
+    case CS_QUADRATURE_BARY_SUBDIV:
+      ret_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+      break;
+
+    default:
+      /* Nothing to do */
+      break;
+
+    } /* Switch */
+
+  } /* Primal cells */
+  else if (cs_flag_test(loc, CS_FLAG_FACE | CS_FLAG_PRIMAL)) {
+
+    switch (qtype) {
+
+    case CS_QUADRATURE_HIGHER:
+    case CS_QUADRATURE_HIGHEST:
+      ret_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ;
+      /* No break, pass to the following too */
+    case CS_QUADRATURE_BARY_SUBDIV:
+      ret_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ |
+        CS_CDO_LOCAL_PF;
+      break;
+
+    default:
+      /* Nothing to do */
+      break;
+
+    } /* Switch */
+
+  } /* Primal faces */
+  else if (cs_flag_test(loc, CS_FLAG_EDGE | CS_FLAG_PRIMAL) ||
+           cs_flag_test(loc, CS_FLAG_FACE | CS_FLAG_DUAL)) {
+
+    switch (qtype) {
+
+    case CS_QUADRATURE_HIGHER:
+    case CS_QUADRATURE_HIGHEST:
+      ret_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ;
+      /* No break, pass to the following too */
+    case CS_QUADRATURE_BARY_SUBDIV:
+      ret_flag |= CS_CDO_LOCAL_EF | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ |
+        CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PE;
+      break;
+
+    default:
+      /* Nothing to do */
+      break;
+
+    } /* Switch */
+
+  } /* Primal edge or dual faces */
+
+  return ret_flag;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
