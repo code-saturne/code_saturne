@@ -103,6 +103,8 @@ static cs_atmo_option_t  _atmo_option = {
  * Static global variables
  *============================================================================*/
 
+cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
