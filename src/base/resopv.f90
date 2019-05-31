@@ -120,7 +120,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb, b_head_loss, gamcav, dgdpca, rvoid1
+use pointe, only: itypfb, b_head_loss, gamcav, dgdpca
 use albase
 use parall
 use period

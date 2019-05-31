@@ -2460,10 +2460,6 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
 void CS_PROCF(uiporo, UIPORO)(void)
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
-
-  mei_tree_t *ev_formula  = NULL;
 
   int n_zones = cs_volume_zone_n_zones();
 
@@ -2500,9 +2496,6 @@ void CS_PROCF(uiporo, UIPORO)(void)
     const cs_zone_t *z = cs_volume_zone_by_id(z_id);
 
     if (z->type & CS_VOLUME_ZONE_POROSITY) {
-
-      cs_lnum_t  n_cells = z->n_elts;
-      const cs_lnum_t *cell_ids = z->elt_ids;
 
       cs_tree_node_t *tn_zp = _add_zone_id_test_attribute(tn_p, z->id);
       const char *mdl = cs_tree_node_get_child_value_str(tn_zp, "model");
@@ -3445,8 +3438,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                                 const cs_real_t *gravity_z,
                                 const int       *unsaturated)
 {
-  mei_tree_t *ev_formula  = NULL;
-
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 

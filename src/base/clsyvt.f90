@@ -116,7 +116,7 @@ integer          ifac, ii, isou
 integer          iel, f_dim, clsyme
 integer          iscal , ivar, idftnp
 
-double precision rnx, rny, rnz, rxnn
+double precision rnx, rny, rnz
 double precision upx, upy, upz, usn
 double precision tx, ty, tz, txn, t2x, t2y, t2z
 double precision eloglo(3,3), alpha(6,6)
@@ -714,22 +714,6 @@ if (iale.eq.1) then
   enddo
 
 endif
-
-!===============================================================================
-! 5. Formats
-!===============================================================================
-
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,' LA NORMALE A LA FACE DE BORD DE SYMETRIE ',I10,/,&
-         ' EST NULLE ; COORDONNEES : ',3E12.5)
-
-#else
-
- 1000 format(/,' THE NORMAL TO THE SYMMETRY BOUNDARY FACE ',I10,/,&
-         ' IS NULL; COORDINATES: ',3E12.5)
-
-#endif
 
 !----
 ! End

@@ -52,12 +52,8 @@
 !> \param[in]     iterns        index of the iteration on Navier-Stokes
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     nfbpcd        number of faces with condensation source terms
-!> \param[in]     ncmast        number of cells with condensation source terms
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     ifbpcd        index of faces with condensation source terms
-!> \param[in]     ltmast        index of cells with condensation source terms
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
@@ -76,9 +72,6 @@
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
-!> \param[in]     spcond        variable value associated to the condensation
-!>                              source term (for ivar=ipr, spcond is the flow rate
-!>                              \f$ \Gamma_{s, cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[in]     dfrcxt        variation of the external forces
@@ -102,12 +95,11 @@
 subroutine predvv &
  ( iappel ,                                                       &
    nvar   , nscal  , iterns ,                                     &
-   ncepdp , ncesmp , nfbpcd , ncmast ,                            &
-   icepdc , icetsm , ifbpcd , ltmast ,                            &
-   itypsm ,                                                       &
+   ncepdp , ncesmp ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    dt     , vel    , vela   , velk   ,                            &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
-   ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
+   ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     )
@@ -152,17 +144,14 @@ implicit none
 
 integer          iappel
 integer          nvar   , nscal  , iterns
-integer          ncepdp , ncesmp , nfbpcd , ncmast
+integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ifbpcd(nfbpcd)
-integer          ltmast(ncelet)
 
 double precision dt(ncelet)
 double precision tslagr(ncelet,*)
 double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
-double precision spcond(nfbpcd,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(3, ncelet)
 double precision trava(ndim,ncelet)

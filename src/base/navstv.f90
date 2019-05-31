@@ -493,12 +493,11 @@ iappel = 1
 call predvv &
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
-  ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-  icepdc , icetsm , ifbpcd , ltmast ,                            &
-  itypsm ,                                                       &
+  ncepdc , ncetsm ,                                              &
+  icepdc , icetsm , itypsm ,                                     &
   dt     , vel    , vela   , velk   ,                            &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-  ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
+  ckupdc , smacel , frcxt  , grdphd ,                            &
   trava  ,                   dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     )
@@ -1515,12 +1514,11 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
     call predvv &
  ( iappel ,                                                       &
    nvar   , nscal  , iterns ,                                     &
-   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-   icepdc , icetsm , ifbpcd , ltmast ,                            &
-   itypsm ,                                                       &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    dt     , vel    , vel    , velk   ,                            &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , smacel , spcond ,          frcxt  , grdphd ,          &
+   ckupdc , smacel , frcxt  , grdphd ,                            &
    trava  ,                   dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     )
