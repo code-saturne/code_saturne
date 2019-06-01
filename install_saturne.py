@@ -176,7 +176,10 @@ class Package:
         self.version = version
         self.archive = archive
         if self.archive:
-            self.url = url % self.archive
+            try:
+                self.url = url % self.archive
+            except Exception:
+                self.url = url
         else:
             self.url = None
 
@@ -387,20 +390,6 @@ class Package:
 
         os.chdir(os.path.join(build_dir, 'src'))
 
-        # Work around Ubuntu Metis build bug
-        ldflags_add = ''
-        try:
-            p = subprocess.Popen(self.cc + ' -Xlinker --help',
-                                 shell=True,
-                                 universal_newlines=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            output = p.communicate()[0]
-            if output.find("--no-as-needed") > -1:
-                ldflags_add = ' -Wl,--no-as-needed\n'
-        except Exception:
-            pass
-
         if self.shared:
             fdr = open('Make.inc/Makefile.inc.x86-64_pc_linux2.shlib')
         else:
@@ -421,8 +410,6 @@ class Package:
             line = re.sub(re_intsize32, '', line)
             line = re.sub(re_intsize64, '', line)
             line = re.sub(re_idxsize64, '-DIDXSIZE64 -DINTSIZE64', line)
-            if ldflags_add and line[0:7] == 'LDFLAGS':
-                line = line[:-1] + ldflags_add
 
             fd.write(line)
 
@@ -595,7 +582,7 @@ class Setup:
                     package="code_saturne",
                     version=None,
                     archive=None,
-                    url="http://code-saturne.org")
+                    url="https://code-saturne.org")
 
         p = self.packages['code_saturne']
 
@@ -610,9 +597,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.17",
-                    archive="hdf5-1.8.17.tar.gz",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.17/src/%s")
+                    version="1.8.20",
+                    archive="hdf5-1.8.20.tar.gz",
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.20/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -622,10 +609,10 @@ class Setup:
         self.packages['cgns'] = \
             Package(name="CGNS",
                     description="CFD General Notation System",
-                    package="cgnslib",
-                    version="3.2.1",
-                    archive="cgnslib_3.2.1.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.2/%s/download")
+                    package="cgns",
+                    version="3.4.0",
+                    archive="CGNS-3.4.0.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v3.4.0.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
@@ -636,8 +623,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.2.1",
-                    archive="med-3.2.1.tar.gz",
+                    version="3.3.1",
+                    archive="med-3.3.1.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -672,17 +659,17 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.4",
-                    archive="scotch_6.0.4.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/file/34618/%s")
+                    version="6.0.6",
+                    archive="scotch_6.0.6.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/file/37622/%s")
 
     #---------------------------------------------------------------------------
 
     def setup_defaults(self):
 
-        self.cc = find_executable(['cc', 'gcc', 'icc', 'xlc'], 'CC')
+        self.cc = find_executable(['cc', 'gcc', 'icc', 'xlc', 'clang'], 'CC')
         self.fc = find_executable(['f95', 'gfortran', 'ifort'], 'FC')
-        self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++'], 'CXX')
+        self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++', 'clang++'], 'CXX')
         self.mpicc = find_executable(['mpicc', 'mpicc.openmpi', 'mpicc.mpich'])
         self.mpicxx = find_executable(['mpicxx', 'mpicxx.openmpi', 'mpicxx.mpich'])
         self.python = find_executable(['python'], 'PYTHON')

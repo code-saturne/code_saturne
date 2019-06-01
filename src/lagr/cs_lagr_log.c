@@ -337,7 +337,7 @@ cs_lagr_log_setup(void)
 
   if (cs_glob_lagr_time_scheme->modcpl) {
     const char c_dir[] = "xyze";
-    int _idirla = cs_glob_lagr_time_scheme->modcpl;
+    int _idirla = cs_glob_lagr_time_scheme->idirla;
     cs_log_printf
       (CS_LOG_SETUP,
        _("    complete model main flow direction: %c\n"),
