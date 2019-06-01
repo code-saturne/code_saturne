@@ -1385,31 +1385,6 @@ _prepare_mesh_stat(cs_lagr_mesh_stat_t  *ms)
     else if (ms->group > CS_LAGR_STAT_GROUP_PARTICLE)
       cs_field_set_values(f, 0.);
   }
-
-  /* reset weight accumulator values*/
-
-  for (int i = 0; i < _n_lagr_moments_wa; i++) {
-
-    cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
-
-    if (mwa->nt_start > 0 && mwa->nt_start <= ts->nt_cur) {
-
-      mwa->nt_start = ts->nt_cur;
-      mwa->t_start = ts->t_cur - ts->dt_ref;
-
-      mwa->val0 = 0;
-
-      cs_real_t *val = _mwa_val(mwa);
-
-      if (val != NULL) {
-        cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-        for (cs_lnum_t j = 0; j < n_elts; j++)
-          val[j] = 0.;
-      }
-
-    }
-
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -2559,11 +2534,15 @@ _compute_current_weight_m(cs_lagr_moment_wa_t  *mwa,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Reset unsteady stats (all accumulators and particle-based moments).
+ *
+ * \param[in]  stat_group  statistics group (particle or event)
+ * \param[in]  ts          time step
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_lagr_moment_reset_unsteady_stats(void)
+_cs_lagr_stat_reset_unsteady(cs_lagr_stat_group_t   stat_group,
+                             const cs_time_step_t  *ts)
 {
   /* reset moment values*/
 
@@ -2572,10 +2551,34 @@ _cs_lagr_moment_reset_unsteady_stats(void)
     cs_lagr_moment_t *mt = _lagr_moments + i;
     cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + mt->wa_id;
 
-    if (   mwa->group == CS_LAGR_STAT_GROUP_PARTICLE
-        && mwa->allow_reset ) {
+    if (mwa->group == stat_group && mwa->allow_reset) {
       cs_field_t *f = cs_field_by_id(mt->f_id);
       cs_field_set_values(f, 0.);
+    }
+
+  }
+
+  /* reset weight accumulator values */
+
+  for (int i = 0; i < _n_lagr_moments_wa; i++) {
+
+    cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
+
+    if (mwa->group == stat_group && mwa->allow_reset) {
+
+      mwa->nt_start = ts->nt_cur;
+      mwa->t_start = ts->t_prev;
+
+      mwa->val0 = 0;
+
+      cs_real_t *val = _mwa_val(mwa);
+
+      if (val != NULL) {
+        cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
+        for (cs_lnum_t j = 0; j < n_elts; j++)
+          val[j] = 0.;
+      }
+
     }
 
   }
@@ -4501,19 +4504,16 @@ cs_lagr_stat_prepare(void)
   for (int i = 0; i < _n_lagr_moments; i++) {
 
     cs_lagr_moment_t *mt = _lagr_moments + i;
-    cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + mt->wa_id;
-
     cs_field_t *f = cs_field_by_id(mt->f_id);
 
     if (f->n_time_vals > 1)
       cs_field_current_to_previous(f);
 
-    if (   reset_stats
-        && mwa->group > CS_LAGR_STAT_GROUP_PARTICLE
-        && mwa->allow_reset)
-      cs_field_set_values(f, 0.);
-
   }
+
+  if (reset_stats)
+    _cs_lagr_stat_reset_unsteady(CS_LAGR_STAT_GROUP_TRACKING_EVENT,
+                                 ts);
 
   /* Preparation for mesh-based statistics */
 
@@ -4542,17 +4542,18 @@ cs_lagr_stat_update(void)
     bi_events->n_events = 0;
   }
 
+  const cs_time_step_t  *ts = cs_glob_time_step;
+
   /* if unsteady statistics, reset stats, wa, and durations */
   if (   cs_glob_lagr_time_scheme->isttio == 0
       || (   cs_glob_lagr_time_scheme->isttio == 1
-          && cs_glob_time_step->nt_cur <= cs_glob_lagr_stat_options->nstist))
-    _cs_lagr_moment_reset_unsteady_stats();
+          && ts->nt_cur <= cs_glob_lagr_stat_options->nstist))
+    _cs_lagr_stat_reset_unsteady(CS_LAGR_STAT_GROUP_PARTICLE, ts);
 
   _cs_lagr_stat_update_all();
 
   /* Update current time step for active event moments */
 
-  const cs_time_step_t  *ts = cs_glob_time_step;
   _cs_lagr_stat_set_active_event_time(CS_LAGR_STAT_GROUP_TRACKING_EVENT,
                                       ts->nt_cur-1);
 }
