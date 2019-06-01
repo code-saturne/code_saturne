@@ -2574,6 +2574,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   cs_lnum_t  n_failed_particles = 0;
 
   cs_real_t  exit_weight = 0.0;
+  cs_real_t  merged_weight = 0.0;
   cs_real_t  fail_weight = 0.0;
   cs_real_t  tot_weight = 0.0;
 
@@ -2760,6 +2761,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
     else if (cur_part_state == CS_LAGR_PART_MERGED) {
       n_merged_particles++;
+      merged_weight += cur_part_stat_weight;
     }
 
     else if (cur_part_state < CS_LAGR_PART_OUT) {
@@ -2799,6 +2801,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   particles->weight_failed += fail_weight;
 
   particles->n_part_merged += n_merged_particles;
+  particles->weight_merged += merged_weight;
 
   /* Exchange particles, then update set */
 
