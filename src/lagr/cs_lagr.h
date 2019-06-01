@@ -315,11 +315,11 @@ typedef struct {
   /*! total number of particles*/
   cs_gnum_t   n_g_new;
 
-  /*! number of merged particles*/
-  cs_gnum_t   n_g_merged;
-
   /*! number of exited particles*/
   cs_gnum_t   n_g_exit;
+
+  /*! number of merged particles*/
+  cs_gnum_t   n_g_merged;
 
   /*! number of deposited particles */
   cs_gnum_t   n_g_deposited;
@@ -341,6 +341,9 @@ typedef struct {
 
   /*! weight of exited particles*/
   cs_real_t   w_exit;
+
+  /*! weight of merged particles*/
+  cs_real_t   w_merged;
 
   /*! weight of deposited particles */
   cs_real_t   w_deposited;

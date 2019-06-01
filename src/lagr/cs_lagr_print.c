@@ -109,10 +109,7 @@ cs_lagr_print(cs_real_t ttcabs)
       && flal == NULL && _ipass == 1)
     flal = fopen("lagrangian.log","w");
 
-  /* ====================================================================   */
-  /* 2. OUVERTURE DU FICHIER DE STOCKAGE */
-  /* ====================================================================   */
-  /*     Seul le premier processeur ecrit les informations   */
+  /* Open log file on rank 0 only */
 
   if (flal != NULL) {
 
@@ -130,75 +127,68 @@ cs_lagr_print(cs_real_t ttcabs)
                 "# column  4: inst. number of particles (weighted)\n"
                 "# column  5: inst. number of injected particles\n"
                 "# column  6: inst. number of injected particles (weighted)\n"
-                "# column  7: inst. number of merged particles\n"
-                "# column  8: inst. number of exited, or deposited and removed particles\n"
-                "# column  9: inst. number of exited, or deposited and removed particles (weighted)\n"
-                "# column 10: inst. number of deposited particles\n"
-                "# column 11: inst. number of deposited particles (weighted)\n");
+                "# column  7: inst. number of exited, or deposited and removed particles\n"
+                "# column  8: inst. number of exited, or deposited and removed particles (weighted)\n"
+                "# column  9: inst. number of deposited particles\n"
+                "# column 10: inst. number of deposited particles (weighted)\n");
+
+        int col_id = 11;
+        if (cs_glob_lagr_model->agglomeration) {
+          fprintf(flal,
+                  "# column %2d: inst. number of merged particles\n",
+                  "# column %2d: inst. number of merged particles (weighted)\n",
+                  col_id, col_id+1);
+          col_id += 2;
+        }
 
         if (   lagr_model->physical_model == 2
-            && lagr_model->fouling == 1)
+            && lagr_model->fouling == 1) {
           fprintf(flal,
-                  "# column 12: inst. number of fouled particles (coal)\n"
-                  "# column 13: inst. number of fouled particles (coal, weighted)\n"
-                  "# column 14: inst. number of lost particles\n"
-                  "#\n");
+                  "# column %2d: inst. number of fouled particles (coal)\n"
+                  "# column %2d: inst. number of fouled particles (coal, weighted)\n");
+          col_id += 2;
+        }
 
-        else if (lagr_model->resuspension > 0)
+        else if (lagr_model->resuspension > 0) {
           fprintf(flal,
-                  "# column 12: inst. number of resuspended particles\n"
-                  "# column 13: inst. number of resuspended particles (weighted)\n"
-                  "# column 14: inst. number of lost particles\n"
-                  "#\n");
+                  "# column %2d: inst. number of resuspended particles\n"
+                  "# column %2d: inst. number of resuspended particles (weighted)\n");
+          col_id += 2;
+        }
 
-        else
-          fprintf(flal,
-                  "# column 12: inst. number of lost particles\n"
-                  "#\n");
+        fprintf(flal,
+                "# column %2d: inst. number of lost particles\n"
+                "#\n",
+                col_id);
 
       }
 
-      /* ====================================================================
-       * 2 - Ecriture des INFORMATIONS
-       * ====================================================================   */
+      /* Write output */
+
+      fprintf(flal, " %8d %11.4e %8llu %11.4e %8llu %11.4e %8llu %11.4e %8llu %11.4e",
+              cs_glob_time_step->nt_cur,
+              ttcabs,
+              (unsigned long long)(pc->n_g_total), pc->w_total,
+              (unsigned long long)(pc->n_g_new), pc->w_new,
+              (unsigned long long)(pc->n_g_exit - pc->n_g_fouling),
+              pc->w_exit - pc->w_fouling,
+              (unsigned long long)(pc->n_g_deposited), pc->w_deposited);
+
+      if (cs_glob_lagr_model->agglomeration)
+        fprintf(flal, " %8llu %11.4e",
+                (unsigned long long)(pc->n_g_merged), pc->w_merged);
 
       if (   lagr_model->physical_model == 2
           && lagr_model->fouling == 1)
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
-                cs_glob_time_step->nt_cur,
-                ttcabs,
-                (unsigned long long)(pc->n_g_total), pc->w_total,
-                (unsigned long long)(pc->n_g_new), pc->w_new,
-                (unsigned long long)(pc->n_g_merged),
-                (unsigned long long)(pc->n_g_exit - pc->n_g_fouling),
-                pc->w_exit - pc->w_fouling,
-                (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
-                (unsigned long long)(pc->n_g_fouling), pc->w_fouling,
-                (unsigned long long)(pc->n_g_failed));
+        fprintf(flal, " %8llu %11.4e",
+                (unsigned long long)(pc->n_g_fouling), pc->w_fouling);
 
       else if (lagr_model->resuspension > 0)
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %8llu %11.4E %8llu %11.4E %8llu %11.4E %8llu\n",
-                cs_glob_time_step->nt_cur,
-                ttcabs,
-                (unsigned long long)(pc->n_g_total), pc->w_total,
-                (unsigned long long)(pc->n_g_new), pc->w_new,
-                (unsigned long long)(pc->n_g_merged),
-                (unsigned long long)(pc->n_g_exit), pc->w_exit,
-                (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
-                (unsigned long long)(pc->n_g_resuspended), pc->w_resuspended,
-                (unsigned long long)(pc->n_g_failed));
+        fprintf(flal, " %8llu %11.4e",
+                (unsigned long long)(pc->n_g_resuspended), pc->w_resuspended);
 
-      else
-        fprintf(flal, " %8d %11.4E %8llu %11.4E %8llu %11.4E %8llu %8llu %11.4E %8llu %11.4E %8llu\n",
-                cs_glob_time_step->nt_cur,
-                ttcabs,
-                (unsigned long long)(pc->n_g_total), pc->w_total,
-                (unsigned long long)(pc->n_g_new), pc->w_new,
-                (unsigned long long)(pc->n_g_merged),
-                (unsigned long long)(pc->n_g_exit),
-                pc->w_exit,
-                (unsigned long long)(pc->n_g_deposited), pc->w_deposited,
-                (unsigned long long)(pc->n_g_failed));
+      fprintf(flal, " %8llu\n",
+              (unsigned long long)(pc->n_g_failed));
 
     }
 
