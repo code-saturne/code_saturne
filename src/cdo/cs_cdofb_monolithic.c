@@ -235,6 +235,38 @@ static cs_matrix_assembler_t  *cs_shared_matrix_assembler = NULL;
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Setup advanced parameters for the AMG related to the velocity field
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_velocity_amg(void)
+{
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_coarsen_type", "HMIS");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_interp_type", "ext+i-cc");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_agg_nl", "2");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_P_max", "4");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_strong_threshold", "0.5");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_no_CF", "");
+#else
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_coarsen_type","HMIS");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_interp_type","ext+i-cc");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_agg_nl","2");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_P_max","4");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_strong_threshold","0.5");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Generate IndexSet for the PETSc FieldSplit preconditioner
  *
  * \param[in, out]  isp     IndexSet for the pressure DoFs
@@ -377,27 +409,7 @@ _additive_amg_gmres_hook(void     *context,
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
 
-#if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_coarsen_type", "HMIS");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_interp_type", "ext+i-cc");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_agg_nl", "2");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_P_max", "4");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_strong_threshold", "0.5");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_no_CF", "");
-#else
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
-#endif
+  _setup_velocity_amg();
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -507,8 +519,12 @@ _diag_schur_gmres_hook(void     *context,
                    dtol,        /* divergence tolerance */
                    5);          /* max number of iterations */
 
+  _setup_velocity_amg();
+
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
   KSPSetUp(u_ksp);
 
   /* User function for additional settings */
@@ -613,8 +629,12 @@ _upper_schur_gmres_hook(void     *context,
                    dtol,        /* divergence tolerance */
                    5);          /* max number of iterations */
 
+  _setup_velocity_amg();
+
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
   KSPSetUp(u_ksp);
 
   /* User function for additional settings */
@@ -706,8 +726,12 @@ _gkb_hook(void     *context,
                    dtol,        /* divergence tolerance */
                    slesp.n_max_iter); /* max number of iterations */
 
+  _setup_velocity_amg();
+
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
   KSPSetUp(u_ksp);
 
   /* User function for additional settings */
@@ -802,8 +826,12 @@ _gkb_gmres_hook(void     *context,
                    dtol,    /* divergence tolerance */
                    50);     /* max number of iterations */
 
+  _setup_velocity_amg();
+
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
   KSPSetUp(u_ksp);
 
   /* User function for additional settings */
