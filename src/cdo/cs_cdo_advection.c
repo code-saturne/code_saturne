@@ -44,6 +44,7 @@
 #include <bft_mem.h>
 
 #include "cs_cdo_bc.h"
+#include "cs_domain.h"
 #include "cs_hodge.h"
 #include "cs_math.h"
 #include "cs_scheme_geometry.h"
@@ -1204,7 +1205,6 @@ cs_cdo_advection_fb_bc(const cs_equation_param_t   *eqp,
   CS_UNUSED(eqp);
 
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
   assert(csys->n_dofs == cm->n_fc + 1);
 
   const cs_real_t  *fluxes = cb->adv_fluxes;
@@ -1233,8 +1233,20 @@ cs_cdo_advection_fb_bc(const cs_equation_param_t   *eqp,
               linear system. Set the value at the current face as the mean value
               of the two adjacent cells */
 
-      f_row[cm->n_fc]  = -1.0;
-      f_row[f]        +=  1.0;
+      if (   (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
+          || (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET)) {
+
+        f_row[f]     += 1.0;
+        csys->rhs[f] += csys->dir_values[f];
+
+      }
+      else { /* The convective flux is equal to beta.pot. Since beta is equal to
+                zero, pot_f = pot_c */
+
+        f_row[cm->n_fc] += -1;
+        f_row[f]        +=  1;
+
+      }
 
     }
 
@@ -1343,8 +1355,10 @@ cs_cdo_advection_fb_upwcsv(const cs_cell_mesh_t      *cm,
               linear system. Set the value at the current face as the mean value
               of the two adjacent cells */
 
-      f_row[c]  = -1.0;
-      f_row[f] +=  1.0;
+      if (! cs_domain_is_boundary_face(cm->f_ids[f])) {
+        f_row[c] += -1.0;
+        f_row[f] +=  1.0;
+      }
 
     }
 
@@ -1458,8 +1472,10 @@ cs_cdo_advection_fb_upwnoc(const cs_cell_mesh_t      *cm,
               linear system. Set the value at the current face as the mean value
               of the two adjacent cells */
 
-      f_row[c]  = -1.0;
-      f_row[f] +=  1.0;
+      if (! cs_domain_is_boundary_face(cm->f_ids[f])) {
+        f_row[c] += -1.0;
+        f_row[f] +=  1.0;
+      }
 
     }
 
