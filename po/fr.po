@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-05-02 04:23+0200\n"
+"POT-Creation-Date: 2019-06-03 11:30+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1265,6 +1265,9 @@ msgid ""
 msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
+
+msgid "CGNS: unhandled NGON_n element in MIXED section\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4112,8 +4115,12 @@ msgid "3-layer conjugate residual"
 msgstr "Résidu conjugué à 3 couches"
 
 #, c-format
-msgid "  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e\n"
-msgstr "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e, norme : %11.4e\n"
+msgid ""
+"  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e, res_init: "
+"%11.4e\n"
+msgstr ""
+"  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e, norme : %11.4e, "
+"res_init :%11.4e\n"
 
 #, c-format
 msgid "  n_iter : %5d, res_abs : %11.4e\n"
@@ -4911,6 +4918,10 @@ msgid " _cs_real_scatter_norms_nd not implemented yet\n"
 msgstr ""
 
 msgid " _cs_real_scatter_norms_nd_filtered not implemented yet\n"
+msgstr ""
+
+#, c-format
+msgid "Warning: signal %s received during program exit.\n"
 msgstr ""
 
 msgid ""
@@ -6916,7 +6927,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "      %-19s  %-4d\n"
+msgid "      %-19s  %d\n"
 msgstr ""
 
 #, c-format
@@ -7413,6 +7424,12 @@ msgstr ""
 "dynamique peut être dégradé, puisqu'il utilise le même voisinage réduit.\n"
 "Utilisez le voisinage étendu complet ou définissez directement le calcul de "
 "la moyenne de la constante de Smagorinsky dynamique via la subroutine ussmag."
+
+msgid ""
+"while reading porous model,\n"
+"integral formulation (cs_glob_porous_model=3) only compatible \n"
+"with gradient calculation method: iterative handling of non-orthogonalities"
+msgstr ""
 
 msgid ""
 "while reading time scheme parameters,\n"
@@ -9760,6 +9777,14 @@ msgstr " %s : réduction incompatible pour le champ %s.\n"
 msgid " %s: Incompatible way to initialize the field %s.\n"
 msgstr " %s : réduction incompatible pour le champ %s.\n"
 
+#, c-format
+msgid " %s: Incompatible reduction for the pressure field\n"
+msgstr " %s : réduction incompatible pour le champ de pression.\n"
+
+#, c-format
+msgid " %s: Incompatible way to initialize the pressure field.\n"
+msgstr " %s : initialisation incompatible pour le champ de pression.\n"
+
 msgid "interior_faces"
 msgstr "faces intérieures"
 
@@ -9772,10 +9797,8 @@ msgid ""
 " Stop build a face mesh."
 msgstr ""
 
-msgid " Invalid idtvar value for the CDO module.\n"
-msgstr ""
-
-msgid "Unkwown algorithm for cell center computation\n"
+#, c-format
+msgid "%s: Unkwown algorithm for cell center computation\n"
 msgstr ""
 
 msgid ""
@@ -9800,6 +9823,9 @@ msgstr ""
 #, c-format
 msgid ""
 " Undefined type of scheme to solve for eq. %s. Please check your settings."
+msgstr ""
+
+msgid " Invalid idtvar value for the CDO module.\n"
 msgstr ""
 
 msgid ""
@@ -10121,7 +10147,8 @@ msgid ""
 " This case is not handled. Please check your settings.\n"
 msgstr ""
 
-msgid " Invalid type of property."
+#, c-format
+msgid "%s: Invalid type of property."
 msgstr ""
 
 msgid "barycentric"
@@ -10145,8 +10172,9 @@ msgstr ""
 msgid " Invalid case. Not able to compute the source term.\n"
 msgstr ""
 
-msgid " Invalid type of description."
-msgstr ""
+#, c-format
+msgid "%s: Invalid type of description."
+msgstr " %s : Type de description invalide."
 
 #, c-format
 msgid ""
@@ -11036,6 +11064,25 @@ msgstr ""
 
 #, c-format
 msgid ""
+"cg_poly_elements_partial_write() failed to write elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"Associated range: [%llu, %llu]\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"cg_poly_section_write() failed to write polygonal elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "cg_section_write() failed to write polygonal elements:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
@@ -11546,25 +11593,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Error: can not interpret expression: %s\n"
-" %i"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not find the required symbol: %s\n"
-" %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not find the required symbol: %s\n"
-" %s\n"
-" %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "soil_tracer_law, WARNING:\n"
 "  saturation is outside [0, 1] in %llu cells.\n"
 msgstr ""
@@ -11579,6 +11607,12 @@ msgstr ""
 msgid ""
 "soil_tracer_law, WARNING:\n"
 "  isotropic permeability is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not interpret expression: %s\n"
+" %i"
 msgstr ""
 
 #, c-format
@@ -12423,10 +12457,6 @@ msgid ""
 "  Statistics for particles/boundary interaction:\n"
 msgstr ""
 
-#, c-format
-msgid "    number of additional user statistics: %d\n"
-msgstr "    nombre de statistiques utilisateur supplémentaires : %10d\n"
-
 msgid ""
 "\n"
 "Lagrangian statistics\n"
@@ -12578,6 +12608,68 @@ msgid ""
 "  cs_glob_lagr_time_scheme->iilagr = %d\n"
 "The return coupling must be activated for this model:\n"
 "  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"
+msgstr ""
+
+msgid ""
+"The two-way coupling model is incompatible with a\n"
+"local or variable time step.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The resolution of the particles temperature is activated\n"
+"(cs_glob_lagr_specific_physics->itpvar == %d)\n"
+"but the background Eulerian computation has no thermal scalar."
+msgstr ""
+
+msgid ""
+"The transport of coal particles is not implemented with the\n"
+"second order scheme (cs_glob_lagr_time_scheme->torder == 2)."
+msgstr ""
+
+msgid ""
+"The transport of coal particles is not implemented with the\n"
+"thermal return coupling (cs_glob_lagr_source_terms->ltsthe == 1)."
+msgstr ""
+
+#, c-format
+msgid ""
+"The turbulent dispersion model is not implemented for the selected\n"
+"turbulence model (%d).\n"
+"\n"
+"Only k-epsilon, Rij-epsilon, v2f, and k-omega are supported."
+msgstr ""
+
+#, c-format
+msgid ""
+"The Lagrangian module is not implemented for the selected\n"
+"turbulence model (%d).\n"
+"\n"
+"Only laminar, k-epsilon, Rij-epsilon, v2f, and k-omega are supported."
+msgstr ""
+
+#, c-format
+msgid ""
+"The turbulent dispersion option is incompatible with that of\n"
+"statistics.\n"
+"\n"
+"Statisitics must be actve fo this model, so we must have\n"
+"lagr_time_scheme->modcpl >= cs_glob_lagr_stat_options->idstnt\n"
+"while their current values are %d < %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"The return coupling is not implemented fo the current turbulence model "
+"(%d).\n"
+"It is compatible with k-epsilon, Rij-epsilon,\n"
+"v2f, and k-omega."
+msgstr ""
+
+#, c-format
+msgid ""
+"The deposition model (Guingo & Minier, 2008) is not implemented\n"
+"with the second order scheme (%s)."
 msgstr ""
 
 #, c-format
@@ -14304,8 +14396,16 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"%llu faces have a too large reconstruction distance.\n"
+"%llu boundary faces have a too large reconstruction distance.\n"
 "For these faces, reconstruction are limited.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"%llu internal faces have a too large reconstruction distance.\n"
+"For these faces, reconstruction are limited.\n"
+"\n"
 msgstr ""
 
 #, c-format
@@ -15972,3 +16072,6 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid "    number of additional user statistics: %d\n"
+#~ msgstr "    nombre de statistiques utilisateur supplémentaires : %10d\n"
