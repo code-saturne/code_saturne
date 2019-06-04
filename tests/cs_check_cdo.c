@@ -358,10 +358,10 @@ _define_cm_hexa_unif(double            a,
   cm->type = FVM_CELL_HEXA;
 
   /* Set all quantities */
-  cm->flag = CS_CDO_LOCAL_PV |CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
-    CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ |
-    CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_EFQ |
-    CS_CDO_LOCAL_DIAM;
+  cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
+    CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
+    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_EFQ |
+    CS_FLAG_COMP_DIAM;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = ah;
   cm->vol_c = a*a*a;
 
@@ -574,10 +574,10 @@ _define_cm_tetra_ref(double            a,
   cm->type = FVM_CELL_TETRA;
 
   /* Set all quantities */
-  cm->flag = CS_CDO_LOCAL_PV |CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
-    CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ |
-    CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |CS_CDO_LOCAL_EFQ  |
-    CS_CDO_LOCAL_DIAM;
+  cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
+    CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
+    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |CS_FLAG_COMP_EFQ  |
+    CS_FLAG_COMP_DIAM;
 
   cm->vol_c = cs_math_1ov6*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;

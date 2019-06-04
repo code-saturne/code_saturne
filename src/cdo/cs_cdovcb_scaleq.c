@@ -436,7 +436,7 @@ _vcb_advection_diffusion_reaction(double                         time_eval,
     if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
       /* |c|*wvc = |dual_cell(v) cap c| */
-      assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+      assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
       const double  ptyc = cb->rpty_val * cm->vol_c;
       for (short int i = 0; i < cm->n_vc; i++)
         csys->mat->val[i*(cm->n_vc + 1)] += 0.75 * cm->wvc[i] * ptyc;
@@ -947,9 +947,9 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->n_dofs = n_vertices + n_cells;
 
   /* Flag to indicate what to build in a cell mesh */
-  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ |
-    CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EV |
-    CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ |
+    CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV |
+    CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
   eqb->bd_msh_flag = 0;
 
   /* Store the last computed values of the field at cell centers and the data
@@ -1001,7 +1001,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Non-homogeneous Neumann BCs */
   if (eqb->face_bc->n_nhmg_neu_faces > 0) {
-    eqb->bd_msh_flag = CS_CDO_LOCAL_FV;
+    eqb->bd_msh_flag = CS_FLAG_COMP_FV;
   }
 
   /* Advection */
@@ -1013,7 +1013,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     switch (eqp->adv_scheme) {
     case CS_PARAM_ADVECTION_SCHEME_CIP:
 
-      eqb->msh_flag |= CS_CDO_LOCAL_EF;
+      eqb->msh_flag |= CS_FLAG_COMP_EF;
       _set_cip_coef(eqp);
 
       eqc->add_advection_bc = cs_cdo_advection_vcb_bc;
@@ -1618,7 +1618,7 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+        assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1965,7 +1965,7 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+        assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -2191,9 +2191,9 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     /* msh_flag for Neumann and Robin BCs. Add add_flag for the other cases
        when one has to reconstruct a flux */
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_FV;
-    cs_flag_t  add_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_PEQ |
-      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_FV;
+    cs_flag_t  add_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_PEQ |
+      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ;
 
     if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
       cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
@@ -2553,8 +2553,8 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
     int  t_id = 0;
 #endif
 
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
-      CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+      CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
@@ -2645,8 +2645,8 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     int  t_id = 0;
 #endif
 
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
-      CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+      CS_FLAG_COMP_EFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
@@ -2739,8 +2739,8 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
     BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
 
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
-      CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_HFQ;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+      CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_HFQ;
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */

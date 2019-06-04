@@ -397,8 +397,8 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
                           const cs_real_t         center[3],
                           cs_real_t               inertia[3][3])
 {
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
-                      CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+                      CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
 
   cs_real_33_t  M = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
@@ -554,8 +554,8 @@ cs_compute_fwbs_q1(short int                 f,
 {
   /* Sanity checks */
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
+                      CS_FLAG_COMP_EV));
 
   const cs_quant_t  pfq = cm->face[f];
   const double  h_coef = cs_math_1ov3 * cm->hfc[f];
@@ -592,8 +592,8 @@ cs_compute_fwbs_q2(short int                f,
 {
   /* Sanity checks */
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
+                      CS_FLAG_COMP_EV));
 
   const cs_quant_t  pfq = cm->face[f];
   const double  f_coef = 0.5/pfq.meas;
@@ -635,8 +635,8 @@ cs_compute_fwbs_q3(short int                 f,
 {
   /* Sanity checks */
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
+                      CS_FLAG_COMP_EV));
 
   const cs_quant_t  pfq = cm->face[f];
   const double  hf = cm->hfc[f];

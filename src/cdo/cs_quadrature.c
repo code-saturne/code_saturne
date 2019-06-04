@@ -35,6 +35,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_flag.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -503,10 +505,10 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
 
   case CS_QUADRATURE_HIGHER:
   case CS_QUADRATURE_HIGHEST:
-    ret_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ;
+    ret_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ;
     /* No break, pass to the following too */
   case CS_QUADRATURE_BARY_SUBDIV:
-    ret_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+    ret_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
     break;
 
   default:
@@ -521,10 +523,10 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
 
     case CS_QUADRATURE_HIGHER:
     case CS_QUADRATURE_HIGHEST:
-      ret_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_HFQ;
+      ret_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_HFQ;
       /* No break, pass to the following too */
     case CS_QUADRATURE_BARY_SUBDIV:
-      ret_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+      ret_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
       break;
 
     default:
@@ -540,11 +542,11 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
 
     case CS_QUADRATURE_HIGHER:
     case CS_QUADRATURE_HIGHEST:
-      ret_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ;
+      ret_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ;
       /* No break, pass to the following too */
     case CS_QUADRATURE_BARY_SUBDIV:
-      ret_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ |
-        CS_CDO_LOCAL_PF;
+      ret_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ |
+        CS_FLAG_COMP_PF;
       break;
 
     default:
@@ -561,11 +563,11 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
 
     case CS_QUADRATURE_HIGHER:
     case CS_QUADRATURE_HIGHEST:
-      ret_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ;
+      ret_flag |= CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EFQ;
       /* No break, pass to the following too */
     case CS_QUADRATURE_BARY_SUBDIV:
-      ret_flag |= CS_CDO_LOCAL_EF | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ |
-        CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PE;
+      ret_flag |= CS_FLAG_COMP_EF | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ |
+        CS_FLAG_COMP_PV | CS_FLAG_COMP_PE;
       break;
 
     default:

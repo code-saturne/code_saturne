@@ -686,7 +686,7 @@ _update_variables(const cs_real_t              dt_cur,
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id,
-                         CS_CDO_LOCAL_PF |  CS_CDO_LOCAL_PFQ,
+                         CS_FLAG_COMP_PF |  CS_FLAG_COMP_PFQ,
                          connect, quant, cm);
 
       /* Update the cell pressure */
