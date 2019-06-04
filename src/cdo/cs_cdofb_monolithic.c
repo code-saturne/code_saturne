@@ -677,12 +677,10 @@ _gkb_hook(void     *context,
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  slesp = eqp->sles_param;
 
-  const int  n_max_restart = 30;
-
   KSPSetType(ksp, KSPPREONLY);
 
   /* Apply modifications to the KSP structure */
-  PC up_pc, u_pc, p_pc;
+  PC up_pc, u_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
@@ -784,7 +782,7 @@ _gkb_gmres_hook(void     *context,
                    slesp.n_max_iter); /* max number of iterations */
 
   /* Apply modifications to the KSP structure */
-  PC up_pc, u_pc, p_pc;
+  PC up_pc, u_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
