@@ -118,8 +118,6 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
  *          Case of vertex-based schemes
  *
  * \param[in]      cm           pointer to a cellwise view of the mesh
- * \param[in]      connect      pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      face_bc      pointer to a cs_cdo_bc_face_t structure
  * \param[in]      vtx_bc_flag  BC flags associated to vertices
@@ -132,8 +130,6 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
 
 void
 cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
-                           const cs_cdo_connect_t       *connect,
-                           const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
                            const cs_cdo_bc_face_t       *face_bc,
                            const cs_flag_t               vtx_bc_flag[],
@@ -148,8 +144,6 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
  *          Case of Face-based schemes
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
@@ -161,8 +155,6 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
 void
 cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
-                           const cs_cdo_connect_t       *connect,
-                           const cs_cdo_quantities_t    *quant,
                            const cs_equation_param_t    *eqp,
                            const cs_cdo_bc_face_t       *face_bc,
                            const cs_real_t               dir_values[],
@@ -249,7 +241,6 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
  * \param[in, out] neu_values  array storing the Neumann values
@@ -260,7 +251,6 @@ void
 cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
                                short int                   def_id,
                                short int                   f,
-                               const cs_cdo_quantities_t  *quant,
                                const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
                                double                     *neu_values);
@@ -273,7 +263,6 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
  * \param[in, out] neu_values  array storing Neumann values to use
@@ -284,7 +273,6 @@ void
 cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
                                short int                    def_id,
                                short int                    f,
-                               const cs_cdo_quantities_t   *quant,
                                const cs_equation_param_t   *eqp,
                                const cs_cell_mesh_t        *cm,
                                double                      *neu_values);
@@ -296,7 +284,6 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
- * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
  * \param[in, out] rob_values  array storing Robin values to use
@@ -307,7 +294,6 @@ void
 cs_equation_compute_robin(cs_real_t                    t_eval,
                           short int                    def_id,
                           short int                    f,
-                          const cs_cdo_quantities_t   *quant,
                           const cs_equation_param_t   *eqp,
                           const cs_cell_mesh_t        *cm,
                           double                      *rob_values);

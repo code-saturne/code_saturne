@@ -333,7 +333,6 @@ _init_cell_system(const cs_flag_t               cell_flag,
 {
   const int  n_dofs = eqc->n_cell_dofs + cm->n_fc*eqc->n_face_dofs;
   const int  n_blocks = cm->n_fc + 1;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   int  *block_sizes = cb->ids;
   for (int i = 0; i < cm->n_fc; i++)
@@ -376,7 +375,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      const cs_lnum_t  bf_id = cm->f_ids[f] - connect->n_faces[2]; // n_i_faces
+      const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       if (bf_id > -1) {        /*  Border face */
 
         const cs_flag_t  face_flag = eqb->face_bc->flag[bf_id];

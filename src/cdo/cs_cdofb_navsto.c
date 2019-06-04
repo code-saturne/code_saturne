@@ -233,7 +233,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
     /* Get the boundary face in the cell numbering and the boundary face id in
        the mesh numbering */
     const short int  f = csys->_f_ids[i];
-    const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
+    const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
     /* Set the type of boundary */
     nsb->bf_type[i] = bf_type[bf_id];
