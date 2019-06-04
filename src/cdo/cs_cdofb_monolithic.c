@@ -790,7 +790,7 @@ _gkb_gmres_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
-  PCFieldSplitSetGKBTol(up_pc, 1e-4);
+  PCFieldSplitSetGKBTol(up_pc, 1e-1);
   PCFieldSplitSetGKBMaxit(up_pc, 100);
   PCFieldSplitSetGKBNu(up_pc, 0);
   PCFieldSplitSetGKBDelay(up_pc, 5);
@@ -821,7 +821,7 @@ _gkb_gmres_hook(void     *context,
   PCHYPRESetType(u_pc, "boomeramg");
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(u_ksp,
-                   1e-5,    /* relative convergence tolerance */
+                   1e-2,    /* relative convergence tolerance */
                    abstol,  /* absolute convergence tolerance */
                    dtol,    /* divergence tolerance */
                    50);     /* max number of iterations */
