@@ -32,7 +32,6 @@
 #include <bft_error.h>
 
 #include "cs_base.h"
-#include "cs_cdo_local.h"
 #include "cs_defs.h"
 #include "cs_math.h"
 #include "cs_param.h"

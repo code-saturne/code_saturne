@@ -825,12 +825,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Dimensions of the algebraic system */
   eqc->n_dofs = n_faces + n_cells;
 
-  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PF | CS_CDO_LOCAL_DEQ |
-    CS_CDO_LOCAL_PFQ;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ |
+    CS_FLAG_COMP_PFQ;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+  eqb->bd_msh_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
@@ -881,9 +881,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     } /* Switch on Hodge algo. */
 
     /* If necessary, enrich the mesh flag to account for the property */
-    const cs_xdef_t *dff_def = eqp->diffusion_property->defs[0];
-    if (dff_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
-      eqb->msh_flag |= cs_quadrature_get_flag(dff_def->qtype,
+    const cs_xdef_t *diff_def = eqp->diffusion_property->defs[0];
+    if (diff_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      eqb->msh_flag |= cs_quadrature_get_flag(diff_def->qtype,
                                               CS_FLAG_CELL | CS_FLAG_PRIMAL);
 
   } /* Diffusion */
@@ -901,12 +901,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_wsym_dirichlet;
     break;
 
@@ -930,7 +930,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
                                               CS_FLAG_FACE | CS_FLAG_PRIMAL);
 
     /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ;
 
     switch (eqp->adv_formulation) {
 
@@ -991,7 +991,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_COST) {
-      eqb->msh_flag |= CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
 
@@ -1014,7 +1014,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       if (eqp->do_lumping)
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
       else {
-        eqb->msh_flag |= CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
       }
     }
@@ -2169,8 +2169,8 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ;
-    cs_flag_t  add_flag = CS_CDO_LOCAL_DEQ;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ;
+    cs_flag_t  add_flag = CS_FLAG_COMP_DEQ;
 
     if (eqb->diff_pty_uniform) /* c_id = 0, cell_flag = 0 */
       cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);

@@ -798,9 +798,9 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->bflux_field_id = bflux_id;
 
   /* Mesh flag to know what to build */
-  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ |
-    CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ |
-    CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DIAM;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
+    CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ |
+    CS_FLAG_COMP_EV | CS_FLAG_COMP_DIAM;
 
   switch (eqp->space_scheme) {
 

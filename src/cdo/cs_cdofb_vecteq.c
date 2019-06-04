@@ -1393,12 +1393,12 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->n_dofs = 3*(n_faces + n_cells);
 
   eqb->sys_flag = CS_FLAG_SYS_VECTOR;
-  eqb->msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ;
+  eqb->msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE |
-    CS_CDO_LOCAL_FEQ;
+  eqb->bd_msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
+    CS_FLAG_COMP_FEQ;
 
   BFT_MALLOC(eqc->face_values, 3*n_faces, cs_real_t);
   BFT_MALLOC(eqc->rc_tilda, 3*n_cells, cs_real_t);
@@ -1454,12 +1454,12 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vfb_wsym_dirichlet;
     break;
 
@@ -1473,7 +1473,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->enforce_sliding = NULL;
   if (eqb->face_bc->n_sliding_faces > 0) {
     /* There is at least one face with a sliding condition to handle */
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
   }
 
@@ -1491,7 +1491,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
       if (eqp->do_lumping)
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
       else {
-        eqb->msh_flag |= CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
       }
     }
