@@ -1653,7 +1653,7 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
     return f_flux;
 
   const cs_quant_t  pfq = cm->face[f];
-  const cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
+  const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
   assert(bf_id > -1);
   assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
@@ -1864,11 +1864,12 @@ cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
   for (short int v = 0; v < cm->n_vc; v++) fluxes[v] = 0;
 
   const cs_quant_t  pfq = cm->face[f];
-  const cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
+  const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
   assert(bf_id > -1);
-  assert(cs_flag_test(cm->flag,  CS_FLAG_COMP_PFQ| CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_flag_test(cm->flag,
+                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+                      CS_FLAG_COMP_EV  | CS_FLAG_COMP_FE));
 
   if (adv->n_bdy_flux_defs == 0) {
     /* Implicit definition of the boundary flux from the definition of the

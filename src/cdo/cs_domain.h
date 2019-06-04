@@ -153,22 +153,6 @@ cs_domain_increment_time_step(cs_domain_t  *domain)
   ts->nt_cur++;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Is the face a boundary one?
- *
- * \param[in]       f_id     ID of the face to test
- *
- * \return is the face boundary?
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_domain_is_boundary_face(const cs_lnum_t f_id)
-{
-  return f_id >= cs_glob_domain->cdo_quantities->n_i_faces;
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

@@ -347,8 +347,6 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
   if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     cs_equation_fb_set_cell_bc(cm,
-                               cs_shared_connect,
-                               cs_shared_quant,
                                eqp,
                                eqb->face_bc,
                                dir_values,
@@ -599,10 +597,6 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
 
@@ -795,10 +789,6 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
@@ -1027,10 +1017,6 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);

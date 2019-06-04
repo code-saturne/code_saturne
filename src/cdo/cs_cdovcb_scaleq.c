@@ -318,8 +318,6 @@ _init_vcb_cell_system(const cs_flag_t                 cell_flag,
   if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     cs_equation_vb_set_cell_bc(cm,
-                               cs_shared_connect,
-                               cs_shared_quant,
                                eqp,
                                eqb->face_bc,
                                vtx_bc_flag,
@@ -1333,10 +1331,6 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
 
@@ -1542,10 +1536,6 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
@@ -1845,10 +1835,6 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
     cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
     cs_real_t  *cell_sources = eqc->source_terms + n_vertices;
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
@@ -2212,7 +2198,6 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_equation_compute_neumann_sv(t_eval,
                                          face_bc->def_ids[bf_id],
                                          f,
-                                         quant,
                                          eqp,
                                          cm,
                                          neu_values);
@@ -2239,7 +2224,6 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_equation_compute_robin(t_eval,
                                     face_bc->def_ids[bf_id],
                                     f,
-                                    quant,
                                     eqp,
                                     cm,
                                     robin_values);

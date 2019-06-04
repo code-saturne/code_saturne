@@ -173,14 +173,15 @@ typedef struct {
   cs_nvec3_t  *dface; /*!< local dual face quantities (area and unit normal) */
 
   /* Face information */
-  short int    n_fc;    /*!< local number of faces in a cell */
-  cs_lnum_t   *f_ids;   /*!< face ids on this rank */
-  short int   *f_sgn;   /*!< incidence number between f and c */
-  double      *f_diam;  /*!< diameters of local faces */
-  double      *hfc;     /*!< height of the pyramid of basis f and apex c */
-  double      *pfc;     /*!< volume of the pyramid for each face */
-  cs_quant_t  *face;    /*!< face quantities (xf, area and unit normal) */
-  cs_nvec3_t  *dedge;   /*!< dual edge quantities (length and unit vector) */
+  short int    n_fc;     /*!< local number of faces in a cell */
+  cs_lnum_t    bface_shift; /*!< shift to get the boundary face numbering */
+  cs_lnum_t   *f_ids;    /*!< face ids on this rank */
+  short int   *f_sgn;    /*!< incidence number between f and c */
+  double      *f_diam;   /*!< diameters of local faces */
+  double      *hfc;      /*!< height of the pyramid of basis f and apex c */
+  double      *pfc;      /*!< volume of the pyramid for each face */
+  cs_quant_t  *face;     /*!< face quantities (xf, area and unit normal) */
+  cs_nvec3_t  *dedge;    /*!< dual edge quantities (length and unit vector) */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
   short int   *e2v_ids; /*!< cell-wise edge->vertices connectivity */
@@ -391,6 +392,26 @@ cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
   *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Is the face a boundary one ?
+ *
+ * \param[in]  cm     pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]  f      id of the face in the cellwise numbering
+ *
+ * \return true if this is a boundary face otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_cell_mesh_is_boundary_face(const cs_cell_mesh_t    *cm,
+                              const short int          f)
+{
+  if (cm->f_ids[f] - cm->bface_shift > -1)
+    return true;
+  else
+    return false;
+}
 
 /*============================================================================
  * Public function prototypes

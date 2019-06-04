@@ -44,7 +44,6 @@
 #include <bft_mem.h>
 
 #include "cs_cdo_bc.h"
-#include "cs_domain.h"
 #include "cs_hodge.h"
 #include "cs_math.h"
 #include "cs_scheme_geometry.h"
@@ -81,7 +80,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_CDO_ADVECTION_DBG 0
+#define CS_CDO_ADVECTION_DBG    0
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3 cs_math_3_dot_product
@@ -1355,7 +1354,7 @@ cs_cdo_advection_fb_upwcsv(const cs_cell_mesh_t      *cm,
               linear system. Set the value at the current face as the mean value
               of the two adjacent cells */
 
-      if (! cs_domain_is_boundary_face(cm->f_ids[f])) {
+      if (! cs_cell_mesh_is_boundary_face(cm, f)) {
         f_row[c] += -1.0;
         f_row[f] +=  1.0;
       }
@@ -1472,7 +1471,7 @@ cs_cdo_advection_fb_upwnoc(const cs_cell_mesh_t      *cm,
               linear system. Set the value at the current face as the mean value
               of the two adjacent cells */
 
-      if (! cs_domain_is_boundary_face(cm->f_ids[f])) {
+      if (!cs_cell_mesh_is_boundary_face(cm, f)) {
         f_row[c] += -1.0;
         f_row[f] +=  1.0;
       }

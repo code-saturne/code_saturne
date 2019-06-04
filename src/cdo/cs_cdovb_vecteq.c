@@ -296,8 +296,6 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
 
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
-                               cs_shared_connect,
-                               cs_shared_quant,
                                eqp,
                                eqb->face_bc,
                                vtx_bc_flag,
@@ -1382,10 +1380,6 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = _vbv_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbv_cell_builder[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);

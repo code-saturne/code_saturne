@@ -270,7 +270,6 @@ cs_cell_sys_create(int      n_max_dofbyc,
     BFT_MALLOC(csys->intern_forced_ids, n_max_dofbyc, cs_lnum_t);
 
   /* Boundary conditions */
-  csys->face_shift = -1;
   csys->n_bc_faces = 0;
   csys->_f_ids = NULL;
   csys->bf_ids = NULL;
@@ -926,6 +925,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
 
   cm->n_fc = c2f_idx[1] - c2f_idx[0];
+  cm->bface_shift = quant->n_i_faces;
 
   if (build_flag == 0)
     return;
@@ -1127,7 +1127,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       cm->f2v_idx[0] = 0;
       for (short int f = 0; f < cm->n_fc; f++) {
 
-        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+        const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
         int  n_vf = 0;
         if (bf_id > -1) /* Boundary face */
@@ -1144,7 +1144,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       /* Fill the list of vertices */
       for (short int f = 0; f < cm->n_fc; f++) {
 
-        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+        const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
         short int  *_ids = cm->f2v_ids + cm->f2v_idx[f];
 

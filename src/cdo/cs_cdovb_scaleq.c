@@ -268,8 +268,6 @@ _vbs_init_cell_system(cs_real_t                      t_eval,
                       cs_cell_sys_t                 *csys,
                       cs_cell_builder_t             *cb)
 {
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-
   /* Cell-wise view of the linear system to build */
   csys->c_id = cm->c_id;
   csys->cell_flag = cell_flag;
@@ -291,8 +289,6 @@ _vbs_init_cell_system(cs_real_t                      t_eval,
 
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
-                               connect,
-                               cs_shared_quant,
                                eqp,
                                eqb->face_bc,
                                vtx_bc_flag,
@@ -2471,7 +2467,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         /* Identify which face is a boundary face */
         for (short int f = 0; f < cm->n_fc; f++) {
-          const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+          const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
           if (bf_id > -1) { /* Border face */
 
             /* Advective flux */
@@ -2654,7 +2650,6 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_equation_compute_neumann_sv(t_eval,
                                          face_bc->def_ids[bf_id],
                                          f,
-                                         quant,
                                          eqp,
                                          cm,
                                          neu_values);
@@ -2681,7 +2676,6 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_equation_compute_robin(t_eval,
                                     face_bc->def_ids[bf_id],
                                     f,
-                                    quant,
                                     eqp,
                                     cm,
                                     robin_values);
