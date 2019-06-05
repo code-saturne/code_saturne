@@ -1281,18 +1281,19 @@ cs_lagr_update_particle_counter(void)
                         p_set->n_part_resusp,
                         p_set->n_failed_part};
 
-  cs_real_t wsum[6] = {p_set->weight,
-                       p_set->weight_new,
-                       p_set->weight_merged,
-                       p_set->weight_out,
-                       p_set->weight_dep,
-                       p_set->weight_fou,
-                       p_set->weight_resusp};
+  cs_real_t wsum[] = {p_set->weight,
+                      p_set->weight_new,
+                      p_set->weight_merged,
+                      p_set->weight_out,
+                      p_set->weight_dep,
+                      p_set->weight_fou,
+                      p_set->weight_resusp};
 
   cs_lnum_t size_count = sizeof(gcount) / sizeof(gcount[0]);
+  cs_lnum_t size_sum = sizeof(wsum) / sizeof(wsum[0]);
 
   cs_parall_counter(gcount, size_count);
-  cs_parall_sum(7, CS_REAL_TYPE, wsum);
+  cs_parall_sum(size_sum, CS_REAL_TYPE, wsum);
 
   cs_lnum_t iter = 0;
 
