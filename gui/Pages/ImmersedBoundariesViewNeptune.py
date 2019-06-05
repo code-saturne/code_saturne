@@ -98,38 +98,6 @@ class FSIObjectNameDelegate(QItemDelegate):
 # QComboBox delegate for the FSI type : Set motion or computed from fluid forces
 #-------------------------------------------------------------------------------
 
-class FSIMovingDelegate(QItemDelegate):
-    """
-    USe of a comboBox to set the moving attribute of the object
-    """
-    def __init__(self, parent):
-        super(FSIMovingDelegate, self).__init__(parent)
-        self.parent  = parent
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-
-        for itm in ['non_moving', 'moving']:
-            editor.addItem(itm)
-
-        editor.installEventFilter(self)
-        return editor
-
-    def setEditorData(self, comboBox, index):
-        row = index.row()
-        col = index.column()
-        string = index.model().dataFSI[row][col]
-        comboBox.setEditText(string)
-
-
-    def setModelData(self, comboBox, model, index):
-        value = comboBox.currentText()
-        model.setData(index, value, Qt.DisplayRole)
-
-#-------------------------------------------------------------------------------
-# QComboBox delegate for the FSI type : Set motion or computed from fluid forces
-#-------------------------------------------------------------------------------
-
 class FSITypeDelegate(QItemDelegate):
     """
     Use of a combobox to set the fsi interaction type
@@ -144,13 +112,8 @@ class FSITypeDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
 
-        for itm in ["off", "imposed", "computed"]:
+        for itm in ["imposed", "computed"]:
             editor.addItem(itm)
-
-        if self.mdl.getObjectMotion(index.row()+1) == 'moving':
-            editor.model().item(0).setEnabled(False)
-        else:
-            editor.model().item(0).setEnabled(True)
 
         editor.installEventFilter(self)
         return editor
@@ -187,11 +150,9 @@ class StandardItemModelFSI(QStandardItemModel):
         QStandardItemModel.__init__(self)
 
         self.headers = [self.tr("Object name"),
-                        self.tr("Object motion"),
                         self.tr("Interaction type")]
         self.tooltip = [self.tr("Name of solid object"),
-                        self.tr("Is the object moving or not"),
-                        self.tr("Type of interaction with the flow")]
+                        self.tr("Type of motion interaction with the flow")]
 
         self.setColumnCount(len(self.headers))
         self.dataFSI = []
@@ -219,13 +180,7 @@ class StandardItemModelFSI(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
 
-        if index.column() in (0, 1):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-        elif index.column() == 2:
-            if self.__model.getObjectMotion(index.row()+1) == 'non_moving':
-                return Qt.NoItemFlags
-            else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -245,14 +200,7 @@ class StandardItemModelFSI(QStandardItemModel):
 
         num = row + 1
         self.__model.setObjectName(num, self.dataFSI[row][0])
-        self.__model.setObjectMotion(num, self.dataFSI[row][1])
-        if self.dataFSI[row][1] == 'non_moving':
-            self.dataFSI[row][2] = 'off'
-        else:
-            if self.dataFSI[row][2] == 'off':
-                self.dataFSI[row][2] = 'imposed'
-
-        self.__model.setObjectInteraction(num, self.dataFSI[row][2])
+        self.__model.setObjectInteraction(num, self.dataFSI[row][1])
 
 #        self.dataChanged.emit(index, index)
 
@@ -266,11 +214,11 @@ class StandardItemModelFSI(QStandardItemModel):
         row = index.row()
         return self.dataFSI[row]
 
-    def addItem(self, object_name, motion_type, interaction_type):
+    def addItem(self, object_name, interaction_type):
         """
         Add a row in the table.
         """
-        self.dataFSI.append([object_name, motion_type, interaction_type])
+        self.dataFSI.append([object_name, interaction_type])
         row = self.rowCount()
         self.setRowCount(row+1)
 
@@ -315,28 +263,24 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
         for obj in range(1,self.ibm.getNumberOfFSIObjects()+1):
             self.modelFSI.addItem(self.ibm.getObjectName(obj),
-                                  self.ibm.getObjectMotion(obj),
                                   self.ibm.getObjectInteraction(obj))
 
         if QT_API == "PYQT4":
             self.tableViewFSI.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableViewFSI.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFSI.horizontalHeader().setResizeMode(4, QHeaderView.Stretch)
+            self.tableViewFSI.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableViewFSI.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             self.tableViewFSI.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFSI.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+            self.tableViewFSI.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
 
         self.modelFSI.dataChanged.connect(self.dataChanged)
 
         delegateObjectLabel  = FSIObjectNameDelegate(self.tableViewFSI)
         self.tableViewFSI.setItemDelegateForColumn(0, delegateObjectLabel)
 
-        delegateObjectMotion = FSIMovingDelegate(self.tableViewFSI)
-        self.tableViewFSI.setItemDelegateForColumn(1, delegateObjectMotion)
-
         delegateObjectType   = FSITypeDelegate(self.tableViewFSI, self.ibm)
-        self.tableViewFSI.setItemDelegateForColumn(2, delegateObjectType)
+        self.tableViewFSI.setItemDelegateForColumn(1, delegateObjectType)
 
         self.checkBoxActivate.stateChanged.connect(self.slotCheckActivate)
 
@@ -434,14 +378,6 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.updatePageView()
 
     def dataChanged(self, topLeft, bottomRight):
-#        self.tableViewFSI.resizeColumnsToContents()
-#        self.tableViewFSI.resizeRowsToContents()
-
-#        if QT_API == "PYQT4":
-#            self.tableViewFSI.horizontalHeader().setResizeMode(0,QHeaderView.Stretch)
-#        elif QT_API == "PYQT5":
-#            self.tableViewFSI.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-
         self.updatePageView()
 
     def updatePageView(self):
@@ -459,11 +395,6 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             self.checkBoxActivate.setChecked(True)
             self.groupBoxMethod.show()
             self.groupBoxObjects.show()
-
-            # If motion is set to 'fixed', interaction is switched back to off
-            for obj in range(self.ibm.getNumberOfFSIObjects()):
-                if self.ibm.getObjectMotion(obj+1) == 'non_moving':
-                    self.ibm.setObjectInteraction(obj+1, 'off')
 
             # Which button to show for the solid definition
             if self.current_obj:
@@ -483,7 +414,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                     self.groupBoxExplicit.hide()
                     self.groupBoxMEDCoupling.hide()
 
-                if self.ibm.getObjectMotion(self.current_obj) == 'moving':
+                if self.ibm.getObjectInteraction(self.current_obj) == 'computed':
                     self.groupBoxObjProperties.show()
                     # Set correct values for each slot
                     self.lineEditObjDensity.setText(str(
@@ -540,11 +471,10 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
         name        = '_'.join([self.ibm.defaultValues()['fsi_object_name'],
                                 str(self.ibm.getNumberOfFSIObjects()+1)])
-        motion      = self.ibm.defaultValues()['fsi_moving']
         interaction = self.ibm.defaultValues()['fsi_interaction']
 
-        num = self.ibm.addFSIObject(name, motion, interaction)
-        self.modelFSI.addItem(name, motion, interaction)
+        num = self.ibm.addFSIObject(name, interaction)
+        self.modelFSI.addItem(name, interaction)
 
 
     @pyqtSlot()

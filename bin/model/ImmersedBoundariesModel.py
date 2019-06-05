@@ -71,8 +71,7 @@ class ImmersedBoundariesModel(Variables, Model):
         default = {}
         default['OnOff']            = 'off'
         default['fsi_object_name']  = "fsi_object"
-        default['fsi_moving']       = "non_moving"
-        default['fsi_interaction']  = "off"
+        default['fsi_interaction']  = "imposed"
         default['method']           = "explicit"
         default['object_density']   = 0.0
         default['object_stiffness'] = 0.0
@@ -151,7 +150,7 @@ class ImmersedBoundariesModel(Variables, Model):
 
     # ----------------------------------
     @Variables.undoGlobal
-    def addFSIObject(self, name, motion, interaction):
+    def addFSIObject(self, name, interaction):
 
         num = self.getNumberOfFSIObjects()
 
@@ -160,7 +159,6 @@ class ImmersedBoundariesModel(Variables, Model):
         num += 1
 
         self.setObjectName(num, name)
-        self.setObjectMotion(num, motion)
         self.setObjectInteraction(num, interaction)
 
         return num
@@ -191,27 +189,6 @@ class ImmersedBoundariesModel(Variables, Model):
 
         return self.__getStringData(num-1, 'object_name',
                                     self.setObjectName)
-    # ----------------------------------
-
-    # ----------------------------------
-    @Variables.undoLocal
-    def setObjectMotion(self, num, motion):
-
-        self.isLowerOrEqual(num, self.getNumberOfFSIObjects())
-        self.isStr(motion)
-
-        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
-        node.xmlSetData('object_motion', motion)
-
-        if motion == 'non_moving':
-            self.setObjectInteraction(num, "Off")
-
-
-    @Variables.noUndo
-    def getObjectMotion(self, num):
-
-        return self.__getStringData(num-1, 'object_motion',
-                                    self.setObjectMotion)
     # ----------------------------------
 
     # ----------------------------------
