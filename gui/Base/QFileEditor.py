@@ -806,7 +806,7 @@ class QFileEditor(QMainWindow):
                 if ps == 'SRC':
                     self._contextMenu.addAction(self._explorerActions['edit'])
                     self._contextMenu.addAction(self._explorerActions['remove'])
-                elif ps in ['EXAMPLES', 'REFERENCES']:
+                elif ps in ['EXAMPLES', 'REFERENCE']:
                     self._contextMenu.addAction(self._explorerActions['view'])
                     self._contextMenu.addAction(self._explorerActions['copy'])
                 elif ps in ['DRAFT']:
