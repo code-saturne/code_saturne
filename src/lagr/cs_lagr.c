@@ -1295,21 +1295,19 @@ cs_lagr_update_particle_counter(void)
   cs_parall_counter(gcount, size_count);
   cs_parall_sum(size_sum, CS_REAL_TYPE, wsum);
 
-  cs_lnum_t iter = 0;
-
-  pc->n_g_total = gcount[iter++];
-  pc->n_g_new = gcount[iter++];
-  pc->n_g_exit = gcount[iter++];
-  pc->n_g_merged = gcount[iter++];
-  pc->n_g_deposited = gcount[iter++];
-  pc->n_g_fouling = gcount[iter++];
-  pc->n_g_resuspended = gcount[iter++];
-  pc->n_g_failed = gcount[iter++];
+  pc->n_g_total = gcount[0];
+  pc->n_g_new = gcount[1];
+  pc->n_g_merged = gcount[2];
+  pc->n_g_exit = gcount[3];
+  pc->n_g_deposited = gcount[4];
+  pc->n_g_fouling = gcount[5];
+  pc->n_g_resuspended = gcount[6];
+  pc->n_g_failed = gcount[7];
 
   pc->w_total = wsum[0];
   pc->w_new = wsum[1];
-  pc->w_exit = wsum[2];
-  pc->w_merged = wsum[3];
+  pc->w_merged = wsum[2];
+  pc->w_exit = wsum[3];
   pc->w_deposited = wsum[4];
   pc->w_fouling = wsum[5];
   pc->w_resuspended = wsum[6];
