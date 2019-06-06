@@ -202,7 +202,7 @@
       <item>
        <widget class="QToolButton" name="toolButtonMEDFile">
         <property name="text">
-         </string>
+          <string>Choose a MED File</string>
         </property>
         <property name="icon">
          <iconset resource="resources_pages.qrc">

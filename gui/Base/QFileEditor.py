@@ -766,6 +766,11 @@ class QFileEditor(QMainWindow):
         clicked = os.path.join(self._currentSelection['subpath'],
                                self._currentSelection['filename'])
 
+        # To ensure that os.path.isdir works correctly we use the full path
+        # to the object which is selected in the menu
+        if self.case_dir:
+            clicked = os.path.join(self.case_dir, clicked)
+
         edit_list = ['SRC']
 
         if not os.path.isdir(clicked):
