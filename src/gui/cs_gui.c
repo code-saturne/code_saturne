@@ -2762,6 +2762,8 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
   _variable_value(c_pres->name, "verbosity", &tmp);
   var_cal_opt.iwarni = (int) tmp;
 
+  _variable_attribute(c_pres->name, "flux_reconstruction", &var_cal_opt.ircflu);
+
   /* Set Field calculation options in the field structure */
   cs_field_set_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
 

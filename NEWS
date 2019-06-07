@@ -4,6 +4,10 @@ Release 5.0.11 (Unreleased)
 Bug fixes
 ---------
 
+- GUI: fix reading of reconstruction flux option for pressure and hydraulic
+  head. It was not possible to disable flux reconstruction using the GUI for
+  these variables.
+
 - Run script: fix overwriting of preprocessing mesh orientation output
   in case of multiple input meshes (Mantis issue #226).
 
