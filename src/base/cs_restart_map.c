@@ -147,7 +147,7 @@ _type_size(cs_restart_val_type_t   val_type)
  * \param[in]       locator          associated locator
  * \param[in]       n_location_vals  number of values per location (interlaced)
  * \param[in]       val_type         value type
- * \param[out]      val_src          array of source values
+ * \param[in]       val_src          array of source values
  * \param[out]      val              array of values
  */
 /*----------------------------------------------------------------------------*/
