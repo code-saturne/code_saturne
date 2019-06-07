@@ -1761,7 +1761,7 @@ _locate_all_local(ple_locator_t               *this_locator,
 
     if (n_coords < n_points) {
       for (j = 0; j < n_coords; j++) {
-        if (location[j] > -1) {
+        if (_location[j] > -1) {
           k = id[j];
           if (distance != NULL) {
             if (distance[k] <= _distance[j])

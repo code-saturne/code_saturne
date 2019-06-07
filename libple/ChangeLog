@@ -1,4 +1,4 @@
-2019-02-14  Yvan Fournier <yvan.fournier@edf.fr>
+2019-06-07  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Fix in PLE locator for local cases when some points fall outside
 	the mesh bounding box. This may also fix possible issues for local
