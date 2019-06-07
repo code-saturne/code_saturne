@@ -1998,6 +1998,9 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
   cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
   cs_gui_node_get_child_int(tn_v, "rhs_reconstruction", &var_cal_opt.nswrsm);
   cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.iwarni);
+  cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
+                                   &var_cal_opt.ircflu);
+
 
   /* Set Field calculation options in the field structure */
   cs_field_set_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
