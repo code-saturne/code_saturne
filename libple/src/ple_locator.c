@@ -3443,9 +3443,10 @@ ple_locator_dump(const ple_locator_t  *this_locator)
   /*------------------------*/
 
   for (i = 0; i < _locator->n_intersects; i++)
-    ple_printf("\n"
-               "  Intersection %d with distant rank %d\n\n",
-               i+1, _locator->intersect_rank[i]);
+    if (_locator->intersect_rank != NULL)
+      ple_printf("\n"
+          "  Intersection %d with distant rank %d\n\n",
+          i+1, _locator->intersect_rank[i]);
 
   if (_locator->n_interior > 0) {
 
