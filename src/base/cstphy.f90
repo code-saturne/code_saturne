@@ -325,28 +325,28 @@ module cstphy
   !> Useful if and only if \ref optcal::iturb "iturb"= 20, 21 or 30
   !> (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: ce2
-  
-  !> constant \f$C_{NL1}\f$ for the \f$k-\varepsilon\f$ 
+
+  !> constant \f$C_{NL1}\f$ for the \f$k-\varepsilon\f$
   !> model from Baglietto et al. (quadratric)
   !> Useful if and only if \ref optcal::iturb "iturb"= 23
   double precision, save :: cnl1
 
-  !> constant \f$C_{NL2}\f$ for the \f$k-\varepsilon\f$ 
+  !> constant \f$C_{NL2}\f$ for the \f$k-\varepsilon\f$
   !> model from Baglietto et al. (quadratric)
   !> Useful if and only if \ref optcal::iturb "iturb"= 23
   double precision, save :: cnl2
 
-  !> constant \f$C_{NL3}\f$ for the \f$k-\varepsilon\f$ 
+  !> constant \f$C_{NL3}\f$ for the \f$k-\varepsilon\f$
   !> model from Baglietto et al. (quadratric)
   !> Useful if and only if \ref optcal::iturb "iturb"= 23
   double precision, save :: cnl3
 
-  !> constant \f$C_{NL4}\f$ for the \f$k-\varepsilon\f$ 
+  !> constant \f$C_{NL4}\f$ for the \f$k-\varepsilon\f$
   !> model from Baglietto et al. (quadratric)
   !> Useful if and only if \ref optcal::iturb "iturb"= 23
   double precision, save :: cnl4
 
-  !> constant \f$C_{NL5}\f$ for the \f$k-\varepsilon\f$ 
+  !> constant \f$C_{NL5}\f$ for the \f$k-\varepsilon\f$
   !> model from Baglietto et al. (quadratric)
   !> Useful if and only if \ref optcal::iturb "iturb"= 23
   double precision, save :: cnl5

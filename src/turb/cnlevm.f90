@@ -22,12 +22,12 @@
 
 
 !===============================================================================
-! Function: 
+! Function:
 ! --------
 !>
 !> \file cnlevm.f90
 !>
-!> \brief Calculation of non linear terms of the quadratic k-epsilon model 
+!> \brief Calculation of non linear terms of the quadratic k-epsilon model
 !>        (Baglietto et al.)
 !>
 !-------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ implicit none
 
 double precision rij(6,ncelet)
 
-! Local variables      
+! Local variables
 
 integer iel
 integer ii, jj, kk
@@ -116,7 +116,7 @@ do iel = 1, ncelet
   xeps   = cvar_ep(iel)
   xk     = cvar_k(iel)
   xttke  = xk/xeps
-  
+
   ! Sij
   xstrai(1,1) = gradv(1, 1, iel)
   xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
@@ -154,10 +154,10 @@ do iel = 1, ncelet
       end do
     end do
   end do
-  
+
   xss  = xttke*sqrt(.5d0*sijsij)
   xcmu = d2s3/(3.9d0 + xss)
-  
+
   ! Evaluating "constants"
   xqc1 = cnl1/((cnl4 + cnl5*xss**3.d0)*xcmu)
   xqc2 = cnl2/((cnl4 + cnl5*xss**3.d0)*xcmu)
