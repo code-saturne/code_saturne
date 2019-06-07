@@ -2061,6 +2061,9 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
   cs_gui_node_get_child_real(tn_v, "solver_precision", &var_cal_opt.epsilo);
   cs_gui_node_get_child_int(tn_v, "rhs_reconstruction", &var_cal_opt.nswrsm);
   cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.iwarni);
+  cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
+                                   &var_cal_opt.ircflu);
+
 
   /* For CDO equation */
   cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);
