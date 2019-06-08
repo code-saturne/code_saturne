@@ -86,7 +86,7 @@ call field_get_val_s(icrom, crom)
 tot_vol = 0.d0
 
 do iel = 1, ncel
-  tot_vol = tot_vol + volume(iel)
+  tot_vol = tot_vol + cell_f_vol(iel)
 enddo
 
 if (irangp.ge.0) then
@@ -203,9 +203,9 @@ do iel = 1, ncel
   cpro_momst(1,iel) = -(dp*dir_qdm(1)-dir_var(1))
   cpro_momst(2,iel) = -(dp*dir_qdm(2)-dir_var(2))
   cpro_momst(3,iel) = -(dp*dir_qdm(3)-dir_var(3))
-  crvexp(1,iel) = cpro_momst(1,iel) * cell_f_vol(iel)
-  crvexp(2,iel) = cpro_momst(2,iel) * cell_f_vol(iel)
-  crvexp(3,iel) = cpro_momst(3,iel) * cell_f_vol(iel)
+  crvexp(1,iel) = crvexp(1,iel) + cpro_momst(1,iel) * cell_f_vol(iel)
+  crvexp(2,iel) = crvexp(2,iel) + cpro_momst(2,iel) * cell_f_vol(iel)
+  crvexp(3,iel) = crvexp(3,iel) + cpro_momst(3,iel) * cell_f_vol(iel)
 enddo
 
 mom_a = mom
