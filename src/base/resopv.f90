@@ -209,9 +209,10 @@ double precision, allocatable, dimension(:) :: dam, xam
 double precision, allocatable, dimension(:) :: res, phia
 double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
-double precision, allocatable, dimension(:) :: coefap, coefbp, coefa_dp2
+double precision, allocatable, dimension(:) :: coefa_dp2
 double precision, allocatable, dimension(:) :: coefa_rho, coefb_rho
-double precision, allocatable, dimension(:) :: cofafp, cofbfp, coefaf_dp2
+double precision, allocatable, dimension(:) :: cofbfp
+double precision, allocatable, dimension(:) :: coefaf_dp2
 double precision, allocatable, dimension(:) :: rhs, rovsdt
 double precision, allocatable, dimension(:) :: hydro_pres
 double precision, allocatable, dimension(:) :: velflx, velflb, ddphi
@@ -465,77 +466,6 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     indhyd = 0
   else
 
-    ! Work arrays for BCs
-    allocate(coefap(ndimfb), cofafp(ndimfb))
-    allocate(coefbp(ndimfb), cofbfp(ndimfb))
-
-    do ifac = 1, nfabor
-
-      iel = ifabor(ifac)
-
-      if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
-        hint = dt(iel)/distb(ifac)
-      ! Symmetric tensor diffusivity
-      elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-
-        visci(1,1) = vitenp(1,iel)
-        visci(2,2) = vitenp(2,iel)
-        visci(3,3) = vitenp(3,iel)
-        visci(1,2) = vitenp(4,iel)
-        visci(2,1) = vitenp(4,iel)
-        visci(2,3) = vitenp(5,iel)
-        visci(3,2) = vitenp(5,iel)
-        visci(1,3) = vitenp(6,iel)
-        visci(3,1) = vitenp(6,iel)
-
-        ! ||Ki.S||^2
-        viscis = ( visci(1,1)*surfbo(1,ifac)       &
-                 + visci(1,2)*surfbo(2,ifac)       &
-                 + visci(1,3)*surfbo(3,ifac))**2   &
-               + ( visci(2,1)*surfbo(1,ifac)       &
-                 + visci(2,2)*surfbo(2,ifac)       &
-                 + visci(2,3)*surfbo(3,ifac))**2   &
-               + ( visci(3,1)*surfbo(1,ifac)       &
-                 + visci(3,2)*surfbo(2,ifac)       &
-                 + visci(3,3)*surfbo(3,ifac))**2
-
-        ! IF.Ki.S
-        fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
-                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
-                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
-                )*surfbo(1,ifac)                              &
-              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
-                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
-                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
-                )*surfbo(2,ifac)                              &
-              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
-                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
-                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
-                )*surfbo(3,ifac)
-
-        distfi = distb(ifac)
-
-        ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-        ! NB: eps =1.d-1 must be consistent with vitens.f90
-        fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
-
-        hint = viscis/surfbn(ifac)/fikis
-
-      endif
-
-      ! LOCAL Neumann Boundary Conditions on the hydrostatic pressure
-      !--------------------------------------------------------------
-
-      qimp = 0.d0
-
-      call set_neumann_scalar &
-           !==================
-         ( coefap(ifac), cofafp(ifac),             &
-           coefbp(ifac), cofbfp(ifac),             &
-           qimp        , hint )
-
-    enddo
-
     ! External forces containing bouyancy force ONLY
     do iel = 1, ncel
       dronm1 = (croma(iel)-ro0)
@@ -561,15 +491,9 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
       !frchy, dfrchy,                          &
       frcxt  , dfrcxt ,                       &
       hydro_pres      , iflux  , bflux ,      &
-      coefap , coefbp ,                       &
-      cofafp , cofbfp ,                       &
       viscf  , viscb  ,                       &
       dam    , xam    ,                       &
       dphi   , rhs    ) !FIXME remove work arrays.
-
-    ! Free memory
-    deallocate(coefap, cofafp)
-    deallocate(coefbp, cofbfp)
 
   endif
 
@@ -1456,7 +1380,7 @@ if (idilat.ge.4) then
 endif
 
 ! It is: div(dt/rho*rho grad P) + div(rho u*) - Gamma
-! NB: if iphydr=1, div(rho u*) contains div(d fext).
+! NB: if iphydr=1, div(rho u*) contains div(dt d fext).
 do iel = 1, ncel
   res(iel) = res(iel) + cpro_divu(iel)
 enddo
@@ -1465,7 +1389,7 @@ enddo
 rnormp = sqrt(cs_gdot(ncel,res,res))
 
 if (vcopt_p%iwarni.ge.2) then
-  write(nfecra,1300)chaine(1:16) ,rnormp
+  write(nfecra,1300) chaine(1:16), rnormp
 endif
 if (iterns.le.1) then
   sinfo%nbivar = 0

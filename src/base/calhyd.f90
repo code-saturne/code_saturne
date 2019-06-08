@@ -38,10 +38,6 @@
 !> \param[out]    phydr         hydrostatic pressure increment
 !> \param[in]     flumas        work array
 !> \param[in]     flumab        work array
-!> \param[in]     coefap        boundary conditions coefficient
-!> \param[in]     coefbp        boundary conditions coefficient
-!> \param[in]     cofafp        boundary conditions coefficient
-!> \param[in]     cofbfp        boundary conditions coefficient
 !> \param[in,out] viscf         work array
 !> \param[in,out] viscb         work array
 !> \param[in,out] dam           work array
@@ -54,8 +50,6 @@ subroutine calhyd &
  ( indhyd ,                                                       &
    fext   , dfext  ,                                              &
    phydr  , flumas , flumab ,                                     &
-   coefap , coefbp ,                                              &
-   cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    dpvar  , smbr   )
@@ -65,6 +59,7 @@ subroutine calhyd &
 !===============================================================================
 
 use atincl, only: iatmst
+use dimens, only: ndimfb
 use paramx
 use numvar
 use entsor
@@ -87,8 +82,6 @@ double precision fext(3,ncelet)
 double precision dfext(3,ncelet)
 double precision phydr(ncelet)
 double precision flumas(nfac), flumab(nfabor)
-double precision coefap(nfabor), coefbp(nfabor)
-double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac)
 double precision dpvar(ncelet)
@@ -99,7 +92,7 @@ double precision smbr(ncelet)
 character(len=80) :: chaine
 integer          lchain
 integer          f_id, iccocg, inc   , init  , isym
-integer          iel   , ical
+integer          iel   , ical, ifac
 integer          nswmpr
 integer          isweep, niterf
 integer          iphydp
@@ -111,10 +104,13 @@ integer          imucpp, f_id0
 double precision residu, rnorm , rnrmf , rnrmdf
 double precision epsrgp, climgp, extrap, epsilp
 double precision precre, precab, thetap
+double precision qimp, hint
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: rovsdt, div_dfext, viscce
+double precision, allocatable, dimension(:) :: coefap, coefbp
+double precision, allocatable, dimension(:) :: cofafp, cofbfp
 
 type(var_cal_opt) :: vcopt_u, vcopt_pr
 
@@ -197,23 +193,41 @@ indhyd = 1
 f_id0 = -1
 
 !===============================================================================
-! 2.  PREPARATION DE LA MATRICE DU SYSTEME A RESOUDRE
+! 2. Prepare matrix and boundary conditions
 !===============================================================================
 
-! ---> TERME INSTATIONNAIRE
+! Boundary conditions
 
+! Work arrays for BCs
+allocate(coefap(ndimfb), cofafp(ndimfb))
+allocate(coefbp(ndimfb), cofbfp(ndimfb))
+
+do ifac = 1, nfabor
+  ! LOCAL Neumann Boundary Conditions on the hydrostatic pressure
+  !--------------------------------------------------------------
+
+  hint = 1.d0/distb(ifac)
+  qimp = 0.d0
+
+  call set_neumann_scalar &
+    !==================
+  ( coefap(ifac), cofafp(ifac),             &
+    coefbp(ifac), cofbfp(ifac),             &
+    qimp        , hint )
+
+enddo
+
+! Unsteady term
 do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
 
-! ---> "VITESSE" DE DIFFUSION FACETTE
-
+! Face diffusivity
 do iel = 1, ncel
   viscce(iel) = 1.d0
 enddo
 
-call viscfa                                                       &
-!==========
+call viscfa &
  ( imvisf ,                                                       &
    viscce ,                                                       &
    viscf  , viscb  )
@@ -236,11 +250,8 @@ call matrix &
    rvoid  , dam    , xam    )
 
 !===============================================================================
-! 3.  INITIALISATION DU FLUX DE MASSE
+! 3. Compute right hand side
 !===============================================================================
-
-
-!     PROJECTION AUX FACES DES TERMES SOURCES
 
 init   = 1
 inc    = 0
@@ -251,7 +262,7 @@ iwarnp = vcopt_pr%iwarni
 epsrgp = vcopt_pr%epsrgr
 climgp = vcopt_pr%climgr
 
-call projts                                                       &
+call projts &
 !==========
  ( init   , nswrgp ,                                              &
    dfext  ,                                                       &
@@ -376,6 +387,8 @@ endif
 
 ! Free memory
 deallocate(rovsdt, div_dfext, viscce)
+deallocate(coefap, cofafp)
+deallocate(coefbp, cofbfp)
 
 !===============================================================================
 ! 5. Free solver setup
@@ -384,7 +397,7 @@ deallocate(rovsdt, div_dfext, viscce)
 call sles_free_native(-1, chaine)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -410,7 +423,7 @@ call sles_free_native(-1, chaine)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return
