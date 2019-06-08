@@ -903,6 +903,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
                           int                    verbosity,
                           int                    idimtr,
                           cs_real_t              climgp,
+                          const char            *var_name,
                           const cs_real_t        var[],
                           cs_real_3_t  *restrict grad)
 {
@@ -1306,9 +1307,9 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   /* Output warning if necessary */
 
   if (verbosity > 1)
-    bft_printf(_(" Gradient limitation in %llu cells\n"
+    bft_printf(_(" Variable: %s; Gradient limitation in %llu cells\n"
                  "   minimum factor = %14.5e; maximum factor = %14.5e\n"),
-               (unsigned long long)n_clip, min_factor, max_factor);
+               var_name, (unsigned long long)n_clip, min_factor, max_factor);
 
   /* Synchronize grad */
 
@@ -3062,6 +3063,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
                           int                           clip_mode,
                           int                           verbosity,
                           cs_real_t                     climgp,
+                          const char                   *var_name,
                           const cs_real_3_t   *restrict pvar,
                           cs_real_33_t        *restrict gradv)
 {
@@ -3510,8 +3512,9 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
   /* Output warning if necessary */
 
   if (verbosity > 1)
-    bft_printf(_(" Gradient of a vector limitation in %llu cells\n"
+    bft_printf(_(" Variable: %s; Gradient of a vector limitation in %llu cells\n"
                  "   minimum factor = %14.5e; maximum factor = %14.5e\n"),
+               var_name,
                (unsigned long long)n_clip, min_factor, max_factor);
 
   /* Synchronize the updated Gradient */
@@ -6565,6 +6568,7 @@ _gradient_scalar(const char                    *var_name,
                          rhsv);
 
     _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
+                              var_name,
                               var, r_grad);
 
     _initialize_scalar_gradient(mesh,
@@ -6595,6 +6599,7 @@ _gradient_scalar(const char                    *var_name,
   }
 
   _scalar_gradient_clipping(halo_type, clip_mode, verbosity, tr_dim, clip_coeff,
+                            var_name,
                             var, grad);
 
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
@@ -6757,6 +6762,7 @@ _gradient_vector(const char                    *var_name,
                               _imlini,
                               verbosity,
                               _climin,
+                              var_name,
                               (const cs_real_3_t *)var,
                               r_gradv);
 
@@ -6788,6 +6794,7 @@ _gradient_vector(const char                    *var_name,
                             clip_mode,
                             verbosity,
                             clip_coeff,
+                            var_name,
                             (const cs_real_3_t *)var,
                             grad);
 
