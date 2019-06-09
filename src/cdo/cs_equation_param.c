@@ -559,8 +559,10 @@ _set_key(const char            *label,
     break;
 
   case CS_EQKEY_HODGE_DIFF_ALGO:
-    if (strcmp(keyval,"cost") == 0)
+    if (strcmp(keyval,"cost") == 0 || strcmp(keyval,"ocs") == 0)
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+    else if (strcmp(keyval, "ocs2") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_OCS2;
     else if (strcmp(keyval, "voronoi") == 0)
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
     else if (strcmp(keyval, "wbs") == 0)

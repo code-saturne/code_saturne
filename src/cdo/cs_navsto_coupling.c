@@ -938,7 +938,7 @@ void *
 cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
                                   void                       *context)
 {
-  assert(nsp != NULL);
+  CS_UNUSED(nsp);
 
   cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
 

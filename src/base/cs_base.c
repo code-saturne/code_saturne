@@ -48,6 +48,16 @@
 #include <dlfcn.h>
 #endif
 
+#if defined(HAVE_CATALYST)
+#  define _CS_EXIT_DEPLIB_CRASH_WORKAROUND 1
+#else
+#  define _CS_EXIT_DEPLIB_CRASH_WORKAROUND 0
+#endif
+
+#if _CS_EXIT_DEPLIB_CRASH_WORKAROUND
+#include <setjmp.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -137,6 +147,8 @@ static char  cs_glob_base_str[CS_BASE_N_STRINGS][CS_BASE_STRING_LEN + 1];
 
 /* Global variables associated with signal handling */
 
+static bool _cs_base_sighandlers_set = false;
+
 #if defined(SIGHUP)
 static _cs_base_sighandler_t cs_glob_base_sighup_save = SIG_DFL;
 #endif
@@ -154,6 +166,15 @@ static _cs_base_sighandler_t cs_glob_base_sigtrap_save = SIG_DFL;
 #if defined(SIGXCPU)
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
+
+/* Workaround fo SIGSEGV at exit
+   with some ParaViw Catalyst/OpenGL driver combinations */
+
+#if _CS_EXIT_DEPLIB_CRASH_WORKAROUND
+static jmp_buf _cs_exit_jmp_buf;
+#endif
+
+/* Dynamic library handling */
 
 #if defined(HAVE_DLOPEN)
 #if defined(CS_DLOPEN_USE_RTLD_GLOBAL)
@@ -320,6 +341,10 @@ _cs_base_err_vprintf(const char  *format,
  * The message is repeated on the standard output and an error file.
  *----------------------------------------------------------------------------*/
 
+#if defined(__GNUC__)
+__attribute__((format(printf, 1, 2)))
+#endif
+
 static void
 _cs_base_err_printf(const char  *format,
                     ...)
@@ -329,7 +354,7 @@ _cs_base_err_printf(const char  *format,
   va_list  arg_ptr;
   va_start(arg_ptr, format);
 
-  /* message sur les sorties */
+  /* message on outputs */
 
   _cs_base_err_vprintf(format, arg_ptr);
 
@@ -337,6 +362,82 @@ _cs_base_err_printf(const char  *format,
 
   va_end(arg_ptr);
 }
+
+#if _CS_EXIT_DEPLIB_CRASH_WORKAROUND
+
+/*----------------------------------------------------------------------------
+ * Handle a signal as a warning at exit
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_sig_exit_crash_workaround(int  signum)
+{
+  bft_printf_flush();
+
+  char sig_name[32] = "";
+
+  switch (signum) {
+
+  case SIGFPE:
+    snprintf(sig_name, 31, "SIGFPE");
+    break;
+
+  case SIGSEGV:
+    snprintf(sig_name, 31, "SIGSEGV");
+    break;
+
+  }
+
+  if (cs_glob_rank_id <= 0) {
+    fprintf(stderr, _("Warning: signal %s received during program exit.\n"),
+            sig_name);
+    cs_base_backtrace_dump(stderr, 3);
+  }
+
+  longjmp(_cs_exit_jmp_buf, 1);
+}
+
+/*----------------------------------------------------------------------------
+ * Set signal handlers to workaround an external library issue at exit.
+ *
+ * This is used at exit to transform errors into warnings on rank 0
+ * only during a standard exit routine.
+ *
+ * This is an ugly workaroud to an ugly crash observed when exiting after
+ * have used VTK (Paraview Catalyst) libraries (on Debian Stretch with
+ * NVIDIA 390 driver at least).
+ *
+ * It is based on changing to a different signal handler for SIGSEGV
+ * (but could also be used for other signals), and using setjmp/longjmp
+ * to return from that handler and call _exit to avoid further issues.
+ * This avoids returning a nonzero error code to the caller when the
+ * code had finished correctly before calling exit(EXIT_SUCCESS).
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_atexit_crash_workaround(void)
+{
+#if defined(HAVE_SIGACTION)
+
+  if (_cs_base_sighandlers_set) {
+    struct sigaction sa;
+    sa.sa_handler = *_cs_base_sig_exit_crash_workaround;
+    sigfillset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sa.sa_restorer = NULL;
+    if (sigaction(SIGSEGV, &sa, NULL) == -1 && cs_glob_rank_id <= 0)
+      perror("sigaction");
+
+    int i = setjmp(_cs_exit_jmp_buf);
+
+    if (i == 1)
+      _exit(EXIT_SUCCESS); /* This handler is only used during normal exit */
+  }
+
+#endif
+}
+
+#endif /* _CS_EXIT_DEPLIB_CRASH_WORKAROUND */
 
 /*----------------------------------------------------------------------------
  * Exit function
@@ -384,6 +485,13 @@ _cs_base_exit(int status)
     }
   }
 #endif /* HAVE_MPI */
+
+#if _CS_EXIT_DEPLIB_CRASH_WORKAROUND
+
+  if (status == EXIT_SUCCESS)
+    _set_atexit_crash_workaround();
+
+#endif
 
   exit(status);
 }
@@ -503,9 +611,8 @@ _cs_mem_error_handler(const char  *file_name,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_base_backtrace_print(int  niv_debut)
+_cs_base_backtrace_print(int  lv_start)
 {
-  size_t  ind;
   bft_backtrace_t  *tr = NULL;
 
   tr = bft_backtrace_create();
@@ -518,23 +625,23 @@ _cs_base_backtrace_print(int  niv_debut)
     const char *s_func;
     const char *s_addr;
 
-    const char s_inconnu[] = "?";
+    const char s_unknown[] = "?";
     const char s_vide[] = "";
     const char *s_prefix = s_vide;
 
-    size_t nbr = bft_backtrace_size(tr);
+    int nbr = bft_backtrace_size(tr);
 
     if (nbr > 0)
       _cs_base_err_printf(_("\nCall stack:\n"));
 
-    for (ind = niv_debut ; ind < nbr ; ind++) {
+    for (int ind = lv_start; ind < nbr; ind++) {
 
       s_file = bft_backtrace_file(tr, ind);
       s_func = bft_backtrace_function(tr, ind);
       s_addr = bft_backtrace_address(tr, ind);
 
       if (s_file == NULL)
-        s_file = s_inconnu;
+        s_file = s_unknown;
       if (s_func == NULL)
         strcpy(s_func_buf, "?");
       else {
@@ -543,10 +650,10 @@ _cs_base_backtrace_print(int  niv_debut)
         strcat(s_func_buf, ">");
       }
       if (s_addr == NULL)
-        s_addr = s_inconnu;
+        s_addr = s_unknown;
 
       _cs_base_err_printf("%s%4d: %-12s %-32s (%s)\n", s_prefix,
-                          ind-niv_debut+1, s_addr, s_func_buf, s_file);
+                          ind-lv_start+1, s_addr, s_func_buf, s_file);
 
     }
 
@@ -1371,6 +1478,7 @@ cs_base_error_init(bool  signal_defaults)
       cs_glob_base_sigcpu_save = signal(SIGXCPU, _cs_base_sig_fatal);
 #endif
 
+    _cs_base_sighandlers_set = true;
   }
 }
 
@@ -2360,6 +2468,70 @@ cs_base_get_dl_function_pointer(void        *handle,
 }
 
 #endif /* defined(HAVE_DLOPEN) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump a stack trace to a file
+ *
+ * \param[in]  f         pointer to file in which to dump trace
+ * \param[in]  lv_start  start level in stack trace
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_backtrace_dump(FILE  *f,
+                       int    lv_start)
+{
+  bft_backtrace_t  *tr = NULL;
+
+  tr = bft_backtrace_create();
+
+  if (tr != NULL) {
+
+    char s_func_buf[67];
+
+    const char *s_file;
+    const char *s_func;
+    const char *s_addr;
+
+    const char s_unknown[] = "?";
+    const char s_vide[] = "";
+    const char *s_prefix = s_vide;
+
+    int nbr = bft_backtrace_size(tr);
+
+    if (nbr > 0)
+      fprintf(f, "\nCall stack:\n");
+
+    for (int ind = lv_start; ind < nbr; ind++) {
+
+      s_file = bft_backtrace_file(tr, ind);
+      s_func = bft_backtrace_function(tr, ind);
+      s_addr = bft_backtrace_address(tr, ind);
+
+      if (s_file == NULL)
+        s_file = s_unknown;
+      if (s_func == NULL)
+        strcpy(s_func_buf, "?");
+      else {
+        s_func_buf[0] = '<';
+        strncpy(s_func_buf + 1, s_func, 64);
+        strcat(s_func_buf, ">");
+      }
+      if (s_addr == NULL)
+        s_addr = s_unknown;
+
+      fprintf(f, "%s%4d: %-12s %-32s (%s)\n", s_prefix,
+              ind-lv_start+1, s_addr, s_func_buf, s_file);
+
+    }
+
+    bft_backtrace_destroy(tr);
+
+    if (nbr > 0)
+      fprintf(f, "End of stack\n\n");
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 

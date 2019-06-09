@@ -190,8 +190,8 @@ static cs_lagr_particle_counter_t _lagr_particle_counter
      .n_g_cumulative_failed = 0,
      .n_g_total = 0,
      .n_g_new = 0,
-     .n_g_merged = 0,
      .n_g_exit = 0,
+     .n_g_merged = 0,
      .n_g_deposited = 0,
      .n_g_fouling = 0,
      .n_g_resuspended = 0,
@@ -199,6 +199,7 @@ static cs_lagr_particle_counter_t _lagr_particle_counter
      .w_total = 0.,
      .w_new = 0.,
      .w_exit = 0.,
+     .w_merged = 0.,
      .w_deposited = 0.,
      .w_fouling = 0.,
      .w_resuspended = 0.};
@@ -1280,35 +1281,36 @@ cs_lagr_update_particle_counter(void)
                         p_set->n_part_resusp,
                         p_set->n_failed_part};
 
-  cs_real_t wsum[6] = {p_set->weight,
-                       p_set->weight_new,
-                       p_set->weight_out,
-                       p_set->weight_dep,
-                       p_set->weight_fou,
-                       p_set->weight_resusp};
+  cs_real_t wsum[] = {p_set->weight,
+                      p_set->weight_new,
+                      p_set->weight_merged,
+                      p_set->weight_out,
+                      p_set->weight_dep,
+                      p_set->weight_fou,
+                      p_set->weight_resusp};
 
   cs_lnum_t size_count = sizeof(gcount) / sizeof(gcount[0]);
+  cs_lnum_t size_sum = sizeof(wsum) / sizeof(wsum[0]);
 
   cs_parall_counter(gcount, size_count);
-  cs_parall_sum(6, CS_REAL_TYPE, wsum);
+  cs_parall_sum(size_sum, CS_REAL_TYPE, wsum);
 
-  cs_lnum_t iter = 0;
-
-  pc->n_g_total = gcount[iter++];
-  pc->n_g_new = gcount[iter++];
-  pc->n_g_merged = gcount[iter++];
-  pc->n_g_exit = gcount[iter++];
-  pc->n_g_deposited = gcount[iter++];
-  pc->n_g_fouling = gcount[iter++];
-  pc->n_g_resuspended = gcount[iter++];
-  pc->n_g_failed = gcount[iter++];
+  pc->n_g_total = gcount[0];
+  pc->n_g_new = gcount[1];
+  pc->n_g_merged = gcount[2];
+  pc->n_g_exit = gcount[3];
+  pc->n_g_deposited = gcount[4];
+  pc->n_g_fouling = gcount[5];
+  pc->n_g_resuspended = gcount[6];
+  pc->n_g_failed = gcount[7];
 
   pc->w_total = wsum[0];
   pc->w_new = wsum[1];
-  pc->w_exit = wsum[2];
-  pc->w_deposited = wsum[3];
-  pc->w_fouling = wsum[4];
-  pc->w_resuspended = wsum[5];
+  pc->w_merged = wsum[2];
+  pc->w_exit = wsum[3];
+  pc->w_deposited = wsum[4];
+  pc->w_fouling = wsum[5];
+  pc->w_resuspended = wsum[6];
 
   return pc;
 }
@@ -1807,8 +1809,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   part_c->n_g_total = 0;
   part_c->n_g_new = 0;
-  part_c->n_g_merged = 0;
   part_c->n_g_exit = 0;
+  part_c->n_g_merged = 0;
   part_c->n_g_deposited = 0;
   part_c->n_g_fouling = 0;
   part_c->n_g_resuspended = 0;
@@ -1816,6 +1818,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   part_c->w_total = 0;
   part_c->w_new = 0;
   part_c->w_exit = 0;
+  part_c->w_merged = 0;
   part_c->w_deposited = 0;
   part_c->w_fouling = 0;
   part_c->w_resuspended = 0;

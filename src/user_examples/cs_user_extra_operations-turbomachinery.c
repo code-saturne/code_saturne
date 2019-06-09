@@ -148,7 +148,7 @@ _findpt_r(cs_domain_t          *domain,
 
     if (r == rot) {
       for (int i = 0; i < 3; i++)
-        d[i] = coords[i] - cell_cen[*node][i];
+        d[i] = coords[i] - cell_cen[cell_id][i];
       cs_real_t dis2 = cs_math_3_square_norm(d);
       if (dis2 < dis2mn) {
         *node = cell_id;

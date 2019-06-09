@@ -125,8 +125,8 @@ _normal_flux_reco(short int                  fb,
                   cs_sdm_t                  *ntrgrd)
 {
   /* Sanity check */
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-                      CS_CDO_LOCAL_HFQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                      CS_FLAG_COMP_HFQ));
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
 
   const short int  nfc = cm->n_fc;
@@ -233,7 +233,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
     /* Get the boundary face in the cell numbering and the boundary face id in
        the mesh numbering */
     const short int  f = csys->_f_ids[i];
-    const cs_lnum_t  bf_id = cm->f_ids[f] - csys->face_shift;
+    const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
     /* Set the type of boundary */
     nsb->bf_type[i] = bf_type[bf_id];

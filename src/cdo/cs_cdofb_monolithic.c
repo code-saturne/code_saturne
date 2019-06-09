@@ -235,6 +235,38 @@ static cs_matrix_assembler_t  *cs_shared_matrix_assembler = NULL;
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Setup advanced parameters for the AMG related to the velocity field
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_velocity_amg(void)
+{
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_coarsen_type", "HMIS");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_interp_type", "ext+i-cc");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_agg_nl", "2");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_P_max", "4");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_strong_threshold", "0.5");
+  PetscOptionsSetValue(NULL,
+                       "-pc_velocity_hypre_boomeramg_no_CF", "");
+#else
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_coarsen_type","HMIS");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_interp_type","ext+i-cc");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_agg_nl","2");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_P_max","4");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_strong_threshold","0.5");
+  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Generate IndexSet for the PETSc FieldSplit preconditioner
  *
  * \param[in, out]  isp     IndexSet for the pressure DoFs
@@ -377,27 +409,7 @@ _additive_amg_gmres_hook(void     *context,
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
 
-#if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_coarsen_type", "HMIS");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_interp_type", "ext+i-cc");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_agg_nl", "2");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_P_max", "4");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_strong_threshold", "0.5");
-  PetscOptionsSetValue(NULL,
-                       "-pc_velocity_hypre_boomeramg_no_CF", "");
-#else
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_coarsen_type","HMIS");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_interp_type","ext+i-cc");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_agg_nl","2");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_P_max","4");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_strong_threshold","0.5");
-  PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
-#endif
+  _setup_velocity_amg();
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -507,8 +519,12 @@ _diag_schur_gmres_hook(void     *context,
                    dtol,        /* divergence tolerance */
                    5);          /* max number of iterations */
 
+  _setup_velocity_amg();
+
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
   KSPSetUp(u_ksp);
 
   /* User function for additional settings */
@@ -613,8 +629,12 @@ _upper_schur_gmres_hook(void     *context,
                    dtol,        /* divergence tolerance */
                    5);          /* max number of iterations */
 
+  _setup_velocity_amg();
+
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
   KSPSetUp(u_ksp);
 
   /* User function for additional settings */
@@ -634,6 +654,202 @@ _upper_schur_gmres_hook(void     *context,
   ISDestroy(&isp);
   ISDestroy(&isv);
 }
+
+#if PETSC_VERSION_GE(3,11,0)
+/*----------------------------------------------------------------------------
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of GKB as a solver with CG(Boomer) as inner solver for the
+ *         velocity block.
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_gkb_hook(void     *context,
+          Mat       a,
+          KSP       ksp)
+{
+  IS  isv, isp;
+
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  KSPSetType(ksp, KSPPREONLY);
+
+  /* Apply modifications to the KSP structure */
+  PC up_pc, u_pc;
+
+  KSPGetPC(ksp, &up_pc);
+  PCSetType(up_pc, PCFIELDSPLIT);
+  PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
+
+  PCFieldSplitSetGKBTol(up_pc, 10*slesp.eps);
+  PCFieldSplitSetGKBMaxit(up_pc, slesp.n_max_iter);
+  PCFieldSplitSetGKBNu(up_pc, 0);
+  PCFieldSplitSetGKBDelay(up_pc, 5);
+
+  _build_is_for_fieldsplit(&isp, &isv);
+
+  /* First level Pressure | Velocity (X,Y,Z) */
+  PCFieldSplitSetIS(up_pc, "velocity", isv);
+  PCFieldSplitSetIS(up_pc, "pressure", isp);
+
+  /* Need to call PCSetUp before configuring the second level (Thanks to
+     Natacha Bereux) */
+  PCSetFromOptions(up_pc);
+  PCSetUp(up_pc);
+  KSPSetUp(ksp);
+
+  PetscInt  n_split;
+  KSP  *up_subksp;
+  PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
+  assert(n_split == 2);
+
+  KSP  u_ksp = up_subksp[0];
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPSetType(u_ksp, KSPFGMRES);
+  KSPGetPC(u_ksp, &u_pc);
+  PCSetType(u_pc, PCHYPRE);
+  PCHYPRESetType(u_pc, "boomeramg");
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(u_ksp,
+                   slesp.eps,   /* relative convergence tolerance */
+                   abstol,      /* absolute convergence tolerance */
+                   dtol,        /* divergence tolerance */
+                   slesp.n_max_iter); /* max number of iterations */
+
+  _setup_velocity_amg();
+
+  PCSetFromOptions(u_pc);
+  PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
+  KSPSetUp(u_ksp);
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, a, ksp);
+
+  /* Apply modifications to the KSP structure */
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp.setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp.setup_done = true;
+  }
+
+  PetscFree(up_subksp);
+  ISDestroy(&isp);
+  ISDestroy(&isv);
+}
+
+/*----------------------------------------------------------------------------
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of GKB preconditioner. by block for a GMRES
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_gkb_gmres_hook(void     *context,
+                Mat       a,
+                KSP       ksp)
+{
+  IS  isv, isp;
+
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  KSPSetType(ksp, KSPFGMRES);
+
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(ksp,
+                   slesp.eps,         /* relative convergence tolerance */
+                   abstol,            /* absolute convergence tolerance */
+                   dtol,              /* divergence tolerance */
+                   slesp.n_max_iter); /* max number of iterations */
+
+  /* Apply modifications to the KSP structure */
+  PC up_pc, u_pc;
+
+  KSPGetPC(ksp, &up_pc);
+  PCSetType(up_pc, PCFIELDSPLIT);
+  PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
+
+  PCFieldSplitSetGKBTol(up_pc, 1e-1);
+  PCFieldSplitSetGKBMaxit(up_pc, 100);
+  PCFieldSplitSetGKBNu(up_pc, 0);
+  PCFieldSplitSetGKBDelay(up_pc, 5);
+
+  _build_is_for_fieldsplit(&isp, &isv);
+
+  /* First level Pressure | Velocity (X,Y,Z) */
+  PCFieldSplitSetIS(up_pc, "velocity", isv);
+  PCFieldSplitSetIS(up_pc, "pressure", isp);
+
+  /* Need to call PCSetUp before configuring the second level (Thanks to
+     Natacha Bereux) */
+  PCSetFromOptions(up_pc);
+  PCSetUp(up_pc);
+  KSPSetUp(ksp);
+
+  PetscInt  n_split;
+  KSP  *up_subksp;
+  PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
+  assert(n_split == 2);
+
+  KSP  u_ksp = up_subksp[0];
+
+  /* Set KSP tolerances */
+  KSPSetType(u_ksp, KSPFGMRES);
+  KSPGetPC(u_ksp, &u_pc);
+  PCSetType(u_pc, PCHYPRE);
+  PCHYPRESetType(u_pc, "boomeramg");
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(u_ksp,
+                   1e-2,    /* relative convergence tolerance */
+                   abstol,  /* absolute convergence tolerance */
+                   dtol,    /* divergence tolerance */
+                   50);     /* max number of iterations */
+
+  _setup_velocity_amg();
+
+  PCSetFromOptions(u_pc);
+  PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
+  KSPSetUp(u_ksp);
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, a, ksp);
+
+  /* Apply modifications to the KSP structure */
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp.setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp.setup_done = true;
+  }
+
+  PetscFree(up_subksp);
+  ISDestroy(&isp);
+  ISDestroy(&isv);
+}
+#endif  /* GKB available only if version >= 3.11 */
 #endif  /* HAVE_PETSC */
 
 /*----------------------------------------------------------------------------*/
@@ -1611,6 +1827,35 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          _upper_schur_gmres_hook,
                          (void *)mom_eqp);
     break;
+
+#if PETSC_VERSION_GE(3,11,0)    /* Golub-Kahan Bi-diagonalization */
+  case CS_NAVSTO_SLES_GKB:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _gkb_hook,
+                         (void *)mom_eqp);
+    break;
+
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _gkb_gmres_hook,
+                         (void *)mom_eqp);
+    break;
+#else
+  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " PETSc 3.11.x or greater is required with this option.\n",
+              __func__, mom_eqp->name);
+    break;
+#endif
+
 #else
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:

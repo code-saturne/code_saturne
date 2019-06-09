@@ -840,6 +840,27 @@ cs_meg_source_terms(const cs_zone_t  *vz,
                     const char       *source_type);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_meg_immersed_boundaries_inout.c
+ *
+ * \brief This function is used to indicate whether a given point is within or
+ * outside a given solid
+ *
+ * \param[inout]    ipenal       indicator for cut cells algorithm
+ * \param[in]       object_name  name of the solid object
+ * \param[in]       xyz          cs_real_3_t pointer containing the point coordinates
+ * \param[in]       t            time value
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_immersed_boundaries_inout(int         *ipenal,
+                                 const char  *object_name,
+                                 cs_real_3_t  xyz,
+                                 cs_real_t    t);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

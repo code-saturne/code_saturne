@@ -78,43 +78,98 @@ typedef enum {
 } cs_navsto_param_model_t;
 
 /*! \enum cs_navsto_param_sles_t
- *  \brief High-level information about the Way of settings the SLES
- *  for solving the Navier-Stokes system
+ *
+ *  \brief High-level information about the way of settings the SLES for solving
+ *  the Navier-Stokes system. When a the system is treated as a saddle-point
+ *  problem (monolithic approach in what follows), then one uses these
+ *  notations: A_{00} is the upper-left block and A_{11} (should be 0 but the
+ *  preconditionner may have entries for the approximation of the inverse of the
+ *  Schur complement).
  *
  * \var CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
- * Use the same mechanism as for stand-alone equation relying on the function
- * \ref cs_equation_set_sles
+ * Associated keyword: "no_block"
+ *
+ * Use the same mechanism as for a stand-alone equation. In this case, the
+ * setting relies on the function \ref cs_equation_set_sles and the different
+ * options for solving a linear system such as the choice of the iterative
+ * solver or the choice of the preconditionner or the type of residual
+ * normalization
+ *
  *
  * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
+ * Associated keyword: "block_amg_cg"
+ *
  * The Navier-Stokes system of equations is solved using a multigrid on each
  * diagonal block as a preconditioner and applying a conjugate gradient as
  * solver. Use this strategy when the saddle-point problem has been reformulated
  * into a "classical" linear system. For instance when a Uzawa or an Artificial
- * Compressibility coupling algorithm is used. This option is only available
- * with the support to the PETSc library up to now.
+ * Compressibility coupling algorithm is used. (i.e. with the parameter
+ * \ref CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY or
+ * \ref CS_NAVSTO_COUPLING_UZAWA is set as coupling algorithm). This option is
+ * only available with the support to the PETSc library up to now.
+ *
  *
  * \var CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
- * The Navier-Stokes system of equations is solved an additive preconditioner
- * (block diagonal matrix where the block 00 is A_{00} preconditionned by one
- * multigrid iteration and the block 11 is set to the identity. This option
- * is only available with the support to the PETSc library up to now.
- * Available choice when a monolithic approach is used.
+ * Associated keyword: "additive_gmres"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
+ * system of equations is solved an additive preconditioner (block diagonal
+ * matrix where the block 00 is A_{00} preconditionned by one multigrid
+ * iteration and the block 11 is set to the identity. This option is only
+ * available with the support to the PETSc library up to now.
+ *
  *
  * \var CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
+ * Associated keyword: "diag_schur_gmres"
  *
- * The Navier-Stokes system of equations is solved using a block diagonal
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a block diagonal
  * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
  * iteration and the block 11 is an approximation of the Schur complement
  * preconditionned with one multigrid iteration. The main iterative solver is a
- * flexible GMRES. Available choice when a monolithic approach is used.
+ * flexible GMRES. This option is only available with the support to the PETSc
+ * library up to now.
+ *
  *
  * \var CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
+ * Associated keyword: "upper_schur_gmres"
  *
- * The Navier-Stokes system of equations is solved using a upper triangular
- * block preconditioner where the block 00 is A_{00} preconditioned with one
- * multigrid iteration and the block 11 is an approximation of the Schur
- * complement preconditionned with a minres. The main iterative solver is a
- * flexible GMRES. Available choice when a monolithic approach is used.
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a upper triangular block
+ * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
+ * iteration and the block 11 is an approximation of the Schur complement
+ * preconditionned with a minres. The main iterative solver is a flexible
+ * GMRES. This option is only available with the support to the PETSc
+ * library up to now.
+ *
+ *
+ * \var CS_NAVSTO_SLES_GKB
+ * Associated keyword: "gkb"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a Golub-Kahan
+ * bi-diagonalization. One assumes that the saddle-point system is symmetric.
+ * By default, the block A_{00} may be augmented (this is not the default
+ * choice) and is solved with a conjuguate gradient algorithm preconditionned
+ * with a multigrid. The residual is computed in the energy norm. This option is
+ * only available with the support to the PETSc library up to now.
+ *
+ * * \var CS_NAVSTO_SLES_GKB_GMRES
+ * Associated keyword: "gkb_gmres"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a Golub-Kahan
+ * bi-diagonalization (GKB) as preconditionner of a flexible GMRES solver. The
+ * GKB algorithm is solved with a reduced tolerance as well as the CG+Multigrid
+ * used as an inner solver in the GKB algorithm. One assumes that the
+ * saddle-point system is symmetric. The residual for the GKB part is computed
+ * in the energy norm. This option is only available with the support to the
+ * PETSc library up to now.
  */
 
 typedef enum {
@@ -124,6 +179,8 @@ typedef enum {
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
+  CS_NAVSTO_SLES_GKB_GMRES,
+  CS_NAVSTO_SLES_GKB,
 
   CS_NAVSTO_SLES_N_TYPES
 

@@ -88,24 +88,24 @@ static int  cs_cdo_local_n_structures = 0;
 
 /* Store predefined flags */
 static const cs_flag_t  cs_cdo_local_flag_v =
-  CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FV;
+  CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FV;
 static const cs_flag_t  cs_cdo_local_flag_e =
-  CS_CDO_LOCAL_PE | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
-  CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF  | CS_CDO_LOCAL_EFQ;
+  CS_FLAG_COMP_PE | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV |
+  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_EFQ;
 static const cs_flag_t  cs_cdo_local_flag_peq =
-  CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ;
+  CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ;
 static const cs_flag_t  cs_cdo_local_flag_f =
-  CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FE |
-  CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_HFQ |
-  CS_CDO_LOCAL_FV;
+  CS_FLAG_COMP_PF  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FE  |
+  CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_EFQ | CS_FLAG_COMP_HFQ |
+  CS_FLAG_COMP_FV;
 static const cs_flag_t  cs_cdo_local_flag_pfq =
-  CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ;
+  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ;
 static const cs_flag_t  cs_cdo_local_flag_deq =
-  CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_DEQ;
+  CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ;
 static const cs_flag_t  cs_cdo_local_flag_fe =
-  CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
+  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF | CS_FLAG_COMP_EFQ;
 static const cs_flag_t  cs_cdo_local_flag_ef =
-  CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
+  CS_FLAG_COMP_EF | CS_FLAG_COMP_EFQ;
 
 /* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t */
 static double     **cs_cdo_local_dbuf = NULL;
@@ -270,7 +270,6 @@ cs_cell_sys_create(int      n_max_dofbyc,
     BFT_MALLOC(csys->intern_forced_ids, n_max_dofbyc, cs_lnum_t);
 
   /* Boundary conditions */
-  csys->face_shift = -1;
   csys->n_bc_faces = 0;
   csys->_f_ids = NULL;
   csys->bf_ids = NULL;
@@ -926,6 +925,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
 
   cm->n_fc = c2f_idx[1] - c2f_idx[0];
+  cm->bface_shift = quant->n_i_faces;
 
   if (build_flag == 0)
     return;
@@ -946,7 +946,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     }
 
     /* Primal vertices quantities */
-    if (build_flag & CS_CDO_LOCAL_PVQ) {
+    if (build_flag & CS_FLAG_COMP_PVQ) {
 
       const double  *wvc = quant->dcell_vol + c2v_idx[0];
       const double  invvol = 1/cm->vol_c;
@@ -970,7 +970,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     if (build_flag & cs_cdo_local_flag_peq) {
 
-      assert(build_flag & CS_CDO_LOCAL_PV);
+      assert(build_flag & CS_FLAG_COMP_PV);
 
       /* Primal edge quantities */
       for (short int e = 0; e < cm->n_ec; e++) {
@@ -993,7 +993,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     } /* Primal edge quantities */
 
     /* Dual face quantities related to each edge */
-    if (build_flag & CS_CDO_LOCAL_DFQ) {
+    if (build_flag & CS_FLAG_COMP_DFQ) {
 
       for (short int e = 0; e < cm->n_ec; e++) {
 
@@ -1061,7 +1061,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     } /* Dual edge quantities */
 
-    if (build_flag & CS_CDO_LOCAL_HFQ) {
+    if (build_flag & CS_FLAG_COMP_HFQ) {
 
       /* Compute the height of the pyramid of base f whose apex is
          the cell center */
@@ -1084,8 +1084,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* Face information */
 
-  if (build_flag & CS_CDO_LOCAL_EV ||
-      build_flag & CS_CDO_LOCAL_FV) {
+  if (build_flag & CS_FLAG_COMP_EV ||
+      build_flag & CS_FLAG_COMP_FV) {
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
@@ -1104,7 +1104,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     for (short int v = 0; v < cm->n_vc; v++)
       kbuf[cm->v_ids[v]-v_shift] = v;
 
-    if (build_flag & CS_CDO_LOCAL_EV) {
+    if (build_flag & CS_FLAG_COMP_EV) {
       for (short int e = 0; e < cm->n_ec; e++) {
 
         const cs_lnum_t  e_id = cm->e_ids[e];
@@ -1118,7 +1118,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       } /* Loop on cell edges */
     } /* edge-vertices information */
 
-    if (build_flag & CS_CDO_LOCAL_FV) {
+    if (build_flag & CS_FLAG_COMP_FV) {
 
       const cs_adjacency_t  *if2v = connect->if2v;
       const cs_adjacency_t  *bf2v = connect->bf2v;
@@ -1127,7 +1127,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       cm->f2v_idx[0] = 0;
       for (short int f = 0; f < cm->n_fc; f++) {
 
-        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+        const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
         int  n_vf = 0;
         if (bf_id > -1) /* Boundary face */
@@ -1144,7 +1144,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       /* Fill the list of vertices */
       for (short int f = 0; f < cm->n_fc; f++) {
 
-        const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+        const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
         short int  *_ids = cm->f2v_ids + cm->f2v_idx[f];
 
@@ -1212,7 +1212,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     /* Sanity check */
     assert(cm->f2e_idx[cm->n_fc] == 2*cm->n_ec);
 
-    if (build_flag & CS_CDO_LOCAL_FEQ) {
+    if (build_flag & CS_FLAG_COMP_FEQ) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
         for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++)
@@ -1243,7 +1243,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       } /* Loop on face edges */
     } /* Loop on cell faces */
 
-    if (build_flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
+    if (build_flag & CS_FLAG_COMP_EFQ) { /* Build cm->sefc */
 
       cs_nvec3_t  nv;
       const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
@@ -1272,9 +1272,9 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* edge-->faces */
 
-  if (build_flag & CS_CDO_LOCAL_DIAM) {
+  if (build_flag & CS_FLAG_COMP_DIAM) {
 
-    assert(cs_flag_test(build_flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+    assert(cs_flag_test(build_flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
@@ -1588,8 +1588,8 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
   /* Sanity checks */
   assert(f > -1 && f < cm->n_fc);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   fm->c_id = cm->c_id;
   for (int k = 0; k < 3; k++) fm->xc[k] = cm->xc[k];
@@ -1789,7 +1789,7 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
   /* Sanity checks */
   assert(f > -1 && f < cm->n_fc);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   fm->c_id = cm->c_id;
   fm->f = f;

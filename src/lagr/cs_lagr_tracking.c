@@ -2353,6 +2353,12 @@ _exchange_counter(const cs_halo_t  *halo,
  *  particles <-- set of particles to update
  *----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER)
+#if __INTEL_COMPILER < 1800
+#pragma optimization_level 1 /* Bug with O2 or above with icc 17.0.0 20160721 */
+#endif
+#endif
+
 static void
 _exchange_particles(const cs_halo_t         *halo,
                     cs_lagr_halo_t          *lag_halo,
@@ -2574,6 +2580,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   cs_lnum_t  n_failed_particles = 0;
 
   cs_real_t  exit_weight = 0.0;
+  cs_real_t  merged_weight = 0.0;
   cs_real_t  fail_weight = 0.0;
   cs_real_t  tot_weight = 0.0;
 
@@ -2760,6 +2767,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
     else if (cur_part_state == CS_LAGR_PART_MERGED) {
       n_merged_particles++;
+      merged_weight += cur_part_stat_weight;
     }
 
     else if (cur_part_state < CS_LAGR_PART_OUT) {
@@ -2799,6 +2807,7 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   particles->weight_failed += fail_weight;
 
   particles->n_part_merged += n_merged_particles;
+  particles->weight_merged += merged_weight;
 
   /* Exchange particles, then update set */
 
@@ -2820,8 +2829,6 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 static void
 _initialize_displacement(cs_lagr_particle_set_t  *particles)
 {
-  cs_lnum_t  i;
-
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
   const cs_lagr_attribute_map_t  *am = particles->p_am;
@@ -2852,7 +2859,7 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles)
 
   /* Prepare tracking info */
 
-  for (i = 0; i < particles->n_particles; i++) {
+  for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
 
     cs_lnum_t cur_part_cell_id
       = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_ID);

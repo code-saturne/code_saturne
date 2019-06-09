@@ -612,6 +612,114 @@ _compute_aniso_hodge_ul(const int               n_ent,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the discrete Hodge operator (the upper left part) from
+ *          primal edges to dual faces with the algorithm called:
+ *          Orthogonal Consistent/Sub-Stabilization decomposition (OCS2) with a
+ *          subdivision of pvol_{e,c}
+ *          Case of anisotropic material property.
+ *
+ * \param[in]      dbeta2   space dim * squared value of the stabilization coef.
+ * \param[in]      pty      values of the tensor related to the material pty
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb       temporary buffers
+ * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_aniso_hepfd_ocs2_ul(const double            dbeta2,
+                             const cs_cell_mesh_t   *cm,
+                             cs_cell_builder_t      *cb,
+                             cs_sdm_t               *hloc)
+{
+  const cs_real_3_t  *pty = (const cs_real_3_t *)cb->dpty_mat;
+  const double  ovc = 1./cm->vol_c;
+  const int  n_ent = cm->n_ec;
+
+  /* Store the consistent part of the reconstruction of the basis element */
+  cs_real_3_t  *consist = cb->vectors;
+  for (int i = 0; i < n_ent; i++) {
+    const  double  fd_coef = ovc * cm->dface[i].meas;
+    for (int k = 0; k < 3; k++)
+      consist[i][k] = fd_coef * cm->dface[i].unitv[k];
+  }
+
+  /* Initialize the upper left part of the discrete Hodge op and store useful
+     quantities */
+
+  /* Consistency part */
+  for (int i = 0; i < n_ent; i++) {
+
+    double  pty_fd_i[3] = {0, 0, 0};
+    for (int k = 0; k < 3; k++) {
+      pty_fd_i[0] += pty[0][k] * cm->dface[i].unitv[k];
+      pty_fd_i[1] += pty[1][k] * cm->dface[i].unitv[k];
+      pty_fd_i[2] += pty[2][k] * cm->dface[i].unitv[k];
+    }
+    for (int k = 0; k < 3; k++)
+      pty_fd_i[k] *= cm->dface[i].meas;
+
+    double  *h_i = hloc->val + i*n_ent;
+    for (int j = i; j < n_ent; j++)
+      h_i[j] = _dp3(consist[j], pty_fd_i);
+
+  }
+
+  /* Stabilization part */
+  cs_sdm_square_init(n_ent, cb->aux);
+
+  for (int k = 0; k < n_ent; k++) {
+
+    const cs_real_t  ep_k[3] = { cm->edge[k].meas * cm->edge[k].unitv[0],
+                                 cm->edge[k].meas * cm->edge[k].unitv[1],
+                                 cm->edge[k].meas * cm->edge[k].unitv[2] };
+    const cs_real_3_t  nkf0 = { cm->sefc[2*k].unitv[0],
+                                cm->sefc[2*k].unitv[1],
+                                cm->sefc[2*k].unitv[2] };
+    const cs_real_3_t  nkf1 = { cm->sefc[2*k+1].unitv[0],
+                                cm->sefc[2*k+1].unitv[1],
+                                cm->sefc[2*k+1].unitv[2] };
+
+    cs_real_3_t  pty_fdk0 = {0, 0, 0}, pty_fdk1 = {0, 0, 0};
+    for (int kk = 0; kk < 3; kk++) {
+      pty_fdk0[0] += pty[0][kk] * nkf0[kk];
+      pty_fdk0[1] += pty[1][kk] * nkf0[kk];
+      pty_fdk0[2] += pty[2][kk] * nkf0[kk];
+      //
+      pty_fdk1[0] += pty[0][kk] * nkf1[kk];
+      pty_fdk1[1] += pty[1][kk] * nkf1[kk];
+      pty_fdk1[2] += pty[2][kk] * nkf1[kk];
+    }
+
+    double  contrib_pek = 0;
+    contrib_pek  = cm->sefc[2*k  ].meas*_dp3(nkf0, pty_fdk0)/_dp3(ep_k, nkf0);
+    contrib_pek += cm->sefc[2*k+1].meas*_dp3(nkf1, pty_fdk1)/_dp3(ep_k, nkf1);
+    contrib_pek *= dbeta2;
+
+    for (int i = 0; i < n_ent; i++) {
+
+      double  contrib_i = -_dp3(consist[i], ep_k);
+      if (i == k) contrib_i += 1;
+      const double  contrib_ik = contrib_pek * contrib_i;
+
+      double  *h_i = hloc->val + i*n_ent;
+      h_i[i] += contrib_ik * contrib_i;
+
+      for (int j = i+1; j < n_ent; j++) {
+        if (j != k)
+          h_i[j] += - _dp3(consist[j], ep_k) * contrib_ik;
+        else
+          h_i[j] += (1 -_dp3(consist[j], ep_k)) * contrib_ik;
+      }
+
+    } /* i */
+
+  } /* Loop on sub-volume k */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local discrete Hodge operator using the generic COST algo.
  *          and a cellwise view of the mesh. Specific for EpFd Hodge operator.
  *          COST means COnsistency + STabilization
@@ -693,7 +801,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
 {
   /* Sanity checks */
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+                      CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
@@ -758,7 +866,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+                      CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Compute the local discrete Hodge operator */
   cs_hodge_edfp_voro_get(h_info, cm, cb);
@@ -819,8 +927,8 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
+                      CS_FLAG_COMP_EV));
 
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
@@ -994,8 +1102,8 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
+                      CS_FLAG_COMP_EV));
 
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
@@ -1151,6 +1259,164 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build a local stiffness matrix using the Orthogonal
+ *          Consistent/Sub-Stabilization decomposition (OCS2) with a
+ *          subdivision of pvol_{e,c}.
+ *          Case of anisotropic material property
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_param_hodge_t    h_info,
+                                     const cs_cell_mesh_t     *cm,
+                                     cs_cell_builder_t        *cb)
+{
+  /* Sanity checks */
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_OCS2);
+  assert(cs_flag_test(cm->flag,
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
+                      CS_FLAG_COMP_EV | CS_FLAG_COMP_EFQ));
+
+  /* Initialize the local stiffness matrix */
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_vc, sloc);
+
+  /* Initialize the hodge matrix */
+  cs_sdm_t  *hloc = cb->hdg;
+  cs_sdm_square_init(cm->n_ec, hloc);
+
+  /* Compute the upper left part of the local Hodge matrix
+   *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
+   *  or DUAL->PRIMAL space */
+  _compute_aniso_hepfd_ocs2_ul(3*h_info.coef*h_info.coef, cm, cb, hloc);
+
+  for (int ei = 0; ei < cm->n_ec; ei++) { /* Loop on cell edges I */
+
+    const short int  *v_sgn = cm->e2v_sgn + ei;
+    const short int  *v_ids = cm->e2v_ids + 2*ei;
+    const short int  i1 = v_ids[0], i2 = v_ids[1];
+    assert(i1 < i2);
+
+    double  *si1 = sloc->val + i1*sloc->n_rows;
+    double  *si2 = sloc->val + i2*sloc->n_rows;
+
+    /* Diagonal value: consistency part has already been computed */
+    const double  *hii = hloc->val + ei*(1 + cm->n_ec);
+    const double  dval = hii[0];
+
+    si1[i1] += dval;
+    si1[i2] -= dval;
+    si2[i2] += dval;
+
+    /* Compute extra-diag entries */
+    for (int _j = 1; _j < cm->n_ec-ei; _j++) { /* Loop on cell entities J */
+
+      const short int  j1 = v_ids[2*_j], j2 = v_ids[2*_j+1];
+      assert(j1 < j2);
+
+      double  *sj1 = sloc->val + j1*sloc->n_rows;
+      double  *sj2 = sloc->val + j2*sloc->n_rows;
+
+      /* Add contribution from the stabilization part for each sub-volume
+         related to a primal entity */
+      const double xval = hii[_j] * v_sgn[0]*v_sgn[_j];
+
+      if (i2 < j1) {            /* i1 < i2 < j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= xval;
+        si2[j2] += xval;
+      }
+      else if (i2 == j1) {      /* i1 < i2 = j1 < j2 */
+        si1[j1] += xval;
+        si1[j2] -= xval;
+        si2[j1] -= 2*xval;
+        si2[j2] += xval;
+      }
+      else if (i2 < j2) {
+
+        assert(i2 > j1);
+        if (i1 < j1)            /* i1 < j1 < i2 < j2 */
+          si1[j1] += xval;
+        else if (i1 == j1)      /* i1 = j1 < i2 < j2 */
+          si1[j1] += 2*xval;
+        else                    /* j1 < i1 < i2 < j2 */
+          sj1[i1] += xval;
+
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += xval;
+
+      }
+      else if (i2 == j2) {
+
+        if (i1 < j1)            /* i1 < j1 < i2 = j2 */
+          si1[j1] += xval;
+        else                    /* j1 < i1 < i2 = j2 */
+          sj1[i1] += xval;
+
+        /* Remark: the case i1 == j1 is not possible since ei != ej */
+        si1[j2] -= xval;
+        sj1[i2] -= xval;
+        si2[j2] += 2*xval;
+
+      }
+      else {                    /* i2 > j2 */
+
+        if (i1 < j1) {          /* i1 < j1 < j2 < i2 */
+          si1[j1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j1) {    /* i1 = j1 < j2 < i2 */
+          si1[j1] += 2*xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 < j2) {     /* j1 < i1 < j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= xval;
+        }
+        else if (i1 == j2) {    /* j1 < i1 = j2 < i2 */
+          sj1[i1] += xval;
+          si1[j2] -= 2*xval;
+        }
+        else {                  /* j1 < j2 < i1 < i2 */
+          sj1[i1] += xval;
+          sj2[i1] -= xval;
+        }
+
+        assert(i2 > j2);
+        sj1[i2] -= xval;
+        sj2[i2] += xval;
+
+      } /* End of tests */
+
+    } /* End of loop on J entities */
+
+  } /* End of loop on I entities */
+
+  /* Stiffness matrix is symmetric by construction */
+  for (int ei = 0; ei < sloc->n_rows; ei++) {
+    double *si = sloc->val + ei*sloc->n_rows;
+    for (int ej = 0; ej < ei; ej++)
+      si[ej] = sloc->val[ej*sloc->n_rows + ei];
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
+    _check_stiffness(sloc);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local stiffness matrix using the generic COST algo.
  *          Case of CDO vertex-based schemes
  *
@@ -1169,8 +1435,8 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
+                      CS_FLAG_COMP_EV));
 
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_ec;
@@ -1389,8 +1655,8 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
+                      CS_FLAG_COMP_EV));
 
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
@@ -1481,8 +1747,8 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
-                      CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ));
+                      CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
+                      CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ));
 
   cs_real_3_t  grd_c, grd_f, grd_v1, grd_v2, matg;
 
@@ -1613,8 +1879,8 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
 {
   /* Sanity checks */
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
-                      CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
+                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
 
   cs_real_3_t  grd_c, grd_f, grd_v1, grd_v2, matg, matg_c;
 
@@ -1763,7 +2029,7 @@ cs_hodge_fb_get_mass(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_FB);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
   const int n_cols = cm->n_fc + 1;
   const cs_real_t  over_cell = 1./(cm->vol_c*cm->vol_c);
@@ -1836,8 +2102,8 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VC);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
-                      CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
+                      CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
+                      CS_FLAG_COMP_EV  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
 
   cs_sdm_t  *hdg = cb->hdg;
 
@@ -1952,8 +2218,8 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PVQ |CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
-                      CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
+                      CS_FLAG_COMP_PVQ |CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
+                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
 
   double  *wvf = cb->values;
   double  *pefc_vol = cb->values + cm->n_vc;
@@ -2061,7 +2327,7 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   cs_sdm_t  *hdg = cb->hdg;
   cs_sdm_square_init(cm->n_vc, hdg);
@@ -2111,7 +2377,7 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -2171,7 +2437,7 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -2233,6 +2499,55 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build a local Hodge operator for a given cell using the Orthogonal
+ *          Consistent/Sub-Stabilization decomposition (OCS2) with a
+ *          subdivision of pvol_{e,c}.
+ *          Hodge op. from primal edges to dual faces.
+ *          This function is specific for vertex-based schemes
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_epfd_ocs2_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb)
+{
+  /* Sanity check */
+  assert(cb != NULL && cb->hdg != NULL);
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_OCS2);
+  assert(cs_flag_test(cm->flag,
+                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
+                      CS_FLAG_COMP_EV | CS_FLAG_COMP_EFQ));
+
+  /* Initialize the local matrix related to this discrete Hodge operator */
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_ec, hdg);
+
+  /* Compute the upper left part of the local Hodge matrix */
+  _compute_aniso_hepfd_ocs2_ul(3*h_info.coef*h_info.coef, cm, cb, hdg);
+
+  /* Hodge operator leads to a symmetric matrix by construction */
+  for (int ei = 0; ei < hdg->n_rows; ei++) {
+    double *hi = hdg->val + ei*hdg->n_rows;
+    for (int ej = 0; ej < ei; ej++)
+      hi[ej] = hdg->val[ej*hdg->n_rows + ei];
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
  *          Hodge op. from primal faces to dual edges.
  *          This function is related to cell-based schemes
@@ -2252,7 +2567,7 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_FPED);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -2306,7 +2621,7 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_FPED);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -2387,7 +2702,7 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -2441,7 +2756,7 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -2522,7 +2837,7 @@ cs_hodge_edfp_cost_get_opt(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   const int  n_fc = cm->n_fc;
   cs_real_3_t  *pq = cb->vectors;
@@ -2631,7 +2946,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     case CS_PARAM_HODGE_TYPE_VPCD:
 
-      msh_flag |= CS_CDO_LOCAL_PVQ;
+      msh_flag |= CS_FLAG_COMP_PVQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
       BFT_MALLOC(_in, connect->n_max_vbyc, double);
 
@@ -2641,12 +2956,12 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       switch (h_info.algo) {
       case CS_PARAM_HODGE_ALGO_COST:
       case CS_PARAM_HODGE_ALGO_VORONOI:
-        msh_flag |= CS_CDO_LOCAL_PVQ;
+        msh_flag |= CS_FLAG_COMP_PVQ;
         compute = cs_hodge_vpcd_voro_get;
         break;
       case CS_PARAM_HODGE_ALGO_WBS:
-        msh_flag |= CS_CDO_LOCAL_PVQ |CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
-          CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        msh_flag |= CS_FLAG_COMP_PVQ |CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
+          CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         compute = cs_hodge_vpcd_wbs_get;
         break;
       default:
@@ -2657,7 +2972,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     case CS_PARAM_HODGE_TYPE_EPFD:
 
-      msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+      msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
       BFT_MALLOC(_in, connect->n_max_ebyc, double);
 
@@ -2669,7 +2984,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         compute = cs_hodge_epfd_cost_get;
         break;
       case CS_PARAM_HODGE_ALGO_VORONOI:
-        msh_flag |= CS_CDO_LOCAL_EFQ;
+        msh_flag |= CS_FLAG_COMP_EFQ;
         compute = cs_hodge_epfd_voro_get;
         break;
       default:
@@ -2680,7 +2995,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     case CS_PARAM_HODGE_TYPE_EDFP:
 
-      msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ;
+      msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
       BFT_MALLOC(_in, connect->n_max_fbyc, double);
 
@@ -2702,7 +3017,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     case CS_PARAM_HODGE_TYPE_FPED:
 
-      msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ;
+      msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
       BFT_MALLOC(_in, connect->n_max_fbyc, double);
 
@@ -2724,8 +3039,8 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     case CS_PARAM_HODGE_TYPE_VC:
 
-      msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
-         CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ;
+      msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
+         CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVCB, connect);
       BFT_MALLOC(_in, connect->n_max_vbyc + 1, double);
 

@@ -508,8 +508,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
     if (st_def->meta & CS_FLAG_PRIMAL) {
       if (space_scheme == CS_SPACE_SCHEME_CDOVB ||
           space_scheme == CS_SPACE_SCHEME_CDOVCB) {
-        msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
-          CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
+          CS_FLAG_COMP_EV  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         *sys_flag |= CS_FLAG_SYS_MASS_MATRIX | CS_FLAG_SYS_SOURCES_HLOC;
       }
     }
@@ -522,13 +522,13 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
     case CS_SPACE_SCHEME_CDOVB:
 
-      msh_flag |= CS_CDO_LOCAL_PV;
+      msh_flag |= CS_FLAG_COMP_PV;
       if (st_def->meta & CS_FLAG_DUAL) {
 
         switch (st_def->type) {
 
         case CS_XDEF_BY_VALUE:
-          msh_flag |= CS_CDO_LOCAL_PVQ;
+          msh_flag |= CS_FLAG_COMP_PVQ;
           if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
             compute_source[st_id] = cs_source_term_dcvd_by_value;
           else
@@ -540,27 +540,27 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           switch (st_def->qtype) {
 
           case CS_QUADRATURE_BARY:
-            msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_PFQ |
-              CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ;
+            msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ |
+              CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ;
             compute_source[st_id] = cs_source_term_dcsd_bary_by_analytic;
             break;
 
           case CS_QUADRATURE_BARY_SUBDIV:
-            msh_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
-              CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+            msh_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
+              CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
             compute_source[st_id] = cs_source_term_dcsd_q1o1_by_analytic;
             break;
 
           case CS_QUADRATURE_HIGHER:
-            msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |
-              CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_PVQ |
-              CS_CDO_LOCAL_PEQ;
+            msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |
+              CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_PVQ |
+              CS_FLAG_COMP_PEQ;
             compute_source[st_id] = cs_source_term_dcsd_q10o2_by_analytic;
             break;
 
           case CS_QUADRATURE_HIGHEST:
-            msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-              CS_CDO_LOCAL_EV;
+            msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+              CS_FLAG_COMP_EV;
             compute_source[st_id] = cs_source_term_dcsd_q5o3_by_analytic;
             break;
 
@@ -572,7 +572,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           break;
 
         case CS_XDEF_BY_ARRAY:
-          msh_flag |= CS_CDO_LOCAL_PVQ;
+          msh_flag |= CS_FLAG_COMP_PVQ;
           compute_source[st_id] = cs_source_term_dcsd_by_array;
           break;
 
@@ -590,12 +590,12 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         switch (st_def->type) {
 
         case CS_XDEF_BY_VALUE:
-          msh_flag |= CS_CDO_LOCAL_PV;
+          msh_flag |= CS_FLAG_COMP_PV;
           compute_source[st_id] = cs_source_term_pvsp_by_value;
           break;
 
         case CS_XDEF_BY_ANALYTIC_FUNCTION:
-          msh_flag |= CS_CDO_LOCAL_PV;
+          msh_flag |= CS_FLAG_COMP_PV;
           compute_source[st_id] = cs_source_term_pvsp_by_analytic;
           break;
 
@@ -634,12 +634,12 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         switch (st_def->type) {
 
         case CS_XDEF_BY_VALUE:
-          msh_flag |= CS_CDO_LOCAL_PV;
+          msh_flag |= CS_FLAG_COMP_PV;
           compute_source[st_id] = cs_source_term_vcsp_by_value;
           break;
 
         case CS_XDEF_BY_ANALYTIC_FUNCTION:
-          msh_flag |= CS_CDO_LOCAL_PV;
+          msh_flag |= CS_FLAG_COMP_PV;
           compute_source[st_id] = cs_source_term_vcsp_by_analytic;
           break;
 
@@ -665,7 +665,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        msh_flag |= CS_CDO_LOCAL_PV;
+        msh_flag |= CS_FLAG_COMP_PV;
         if ((*sys_flag) & CS_FLAG_SYS_VECTOR) {
 
           /* Switch only to allow more precise quadratures */
@@ -676,9 +676,9 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
             /* TODO: Are all these flags really necessary? Check in the */
             /* integration */
-            msh_flag |= CS_CDO_LOCAL_EV  |CS_CDO_LOCAL_EF |CS_CDO_LOCAL_PFQ |
-                        CS_CDO_LOCAL_FEQ |CS_CDO_LOCAL_HFQ|CS_CDO_LOCAL_PEQ |
-                        CS_CDO_LOCAL_FE;
+            msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF |CS_FLAG_COMP_PFQ |
+                        CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ|CS_FLAG_COMP_PEQ |
+                        CS_FLAG_COMP_FE;
             compute_source[st_id] = cs_source_term_pcvd_by_analytic;
 
           }
@@ -693,9 +693,9 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
             /* TODO: Are all these flags really necessary? Check in the */
             /* integration */
-            msh_flag |= CS_CDO_LOCAL_EV  |CS_CDO_LOCAL_EF |CS_CDO_LOCAL_PFQ |
-                        CS_CDO_LOCAL_FEQ |CS_CDO_LOCAL_HFQ|CS_CDO_LOCAL_PEQ |
-                        CS_CDO_LOCAL_FE;
+            msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF |CS_FLAG_COMP_PFQ |
+                        CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ|CS_FLAG_COMP_PEQ |
+                        CS_FLAG_COMP_FE;
             compute_source[st_id] = cs_source_term_pcsd_by_analytic;
 
           }
@@ -1003,7 +1003,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV));
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  pot_value = s_input[0];
@@ -1055,7 +1055,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1106,7 +1106,7 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  density_value = s_input[0];
@@ -1147,7 +1147,7 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   const cs_real_t *st_vect = (const cs_real_t *)source->input;
 
@@ -1188,7 +1188,7 @@ cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PVQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   const cs_xdef_array_input_t  *ai =
     (const cs_xdef_array_input_t *)source->input;
@@ -1232,8 +1232,8 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
-                      CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
+                      CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1325,8 +1325,8 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1405,9 +1405,9 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE  |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_PVQ |
-                      CS_CDO_LOCAL_PEQ));
+                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE  |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
+                      CS_FLAG_COMP_PEQ));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1609,8 +1609,8 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1941,8 +1941,8 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   assert(source->dim == 1);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
@@ -2161,8 +2161,8 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
   assert(source->dim == 3);
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
@@ -2469,8 +2469,8 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL && input != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
@@ -2590,8 +2590,8 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL && input != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;

@@ -129,8 +129,8 @@ do iel = 1, ncel
 
   endif
 
-  mom_bulk(1) = mom_bulk(1) + crom(iel)*volume(iel)*xuent/tot_vol
-  mom_bulk(2) = mom_bulk(2) + crom(iel)*volume(iel)*xvent/tot_vol
+  mom_bulk(1) = mom_bulk(1) + crom(iel)*cell_f_vol(iel)*xuent/tot_vol
+  mom_bulk(2) = mom_bulk(2) + crom(iel)*cell_f_vol(iel)*xvent/tot_vol
 
 enddo
 
@@ -147,9 +147,9 @@ norm_bulk = sqrt(mom_bulk(1)**2 + mom_bulk(2)**2 + mom_bulk(3)**2)
 mom = 0.d0
 
 do iel = 1, ncel
-  mom(1) = mom(1) + crom(iel)*volume(iel)*vel(1,iel)/tot_vol
-  mom(2) = mom(2) + crom(iel)*volume(iel)*vel(2,iel)/tot_vol
-  mom(3) = mom(3) + crom(iel)*volume(iel)*vel(3,iel)/tot_vol
+  mom(1) = mom(1) + crom(iel)*cell_f_vol(iel)*vel(1,iel)/tot_vol
+  mom(2) = mom(2) + crom(iel)*cell_f_vol(iel)*vel(2,iel)/tot_vol
+  mom(3) = mom(3) + crom(iel)*cell_f_vol(iel)*vel(3,iel)/tot_vol
 enddo
 
 if (irangp.ge.0) then
@@ -200,12 +200,12 @@ dir_var(2) = norm_bulk*(dir(2)-dir_a(2))/dtref
 dir_var(3) = 0.d0
 
 do iel = 1, ncel
-  crvexp(1,iel) = -(dp*dir_qdm(1)-dir_var(1))*volume(iel)
-  crvexp(2,iel) = -(dp*dir_qdm(2)-dir_var(2))*volume(iel)
-  crvexp(3,iel) = -(dp*dir_qdm(3)-dir_var(3))*volume(iel)
   cpro_momst(1,iel) = -(dp*dir_qdm(1)-dir_var(1))
   cpro_momst(2,iel) = -(dp*dir_qdm(2)-dir_var(2))
   cpro_momst(3,iel) = -(dp*dir_qdm(3)-dir_var(3))
+  crvexp(1,iel) = cpro_momst(1,iel) * cell_f_vol(iel)
+  crvexp(2,iel) = cpro_momst(2,iel) * cell_f_vol(iel)
+  crvexp(3,iel) = cpro_momst(3,iel) * cell_f_vol(iel)
 enddo
 
 mom_a = mom

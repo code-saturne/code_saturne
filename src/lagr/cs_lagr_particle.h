@@ -211,8 +211,8 @@ typedef struct {
 
   cs_lnum_t  n_particles;                     /* number of particle in domain */
   cs_lnum_t  n_part_new;
-  cs_lnum_t  n_part_merged;                   /* number of merged particles */
   cs_lnum_t  n_part_out;
+  cs_lnum_t  n_part_merged;                   /* number of merged particles */
   cs_lnum_t  n_part_dep;
   cs_lnum_t  n_part_fou;
   cs_lnum_t  n_part_resusp;
@@ -221,6 +221,7 @@ typedef struct {
   cs_real_t  weight;
   cs_real_t  weight_new;
   cs_real_t  weight_out;
+  cs_real_t  weight_merged;
   cs_real_t  weight_dep;
   cs_real_t  weight_fou;
   cs_real_t  weight_resusp;

@@ -898,8 +898,8 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
   assert(hhob->cell_basis != NULL && hhob->grad_basis != NULL &&
          hhob->face_basis != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   const int  gs = hhob->grad_basis->size - 1;
   cs_sdm_t  *stiffness = cb->hdg, *rhs_t = cb->aux;
@@ -1134,8 +1134,8 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
   assert(hhob->cell_basis != NULL && hhob->grad_basis != NULL &&
          hhob->face_basis != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   const cs_basis_func_t  *cbf = hhob->cell_basis;
   const int  cs = cbf->size;
@@ -1450,8 +1450,8 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
   assert(hhob->cell_basis != NULL && hhob->face_basis != NULL);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
 
@@ -1623,8 +1623,8 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
               __func__);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
 
@@ -1833,8 +1833,8 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
   assert(fbf != NULL);
   assert(fbf->facto != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   memset(res, 0, fbf->size*sizeof(cs_real_t));
   memset(rhs, 0, fbf->size*sizeof(cs_real_t));
@@ -1960,8 +1960,8 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
   assert(fbf != NULL);
   assert(fbf->facto != NULL);
   assert(cs_flag_test(cm->flag,
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
+                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   /* In vector case we multiply by 3*/
   memset(res, 0, 3*fbf->size*sizeof(cs_real_t));

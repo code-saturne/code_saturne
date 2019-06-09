@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-05-02 04:23+0200\n"
+"POT-Creation-Date: 2019-06-03 11:26+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4953,6 +4953,10 @@ msgstr ""
 msgid " _cs_real_scatter_norms_nd_filtered not implemented yet\n"
 msgstr ""
 
+#, c-format
+msgid "Warning: signal %s received during program exit.\n"
+msgstr ""
+
 msgid ""
 "\n"
 "\n"
@@ -6956,7 +6960,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "      %-19s  %-4d\n"
+msgid "      %-19s  %d\n"
 msgstr ""
 
 #, c-format
@@ -7457,6 +7461,12 @@ msgstr ""
 "dynamique peut être dégradé, puisqu'il utilise le même voisinage réduit.\n"
 "Utilisez le voisinage étendu complet ou définissez directement le calcul de "
 "la moyenne de la constante de Smagorinsky dynamique via la subroutine ussmag."
+
+msgid ""
+"while reading porous model,\n"
+"integral formulation (cs_glob_porous_model=3) only compatible \n"
+"with gradient calculation method: iterative handling of non-orthogonalities"
+msgstr ""
 
 msgid ""
 "while reading time scheme parameters,\n"
@@ -10036,7 +10046,7 @@ msgstr ""
 #, c-format
 msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-" Choice between hho_{p0, p1, p2} or cdo_fb"
+" Choice between \"no_block\", \"block_amg_cg\"..."
 msgstr ""
 
 #, c-format
@@ -10155,7 +10165,10 @@ msgstr ""
 msgid "Whitney on the Barycentric Subdivision (WBS)"
 msgstr ""
 
-msgid "COnsistency-STabilization splitting (COST)"
+msgid "Orthogonal Consistency/Stabilization (OCS)"
+msgstr ""
+
+msgid "Orthogonal Consistency/Sub-Stabilization (OCS2)"
 msgstr ""
 
 msgid "Automatic switch"
@@ -11615,29 +11628,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Error: can not interpret expression: %s\n"
-" %i"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not find the required symbol: %s\n"
-" %s\n"
-msgstr ""
-
-#, c-format
-msgid "Error: can not find the required symbol: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not find the required symbol: %s\n"
-" %s\n"
-" %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "soil_tracer_law, WARNING:\n"
 "  saturation is outside [0, 1] in %llu cells.\n"
 msgstr ""
@@ -11652,6 +11642,16 @@ msgstr ""
 msgid ""
 "soil_tracer_law, WARNING:\n"
 "  isotropic permeability is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not interpret expression: %s\n"
+" %i"
+msgstr ""
+
+#, c-format
+msgid "Error: can not find the required symbol: %s\n"
 msgstr ""
 
 #, c-format
@@ -12651,6 +12651,68 @@ msgid ""
 "  cs_glob_lagr_time_scheme->iilagr = %d\n"
 "The return coupling must be activated for this model:\n"
 "  cs_glob_lagr_time_scheme->iilagr = CS_LAGR_TWOWAY_COUPLING\n"
+msgstr ""
+
+msgid ""
+"The two-way coupling model is incompatible with a\n"
+"local or variable time step.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The resolution of the particles temperature is activated\n"
+"(cs_glob_lagr_specific_physics->itpvar == %d)\n"
+"but the background Eulerian computation has no thermal scalar."
+msgstr ""
+
+msgid ""
+"The transport of coal particles is not implemented with the\n"
+"second order scheme (cs_glob_lagr_time_scheme->torder == 2)."
+msgstr ""
+
+msgid ""
+"The transport of coal particles is not implemented with the\n"
+"thermal return coupling (cs_glob_lagr_source_terms->ltsthe == 1)."
+msgstr ""
+
+#, c-format
+msgid ""
+"The turbulent dispersion model is not implemented for the selected\n"
+"turbulence model (%d).\n"
+"\n"
+"Only k-epsilon, Rij-epsilon, v2f, and k-omega are supported."
+msgstr ""
+
+#, c-format
+msgid ""
+"The Lagrangian module is not implemented for the selected\n"
+"turbulence model (%d).\n"
+"\n"
+"Only laminar, k-epsilon, Rij-epsilon, v2f, and k-omega are supported."
+msgstr ""
+
+#, c-format
+msgid ""
+"The turbulent dispersion option is incompatible with that of\n"
+"statistics.\n"
+"\n"
+"Statisitics must be actve fo this model, so we must have\n"
+"lagr_time_scheme->modcpl >= cs_glob_lagr_stat_options->idstnt\n"
+"while their current values are %d < %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"The return coupling is not implemented fo the current turbulence model "
+"(%d).\n"
+"It is compatible with k-epsilon, Rij-epsilon,\n"
+"v2f, and k-omega."
+msgstr ""
+
+#, c-format
+msgid ""
+"The deposition model (Guingo & Minier, 2008) is not implemented\n"
+"with the second order scheme (%s)."
 msgstr ""
 
 #, c-format

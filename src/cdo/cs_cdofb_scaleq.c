@@ -243,8 +243,6 @@ _init_fb_cell_system(const cs_flag_t               cell_flag,
   if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     cs_equation_fb_set_cell_bc(cm,
-                               cs_shared_connect,
-                               cs_shared_quant,
                                eqp,
                                eqb->face_bc,
                                dir_values,
@@ -834,12 +832,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Dimensions of the algebraic system */
   eqc->n_dofs = n_faces + n_cells;
 
-  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PF | CS_CDO_LOCAL_DEQ |
-    CS_CDO_LOCAL_PFQ;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PF | CS_FLAG_COMP_DEQ |
+    CS_FLAG_COMP_PFQ;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
+  eqb->bd_msh_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
@@ -889,6 +887,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
+    /* If necessary, enrich the mesh flag to account for the property */
+    const cs_xdef_t *diff_def = eqp->diffusion_property->defs[0];
+    if (diff_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      eqb->msh_flag |= cs_quadrature_get_flag(diff_def->qtype,
+                                              CS_FLAG_CELL | CS_FLAG_PRIMAL);
+
   } /* Diffusion */
 
   /* Dirichlet boundary condition enforcement */
@@ -904,12 +908,12 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_HFQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_sfb_wsym_dirichlet;
     break;
 
@@ -926,14 +930,14 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_convection(eqp)) {
 
-    cs_xdef_type_t  adv_deftype =
-      cs_advection_field_get_deftype(eqp->adv_field);
-
-    if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
-      eqb->msh_flag |= CS_CDO_LOCAL_FEQ;
+    const cs_xdef_t *adv_def = eqp->adv_field->definition;
+    if (adv_def != NULL && /* If linked to a NS equation, it might be null */
+        adv_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      eqb->msh_flag |= cs_quadrature_get_flag(adv_def->qtype,
+                                              CS_FLAG_FACE | CS_FLAG_PRIMAL);
 
     /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ;
 
     switch (eqp->adv_formulation) {
 
@@ -994,10 +998,17 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodge.algo == CS_PARAM_HODGE_ALGO_COST) {
-      eqb->msh_flag |= CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
 
+    /* If necessary, enrich the mesh flag to account for the property */
+    for (short int ir = 0; ir < eqp->n_reaction_terms; ir++) {
+      const cs_xdef_t *rea_def = eqp->reaction_properties[ir]->defs[0];
+      if (rea_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+        eqb->msh_flag |= cs_quadrature_get_flag(rea_def->qtype,
+                                                CS_FLAG_FACE | CS_FLAG_PRIMAL);
+    } /* Loop on ir */
   }
 
   /* Time */
@@ -1010,7 +1021,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       if (eqp->do_lumping)
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
       else {
-        eqb->msh_flag |= CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
       }
     }
@@ -1250,10 +1261,6 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
 
@@ -1448,10 +1455,6 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
 
@@ -1538,6 +1541,11 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
         cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
 
       }
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system matrix after time treatment",
+                         csys);
+#endif
 
       /* STATIC CONDENSATION
        * ===================
@@ -1692,10 +1700,6 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
@@ -2166,8 +2170,8 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ;
-    cs_flag_t  add_flag = CS_CDO_LOCAL_DEQ;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ;
+    cs_flag_t  add_flag = CS_FLAG_COMP_DEQ;
 
     if (eqb->diff_pty_uniform) /* c_id = 0, cell_flag = 0 */
       cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
@@ -2196,7 +2200,6 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_equation_compute_neumann_fb(t_eval,
                                          face_bc->def_ids[bf_id],
                                          f,
-                                         quant,
                                          eqp,
                                          cm,
                                          neu_values);

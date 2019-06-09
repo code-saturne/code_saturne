@@ -114,18 +114,18 @@ double precision precre, precab, thetap
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: w1, w7, w10
+double precision, allocatable, dimension(:) :: rovsdt, div_dfext, viscce
 
 type(var_cal_opt) :: vcopt_u, vcopt_pr
 
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  Initialisations
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(w1(ncelet), w7(ncelet), w10(ncelet))
+allocate(rovsdt(ncelet), div_dfext(ncelet), viscce(ncelet))
 
 ! Get variables calculation options
 
@@ -203,19 +203,19 @@ f_id0 = -1
 ! ---> TERME INSTATIONNAIRE
 
 do iel = 1, ncel
-  w1(iel) = 0.d0
+  rovsdt(iel) = 0.d0
 enddo
 
 ! ---> "VITESSE" DE DIFFUSION FACETTE
 
 do iel = 1, ncel
-  w10(iel) = 1.d0
+  viscce(iel) = 1.d0
 enddo
 
 call viscfa                                                       &
 !==========
  ( imvisf ,                                                       &
-   w10    ,                                                       &
+   viscce ,                                                       &
    viscf  , viscb  )
 
 
@@ -231,7 +231,7 @@ call matrix &
 !==========
  ( iconvp , idiffp , ndircp , isym ,                              &
    thetap , imucpp ,                                              &
-   coefbp , cofbfp , w1     ,                                     &
+   coefbp , cofbfp , rovsdt ,                                     &
    flumas , flumab , viscf  , viscb  ,                            &
    rvoid  , dam    , xam    )
 
@@ -258,11 +258,11 @@ call projts                                                       &
    cofbfp ,                                                       &
    flumas, flumab ,                                               &
    viscf  , viscb  ,                                              &
-   w10    , w10    , w10    )
+   viscce , viscce , viscce    )
 
 init = 1
-call divmas(init,flumas,flumab,w7)
-rnorm = sqrt(cs_gdot(ncel,w7,w7))
+call divmas(init,flumas,flumab,div_dfext)
+rnorm = sqrt(cs_gdot(ncel,div_dfext,div_dfext))
 
 !===============================================================================
 ! 4.  BOUCLES SUR LES NON ORTHOGONALITES (RESOLUTION)
@@ -272,9 +272,9 @@ rnorm = sqrt(cs_gdot(ncel,w7,w7))
 nswmpr = vcopt_pr%nswrsm
 
 ! --- Mise a zero des variables
-!       RTP(.,IPR) sera l'increment de pression cumule
-!       DPVAR      sera l'increment d'increment a chaque sweep
-!       W7         sera la divergence du flux de masse predit
+!       phydr      sera l'increment de pression cumule
+!       dpvar      sera l'increment d'increment a chaque sweep
+!       div_dfext         sera la divergence du flux de masse predit
 do iel = 1,ncel
   phydr(iel) = 0.d0
   dpvar(iel) = 0.d0
@@ -288,7 +288,7 @@ do isweep = 1, nswmpr
 ! --- Mise a jour du second membre
 !     (signe "-" a cause de celui qui est implicitement dans la matrice)
   do iel = 1, ncel
-    smbr(iel) = - w7(iel) - smbr(iel)
+    smbr(iel) = - div_dfext(iel) - smbr(iel)
   enddo
 
 ! --- Test de convergence du calcul
@@ -351,7 +351,7 @@ do isweep = 1, nswmpr
 
     call itrgrp &
     !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
    iwarnp ,                                                                    &
    epsrgp , climgp , extrap ,                                                  &
    dfext  ,                                                                    &
@@ -359,7 +359,7 @@ do isweep = 1, nswmpr
    coefap , coefbp ,                                                           &
    cofafp , cofbfp ,                                                           &
    viscf  , viscb  ,                                                           &
-   w10         ,                                                               &
+   viscce ,                                                                    &
    smbr   )
 
   endif
@@ -375,7 +375,7 @@ endif
  101  continue
 
 ! Free memory
-deallocate(w1, w7, w10)
+deallocate(rovsdt, div_dfext, viscce)
 
 !===============================================================================
 ! 5. Free solver setup

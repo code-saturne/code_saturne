@@ -971,6 +971,7 @@ AC_CHECK_FUNCS([clock_gettime clock_getcpuclockid])
 AC_CHECK_FUNCS([getrusage gettimeofday sbrk sysinfo])
 AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memset])
+AC_CHECK_FUNCS([sigaction])
 AC_CHECK_FUNCS([strtok_r])
 
 saved_LIBS="$LIBS"

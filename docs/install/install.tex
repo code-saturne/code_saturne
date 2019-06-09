@@ -1079,7 +1079,7 @@ build on a cluster named \texttt{athos}, using the Intel compilers
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/athos
 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/athos \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.4/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.06.23/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/athos\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-4.0/arch/athos\_ompi \textbackslash \\
@@ -1177,7 +1177,7 @@ using CMake is as simple as on a workstation, and simply requires
 choosing the correct compilers and possibly a few other options (in
 the EDF \CS build, the GCC compilers were chosen to reduce risks, and
 the Fortran wrappers were not needed, so not built).
-\item CGNS: building CGNS 3.1 to 3.3 is preferentially based on CMake,
+\item CGNS: building CGNS is preferentially based on CMake,
 and no specific problems have been observed.
 \item MED: building MED 3.0.5 or above for \CS is easier than previous versions,
 as a new \\ \texttt{--disable-fortan} option is available for the
@@ -1203,7 +1203,7 @@ For an example, let us start with the front-end build:
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/frontend
 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.4/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \\
 }\end{minipage}}
 
@@ -1219,7 +1219,7 @@ compute nodes:
 \textcolor{Violet}{--without-blas} \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/bgq \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.4/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-dlloader -disable-nls \textbackslash \\
@@ -1260,7 +1260,7 @@ options such as in the following example are recommended:
 \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/xc30 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.3/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.4/arch/xc30 \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/xc30 \textbackslash \\
 \textcolor{Violet}{
 --disable-sockets --disable-nls \textbackslash \\
@@ -1529,24 +1529,8 @@ by the GUI but not the executable, so to avoid \emph{causing} issues with
 a debugger using its own version of Qt, separate sections would need
 to be defined. None of those issues exist with \texttt{RPATH}.
 
-Some administrators consider text-based wrappers a cleaner solution
-then hard-coded paths, as they can be updated, but that argument is
-in bad faith, as it transfers the problems to the code developers,
-while utilities on various systems allow editing those headers.
-In addition, in our experience, those administrators with the
-strongest stance against use of \texttt{RPATH} are the ones who
-most often exceed their own abilities by modifying installations
-in ways defying all attempts at quality control (rather than re-installing,
-which provides a clean trace), so none has succeeded so far in
-presenting us a consistently better solution, though we certainly
-would be interested.
-
-So hopefully, you will not be affected by such issues on your
-system, but if you are, you may need to define an
-\texttt{LD\_LIBRARY\_PATH} environment variable, ugly a solution
-as it may be. {\emph{If this causes further issues, please
-do not complain to the \CS support team, but please ask those
-(administrators or Linux distribution packagers) who decided upon this
-policy to solve those issues they created}.
+To avoid most issues, the \CS scripts also update \texttt{LD\_LIBRARY\_PATH}
+before calling executable modules, but you could be affected if running
+them directly from the command line.
 
 \end{document}

@@ -766,6 +766,11 @@ class QFileEditor(QMainWindow):
         clicked = os.path.join(self._currentSelection['subpath'],
                                self._currentSelection['filename'])
 
+        # To ensure that os.path.isdir works correctly we use the full path
+        # to the object which is selected in the menu
+        if self.case_dir:
+            clicked = os.path.join(self.case_dir, clicked)
+
         edit_list = ['SRC']
 
         if not os.path.isdir(clicked):
@@ -801,7 +806,7 @@ class QFileEditor(QMainWindow):
                 if ps == 'SRC':
                     self._contextMenu.addAction(self._explorerActions['edit'])
                     self._contextMenu.addAction(self._explorerActions['remove'])
-                elif ps in ['EXAMPLES', 'REFERENCES']:
+                elif ps in ['EXAMPLES', 'REFERENCE']:
                     self._contextMenu.addAction(self._explorerActions['view'])
                     self._contextMenu.addAction(self._explorerActions['copy'])
                 elif ps in ['DRAFT']:

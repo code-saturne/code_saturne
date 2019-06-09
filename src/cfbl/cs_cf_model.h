@@ -69,6 +69,18 @@ typedef struct {
 
 } cs_cf_model_t;
 
+typedef enum {
+
+  CS_EOS_IDEAL_GAS             = 1,
+
+  CS_EOS_STIFFENED_GAS         = 2,
+
+  CS_EOS_GAS_MIX               = 3,
+
+  CS_EOS_HOMOGENEOUS_TWO_PHASE = 4
+
+} cs_cf_model_eos_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/

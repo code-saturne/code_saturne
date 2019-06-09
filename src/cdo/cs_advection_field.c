@@ -1653,10 +1653,10 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
     return f_flux;
 
   const cs_quant_t  pfq = cm->face[f];
-  const cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
+  const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
   assert(bf_id > -1);
-  assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
   if (adv->n_bdy_flux_defs == 0) { /* No specific definition of the boundary
                                       flux. Use the definition related to the
@@ -1683,8 +1683,8 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
           cs_quadrature_get_tria_integral(def->dim, def->qtype);
         cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
 
-        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_FEQ |
-                            CS_CDO_LOCAL_EV));
+        assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV  | CS_FLAG_COMP_FEQ |
+                            CS_FLAG_COMP_EV));
 
         const cs_lnum_t  start_idx = cm->f2e_idx[f];
         const cs_lnum_t  end_idx = cm->f2e_idx[f+1];
@@ -1864,11 +1864,12 @@ cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
   for (short int v = 0; v < cm->n_vc; v++) fluxes[v] = 0;
 
   const cs_quant_t  pfq = cm->face[f];
-  const cs_lnum_t  bf_id = cm->f_ids[f] - cs_cdo_quant->n_i_faces;
+  const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
   assert(bf_id > -1);
-  assert(cs_flag_test(cm->flag,  CS_CDO_LOCAL_PFQ| CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+  assert(cs_flag_test(cm->flag,
+                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+                      CS_FLAG_COMP_EV  | CS_FLAG_COMP_FE));
 
   if (adv->n_bdy_flux_defs == 0) {
     /* Implicit definition of the boundary flux from the definition of the
@@ -2059,7 +2060,7 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
-      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_PFQ));
+      assert(cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFQ));
 
       /* Loop on cell faces */
       for (short int f = 0; f < cm->n_fc; f++)
@@ -2088,7 +2089,7 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
         case 3: /* Advection field is viewed as a velocity */
           {
             /* Sanity check */
-            assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+            assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
             for (short int f = 0; f < cm->n_fc; f++) {
               /* Retrieve the advection field:
@@ -2119,7 +2120,7 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
         cs_nvec3(ai->values + 3*cm->c_id, &nv);
 
         /* Sanity check */
-        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+        assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
         /* Loop on cell faces */
         for (short int f = 0; f < cm->n_fc; f++)
@@ -2147,7 +2148,7 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
         cs_nvec3(fld->val + 3*cm->c_id, &nv);
 
         /* Sanity check */
-        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PFQ));
+        assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
         /* Loop on cell faces */
         for (short int f = 0; f < cm->n_fc; f++)
@@ -2211,7 +2212,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
       cs_nvec3(cell_vector, &nv);
 
       /* Sanity check */
-      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
+      assert(cs_flag_test(cm->flag, CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ));
 
       /* Loop on cell edges */
       for (short int e = 0; e < cm->n_ec; e++)
@@ -2223,8 +2224,8 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
-      assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EFQ |
-                          CS_CDO_LOCAL_PFQ));
+      assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EFQ |
+                          CS_FLAG_COMP_PFQ));
 
       cs_quadrature_type_t  qtype = cs_xdef_get_quadrature(def);
 
@@ -2364,7 +2365,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
       if (cs_flag_test(input->loc, cs_flag_dual_face_byc)) {
 
         /* Sanity check */
-        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_PE));
+        assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PE));
 
         const cs_real_t  *flux_array =
           input->values + cs_cdo_connect->c2e->idx[cm->c_id];
@@ -2380,7 +2381,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
         cs_nvec3(input->values + 3*cm->c_id, &nv);
 
         /* Sanity check */
-        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
+        assert(cs_flag_test(cm->flag, CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ));
 
         /* Loop on cell edges */
         for (short int e = 0; e < cm->n_ec; e++)
@@ -2407,7 +2408,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
         cs_nvec3(f->val + 3*cm->c_id, &nv);
 
         /* Sanity check */
-        assert(cs_flag_test(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
+        assert(cs_flag_test(cm->flag, CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ));
 
         /* Loop on cell edges */
         for (short int e = 0; e < cm->n_ec; e++)

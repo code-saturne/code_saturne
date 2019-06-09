@@ -24,7 +24,7 @@
 ! Function:
 ! ---------
 
-!> \file predvv.f90
+!> \file gauss.f90
 !>
 !> \brief This subroutine solves a linear system with the gauss method.
 !>

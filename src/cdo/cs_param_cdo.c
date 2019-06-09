@@ -88,7 +88,8 @@ static const char
 cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
   { N_("Voronoi"),
     N_("Whitney on the Barycentric Subdivision (WBS)"),
-    N_("COnsistency-STabilization splitting (COST)"),
+    N_("Orthogonal Consistency/Stabilization (OCS)"),
+    N_("Orthogonal Consistency/Sub-Stabilization (OCS2)"),
     N_("Automatic switch") };
 
 /*============================================================================
@@ -157,7 +158,8 @@ cs_param_hodge_log(const char               *prefix,
                 _p, cs_param_hodge_get_algo_name(hp));
   cs_log_printf(CS_LOG_SETUP, "%s | Property inversion: %s\n",
                 _p, cs_base_strtf(hp.inv_pty));
-  if (hp.algo == CS_PARAM_HODGE_ALGO_COST)
+  if (hp.algo == CS_PARAM_HODGE_ALGO_COST ||
+      hp.algo == CS_PARAM_HODGE_ALGO_OCS2)
     cs_log_printf(CS_LOG_SETUP, "%s | Algo.Coef: %.3e\n",
                   _p, hp.coef);
 }

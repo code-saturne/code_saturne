@@ -484,6 +484,7 @@ _create_particle_set(cs_lnum_t                       n_particles_max,
 
   new_set->weight = 0.0;
   new_set->weight_new = 0.0;
+  new_set->weight_merged = 0.0;
   new_set->weight_out = 0.0;
   new_set->weight_dep = 0.0;
   new_set->weight_fou = 0.0;

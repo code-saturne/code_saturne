@@ -75,8 +75,7 @@ double precision relxsp
 
 character(len=80) :: name
 
-type(var_cal_opt) :: vcopt , vcopt1, vcopt2, vcopt3, vcopt4
-type(var_cal_opt) :: vcopt5, vcopt6
+type(var_cal_opt) :: vcopt , vcopt1
 
 !===============================================================================
 
@@ -317,11 +316,6 @@ if (itytur.eq.3) then
     call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
   else
     call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt1)
-    call field_get_key_struct_var_cal_opt(ivarfl(ir22), vcopt2)
-    call field_get_key_struct_var_cal_opt(ivarfl(ir33), vcopt3)
-    call field_get_key_struct_var_cal_opt(ivarfl(ir12), vcopt4)
-    call field_get_key_struct_var_cal_opt(ivarfl(ir13), vcopt5)
-    call field_get_key_struct_var_cal_opt(ivarfl(ir23), vcopt6)
     call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
 
     ! Diffusivity model:
@@ -545,10 +539,9 @@ if (dtmax.le.-grand) then
   dtmax = 1.0d3*dtref
 endif
 
-!     Ici, ce n'est pas grave pour le moment,
-!      etant entendu que ces coefs ne servent pas
-!      s'ils servaient, attention dans le cas a plusieurs phases avec
-!      une seule pression : celle ci prend le coef de la derniere phase
+! Init. of time step factor for velocity, pressure and turbulent variables
+! FIXME time step factor is used ONLY for additional variables (user or model)
+
 cdtvar(iv ) = cdtvar(iu)
 cdtvar(iw ) = cdtvar(iu)
 cdtvar(ipr) = cdtvar(iu)

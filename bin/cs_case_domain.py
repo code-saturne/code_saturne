@@ -41,6 +41,7 @@ import cs_xml_reader
 
 from cs_exec_environment import run_command, source_shell_script
 from cs_exec_environment import enquote_arg, separate_args
+from cs_exec_environment import get_ld_library_path_additions
 from cs_exec_environment import source_syrthes_env
 
 from cs_mei_to_c import mei_to_c_interpreter
@@ -871,6 +872,18 @@ class domain(base_domain):
             destdir = 'mesh_input'
             make_clean_dir(destdir)
 
+        # Set environment
+
+        ld_library_path_save = None
+        add_lib_dirs = get_ld_library_path_additions(self.package)
+        if add_lib_dirs:
+            ld_library_path_save = os.getenv('LD_LIBRARY_PATH')
+            ld_library_path = ""
+            for d in add_lib_dirs:
+                ld_library_path += d + ':'
+            ld_library_path += ld_library_path_save
+            os.environ['LD_LIBRARY_PATH'] = ld_library_path
+
         # Run once per mesh
 
         for m in self.meshes:
@@ -936,6 +949,11 @@ class domain(base_domain):
                 self.error = 'preprocess'
 
                 break
+
+        # Restore environment
+
+        if ld_library_path_save:
+            os.environ['LD_LIBRARY_PATH'] = ld_library_path_save
 
         # Revert to initial directory
 

@@ -323,7 +323,6 @@ _init_cell_system(const cs_flag_t               cell_flag,
 {
   const int  n_dofs = eqc->n_cell_dofs + cm->n_fc*eqc->n_face_dofs;
   const int  n_blocks = cm->n_fc + 1;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   int  *block_sizes = cb->ids;
   for (int i = 0; i < cm->n_fc; i++)
@@ -366,7 +365,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      const cs_lnum_t  bf_id = cm->f_ids[f] - connect->n_faces[2]; // n_i_faces
+      const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
       if (bf_id > -1) {        /*  Border face */
 
         const cs_flag_t  face_flag = eqb->face_bc->flag[bf_id];
@@ -798,9 +797,9 @@ cs_hho_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->bflux_field_id = bflux_id;
 
   /* Mesh flag to know what to build */
-  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ |
-    CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ |
-    CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DIAM;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
+    CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ |
+    CS_FLAG_COMP_EV | CS_FLAG_COMP_DIAM;
 
   switch (eqp->space_scheme) {
 
@@ -1135,10 +1134,6 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, t_eval_pty, cb);

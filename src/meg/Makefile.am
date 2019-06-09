@@ -77,6 +77,7 @@ EXTRA_DIST =
 
 megfiles = \
 cs_meg_boundary_function.c \
+cs_meg_immersed_boundaries_inout.c \
 cs_meg_initialization.c \
 cs_meg_source_terms.c \
 cs_meg_volume_function.c

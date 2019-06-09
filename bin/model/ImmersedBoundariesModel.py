@@ -23,10 +23,10 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the Cathare coupling model data management.
+This module defines the Immersed boundaries model data management.
 
 This module contains the following classes and function:
-- CathareCouplingModel
+- ImmersedBoundariesModel
 """
 
 #-------------------------------------------------------------------------------
@@ -71,9 +71,12 @@ class ImmersedBoundariesModel(Variables, Model):
         default = {}
         default['OnOff']            = 'off'
         default['fsi_object_name']  = "fsi_object"
-        default['fsi_moving']       = "non_moving"
-        default['fsi_interaction']  = "off"
+        default['fsi_interaction']  = "imposed"
         default['method']           = "explicit"
+        default['object_density']   = 0.0
+        default['object_stiffness'] = 0.0
+        default['object_damping']   = 0.0
+        default['object_init']      = "0.0"
         return default
     # ----------------------------------
 
@@ -147,7 +150,7 @@ class ImmersedBoundariesModel(Variables, Model):
 
     # ----------------------------------
     @Variables.undoGlobal
-    def addFSIObject(self, name, motion, interaction):
+    def addFSIObject(self, name, interaction):
 
         num = self.getNumberOfFSIObjects()
 
@@ -156,7 +159,6 @@ class ImmersedBoundariesModel(Variables, Model):
         num += 1
 
         self.setObjectName(num, name)
-        self.setObjectMotion(num, motion)
         self.setObjectInteraction(num, interaction)
 
         return num
@@ -191,27 +193,6 @@ class ImmersedBoundariesModel(Variables, Model):
 
     # ----------------------------------
     @Variables.undoLocal
-    def setObjectMotion(self, num, motion):
-
-        self.isLowerOrEqual(num, self.getNumberOfFSIObjects())
-        self.isStr(motion)
-
-        node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
-        node.xmlSetData('object_motion', motion)
-
-        if motion == 'non_moving':
-            self.setObjectInteraction(num, "Off")
-
-
-    @Variables.noUndo
-    def getObjectMotion(self, num):
-
-        return self.__getStringData(num-1, 'object_motion',
-                                    self.setObjectMotion)
-    # ----------------------------------
-
-    # ----------------------------------
-    @Variables.undoLocal
     def setObjectInteraction(self, num, interaction):
 
         self.isLowerOrEqual(num, self.getNumberOfFSIObjects())
@@ -231,8 +212,6 @@ class ImmersedBoundariesModel(Variables, Model):
     # ----------------------------------
     @Variables.undoLocal
     def setObjectDensity(self, num, density):
-
-        self.isStr(density)
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node.xmlSetData('object_density', density)
 
@@ -247,7 +226,6 @@ class ImmersedBoundariesModel(Variables, Model):
     # ----------------------------------
     @Variables.undoLocal
     def setObjectStiffness(self, num, stiffness):
-        self.isStr(stiffness)
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node.xmlSetData('object_stiffness', stiffness)
 
@@ -262,7 +240,6 @@ class ImmersedBoundariesModel(Variables, Model):
     # ----------------------------------
     @Variables.undoLocal
     def setObjectDamping(self, num, damping):
-        self.isStr(damping)
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node.xmlSetData('object_damping', damping)
 
@@ -281,11 +258,11 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_eq = node.xmlInitNode('equilibrium_position')
         if xeq:
-            node_eq['xeq'] = xeq
+            node_eq.xmlSetData('xeq',xeq)
         if yeq:
-            node_eq['yeq'] = yeq
+            node_eq.xmlSetData('yeq',yeq)
         if zeq:
-            node_eq['zeq'] = zeq
+            node_eq.xmlSetData('zeq',zeq)
 
 
     @Variables.noUndo
@@ -293,7 +270,19 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_eq = node.xmlGetChildNode('equilibrium_position')
 
-        return node_eq['xeq'], node_eq['yeq'], node_eq['zeq']
+        if node_eq == None:
+            self.setObjectEqPosition(num,
+                                     self.defaultValues()['object_init'],
+                                     self.defaultValues()['object_init'],
+                                     self.defaultValues()['object_init'])
+            return self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init']
+
+        else:
+            return node_eq.xmlGetString('xeq'), \
+                   node_eq.xmlGetString('yeq'), \
+                   node_eq.xmlGetString('zeq')
     # ----------------------------------
 
     # ----------------------------------
@@ -303,11 +292,11 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_ini = node.xmlInitNode('initial_position')
         if xini:
-            node_ini['xini'] = xini
+            node_ini.xmlSetData('xini', xini)
         if yini:
-            node_ini['yini'] = yini
+            node_ini.xmlSetData('yini', yini)
         if zini:
-            node_ini['zini'] = zini
+            node_ini.xmlSetData('zini', zini)
 
 
     @Variables.noUndo
@@ -315,7 +304,18 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_ini = node.xmlGetChildNode('initial_position')
 
-        return node_ini['xini'], node_ini['yini'], node_ini['zini']
+        if node_ini == None:
+            self.setObjectInitPosition(num,
+                                       self.defaultValues()['object_init'],
+                                       self.defaultValues()['object_init'],
+                                       self.defaultValues()['object_init'])
+            return self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init']
+        else:
+            return node_ini.xmlGetString('xini'), \
+                   node_ini.xmlGetString('yini'), \
+                   node_ini.xmlGetString('zini')
     # ----------------------------------
 
     # ----------------------------------
@@ -325,11 +325,11 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_vel = node.xmlInitNode('initial_velocity')
         if vx:
-            node_vel['vx'] = vx
+            node_vel.xmlSetData('vx', vx)
         if vy:
-            node_vel['vy'] = vy
+            node_vel.xmlSetData('vy', vy)
         if vz:
-            node_vel['vz'] = vz
+            node_vel.xmlSetData('vz', vz)
 
 
     @Variables.noUndo
@@ -337,7 +337,18 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_vel = node.xmlGetChildNode('initial_velocity')
 
-        return node_vel['vx'], node_vel['vy'], node_vel['vz']
+        if node_vel == None:
+            self.setObjectInitVel(num,
+                                  self.defaultValues()['object_init'],
+                                  self.defaultValues()['object_init'],
+                                  self.defaultValues()['object_init'])
+            return self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init']
+        else:
+            return node_vel.xmlGetString('vx'), \
+                   node_vel.xmlGetString('vy'), \
+                   node_vel.xmlGetString('vz')
     # ----------------------------------
 
     # ----------------------------------
@@ -345,21 +356,33 @@ class ImmersedBoundariesModel(Variables, Model):
     def setObjectInitAcc(self, num, ax=None, ay=None, az=None):
 
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
-        node_vel = node.xmlInitNode('initial_acceleration')
+        node_acc = node.xmlInitNode('initial_acceleration')
         if ax:
-            node_vel['ax'] = ax
+            node_acc.xmlSetData('ax', ax)
         if ay:
-            node_vel['ay'] = ay
+            node_acc.xmlSetData('ay', ay)
         if az:
-            node_vel['az'] = az
+            node_acc.xmlSetData('az', az)
 
 
     @Variables.noUndo
     def getObjectInitAcc(self, num):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
-        node_vel = node.xmlGetChildNode('initial_velocity')
+        node_vel = node.xmlGetChildNode('initial_acceleration')
 
-        return node_vel['ax'], node_vel['ay'], node_vel['az']
+        if node_vel == None:
+            self.setObjectInitAcc(num,
+                                  self.defaultValues()['object_init'],
+                                  self.defaultValues()['object_init'],
+                                  self.defaultValues()['object_init'])
+            return self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init'], \
+                   self.defaultValues()['object_init']
+
+        else:
+            return node_vel.xmlGetString('ax'), \
+                   node_vel.xmlGetString('ay'), \
+                   node_vel.xmlGetString('az')
     # ----------------------------------
 
 #-------------------------------------------------------------------------------

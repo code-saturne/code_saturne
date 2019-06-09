@@ -268,8 +268,6 @@ _vbs_init_cell_system(cs_real_t                      t_eval,
                       cs_cell_sys_t                 *csys,
                       cs_cell_builder_t             *cb)
 {
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-
   /* Cell-wise view of the linear system to build */
   csys->c_id = cm->c_id;
   csys->cell_flag = cell_flag;
@@ -291,8 +289,6 @@ _vbs_init_cell_system(cs_real_t                      t_eval,
 
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
-                               connect,
-                               cs_shared_quant,
                                eqp,
                                eqb->face_bc,
                                vtx_bc_flag,
@@ -433,7 +429,7 @@ _vbs_advection_diffusion_reaction(double                         time_eval,
     if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
       /* |c|*wvc = |dual_cell(v) cap c| */
-      assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+      assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
       const double  ptyc = cb->rpty_val * cm->vol_c;
       for (short int i = 0; i < cm->n_vc; i++)
         csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * ptyc;
@@ -989,13 +985,13 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Flag to indicate the minimal set of quantities to build in a cell mesh
      According to the situation, additional flags have to be set */
-  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PE |
-    CS_CDO_LOCAL_EV;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PE |
+    CS_FLAG_COMP_EV;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-    CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_FV;
+  eqb->bd_msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+    CS_FLAG_COMP_FEQ | CS_FLAG_COMP_FV;
 
   /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
@@ -1005,27 +1001,34 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
-      eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       if (eqp->diffusion_hodge.is_iso)
         eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
       else
         eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_aniso_stiffness;
 
-      eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
+      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
+      break;
+
+    case CS_PARAM_HODGE_ALGO_OCS2:
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EFQ;
+      eqc->get_stiffness_matrix = cs_hodge_vb_ocs2_get_aniso_stiffness;
+      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
 
-      eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
+      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
-        | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
+        | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
       break;
@@ -1055,7 +1058,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
@@ -1075,7 +1078,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
@@ -1111,11 +1114,11 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       cs_advection_field_get_deftype(eqp->adv_field);
 
     if (adv_deftype == CS_XDEF_BY_VALUE)
-      eqb->msh_flag |= CS_CDO_LOCAL_DFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_DFQ;
     else if (adv_deftype == CS_XDEF_BY_ARRAY)
-      eqb->msh_flag |= CS_CDO_LOCAL_PEQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ;
     else if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
-      eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EFQ | CS_FLAG_COMP_PFQ;
 
     switch (eqp->adv_formulation) {
 
@@ -1124,19 +1127,19 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       switch (eqp->adv_scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
-        eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
         eqc->get_advection_matrix = cs_cdo_advection_vb_cencsv;
         break;
 
       case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
-        eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
         eqc->get_advection_matrix = cs_cdo_advection_vb_mcucsv;
         break;
 
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
       case CS_PARAM_ADVECTION_SCHEME_SG:
-        eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
         if (cs_equation_param_has_diffusion(eqp))
           eqc->get_advection_matrix = cs_cdo_advection_vb_upwcsv_di;
         else
@@ -1159,7 +1162,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       case CS_PARAM_ADVECTION_SCHEME_UPWIND:
       case CS_PARAM_ADVECTION_SCHEME_SAMARSKII:
       case CS_PARAM_ADVECTION_SCHEME_SG:
-        eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
         if (cs_equation_param_has_diffusion(eqp))
           eqc->get_advection_matrix = cs_cdo_advection_vb_upwnoc_di;
         else
@@ -1178,7 +1181,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     }
 
     /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_PEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_PEQ;
     eqc->add_advection_bc = cs_cdo_advection_vb_bc;
 
   }
@@ -1202,8 +1205,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
         break;
       case CS_PARAM_HODGE_ALGO_WBS:
-        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
-          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
+          | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1230,8 +1233,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
         break;
       case CS_PARAM_HODGE_ALGO_WBS:
-        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
-          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
+          | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1780,7 +1783,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+        assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -2097,7 +2100,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+        assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -2350,7 +2353,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
-          assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+          assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
           /* |c|*wvc = |dual_cell(v) cap c| */
           const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
           for (short int v = 0; v < cm->n_vc; v++) {
@@ -2488,7 +2491,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         /* Identify which face is a boundary face */
         for (short int f = 0; f < cm->n_fc; f++) {
-          const cs_lnum_t  bf_id = cm->f_ids[f] - quant->n_i_faces;
+          const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
           if (bf_id > -1) { /* Border face */
 
             /* Advective flux */
@@ -2620,19 +2623,19 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     /* msh_flag for Neumann and Robin BCs. Add add_flag for the other cases
        when one has to reconstruct a flux */
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_FV;
-    cs_flag_t  add_flag = CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE | CS_CDO_LOCAL_PEQ |
-      CS_CDO_LOCAL_PFQ;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_FV;
+    cs_flag_t  add_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_PEQ |
+      CS_FLAG_COMP_PFQ;
 
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      add_flag |= CS_CDO_LOCAL_DFQ;
+      add_flag |= CS_FLAG_COMP_DFQ;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      add_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ;
+      add_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ;
       break;
 
     default:
@@ -2671,7 +2674,6 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_equation_compute_neumann_sv(t_eval,
                                          face_bc->def_ids[bf_id],
                                          f,
-                                         quant,
                                          eqp,
                                          cm,
                                          neu_values);
@@ -2698,7 +2700,6 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_equation_compute_robin(t_eval,
                                     face_bc->def_ids[bf_id],
                                     f,
-                                    quant,
                                     eqp,
                                     cm,
                                     robin_values);
@@ -3004,23 +3005,23 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
     cs_cdo_diffusion_cw_flux_t  *compute_flux = NULL;
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EV;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV;
 
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
-      msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PVQ;
+      msh_flag |= CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PVQ;
       compute_flux = cs_cdo_diffusion_svb_cost_get_cell_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      msh_flag |= CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PVQ;
+      msh_flag |= CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PVQ;
       compute_flux = cs_cdo_diffusion_svb_cost_get_cell_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
       compute_flux = cs_cdo_diffusion_wbs_get_cell_flux;
       break;
 
@@ -3139,8 +3140,8 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     double  *pot = NULL;
     BFT_MALLOC(pot, connect->n_max_vbyc + 1, double); /* +1for WBS algo. */
 
-    cs_flag_t  msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PV |
-      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ;
+    cs_flag_t  msh_flag = CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PV |
+      CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ;
 
     switch (eqp->diffusion_hodge.algo) {
 
@@ -3150,14 +3151,14 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      msh_flag |= CS_CDO_LOCAL_EFQ;
+      msh_flag |= CS_FLAG_COMP_EFQ;
       get_diffusion_hodge = cs_hodge_epfd_voro_get;
       compute_flux = cs_cdo_diffusion_svb_cost_get_dfbyc_flux;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      msh_flag |= CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EFQ;
+      msh_flag |= CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EFQ;
       compute_flux = cs_cdo_diffusion_wbs_get_dfbyc_flux;
       break;
 

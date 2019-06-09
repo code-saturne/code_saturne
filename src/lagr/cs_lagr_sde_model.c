@@ -1603,10 +1603,13 @@ _lagich(const cs_real_t   tempct[],
       }
       else {
 
-        aux5 = pow(  pow(2.0 * radius[l_id_het - 1], 3)
+        cs_real_t f1 = part_coal_mass[l_id_het] / lag_cc->rho0ch[co_id];
+        cs_real_t f2 = 0;
+        if (part_coal_density[l_id_het] > 0.0)
+          f2 = part_coke_mass[l_id_het] / part_coal_density[l_id_het];
+        aux5 = pow(  cs_math_pow3(2.0 * radius[l_id_het - 1])
                    + (  d6spi / (1.0 - lag_cc->xashch[co_id])
-                      * (  part_coal_mass[l_id_het] / lag_cc->rho0ch[co_id]
-                         + part_coke_mass[l_id_het] / part_coal_density[l_id_het])), d1s3);
+                      * (f1 + f2)), d1s3);
 
         /* Clipping   */
         if (aux5 > 2.0 * radius[l_id_het])

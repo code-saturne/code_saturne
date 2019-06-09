@@ -14,8 +14,6 @@ Architectural changes:
 - Allow sourcing environment before launching with the
   --with-shell-env configure option.
 
-- Update CGNS support for CGNS 3.4 compatibility.
-
 - GUI: force SIP API version to 2 for PqQt4. This allows removing
   the "to_qvariant" wrapper function and makes code more readable;
   the GUI will fail if called from external code using PyQt4 which
@@ -131,6 +129,14 @@ Default option changes:
 
 Bug fixes:
 
+- Fixes for GMSH import.
+  * Fix crashes for binary file import
+  * Fix handling of physical groups for GMSH V4 format; names are also handled.
+
+- Atmospheric model: fix issue combining meteo profiles and local injections.
+
+- Lagrangian module: bug fixes in the deposition model.
+
 - Compressible: fix density time scheme in transported passive scalar/vector
   balance to ensure conservativity with compressible algorithm.
 
@@ -154,6 +160,9 @@ Numerics:
   since there is no need for a high precision (1e-8 to 1e-5).
 
 Architectural changes:
+
+- Scripts: add library dependency paths to LD_LIBRARY_PATH for better
+  robustness when "rpath" does not have priority.
 
 - Preprocessor: update Gmsh reader to handle GMSH v4.1 format.
 

@@ -45,26 +45,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* According to the flag which are set, different quantities or connectivities
-   are built on-the-fly and stored in a local cache structure (cell/base) */
-
-#define CS_CDO_LOCAL_PV   (1 <<  0) /*     1: local info. for vertices */
-#define CS_CDO_LOCAL_PVQ  (1 <<  1) /*     2: local quant. on vertices */
-#define CS_CDO_LOCAL_PE   (1 <<  2) /*     4: local info. for edges */
-#define CS_CDO_LOCAL_PEQ  (1 <<  3) /*     8: local quant. on edges */
-#define CS_CDO_LOCAL_DFQ  (1 <<  4) /*    16: local quant. on dual faces */
-#define CS_CDO_LOCAL_PF   (1 <<  5) /*    32: local info. for faces */
-#define CS_CDO_LOCAL_PFQ  (1 <<  6) /*    64: local quant. on faces */
-#define CS_CDO_LOCAL_DEQ  (1 <<  7) /*   128: local quant. on dual edges */
-#define CS_CDO_LOCAL_EV   (1 <<  8) /*   256: local e2v connectivity */
-#define CS_CDO_LOCAL_FE   (1 <<  9) /*   512: local f2e connectivity */
-#define CS_CDO_LOCAL_FEQ  (1 << 10) /*  1024: local f2e quantities */
-#define CS_CDO_LOCAL_FV   (1 << 11) /*  2048: local f2v connectivity */
-#define CS_CDO_LOCAL_EF   (1 << 12) /*  4096: local e2f connectivity */
-#define CS_CDO_LOCAL_EFQ  (1 << 13) /*  8192: local e2f quantities */
-#define CS_CDO_LOCAL_HFQ  (1 << 14) /* 16384: local quant. on face pyramids */
-#define CS_CDO_LOCAL_DIAM (1 << 15) /* 32768: local diameters on faces/cell */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -193,14 +173,15 @@ typedef struct {
   cs_nvec3_t  *dface; /*!< local dual face quantities (area and unit normal) */
 
   /* Face information */
-  short int    n_fc;    /*!< local number of faces in a cell */
-  cs_lnum_t   *f_ids;   /*!< face ids on this rank */
-  short int   *f_sgn;   /*!< incidence number between f and c */
-  double      *f_diam;  /*!< diameters of local faces */
-  double      *hfc;     /*!< height of the pyramid of basis f and apex c */
-  double      *pfc;     /*!< volume of the pyramid for each face */
-  cs_quant_t  *face;    /*!< face quantities (xf, area and unit normal) */
-  cs_nvec3_t  *dedge;   /*!< dual edge quantities (length and unit vector) */
+  short int    n_fc;     /*!< local number of faces in a cell */
+  cs_lnum_t    bface_shift; /*!< shift to get the boundary face numbering */
+  cs_lnum_t   *f_ids;    /*!< face ids on this rank */
+  short int   *f_sgn;    /*!< incidence number between f and c */
+  double      *f_diam;   /*!< diameters of local faces */
+  double      *hfc;      /*!< height of the pyramid of basis f and apex c */
+  double      *pfc;      /*!< volume of the pyramid for each face */
+  cs_quant_t  *face;     /*!< face quantities (xf, area and unit normal) */
+  cs_nvec3_t  *dedge;    /*!< dual edge quantities (length and unit vector) */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
   short int   *e2v_ids; /*!< cell-wise edge->vertices connectivity */
@@ -411,6 +392,26 @@ cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
   *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Is the face a boundary one ?
+ *
+ * \param[in]  cm     pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]  f      id of the face in the cellwise numbering
+ *
+ * \return true if this is a boundary face otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_cell_mesh_is_boundary_face(const cs_cell_mesh_t    *cm,
+                              const short int          f)
+{
+  if (cm->f_ids[f] - cm->bface_shift > -1)
+    return true;
+  else
+    return false;
+}
 
 /*============================================================================
  * Public function prototypes

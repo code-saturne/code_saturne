@@ -1533,6 +1533,24 @@ cs_quadrature_get_tetra_integral(int                   dim,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the flags adapted to the given quadrature type \p qtype and the
+ *         location on which the quadrature should be performed
+ *
+ * \param[in] qtype    \ref cs_quadrature_type_t
+ * \param[in] loc      It could be \ref CS_FLAG_CELL, \ref CS_FLAG_FACE or
+ *                     \ref CS_FLAG_EDGE plus \ref CS_FLAG_PRIMAL or
+ *                     \ref CS_FLAG_DUAL
+ *
+ * \return  metadata stored in a \ref cs_flag_t to build a \ref cs_cell_mesh_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
+                       const cs_flag_t            loc);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

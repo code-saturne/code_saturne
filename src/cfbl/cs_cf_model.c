@@ -76,10 +76,11 @@ BEGIN_C_DECLS
 
   \var  cs_cf_model_t::ieos
         indicator of equation of state
-        -  1: ideal gas with a constant adiabatic coefficient
-        -  2: stiffened gas
-        -  3: mix of ideal gas
-        -  4: two-phase homogeneous model only, each phase is an ideal gas
+        -  CS_EOS_IDEAL_GAS: ideal gas with a constant adiabatic coefficient
+        -  CS_EOS_STIFFENED_GAS: stiffened gas
+        -  CS_EOS_GAS_MIX: mix of ideal gas
+        -  CS_EOS_HOMOGENEOUS_TWO_PHASE: two-phase homogeneous model only,
+           each phase is an ideal gas
 
   \var  cs_cf_model_t::ithvar
         indicator for thermodynamic variables initialization

@@ -409,9 +409,6 @@ cs_domain_post(cs_domain_t  *domain)
   if (domain->cdo_context->force_advfield_update)
     cs_advection_field_update(domain->time_step->t_cur, true);
 
-  /* Pre-stage for post-processing for the current time step */
-  cs_post_time_step_begin(domain->time_step);
-
   /* User-defined extra operations */
   cs_user_extra_operations(domain);
 
@@ -484,8 +481,6 @@ cs_domain_post(cs_domain_t  *domain)
      cs_post_add_time_mesh_dep_output() function pointer
   */
   cs_post_time_step_output(domain->time_step);
-
-  cs_post_time_step_end();
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);

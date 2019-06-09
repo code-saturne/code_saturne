@@ -65,7 +65,7 @@ BEGIN_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------
- * Cooling Tower model options descriptor
+ * Atmospheric model options descriptor
  *----------------------------------------------------------------------------*/
 
 typedef struct {
@@ -77,7 +77,7 @@ typedef struct {
  *============================================================================*/
 
 /* Pointer to atmo options structure */
-extern const cs_atmo_option_t        *cs_glob_atmo_option;
+extern cs_atmo_option_t        *cs_glob_atmo_option;
 
 /*============================================================================
  * Public function definitions

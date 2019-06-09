@@ -686,7 +686,7 @@ _update_variables(const cs_real_t              dt_cur,
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id,
-                         CS_CDO_LOCAL_PF |  CS_CDO_LOCAL_PFQ,
+                         CS_FLAG_COMP_PF |  CS_FLAG_COMP_PFQ,
                          connect, quant, cm);
 
       /* Update the cell pressure */
@@ -1125,10 +1125,6 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
     cs_cdofb_vecteq_get(&csys, &cb);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, time_eval, cb);

@@ -230,8 +230,13 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   _compute_steady_user_equations(domain);
 
   /* Extra operations and post-processing of the computed solutions */
+  cs_post_time_step_begin(domain->time_step);
+
+  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
+
   cs_domain_post(domain);
 
+  cs_post_time_step_end();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -546,7 +551,11 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_domain_increment_time(domain);
 
     /* Extra operations and post-processing of the computed solutions */
+    cs_post_time_step_begin(domain->time_step);
+
     cs_domain_post(domain);
+
+    cs_post_time_step_end();
 
     /* Increment time */
     cs_domain_increment_time_step(domain);

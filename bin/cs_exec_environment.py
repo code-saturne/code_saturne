@@ -694,6 +694,41 @@ def source_rcfile(pkg):
 
 #-------------------------------------------------------------------------------
 
+def get_ld_library_path_additions(pkg):
+    """
+    return library search path additions.
+
+    With ELF shared libraries (Linux/Unix), We may need to add
+    paths to LD_LIBRARY_PATH, because if the compiler is configured
+    to use --enable-new-datgs,
+    DT_RUNPATH will be present instead of DT_RPATH in the library header,
+    and will have lower priority than LD_LIBRARY_PATH.
+
+    This function determines which paths should be added to
+    ld_library_path for safety.
+    """
+
+    lib_dirs = []
+
+    ld_library_path = os.getenv('LD_LIBRARY_PATH')
+    if ld_library_path:
+        ld_library_path_dirs = ld_library_path.split(':')
+
+        for lib in pkg.config.deplibs:
+            if (pkg.config.libs[lib].have == "yes"
+                and (not pkg.config.libs[lib].dynamic_load)):
+                ldflags = separate_args(pkg.config.libs[lib].flags['ldflags'])
+                for f in ldflags:
+                    if f[0:2] == "-L":
+                        d = f[2:]
+                        if os.path.isdir(d):
+                            if not (d in ld_library_path_dirs or d in lib_dirs):
+                                lib_dirs.append(d)
+
+    return lib_dirs
+
+#-------------------------------------------------------------------------------
+
 def source_syrthes_env(pkg):
     """
     Source SYRTHES environment

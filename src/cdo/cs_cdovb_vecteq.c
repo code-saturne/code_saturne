@@ -296,8 +296,6 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
 
     /* Set the bc (specific part) */
     cs_equation_vb_set_cell_bc(cm,
-                               cs_shared_connect,
-                               cs_shared_quant,
                                eqp,
                                eqb->face_bc,
                                vtx_bc_flag,
@@ -439,7 +437,7 @@ _vbv_advection_diffusion_reaction(const cs_equation_param_t     *eqp,
     if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
       /* |c|*wvc = |dual_cell(v) cap c| */
-      assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+      assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
       const double  ptyc = cb->rpty_val * cm->vol_c;
 
       /* Only the diagonal block and its diagonal entries are modified */
@@ -586,7 +584,7 @@ _vbv_enforce_values(const cs_equation_param_t     *eqp,
   /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
   if (csys->has_internal_enforcement) {
 
-    cs_equation_enforced_internal_dofs(eqp, cb, csys);
+    cs_equation_enforced_internal_block_dofs(eqp, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -970,13 +968,13 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Flag to indicate the minimal set of quantities to build in a cell mesh
      According to the situation, additional flags have to be set */
-  eqb->msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PE |
-    CS_CDO_LOCAL_EV;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PE |
+    CS_FLAG_COMP_EV;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
-  eqb->bd_msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
-    CS_CDO_LOCAL_FEQ;
+  eqb->bd_msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+    CS_FLAG_COMP_FEQ;
 
   /* Diffusion */
   eqc->get_stiffness_matrix = NULL;
@@ -988,18 +986,18 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
-      eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      eqb->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ |
-        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ |
+        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
       break;
 
@@ -1027,7 +1025,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ;
     eqc->enforce_dirichlet = cs_cdo_diffusion_vvb_cost_weak_dirichlet;
     break;
 
@@ -1042,7 +1040,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->enforce_sliding = NULL;
   if (eqb->face_bc->n_sliding_faces > 0) {
     /* There is at least one face with a sliding condition to handle */
-    eqb->bd_msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vvb_cost_sliding;
   }
 
@@ -1063,8 +1061,8 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
         break;
       case CS_PARAM_HODGE_ALGO_WBS:
-        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
-          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
+          | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1091,8 +1089,8 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
         break;
       case CS_PARAM_HODGE_ALGO_WBS:
-        eqb->msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ
-          | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
+          | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1392,10 +1390,6 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = _vbv_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbv_cell_builder[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);

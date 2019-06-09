@@ -78,6 +78,12 @@
 
   \snippet cs_user_parameters-base.c param_stokes_model
 
+  To set options for the PISO-like sub iterations (velocity pressure coupling
+  see \ref cs_piso_t structure):
+
+  \snippet cs_user_parameters-base.c param_piso
+
+
   \subsection cs_user_parameters_h_cs_user_parameters1 Special fields and activate some automatic post-processings
 
   For example, to force the presence of a boundary temperature field, which
