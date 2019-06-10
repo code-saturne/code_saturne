@@ -452,6 +452,18 @@ void
 cs_mesh_discard_free_faces(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
+ * Discard free (isolated) vertices from a mesh.
+ *
+ * This is recommended before using the mesh for computation.
+ *
+ * parameters:
+ *   mesh    <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_discard_free_vertices(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Generate or update list of mesh boundary cells.
  *
  * parameters:

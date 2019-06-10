@@ -1367,6 +1367,58 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Check for free (unreferenced) vertices from a mesh.
+ *
+ * parameters:
+ *   mesh    <-> pointer to mesh structure
+ *
+ * returns:
+ *   number of free vertices
+ *----------------------------------------------------------------------------*/
+
+static cs_gnum_t
+_check_free_vertices(cs_mesh_t  *mesh)
+{
+  cs_lnum_t  i;
+  cs_lnum_t  n_vertices = 0;
+  char *ref = NULL;
+
+  cs_gnum_t retval = 0;
+
+  /* Mark vertices */
+
+  BFT_MALLOC(ref, mesh->n_vertices, char);
+
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+    ref[i] = 0;
+
+  for (cs_lnum_t i = 0; i < mesh->i_face_vtx_connect_size; i++)
+    ref[mesh->i_face_vtx_lst[i]] = 1;
+
+  for (cs_lnum_t i = 0; i < mesh->b_face_vtx_connect_size; i++)
+    ref[mesh->b_face_vtx_lst[i]] = 1;
+
+  /* Transform marker to mapping */
+
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+    if (ref[i] == 0)
+      retval += 1;
+  }
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    cs_gnum_t n_g_count = retval;
+    MPI_Allreduce(&n_g_count, &retval, 1, CS_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+  }
+#endif
+
+  BFT_FREE(ref);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Discard free (unreferenced) vertices from a mesh.
  *
  * parameters:
@@ -2442,6 +2494,32 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
              (unsigned long long)(mesh->n_g_vertices));
 
   mesh->n_g_free_faces = 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Discard free (isolated) vertices from a mesh.
+ *
+ * This is recommended before using the mesh for computation.
+ *
+ * parameters:
+ *   mesh    <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_discard_free_vertices(cs_mesh_t  *mesh)
+{
+  cs_gnum_t n_g_f_vertices = _check_free_vertices(mesh);
+
+  if (_check_free_vertices(mesh) > 0) {
+    cs_gnum_t n_g_vertices_old = mesh->n_g_vertices;
+    _discard_free_vertices(mesh);
+    bft_printf(_("\n"
+                 " Removed isolated vertices\n"
+                 "     Number of initial vertices:  %llu\n"
+                 "     Number of vertices:          %llu\n\n"),
+               (unsigned long long)(n_g_vertices_old),
+               (unsigned long long)(mesh->n_g_vertices));
+  }
 }
 
 /*----------------------------------------------------------------------------
