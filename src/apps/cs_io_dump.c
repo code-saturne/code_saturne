@@ -1441,15 +1441,22 @@ _extract_section_values(_cs_io_t    *inp,
     /* Check type name */
 
     if (type_name[0] == 'c') {
-      char *_data = NULL;
-      MEM_MALLOC(_data, n_vals + 1, char);
-      memcpy(_data, data, n_vals);
-      for (i = 0; i < n_vals; i++)
-        if (_data[i] == '\0')
-          _data[i] = '\n';
-      _data[n_vals] = '\0';
-      printf("%s", _data);
-      MEM_FREE(_data);
+      if (inp->location_id == 0) {
+        char *_data = NULL;
+        MEM_MALLOC(_data, n_vals + 1, char);
+        memcpy(_data, data, n_vals);
+        for (i = 0; i < n_vals; i++)
+          if (_data[i] == '\0')
+            _data[i] = '\n';
+        _data[n_vals] = '\0';
+        printf("%s", _data);
+        MEM_FREE(_data);
+      }
+      else {
+        char *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%d\n", (int)(_data[i]));
+      }
     }
 
 #if (__STDC_VERSION__ >= 199901L)

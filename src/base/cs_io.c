@@ -1355,7 +1355,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
   _elts = elts;
 
   if (_elts == NULL && n_vals != 0) {
-    if (header->elt_type == CS_CHAR)
+    if (header->elt_type == CS_CHAR && header->location_id == 0)
       BFT_MALLOC(_elts, n_vals + 1, char);
     else
       BFT_MALLOC(_elts, n_vals*type_size, char);
@@ -1447,7 +1447,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   /* Add null character at end of string to ensure C-type string */
 
-  if (n_vals != 0 && header->elt_type == CS_CHAR)
+  if (n_vals != 0 && header->elt_type == CS_CHAR && header->location_id == 0)
     ((char *)_elts)[header->n_vals] = '\0';
 
   if (log != NULL) {
