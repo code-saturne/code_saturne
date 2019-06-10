@@ -1555,7 +1555,7 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->face_gc_id == NULL)
-          BFT_MALLOC(mb->face_gc_id, n_vals, cs_int_t);
+          BFT_MALLOC(mb->face_gc_id, n_vals, int);
 
         /* Read data */
         cs_io_set_cs_lnum(&header, pp_in);
@@ -1570,6 +1570,38 @@ _read_data(int                 file_id,
               mb->face_gc_id[val_offset_cur + ii] += gc_id_shift;
           }
         }
+      }
+
+      /* Face level values */
+
+      else if (strncmp(header.sec_name, "face_refinement_generation",
+                       CS_IO_NAME_LEN) == 0) {
+
+        mb->have_face_r_gen = true;
+
+        /* Compute range for current file  */
+        _data_range(&header,
+                    pp_in,
+                    mb->n_g_faces,
+                    mr->n_g_faces_read,
+                    1,
+                    0,
+                    mb->face_bi.gnum_range,
+                    gnum_range_cur,
+                    &n_g_faces,
+                    &n_vals,
+                    &n_vals_cur);
+
+        n_faces = n_vals_cur;
+        val_offset_cur = mr->n_faces_read;
+
+        /* Allocate for first file read */
+        if (mb->face_r_gen == NULL)
+          BFT_MALLOC(mb->face_r_gen, n_vals, char);
+
+        /* Read data */
+        cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
+                         mb->face_r_gen + val_offset_cur, pp_in);
       }
 
       /* Face -> vertices connectivity */

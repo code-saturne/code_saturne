@@ -168,21 +168,20 @@ typedef enum {
  * \param[in]  c_v_idx            for each cell, start index of added vertices
  * \param[in]  c_f_n_idx          cells to new faces index (count in),
  *                                or NULL
- * \param[in]  c_r_flag           cell refinement type
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(subdivide_cell_t) (const cs_mesh_t              *m,
-                    cs_lnum_t                     cell_id,
-                    cs_lnum_t                     n_b_f_ini,
-                    const cs_lnum_t               c_o2n_idx[],
-                    const cs_lnum_t               i_face_o2n_idx[],
-                    const cs_lnum_t               b_face_o2n_idx[],
-                    cs_adjacency_t               *c2f,
-                    cs_lnum_t                     c2f2v_start[],
-                    const cs_lnum_t               c_v_idx[],
-                    const cs_lnum_t               c_f_n_idx[]);
+(subdivide_cell_t)(const cs_mesh_t              *m,
+                   cs_lnum_t                     cell_id,
+                   cs_lnum_t                     n_b_f_ini,
+                   const cs_lnum_t               c_o2n_idx[],
+                   const cs_lnum_t               i_face_o2n_idx[],
+                   const cs_lnum_t               b_face_o2n_idx[],
+                   cs_adjacency_t               *c2f,
+                   cs_lnum_t                     c2f2v_start[],
+                   const cs_lnum_t               c_v_idx[],
+                   const cs_lnum_t               c_f_n_idx[]);
 
 /*============================================================================
  * Private function definitions
@@ -1438,6 +1437,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
  * \param[in]       m             mesh
  * \param[in]       check_convex  check if faces are convex ?
  * \param[in]       v2v           vertex->vertex adjacency
+ * \param[in]       c_r_level     cell refinement level
  * \param[in]       c_r_flag      cell refinement flag
  * \param[in, out]  f_r_flag      face refinement flag
  * \param[in, out]  e_v_idx       for each edge, start index of added vertices
@@ -1454,6 +1454,7 @@ static cs_gnum_t
 _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
                               bool                          check_convex,
                               const cs_adjacency_t         *v2v,
+                              const char                    c_r_level[],
                               const cs_mesh_refine_type_t   c_r_flag[],
                               cs_mesh_refine_type_t         f_r_flag[],
                               cs_lnum_t                     e_v_idx[],
@@ -1511,8 +1512,14 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
       cs_lnum_t c_id = i_face_cells[f_id][i];
       if (c_id < n_cells) {
         if (c_r_flag[c_id]) {
-          subdivide = true;
-          f_r_flag[f_id + m->n_b_faces] = CS_REFINE_DEFAULT;
+          /* If a face is shared with a cell with higher refinement level,
+             which is not further refined here, no need to subdivide it a
+             second time. */
+          cs_lnum_t a_c_id = i_face_cells[f_id][(i+1)%2];
+          if (c_r_flag[a_c_id] || c_r_level[c_id] >= c_r_level[a_c_id]) {
+            subdivide = true;
+            f_r_flag[f_id + m->n_b_faces] = CS_REFINE_DEFAULT;
+          }
         }
       }
     }
@@ -2544,6 +2551,7 @@ _subdivided_quad(cs_lnum_t        s_id,
  * \param[in]       c_id_1      cell id with face normal in
  * \param[in]       f_id        assigned face id
  * \param[in, out]  vertex_ids  associated vertex ids (may be permuted)
+ * \param[in]       c_f_ranges  cell added faces range
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2578,6 +2586,7 @@ _add_interior_face_tria(const cs_mesh_t   *m,
  * \param[in]       c_id_1      cell id with face normal in
  * \param[in]       f_id        assigned face id
  * \param[in, out]  vertex_ids  associated vertex ids (may be permuted)
+ * \param[in]       c_f_ranges  cell added faces range
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3640,6 +3649,7 @@ _subdivide_cell_polyhedron(const cs_mesh_t              *m,
  * \param[in]  c_f_n_idx          cells to new faces index (count in),
  *                                or NULL
  * \param[in]  c_r_flag           cell refinement type
+ * \param[in]  c_r_level          cell refinement level
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3654,7 +3664,8 @@ _subdivide_cells(const cs_mesh_t              *m,
                  cs_lnum_t                     c2f2v_start[],
                  const cs_lnum_t               c_v_idx[],
                  const cs_lnum_t               c_f_n_idx[],
-                 const cs_mesh_refine_type_t   c_r_flag[])
+                 const cs_mesh_refine_type_t   c_r_flag[],
+                 const char                    c_r_level[])
 {
   subdivide_cell_t  *c_r_func[CS_REFINE_N_TYPES];
 
@@ -3671,7 +3682,7 @@ _subdivide_cells(const cs_mesh_t              *m,
   for (cs_lnum_t c_id = 0; c_id < n_c_ini; c_id++) {
 
     subdivide_cell_t  *_c_r_func = c_r_func[c_r_flag[c_id]];
-    if (_c_r_func != NULL)
+    if (_c_r_func != NULL) {
       _c_r_func(m,
                 c_id,
                 n_b_f_ini,
@@ -3682,6 +3693,11 @@ _subdivide_cells(const cs_mesh_t              *m,
                 c2f2v_start,
                 c_v_idx,
                 c_f_n_idx);
+
+      cs_lnum_t e_id = c_f_n_idx[c_id+1];
+      for (cs_lnum_t f_id = c_f_n_idx[c_id]; f_id < e_id; f_id++)
+        m->i_face_r_gen[f_id] = c_r_level[c_id] + 1;
+    }
 
     else if (c_r_flag[c_id] != CS_REFINE_NONE)
       bft_error(__FILE__, __LINE__, 0,
@@ -4057,9 +4073,11 @@ _o2n_idx_update_i_face_arrays(cs_mesh_t        *m,
 
   cs_lnum_2_t *i_face_cells;
   int *i_face_family;
+  char *i_face_r_gen;
 
   BFT_MALLOC(i_face_cells, n_new, cs_lnum_2_t);
   BFT_MALLOC(i_face_family, n_new, int);
+  BFT_MALLOC(i_face_r_gen, n_new, char);
 
   for (cs_lnum_t o_id = 0; o_id < n_old; o_id++) {
     for (cs_lnum_t n_id = f_o2n_idx[o_id]; n_id < f_o2n_idx[o_id+1]; n_id++) {
@@ -4068,6 +4086,8 @@ _o2n_idx_update_i_face_arrays(cs_mesh_t        *m,
       i_face_cells[n_id][1] = m->i_face_cells[o_id][1];
       /* update family */
       i_face_family[n_id] = m->i_face_family[o_id];
+      /* update generation */
+      i_face_r_gen[n_id] = m->i_face_r_gen[o_id];
     }
   }
   for (cs_lnum_t n_id = c_f_n_idx[0]; n_id < n_new; n_id++) {
@@ -4076,10 +4096,14 @@ _o2n_idx_update_i_face_arrays(cs_mesh_t        *m,
     i_face_cells[n_id][1] = -1;
     /* initialize family */
     i_face_family[n_id] = default_family_id;
+    /* initialize generation */
+    i_face_r_gen[n_id] = 0;
   }
 
+  BFT_FREE(m->i_face_r_gen);
   BFT_FREE(m->i_face_family);
   BFT_FREE(m->i_face_cells);
+  m->i_face_r_gen = i_face_r_gen;
   m->i_face_cells = i_face_cells;
   m->i_face_family = i_face_family;
 
@@ -4228,6 +4252,40 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   /* Compute some mesh quantities */
 
+  /* Build face generation if not available yet */
+
+  if (m->i_face_r_gen == NULL) {
+    BFT_MALLOC(m->i_face_r_gen, m->n_i_faces, char);
+    for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
+      m->i_face_r_gen[i] = 0;
+  }
+
+  /* Determine current cell refinement level */
+
+  char *c_r_level = NULL;
+  {
+    BFT_MALLOC(c_r_level, m->n_cells_with_ghosts, char);
+    for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++)
+      c_r_level[i] = 0;
+
+    const cs_lnum_2_t *restrict i_face_cells
+      = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+    for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
+      for (cs_lnum_t i = 0; i < 2; i++) {
+        cs_lnum_t c_id = i_face_cells[f_id][i];
+        if (m->i_face_r_gen[f_id] > c_r_level[c_id])
+          c_r_level[c_id] = m->i_face_r_gen[f_id];
+      }
+    }
+
+    if (m->halo != NULL)
+      cs_halo_sync_untyped(m->halo,
+                           CS_HALO_STANDARD,
+                           1,
+                           c_r_level);
+  }
+
   /* Number of added vertices for edges, faces, and cells */
 
   cs_lnum_t n_add_vtx[3] = {0, 0, 0};
@@ -4301,7 +4359,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     BFT_MALLOC(g_edges_num, n_edges, cs_gnum_t);
 
   cs_gnum_t n_g_edges
-    = _new_edge_and_face_vertex_ids(m, check_convex, v2v, c_r_flag, f_r_flag,
+    = _new_edge_and_face_vertex_ids(m, check_convex, v2v, c_r_level,
+                                    c_r_flag, f_r_flag,
                                     e_v_idx, f_v_idx, g_edges_num,
                                     n_add_vtx);
 
@@ -4519,7 +4578,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                    c2f2v_start,
                    c_v_idx,
                    c_i_face_idx,
-                   c_r_flag);
+                   c_r_flag,
+                   c_r_level);
 
   t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[7]), &t1, &t2);
@@ -4544,6 +4604,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   BFT_FREE(i_face_o2n_idx);
   BFT_FREE(b_face_o2n_idx);
 
+  BFT_FREE(c_r_level);
   BFT_FREE(c_r_flag);
   BFT_FREE(f_r_flag);
 

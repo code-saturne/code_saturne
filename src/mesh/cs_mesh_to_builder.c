@@ -313,15 +313,15 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
     = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
   const cs_datatype_t gnum_type
     = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
-  const cs_datatype_t cs_int_type
-    = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
+  const cs_datatype_t int_type
+    = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
 
   /* Distribute cell group class info to blocks */
   /*---------------------------------------------*/
 
   BFT_MALLOC(mb->cell_gc_id,
              (mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0]),
-             cs_int_t);
+             int);
 
   d = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
                                       mb->cell_bi,
@@ -329,7 +329,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                                       mesh->global_cell_num);
 
   cs_part_to_block_copy_array(d,
-                              cs_int_type,
+                              int_type,
                               1,
                               mesh->cell_family,
                               mb->cell_gc_id);
@@ -441,7 +441,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                         1, /* location_id, */
                         0, /* index id */
                         1, /* n_location_vals */
-                        cs_int_type,
+                        int_type,
                         mb->cell_gc_id,
                         pp_out);
     else
@@ -452,7 +452,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                                1, /* location_id, */
                                0, /* index id */
                                1, /* n_location_vals */
-                               cs_int_type,
+                               int_type,
                                mb->cell_gc_id,
                                pp_out);
   }
@@ -465,9 +465,9 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
 
   BFT_MALLOC(mb->face_gc_id,
              (mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0]),
-             cs_int_t);
+             int);
 
-  BFT_MALLOC(face_gc_id, n_faces, cs_lnum_t);
+  BFT_MALLOC(face_gc_id, n_faces, int);
 
   for (i = 0; i < n_i_faces; i++)
     face_gc_id[i] = mesh->i_face_family[i];
@@ -482,7 +482,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
   /* Distribute to blocks, write if required */
 
   cs_part_to_block_copy_array(d,
-                              cs_int_type,
+                              int_type,
                               1,
                               face_gc_id,
                               mb->face_gc_id);
@@ -498,7 +498,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                         2, /* location_id, */
                         0, /* index id */
                         1, /* n_location_vals */
-                        cs_int_type,
+                        int_type,
                         mb->face_gc_id,
                         pp_out);
     else
@@ -509,13 +509,74 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                                2, /* location_id, */
                                0, /* index id */
                                1, /* n_location_vals */
-                               cs_int_type,
+                               int_type,
                                mb->face_gc_id,
                                pp_out);
   }
 
   if (transfer == false)
     BFT_FREE(mb->face_gc_id);
+
+  /* Face refinement generation */
+  /*----------------------------*/
+
+  if (mb->have_face_r_gen) {
+
+    char *face_r_gen = NULL;
+
+    BFT_MALLOC(mb->face_r_gen,
+               (mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0]),
+               char);
+
+    BFT_MALLOC(face_r_gen, n_faces, char);
+
+    for (i = 0; i < n_i_faces; i++)
+      face_r_gen[i] = mesh->i_face_r_gen[i];
+    for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
+      face_r_gen[j] = 0;
+
+    if (transfer == true)
+      BFT_FREE(mesh->i_face_r_gen);
+
+    /* Distribute to blocks, write if required */
+
+    cs_part_to_block_copy_array(d,
+                                CS_CHAR,
+                                1,
+                                face_r_gen,
+                                mb->face_r_gen);
+
+    BFT_FREE(face_r_gen);
+
+    if (pp_out != NULL) {
+      if (transfer == true)
+        cs_io_write_block("face_refinement_generation",
+                          mb->n_g_faces,
+                          mb->face_bi.gnum_range[0],
+                          mb->face_bi.gnum_range[1],
+                          2, /* location_id, */
+                          0, /* index id */
+                          1, /* n_location_vals */
+                          CS_CHAR,
+                          mb->face_r_gen,
+                          pp_out);
+      else
+        cs_io_write_block_buffer("face_refinement_generation",
+                                 mb->n_g_faces,
+                                 mb->face_bi.gnum_range[0],
+                                 mb->face_bi.gnum_range[1],
+                                 2, /* location_id, */
+                                 0, /* index id */
+                                 1, /* n_location_vals */
+                                 CS_CHAR,
+                                 mb->face_r_gen,
+                                 pp_out);
+
+    }
+  }
+
+  if (transfer == false)
+    BFT_FREE(mb->face_r_gen);
 
   /* Face -> vertex connectivity */
   /*-----------------------------*/
@@ -559,8 +620,6 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                               mesh->vtx_coord,
                               mb->vertex_coords);
 
-  cs_part_to_block_destroy(&d);
-
   if (transfer == true)
     BFT_FREE(mesh->vtx_coord);
 
@@ -593,6 +652,13 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
     BFT_FREE(mesh->global_vtx_num);
   else
     BFT_FREE(mb->vertex_coords);
+
+  if (transfer == true)
+    BFT_FREE(mesh->global_vtx_num);
+  else
+    BFT_FREE(mb->vertex_coords);
+
+  cs_part_to_block_destroy(&d);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -628,8 +694,8 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
   const cs_datatype_t gnum_type
     = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
-  const cs_datatype_t cs_int_type
-    = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
+  const cs_datatype_t int_type
+    = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
 
   /* Face ordering */
 
@@ -729,7 +795,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
 
   /* Cell group classes */
 
-  BFT_MALLOC(mb->cell_gc_id, mesh->n_cells, cs_int_t);
+  BFT_MALLOC(mb->cell_gc_id, mesh->n_cells, int);
 
   order = cs_order_gnum(NULL, mesh->global_cell_num, mesh->n_cells);
   for (i = 0; i < mesh->n_cells; i++)
@@ -748,7 +814,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
                         1, /* location_id, */
                         0, /* index id */
                         1, /* n_location_vals */
-                        cs_int_type,
+                        int_type,
                         mb->cell_gc_id,
                         pp_out);
     else
@@ -759,7 +825,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
                                1, /* location_id, */
                                0, /* index id */
                                1, /* n_location_vals */
-                               cs_int_type,
+                               int_type,
                                mb->cell_gc_id,
                                pp_out);
   }
@@ -769,7 +835,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
 
   /* Face group classes */
 
-  BFT_MALLOC(mb->face_gc_id, n_faces, cs_int_t);
+  BFT_MALLOC(mb->face_gc_id, n_faces, int);
 
   for (i = 0; i < n_i_faces; i++)
     mb->face_gc_id[i] = mesh->i_face_family[i_order[i]];
@@ -790,7 +856,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
                         2, /* location_id, */
                         0, /* index id */
                         1, /* n_location_vals */
-                        cs_int_type,
+                        int_type,
                         mb->face_gc_id,
                         pp_out);
     else
@@ -801,13 +867,58 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
                                2, /* location_id, */
                                0, /* index id */
                                1, /* n_location_vals */
-                               cs_int_type,
+                               int_type,
                                mb->face_gc_id,
                                pp_out);
   }
 
   if (transfer == false)
     BFT_FREE(mb->face_gc_id);
+
+  /* Face refinement generation */
+
+  if (mb->have_face_r_gen) {
+
+    BFT_MALLOC(mb->face_r_gen, n_faces, char);
+
+    for (i = 0; i < n_i_faces; i++)
+      mb->face_r_gen[i] = mesh->i_face_family[i_order[i]];
+    for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
+      mb->face_r_gen[j] = mesh->b_face_family[b_order[i]];
+
+    if (transfer == true) {
+      BFT_FREE(mesh->i_face_family);
+      BFT_FREE(mesh->b_face_family);
+    }
+
+    if (pp_out != NULL) {
+      if (transfer == true)
+        cs_io_write_block("face_refinement_generation",
+                          mb->n_g_faces,
+                          1,
+                          mb->n_g_faces + 1,
+                          2, /* location_id, */
+                          0, /* index id */
+                          1, /* n_location_vals */
+                          CS_CHAR,
+                          mb->face_r_gen,
+                          pp_out);
+      else
+        cs_io_write_block_buffer("face_refinement_generation",
+                                 mb->n_g_faces,
+                                 1,
+                                 mb->n_g_faces + 1,
+                                 2, /* location_id, */
+                                 0, /* index id */
+                                 1, /* n_location_vals */
+                                 CS_CHAR,
+                                 mb->face_r_gen,
+                                 pp_out);
+    }
+
+    if (transfer == false)
+      BFT_FREE(mb->face_r_gen);
+  }
 
   /* Face -> vertex connectivity */
   /*-----------------------------*/
@@ -1058,7 +1169,7 @@ _write_dimensions(cs_mesh_t          *mesh,
 
   if (mesh->n_init_perio > 0) {
 
-    cs_int_t  n_rot_perio = 0;
+    int n_rot_perio = 0;
 
     /* Count rotation periodicities */
 
@@ -1338,6 +1449,7 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
   BFT_FREE(mb->face_vertices);
   BFT_FREE(mb->cell_gc_id);
   BFT_FREE(mb->face_gc_id);
+  BFT_FREE(mb->face_r_gen);
   BFT_FREE(mb->vertex_coords);
 
   /* Precompute some sizes */
@@ -1358,6 +1470,22 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
                                 &g_b_face_vertices_size);
 
   mb->n_g_face_connect_size = g_i_face_vertices_size + g_b_face_vertices_size;
+
+  /* Get refinement info if needed */
+
+  int r_flag = 0;
+  if (mesh->i_face_r_gen != NULL)
+    r_flag = 1;
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    int _r_flag = r_flag;
+    MPI_Allreduce(&_r_flag, &r_flag, 1,
+                  MPI_INT, MPI_MAX, cs_glob_mpi_comm);
+  }
+#endif
+
+  mb->have_face_r_gen = (r_flag) ? true : false;
 
   /* Get periodic faces information if required */
 
@@ -1427,7 +1555,6 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
                        NULL, pp_out);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -276,8 +276,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t        *m,
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
 
   cs_real_33_t   *restrict cocgb;
   if (ce == NULL) {
@@ -2267,7 +2265,7 @@ _compute_face_vectors(int                dim,
   cs_lnum_t face_id;
   cs_lnum_t cell_id;
 
-  cs_real_t dipjp, psi, pond;
+  cs_real_t dipjp, pond;
   cs_real_t surfnx, surfny, surfnz;
   cs_real_t vecijx, vecijy, vecijz;
 

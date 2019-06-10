@@ -2259,6 +2259,10 @@ cs_mesh_create(void)
   mesh->i_face_family = NULL;
   mesh->b_face_family = NULL;
 
+  /* Refinement */
+
+  mesh->i_face_r_gen = NULL;
+
   /* Selector features */
 
   mesh->class_defs = NULL;
@@ -2309,6 +2313,8 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   BFT_FREE(mesh->cell_family);
   BFT_FREE(mesh->i_face_family);
   BFT_FREE(mesh->b_face_family);
+
+  BFT_FREE(mesh->i_face_r_gen);
 
   /* Free periodic structures */
 

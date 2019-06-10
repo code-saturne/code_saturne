@@ -176,16 +176,20 @@ typedef struct {
   fvm_selector_t  *select_i_faces;    /*!< interior faces selection object */
   fvm_selector_t  *select_b_faces;    /*!< boundary faces selection object */
 
+  /* Refinement features */
+
+  char       *i_face_r_gen;        /*!< interior face refinement generation */
+
   /* Status flags */
 
-  cs_gnum_t n_g_free_faces;          /*!< global number of boundary faces
-                                       which are in fact isolated */
-  int verbosity;                     /*!< current verbosity level */
-  int modified;                      /*!< modification status */
-  int save_if_modified;              /*!< flag for mesh saving behavior:
-                                       0: never save
-                                       1: saved when modified (default)
-                                       2: always save */
+  cs_gnum_t n_g_free_faces;        /*!< global number of boundary faces
+                                     which are in fact isolated */
+  int verbosity;                   /*!< current verbosity level */
+  int modified;                    /*!< modification status */
+  int save_if_modified;            /*!< flag for mesh saving behavior:
+                                     0: never save
+                                     1: saved when modified (default)
+                                     2: always save */
 
 } cs_mesh_t;
 

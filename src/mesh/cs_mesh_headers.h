@@ -46,6 +46,7 @@
 #include "cs_mesh_boundary.h"
 #include "cs_mesh_boundary_layer.h"
 #include "cs_mesh_builder.h"
+#include "cs_mesh_coarsen.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_connect.h"
 #include "cs_mesh_extrude.h"

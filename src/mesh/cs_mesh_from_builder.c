@@ -516,8 +516,8 @@ _extract_face_gc_id(cs_mesh_t        *mesh,
 
   /* Allocate arrays */
 
-  BFT_MALLOC(mesh->i_face_family, mesh->n_i_faces, cs_int_t);
-  BFT_MALLOC(mesh->b_face_family, mesh->n_b_faces, cs_int_t);
+  BFT_MALLOC(mesh->i_face_family, mesh->n_i_faces, int);
+  BFT_MALLOC(mesh->b_face_family, mesh->n_b_faces, int);
 
   /* Now copy face group class (family) id */
 
@@ -531,6 +531,41 @@ _extract_face_gc_id(cs_mesh_t        *mesh,
     else
       mesh->b_face_family[n_b_faces++] = face_gc_id[i];
 
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Build internal and boundary face -> refinement generation using a common
+ * face level and a face type marker.
+ *
+ * The corresponding arrays in the mesh structure are allocated and
+ * defined by this function, and should have been previously empty.
+ *
+ * parameters:
+ *   mesh       <-> pointer to mesh structure
+ *   n_faces    <-- number of local faces
+ *   face_r_gen <-- local face level
+ *   face_type  <-- face type marker
+ *----------------------------------------------------------------------------*/
+
+static void
+_extract_face_r_gen(cs_mesh_t        *mesh,
+                    cs_lnum_t         n_faces,
+                    const char        face_r_gen[],
+                    const char        face_type[])
+{
+  size_t n_i_faces = 0;
+  size_t n_b_faces = 0;
+
+  /* Allocate arrays */
+
+  BFT_MALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
+
+  /* Now copy face group class (family) id */
+
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+    if (face_type[i] == '\0')
+      mesh->i_face_r_gen[n_i_faces++] = face_r_gen[i];
   }
 }
 
@@ -1021,6 +1056,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   cs_lnum_2_t *_face_cells = NULL;
   cs_lnum_t *_face_gc_id = NULL;
+  char *_face_r_gen = NULL;
   cs_lnum_t *_face_vertices_idx = NULL;
   cs_lnum_t *_face_vertices = NULL;
 
@@ -1143,6 +1179,20 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_FREE(mb->face_gc_id);
 
+  /* Face level */
+
+  if (mb->have_face_r_gen) {
+    BFT_MALLOC(_face_r_gen, _n_faces, char);
+
+    cs_block_to_part_copy_array(d,
+                                CS_CHAR,
+                                1,
+                                mb->face_r_gen,
+                                _face_r_gen);
+  }
+
+  BFT_FREE(mb->face_r_gen);
+
   /* Face connectivity */
 
   BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
@@ -1242,11 +1292,14 @@ _decompose_data_g(cs_mesh_t          *mesh,
   _face_type_g(mesh,
                _n_faces,
                face_ifs,
-               _face_cells,
-               _face_vertices_idx,
+               (const cs_lnum_2_t *)_face_cells,
+               (const cs_lnum_t *)_face_vertices_idx,
                face_type);
 
-  _extract_face_cell(mesh, _n_faces, _face_cells, face_type);
+  _extract_face_cell(mesh,
+                     _n_faces,
+                     (const cs_lnum_2_t *)_face_cells,
+                     face_type);
 
   {
     cs_gnum_t _n_g_free_faces = mesh->n_g_free_faces;
@@ -1291,6 +1344,14 @@ _decompose_data_g(cs_mesh_t          *mesh,
                       face_type);
 
   BFT_FREE(_face_gc_id);
+
+  if (mb->have_face_r_gen) {
+    _extract_face_r_gen(mesh,
+                        _n_faces,
+                        _face_r_gen,
+                        face_type);
+    BFT_FREE(_face_r_gen);
+  }
 
   BFT_FREE(face_type);
 }
@@ -1379,11 +1440,14 @@ _decompose_data_l(cs_mesh_t          *mesh,
                _n_faces,
                mb->n_per_face_couples,
                (const cs_gnum_t *const *)mb->per_face_couples,
-               _face_cells,
+               (const cs_lnum_2_t *)_face_cells,
                _face_vertices_idx,
                face_type);
 
-  _extract_face_cell(mesh, _n_faces, _face_cells, face_type);
+  _extract_face_cell(mesh,
+                     _n_faces,
+                     (const cs_lnum_2_t *)_face_cells,
+                     face_type);
 
   BFT_FREE(_face_cells);
 
@@ -1416,6 +1480,14 @@ _decompose_data_l(cs_mesh_t          *mesh,
                       face_type);
 
   BFT_FREE(mb->face_gc_id);
+
+  if (mb->have_face_r_gen) {
+    _extract_face_r_gen(mesh,
+                        _n_faces,
+                        mb->face_r_gen,
+                        face_type);
+    BFT_FREE(mb->face_r_gen);
+  }
 
   BFT_FREE(face_type);
 }
