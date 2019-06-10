@@ -1577,7 +1577,6 @@ _new_cell_vertex_ids(cs_mesh_t                    *m,
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
 
     if (   c_r_flag[c_id] == CS_REFINE_HEXA
-        || c_r_flag[c_id] == CS_REFINE_PRISM
         || c_r_flag[c_id] == CS_REFINE_POLYHEDRON)
       c_v_idx[c_id+1] = 1;
     else
