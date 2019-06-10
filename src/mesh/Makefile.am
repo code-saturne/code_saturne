@@ -66,6 +66,7 @@ cs_mesh_boundary.h \
 cs_mesh_boundary_layer.h \
 cs_mesh_builder.h \
 cs_mesh_coherency.h \
+cs_mesh_coarsen.h \
 cs_mesh_connect.h \
 cs_mesh_extrude.h \
 cs_mesh_from_builder.h \
@@ -106,6 +107,7 @@ cs_mesh_bad_cells.c \
 cs_mesh_boundary.c \
 cs_mesh_boundary_layer.c \
 cs_mesh_builder.c \
+cs_mesh_coarsen.c \
 cs_mesh_coherency.c \
 cs_mesh_connect.c \
 cs_mesh_extrude.c \
