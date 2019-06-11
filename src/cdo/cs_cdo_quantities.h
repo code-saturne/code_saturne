@@ -439,9 +439,9 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the two normalized vector associated to a primal edge
+ * \brief  Get the normalized vector associated to a primal edge
  *
- * \param[in]  e_id     id related to the face (f_id > n_i_face -> border face)
+ * \param[in]  e_id     id related to an edge
  * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return  a pointer to the edge normalized vector
