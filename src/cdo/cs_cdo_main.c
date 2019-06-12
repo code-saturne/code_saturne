@@ -229,14 +229,6 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   /* User-defined equations */
   _compute_steady_user_equations(domain);
 
-  /* Extra operations and post-processing of the computed solutions */
-  cs_post_time_step_begin(domain->time_step);
-
-  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
-
-  cs_domain_post(domain);
-
-  cs_post_time_step_end();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -534,6 +526,16 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Build and solve equations related to the computational domain in case of
      steady-state equations */
   _solve_steady_state_domain(domain);
+
+  /* Extra operations and post-processing of the computed solutions after the
+     steady-state computations or before the time loop */
+  cs_post_time_step_begin(domain->time_step);
+
+  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
+
+  cs_domain_post(domain);
+
+  cs_post_time_step_end();
 
   /* Main time loop */
   if (domain->time_step->nt_cur == 0)
