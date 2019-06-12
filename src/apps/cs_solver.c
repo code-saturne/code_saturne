@@ -466,6 +466,10 @@ cs_run(void)
 
   }
 
+  /* Finalize user extra operations */
+  if (opts.verif == false)
+    cs_user_extra_operations_finalize(cs_glob_domain);
+
   /* Finalize linear system resolution */
 
   cs_sles_default_finalize();
@@ -476,10 +480,6 @@ cs_run(void)
 
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
-
-  /* Finalize user extra operations */
-  if (opts.verif == false)
-    cs_user_extra_operations_finalize(cs_glob_domain);
 
   /* Final stage for CDO/HHO schemes */
 
