@@ -113,23 +113,33 @@ cs_meg_initialization(const char      *field_name,
 {
   cs_real_t *new_vals = NULL;
 
+""",
+'ibm':"""void
+cs_meg_immersed_boundaries_inout(int         *ipenal,
+                                 const char  *object_name,
+                                 cs_real_3_t  xyz,
+                                 cs_real_t    t)
+{
 """
 }
 
 _function_names = {'vol':'cs_meg_volume_function.c',
                    'bnd':'cs_meg_boundary_function.c',
                    'src':'cs_meg_source_terms.c',
-                   'ini':'cs_meg_initialization.c'}
+                   'ini':'cs_meg_initialization.c',
+                   'ibm':'cs_meg_immersed_boundaries_inout.c'}
 
 _block_comments = {'vol':'User defined formula for variable(s) %s over zone %s',
                    'bnd':'User defined formula for "%s" over BC=%s',
                    'src':'User defined source term for %s over zone %s',
-                   'ini':'User defined initialization for variable %s over zone %s'}
+                   'ini':'User defined initialization for variable %s over zone %s',
+                   'ibm':'User defined explicit formula of %s indicator for object %s'}
 
 _func_short_to_long = {'vol':'volume zone',
                        'bnd':'boundary',
                        'src':'source term',
-                       'ini':'initialization'}
+                       'ini':'initialization',
+                       'ibm':'Immersed boundaries'}
 
 #-------------------------------------------------------------------------------
 
@@ -908,6 +918,8 @@ def parse_gui_expression(expression,
 
     tab = '  '
     ntabs = 3
+    if func_type == 'ibm':
+        ntabs = 2
 
     if_open = 0
 
@@ -1014,6 +1026,9 @@ def parse_gui_expression(expression,
                         else:
                             new_v = 'new_vals[e_id]'
 
+                    elif func_type == 'ibm':
+                        new_v = '*ipenal'
+
                     l = new_v + ' = ' + lf[1]
 
             # ------------------------------------
@@ -1086,7 +1101,8 @@ class mei_to_c_interpreter:
         self.funcs = {'vol':{},
                       'bnd':{},
                       'src':{},
-                      'ini':{}}
+                      'ini':{},
+                      'ibm':{}}
 
         self.code_to_write = ""
 
@@ -1107,6 +1123,9 @@ class mei_to_c_interpreter:
 
             # Initialization function
             self.generate_initialize_code()
+
+            # Immersed boundaries function
+            self.generate_immersed_boundaries_code()
 
     #---------------------------------------------------------------------------
 
@@ -1148,10 +1167,6 @@ class mei_to_c_interpreter:
     #---------------------------------------------------------------------------
 
     def write_cell_block(self, func_key):
-
-        # Check if function exists
-        if func_key not in self.funcs['vol'].keys():
-            return
 
         func_params = self.funcs['vol'][func_key]
 
@@ -1723,7 +1738,121 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def write_ibm_block(self, func_key):
+
+        func_params = self.funcs['ibm'][func_key]
+
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
+
+        object_name, name = func_key.split('::')
+        exp_lines_comp = func_params['lines']
+
+        # Get user definitions and code
+        usr_defs = ''
+        usr_code = ''
+        usr_blck = ''
+
+        tab   = "  "
+        ntabs = 2
+
+        known_symbols = []
+        coords = ['x', 'y', 'z']
+        need_coords = False
+
+        # Add to definitions useful arrays or scalars
+        for line_comp in exp_lines_comp:
+            for s in symbols:
+                sn = s[0]
+                if sn in line_comp and sn not in known_symbols:
+                    if sn == 'dt':
+                        usr_defs += ntabs*tab
+                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt;\n'
+                        known_symbols.append(sn)
+                    elif sn == 't':
+                        usr_defs += ntabs*tab
+                        usr_defs += 'const cs_real_t time = cs_glob_time_step->t_cur;\n'
+                        known_symbols.append(sn)
+                    elif sn == 'iter':
+                        usr_defs += ntabs*tab
+                        usr_defs += 'const int iter = cs_glob_time_step->nt_cur;\n'
+                        known_symbols.append(sn)
+                    elif sn in coords:
+                        ic = coords.index(sn)
+                        lxyz = 'const cs_real_t %s = xyz[c_id][%s];\n' % (sn, str(ic))
+                        usr_code += (ntabs+1)*tab + lxyz
+                        known_symbols.append(sn)
+                        need_coords = True
+                    elif sn in self.notebook.keys():
+                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
+                                % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
+                    elif sn in _ref_turb_values:
+                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
+                        usr_defs += ntabs*tab + l
+                        known_symbols.append(sn)
+
+                    elif s not in known_fields:
+                        if len(s[1].split('=')) > 1:
+                            sval = s[1].split('=')[-1]
+                            usr_defs += ntabs*tab + 'const cs_real_t '+sn+' = '+str(sval)+';\n'
+                            known_symbols.append(sn)
+
+        if need_coords:
+            usr_defs = ntabs*tab \
+                     + 'const cs_real_3_t xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
+                     + '\n\n' \
+                     + usr_defs
+
+        # Internal names of mathematical functions
+        for key in _cs_math_internal_name.keys():
+            if key in expression:
+                expression = expression.replace(key+'(',
+                                                _cs_math_internal_name[key]+'(')
+
+        for line in exp_lines_comp:
+            if 'pi' in line and 'pi' not in known_symbols:
+                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
+                known_symbols.append('pi')
+
+        for s in required:
+            known_symbols.append(s);
+
+        known_symbols.append('#')
+
+        ntabs += 1
+        if_loop = False
+
+        # Parse the user expresion
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'ibm')
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
+
+        usr_blck = tab + 'if (strcmp(object_name, "%s") == 0) {' % (name)
+        usr_blck += usr_code
+        usr_blck += tab + '}\n'
+
+        return usr_blck
+
+    #---------------------------------------------------------------------------
+
     def write_block(self, func_type, key):
+
+        # Check if function exists
+        if key not in self.funcs[func_type].keys():
+            return
 
         if func_type == 'vol':
             return self.write_cell_block(key)
@@ -1733,6 +1862,8 @@ class mei_to_c_interpreter:
             return self.write_src_block(key)
         elif func_type == 'ini':
             return self.write_ini_block(key)
+        elif func_type == 'ibm':
+            return self.write_ibm_block(key)
         else:
             return None
 
@@ -2361,12 +2492,30 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def generate_immersed_boundaries_code(self):
+
+        if self.pkg_name == 'neptune_cfd':
+            from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
+            ibm = ImmersedBoundariesModel(self.case)
+
+            if ibm.getOnOff() == 'on' and ibm.getMethod() == 'explicit':
+                for objId in len(ibm.getObjectsNodeList()):
+                    node = ibm.getObjectsNodeList()[objId]
+
+                    object_name = ibm.getObjectName(objId+1)
+
+                    exp, req, sym = ibm.getIBMFormulaComponents(objId)
+                    self.init_block('ibm', object_name, 'porosity',
+                                    exp, req, sym, [])
+
+    #---------------------------------------------------------------------------
+
     def check_meg_code_syntax(self, function_name):
 
         if not os.path.exists(self.tmp_path):
             os.makedirs(self.tmp_path)
 
-        if function_name in ['vol', 'bnd', 'src', 'ini']:
+        if function_name in ['vol', 'bnd', 'src', 'ini', 'ibm']:
             self.save_function(func_type=function_name,
                                hard_path=self.tmp_path)
 

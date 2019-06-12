@@ -42,6 +42,7 @@ import sys, unittest
 from code_saturne.model.Common import *
 from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLmodel import ModelTest
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # Cathare coupling model class
@@ -61,6 +62,7 @@ class ImmersedBoundariesModel(Variables, Model):
 
         self.__node_models = self.case.xmlGetNode('thermophysical_models')
         self.__node_ibm    = self.__node_models.xmlInitNode('immersed_boundaries')
+        self.notebook = NotebookModel(self.case)
     # ----------------------------------
 
     # ----------------------------------
@@ -84,6 +86,24 @@ class ImmersedBoundariesModel(Variables, Model):
     def getNumberOfFSIObjects(self):
 
         return len(self.__node_ibm.xmlGetNodeList('ibm_object'))
+    # ----------------------------------
+
+    # ----------------------------------
+    def getObjectsNodeList(self):
+
+        return self.__node_ibm.xmlGetNodeList('ibm_object')
+    # ----------------------------------
+
+    # ----------------------------------
+    def getObjectsNameList(self):
+        """
+        return list of objects' names
+        """
+        objectsList = []
+        for node in self.__node_ibm.xmlGetNodeList('ibm_object'):
+            objectsList.append(node['object_name'])
+
+        return objectsList
     # ----------------------------------
 
     # ----------------------------------
@@ -383,6 +403,48 @@ class ImmersedBoundariesModel(Variables, Model):
             return node_vel.xmlGetString('ax'), \
                    node_vel.xmlGetString('ay'), \
                    node_vel.xmlGetString('az')
+    # ----------------------------------
+
+    # ----------------------------------
+    def deleteObjectFormula(self, objId):
+
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[objId]
+        node.xmlRemoveChild('explicit_formula')
+
+
+    def setObjectFormula(self, objId, formula):
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[objId]
+        n = node.xmlInitChildNode('explicit_formula')
+
+        n.xmlSetTextNode(formula)
+
+
+    def getObjectFormula(self, objId):
+        print("--------------")
+        print(len(self.getObjectsNodeList()))
+        print("--------------")
+        node = self.__node_ibm.xmlGetNodeList('ibm_object')[objId]
+        formula = node.xmlGetString('explicit_formula')
+
+        return formula
+
+
+    def getIBMFormulaComponents(self, objId):
+
+        exp = self.getObjectFormula(objId)
+        if not exp:
+            exp = """indicator = 1;\n"""
+
+        req = [('indicator', 'Solid object indicator (1 is fluid, 0 is solid)')]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate'),
+               ('t', 'current time')]
+
+        for (name, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
     # ----------------------------------
 
 #-------------------------------------------------------------------------------

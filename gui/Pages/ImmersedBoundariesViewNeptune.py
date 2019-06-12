@@ -56,6 +56,7 @@ from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValida
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.ImmersedBoundariesNeptune import Ui_ImmersedBoundariesNeptune
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -268,11 +269,11 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         if QT_API == "PYQT4":
             self.tableViewFSI.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
             self.tableViewFSI.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFSI.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
+#            self.tableViewFSI.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableViewFSI.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             self.tableViewFSI.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFSI.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+#            self.tableViewFSI.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
 
         self.modelFSI.dataChanged.connect(self.dataChanged)
 
@@ -503,13 +504,16 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
         objId = self.current_obj
 
-        exp, req, sym = self.ibm.getFormulaPorosityComponents(objId)
-        exa = ""
+        exp, req, sym = self.ibm.getIBMFormulaComponents(objId-1)
+        exa = """if (x < 0.5)
+                   indicator = 0;
+                 else
+                   indicator = 1;"""
 
         name = self.ibm.getObjectName(objId)
 
         dialog = QMegEditorView(parent        = self,
-                                function_type = 'var_poro',
+                                function_type = 'ibm',
                                 zone_name     = name,
                                 variable_name = 'porosity',
                                 expression    = exp,
@@ -521,7 +525,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotExplicitFormula -> %s" % str(result))
-            self.ibm.setExplicitFormula(str(objId), 'porosity', result)
+            self.ibm.setObjectFormula(objId-1, result)
             self.pushButtonExplicit.setStyleSheet("background-color: green")
             self.pushButtonExplicit.setToolTip(exp)
 
