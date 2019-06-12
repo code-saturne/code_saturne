@@ -3948,6 +3948,12 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   for (i = 0; i < mesh->n_i_faces; i++)
     bft_printf("   < %3d >  %5d\n", i, mesh->i_face_family[i]);
 
+  if (mesh->i_face_r_gen != NULL) {
+    bft_printf("Refinement generation of each internal face:\n");
+    for (i = 0; i < mesh->n_i_faces; i++)
+      bft_printf("   < %3d >  %5d\n", i, (int)(mesh->i_face_r_gen[i]));
+  }
+
   if (mesh->global_i_face_num != NULL) {
 
     bft_printf("\nInternal faces global numbering:\n");

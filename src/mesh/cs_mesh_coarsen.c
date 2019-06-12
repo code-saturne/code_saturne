@@ -201,11 +201,11 @@ _cell_equiv(cs_mesh_t  *m,
         cs_lnum_t min_equiv = CS_MIN(c_equiv[c_id0], c_equiv[c_id1]);
         if (c_equiv[c_id0] > min_equiv) {
           c_equiv[c_id0] = min_equiv;
-          reloop = true;
+          reloop = 1;
         }
         if (c_equiv[c_id1] > min_equiv) {
           c_equiv[c_id1] = min_equiv;
-          reloop = true;
+          reloop = 1;
         }
       }
     }
