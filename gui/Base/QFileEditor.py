@@ -799,8 +799,13 @@ class QFileEditor(QMainWindow):
         ps        = self._currentSelection['filedir']
 
         self._contextMenu = QMenu()
+
+        if (path2file == '' or path2file == None ) and self.case_dir:
+            path2file = self.case_dir
+
         if pe == 'RESU':
-            self._contextMenu.addAction(self._explorerActions['view'])
+            if not os.path.isdir(os.path.join(path2file, fname)):
+                self._contextMenu.addAction(self._explorerActions['view'])
         elif pe == 'SRC':
             if not os.path.isdir(os.path.join(path2file, fname)):
                 if ps == 'SRC':
