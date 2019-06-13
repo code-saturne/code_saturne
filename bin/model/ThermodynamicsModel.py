@@ -488,7 +488,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 c = node['choice']
                 self.isInList(c, ('constant', 'user_law', 'table_law'))
 
-        if c != None:
+        if c == None:
             c = self.defaultValues()['propertyChoice']
             self.setPropertyMode(fieldId, tag, c)
 
