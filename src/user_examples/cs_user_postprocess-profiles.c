@@ -55,6 +55,7 @@
 #include "cs_time_plot.h"
 
 #include "cs_field_pointer.h"
+#include "cs_field_operator.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_turbulence_model.h"
@@ -321,8 +322,12 @@ cs_user_postprocess_values(const char            *mesh_name,
           || turb_mdl->itytur == 5
           || turb_mdl->itytur == 6) {
 
-        cs_real_3_t *coords = NULL; /* profile points are cell centers */
-        cs_post_evm_reynolds_stresses(n_cells, cell_list, coords, rij);
+        cs_field_interpolate_t interpolation_type = CS_FIELD_INTERPOLATE_MEAN;
+        cs_post_evm_reynolds_stresses(interpolation_type,
+                                      n_cells,
+                                      cell_list,
+                                      NULL, /* coords */
+                                      rij);
 
       } else if (turb_mdl->itytur == 3 && turb_rans_mdl->irijco == 0) {
 

@@ -33,6 +33,7 @@
 
 #include "cs_defs.h"
 #include "cs_mesh_location.h"
+#include "cs_field_operator.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -222,19 +223,23 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 /*!
  * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
  *
- * \param[in]  n_cells     number of cells
- * \param[in]  cell_ids    list of cells (0 to n-1) containing given coordinates
- * \param[in]  coords      coordinates
- * \param[out] rst         Reynolds stresses stored as vector
- *                         [r11,r22,r33,r12,r23,r13]
+ * \param[in]  interpolation_type interpolation type for turbulent kinetic
+ *                                energy field
+ * \param[in]  n_cells            number of points
+ * \param[in]  cell_ids           cell location of points
+ *                                (indexed from 0 to n-1)
+ * \param[in]  coords             point coordinates
+ * \param[out] rst                Reynolds stresses stored as vector
+ *                                [r11,r22,r33,r12,r23,r13]
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_evm_reynolds_stresses(cs_lnum_t          n_cells,
-                              const cs_lnum_t    cell_ids[],
-                              const cs_real_3_t *coords,
-                              cs_real_6_t       *rst);
+cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
+                              cs_lnum_t               n_cells,
+                              const cs_lnum_t         cell_ids[],
+                              const cs_real_3_t      *coords,
+                              cs_real_6_t            *rst);
 
 /*----------------------------------------------------------------------------*/
 /*!
