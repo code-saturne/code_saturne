@@ -214,7 +214,8 @@ double precision, allocatable, dimension(:) :: coefa_rho, coefb_rho
 double precision, allocatable, dimension(:) :: cofbfp
 double precision, allocatable, dimension(:) :: coefaf_dp2
 double precision, allocatable, dimension(:) :: rhs, rovsdt
-double precision, allocatable, dimension(:) :: hydro_pres
+double precision, allocatable, dimension(:), target :: hydro_pres
+double precision, dimension(:), pointer :: cpro_hydro_pres
 double precision, allocatable, dimension(:) :: velflx, velflb, ddphi
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
 double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
@@ -248,7 +249,6 @@ double precision, allocatable, dimension(:,:) :: trav
 double precision, dimension(:,:), pointer :: cpro_poro_div_duq
 double precision, dimension(:), pointer :: cpro_rho_mass, bpro_rho_mass
 double precision, dimension(:), allocatable, target :: cpro_rho_tc, bpro_rho_tc
-
 double precision, allocatable, dimension(:) :: c2
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv
 double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
@@ -277,7 +277,20 @@ iswdyp = vcopt_p%iswdyn
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dphim1(ncelet), rhs0(ncelet))
 if (icalhy.eq.1) allocate(frchy(ndim,ncelet),             &
-                          dfrchy(ndim,ncelet), hydro_pres(ncelet))
+                          dfrchy(ndim,ncelet))
+
+call field_get_id_try("hydrostatic_pressure", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, cpro_hydro_pres)
+else
+  allocate(hydro_pres(ncelet))
+  cpro_hydro_pres => hydro_pres
+endif
+
+! Initialize hydrostatic pressure to 0
+do iel = 1, ncel
+  cpro_hydro_pres(iel) = 0.d0
+enddo
 
 ! Diffusive flux Boundary conditions for delta P
 allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
@@ -453,7 +466,7 @@ do ifac = 1, nfabor
 enddo
 
 ! Compute a pseudo hydrostatic pressure increment stored
-! in hydro_pres(.) with Homogeneous Neumann BCs everywhere
+! in cpro_hydro_pres(.) with Homogeneous Neumann BCs everywhere
 if (iphydr.eq.1.and.icalhy.eq.1) then
 
   ifcsor = isostd(nfabor+1)
@@ -490,7 +503,7 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
       !TODO
       !frchy, dfrchy,                          &
       frcxt  , dfrcxt ,                       &
-      hydro_pres      , iflux  , bflux ,      &
+      cpro_hydro_pres, isostd, iflux  , bflux ,    &
       viscf  , viscb  ,                       &
       dam    , xam    ,                       &
       dphi   , rhs    ) !FIXME remove work arrays.
@@ -517,7 +530,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
       phydr0 = 0.d0
     else
       iel0 = ifabor(ifac0)
-      phydr0 = hydro_pres(iel0)                                     &
+      phydr0 = cpro_hydro_pres(iel0)                                     &
            +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
            +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
            +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
@@ -527,6 +540,11 @@ if (iphydr.eq.1.or.iifren.eq.1) then
       call parsom (phydr0)
     endif
   endif
+
+  ! Rescale cpro_hydro_pres so that it is 0 on the reference face
+  do iel = 1, ncel
+    cpro_hydro_pres(iel) = cpro_hydro_pres(iel) - phydr0
+  enddo
 
   ! If hydrostatic pressure increment or free entrance Inlet
   if (indhyd.eq.1.or.iifren.eq.1) then
@@ -542,11 +560,10 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         iel=ifabor(ifac)
 
         if (indhyd.eq.1) then
-          coefa_dp(ifac) =  hydro_pres(iel)                               &
+          coefa_dp(ifac) =  cpro_hydro_pres(iel)                               &
                          + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
                          + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
-                         + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)  &
-                         -  phydr0
+                         + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)
         endif
 
         ! Diffusive flux BCs
@@ -2270,7 +2287,8 @@ deallocate(coefaf_dp, coefbf_dp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dphim1, rhs0)
-if (icalhy.eq.1) deallocate(frchy, dfrchy, hydro_pres)
+if (icalhy.eq.1) deallocate(frchy, dfrchy)
+if (allocated(hydro_pres)) deallocate(hydro_pres)
 if (ivofmt.ge.0.or.idilat.eq.4) then
   if (allocated(xdtsro)) deallocate(xdtsro)
   if (allocated(xunsro)) deallocate(xunsro)

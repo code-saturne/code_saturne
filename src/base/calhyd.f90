@@ -36,6 +36,8 @@
 !> \param[in]     dfext         external force increment
 !>                              generating hydrostatic pressure
 !> \param[out]    phydr         hydrostatic pressure increment
+!> \param[in]     isostd        indicator of standard outlet and index
+!>                               of the reference outlet face
 !> \param[in]     flumas        work array
 !> \param[in]     flumab        work array
 !> \param[in,out] viscf         work array
@@ -49,7 +51,7 @@
 subroutine calhyd &
  ( indhyd ,                                                       &
    fext   , dfext  ,                                              &
-   phydr  , flumas , flumab ,                                     &
+   phydr  , isostd , flumas , flumab ,                            &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    dpvar  , smbr   )
@@ -81,6 +83,7 @@ integer          indhyd
 double precision fext(3,ncelet)
 double precision dfext(3,ncelet)
 double precision phydr(ncelet)
+integer          isostd(nfabor+1)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac)
