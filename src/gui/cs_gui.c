@@ -953,6 +953,7 @@ _write_profile_v_label_name(cs_tree_node_t  *tn_vp,
         fprintf(file, ", %s", label);
     }
 
+    BFT_FREE(label);
   }
 
 }
