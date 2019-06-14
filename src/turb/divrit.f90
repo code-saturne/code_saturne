@@ -417,7 +417,7 @@ if (ityturt(iscal).ne.3) then
           temp(ii)    = temp(ii)   / coeff_imp
           ! Calculation of the diffusion tensor for the implicited part
           ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+          vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
 
         else if(iturt(iscal).eq.21) then
           ! EB-AFM
@@ -428,7 +428,7 @@ if (ityturt(iscal).ne.3) then
           temp(ii)    = temp(ii)   / coeff_imp
           ! Calculation of the diffusion tensor for the implicited part
           ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+          vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
 
         else if(iturt(iscal).eq.11) then
           ! EB-GGDH
@@ -438,7 +438,7 @@ if (ityturt(iscal).ne.3) then
           temp(ii)    = temp(ii)   / coeff_imp
           ! Calculation of the diffusion tensor for the implicited part
           ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+          vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
         endif
 
         ! In the next step, we compute the divergence of:
@@ -449,9 +449,9 @@ if (ityturt(iscal).ne.3) then
 
       ! Extra diag part of the diffusion tensor for covofi
       if(iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
-        vistet(4,iel) = ctheta(iscal)* xtt * xrij(1,2)
-        vistet(5,iel) = ctheta(iscal)* xtt * xrij(2,3)
-        vistet(6,iel) = ctheta(iscal)* xtt * xrij(1,3)
+        vistet(4,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,2)
+        vistet(5,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(2,3)
+        vistet(6,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,3)
       end if
 
     enddo ! End loop over ncel
@@ -627,7 +627,7 @@ if (ityturt(iscal).ne.3) then
           temp(ii)    = temp(ii)   / coeff_imp
           ! Calculation of the diffusion tensor for the implicited part
           ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+          vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
 
         else if(iturt(iscal).eq.21) then
           ! EB-AFM
@@ -638,7 +638,7 @@ if (ityturt(iscal).ne.3) then
           temp(ii)    = temp(ii)   / coeff_imp
           ! Calculation of the diffusion tensor for the implicited part
           ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+          vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
 
         else if(iturt(iscal).eq.11) then
           ! EB-GGDH
@@ -648,7 +648,7 @@ if (ityturt(iscal).ne.3) then
           temp(ii)    = temp(ii)   / coeff_imp
           ! Calculation of the diffusion tensor for the implicited part
           ! of the model computed in covofi.f90
-          vistet(ii,iel) = ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+          vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
         endif
 
         ! In the next step, we compute the divergence of:
@@ -659,9 +659,9 @@ if (ityturt(iscal).ne.3) then
 
       ! Extra diag part of the diffusion tensor for covofi
       if(iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
-        vistet(4,iel) = ctheta(iscal)* xtt * xrij(1,2)
-        vistet(5,iel) = ctheta(iscal)* xtt * xrij(2,3)
-        vistet(6,iel) = ctheta(iscal)* xtt * xrij(1,3)
+        vistet(4,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,2)
+        vistet(5,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(2,3)
+        vistet(6,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,3)
       end if
 
     enddo ! End loop over ncel
