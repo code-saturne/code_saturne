@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add the possibility to compute a porosity from a file containing points (*.pts)
+  comming from a 3D scan. To use set it set in cs_user_parameters.c the scan file
+  with "cs_porosity_from_scan_set_file_name("my_scan.pts")".
+
 - Multigrid: simplify plotting behavior.
   * Only convergence of cycles is now plotted, as many smoother
     operators do not compute the residual
