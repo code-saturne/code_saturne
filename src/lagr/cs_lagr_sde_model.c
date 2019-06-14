@@ -1323,7 +1323,7 @@ _lagich(const cs_real_t   tempct[],
 
     /* No heterogeneous combustion if Mch/Mp >= 1.e-3 */
     cs_real_t gamhet;
-    if (prev_part_coal_mass[0] >= (0.001 * mlayer[0]))
+    if (prev_part_coal_mass[0] <= (0.001 * mlayer[0]))
       gamhet = 0.0;
     else
       /* Compute GamHET */
@@ -1466,7 +1466,7 @@ _lagich(const cs_real_t   tempct[],
         fcoke[l_id]  = 0.0;
 
       /* Loop on all cells which have reactive coke or coal */
-      for (cs_lnum_t l_id = l_id_het; l_id < 0; l_id--) {
+      for (cs_lnum_t l_id = 0; l_id < l_id_het; l_id++) {
 
         aux1 =  (skp1[l_id] *    (1.0 - lag_cc->y1ch[co_id]) + skp2[l_id]
                             * (1.0 - lag_cc->y2ch[co_id]))
@@ -1565,14 +1565,14 @@ _lagich(const cs_real_t   tempct[],
 
     l_id_het = 0;
     for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++) {
-      if (prev_part_coal_mass[l_id] > 0.0)
+      if (part_coal_mass[l_id] > 0.0)
         l_id_het = l_id;
     }
 
     /* Check for remaining coke on a more external layer */
 
     for (cs_lnum_t l_id = l_id_het; l_id < nlayer; l_id++) {
-      if (prev_part_coke_mass[l_id] > 0.0)
+      if (part_coke_mass[l_id] > 0.0)
         l_id_het = l_id;
     }
 
