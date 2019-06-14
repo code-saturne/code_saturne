@@ -535,9 +535,6 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
     for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
       face_r_gen[j] = 0;
 
-    if (transfer == true)
-      BFT_FREE(mesh->i_face_r_gen);
-
     /* Distribute to blocks, write if required */
 
     cs_part_to_block_copy_array(d,
@@ -574,6 +571,9 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
 
     }
   }
+
+  if (transfer == true)
+    BFT_FREE(mesh->i_face_r_gen);
 
   if (transfer == false)
     BFT_FREE(mb->face_r_gen);
@@ -886,10 +886,8 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
       mb->face_r_gen[j] = mesh->b_face_family[b_order[i]];
 
-    if (transfer == true) {
-      BFT_FREE(mesh->i_face_family);
-      BFT_FREE(mesh->b_face_family);
-    }
+    if (transfer == true)
+      BFT_FREE(mesh->i_face_r_gen);
 
     if (pp_out != NULL) {
       if (transfer == true)
@@ -1474,8 +1472,12 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
   /* Get refinement info if needed */
 
   int r_flag = 0;
-  if (mesh->i_face_r_gen != NULL)
-    r_flag = 1;
+  for (cs_lnum_t j = 0; j < mesh->n_i_faces; j++) {
+    if (mesh->i_face_r_gen[j] != 0) {
+      r_flag = 1;
+      break;
+    }
+  }
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {

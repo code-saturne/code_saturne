@@ -1181,14 +1181,17 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   /* Face level */
 
-  if (mb->have_face_r_gen) {
-    BFT_MALLOC(_face_r_gen, _n_faces, char);
+  BFT_MALLOC(_face_r_gen, _n_faces, char);
 
+  if (mb->have_face_r_gen)
     cs_block_to_part_copy_array(d,
                                 CS_CHAR,
                                 1,
                                 mb->face_r_gen,
                                 _face_r_gen);
+  else {
+    for (i = 0; i < _n_faces; i++)
+      _face_r_gen[i] = 0;
   }
 
   BFT_FREE(mb->face_r_gen);
@@ -1345,13 +1348,11 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_FREE(_face_gc_id);
 
-  if (mb->have_face_r_gen) {
-    _extract_face_r_gen(mesh,
-                        _n_faces,
-                        _face_r_gen,
-                        face_type);
-    BFT_FREE(_face_r_gen);
-  }
+  _extract_face_r_gen(mesh,
+                      _n_faces,
+                      _face_r_gen,
+                      face_type);
+  BFT_FREE(_face_r_gen);
 
   BFT_FREE(face_type);
 }
@@ -1487,6 +1488,11 @@ _decompose_data_l(cs_mesh_t          *mesh,
                         mb->face_r_gen,
                         face_type);
     BFT_FREE(mb->face_r_gen);
+  }
+  else {
+    BFT_MALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
+    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+      mesh->i_face_r_gen[i] = 0;
   }
 
   BFT_FREE(face_type);

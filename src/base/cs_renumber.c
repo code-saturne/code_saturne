@@ -278,8 +278,6 @@ static const char *_vertices_renum_name[]
 /*----------------------------------------------------------------------------
  * Redistribute family (group class) ids in case of renubering
  *
- * This is the case when the mesh is read in the obsolete 'slc' format.
- *
  * parameters:
  *   n_elts     <--  Number of elements
  *   new_to_old <--  Pointer to renumbering array
@@ -291,7 +289,6 @@ _update_family(cs_lnum_t         n_elts,
                const cs_lnum_t  *new_to_old,
                cs_lnum_t        *family)
 {
-  cs_lnum_t ii;
   cs_lnum_t *old_family;
 
   if (family == NULL)
@@ -301,10 +298,39 @@ _update_family(cs_lnum_t         n_elts,
 
   memcpy(old_family, family, n_elts*sizeof(cs_lnum_t));
 
-  for (ii = 0; ii < n_elts; ii++)
+  for (cs_lnum_t ii = 0; ii < n_elts; ii++)
     family[ii] = old_family[new_to_old[ii]];
 
   BFT_FREE(old_family);
+}
+
+/*----------------------------------------------------------------------------
+ * Redistribute face generaltion level in case of renubering
+ *
+ * parameters:
+ *   n_elts     <--  Number of elements
+ *   new_to_old <--  Pointer to renumbering array
+ *   family     <->  Pointer to array of family ids (or NULL)
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_r_gen(cs_lnum_t         n_elts,
+              const cs_lnum_t  *new_to_old,
+              char             *r_gen)
+{
+  char *old_r_gen;
+
+  if (r_gen == NULL)
+    return;
+
+  BFT_MALLOC(old_r_gen, n_elts, char);
+
+  memcpy(old_r_gen, r_gen, n_elts);
+
+  for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+    r_gen[ii] = old_r_gen[new_to_old[ii]];
+
+  BFT_FREE(old_r_gen);
 }
 
 /*----------------------------------------------------------------------------
@@ -321,14 +347,13 @@ _update_global_num(size_t             n_elts,
                    const cs_lnum_t    new_to_old[],
                    cs_gnum_t        **global_num)
 {
-  size_t i;
   cs_gnum_t *_global_num = *global_num;
 
   if (_global_num == NULL) {
 
     BFT_MALLOC(_global_num, n_elts, cs_gnum_t);
 
-    for (i = 0; i < n_elts; i++)
+    for (size_t i = 0; i < n_elts; i++)
       _global_num[i] = new_to_old[i] + 1;
 
     *global_num = _global_num;
@@ -341,7 +366,7 @@ _update_global_num(size_t             n_elts,
     BFT_MALLOC(tmp_global, n_elts, cs_gnum_t);
     memcpy(tmp_global, _global_num, n_elts*sizeof(cs_gnum_t));
 
-    for (i = 0; i < n_elts; i++)
+    for (size_t i = 0; i < n_elts; i++)
       _global_num[i] = tmp_global[new_to_old[i]];
 
     BFT_FREE(tmp_global);
@@ -738,6 +763,9 @@ _cs_renumber_update_i_faces(cs_mesh_t        *mesh,
     /* Update face families and global numbering */
 
     _update_family(n_i_faces, new_to_old_i, mesh->i_face_family);
+
+    if (mesh->i_face_r_gen != NULL)
+      _update_r_gen(n_i_faces, new_to_old_i, mesh->i_face_r_gen);
 
     _update_global_num(n_i_faces, new_to_old_i, &(mesh->global_i_face_num));
 

@@ -1009,6 +1009,7 @@ _add_layer_faces(cs_mesh_t        *m,
                 cs_lnum_t);
 
     BFT_REALLOC(m->i_face_family, m->n_i_faces + n_add_faces, cs_lnum_t);
+    BFT_REALLOC(m->i_face_r_gen, m->n_i_faces + n_add_faces, char);
 
     bool have_g_i_face_num = (m->global_i_face_num != NULL) ? true : false;
     bool have_g_cell_num = (m->global_cell_num != NULL) ? true : false;
@@ -1118,6 +1119,7 @@ _add_layer_faces(cs_mesh_t        *m,
         else
           m->i_face_family[n_i_faces_ini + s_id]
             = m->b_face_family[f_id];
+        m->i_face_r_gen[n_i_faces_ini + s_id] = 0;
 
         /* Other faces shifted */
 
@@ -1126,6 +1128,7 @@ _add_layer_faces(cs_mesh_t        *m,
           m->i_face_cells[l][0] = n_cells_ini + s_id + j - 1;
           m->i_face_cells[l][1] = n_cells_ini + s_id + j;
           m->i_face_family[l] = default_family_id;
+          m->i_face_r_gen[l] = 0;
         }
 
         /* Boundary face updated to new boundary cell */
@@ -1294,6 +1297,7 @@ _add_side_faces(cs_mesh_t           *m,
     cs_lnum_t *p_face_vtx_lst = NULL;
     cs_lnum_t *a_face_gc = NULL;
     cs_gnum_t *a_face_gnum = NULL;
+    char *a_face_r_gen = NULL;
 
     if (e2f_stride == 2) {
       cs_lnum_t f2v_size_ini = m->i_face_vtx_idx[m->n_i_faces];
@@ -1302,10 +1306,12 @@ _add_side_faces(cs_mesh_t           *m,
       BFT_REALLOC(m->i_face_vtx_idx, m->n_i_faces + n_faces_add + 1, cs_lnum_t);
       BFT_REALLOC(m->i_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
       BFT_REALLOC(m->i_face_family, m->n_i_faces + n_faces_add, cs_lnum_t);
+      BFT_REALLOC(m->i_face_r_gen, m->n_i_faces + n_faces_add, char);
       a_face_cell = (cs_lnum_t *)(m->i_face_cells + m->n_i_faces);
       p_face_vtx_idx = m->i_face_vtx_idx + m->n_i_faces;
       p_face_vtx_lst = m->i_face_vtx_lst + f2v_size_ini;
       a_face_gc = m->i_face_family + m->n_i_faces;
+      a_face_r_gen = m->i_face_r_gen + m->n_i_faces;
       if (e_io_num != NULL) {
         BFT_REALLOC(m->global_i_face_num, m->n_i_faces + n_faces_add, cs_gnum_t);
         a_face_gnum = m->global_i_face_num +  m->n_i_faces;
@@ -1442,6 +1448,8 @@ _add_side_faces(cs_mesh_t           *m,
       if (e2f_stride != 1) {
         for (cs_lnum_t k = 0; k < n_f_sub; k++)
           a_face_gc[f_shift[i] + k] = default_family_id;
+        for (cs_lnum_t k = 0; k < n_f_sub; k++)
+          a_face_r_gen[f_shift[i] + k] = 0;
       }
       else {
         for (cs_lnum_t k = 0; k < n_f_sub; k++)

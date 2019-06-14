@@ -244,6 +244,7 @@ _perio_face_clean(cs_join_param_t      param,
     if (tag[i] > 0) {
       mesh->global_i_face_num[n_fi_faces] = mesh->global_i_face_num[i];
       mesh->i_face_family[n_fi_faces] = mesh->i_face_family[i];
+      mesh->i_face_r_gen[n_fi_faces] = mesh->i_face_r_gen[i];
       new_f2v_idx[n_fi_faces + 1] =  mesh->i_face_vtx_idx[i+1]
                                    - mesh->i_face_vtx_idx[i];
       n_fi_faces++;
@@ -252,6 +253,7 @@ _perio_face_clean(cs_join_param_t      param,
 
   BFT_REALLOC(mesh->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
   BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
 
   /* Update interior face connectivity */
 

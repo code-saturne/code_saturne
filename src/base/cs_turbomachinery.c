@@ -589,6 +589,12 @@ _copy_mesh(const cs_mesh_t  *mesh,
     memcpy(mesh_copy->b_face_family, mesh->b_face_family,
            mesh->n_b_faces*sizeof(cs_lnum_t));
   }
+
+  if (mesh->i_face_r_gen != NULL) {
+    BFT_MALLOC(mesh_copy->i_face_r_gen, mesh->n_i_faces, char);
+    memcpy(mesh_copy->i_face_r_gen, mesh->i_face_r_gen,
+           mesh->n_i_faces);
+  }
 }
 
 /*----------------------------------------------------------------------------

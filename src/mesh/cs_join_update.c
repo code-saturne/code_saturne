@@ -3504,6 +3504,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   cs_lnum_2_t  *new_face_cells = mesh->i_face_cells;
   cs_gnum_t  n_g_ii_faces = mesh->n_g_i_faces;
   cs_gnum_t  *new_fgnum = mesh->global_i_face_num;
+  char  *_new_face_r_gen = mesh->i_face_r_gen;
 
   const int  n_ranks = cs_glob_n_ranks;
   const int  rank = CS_MAX(cs_glob_rank_id, 0);
@@ -3519,6 +3520,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   BFT_REALLOC(new_f2v_idx, n_fi_faces + 1, cs_lnum_t);
   BFT_REALLOC(new_face_cells, n_fi_faces, cs_lnum_2_t);
   BFT_REALLOC(_new_face_family, n_fi_faces, cs_lnum_t);
+  BFT_REALLOC(_new_face_r_gen, n_fi_faces, char);
 
   max_size = 0;
   for (i = 0; i < jmesh->n_faces; i++)
@@ -3624,6 +3626,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
                     fnum[0], fnum[1]);
 
       _new_face_family[n_fi_faces] = new_face_family[i];
+      _new_face_r_gen[n_fi_faces] = 0;
 
       n_fi_faces++;
       new_f2v_idx[n_fi_faces] = n_face_vertices;
@@ -3696,6 +3699,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   mesh->global_i_face_num = new_fgnum;
   mesh->i_face_cells = new_face_cells;
   mesh->i_face_family = _new_face_family;
+  mesh->i_face_r_gen = _new_face_r_gen;
   mesh->i_face_vtx_connect_size = new_f2v_idx[n_fi_faces];
 }
 

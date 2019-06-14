@@ -300,6 +300,47 @@ _clean_i_family(cs_lnum_t        *i_face_family,
 }
 
 /*----------------------------------------------------------------------------
+ * Remove internal faces of i_face_r_gen from an index
+ * (realloc has to be done after).
+ *
+ * parameters:
+ *   i_face_r_gen    <-> interior faces refinement generation
+ *   n_i_faces       <-- number of internal faces
+ *   clean_list      <-- sorted index of faces to remove
+ *   clean_list_size <-- size of clean_list
+ *----------------------------------------------------------------------------*/
+
+static void
+_clean_i_r_gen(char             *i_face_r_gen,
+               cs_lnum_t         n_i_faces,
+               const cs_lnum_t  *clean_list,
+               cs_lnum_t         clean_list_size)
+{
+  cs_lnum_t face_id;
+  cs_lnum_t ind_empty = 0;
+  cs_lnum_t ind_full = 0;
+
+  for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+    bool remove_face = false;
+
+    if (ind_empty < clean_list_size) {
+      if (face_id == clean_list[ind_empty]) {
+        remove_face = true;
+        ind_empty++;
+      }
+    }
+
+    if (remove_face == false) {
+      if (face_id != ind_full)
+        i_face_r_gen[ind_full] = i_face_r_gen[face_id];
+      ind_full++;
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Get the complement of one list.
  *
  * parameters:
@@ -1601,6 +1642,11 @@ _boundary_insert(cs_mesh_t           *mesh,
                   face_id,
                   n_faces);
 
+  _clean_i_r_gen(mesh->i_face_r_gen,
+                 n_i_faces,
+                 face_id,
+                 n_faces);
+
   mesh->n_i_faces = n_i_faces - n_faces;
   mesh->i_face_vtx_connect_size = i_face_vtx_connect_size - i_face_vtx_cleaned;
 
@@ -1622,6 +1668,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_lnum_t);
   BFT_REALLOC(mesh->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
   BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
 
   if (mesh->n_g_b_faces != _n_g_b_faces)
     mesh->modified = 1;
