@@ -501,9 +501,9 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     !==========
     ( indhyd ,                                &
       !TODO
-      !frchy, dfrchy,                          &
+      !frchy, dfrchy,                         &
       frcxt  , dfrcxt ,                       &
-      cpro_hydro_pres, isostd, iflux  , bflux ,    &
+      cpro_hydro_pres, iflux  , bflux ,       &
       viscf  , viscb  ,                       &
       dam    , xam    ,                       &
       dphi   , rhs    ) !FIXME remove work arrays.
@@ -524,11 +524,10 @@ endif
 
 if (iphydr.eq.1.or.iifren.eq.1) then
 
+  phydr0 = 0.d0
   if (indhyd.eq.1) then
     ifac0 = isostd(nfabor+1)
-    if (ifac0.le.0) then
-      phydr0 = 0.d0
-    else
+    if (ifac0.gt.0) then
       iel0 = ifabor(ifac0)
       phydr0 = cpro_hydro_pres(iel0)                                     &
            +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
