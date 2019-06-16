@@ -26,7 +26,7 @@
 module atchem
 
 !=============================================================================
-
+use, intrinsic :: iso_c_binding
 use ppppar, only: nozppm
 
 !=============================================================================
@@ -49,8 +49,7 @@ parameter (Mair = 28.9d-3)           ! Kg/mol
 !> - 2 --> scheme with 20 species and 34 reactions
 !> - 3 --> scheme CB05 with 52 species and 155 reactions
 !> - 4 --> user defined schema
-
-integer, save :: ichemistry
+integer(c_int), pointer, save :: ichemistry
 
 !> ifilechemistry: choice to read (=1,2,3,4, according to the scheme) or not (0)
 !> a concentration profile file
@@ -60,21 +59,21 @@ integer, save :: ifilechemistry
 integer, save :: isepchemistry
 !> iphotolysis: inclusion (=1) or not (=2) of photolysis reactions
 integer, save :: iphotolysis
-!> nespg: number of chemical species
-integer, save :: nespg
-!> nrg: number of chemical reactions
-integer, save :: nrg
+!> Number of chemical species
+integer(c_int), pointer, save :: nespg
+!> Number of chemical reactions
+integer(c_int), pointer, save :: nrg
 
 !> scalar id for chemical species
-integer, allocatable, dimension(:)          ::  isca_chem
-!> molar mass of chemical species (Kg/mol)
-double precision, allocatable, dimension(:) ::  dmmk
+integer(c_int), dimension(:), pointer, save ::  isca_chem
+!> molar mass of chemical species (Kg/mol)//TODO FIXME in g/mol
+double precision, dimension(:), pointer ::  dmmk
+!> pointer to deal with different orders of chemical species
+integer(c_int), dimension(:), pointer ::  chempoint
 !> conversion factors for reaction rates jaccobian matrix
 double precision, allocatable, dimension(:) ::  conv_factor_jac
 !> kinetics constants
 double precision, allocatable, dimension(:) ::  reacnum
-!> pointer to deal with different orders of chemical species
-integer, allocatable, dimension(:)          ::  chempoint
 
 !> maximal time step for chemistry resolution
 double precision dtchemmax
@@ -120,7 +119,7 @@ use mesh, only: ncel
 
 implicit none
 
-integer imode, ii
+integer imode
 
 ! First reading of concentration profiles file
 imode = 0
@@ -129,15 +128,6 @@ call atlecc(imode)
 
 ! Dynamical allocations
 
-! dmmk may have already been allocated in atini1 if a default
-! chemical scheme is used
-if (.not. allocated(dmmk)) allocate(dmmk(nespg))
-! chempoint may have already been allocated in atini1 if a default
-! chemical scheme is used
-if (.not. allocated(chempoint)) then
-  allocate(chempoint(nespg))
-  chempoint=(/ (ii,ii=1,nespg,1) /)
-endif
 allocate(conv_factor_jac(nespg*nespg))
 allocate(reacnum(ncel*nrg))
 allocate(idespgi(nespgi))
@@ -154,14 +144,38 @@ allocate(ychem(nbchim))
 end subroutine init_chemistry
 
 !=============================================================================
+
+subroutine init_chemistry_pointers
+
+  use, intrinsic :: iso_c_binding
+  use cs_c_bindings
+
+  implicit none
+
+  ! Local variables
+
+  type(c_ptr) :: c_species_to_scalar_id, c_molar_mass, c_chempoint
+
+  call cs_f_atmo_chem_arrays_get_pointers(c_species_to_scalar_id, &
+                                          c_molar_mass, &
+                                          c_chempoint)
+
+  call c_f_pointer(c_species_to_scalar_id, isca_chem, [nespg])
+  call c_f_pointer(c_molar_mass, dmmk, [nespg])
+  call c_f_pointer(c_chempoint, chempoint, [nespg])
+
+end subroutine init_chemistry_pointers
+
+!=============================================================================
 !> \brief deallocate the space
 subroutine finalize_chemistry
 
+use cs_c_bindings
+
 implicit none
 
-deallocate(isca_chem)
-deallocate(dmmk)
-deallocate(chempoint)
+call cs_f_atmo_chem_finalize()
+
 deallocate(conv_factor_jac)
 deallocate(reacnum)
 deallocate(idespgi)

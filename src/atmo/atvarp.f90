@@ -59,6 +59,7 @@ use atincl
 use atchem
 use field
 use siream
+use cs_c_bindings
 
 !===============================================================================
 
@@ -73,7 +74,7 @@ character(len=2) :: nbin
 character(len=10), dimension(nesp_aer) :: f_esp_siream
 
 integer(c_int) :: n_chem_species
-integer(c_int), dimension(65) :: species_f_id
+integer(c_int), dimension(:), allocatable :: species_f_id
 
 !===============================================================================
 ! Interfaces
@@ -176,10 +177,11 @@ if (ifilechemistry.ge.1) then
   if (ifilechemistry.eq.1) then
     nrg = 5
     nespg = 4
-    allocate(isca_chem(nespg))
-    allocate(dmmk(nespg))
-    allocate(chempoint(nespg))
-    call add_model_scalar_field('chemistry_no',  'NO',  isca_chem(1))
+
+    ! Map isca_chem, dmmk, chempoint and allocate it if needed
+    call init_chemistry_pointers()
+
+    call add_model_scalar_field('chemistry_no',  'NO',  isca_chem(1)) !FIXME species and not chemistry
     call add_model_scalar_field('chemistry_no2', 'NO2', isca_chem(2))
     call add_model_scalar_field('chemistry_o3',  'O3',  isca_chem(3))
     call add_model_scalar_field('chemistry_o3p', 'O3P', isca_chem(4))
@@ -188,13 +190,14 @@ if (ifilechemistry.ge.1) then
     dmmk(3)=48.d-3 ! Molar mass O3
     dmmk(4)=16.d-3 ! Molar mass O3P
     chempoint = (/ 4, 3, 2, 1 /)
-  ! scheme with 20 species and 34 reactions
+  ! scheme with 20 species and 34 reactions! Note pas de COV
   else if (ifilechemistry.eq.2) then
     nrg = 34
     nespg = 20
-    allocate(isca_chem(nespg))
-    allocate(dmmk(nespg))
-    allocate(chempoint(nespg))
+
+    ! Map isca_chem, dmmk, chempoint and allocate it if needed
+    call init_chemistry_pointers()
+
     call add_model_scalar_field('species_no',    'NO',    isca_chem(1))
     call add_model_scalar_field('species_no2',   'NO2',   isca_chem(2))
     call add_model_scalar_field('species_o3',    'O3',    isca_chem(3))
@@ -246,9 +249,9 @@ if (ifilechemistry.ge.1) then
       nrg = 155
       nespg = 52
     endif
-    allocate(isca_chem(nespg))
-    allocate(dmmk(nespg))
-    allocate(chempoint(nespg))
+
+    ! Map isca_chem, dmmk, chempoint and allocate it if needed
+    call init_chemistry_pointers()
 
     call add_model_scalar_field('species_no',    'NO',    isca_chem(1))
     call add_model_scalar_field('species_no2',   'NO2',   isca_chem(2))
@@ -372,7 +375,7 @@ if (ifilechemistry.ge.1) then
       call add_model_scalar_field('species_cvanclp',  'CVANCLP',  isc)
       call add_model_scalar_field('species_cvbiiso1', 'CVBIISO1', isc)
       call add_model_scalar_field('species_cvbiiso2', 'CVBIISO2', isc)
-      dmmk(53)=114.0d0   ! Molar mass HC8
+      dmmk(53)=114.0d0   ! Molar mass HC8 ! FIXME not the same unity
       dmmk(54)=136.0d0   ! Molar mass API
       dmmk(55)=136.0d0   ! Molar mass LIM
       dmmk(56)=150.0d0   ! Molar mass CVARO1
@@ -399,7 +402,17 @@ if (ifilechemistry.ge.1) then
                      19, 20, 4, 21, 36, 22, 34, 16, 23, 24, 25, 31, 32, 26,&
                      5, 6, 27, 12, 28, 30, 29, 7, 8, 18 /)
     endif
- endif
+  ! User defined chemistry using SPACK file and routines
+  else if (ifilechemistry.eq.4) then
+
+    ! This function read the numver of species and reactions
+    ! and creates variables
+    call cs_atmo_declare_chem_from_spack()
+
+    ! Map isca_chem, dmmk, chempoint and allocate it if needed
+    call init_chemistry_pointers()
+
+  endif
 
 endif
 
@@ -454,12 +467,16 @@ endif
 ! 4. Map to fields and GUI
 !===============================================================================
 
+allocate(species_f_id(nespg))
+
 n_chem_species = nespg
 do isc = 1, nespg
   species_f_id(isc) = ivarfl(isca(isca_chem(isc)))
 enddo
 
 call cs_field_pointer_map_atmospheric(n_chem_species, species_f_id)
+
+deallocate(species_f_id)
 
 !===============================================================================
 ! 5. General field and physical properties

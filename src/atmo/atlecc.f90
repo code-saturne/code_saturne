@@ -187,7 +187,6 @@ else
     if(tchem(itp).lt.tchem(itp-1)) then
       write(nfecra,8000)
       call csexit (1)
-      !==========
     endif
   endif
 endif

@@ -72,6 +72,27 @@ typedef struct {
   bool compute_z_ground;
 } cs_atmo_option_t;
 
+/*----------------------------------------------------------------------------
+ * Atmospheric chemistry options descriptor
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+  /*! Choice of chemistry resolution scheme
+       - 0 --> no atmospheric chemistry
+       - 1 --> quasi steady equilibrium NOx scheme with 4 species and 5 reactions
+       - 2 --> scheme with 20 species and 34 reactions
+       - 3 --> scheme CB05 with 52 species and 155 reactions
+       - 4 --> user defined schema from SPACK */
+  int model;
+  int n_species;
+  int n_reactions;
+  char *spack_file_name;
+  int *species_to_scalar_id;
+  /*! Molar mass of the chemical species (g/mol) */
+  cs_real_t *molar_mass;
+  int *chempoint;
+} cs_atmo_chemisty_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -79,9 +100,23 @@ typedef struct {
 /* Pointer to atmo options structure */
 extern cs_atmo_option_t        *cs_glob_atmo_option;
 
+/* Pointer to atmo chemistry structure */
+extern cs_atmo_chemisty_t *cs_glob_atmo_chemistry;
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the SPACK file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmos_chemistry_set_spack_file_name(const char *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -109,6 +144,17 @@ extern cs_atmo_option_t        *cs_glob_atmo_option;
 
 void
 cs_atmo_z_ground_compute(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function declare additional transported variables for
+ *        atmospheric module  for the chemistry defined from SPACK.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_declare_chem_from_spack(void);
 
 /*----------------------------------------------------------------------------*/
 

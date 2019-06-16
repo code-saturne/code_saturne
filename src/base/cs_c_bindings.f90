@@ -2136,12 +2136,14 @@ module cs_c_bindings
     !> \brief Return pointers to atmo includes
 
     !> \param[out]   compute_z_ground     Pointer to compute_z_ground
+    !> \param[out]   nespg
+    !> \param[out]   nrg
 
-    subroutine cs_f_atmo_get_pointers(compute_z_ground) &
+    subroutine cs_f_atmo_get_pointers(compute_z_ground, ichemistry, nespg, nrg) &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: compute_z_ground
+      type(c_ptr), intent(out) :: compute_z_ground, ichemistry, nespg, nrg
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
@@ -2154,6 +2156,37 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_atmo_z_ground_compute
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Return pointers to atmo chemistry arrays
+
+    subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk, chempoint) &
+      bind(C, name='cs_f_atmo_chem_arrays_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: isca_chem, dmmk, chempoint
+    end subroutine cs_f_atmo_chem_arrays_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Deallocate arrays for atmo chemistry
+
+    subroutine cs_f_atmo_chem_finalize() &
+      bind(C, name='cs_f_atmo_chem_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_atmo_chem_finalize
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Declare chemistry variables from SAPCK
+
+    subroutine cs_atmo_declare_chem_from_spack() &
+      bind(C, name='cs_atmo_declare_chem_from_spack')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_declare_chem_from_spack
 
     !---------------------------------------------------------------------------
 

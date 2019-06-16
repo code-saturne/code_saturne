@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -59,6 +60,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_domain.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
@@ -70,6 +72,7 @@
 #include "cs_parall.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_physical_constants.h"
+#include "cs_prototypes.h"
 #include "cs_post.h"
 #include "cs_restart.h"
 #include "cs_selector.h"
@@ -95,8 +98,20 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
+/* global atmo options structure */
 static cs_atmo_option_t  _atmo_option = {
   .compute_z_ground = false
+};
+
+/* atmo chemistry options structure */
+static cs_atmo_chemisty_t _atmo_chem = {
+  .model = 0,
+  .n_species = 0,
+  .n_reactions = 0,
+  .spack_file_name = NULL,
+  .species_to_scalar_id = NULL,
+  .molar_mass = NULL,
+  .chempoint = NULL
 };
 
 /*============================================================================
@@ -104,6 +119,7 @@ static cs_atmo_option_t  _atmo_option = {
  *============================================================================*/
 
 cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
+cs_atmo_chemisty_t *cs_glob_atmo_chemistry = &_atmo_chem;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -111,22 +127,76 @@ cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
  *============================================================================*/
 
 void
-cs_f_atmo_get_pointers(bool  **compute_z_ground);
+cs_f_atmo_get_pointers(bool  **compute_z_ground,
+                       int   **model,
+                       int   **n_species,
+                       int   **n_reactions);
+
+void
+cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
+                                   cs_real_t **molar_mass,
+                                   int       **chempoint);
+void
+cs_f_atmo_chem_finalize(void);
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get pointer to compute_z_ground
+ * Convert string to lower case
+ *----------------------------------------------------------------------------*/
+
+char *
+strtolower(char       *dest,
+           const char *src)
+{
+  char *result = dest;
+  while (*dest++ = tolower(*src++));
+  return result;
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_atmo_get_pointers(bool **compute_z_ground)
+cs_f_atmo_get_pointers(bool  **compute_z_ground,
+                       int   **model,
+                       int   **n_species,
+                       int   **n_reactions)
 {
   *compute_z_ground = &(_atmo_option.compute_z_ground);
+  *model = &(_atmo_chem.model);
+  *n_species = &(_atmo_chem.n_species);
+  *n_reactions = &(_atmo_chem.n_reactions);
 }
 
+void
+cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
+                                   cs_real_t **molar_mass,
+                                   int       **chempoint)
+{
+
+  if (_atmo_chem.species_to_scalar_id == NULL)
+    BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
+  if (_atmo_chem.molar_mass == NULL)
+    BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+  if (_atmo_chem.chempoint == NULL)
+    BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+
+  *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
+  *molar_mass = (_atmo_chem.molar_mass);
+  *chempoint = (_atmo_chem.chempoint);
+}
+
+void
+cs_f_atmo_chem_finalize(void)
+{
+  BFT_FREE(_atmo_chem.species_to_scalar_id);
+  BFT_FREE(_atmo_chem.molar_mass);
+  BFT_FREE(_atmo_chem.chempoint);
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -332,6 +402,105 @@ cs_atmo_z_ground_compute(void)
   BFT_FREE(dpvar);
   BFT_FREE(rhs);
   BFT_FREE(rovsdt);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function set the file name of the SPACK file.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmos_chemistry_set_spack_file_name(const char *file_name)
+{
+  _atmo_chem.model = 4;
+
+  BFT_MALLOC(_atmo_chem.spack_file_name,
+             strlen(file_name) + 1,
+             char);
+
+  sprintf(_atmo_chem.spack_file_name, "%s", file_name);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function declare additional transported variables for
+ *        atmospheric module  for the chemistry defined from SPACK.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_declare_chem_from_spack(void)
+{
+  char line[512];
+  char name[512];
+  char label[512];
+
+  /* Open file */
+  bft_printf(" Open a SPACK file for atmo chemistry:\n    %s \n",
+      _atmo_chem.spack_file_name);
+
+  FILE* file = fopen(_atmo_chem.spack_file_name, "rt");
+  if (file == NULL)
+    bft_error(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: Could not open file."));
+
+  bool loop = true;
+
+  /* Read "[species]" */
+  for (int i = 1; loop; i++ ) {
+    if (fscanf(file, "%s\n", line) != 1)
+      bft_error(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: Could not open file."));
+
+    if (strcmp("[species]", line) == 0)
+      loop = false;
+  }
+
+  loop = true;
+  /* Read  SPACK: first loop count the number of species */
+  for (int i = 1; loop; i++ ) {
+    /* Read species */
+    if (fscanf(file, "%s\n", line) != 1)
+      bft_printf(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: Could not read line %d."), i);
+
+    /* When reach [molecular_waight]: break */
+    if (strcmp("[molecular_weight]", line) == 0)
+      loop = false;
+    else {
+      _atmo_chem.n_species = i;
+    }
+  }
+
+  /* Now allocate arrays */
+  BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
+  BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+  BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+
+  /* Read  SPACK: second loop Create variables and read molar mass */
+  for (int i = 0; i < _atmo_chem.n_species; i++ ) {
+    /* Read species */
+    if (fscanf(file, "%s %f\n", line, &(_atmo_chem.molar_mass[i])) != 1)
+      bft_printf(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: warning, may be end of file."));
+
+    /* The order is already ok */
+    _atmo_chem.chempoint[i] = i+1;//FIXME ?
+
+    /* Build name of the field:
+     * species_name in lower case */
+    strcpy(name, "species_");
+    strtolower(label, line);
+    strcat(name, label);
+
+    /* Field of dimension 1 */
+    int f_id = cs_variable_field_create(name, line, CS_MESH_LOCATION_CELLS, 1);
+
+    /* Scalar field, store in isca_chem/species_to_scalar_id (FORTRAN/C) array */
+    _atmo_chem.species_to_scalar_id[i] = cs_add_model_field_indexes(f_id);
+
+  }
 
 }
 

@@ -395,16 +395,20 @@ contains
   subroutine atmo_init
 
     use, intrinsic :: iso_c_binding
+    use atchem, only: nrg, nespg, ichemistry
     use cs_c_bindings
 
     implicit none
 
     ! Local variables
-    type(c_ptr) :: c_compute_z_ground
+    type(c_ptr) :: c_compute_z_ground, c_model, c_nrg, c_nespg
 
-    call cs_f_atmo_get_pointers(c_compute_z_ground)
+    call cs_f_atmo_get_pointers(c_compute_z_ground, c_model, c_nespg, c_nrg)
 
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
+    call c_f_pointer(c_model, ichemistry)
+    call c_f_pointer(c_nespg, nespg)
+    call c_f_pointer(c_nrg, nrg)
 
     return
 
