@@ -490,7 +490,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         if c == None:
             c = self.defaultValues()['propertyChoice']
-            self.setPropertyMode(fieldId, tag, c)
+            if node:
+                self.setPropertyMode(fieldId, tag, c)
 
         return c
 
