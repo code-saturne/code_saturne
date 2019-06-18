@@ -1095,7 +1095,7 @@ class mei_to_c_interpreter:
         for (nme, val) in nb.getNotebookList():
             self.notebook[nme] = str(val)
 
-        if create_functions:
+        if create_functions and self.has_meg_code():
             # Volume code
             self.generate_volume_code()
 
