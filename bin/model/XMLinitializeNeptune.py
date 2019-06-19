@@ -565,7 +565,7 @@ class XMLinitNeptune(Variables):
                     elif old_name in turb_dico.keys():
                         vn['name'] = turb_dico[old_name]
                         if field_id:
-                            vn['name'] += field_id
+                            vn['name'] += '_' + field_id
 
                     elif bool(re.search('MassFractionNonCondensableGas', old_name)):
                         vn['name'] = vn['name'].replace('MassFractionNonCondensableGas',
