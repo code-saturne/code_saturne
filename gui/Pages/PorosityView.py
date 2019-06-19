@@ -53,7 +53,7 @@ from code_saturne.Base.QtPage import ComboModel
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.PorosityForm import Ui_PorosityForm
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.PorosityModel import PorosityModel
 from code_saturne.model.NotebookModel import NotebookModel
 
