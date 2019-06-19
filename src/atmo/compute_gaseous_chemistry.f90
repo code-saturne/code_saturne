@@ -186,10 +186,9 @@ enddo
 
 deallocate(cvar_espg, cvara_espg)
 
-! TODO: clipping or not ?
 ! Clipping
 do ii = 1, nespg
-  call clpsca (ii)
+  call clpsca(isca_chem(ii))
 enddo
 
 !--------
