@@ -108,7 +108,7 @@ do iel = 1, ncel
   ! Filling working arrays
   do ii = 1, nespg
     dlconc(chempoint(ii)) = cvara_espg(ii)%p(iel)
-    conv_factor(chempoint(ii)) = rom*navo*(1.0d-12)/dmmk(ii)
+    conv_factor(chempoint(ii)) = rom*navo*(1.0d-9)/dmmk(ii)
     source(ii) = 0.0d0
   enddo
 

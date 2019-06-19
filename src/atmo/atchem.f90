@@ -66,7 +66,7 @@ integer(c_int), pointer, save :: nrg
 
 !> scalar id for chemical species
 integer(c_int), dimension(:), pointer, save ::  isca_chem
-!> molar mass of chemical species (Kg/mol)//TODO FIXME in g/mol
+!> Molar mass of chemical species (g/mol)
 double precision, dimension(:), pointer ::  dmmk
 !> pointer to deal with different orders of chemical species
 integer(c_int), dimension(:), pointer ::  chempoint

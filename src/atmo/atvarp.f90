@@ -181,14 +181,14 @@ if (ifilechemistry.ge.1) then
     ! Map isca_chem, dmmk, chempoint and allocate it if needed
     call init_chemistry_pointers()
 
-    call add_model_scalar_field('chemistry_no',  'NO',  isca_chem(1)) !FIXME species and not chemistry
-    call add_model_scalar_field('chemistry_no2', 'NO2', isca_chem(2))
-    call add_model_scalar_field('chemistry_o3',  'O3',  isca_chem(3))
-    call add_model_scalar_field('chemistry_o3p', 'O3P', isca_chem(4))
-    dmmk(1)=30.d-3 ! Molar mass NO
-    dmmk(2)=46.d-3 ! Molar mass NO2
-    dmmk(3)=48.d-3 ! Molar mass O3
-    dmmk(4)=16.d-3 ! Molar mass O3P
+    call add_model_scalar_field('species_no',  'NO',  isca_chem(1))
+    call add_model_scalar_field('species_no2', 'NO2', isca_chem(2))
+    call add_model_scalar_field('species_o3',  'O3',  isca_chem(3))
+    call add_model_scalar_field('species_o3p', 'O3P', isca_chem(4))
+    dmmk(1)=30.d0  ! Molar mass (g/mol) NO
+    dmmk(2)=46.d0  ! Molar mass (g/mol) NO2
+    dmmk(3)=48.d0  ! Molar mass (g/mol) O3
+    dmmk(4)=16.d0  ! Molar mass (g/mol) O3P
     chempoint = (/ 4, 3, 2, 1 /)
   ! scheme with 20 species and 34 reactions! Note pas de COV
   else if (ifilechemistry.eq.2) then
@@ -218,26 +218,26 @@ if (ifilechemistry.ge.1) then
     call add_model_scalar_field('species_xo2',   'XO2',   isca_chem(18))
     call add_model_scalar_field('species_so2',   'SO2',   isca_chem(19))
     call add_model_scalar_field('species_h2so4', 'H2SO4', isca_chem(20))
-    dmmk(1)=30.d-3     ! Molar mass NO
-    dmmk(2)=46.d-3     ! Molar mass NO2
-    dmmk(3)=48.d-3     ! Molar mass O3
-    dmmk(4)=16.d-3     ! Molar mass O3P
-    dmmk(5)=16.d-3     ! Molar mass O1D
-    dmmk(6)=17.01d-3   ! Molar mass OH
-    dmmk(7)=33.01d-3   ! Molar mass HO2
-    dmmk(8)=34.01d-3   ! Molar mass H2O2
-    dmmk(9)=62.01d-3   ! Molar mass NO3
-    dmmk(10)=108.01d-3 ! Molar mass N2O5
-    dmmk(11)=47.01d-3  ! Molar mass HONO
-    dmmk(12)=63.01d-3  ! Molar mass HNO3
-    dmmk(13)=28.01d-3  ! Molar mass CO
-    dmmk(14)=30.03d-3  ! Molar mass HCHO
-    dmmk(15)=44.05d-3  ! Molar mass ALD2
-    dmmk(16)=75.04d-3  ! Molar mass C2O3
-    dmmk(17)=121.05d-3 ! Molar mass PAN
-    dmmk(18)=47.03d-3  ! Molar mass XO2
-    dmmk(19)=64.06d-3  ! Molar mass SO2
-    dmmk(20)=98.08d-3  ! Molar mass H2SO4
+    dmmk(1)=30.d0      ! Molar mass (g/mol) NO
+    dmmk(2)=46.d0      ! Molar mass (g/mol) NO2
+    dmmk(3)=48.d0      ! Molar mass (g/mol) O3
+    dmmk(4)=16.d0      ! Molar mass (g/mol) O3P
+    dmmk(5)=16.d0      ! Molar mass (g/mol) O1D
+    dmmk(6)=17.01d0    ! Molar mass (g/mol) OH
+    dmmk(7)=33.01d0    ! Molar mass (g/mol) HO2
+    dmmk(8)=34.01d0    ! Molar mass (g/mol) H2O2
+    dmmk(9)=62.01d0    ! Molar mass (g/mol) NO3
+    dmmk(10)=108.01d0  ! Molar mass (g/mol) N2O5
+    dmmk(11)=47.01d0   ! Molar mass (g/mol) HONO
+    dmmk(12)=63.01d0   ! Molar mass (g/mol) HNO3
+    dmmk(13)=28.01d0   ! Molar mass (g/mol) CO
+    dmmk(14)=30.03d0   ! Molar mass (g/mol) HCHO
+    dmmk(15)=44.05d0   ! Molar mass (g/mol) ALD2
+    dmmk(16)=75.04d0   ! Molar mass (g/mol) C2O3
+    dmmk(17)=121.05d0  ! Molar mass (g/mol) PAN
+    dmmk(18)=47.03d0   ! Molar mass (g/mol) XO2
+    dmmk(19)=64.06d0   ! Molar mass (g/mol) SO2
+    dmmk(20)=98.08d0   ! Molar mass (g/mol) H2SO4
     chempoint = (/ 20, 19, 16, 17, 2, 15, 14, 3, 18, 7, 8, 9, 4, &
                    10, 1, 12, 11, 13, 5, 6 /)
   ! scheme CB05 with 52 species and 155 reactions
@@ -305,58 +305,58 @@ if (ifilechemistry.ge.1) then
     call add_model_scalar_field('species_so2',   'SO2',   isca_chem(50))
     call add_model_scalar_field('species_h2so4', 'H2SO4', isca_chem(51))
     call add_model_scalar_field('species_hco3',  'HCO3',  isca_chem(52))
-    dmmk(1)=30.d-3     ! Molar mass NO
-    dmmk(2)=46.d-3     ! Molar mass NO2
-    dmmk(3)=48.d-3     ! Molar mass O3
-    dmmk(4)=16.d-3     ! Molar mass O3P
-    dmmk(5)=16.d-3     ! Molar mass O1D
-    dmmk(6)=17.01d-3   ! Molar mass OH
-    dmmk(7)=33.01d-3   ! Molar mass HO2
-    dmmk(8)=34.01d-3   ! Molar mass H2O2
-    dmmk(9)=62.01d-3   ! Molar mass NO3
-    dmmk(10)=108.01d-3 ! Molar mass N2O5
-    dmmk(11)=47.01d-3  ! Molar mass HONO
-    dmmk(12)=63.01d-3  ! Molar mass HNO3
-    dmmk(13)=79.01d-3  ! Molar mass HNO4
-    dmmk(14)=28.01d-3  ! Molar mass CO
-    dmmk(15)=30.03d-3  ! Molar mass HCHO
-    dmmk(16)=44.05d-3  ! Molar mass ALD2
-    dmmk(17)=75.04d-3  ! Molar mass C2O3
-    dmmk(18)=121.05d-3 ! Molar mass PAN
-    dmmk(19)=43.04d-3  ! Molar mass ALDX
-    dmmk(20)=74.04d-3  ! Molar mass CXO3
-    dmmk(21)=120.04d-3 ! Molar mass PANX
-    dmmk(22)=47.03d-3  ! Molar mass XO2
-    dmmk(23)=47.03d-3  ! Molar mass XO2N
-    dmmk(24)=77.04d-3  ! Molar mass NTR
-    dmmk(25)=46.07d-3  ! Molar mass ETOH
-    dmmk(26)=16.04d-3  ! Molar mass CH4
-    dmmk(27)=47.03d-3  ! Molar mass MEO2
-    dmmk(28)=32.04d-3  ! Molar mass MEOH
-    dmmk(29)=48.04d-3  ! Molar mass MEPX
-    dmmk(30)=46.03d-3  ! Molar mass FACD
-    dmmk(31)=30.07d-3  ! Molar mass ETHA
-    dmmk(32)=47.03d-3  ! Molar mass ROOH
-    dmmk(33)=60.05d-3  ! Molar mass AACD
-    dmmk(34)=76.05d-3  ! Molar mass PACD
-    dmmk(35)=15.03d-3  ! Molar mass PAR
-    dmmk(36)=16.d-3    ! Molar mass ROR
-    dmmk(37)=28.05d-3  ! Molar mass ETH
-    dmmk(38)=27.05d-3  ! Molar mass OLE
-    dmmk(39)=56.11d-3  ! Molar mass IOLE
-    dmmk(40)=68.18d-3  ! Molar mass ISOP
-    dmmk(41)=70.09d-3  ! Molar mass ISPD
-    dmmk(42)=136.24d-3 ! Molar mass TERP
-    dmmk(43)=92.14d-3  ! Molar mass TOL
-    dmmk(44)=106.16d-3 ! Molar mass XYL
-    dmmk(45)=108.14d-3 ! Molar mass CRES
-    dmmk(46)=141.15d-3 ! Molar mass TO2
-    dmmk(47)=48.04d-3  ! Molar mass OPEN
-    dmmk(48)=108.14d-3 ! Molar mass CRO
-    dmmk(49)=72.06d-3  ! Molar mass MGLY
-    dmmk(50)=64.06d-3  ! Molar mass SO2
-    dmmk(51)=98.08d-3  ! Molar mass H2SO4
-    dmmk(52)=63.03d-3  ! Molar mass HCO3
+    dmmk(1)=30.d0      ! Molar mass (g/mol) NO
+    dmmk(2)=46.d0      ! Molar mass (g/mol) NO2
+    dmmk(3)=48.d0      ! Molar mass (g/mol) O3
+    dmmk(4)=16.d0      ! Molar mass (g/mol) O3P
+    dmmk(5)=16.d0      ! Molar mass (g/mol) O1D
+    dmmk(6)=17.01d0    ! Molar mass (g/mol) OH
+    dmmk(7)=33.01d0    ! Molar mass (g/mol) HO2
+    dmmk(8)=34.01d0    ! Molar mass (g/mol) H2O2
+    dmmk(9)=62.01d0    ! Molar mass (g/mol) NO3
+    dmmk(10)=108.01d0  ! Molar mass (g/mol) N2O5
+    dmmk(11)=47.01d0   ! Molar mass (g/mol) HONO
+    dmmk(12)=63.01d0   ! Molar mass (g/mol) HNO3
+    dmmk(13)=79.01d0   ! Molar mass (g/mol) HNO4
+    dmmk(14)=28.01d0   ! Molar mass (g/mol) CO
+    dmmk(15)=30.03d0   ! Molar mass (g/mol) HCHO
+    dmmk(16)=44.05d0   ! Molar mass (g/mol) ALD2
+    dmmk(17)=75.04d0   ! Molar mass (g/mol) C2O3
+    dmmk(18)=121.05d0  ! Molar mass (g/mol) PAN
+    dmmk(19)=43.04d0   ! Molar mass (g/mol) ALDX
+    dmmk(20)=74.04d0   ! Molar mass (g/mol) CXO3
+    dmmk(21)=120.04d0  ! Molar mass (g/mol) PANX
+    dmmk(22)=47.03d0   ! Molar mass (g/mol) XO2
+    dmmk(23)=47.03d0   ! Molar mass (g/mol) XO2N
+    dmmk(24)=77.04d0   ! Molar mass (g/mol) NTR
+    dmmk(25)=46.07d0   ! Molar mass (g/mol) ETOH
+    dmmk(26)=16.04d0   ! Molar mass (g/mol) CH4
+    dmmk(27)=47.03d0   ! Molar mass (g/mol) MEO2
+    dmmk(28)=32.04d0   ! Molar mass (g/mol) MEOH
+    dmmk(29)=48.04d0   ! Molar mass (g/mol) MEPX
+    dmmk(30)=46.03d0   ! Molar mass (g/mol) FACD
+    dmmk(31)=30.07d0   ! Molar mass (g/mol) ETHA
+    dmmk(32)=47.03d0   ! Molar mass (g/mol) ROOH
+    dmmk(33)=60.05d0   ! Molar mass (g/mol) AACD
+    dmmk(34)=76.05d0   ! Molar mass (g/mol) PACD
+    dmmk(35)=15.03d0   ! Molar mass (g/mol) PAR
+    dmmk(36)=16.d0     ! Molar mass (g/mol) ROR
+    dmmk(37)=28.05d0   ! Molar mass (g/mol) ETH
+    dmmk(38)=27.05d0   ! Molar mass (g/mol) OLE
+    dmmk(39)=56.11d0   ! Molar mass (g/mol) IOLE
+    dmmk(40)=68.18d0   ! Molar mass (g/mol) ISOP
+    dmmk(41)=70.09d0   ! Molar mass (g/mol) ISPD
+    dmmk(42)=136.24d0  ! Molar mass (g/mol) TERP
+    dmmk(43)=92.14d0   ! Molar mass (g/mol) TOL
+    dmmk(44)=106.16d0  ! Molar mass (g/mol) XYL
+    dmmk(45)=108.14d0  ! Molar mass (g/mol) CRES
+    dmmk(46)=141.15d0  ! Molar mass (g/mol) TO2
+    dmmk(47)=48.04d0   ! Molar mass (g/mol) OPEN
+    dmmk(48)=108.14d0  ! Molar mass (g/mol) CRO
+    dmmk(49)=72.06d0   ! Molar mass (g/mol) MGLY
+    dmmk(50)=64.06d0   ! Molar mass (g/mol) SO2
+    dmmk(51)=98.08d0   ! Molar mass (g/mol) H2SO4
+    dmmk(52)=63.03d0   ! Molar mass (g/mol) HCO3
     if (iaerosol.eq.1) then
       call add_model_scalar_field('species_hc8',      'HC8',      isca_chem(53))
       call add_model_scalar_field('species_api',      'API',      isca_chem(54))
@@ -375,19 +375,19 @@ if (ifilechemistry.ge.1) then
       call add_model_scalar_field('species_cvanclp',  'CVANCLP',  isc)
       call add_model_scalar_field('species_cvbiiso1', 'CVBIISO1', isc)
       call add_model_scalar_field('species_cvbiiso2', 'CVBIISO2', isc)
-      dmmk(53)=114.0d0   ! Molar mass HC8 ! FIXME not the same unity
-      dmmk(54)=136.0d0   ! Molar mass API
-      dmmk(55)=136.0d0   ! Molar mass LIM
-      dmmk(56)=150.0d0   ! Molar mass CVARO1
-      dmmk(57)=150.0d0   ! Molar mass CVARO2
-      dmmk(58)=140.0d0   ! Molar mass CVALK1
-      dmmk(59)=140.0d0   ! Molar mass CVOLE1
-      dmmk(60)=184.0d0   ! Molar mass CVAPI1
-      dmmk(61)=184.0d0   ! Molar mass CVAPI2
-      dmmk(62)=200.0d0   ! Molar mass CVLIM1
-      dmmk(63)=200.0d0   ! Molar mass CVLIM2
-      dmmk(64)=17.0d0    ! Molar mass NH3
-      dmmk(65)=36.5d0    ! Molar mass HCL
+      dmmk(53)=114.0d0   ! Molar mass (g/mol) HC8
+      dmmk(54)=136.0d0   ! Molar mass (g/mol) API
+      dmmk(55)=136.0d0   ! Molar mass (g/mol) LIM
+      dmmk(56)=150.0d0   ! Molar mass (g/mol) CVARO1
+      dmmk(57)=150.0d0   ! Molar mass (g/mol) CVARO2
+      dmmk(58)=140.0d0   ! Molar mass (g/mol) CVALK1
+      dmmk(59)=140.0d0   ! Molar mass (g/mol) CVOLE1
+      dmmk(60)=184.0d0   ! Molar mass (g/mol) CVAPI1
+      dmmk(61)=184.0d0   ! Molar mass (g/mol) CVAPI2
+      dmmk(62)=200.0d0   ! Molar mass (g/mol) CVLIM1
+      dmmk(63)=200.0d0   ! Molar mass (g/mol) CVLIM2
+      dmmk(64)=17.0d0    ! Molar mass (g/mol) NH3
+      dmmk(65)=36.5d0    ! Molar mass (g/mol) HCL
     endif
     if (iaerosol.eq.1) then
       chempoint = (/ 64, 65, 59, 57, 3, 55, 61, 20, 56, 16, 23, 50,&
