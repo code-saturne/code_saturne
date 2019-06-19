@@ -211,64 +211,64 @@ endif
 !===============================================================================
 if (ifilechemistry.eq.4) then
 
- 103  read (impmec,'(A80)',err=999,end=999) ccomnt
+  103  read (impmec,'(A80)',err=999,end=999) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 103
-backspace(impmec)
+  if(ccomnt(1:1).eq.csaute) go to 103
+  backspace(impmec)
 
-if (imode.eq.0) then
-  read(impmec,*,err=999,end=999) nrg
-else
-  read(impmec,*,err=999,end=999)
-endif
+  if (imode.eq.0) then
+    read(impmec,*,err=999,end=999) nrg
+  else
+    read(impmec,*,err=999,end=999)
+  endif
 
-!===============================================================================
-! 4. reading the number of species
-!===============================================================================
+  !===============================================================================
+  ! 4. reading the number of species
+  !===============================================================================
 
- 104  read (impmec,'(A80)',err=999,end=999) ccomnt
+  104  read (impmec,'(A80)',err=999,end=999) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 104
-backspace(impmec)
+  if(ccomnt(1:1).eq.csaute) go to 104
+  backspace(impmec)
 
-if (imode.eq.0) then
-  read(impmec,*,err=999,end=999) nespg
-else
-  read(impmec,*,err=999,end=999)
-endif
+  if (imode.eq.0) then
+    read(impmec,*,err=999,end=999) nespg
+  else
+    read(impmec,*,err=999,end=999)
+  endif
 
-!===============================================================================
-! 5. reading the names of the species
-!===============================================================================
+  !===============================================================================
+  ! 5. reading the names of the species
+  !===============================================================================
 
- 105  read(impmec,'(A80)',err=999,end=999) ccomnt
+  105  read(impmec,'(A80)',err=999,end=999) ccomnt
 
-if (ccomnt(1:1).eq.csaute) go to 105
-backspace(impmec)
+  if (ccomnt(1:1).eq.csaute) go to 105
+  backspace(impmec)
 
-allocate(namespg(nespg))
-read(impmec,*,err=999,end=999) namespg(1:nespg)
-do k = 1, nespg
-  f_id = ivarfl(isca(isca_chem(k)))
-  call field_set_key_str(f_id, keylbl, namespg(k))
-enddo
-deallocate (namespg)
+  allocate(namespg(nespg))
+  read(impmec,*,err=999,end=999) namespg(1:nespg)
+  do k = 1, nespg
+    f_id = ivarfl(isca(isca_chem(k)))
+    call field_set_key_str(f_id, keylbl, namespg(k))
+  enddo
+  deallocate (namespg)
 
-!===============================================================================
-! 6. reading the molar masses of the species
-!===============================================================================
+  !===============================================================================
+  ! 6. reading the molar masses of the species
+  !===============================================================================
 
- 106  read (impmec,'(a80)',err=999,end=999) ccomnt
+  106  read (impmec,'(a80)',err=999,end=999) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 106
-backspace(impmec)
+  if(ccomnt(1:1).eq.csaute) go to 106
+  backspace(impmec)
 
-if (imode.eq.0) then
-  read(impmec,*,err=999,end=999)
-else
-  ! Molar masses must be given in the same order as species
-  read(impmec,*,err=999,end=999) dmmk(1:nespg)
-endif
+  if (imode.eq.0) then
+    read(impmec,*,err=999,end=999)
+  else
+    ! Molar masses must be given in the same order as species
+    read(impmec,*,err=999,end=999) dmmk(1:nespg)
+  endif
 
 endif ! End test on ifilechemistry
 !===============================================================================
