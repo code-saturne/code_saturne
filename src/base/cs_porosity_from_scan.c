@@ -146,7 +146,6 @@ void _count_from_file(const cs_mesh_t *m,
                       const cs_mesh_quantities_t *mq) {
 
   char line[512];
-  bool debug = false;
 
   cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
 
@@ -508,9 +507,6 @@ cs_compute_porosity_from_scan(void)
     }
 
     cs_parall_bcast(rank_source, 3, CS_REAL_TYPE, source_cen);
-
-    //DEBUG
-    bft_printf("%d SOURCE CENTER %d = [%f, %f, %f]\n",s_id,  source_c_ids[s_id],source_cen[0], source_cen[1], source_cen[2]);
 
     /* Compute the mass flux due to V = e_r
      *=======================================*/
