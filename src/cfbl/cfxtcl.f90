@@ -118,8 +118,7 @@ integer          ivarcf(nvcfmx)
 
 double precision hint, bmasfl
 
-double precision, allocatable, dimension(:) :: w1, w2
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w5
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: wbfb, wbfa
 double precision, allocatable, dimension(:) :: bc_en, bc_pr, bc_tk
@@ -141,8 +140,7 @@ double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w5(ncelet))
 allocate(w7(nfabor), wbfa(nfabor), wbfb(nfabor))
 allocate(bc_en(nfabor))
 allocate(bc_pr(nfabor))
@@ -677,8 +675,7 @@ do ifac = 1, nfabor
  enddo ! end of loop on boundary faces
 
 ! Free memory
-deallocate(w1, w2)
-deallocate(w4, w5, w6)
+deallocate(w5)
 deallocate(w7, wbfb, wbfa)
 deallocate(bc_en, bc_pr, bc_tk, bc_fracv, bc_fracm, bc_frace, bc_vel)
 
