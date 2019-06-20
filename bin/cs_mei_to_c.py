@@ -1444,7 +1444,6 @@ class mei_to_c_interpreter:
 
         if need_for_loop:
             usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < bz->n_elts; e_id++) {\n'
-            usr_blck += 3*tab + 'cs_lnum_t f_id = bz->elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -1575,7 +1574,6 @@ class mei_to_c_interpreter:
         usr_blck += usr_defs + '\n'
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -1712,7 +1710,6 @@ class mei_to_c_interpreter:
         usr_blck += usr_defs + '\n'
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
