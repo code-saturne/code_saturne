@@ -217,12 +217,12 @@ do ilelt = 1, nlelt
     ! We will also be careful if necessary to use a more precise
     ! formula for the dynamic viscosity use in the calculation of
     ! the Reynolds number (especially if it is variable, it may be
-    ! useful to take the law from 'usphyv'. Here, we use by default
+    ! useful to take the law from 'cs_user_physical_properties'. Here, we use by default
     ! the 'viscl0" value.
 
     ! Regarding the density, we have acess to its value at boundary
     ! faces (romb) so this value is the one used here (specifically,
-    ! it is consistent with the processing in 'usphyv', in case of
+    ! it is consistent with the processing in 'cs_user_physical_properties', in case of
     ! variable density)
 
     ! Hydraulic diameter

@@ -149,7 +149,7 @@ BEGIN_C_DECLS
         therefore better to specify its value.
 
         Always useful otherwise, even if a law defining the density is given by
-        the user subroutines \ref usphyv or \ref cs_user_physical_properties.
+        the user subroutines \ref cs_user_physical_properties.
         Indeed, except with the compressible module, CS  does not use the total
         pressure \f$P\f$ when solving the Navier-Stokes equation, but a reduced
         pressure \f$ P^*=P-\rho_0\vect{g}.(\vect{x}-\vect{x}_0)+ P^*_0-P_0 \f$,
@@ -170,7 +170,7 @@ BEGIN_C_DECLS
         Negative value: not initialized.
 
         Always useful, it is the used value unless the user specifies the
-        viscosity in the subroutine \ref usphyv.
+        viscosity in the subroutine \ref cs_user_physical_properties.
   \var  cs_fluid_properties_t::p0
         reference pressure for the total pressure
 
@@ -233,14 +233,14 @@ BEGIN_C_DECLS
         so that \ref cs_thermal_model_t::iscalt "cs_glob_thermal_model->iscalt" = n
         and \ref cs_thermal_model_t::itherm "cs_glob_thermal_model->itherm" =  1
        (there is a scalar "temperature"), unless the
-        user specifies the specific heat in the user subroutine \ref usphyv
+        user specifies the specific heat in the user subroutine \ref cs_user_physical_properties
         (\ref cstphy::icp "icp" > 0) with the compressible module or coal combustion,
         \ref cp0 is also needed even when there is no user scalar. \note
         None of the scalars from the specific physics is a temperature. \note
         When using the Graphical Interface, \ref cp0 is also used to
         calculate the diffusivity of the thermal scalars, based on their
         conductivity; it is therefore needed, unless the diffusivity is also
-        specified in \ref usphyv.
+        specified in \ref cs_user_physical_properties.
   \var  cs_fluid_properties_t::cv0
         reference isochoric specific heat (J/kg/K)
 

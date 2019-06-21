@@ -393,13 +393,16 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh);
 void
 cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh);
 
-/*----------------------------------------------------------------------------
- * This function is called each time step to define physical properties.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is called each time step to define physical properties.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(const cs_mesh_t             *mesh,
-                            const cs_mesh_quantities_t  *mesh_quantities);
+cs_user_physical_properties(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1616,6 +1616,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for physical properties
+
+    subroutine user_physical_properties()  &
+      bind(C, name='cs_user_physical_properties_wrapper')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine user_physical_properties
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for user arrays
 
     subroutine cs_gui_user_arrays()  &

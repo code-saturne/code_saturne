@@ -169,6 +169,9 @@ endif
 
 call usphyv(nvar, nscal, mbrom, dt)
 
+! C version
+call user_physical_properties()
+
 ! Finalization of physical properties for specific physics
 ! AFTER the user
 if (ippmod(iphpar).ge.1 .or. ippmod(idarcy).ge.1) then
@@ -201,7 +204,7 @@ if (iterns.ge.1) return
 
 !  Au premier pas de temps du calcul
 !     Si on a indique que rho (visc) etait constant
-!       et qu'on l'a modifie dans usphyv, ca ne va pas
+!       et qu'on l'a modifie dans cs_user_physical_properties, ca ne va pas
 !     On se sert de irovar (ivivar) pour ecrire et lire
 !       rho (visc) dans le fichier suite
 
@@ -1004,7 +1007,8 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Verifier l''interface, cs_user_parameters.f90, et usphyv.', /,&
+'@  Verifier l''interface, cs_user_parameters.f90,'             /,&
+'@     et cs_user_physical_properties.',                        /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1023,7 +1027,8 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Verifier l''interface, cs_user_parameters.f90, et usphyv.', /,&
+'@  Verifier l''interface, cs_user_parameters.f90,',            /,&
+'@     et cs_user_physical_properties.',                        /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1040,11 +1045,12 @@ endif
 '@  En compressible la viscosite moleculaire est constante par',/,&
 '@     defaut (IVIVAR=0) et la valeur de IVIVAR n''a',   /,&
 '@     pas ete modifiee dans uscfx2. Pourtant, on a modifie',   /,&
-'@     les valeurs de la viscosite moleculaire dans usphyv.',   /,&
+'@     les valeurs de la viscosite moleculaire dans',           /,&
+'@     cs_user_physical_properties.',                           /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Verifier uscfx2 et usphyv.',                                /,&
+'@  Verifier uscfx2 et cs_user_physical_properties.',           /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1095,11 +1101,12 @@ endif
 '@',                                                            /,&
 '@  On a indique que la masse volumique etait',                 /,&
 '@     variable (IROVAR=1) mais on n a pas modifie ',           /,&
-'@     la valeur de Beta dans l''interface ou dans usphyv',     /,&
+'@     la valeur de Beta dans l''interface ou dans',            /,&
+'@     cs_user_physical_properties.',                           /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
-'@  Verifier l''interface et usphyv.'                         , /,&
+'@  Verifier l''interface et cs_user_physical_properties.'    , /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1154,7 +1161,8 @@ endif
 '@  Se reporter aux impressions precedentes pour plus de',      /,&
 '@    renseignements.',                                         /,&
 '@  Verifier les definitions et lois definies',                 /,&
-'@    dans usphyv ou dans l''interface graphique.',             /,&
+'@    dans cs_user_physical_properties',                        /,&
+'@    ou dans l''interface graphique.',                         /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1204,7 +1212,8 @@ endif
 '@',                                                            /,&
 '@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
-'@  Check the interface, cs_user_parameters.f90, and usphyv',   /,&
+'@  Check the interface, cs_user_parameters.f90,',              /,&
+'@     and cs_user_physical_properties',                        /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1223,7 +1232,8 @@ endif
 '@',                                                            /,&
 '@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
-'@  Check the interface, cs_user_parameters.f90, and usphyv',   /,&
+'@  Check the interface, cs_user_parameters.f90,',              /,&
+'@     and cs_user_physical_properties',                        /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1239,11 +1249,11 @@ endif
 '@  In the compressible module, the molecular viscosity is',    /,&
 '@     constant by default (IVIVAR=0) and the value',    /,&
 '@     of IVIVAR  has not been modified in uscfx2. Yet, its',   /,&
-'@     value has been modified in usphyv.',                     /,&
+'@     value has been modified in cs_user_physical_properties.',/,&
 '@',                                                            /,&
 '@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
-'@  Verify uscfx2 and usphyv.',                                 /,&
+'@  Verify uscfx2 and cs_user_physical_properties.',            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1292,11 +1302,11 @@ endif
 '@',                                                            /,&
 '@  The density has been declared variable (IROVAR=1) but',     /,&
 '@     the value of Beta has not been modified     ',           /,&
-'@     in GUI or usphyv',                                       /,&
+'@     in GUI or cs_user_physical_properties',                  /,&
 '@',                                                            /,&
 '@  The calculation will not be run',                           /,&
 '@',                                                            /,&
-'@  Check the interface or usphyv.'                           , /,&
+'@  Check the interface or cs_user_physical_properties.',       /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@', /)
@@ -1316,7 +1326,8 @@ endif
 '@',                                                            /,&
 '@  The physical property identified is variable and the',      /,&
 '@    minimum reached is', e12.4                               ,/,&
-'@  Verify that this property has been defined in usphyv and',  /,&
+'@  Verify that this property has been defined in',             /,&
+'@    cs_user_physical_properties and',                         /,&
 '@    that the chosen law leads to correct values.',            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1349,7 +1360,7 @@ endif
 '@  The calculation will not be run (',i10,' errors).',         /,&
 '@',                                                            /,&
 '@  Refer to previous warnings for further information.',       /,&
-'@  Verify usphyv.',                                            /,&
+'@  Verify cs_user_physical_properties.',                       /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

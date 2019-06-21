@@ -144,7 +144,7 @@ endif
 '@                                                            ',/,&
 '@  The computation will not run further.                     ',/,&
 '@                                                            ',/,&
-'@  Check usphyv.                                             ',/,&
+'@  Check cs_user_physical_properties.'                        ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

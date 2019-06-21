@@ -127,7 +127,7 @@ module cstphy
   !> it is therefore better to specify its value.
   !>
   !> Always useful otherwise, even if a law defining the density is given by
-  !> the user subroutines \ref usphyv or \ref cs_user_physical_properties.
+  !> the user subroutines \ref cs_user_physical_properties.
   !> indeed, except with the
   !> compressible module, CS  does not use
   !> the total pressure \f$P\f$ when solving the Navier-Stokes equation, but a
@@ -149,7 +149,7 @@ module cstphy
   !>
   !> Negative value: not initialized.
   !> Always useful, it is the used value unless the user specifies the
-  !> viscosity in the subroutine \ref usphyv
+  !> viscosity in the subroutine \ref cs_user_physical_properties
   real(c_double), pointer, save :: viscl0
 
   !> reference pressure for the total pressure.\n
@@ -218,13 +218,13 @@ module cstphy
   !> so that \ref optcal::iscalt "iscalt" = n and \ref optcal::itherm "itherm" = 1
   !> (there is a "temperature" scalar),
   !> unless the user specifies the specific heat in the user subroutine
-  !> \ref usphyv (\ref cstphy::icp "icp" > 0) with the compressible module or
+  !> \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the compressible module or
   !>  coal combustion, \ref cp0 is also needed even when there is no user scalar.
   !> \note None of the scalars from the specific physics is a temperature.
   !> \note When using the Graphical Interface, \ref cp0 is also used to
   !> calculate the diffusivity of the thermal scalars,
   !> based on their conductivity; it is therefore needed, unless the
-  !> diffusivity is also specified in \ref usphyv.
+  !> diffusivity is also specified in \ref cs_user_physical_properties.
   real(c_double), pointer, save :: cp0
 
   !> Reference isochoric specific heat.

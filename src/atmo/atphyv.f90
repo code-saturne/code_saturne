@@ -92,7 +92,7 @@ ivart = -1
 ! This routine computes the density and the thermodynamic temperature.
 ! The computations require the pressure profile which is here taken from
 ! the meteo file. If no meteo file is used, the user should
-! give the laws for RHO and T in usphyv.f90
+! give the laws for RHO and T in cs_user_physical_properties.f90
 
 if (imeteo.eq.0) return
 
@@ -204,8 +204,8 @@ call usatph ()
 '@      ISCALT = ',I10                                         ,/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Verifier le codage de usphyv (et le test lors de la     ',/,&
-'@      definition de IVART).                                 ',/,&
+'@    Verifier le codage de cs_user_physical_properties,',      /,&
+'@     (et le test lors de la definition de IVART).'           ,/,&
 '@    Verifier la definition des variables de calcul dans     ',/,&
 '@      usipsu. Si un scalaire doit jouer le role de la       ',/,&
 '@      temperature, verifier que ISCALT a ete renseigne.     ',/,&

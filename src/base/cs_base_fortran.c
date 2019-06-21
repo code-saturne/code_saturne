@@ -619,6 +619,12 @@ cs_user_extra_operations_initialize_wrapper(void)
 }
 
 void
+cs_user_physical_properties_wrapper(void)
+{
+  cs_user_physical_properties(cs_glob_domain);
+}
+
+void
 cs_user_extra_operations_wrapper(void)
 {
   cs_user_extra_operations(cs_glob_domain);

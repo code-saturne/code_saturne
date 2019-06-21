@@ -500,8 +500,7 @@ CS_PROCF (ellecd, ELLECD) (void)
 void
 CS_PROCF (elphyv, ELPHYV) (void)
 {
-  cs_elec_physical_properties(cs_glob_mesh,
-                              cs_glob_mesh_quantities);
+  cs_elec_physical_properties(cs_glob_domain);
 }
 
 void
@@ -1043,13 +1042,12 @@ cs_elec_convert_h_t(int        mode,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_physical_properties(const cs_mesh_t             *mesh,
-                            const cs_mesh_quantities_t  *mesh_quantities)
+cs_elec_physical_properties(const cs_domain_t *domain)
 {
   static long ipass = 0;
   int nt_cur = cs_glob_time_step->nt_cur;
   int isrrom = 0;
-  cs_lnum_t  n_cells = mesh->n_cells;
+  cs_lnum_t  n_cells = domain->mesh->n_cells;
   const int keysca = cs_field_key_id("diffusivity_id");
   int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
   cs_field_t *c_prop = NULL;
@@ -1354,7 +1352,7 @@ cs_elec_physical_properties(const cs_mesh_t             *mesh,
   }
 
   /* now user properties (for joule effect particulary) */
-  cs_user_physical_properties(mesh, mesh_quantities);
+  cs_user_physical_properties(domain);
 }
 
 /*----------------------------------------------------------------------------
