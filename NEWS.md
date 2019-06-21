@@ -24,6 +24,11 @@ Architectural changes:
   has loaded the default API, so compatibility with Salome
   versions 7 or older is dropped.
 
+Default option changes:
+
+- Set k-epsilon turbulence models to uncoupled option by default
+  (it was already uncoupled by default for all models except standard k-epsilon)
+
 Bug fixes:
 
 - Fix momentum conservation for the variable density deprecated algorithm

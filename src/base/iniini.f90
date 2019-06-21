@@ -557,7 +557,6 @@ iwallf =-999
 iwalfs = -999
 iwallt = 0
 iclkep = 0
-ikecou =-999
 irijnu = 0
 irijrb = 0
 irijec = 0

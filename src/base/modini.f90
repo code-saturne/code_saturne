@@ -734,22 +734,6 @@ endif
 if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
      write(nfecra,2001)
 
-! ---> IKECOU
-!     En k-eps prod lin, v2f ou k-omega, on met IKECOU a 0 par defaut,
-!     sinon on le laisse a 1
-!     Dans verini on bloquera le v2f et le k-eps prod lin si IKECOU.NE.0
-!     On bloquera aussi le stationnaire si IKECOU.NE.0
-if (ikecou.eq.-999) then
-  if (idtvar.lt.0) then
-    ikecou = 0
-  else if (iturb.eq.21 .or. iturb.eq.22 .or. iturb.eq.23 .or. &
-           itytur.eq.5 .or. iturb.eq.60 ) then
-    ikecou = 0
-  else
-    ikecou = 1
-  endif
-endif
-
 ! ---> RELAXV
 if (idtvar.lt.0) then
   relxsp = 1.d0-relxst
