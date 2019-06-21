@@ -287,7 +287,7 @@ endif
 if (ippmod(icompf).ge.0.or.(idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1)) then
   pcrom => croma
 
-! VOF algorithm and Low Mach compressible Algos: density at time n-1
+! VOF algorithm and Low Mach compressible algos: density at time n-1
 else if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
   if (iterns.eq.1) then
     pcrom => cromaa
@@ -295,7 +295,7 @@ else if ((idilat.gt.1.or.ivofmt.ge.0).and.irovar.eq.1) then
     pcrom => croma
   endif
 
-! Deprecated algo or constant density
+! Weakly variable density algo. (idilat <=1) or constant density
 else
   pcrom => crom_eos
 endif
@@ -308,11 +308,19 @@ allocate(tsimp(3,3,ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
-! map the density pointer:
-! 1/4(n-1) + 1/2(n) + 1/4(n+1)
-! here replaced by (n)
-crom => croma
-brom => broma
+! Density for other terms such as buoyancy term
+! 2nd order in time
+if (vcopt_u%thetav .lt. 1.d0) then
+  ! map the density pointer:
+  ! 1/4(n-1) + 1/2(n) + 1/4(n+1)
+  ! here replaced by (n)
+  crom => croma
+  brom => broma
+! 1st order in time
+else
+  crom => crom_eos
+  brom => brom_eos
+endif
 
 ! Interpolation of rho^n-1/2 (stored in pcrom)
 ! Interpolation of the mass flux at (n+1/2)
