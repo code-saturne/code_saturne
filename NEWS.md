@@ -153,8 +153,15 @@ Bug fixes:
 - Compressible: fix density time scheme in transported passive scalar/vector
   balance to ensure conservativity with compressible algorithm.
 
-- Fixes for time scheme of density in unsteady term of momentum, transported
-  scalars / vectors balances.
+- Fixes in time stepping:
+  * Fix momentum conservation for the variable density deprecated algorithm
+    with mass flux prediction (option idilat>=2, ipredfl=1). The density
+    which is coherent with the mass balance needs to be updated right after
+    mass flux prediction step.
+  * Fix time stepping for buoyancy term. Compute it with last density value
+    (EOS) when using first order time stepping, to avoid a time shift.
+  * Fixes for time scheme of density in unsteady term of momentum, transported
+    scalars / vectors balances.
   * Use density at time n in momentum balance unsteady term if mass flux is
     predicted.
   * Use EOS density in momentum balance unsteady term if mass accumulation is
