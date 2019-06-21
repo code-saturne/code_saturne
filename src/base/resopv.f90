@@ -226,7 +226,6 @@ double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, allocatable, dimension(:) :: iflux, bflux
-double precision, allocatable, dimension(:) :: xunsro
 double precision, allocatable, dimension(:), target :: xdtsro
 double precision, allocatable, dimension(:), target  :: divu
 double precision, allocatable, dimension(:,:), target :: tpusro
@@ -412,13 +411,6 @@ endif
 ! Calculation of dt/rho
 if (ivofmt.ge.0.or.idilat.eq.4) then
 
-  ! Allocate and initialize specific arrays
-  allocate(xunsro(ncelet))
-  do iel = 1, ncel
-    xunsro(iel) = 1.d0/crom(iel)
-  enddo
-  call synsca(xunsro)
-
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     allocate(xdtsro(ncelet))
     do iel = 1, ncel
@@ -428,12 +420,13 @@ if (ivofmt.ge.0.or.idilat.eq.4) then
   elseif (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
     allocate(tpusro(6,ncelet))
     do iel = 1, ncel
-      tpusro(1,iel) = vitenp(1,iel)*xunsro(iel)
-      tpusro(2,iel) = vitenp(2,iel)*xunsro(iel)
-      tpusro(3,iel) = vitenp(3,iel)*xunsro(iel)
-      tpusro(4,iel) = vitenp(4,iel)*xunsro(iel)
-      tpusro(5,iel) = vitenp(5,iel)*xunsro(iel)
-      tpusro(6,iel) = vitenp(6,iel)*xunsro(iel)
+      drom = 1.d0 / crom(iel)
+      tpusro(1,iel) = vitenp(1,iel) * drom
+      tpusro(2,iel) = vitenp(2,iel) * drom
+      tpusro(3,iel) = vitenp(3,iel) * drom
+      tpusro(4,iel) = vitenp(4,iel) * drom
+      tpusro(5,iel) = vitenp(5,iel) * drom
+      tpusro(6,iel) = vitenp(6,iel) * drom
     enddo
     call syntis(tpusro)
   endif
@@ -2290,7 +2283,6 @@ if (icalhy.eq.1) deallocate(frchy, dfrchy)
 if (allocated(hydro_pres)) deallocate(hydro_pres)
 if (ivofmt.ge.0.or.idilat.eq.4) then
   if (allocated(xdtsro)) deallocate(xdtsro)
-  if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)
 endif
 if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
