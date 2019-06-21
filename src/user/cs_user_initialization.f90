@@ -40,7 +40,7 @@
 !>
 !> Modification of the behaviour law of physical quantities (rom, viscl,
 !> viscls, cp) is not done here. It is the purpose of the user subroutine
-!> \ref usphyv (in cs_user_physical_properties.f90)
+!> \ref cs_user_physical_properties
 !>
 !> \c rom and \c viscl values are equal to \c ro0 and \c viscl0 or initialize
 !> by reading the restart file.

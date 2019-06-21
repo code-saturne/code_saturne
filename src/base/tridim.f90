@@ -1133,6 +1133,9 @@ do while (iterns.le.nterup)
       mbrom = 0
       call usphyv(nvar, nscal, mbrom, dt)
 
+      ! C version
+      call user_physical_properties()
+
       if (darcy_unsteady.eq.0) then
 
         do iel = 1, ncel

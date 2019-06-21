@@ -150,7 +150,7 @@ call cs_ctwr_phyvar_update(ro0,t0,p0,molmass_rat)
 '@'                                                            ,/,&
 '@    Le calcul ne sera pas execute.'                          ,/,&
 '@'                                                            ,/,&
-'@    Modifier les parametres ou usphyv.'                      ,/,&
+'@    Modifier les parametres ou cs_user_physical_properties.' ,/,&
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)

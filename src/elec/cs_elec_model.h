@@ -33,6 +33,7 @@
 
 #include "cs_defs.h"
 
+#include "cs_domain.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
@@ -232,8 +233,7 @@ cs_elec_convert_h_t(int         mode,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_physical_properties(const cs_mesh_t             *mesh,
-                            const cs_mesh_quantities_t  *mesh_quantities);
+cs_elec_physical_properties(const cs_domain_t             *domain);
 
 /*----------------------------------------------------------------------------
  * compute source terms for energy

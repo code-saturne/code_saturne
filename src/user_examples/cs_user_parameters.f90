@@ -825,7 +825,7 @@ call rotation_define(0.d0, 0.d0, 0.d0,  &    ! rotation vector
 !         ro0, viscl0 and cp0
 !             are useful and represent either the fluid properties if they
 !             are constant, either simple mean values for the initialization
-!             if properties are variable and defined in usphyv.
+!             if properties are variable and defined in cs_user_physical_properties.
 !         t0  is not useful
 !         p0  is useful but is not used in an equation of state. p0
 !             is a reference value for the incompressible solver
@@ -921,7 +921,7 @@ p0 = 1.01325d5
 !       or variable (irovar=1, ivivar=1, icp=0)
 
 !     For those properties we choose as variable, the corresponding law
-!       must be defined in usphyv
+!       must be defined in cs_user_physical_properties
 !       (incs_user_physical_properties.f90);
 !       if they are constant, they take values ro0, viscl0, and cp0.
 
@@ -954,7 +954,7 @@ xyzp0(3) = 0.d0
 !       electric arcs: see usppmo) implicitly defined in the model,
 !       the diffusivity should not be modified here.
 
-!     Caution:   complete usphyv with the law defining the diffusivity
+!     Caution:   complete cs_user_physical_properties with the law defining the diffusivity
 !     ========   if and only if ifcvsl = 0 has been set here.
 
 
@@ -989,7 +989,7 @@ enddo
 !       have the same behavior as the density of this scalar,
 !       so values set here will be ignored.
 
-!     Caution:   complete usphyv with the law defining the density
+!     Caution:   complete cs_user_physical_properties with the law defining the density
 !     ========   if and only if ifcvsl = 0 has been set here.
 
 do iscal = 1, nscaus
@@ -1651,7 +1651,7 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
   visls0(itempk) = 3.d-2
 
 !       If the molecular thermal conductivity is variable, its values
-!         must be provided in the user subroutine 'usphyv'
+!         must be provided in the user subroutine 'cs_user_physical_properties'
 
 ! --> Volumetric molecular viscosity
 
@@ -1662,7 +1662,7 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
   viscv0 = 0.d0
 
 !       If the volumetric molecular viscosity is variable, its values
-!         must be provided in the user subroutine 'usphyv'
+!         must be provided in the user subroutine 'cs_user_physical_properties'
 
 ! --> Molar mass of the gas (kg/mol)
 

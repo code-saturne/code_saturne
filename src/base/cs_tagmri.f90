@@ -181,11 +181,11 @@ endif
 '@',/,                                                            &
 '@      usipsu specifies that the specific heat is uniform',/,    &
 '@        icp = ',i10   ,' while',/,                              &
-'@      usphyv prescribes a variable specific heat.',/,           &
+'@      cs_user_physical_properties prescribes a variable specific heat.',/,&
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
 '@',/,                                                            &
-'@    Modify usipsu or usphyv.',/,                                &
+'@    Modify usipsu or cs_user_physical_properties.',/,           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
