@@ -2724,6 +2724,19 @@ cs_mesh_quantities_set_porous_model(int  porous_model)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set (unset) has_disable_flag
+ *
+ * \param[in]  flag   1: on, 0: off
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_mesh_quantities_set_has_disable_flag(int  flag)
+{
+  cs_glob_mesh_quantities->has_disable_flag = flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create a mesh quantities structure.
  *
  * \return  pointer to created cs_mesh_quantities_t structure
@@ -2768,7 +2781,8 @@ cs_mesh_quantities_create(void)
   mesh_quantities->corr_grad_lin_det = NULL;
   mesh_quantities->corr_grad_lin = NULL;
   mesh_quantities->b_sym_flag = NULL;
-  mesh_quantities->c_solid_flag = NULL;
+  mesh_quantities->has_disable_flag = 0;
+  mesh_quantities->c_disable_flag = NULL;
   mesh_quantities->bad_cell_flag = NULL;
 
   return (mesh_quantities);
@@ -2841,7 +2855,7 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   BFT_FREE(mq->corr_grad_lin_det);
   BFT_FREE(mq->corr_grad_lin);
   BFT_FREE(mq->b_sym_flag);
-  BFT_FREE(mq->c_solid_flag);
+  BFT_FREE(mq->c_disable_flag);
   BFT_FREE(mq->bad_cell_flag);
 }
 
@@ -3133,14 +3147,9 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   /* Porous models */
   if (cs_glob_porous_model > 0) {
+    mesh_quantities->has_disable_flag = 1;
     if (mesh_quantities->cell_f_vol == NULL)
       BFT_MALLOC(mesh_quantities->cell_f_vol, n_cells_with_ghosts, cs_real_t);
-
-    if (mesh_quantities->c_solid_flag == NULL) {
-      BFT_MALLOC(mesh_quantities->c_solid_flag, n_cells_with_ghosts, cs_int_t);
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
-        mesh_quantities->c_solid_flag[cell_id] = 0;
-    }
 
   }
   else {
@@ -3150,10 +3159,16 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
     mesh_quantities->max_f_vol = mesh_quantities->max_vol;
     mesh_quantities->tot_f_vol = mesh_quantities->tot_vol;
 
-    if (mesh_quantities->c_solid_flag == NULL) {
-      BFT_MALLOC(mesh_quantities->c_solid_flag, 1, cs_int_t);
-      mesh_quantities->c_solid_flag[0] = 0;
-    }
+  }
+
+  if (mesh_quantities->has_disable_flag == 1) {
+    BFT_MALLOC(mesh_quantities->c_disable_flag, n_cells_with_ghosts, int);
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
+      mesh_quantities->c_disable_flag[cell_id] = 0;
+  }
+  else {
+    BFT_MALLOC(mesh_quantities->c_disable_flag, 1, int);
+    mesh_quantities->c_disable_flag[0] = 0;
   }
 
   if (mesh_quantities->i_dist == NULL)

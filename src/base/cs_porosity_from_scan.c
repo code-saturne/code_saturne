@@ -284,7 +284,7 @@ void _count_from_file(const cs_mesh_t *m,
     cell_f_vol[cell_id] = mq->cell_vol[cell_id];
     if (f->val[cell_id] > nb_points_thresholds) {
       cell_f_vol[cell_id] = 0.;
-      mq->c_solid_flag[cell_id] = 1;
+      mq->c_disable_flag[cell_id] = 1;
     }
   }
 

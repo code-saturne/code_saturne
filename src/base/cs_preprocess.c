@@ -462,7 +462,7 @@ cs_preprocess_mesh_update_fortran(void)
               m->b_face_vtx_idx,
               m->b_face_vtx_lst,
               mq->b_sym_flag,
-              mq->c_solid_flag,
+              mq->c_disable_flag,
               &(mq->min_vol),
               &(mq->max_vol),
               &(mq->tot_vol),
