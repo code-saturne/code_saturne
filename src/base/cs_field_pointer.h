@@ -110,6 +110,7 @@ typedef enum {
   CS_ENUMF_(mu_t),         /*!< turbulent dynamic viscosity */
 
   CS_ENUMF_(lambda),       /*!< Thermal conductivity */
+  CS_ENUMF_(th_diff),      /*!< Thermal diffusivity */
 
   CS_ENUMF_(poro),         /*!< porosity */
   CS_ENUMF_(if_poro),      /*!< internal faces porosity */
@@ -226,7 +227,6 @@ typedef enum {
   CS_ENUMF_(drag),           /*!< Phases drag */
   CS_ENUMF_(ad_mass),        /*!< Added mass */
   CS_ENUMF_(wlubr),          /*!< Wall lubrication */
-  CS_ENUMF_(th_diff),        /*!< Thermal diffusivity */
   CS_ENUMF_(th_diff_t),      /*!< Turbulent thermal diffusivity */
   CS_ENUMF_(drho_dp),        /*!< drho over dp */
   CS_ENUMF_(drho_dh),        /*!< drho over dh */
