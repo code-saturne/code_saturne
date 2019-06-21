@@ -489,12 +489,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
+  int has_dc = mq->has_disable_flag;
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   {
 #   pragma omp for nowait
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      smbini[iel] = smbrp[iel];
-      smbrp[iel] = 0.;
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
+        smbrp[cell_id] = 0.;
+      smbini[cell_id] = smbrp[cell_id];
+      smbrp[cell_id] = 0.;
     }
 
 #   pragma omp for nowait
@@ -605,7 +608,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     w1[cell_id] += smbrp[cell_id];
     /* Remove contributions from penalized cells */
-    if (mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] != 0)
+    if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
       w1[cell_id] = 0.;
   }
 
@@ -1404,13 +1407,17 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
+  int has_dc = mq->has_disable_flag;
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   {
 #   pragma omp for nowait
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
-        smbini[iel][isou] = smbrp[iel][isou];
-        smbrp[iel][isou] = 0.;
+        /* Overwrite disabled cells */
+        if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
+          smbrp[cell_id][isou] = 0.;
+        smbini[cell_id][isou] = smbrp[cell_id][isou];
+        smbrp[cell_id][isou] = 0.;
       }
     }
 
@@ -1539,7 +1546,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     for (int i = 0; i < 3; i++)
       w1[cell_id][i] += smbrp[cell_id][i];
     /* Remove contributions from penalized cells */
-    if (mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] != 0)
+    if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
       for (int i = 0; i < 3; i++)
         w1[cell_id][i] = 0.;
   }
@@ -2227,13 +2234,17 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
+  int has_dc = mq->has_disable_flag;
 # pragma omp parallel  if(n_cells > CS_THR_MIN)
   {
 #   pragma omp for nowait
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t isou = 0; isou < 6; isou++) {
-        smbini[iel][isou] = smbrp[iel][isou];
-        smbrp[iel][isou] = 0.;
+        /* Overwrite disabled cells */
+        if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
+          smbrp[cell_id][isou] = 0.;
+        smbini[cell_id][isou] = smbrp[cell_id][isou];
+        smbrp[cell_id][isou] = 0.;
       }
     }
 
@@ -2351,7 +2362,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     for (cs_lnum_t i = 0; i < 6; i++)
       w1[cell_id][i] += smbrp[cell_id][i];
     /* Remove contributions from penalized cells */
-    if (mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] != 0) {
+    if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0) {
       for (cs_lnum_t i = 0; i < 6; i++)
         w1[cell_id][i] = 0.;
     }

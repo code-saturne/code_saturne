@@ -262,9 +262,11 @@ cs_matrix_wrapper_scalar(int               iconvp,
   }
 
   /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+  if (mq->has_disable_flag == 1) {
 # pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    da[cell_id] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      da[cell_id] += mq->c_disable_flag[cell_id];
+    }
   }
 
 }
@@ -365,9 +367,11 @@ cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
   }
 
   /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+  if (mq->has_disable_flag == 1) {
 # pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    da[cell_id] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      da[cell_id] += mq->c_disable_flag[cell_id];
+    }
   }
 
 }
@@ -487,11 +491,13 @@ cs_matrix_wrapper_vector(int                  iconvp,
   }
 
   /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+  if (mq->has_disable_flag == 1) {
 # pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    for (int isou = 0; isou < 3; isou++)
-      da[cell_id][isou][isou]
-        += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 3; isou++)
+        da[cell_id][isou][isou]
+          += (cs_real_t)(mq->c_disable_flag[cell_id]);
+    }
   }
 
 }
@@ -608,10 +614,11 @@ cs_matrix_wrapper_tensor(int                  iconvp,
   }
 
   /* If a whole line of the matrix is 0, the diagonal is set to 1 */
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    cs_lnum_t corr_cell_id = CS_MIN(cs_glob_porous_model, 1)*cell_id;
-    for (int isou = 0; isou < 6; isou++) {
-      da[cell_id][isou][isou] += mq->c_solid_flag[corr_cell_id];
+  if (mq->has_disable_flag == 1) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 6; isou++) {
+        da[cell_id][isou][isou] += mq->c_disable_flag[cell_id];
+      }
     }
   }
 

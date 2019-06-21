@@ -152,7 +152,11 @@ typedef struct {
                                         linear gradient correction */
 
   cs_int_t      *b_sym_flag;     /* Symmetry flag for boundary faces */
-  cs_int_t      *c_solid_flag;   /* Is the fluid volume 0 flag */
+  int           has_disable_flag;   /* Is the cell disabled?
+                                       0: unactivated
+                                       1: activated */
+  int           *c_disable_flag;   /* Is the cell disabled?
+                                    used for fluid solid and porous modelling */
   unsigned      *bad_cell_flag;  /* Flag (mask) for bad cells detected */
 
 } cs_mesh_quantities_t ;
@@ -244,6 +248,17 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option);
 
 void
 cs_mesh_quantities_set_porous_model(int  porous_model);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set (unset) has_disable_flag
+ *
+ * \param[in]  flag   1: on, 0: off
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_set_has_disable_flag(int  flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

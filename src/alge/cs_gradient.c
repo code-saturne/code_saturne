@@ -1400,8 +1400,8 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -1661,7 +1661,7 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
     /* Is the cell fully solid? */
-    if (c_solid_flag[is_p * cell_id] == 0)
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
       dvol = 1. / cell_f_vol[cell_id];
     else
       dvol = 0.;
@@ -1730,8 +1730,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -1985,8 +1985,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
-    /* Is the cell fully solid? */
-    if (c_solid_flag[is_p * cell_id] == 0)
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
       dvol = 1. / cell_f_vol[cell_id];
     else
       dvol = 0.;
@@ -3573,8 +3573,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -3697,8 +3697,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
-    /* Is the cell fully solid? */
-    if (c_solid_flag[is_p * cell_id] == 0)
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
       dvol = 1. / cell_f_vol[cell_id];
     else
       dvol = 0.;
@@ -3756,8 +3756,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
@@ -3868,8 +3868,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
-    /* Is the cell fully solid? */
-    if (c_solid_flag[is_p * cell_id] == 0)
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
       dvol = 1. / cell_f_vol[cell_id];
     else
       dvol = 0.;
@@ -3965,8 +3965,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -4132,7 +4132,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_real_t dvol;
-        if (c_solid_flag[is_p * cell_id] == 0)
+        /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+        if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
           dvol = 1. / cell_f_vol[cell_id];
         else
           dvol = 0.;
@@ -5247,8 +5248,8 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -5352,8 +5353,8 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
-    /* Is the cell fully solid? */
-    if (c_solid_flag[is_p * cell_id] == 0)
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
       dvol = 1. / cell_f_vol[cell_id];
     else
       dvol = 0.;
@@ -5434,8 +5435,8 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -5580,7 +5581,8 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_real_t dvol;
-        if (c_solid_flag[is_p * cell_id] == 0)
+        /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+        if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
           dvol = 1. / cell_f_vol[cell_id];
         else
           dvol = 0.;
@@ -5690,8 +5692,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -5897,8 +5899,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
-    /* Is the cell fully solid? */
-    if (c_solid_flag[is_p * cell_id] == 0)
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
       dvol = 1. / cell_f_vol[cell_id];
     else
       dvol = 0.;
@@ -5988,8 +5990,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -6295,8 +6297,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_real_t dvol;
-      /* Is the cell fully solid? */
-      if (c_solid_flag[is_p * cell_id] == 0)
+      /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+      if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
         dvol = 1. / cell_f_vol[cell_id];
       else
         dvol = 0.;
@@ -6975,8 +6977,8 @@ void CS_PROCF (grdpor, GRDPOR)
   const cs_real_t *restrict b_f_face_surf = mq->b_f_face_surf;
   const cs_real_t *restrict b_face_surf = mq->b_face_surf;
 
-  const cs_int_t *restrict c_solid_flag = mq->c_solid_flag;
-  int is_p = CS_MIN(cs_glob_porous_model, 1); /* is porous? */
+  const int *restrict c_disable_flag = mq->c_disable_flag;
+  int has_dc = mq->has_disable_flag; /* Has cells disabled? */
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
@@ -7034,8 +7036,9 @@ void CS_PROCF (grdpor, GRDPOR)
                                   * cs_math_3_dot_product(vel_j, normal);
 
           cs_real_t d_f_surf = 0.;
-          if (  c_solid_flag[is_p * ii] == 0
-              &&c_solid_flag[is_p * jj] == 0)
+          /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+          if (has_dc *  c_disable_flag[has_dc * ii] == 0
+              && has_dc * c_disable_flag[has_dc * jj] == 0)
             d_f_surf = 1. / CS_MAX(i_f_face_surf[face_id],
                                    cs_math_epzero * i_face_surf[face_id]);
 
@@ -7075,7 +7078,8 @@ void CS_PROCF (grdpor, GRDPOR)
                                  * cs_math_3_dot_product(vel_i, normal);
 
           cs_real_t d_f_surf = 0.;
-          if (c_solid_flag[is_p * ii] == 0)
+          /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+          if (has_dc * c_disable_flag[has_dc * ii] == 0)
             d_f_surf = 1. / CS_MAX(b_f_face_surf[face_id],
                                    cs_math_epzero * b_face_surf[face_id]);
 
@@ -7088,9 +7092,9 @@ void CS_PROCF (grdpor, GRDPOR)
 
         /* Finalisation of cell terms */
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-          /* Is the cell fully solid? */
+          /* Is the cell disabled (for solid or porous)? Not the case if coupled */
           cs_real_t dvol = 0.;
-          if (c_solid_flag[is_p * cell_id] == 0)
+          if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
             dvol = 1. / cell_f_vol[cell_id];
 
           for (cs_lnum_t i = 0; i < 3; i++)
