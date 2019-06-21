@@ -3,9 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
-- Add the possibility to compute a porosity from a file containing points (*.pts)
-  comming from a 3D scan. To use set it set in cs_user_parameters.c the scan file
-  with "cs_porosity_from_scan_set_file_name("my_scan.pts")".
+- Add the possibility to compute a porosity from a file containing
+  points (*.pts) coming from a 3D scan. To use it set the scan file
+  with "cs_porosity_from_scan_set_file_name("my_scan.pts")" in
+  cs_user_parameters.c.
 
 - Multigrid: simplify plotting behavior.
   * Only convergence of cycles is now plotted, as many smoother
@@ -35,6 +36,10 @@ Bug fixes:
   with mass flux prediction (option idilat>=2, ipredfl=1). The density
   which is coherent with the mass balance needs to be updated right after
   mass flux prediction step.
+
+- Fix time stepping for buoyancy term. Compute it with last density value (EOS) 
+  when using first order time stepping, to avoid a time shift.
+  No changes for 2nd order time stepping.
 
 Release 6.0.0 (unreleased)
 --------------------------
