@@ -342,6 +342,8 @@ cs_field_pointer_map_base(void)
 
   cs_field_pointer_map(CS_ENUMF_(lambda),
                        cs_field_by_name_try("thermal_conductivity"));
+  cs_field_pointer_map(CS_ENUMF_(th_diff),
+                       cs_field_by_name_try("thermal_diffusivity"));
 
   cs_field_pointer_map(CS_ENUMF_(vism),
                        cs_field_by_name_try("mesh_viscosity"));
