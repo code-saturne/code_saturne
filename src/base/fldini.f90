@@ -692,6 +692,7 @@ if (irovar.eq.1) then
 endif
 
 ! Some C mappings
+call cs_field_pointer_map_base
 call cs_field_pointer_map_boundary
 
 return

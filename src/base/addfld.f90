@@ -576,6 +576,10 @@ do f_id = 0, nfld - 1
   endif
 enddo
 
+! Map pointers
+
+call cs_field_pointer_map_base
+call cs_field_pointer_map_boundary
 
 !---
 ! Formats
