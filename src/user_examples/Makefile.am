@@ -114,6 +114,7 @@ cs_user_performance_tuning-matrix.c \
 cs_user_performance_tuning-numbering.c \
 cs_user_performance_tuning-parallel-io.c \
 cs_user_performance_tuning-partition.c \
+cs_user_physical_properties.c \
 cs_user_porosity.c \
 cs_user_postprocess.c \
 cs_user_postprocess-profiles.c \
