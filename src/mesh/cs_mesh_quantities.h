@@ -587,6 +587,19 @@ cs_compute_cell_cocg_it_coupling(const cs_mesh_t         *m,
                                  cs_internal_coupling_t  *ce);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tag disabled solid cells for fluid_solid mode.
+ *
+ * \param[in, out] m     pointer to a cs_mesh_t structure
+ * \param[in, out] mq    pointer to a cs_mesh_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_tag_disable_cells(cs_mesh_t            *m,
+                                       cs_mesh_quantities_t *mq);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

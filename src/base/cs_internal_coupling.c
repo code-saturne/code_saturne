@@ -712,6 +712,41 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
 }
 
 /*----------------------------------------------------------------------------
+ * Tag solid cells for fluid_solid mode
+ *
+ * parameters:
+ *   m   <->  pointer to mesh structure to modify
+ *   mq  <->  pointer to mesh_quantities structure to modify
+ *   cpl <-> pointer to coupling structure to modify
+ *----------------------------------------------------------------------------*/
+
+static void
+_tag_solid_cells(cs_mesh_t               *m,
+                 cs_mesh_quantities_t    *mq,
+                 cs_internal_coupling_t  *cpl)
+{
+  cs_lnum_t  n_selected_cells;
+  cs_lnum_t *selected_cells = NULL;
+
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  /* Selection of Volume zone using volumic selection criteria*/
+
+  BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
+  cs_selector_get_cell_list(cpl->cells_criteria,
+                            &n_selected_cells,
+                            selected_cells);
+
+  /* For fluid solid computation, disable solid cells for dynamics */
+  assert(mq->has_disable_flag == 1);
+  for (cs_lnum_t i = 0; i < n_selected_cells; i++)
+    mq->c_disable_flag[selected_cells[i]] = 1;
+
+  BFT_FREE(selected_cells);
+
+}
+
+/*----------------------------------------------------------------------------
  * Initialize internal coupling locators using cell and face selection criteria.
  *
  * parameters:
@@ -2809,6 +2844,25 @@ cs_internal_coupling_preprocess(cs_mesh_t  *mesh)
        * locators are initialized afterwards */
       _volume_initialize_insert_boundary(mesh, cpl);
     }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Tag disabled solid cells for fluid_solid mode.
+ *
+ * \param[in, out] m     pointer to a cs_mesh_t structure
+ * \param[in, out] mq    pointer to a cs_mesh_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_tag_disable_cells(cs_mesh_t            *m,
+                                       cs_mesh_quantities_t *mq)
+{
+  for (int i = 0; i < _n_internal_couplings; i++) {
+    cs_internal_coupling_t *cpl = _internal_coupling + i;
+    _tag_solid_cells(m, mq, cpl);
   }
 }
 

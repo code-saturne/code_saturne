@@ -1109,6 +1109,9 @@ do while (iterns.le.nterup)
 
     if (ippmod(idarcy).eq.-1) then
 
+      ! Disable solid cells in fluid_solid mode
+      if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
+
       call navstv &
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
@@ -1400,6 +1403,8 @@ if (iccvfg.eq.0) then
 
 endif  ! Fin si calcul sur champ de vitesse fige SUITE
 
+! Re enable solid cells in fluid_solid mode
+if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(0)
 
 !     Ici on peut liberer les eventuels tableaux SKW et DIVUKW
 
