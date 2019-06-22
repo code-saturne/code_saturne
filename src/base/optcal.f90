@@ -944,6 +944,11 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: irecmf
 
+  !> Has a solid zone where dynamics must be killed?
+  !>    - false (default)
+  !>    - true
+  logical(c_bool), pointer, save :: fluid_solid
+
   !> choice the way to compute the exchange coefficient of the
   !> condensation source term used by the copain model
   !>    - 1: the turbulent exchange coefficient of the flow
@@ -1413,13 +1418,14 @@ module optcal
                                                 arak  ,ipucou, iccvfg,         &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
-                                                iifren, icalhy, irecmf)        &
+                                                iifren, icalhy, irecmf, fluid_solid)&
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ivisse, irevmc, iprco, arak
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
       type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
+      type(c_ptr), intent(out) :: fluid_solid
     end subroutine cs_f_stokes_options_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1705,13 +1711,15 @@ contains
     type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
+    type(c_ptr) :: c_fluid_solid
 
     call cs_f_mesh_quantities_get_pointers(c_iporos)
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
                                           c_arak  , c_ipucou, c_iccvfg,  &
                                           c_idilat, c_epsdp , c_itbrrb,  &
                                           c_iphydr, c_igprij, c_igpust,  &
-                                          c_iifren, c_icalhy, c_irecmf)
+                                          c_iifren, c_icalhy, c_irecmf,  &
+                                          c_fluid_solid)
 
     call c_f_pointer(c_iporos, iporos)
     call c_f_pointer(c_ivisse, ivisse)
@@ -1729,6 +1737,7 @@ contains
     call c_f_pointer(c_iifren, iifren)
     call c_f_pointer(c_icalhy, icalhy)
     call c_f_pointer(c_irecmf, irecmf)
+    call c_f_pointer(c_fluid_solid, fluid_solid)
 
   end subroutine stokes_options_init
 

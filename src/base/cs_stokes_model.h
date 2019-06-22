@@ -111,6 +111,9 @@ typedef struct {
                                  non-orthogonalities
                                  - 1: true
                                  - 0: false (default) */
+  bool          fluid_solid;  /* Has a solid zone where dynamics must be killed?
+                                 - fasle (default)
+                                 - true */
 
 } cs_stokes_model_t;
 

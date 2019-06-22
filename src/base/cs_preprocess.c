@@ -65,6 +65,7 @@
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_preprocessor_data.h"
+#include "cs_stokes_model.h"
 #include "cs_timer_stats.h"
 #include "cs_volume_zone.h"
 
@@ -392,12 +393,22 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   t1 = cs_timer_wtime();
 
+  /* If fluid_solid mode is activate: disable solid cells for the dynamics */
+  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+  if (stokes->fluid_solid)
+    cs_glob_mesh_quantities->has_disable_flag = 1;
+
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
 
   if (cs_glob_porous_model == 3) {
     cs_mesh_init_fluid_sections(cs_glob_mesh, cs_glob_mesh_quantities);
     cs_mesh_quantities_fluid_compute(cs_glob_mesh, cs_glob_mesh_quantities);
   }
+
+  /* If fluid_solid mode is activate: disable solid cells for the dynamics */
+  if (stokes->fluid_solid)
+    cs_internal_coupling_tag_disable_cells(cs_glob_mesh, cs_glob_mesh_quantities);
+
   cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
   cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
   t2 = cs_timer_wtime();

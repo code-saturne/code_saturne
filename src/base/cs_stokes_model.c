@@ -209,6 +209,10 @@ BEGIN_C_DECLS
         for the mass flux reconstruction for the non-orthogonalities
         - 1: true
         - 0: false (default)
+  \var  cs_stokes_model_t::fluid_solid
+        Has a solid zone where dynamics must be killed?
+        - false (default)
+        - true
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -243,7 +247,8 @@ static cs_stokes_model_t  _stokes_model = {
   .igpust = 1,
   .iifren = 0,
   .icalhy = -1,
-  .irecmf = 0};
+  .irecmf = 0,
+  .fluid_solid = false};
 
 const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
 
@@ -267,7 +272,8 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **igpust,
                                  int     **iifren,
                                  int     **icalhy,
-                                 int     **irecmf);
+                                 int     **irecmf,
+                                 bool    **fluid_solid);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -295,6 +301,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   iifren  --> pointer to cs_glob_stokes_model->iifren
  *   icalhy  --> pointer to cs_glob_stokes_model->icalhy
  *   irecmf  --> pointer to cs_glob_stokes_model->irecmf
+ *   fluid_solid --> Pointer to cs_glob_stokes_model->fluid_solid
  *----------------------------------------------------------------------------*/
 
 void
@@ -312,7 +319,8 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **igpust,
                                  int     **iifren,
                                  int     **icalhy,
-                                 int     **irecmf)
+                                 int     **irecmf,
+                                 bool    **fluid_solid)
 {
   *ivisse = &(_stokes_model.ivisse);
   *irevmc = &(_stokes_model.irevmc);
@@ -329,6 +337,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *iifren = &(_stokes_model.iifren);
   *icalhy = &(_stokes_model.icalhy);
   *irecmf = &(_stokes_model.irecmf);
+  *fluid_solid = &(_stokes_model.fluid_solid);
 }
 
 /*============================================================================
