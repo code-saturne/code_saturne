@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_advection_field.h"
+#include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_param.h"
 #include "cs_property.h"

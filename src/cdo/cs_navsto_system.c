@@ -50,7 +50,6 @@
 #include "cs_cdofb_predco.h"
 #include "cs_cdofb_uzawa.h"
 #include "cs_hho_stokes.h"
-#include "cs_equation.h"
 #include "cs_evaluate.h"
 #include "cs_flag.h"
 #include "cs_log.h"
