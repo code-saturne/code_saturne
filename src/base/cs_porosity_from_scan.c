@@ -109,7 +109,10 @@ BEGIN_C_DECLS
 static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
   .file_name = NULL,
-  .translation = {0., 0., 0.},
+  .transformation_matrix =
+  {{0., 0., 0., 0.},
+    {0., 0., 0., 0.},
+    {0., 0., 0., 0.}},
   .nb_sources = 0,
   .sources = NULL,
   .source_c_ids = NULL
@@ -153,6 +156,23 @@ void _count_from_file(const cs_mesh_t *m,
   bft_printf(" Compute the porosity from a scan points file:\n    %s \n",
       _porosity_from_scan_opt.file_name);
 
+  bft_printf("  Transformation       %12.5g %12.5g %12.5g %12.5g\n"
+             "  matrix:              %12.5g %12.5g %12.5g %12.5g\n"
+             "                       %12.5g %12.5g %12.5g %12.5g\n",
+             "    (last column is translation vector)\n",
+             _porosity_from_scan_opt.transformation_matrix[0][0],
+             _porosity_from_scan_opt.transformation_matrix[0][1],
+             _porosity_from_scan_opt.transformation_matrix[0][2],
+             _porosity_from_scan_opt.transformation_matrix[0][3],
+             _porosity_from_scan_opt.transformation_matrix[1][0],
+             _porosity_from_scan_opt.transformation_matrix[1][1],
+             _porosity_from_scan_opt.transformation_matrix[1][2],
+             _porosity_from_scan_opt.transformation_matrix[1][3],
+             _porosity_from_scan_opt.transformation_matrix[2][0],
+             _porosity_from_scan_opt.transformation_matrix[2][1],
+             _porosity_from_scan_opt.transformation_matrix[2][2],
+             _porosity_from_scan_opt.transformation_matrix[2][3]);
+
   FILE* file = fopen(_porosity_from_scan_opt.file_name, "rt");
   if (file == NULL)
     bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not open file."));
@@ -168,15 +188,23 @@ void _count_from_file(const cs_mesh_t *m,
   /* Read points */
   for (int i = 0; i < n_points; i++ ) {
     int num, green, red, blue;
-    if (fscanf(file, "%lf", &(point_coords[i][0])) != 1)
-      bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
-    if (fscanf(file, "%lf", &(point_coords[i][1])) != 1)
-      bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
-    if (fscanf(file, "%lf", &(point_coords[i][2])) != 1)
-      bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
-    /* Translation */
+    cs_real_4_t xyz;
     for (int j = 0; j < 3; j++)
-      point_coords[i][j] += _porosity_from_scan_opt.translation[j];
+      point_coords[i][j] = 0.;
+
+    if (fscanf(file, "%lf", &(xyz[0])) != 1)
+      bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
+    if (fscanf(file, "%lf", &(xyz[1])) != 1)
+      bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+    if (fscanf(file, "%lf", &(xyz[2])) != 1)
+      bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+
+    /* Translation  and rotation */
+    xyz[3] = 1.;
+    for (int j = 0; j < 3; j++)
+      for (int k = 0; k < 4; k++)
+        point_coords[i][j] += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
+
     if (fscanf(file, "%d", &num) != 1)
       bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
     if (fscanf(file, "%d", &red) != 1)
