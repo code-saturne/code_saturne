@@ -635,44 +635,44 @@ do ifac = 1, nfabor
           icodcl(ifac,ifb ) = 3
         endif
       elseif(iturb.eq.60) then
-         if(rcodcl(ifac,ik  ,1).lt.rinfin*0.5d0  .and.      &
-            rcodcl(ifac,iomg,1).lt.rinfin*0.5d0) then
-           icodcl(ifac,ik  ) = 1
-           icodcl(ifac,iomg) = 1
-         else
-           icodcl(ifac,ik  ) = 3
-           icodcl(ifac,iomg) = 3
-         endif
-       elseif(iturb.eq.70) then
-         if(rcodcl(ifac,inusa,1).gt.0.d0) then
-           icodcl(ifac,inusa) = 1
-         else
-           icodcl(ifac,inusa) = 3
-         endif
-       endif
-       if (nscaus.gt.0) then
-         do ii = 1, nscaus
-           if(rcodcl(ifac,isca(ii),1).lt.rinfin*0.5d0) then
-             icodcl(ifac,isca(ii)) = 1
-           else
-             icodcl(ifac,isca(ii)) = 3
-           endif
-         enddo
-       endif
-       if (nscasp.gt.0) then
-         do ii = 1, nscasp
-           if(rcodcl(ifac,iscasp(ii),1).lt.rinfin*0.5d0) then
-             icodcl(ifac,iscasp(ii)) = 1
-           else
-             icodcl(ifac,iscasp(ii)) = 3
-           endif
-         enddo
-       endif
-     endif
+        if(rcodcl(ifac,ik  ,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,iomg,1).lt.rinfin*0.5d0) then
+          icodcl(ifac,ik  ) = 1
+          icodcl(ifac,iomg) = 1
+        else
+          icodcl(ifac,ik  ) = 3
+          icodcl(ifac,iomg) = 3
+        endif
+      elseif(iturb.eq.70) then
+        if(rcodcl(ifac,inusa,1).gt.0.d0) then
+          icodcl(ifac,inusa) = 1
+        else
+          icodcl(ifac,inusa) = 3
+        endif
+      endif
+      if (nscaus.gt.0) then
+        do ii = 1, nscaus
+          if(rcodcl(ifac,isca(ii),1).lt.rinfin*0.5d0) then
+            icodcl(ifac,isca(ii)) = 1
+          else
+            icodcl(ifac,isca(ii)) = 3
+          endif
+        enddo
+      endif
+      if (nscasp.gt.0) then
+        do ii = 1, nscasp
+          if(rcodcl(ifac,iscasp(ii),1).lt.rinfin*0.5d0) then
+            icodcl(ifac,iscasp(ii)) = 1
+          else
+            icodcl(ifac,iscasp(ii)) = 3
+          endif
+        enddo
+      endif
+    endif
 
-   endif ! end of test on inlet/outlet faces
+  endif ! end of test on inlet/outlet faces
 
- enddo ! end of loop on boundary faces
+enddo ! end of loop on boundary faces
 
 ! Free memory
 deallocate(w5)
