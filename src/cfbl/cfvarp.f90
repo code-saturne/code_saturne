@@ -97,7 +97,7 @@ if (ippmod(icompf).ge.0) then
   viscv0 = 0.d0
 
   ! Mixture fractions (two-phase homogeneous flows)
-  if (ippmod(icompf).gt.1) then
+  if (ippmod(icompf).eq.2) then
     ! Volume fraction of phase 1 (with respect to the EOS parameters)
     call add_model_scalar_field('volume_fraction', 'Volume Fraction', ifracv)
 

@@ -161,7 +161,7 @@ call field_get_val_s(ivarfl(ien), cvar_en)
 if (icv.ge.0) call field_get_val_s(icv, cpro_cv)
 
 ! mixture fractions for the homogeneous two-phase flows
-if (ippmod(icompf).gt.1) then
+if (ippmod(icompf).eq.2) then
   call field_get_val_s(ivarfl(isca(ifracv)), cvar_fracv)
   call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
   call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
