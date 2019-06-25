@@ -63,7 +63,7 @@ if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
       import sys
       sys.path.insert(0, cs_config.config().libs['coolprop'].flags['pythonpath'])
       import CoolProp
-      sys.pop(0)
+      sys.path.pop(0)
       seld.coolprop_fluids = []
       for f in CoolProp.__fluids__:
          coolprop_fluids.append(f)
