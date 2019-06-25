@@ -213,7 +213,13 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
                     line.setStatusTip(msg[i])
                     self.mdl.setRelevantSubdir("no", sub_dir[i])
 
-            if os.path.isdir(self.spath) and meshes_dir in os.listdir(self.spath):
+            set_subdir = False
+            try:
+                if os.path.isdir(self.spath) and meshes_dir in os.listdir(self.spath):
+                    set_subdr = True
+            except Exception:
+                pass
+            if set_subdir:
                 self.mdl.setPath(self.path[4], os.path.abspath(self.spath + '/' + meshes_dir))
                 self.mdl.setRelevantSubdir("yes", self.path[4])
             else:
