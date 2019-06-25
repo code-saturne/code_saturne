@@ -178,20 +178,31 @@ void _count_from_file(const cs_mesh_t *m,
     bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not open file."));
 
   int n_points = 0;
+  int n_read_points = 0;
 
-  if (fscanf(file, "%d", &n_points) != 1)
+  if (fscanf(file, "%d", &n_read_points) != 1)
     bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not read the number of lines."));
 
-  bft_printf(__FILE__,__LINE__, 0, _("Porosity from scan: %d points to be read."), n_points);
+  bft_printf("Porosity from scan: %d points to be read.\n", n_points);
 
   /* Pointer to field */
   cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
 
 
+  /* Location mesh where points will be localized */
+  fvm_nodal_t *location_mesh =
+    cs_mesh_connect_cells_to_nodal(m,
+                                   "pts_location_mesh",
+                                   false, // no family info
+                                   m->n_cells,
+                                   NULL);
+
+  fvm_nodal_make_vertices_private(location_mesh);
+
   /* Read multiple scan file
    * ----------------------- */
-  do
-  {
+  for (int n_scan = 0; n_read_points != 0; n_scan++) {
+    n_points = n_read_points;
     cs_real_3_t *point_coords;
     BFT_MALLOC(point_coords, n_points, cs_real_3_t);
 
@@ -227,30 +238,30 @@ void _count_from_file(const cs_mesh_t *m,
 
     /* Check EOF was correctly reached */
     if (fgets(line, sizeof(line), file) != NULL) {
-      n_points = strtol(line, NULL, 10);
-      bft_printf(__FILE__,__LINE__, 0, _("Porosity from scan: Again %d points to be read."), n_points);
+      n_read_points = strtol(line, NULL, 10);
+      bft_printf("  Porosity from scan: Again %d points to be read.\n\n", n_read_points);
+    }
+    else {
+      n_read_points = 0;
     }
 
-    if (fclose(file) != 0)
-      bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not close the file."));
+    char *fvm_name;
+    BFT_MALLOC(fvm_name,
+               strlen(_porosity_from_scan_opt.file_name) + 3 + 1,
+               char);
 
 
-    /* Build FVM mesh from points  */
-    fvm_nodal_t *pts_mesh = fvm_nodal_create(_porosity_from_scan_opt.file_name, 3);
+    strcpy(fvm_name, _porosity_from_scan_opt.file_name);
+    char suffix[3];
+    sprintf(suffix, "_%2d", n_scan);
+    strcat(fvm_name, suffix);
+
+    /* Build FVM mesh from scanned points */
+    fvm_nodal_t *pts_mesh = fvm_nodal_create(fvm_name, 3);
 
     /* Update the points set structure */
     fvm_nodal_define_vertex_list(pts_mesh, n_points, NULL);
     fvm_nodal_transfer_vertices(pts_mesh, (cs_coord_t *)point_coords);
-
-
-    fvm_nodal_t *location_mesh =
-      cs_mesh_connect_cells_to_nodal(m,
-                                     "pts_location_mesh",
-                                     false, // no family info
-                                     m->n_cells,
-                                     NULL);
-
-    fvm_nodal_make_vertices_private(location_mesh);
 
     /* Now build locator
      * Locate points on this location mesh */
@@ -284,7 +295,6 @@ void _count_from_file(const cs_mesh_t *m,
                          cs_coupling_point_in_mesh_p);
 
     /* Shift from 1-base to 0-based locations */
-
     ple_locator_shift_locations(_locator, -1);
 
     /* dump locator */
@@ -311,13 +321,15 @@ void _count_from_file(const cs_mesh_t *m,
 
     }
 
-    /* Nodal mesh is not needed anymore */
-    location_mesh = fvm_nodal_destroy(location_mesh);
     _locator = ple_locator_destroy(_locator);
 
-  }
-  while (n_points != 0);
+  } /* End loop on multiple scans */
 
+  if (fclose(file) != 0)
+    bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not close the file."));
+
+  /* Nodal mesh is not needed anymore */
+  location_mesh = fvm_nodal_destroy(location_mesh);
 
   int nb_points_thresholds = 10;
   /* Synchronize nb_scan_points */
