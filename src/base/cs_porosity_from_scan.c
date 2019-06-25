@@ -206,6 +206,9 @@ void _count_from_file(const cs_mesh_t *m,
     cs_real_3_t *point_coords;
     BFT_MALLOC(point_coords, n_points, cs_real_3_t);
 
+    cs_real_3_t min_vec = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
+    cs_real_3_t max_vec = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
+
     /* Read points */
     for (int i = 0; i < n_points; i++ ) {
       int num, green, red, blue;
@@ -222,9 +225,14 @@ void _count_from_file(const cs_mesh_t *m,
 
       /* Translation  and rotation */
       xyz[3] = 1.;
-      for (int j = 0; j < 3; j++)
+      for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 4; k++)
           point_coords[i][j] += _porosity_from_scan_opt.transformation_matrix[j][k] * xyz[k];
+
+        /* Compute bounding box*/
+        min_vec[j] = CS_MIN(min_vec[j], point_coords[i][j]);
+        max_vec[j] = CS_MAX(max_vec[j], point_coords[i][j]);
+      }
 
       if (fscanf(file, "%d", &num) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
@@ -237,13 +245,18 @@ void _count_from_file(const cs_mesh_t *m,
     }
 
     /* Check EOF was correctly reached */
-    if (fgets(line, sizeof(line), file) != NULL) {
+    if (fgets(line, sizeof(line), file) != NULL)
       n_read_points = strtol(line, NULL, 10);
-      bft_printf("  Porosity from scan: Again %d points to be read.\n\n", n_read_points);
-    }
-    else {
+    else
       n_read_points = 0;
-    }
+
+    /* Bounding box*/
+    bft_printf("  Bounding box [%f, %f, %f], [%f, %f, %f].\n\n",
+        min_vec[0], min_vec[1], min_vec[2],
+        max_vec[0], max_vec[1], max_vec[2]);
+
+    if (n_read_points > 0)
+      bft_printf("  Porosity from scan: Again %d points to be read.\n\n", n_read_points);
 
     char *fvm_name;
     BFT_MALLOC(fvm_name,
