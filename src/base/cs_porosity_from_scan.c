@@ -110,9 +110,9 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
   .file_name = NULL,
   .transformation_matrix =
-  {{0., 0., 0., 0.},
-    {0., 0., 0., 0.},
-    {0., 0., 0., 0.}},
+  {{1., 0., 0., 0.},
+    {0., 1., 0., 0.},
+    {0., 0., 1., 0.}},
   .nb_sources = 0,
   .sources = NULL,
   .source_c_ids = NULL
