@@ -54,7 +54,9 @@
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_cdofb_navsto.h"
+#if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
+#endif
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
 #include "cs_equation_priv.h"

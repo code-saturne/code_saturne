@@ -46,6 +46,9 @@
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
 #include "cs_equation_bc.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
@@ -219,7 +222,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 #   pragma omp critical
     {
       cs_log_printf(CS_LOG_DEFAULT, ">> Divergence:\n");
-      for (short int f = 0; f < n_fc; f++)
+      for (short int f = 0; f < cm->n_fc; f++)
         cs_log_printf(CS_LOG_DEFAULT, "    f%2d: %- .4e, %- .4e, %- .4e\n",
                       f, nsb->div_op[3*f]*sovc, nsb->div_op[3*f+1]*sovc,
                       nsb->div_op[3*f+2]*sovc);

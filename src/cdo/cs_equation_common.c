@@ -45,6 +45,9 @@
 #include "cs_blas.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_local.h"
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_parall.h"
