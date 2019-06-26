@@ -3142,7 +3142,7 @@ if (nscal.ge.1) then
             enddo
           endif
 
-        ! convective boundary for marangoni effects (generalized symmetry condition)
+        ! convective boundary for Marangoni effects (generalized symmetry condition)
         !---------------------------------------------------------------------------
 
         elseif (icodcl(ifac,ivar).eq.14) then

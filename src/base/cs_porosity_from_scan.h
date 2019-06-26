@@ -71,6 +71,7 @@ BEGIN_C_DECLS
 typedef struct {
   bool  compute_porosity_from_scan;
   char *file_name;
+  bool  postprocess_points;
   /*! Matrix of associated transformation
      (3x4 matrix, 3 first rows of a homogeneous
      coordinates transformation matrix,

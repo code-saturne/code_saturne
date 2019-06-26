@@ -109,6 +109,7 @@ BEGIN_C_DECLS
 static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
   .file_name = NULL,
+  .postprocess_points = true,
   .transformation_matrix =
   {{1., 0., 0., 0.},
     {0., 1., 0., 0.},
@@ -204,7 +205,9 @@ void _count_from_file(const cs_mesh_t *m,
   for (int n_scan = 0; n_read_points != 0; n_scan++) {
     n_points = n_read_points;
     cs_real_3_t *point_coords;
+    float *colors;
     BFT_MALLOC(point_coords, n_points, cs_real_3_t);
+    BFT_MALLOC(colors, 3*n_points, float);
 
     cs_real_3_t min_vec = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
     cs_real_3_t max_vec = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
@@ -236,12 +239,18 @@ void _count_from_file(const cs_mesh_t *m,
 
       if (fscanf(file, "%d", &num) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+      /* Red */
       if (fscanf(file, "%d", &red) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+      /* Green */
       if (fscanf(file, "%d", &green) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+      /* Blue */
       if (fscanf(file, "%d\n", &blue) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+      colors[3*i + 0] = red;
+      colors[3*i + 1] = green;
+      colors[3*i + 2] = blue;
     }
 
     /* Check EOF was correctly reached */
@@ -258,23 +267,72 @@ void _count_from_file(const cs_mesh_t *m,
     if (n_read_points > 0)
       bft_printf("  Porosity from scan: Again %d points to be read.\n\n", n_read_points);
 
-    char *fvm_name;
-    BFT_MALLOC(fvm_name,
-               strlen(_porosity_from_scan_opt.file_name) + 3 + 1,
-               char);
+    /* FVM meshes for writers */
+    if (_porosity_from_scan_opt.postprocess_points) {
+      char *fvm_name;
+      BFT_MALLOC(fvm_name,
+                 strlen(_porosity_from_scan_opt.file_name) + 3 + 1,
+                 char);
+
+      strcpy(fvm_name, _porosity_from_scan_opt.file_name);
+      char suffix[3];
+      sprintf(suffix, "_%02d", n_scan);
+      strcat(fvm_name, suffix);
+
+      /* Build FVM mesh from scanned points */
+      fvm_nodal_t *pts_mesh = fvm_nodal_create(fvm_name, 3);
+
+      /* Only the first rank writes points for now */
+      cs_gnum_t *vtx_gnum = NULL;
+
+      if (cs_glob_rank_id < 1) {
+        /* Update the points set structure */
+        fvm_nodal_define_vertex_list(pts_mesh, n_points, NULL);
+        fvm_nodal_set_shared_vertices(pts_mesh, (cs_coord_t *)point_coords);
+
+        BFT_MALLOC(vtx_gnum, n_points, cs_gnum_t);
+        for (cs_lnum_t i = 0; i < n_points; i++)
+          vtx_gnum[i] = i + 1;
 
 
-    strcpy(fvm_name, _porosity_from_scan_opt.file_name);
-    char suffix[3];
-    sprintf(suffix, "_%2d", n_scan);
-    strcat(fvm_name, suffix);
+      }
+      fvm_nodal_init_io_num(pts_mesh, vtx_gnum, 0);
 
-    /* Build FVM mesh from scanned points */
-    fvm_nodal_t *pts_mesh = fvm_nodal_create(fvm_name, 3);
+      /* Free if allocated */
+      BFT_FREE(vtx_gnum);
 
-    /* Update the points set structure */
-    fvm_nodal_define_vertex_list(pts_mesh, n_points, NULL);
-    fvm_nodal_transfer_vertices(pts_mesh, (cs_coord_t *)point_coords);
+      /* Create default writer */
+      fvm_writer_t *writer = fvm_writer_init(fvm_name,
+                                             "postprocessing",
+                                             cs_post_get_default_format(),
+                                             cs_post_get_default_format_options(),
+                                             FVM_WRITER_FIXED_MESH);
+
+
+      fvm_writer_export_nodal(writer, pts_mesh);
+
+      const void *var_ptr[1] = {NULL};
+
+      var_ptr[0] = colors;
+
+      fvm_writer_export_field(writer,
+                              pts_mesh,
+                              "color",
+                              FVM_WRITER_PER_NODE,
+                              3,
+                              CS_INTERLACE,
+                              0,
+                              0,
+                              CS_FLOAT,
+                              -1,
+                              0.0,
+                              (const void * *)var_ptr);
+
+
+      /* Free and destroy */
+      fvm_writer_finalize(writer);
+      pts_mesh = fvm_nodal_destroy(pts_mesh);
+    }
 
     /* Now build locator
      * Locate points on this location mesh */
@@ -285,13 +343,13 @@ void _count_from_file(const cs_mesh_t *m,
       options[i] = 0;
     options[PLE_LOCATOR_NUMBERING] = 0; /* base 0 numbering */
 
-  #if defined(PLE_HAVE_MPI)
+#if defined(PLE_HAVE_MPI)
     _locator = ple_locator_create(cs_glob_mpi_comm,
                                   cs_glob_n_ranks,
                                   0);
-  #else
+#else
     _locator = ple_locator_create();
-  #endif
+#endif
 
     ple_locator_set_mesh(_locator,
                          location_mesh,
@@ -311,16 +369,16 @@ void _count_from_file(const cs_mesh_t *m,
     ple_locator_shift_locations(_locator, -1);
 
     /* dump locator */
-  #if 0
+#if 0
     ple_locator_dump(_locator);
-  #endif
+#endif
 
     /* Get the element ids (list of points on the local rank) */
     cs_lnum_t n_points_loc = ple_locator_get_n_dist_points(_locator);
 
-  #if 0
+#if 0
     bft_printf("ple_locator_get_n_dist_points = %d, n_points = %d\n", n_points_loc, n_points);
-  #endif
+#endif
 
     cs_lnum_t *elt_ids = ple_locator_get_dist_locations(_locator);
 
@@ -334,7 +392,10 @@ void _count_from_file(const cs_mesh_t *m,
 
     }
 
+    /* Free memory */
     _locator = ple_locator_destroy(_locator);
+    BFT_FREE(point_coords);
+    BFT_FREE(colors);
 
   } /* End loop on multiple scans */
 
@@ -548,9 +609,10 @@ cs_compute_porosity_from_scan(void)
   cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
 
   /* Local variables */
-  cs_real_t *rovsdt, *dpvar;
+  cs_real_t *rovsdt, *pvar, *dpvar;
   cs_real_t *rhs;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
+  BFT_MALLOC(pvar, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(rhs, m->n_cells_with_ghosts, cs_real_t);
 
@@ -563,7 +625,6 @@ cs_compute_porosity_from_scan(void)
                           _porosity_from_scan_opt.sources[s_id],
                           &(source_c_ids[s_id]),
                           &rank_source);
-
 
     cs_real_t source_cen[3];
 
@@ -654,11 +715,13 @@ cs_compute_porosity_from_scan(void)
      * so no need of diagonal reinforcement */
     vcopt.ndircl = 1;
 
-    /* Right hand side
-     *================*/
+    /* Right hand side and initial guess
+     *==================================*/
 
-    for (cs_lnum_t cell_id = 0; cell_id< m->n_cells_with_ghosts; cell_id++)
+    for (cs_lnum_t cell_id = 0; cell_id< m->n_cells_with_ghosts; cell_id++) {
       rhs[cell_id] = 0.;
+      pvar[cell_id] = 0.;
+    }
 
     /* in parallel, only one rank takes that */
     if (source_c_ids[s_id] > -1)
@@ -702,13 +765,18 @@ cs_compute_porosity_from_scan(void)
                                        NULL,
                                        rovsdt,
                                        rhs,
-                                       f->val,
+                                       pvar,
                                        dpvar,
                                        NULL,
                                        NULL);
+
+    for (cs_lnum_t cell_id = 0; cell_id< m->n_cells; cell_id++)
+      f->val[cell_id] = CS_MAX(f->val[cell_id], pvar[cell_id]);
+
   } /* End loop over sources */
 
   /* Free memory */
+  BFT_FREE(pvar);
   BFT_FREE(dpvar);
   BFT_FREE(rhs);
   BFT_FREE(rovsdt);
