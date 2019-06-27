@@ -272,7 +272,12 @@ elif test "x$cs_gcc" = "xicc"; then
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
-  cflags_default_omp="-openmp"
+  cflags_default_omp="-qopenmp"
+  case "$cs_cc_vers_major" in
+    1[0123456])
+      cflags_default_omp="-openmp"
+      ;;
+  esac
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -599,8 +604,14 @@ elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicc"; then
   cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
+  cxxflags_default_omp="-qopenmp"
   cxxflags_default_std="-funsigned-char"
-  cxxflags_default_omp="-openmp"
+
+  case "$cs_cxx_vers_major" in
+    1[0123456])
+      cxxflags_default_omp="-openmp"
+      ;;
+  esac
 
 # Otherwise, are we using clang ?
 #--------------------------------
