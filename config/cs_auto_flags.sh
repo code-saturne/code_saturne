@@ -272,12 +272,7 @@ elif test "x$cs_gcc" = "xicc"; then
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
-  cflags_default_omp="-qopenmp"
-  case "$cs_cc_vers_major" in
-    1[0123456])
-      cflags_default_omp="-openmp"
-      ;;
-  esac
+  cflags_default_omp="-openmp"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -484,7 +479,9 @@ if test "x$GXX" = "xyes"; then
   # Intel and Pathscale compilers may pass as GXX but
   # may be recognized by version string
 
-  if test -n "`$CXX --version | grep icc`" ; then
+  if test -n "`$CXX --version | grep icpc`" ; then
+    cs_gxx=icpc
+  elif test -n "`$CXX --version | grep icc`" ; then
     cs_gxx=icc
   elif test -n "`$CXX --version | grep clang`" ; then
     cs_gxx=clang
@@ -575,9 +572,13 @@ if test "x$cs_gxx" = "xg++"; then
 # Otherwise, are we using icc ?
 #------------------------------
 
-elif test "x$cs_gxx" = "xicc"; then
+elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicc"; then
 
-  cs_cxx_version=`echo $CXX --version | grep icc |sed 's/[a-zA-Z()]//g'`
+  if test "x$cs_gxx" = "xicpc"; then
+    cs_cxx_version=`echo $CXX --version | grep icpc |sed 's/[a-zA-Z()]//g'`
+  else
+    cs_cxx_version=`echo $CXX --version | grep icc |sed 's/[a-zA-Z()]//g'`
+  fi
 
   echo "compiler '$CXX' is Intel ICC"
 
@@ -598,14 +599,8 @@ elif test "x$cs_gxx" = "xicc"; then
   cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
-  cxxflags_default_omp="-qopenmp"
   cxxflags_default_std="-funsigned-char"
-
-  case "$cs_cxx_vers_major" in
-    1[0123456])
-      cxxflags_default_omp="-openmp"
-      ;;
-  esac
+  cxxflags_default_omp="-openmp"
 
 # Otherwise, are we using clang ?
 #--------------------------------
