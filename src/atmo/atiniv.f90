@@ -206,7 +206,9 @@ if ((iatra1.eq.1.or.ichemistry.ge.1).and.(syear.eq.-999.or.squant.eq.-999.or.sho
   call csexit (1)
 endif
 
-if ((iatra1.eq.1.or.ichemistry.ge.1).and.(xlat.ge.rinfin*0.5.or.xlon.ge.rinfin*0.5)) then
+if ( (iatra1.eq.1 .and. (xlat.ge.rinfin*0.5 .or. xlon.ge.rinfin*0.5)) .or. &
+     (imeteo.gt.0 .and. (maxval(xmet).ge.rinfin*0.5 .or. maxval(ymet).ge.rinfin*0.5)) .or. &
+     (ichemistry.ge.1 .and. (maxval(xchem).ge.rinfin*0.5 .or. maxval(ychem).ge.rinfin*0.5)) ) then
   if (iatra1.eq.1) write(nfecra,1002)
   if (ichemistry.ge.1) write(nfecra,1003)
   call csexit (1)
