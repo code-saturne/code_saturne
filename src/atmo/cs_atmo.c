@@ -104,7 +104,7 @@ static cs_atmo_option_t  _atmo_option = {
 };
 
 /* atmo chemistry options structure */
-static cs_atmo_chemisty_t _atmo_chem = {
+static cs_atmo_chemistry_t _atmo_chem = {
   .model = 0,
   .n_species = 0,
   .n_reactions = 0,
@@ -119,7 +119,7 @@ static cs_atmo_chemisty_t _atmo_chem = {
  *============================================================================*/
 
 cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
-cs_atmo_chemisty_t *cs_glob_atmo_chemistry = &_atmo_chem;
+cs_atmo_chemistry_t *cs_glob_atmo_chemistry = &_atmo_chem;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.

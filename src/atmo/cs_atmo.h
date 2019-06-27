@@ -91,7 +91,7 @@ typedef struct {
   /*! Molar mass of the chemical species (g/mol) */
   cs_real_t *molar_mass;
   int *chempoint;
-} cs_atmo_chemisty_t;
+} cs_atmo_chemistry_t;
 
 /*============================================================================
  * Static global variables
@@ -101,7 +101,7 @@ typedef struct {
 extern cs_atmo_option_t        *cs_glob_atmo_option;
 
 /* Pointer to atmo chemistry structure */
-extern cs_atmo_chemisty_t *cs_glob_atmo_chemistry;
+extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 
 /*============================================================================
  * Public function definitions
