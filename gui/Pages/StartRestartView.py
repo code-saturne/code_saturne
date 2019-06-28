@@ -301,10 +301,13 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
                              'RESU_COUPLING')
             if not os.path.isdir(d):
                 restart_dir = os.path.join(self.case['case_path'], 'RESU')
-            if os.path.isdir(restart_dir):
-                restart_path = '*'
-            else:
-                restart_dir = None
+
+            # isdir returns an error if restart_dir == None, hence the test
+            if restart_dir:
+                if os.path.isdir(restart_dir):
+                    restart_path = '*'
+                else:
+                    restart_dir = None
         elif self.restart_path:
             if os.path.isabs(self.restart_path):
                 restart_path = self.restart_path
