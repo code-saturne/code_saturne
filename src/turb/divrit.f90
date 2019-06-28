@@ -203,7 +203,7 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
 
 ! Find the variance of the thermal scalar
 itt = -1
-if (((abs(gx)+abs(gy)+abs(gz)).gt.epzero).and.irovar.gt.0.and.         &
+if (((abs(gx)+abs(gy)+abs(gz)).gt.epzero).and.(irovar.gt.0.or.idilat.eq.0).and.   &
     ((ityturt(iscal).eq.2).or.(ityturt(iscal).eq.3))) then
   grav(1) = gx
   grav(2) = gy
