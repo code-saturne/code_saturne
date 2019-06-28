@@ -2859,7 +2859,7 @@ cs_restart_read_particles(cs_restart_t  *restart,
     timing[0] = cs_timer_wtime();
 
     cs_block_to_part_global_to_local(n_particles,
-                                     1,
+                                     0,
                                      n_cells,
                                      false,
                                      g_cells_num,
