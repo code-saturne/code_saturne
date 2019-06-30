@@ -237,8 +237,10 @@ void _count_from_file(const cs_mesh_t *m,
         max_vec[j] = CS_MAX(max_vec[j], point_coords[i][j]);
       }
 
+      /* Intensities */
       if (fscanf(file, "%d", &num) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
+
       /* Red */
       if (fscanf(file, "%d", &red) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
@@ -248,9 +250,13 @@ void _count_from_file(const cs_mesh_t *m,
       /* Blue */
       if (fscanf(file, "%d\n", &blue) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
-      colors[3*i + 0] = red;
-      colors[3*i + 1] = green;
-      colors[3*i + 2] = blue;
+
+      /* When colors are written as int, Paraview intreprates them in [0, 255]
+       * when they are written as float, Paraview interprates them in [0., 1.]
+       * */
+      colors[3*i + 0] = red/255.;
+      colors[3*i + 1] = green/255.;
+      colors[3*i + 2] = blue/255.;
     }
 
     /* Check EOF was correctly reached */
