@@ -1379,8 +1379,6 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 static cs_gnum_t
 _check_free_vertices(cs_mesh_t  *mesh)
 {
-  cs_lnum_t  i;
-  cs_lnum_t  n_vertices = 0;
   char *ref = NULL;
 
   cs_gnum_t retval = 0;
