@@ -943,7 +943,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (n_cells > CS_THR_MIN) default(none)           \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc)
+         mav, rs, dir_values, zeta, vel_c, pr, sc)                      \
+  firstprivate(n_cells, time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1399,7 +1400,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (n_cells > CS_THR_MIN) default(none)           \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc)
+         mav, rs, dir_values, zeta, vel_c, pr, sc)                      \
+  firstprivate(n_cells, dt_cur, time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1527,8 +1529,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1878,9 +1880,10 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (n_cells > CS_THR_MIN) default(none)           \
-  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc, compute_initial_source)
+# pragma omp parallel if (n_cells > CS_THR_MIN) default(none)              \
+  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,      \
+         mav, rs, dir_values, zeta, vel_c, pr, sc, compute_initial_source) \
+  firstprivate(n_cells, dt_cur, t_cur, time_eval, tcoef)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2041,8 +2044,8 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.\n");
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))

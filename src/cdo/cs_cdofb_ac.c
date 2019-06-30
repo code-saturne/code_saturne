@@ -845,8 +845,9 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc)
+  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,    \
+         mav, rs, dir_values, zeta, vel_c, pr, sc)                       \
+  firstprivate(time_eval, dt_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -961,7 +962,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */
       if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
-                                                      or Hodge-Voronoi */
+                                                          or Hodge-Voronoi */
 
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
@@ -976,8 +977,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -1170,7 +1171,9 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc, compute_initial_source)
+         mav, rs, dir_values, zeta, vel_c, pr, sc,                      \
+         compute_initial_source)                                        \
+  firstprivate(time_eval, t_cur, dt_cur, tcoef)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1326,8 +1329,8 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
 
       /* 5- STATIC CONDENSATION
        * ======================
