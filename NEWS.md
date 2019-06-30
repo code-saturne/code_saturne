@@ -8,6 +8,18 @@ Bug fixes:
   which is coherent with the mass balance needs to be updated right after
   mass flux prediction step.
 
+- Use EOS density in momentum balance unsteady term if mass accumulation is
+  not taken into account. This falls back to former algorithm in this case.
+  scalars / vectors balances, especially use density at time n in momentum
+  balance unsteady term if mass flux is predicted.
+
+- Use EOS density in momentum balance unsteady term for the weakly variable
+  density algorithm (idilat=1). Use it also in correction step to be coherent.
+  This algorithm is now as before changes on time stepping.
+
+- Update density which is coherent with mass balance after velocity update for
+  low Mach algorithm.
+
 - Fix possible memory corruption in mesh refinement.
 
 - Run script: fix overwriting of preprocessing mesh orientation output
