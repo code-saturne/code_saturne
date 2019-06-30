@@ -138,11 +138,13 @@ Bug fixes:
   * Fix time stepping for buoyancy term. Compute it with last density value
     (EOS) when using first order time stepping, to avoid a time shift.
   * Fixes for time scheme of density in unsteady term of momentum, transported
-    scalars / vectors balances.
-  * Use density at time n in momentum balance unsteady term if mass flux is
-    predicted.
-  * Use EOS density in momentum balance unsteady term if mass accumulation is
-    not taken into account. This falls back to former algorithm in this case.
+    scalars / vectors balances, especially use density at time n in momentum
+    balance unsteady term if mass flux is predicted.
+  * Use EOS density in momentum balance unsteady term for the weakly variable
+    density algorithm (idilat=1). Use it also in correction step to be coherent.
+    This algorithm is now as before changes on time stepping.
+  * Update density which is coherent with mass balance after velocity update for
+    low Mach algorithm.
   * Use same time schemes for vector transport equation as for scalar transport
     equation.
 

@@ -111,7 +111,7 @@ if (iappel.eq.1) then
   endif
 
   ! If required, the density at time step n-1 is updated
-  ! Note that for VOF and dilatable algorithmes, density at time step n-2
+  ! Note that for VOF and dilatable algorithms, density at time step n-2
   ! is also updated
   ! Note that at the begining of the calculation, previous values have been
   ! initialized by inivar
@@ -119,22 +119,24 @@ if (iappel.eq.1) then
     call field_current_to_previous(icrom)
     call field_current_to_previous(ibrom)
 
-    ! Save the latest density field seen by the mass equation
-    ! it will be updated in the correction step.
-    call field_get_id("density_mass", f_id)
-    call field_get_val_s(f_id, cpro_rho_mass)
-    call field_get_id("boundary_density_mass", f_id)
-    call field_get_val_s(f_id, bpro_rho_mass)
+    if (idilat.gt.1) then
+      ! Save the latest density field seen by the mass equation
+      ! it will be updated in the correction step.
+      call field_get_id("density_mass", f_id)
+      call field_get_val_s(f_id, cpro_rho_mass)
+      call field_get_id("boundary_density_mass", f_id)
+      call field_get_val_s(f_id, bpro_rho_mass)
 
-    call field_get_val_s(icrom, crom)
-    do iel = 1, ncelet
-      cpro_rho_mass(iel) = crom(iel)
-    enddo
+      call field_get_val_s(icrom, crom)
+      do iel = 1, ncelet
+        cpro_rho_mass(iel) = crom(iel)
+      enddo
 
-    call field_get_val_s(ibrom, brom)
-    do ifac = 1, nfabor
-      bpro_rho_mass(ifac) = brom(ifac)
-    enddo
+      call field_get_val_s(ibrom, brom)
+      do ifac = 1, nfabor
+        bpro_rho_mass(ifac) = brom(ifac)
+      enddo
+    endif
   endif
 
   call field_get_key_int(iviscl, key_t_ext_id, iviext)

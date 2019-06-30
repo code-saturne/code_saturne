@@ -676,9 +676,10 @@ endif
 ! It is then used in tridim to update buoyant scalars and density in U-P loop
 call cs_parameters_set_n_buoyant_scalars
 
-! If density is variable, a particular care must be taken when dealing with
-! density in the unsteady term in the velocity pressure loop
-if (irovar.eq.1) then
+! For Low Mach algorithms, a particular care
+! must be taken when dealing with density in the unsteady term in the velocity
+! pressure loop
+if (irovar.eq.1.and.idilat.gt.1) then
   ! EOS density, imposed after the correction step, so we need
   ! to keep the previous one, which is in balance with the mass
   f_name = 'density_mass'

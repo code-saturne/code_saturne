@@ -383,7 +383,7 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_s(icrom, crom_eos)
 call field_get_val_s(ibrom, brom_eos)
 
-if (irovar.eq.1) then
+if (irovar.eq.1.and.idilat.gt.1) then
   ! If iterns = 1: this is density at time n
   call field_get_id("density_mass", f_id)
   call field_get_val_s(f_id, cpro_rho_mass)
@@ -416,6 +416,7 @@ if (irovar.eq.1) then
     brom => bpro_rho_mass
   endif
 
+! Weakly variable density algo. (idilat <=1) or constant density
 else
   crom => crom_eos
   brom => brom_eos
@@ -1081,7 +1082,7 @@ if (ippmod(icompf).lt.0) then
     !Free memory
     deallocate(gradp)
 
-    ! RT0 update from the mass fluxes
+  ! RT0 update from the mass fluxes
   else
 
     ! Initialization to 0
@@ -1403,6 +1404,19 @@ if (ivofmt.ge.0) then
 
   endif
 
+endif
+
+! Update density (which is coherent with the mass)
+!-------------------------------------------------
+
+if (irovar.eq.1.and.idilat.gt.1) then
+  do iel = 1, ncelet
+    cpro_rho_mass(iel) = crom_eos(iel)
+  enddo
+
+  do ifac = 1, nfabor
+    bpro_rho_mass(ifac) = brom_eos(ifac)
+  enddo
 endif
 
 !===============================================================================
