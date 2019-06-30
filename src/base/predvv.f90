@@ -273,11 +273,14 @@ endif
 ! Density for the unsteady term (at time n)
 ! Compressible algorithm (mass equation is already solved)
 ! or Low Mach compressible algos with mass flux prediction
-if ((ippmod(icompf).ge.0.and.ippmod(icompf).ne.3).or.(idilat.gt.1.and.ipredfl.eq.1.and.irovar.eq.1)) then
+if ((    (ippmod(icompf).ge.0.and.ippmod(icompf).ne.3)   &
+     .or.(idilat.gt.1.and.ipredfl.eq.1))                 &
+    .and.irovar.eq.1) then
   pcrom => croma
 
 ! VOF algorithm and Low Mach compressible algos: density at time n-1
-else if ((idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3).and.irovar.eq.1) then
+else if ((idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3) &
+         .and.irovar.eq.1) then
   if (iterns.eq.1) then
     pcrom => cromaa
   else

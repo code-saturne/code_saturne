@@ -193,7 +193,7 @@ double precision ardtsr, arsr  , thetap
 double precision dtsrom
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1, relaxp
-double precision hint, qimp, qimpv(3), epsrsp, blencp
+double precision hint, qimpv(3), epsrsp, blencp
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
@@ -346,7 +346,7 @@ if (irovar.eq.1) then
   call field_get_val_prev_s(ibrom, broma)
 endif
 
-if (irovar.eq.1) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ippmod(icompf).eq.3)) then
   call field_get_id("density_mass", f_id)
   call field_get_val_s(f_id, cpro_rho_mass)
   call field_get_id("boundary_density_mass", f_id)
@@ -376,6 +376,7 @@ if (irovar.eq.1) then
     brom => bpro_rho_mass
   endif
 
+! Weakly variable density algo. (idilat <=1) or constant density
 else
   crom => crom_eos
   brom => brom_eos
@@ -1855,29 +1856,15 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
 endif
 
-! Update density (which is coherent with the mass)
-!-------------------------------------------------
+! Update density
+!---------------
 
 if (ippmod(icompf).eq.3) then
   do iel = 1, ncel
-    cpro_rho_mass(iel) = crom_eos(iel) + phi(iel)/c2(iel)
-    crom_eos(iel) = cpro_rho_mass(iel)
-  enddo
-
-  do ifac = 1, nfabor
-    bpro_rho_mass(ifac) = brom_eos(ifac)
+    crom_eos(iel) = crom_eos(iel) + phi(iel)/c2(iel)
   enddo
 
   deallocate(c2)
-
-else if (irovar.eq.1) then
-  do iel = 1, ncelet
-    cpro_rho_mass(iel) = crom_eos(iel)
-  enddo
-
-  do ifac = 1, nfabor
-    bpro_rho_mass(ifac) = brom_eos(ifac)
-  enddo
 endif
 
 !===============================================================================
