@@ -108,7 +108,7 @@ def getRestartInfo(package, results_dir=None, restart_path='*'):
                         except Exception:
                             pass
 
-                return (m, nt, t)
+                return (os.path.split(m)[0], nt, t)
 
             elif False: # except Exception:
                 d = os.path.split(m)[0]
