@@ -801,6 +801,8 @@ _boundary_impact_angle(const void                 *input,
 {
   CS_UNUSED(input);
 
+  const cs_real_t m_epsilon = 1e-30;
+
   cs_lnum_t i, ev_id;
 
   for (i = 0, ev_id = id_range[0]; ev_id < id_range[1]; i++, ev_id++) {
@@ -826,8 +828,11 @@ _boundary_impact_angle(const void                 *input,
                                                              CS_LAGR_VELOCITY);
       cs_real_t vel_norm = cs_math_3_norm(part_vel);
 
-      imp_angle = acos(cs_math_3_dot_product(part_vel, face_normal)
-                       / (face_area * vel_norm));
+      if (face_area * vel_norm > m_epsilon)
+        imp_angle = acos(cs_math_3_dot_product(part_vel, face_normal)
+                         / (face_area * vel_norm));
+      else
+        imp_angle = 0;
     }
 
     vals[i] = imp_angle;
