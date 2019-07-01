@@ -1389,6 +1389,9 @@ _prepare_mesh_stat(cs_lagr_mesh_stat_t  *ms)
     }
     else if (ms->group > CS_LAGR_STAT_GROUP_PARTICLE)
       cs_field_set_values(f, 0.);
+
+    if (ms->group < CS_LAGR_STAT_GROUP_N_GROUPS)
+      _is_active[ms->group] = true;
   }
 }
 
@@ -1635,8 +1638,14 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
   ri->nt_prev = ts->nt_prev;
   ri->t_prev = ts->t_prev;
 
-  ri->n_wa = sizes[0];
-  ri->n_moments = sizes[1];
+  if (retcode >= 0) {
+    ri->n_wa = sizes[0];
+    ri->n_moments = sizes[1];
+  }
+  else {
+    BFT_FREE(_restart_info);
+    return;
+  }
 
   BFT_MALLOC(ri->name, ri->n_moments, const char*);
   BFT_MALLOC(ri->name_buf, sizes[2] + 1, char);
@@ -3438,8 +3447,9 @@ _event_stat_initialize(void)
   /* Mass fluxes: in particle tracking, resuspension, and fouling
      (all part of particle movement) */
 
+  static char              b_stat_name[3][64]; /* mapped to function inputs */
+
   int                      b_stat_type[3];
-  char                     b_stat_name[3][64];
   cs_lagr_moment_m_data_t *b_stat_u_func[3];
   cs_lagr_moment_m_data_t *b_stat_tm_func[3];
   void                    *b_stat_u_input[3];
