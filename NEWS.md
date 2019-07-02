@@ -32,6 +32,9 @@ Default option changes:
 
 Bug fixes:
 
+- Fix for turbulent heat fluxes computation when Boussinesq hypothesis is used.
+  Variance was not taken into account.
+
 - Fix momentum conservation for the variable density deprecated algorithm
   with mass flux prediction (option idilat>=2, ipredfl=1). The density
   which is coherent with the mass balance needs to be updated right after
@@ -40,6 +43,13 @@ Bug fixes:
 - Fix time stepping for buoyancy term. Compute it with last density value (EOS) 
   when using first order time stepping, to avoid a time shift.
   No changes for 2nd order time stepping.
+
+- Use EOS density in momentum balance unsteady term for the weakly variable
+  density algorithm (idilat=1). Use it also in correction step to be coherent.
+  This algorithm is now as before changes on time stepping.
+
+- Fix update of density which is coherent with mass balance, postpone it after
+  velocity update for low Mach algorithm.
 
 Release 6.0.0 (unreleased)
 --------------------------
