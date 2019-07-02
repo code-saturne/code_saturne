@@ -55,7 +55,7 @@ class InterfacialForcesModel(TurbulenceModel,
 
         self.__availableturbulentedispersionModelsList    = ["none","LLB_model","GTD_model"]
         self.__availablewallforcesModelList               = ["none", "antal", "tomiyama"]
-        self.__availableContinuousDragModelList           = ["none", "separate_phases" ,"Large_Interface_Model", "Large_Bubble_Model"]
+        self.__availableContinuousDragModelList           = ["none", "Large_Interface_Model", "Large_Bubble_Model"]
         self.__availableGasDispersedDragModelList         = ["none", "ishii"]
         self.__availableSolidLiquidDispersedDragModelList = ["none", "inclusions", "Wen_Yu"]
         self.__availableAddedMassModelsLists              = ["none", "standard", "zuber"]
@@ -564,10 +564,17 @@ class InterfacialForcesModel(TurbulenceModel,
         get turbulent dispersion model for a couple fieldId
         """
         ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
-        if ChildNode == None :
+
+        # separate_phases model has been removed from the GUI!
+        # Hence if the test leads to separate phases we set the model to none...
+        if ChildNode == None:
             model = self.defaultValuesContinuous()['continuousdragmodel']
             self.setContinuousCouplingModel(model)
             ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+        elif ChildNode['model'] == 'separate_phases':
+            self.setContinuousCouplingModel('none')
+            ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer')
+
         model = ChildNode['model']
         return model
 
@@ -806,7 +813,7 @@ class InterfacialForcesTestCase(ModelTest):
     def checkGetAvailableContinuousDragModelList(self):
         """Check whether the InterfacialEnthalpyModel class could get the AvailableContinuousDragModelList"""
         mdl = InterfacialForcesModel(self.case)
-        assert mdl.getAvailableContinuousDragModelList() == ["none", "separate_phases" ,"Large_Interface_Model", "Large_Bubble_Model"],\
+        assert mdl.getAvailableContinuousDragModelList() == ["none", "Large_Interface_Model", "Large_Bubble_Model"],\
             'Could not get AvailableContinuousDragModelList'
 
 
