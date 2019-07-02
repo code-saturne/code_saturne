@@ -119,6 +119,9 @@ Default option changes:
 
 Bug fixes:
 
+- Fix for turbulent heat fluxes computation when Boussinesq hypothesis is used.
+  Variance was not taken into account.
+
 - Fixes for GMSH import.
   * Fix crashes for binary file import
   * Fix handling of physical groups for GMSH V4 format; names are also handled.
