@@ -54,20 +54,23 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  const char       *name;           /*!< zone name */
+  const char       *name;              /*!< zone name */
 
-  int               id;             /*!< boundary zone id */
-  int               type;           /*!< boundary zone type flag */
+  int               id;                /*!< boundary zone id */
+  int               type;              /*!< boundary zone type flag */
 
-  int               location_id;    /*!< associated mesh location id */
+  int               location_id;       /*!< associated mesh location id */
 
-  cs_lnum_t         n_elts;         /*!< local number of associated faces */
-  const cs_lnum_t  *elt_ids;        /*!< associated face ids */
+  cs_lnum_t         n_elts;            /*!< local number of associated faces */
+  const cs_lnum_t  *elt_ids;           /*!< associated face ids */
 
-  bool              time_varying;   /*!< does the selected zone change
-                                      with time ? */
+  bool              time_varying;      /*!< does the selected zone change
+                                            with time ? */
 
-  bool              allow_overlay;  /*!< allow overlaying of this zone ? */
+  bool              allow_overlay;     /*!< allow overlaying of this zone ? */
+
+  cs_real_t         measure;           /*!< Geometrical measure of the zone */
+  cs_real_t         boundary_measure;  /*!< Boundary geometrical measure of the zone */
 
 } cs_zone_t;
 
@@ -90,9 +93,11 @@ typedef struct {
 
 
   bool              time_varying;   /*!< does the selected zone change
-                                      with time ? */
+                                         with time ? */
   bool              allow_overlay;  /*!< allow overlaying of this zone ? */
 
+  cs_real_t         surface;        /*!< Geometrical measure of the zone */
+  cs_real_t         perimeter;      /*!< Boundary geometrical measure of the zone */
 
 } cs_boundary_zone_t;
 
@@ -117,6 +122,9 @@ typedef struct {
   bool              time_varying;   /*!< does the selected zone change
                                       with time ? */
   bool              allow_overlay;  /*!< allow overlaying of this zone ? */
+
+  cs_real_t         volume;         /*!< Geometrical measure of the zone */
+  cs_real_t         surface;        /*!< Boundary geometrical measure of the zone */
 
 } cs_volume_zone_t;
 

@@ -247,6 +247,9 @@ _zone_define(const char  *name)
   z->time_varying = false;
   z->allow_overlay = false;
 
+  z->measure = 0.;
+  z->boundary_measure = 0.;
+
   return z;
 }
 
@@ -285,6 +288,43 @@ _build_zone_class_id(void)
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_faces; i++)
     _zone_class_id[i] = _zone_id[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute geometrical measure of a boundary zone (surface and perimeter)
+ *
+ * For time-varying zones, the associated mesh location is updated.
+ *
+ * \param[in]  mesh_modified indicate if mesh has been modified
+ * \param[in]  z             zone for which measures need to be computed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_boundary_zone_compute_measure(bool       mesh_modified,
+                               cs_zone_t *z)
+{
+  /* We recompute values only if mesh is modified or zone is time varying.
+   * FIXME: For the moment, the boundary measure is not computed, but set to 0.
+   * to be improved in a next patch
+   */
+  if (z->time_varying || mesh_modified) {
+    cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+
+    z->measure = 0.;
+    z->boundary_measure = 0.;
+
+    for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+      cs_lnum_t f_id = z->elt_ids[e_id];
+      z->measure += b_face_surf[f_id];
+    }
+
+    cs_parall_sum(1, CS_REAL_TYPE, &z->measure);
+    cs_parall_sum(1, CS_REAL_TYPE, &z->boundary_measure);
+  }
+
+  return;
 }
 
 /*============================================================================
@@ -519,6 +559,12 @@ cs_boundary_zone_build_all(bool  mesh_modified)
 
     if (_max_zone_class_id > -1)
       _build_zone_class_id();
+
+    /* Compute or update zone geometrical measures */
+    for (int i = 0; i < _n_zones; i++) {
+      cs_zone_t *z = _zones[i];
+      _boundary_zone_compute_measure(mesh_modified, z);
+    }
   }
 }
 

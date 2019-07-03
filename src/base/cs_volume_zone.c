@@ -259,6 +259,9 @@ _zone_define(const char  *name)
   z->time_varying = false;
   z->allow_overlay = true;
 
+  z->measure = 0.;
+  z->boundary_measure = 0.;
+
   return z;
 }
 
@@ -295,6 +298,43 @@ _log_type(int type)
     cs_log_printf(CS_LOG_SETUP, ")\n");
   else
     cs_log_printf(CS_LOG_SETUP, "\n");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute geometrical measure of a volume zone (volume and surface)
+ *
+ * For time-varying zones, the associated mesh location is updated.
+ *
+ * \param[in]  mesh_modified indicate if mesh has been modified
+ * \param[in]  z             zone for which measures need to be computed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_volume_zone_compute_measure(bool       mesh_modified,
+                             cs_zone_t *z)
+{
+  /* We recompute values only if mesh is modified or zone is time varying.
+   * FIXME: For the moment, the boundary measure is not computed, but set to 0.
+   * to be improved in a next patch
+   */
+  if (z->time_varying || mesh_modified) {
+    cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+    z->measure = 0.;
+    z->boundary_measure = 0.;
+
+    for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+      cs_lnum_t c_id = z->elt_ids[e_id];
+      z->measure += cell_vol[c_id];
+    }
+
+    cs_parall_sum(1, CS_REAL_TYPE, &z->measure);
+    cs_parall_sum(1, CS_REAL_TYPE, &z->boundary_measure);
+  }
+
+  return;
 }
 
 /*============================================================================
@@ -491,6 +531,12 @@ cs_volume_zone_build_all(bool  mesh_modified)
                   "Check definitions or allow overlays for this zone."),
                 i1, _zones[i1]->name, i0, _zones[i0]->name);
 
+    }
+
+    /* Compute or update zone geometrical measures */
+    for (int i = 0; i < _n_zones; i++) {
+      cs_zone_t *z = _zones[i];
+      _volume_zone_compute_measure(mesh_modified, z);
     }
   }
 }
