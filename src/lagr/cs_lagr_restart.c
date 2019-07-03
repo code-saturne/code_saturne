@@ -636,6 +636,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
       for (int s_id = 0; s_id < n_sections; s_id++) {
 
         int comp_id = (n_sections == 1) ? -1 : s_id;
+        int c_stride = (n_sections == 1) ? stride : 1;
 
         _lagr_section_name(attr, comp_id, sec_name);
         _legacy_section_name(attr, old_name);
@@ -646,7 +647,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
                                                   sec_name,
                                                   old_name,
                                                   particles_location_id,
-                                                  stride,
+                                                  c_stride,
                                                   restart_type,
                                                   vals);
 
