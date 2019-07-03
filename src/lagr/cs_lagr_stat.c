@@ -213,6 +213,9 @@ typedef struct {
   int                     n_wa;           /* Number of weight accumulators */
   int                     n_moments;      /* Number of moments */
 
+  const char            **wa_name;        /* Moment name */
+  char                   *wa_name_buf;    /* Buffer for names */
+
   const char            **name;           /* Moment name */
   char                   *name_buf;       /* Buffer for names */
 
@@ -1420,7 +1423,7 @@ _assert_restart_success(int retcode)
  *
  * \param[in]  name             moment name
  * \param[in]  ts               time step status
- * \param[in]  ri               resource info
+ * \param[in]  ri               restart info
  * \param[in]  location_id      id of associated mesh location
  * \param[in]  wa_location_id   associated weight accumulator mesh location id
  * \param[in]  dim              dimension associated with moment
@@ -1444,7 +1447,7 @@ _check_restart(const char                     *name,
                int                             location_id,
                int                             wa_location_id,
                int                             dim,
-               cs_lagr_stat_moment_t           moment_type,
+               int                             moment_type,
                int                             stat_type,
                cs_lagr_stat_group_t            stat_group,
                int                             class_id,
@@ -1538,6 +1541,10 @@ _check_restart(const char                     *name,
 
       if (matching_restart == false)
         prev_id = -1;
+      else {
+        *nt_start = ri->wa_nt_start[prev_wa_id];
+        *t_start = ri->wa_t_start[prev_wa_id];
+      }
 
       break;
     }
@@ -2076,33 +2083,42 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
       && p_data_func == NULL
       && m_data_func == NULL) {
 
-    bool create = false;
-    if (_restart_info != NULL) {
-      if (nt_start == _restart_info->nt_prev)
-        create = true;
-    }
-    else if (nt_start == 0)
-      create = true;
+    char name[64];
+    _statistical_weight_name(stat_group, class_id, name);
 
-    if (create) {
-      char name[64];
+    /* Precaution in case of multiple such fields
+       (possible only in advanced cased with different start times) */
+    int sub_id = 0;
+    while (cs_field_by_name_try(name) != NULL) {
       _statistical_weight_name(stat_group, class_id, name);
-
-      if (cs_field_by_name_try(name) == NULL) {
-        cs_field_t *f
-          = cs_field_create(name,
-                            CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
-                            location_id,
-                            1,
-                            false);
-        mwa->f_id = f->id;
-      }
-
+      sub_id++;
+      int l = strlen(name);
+      if (l > 59)
+        l = 59; /* truncate */
+      snprintf(name+l, 4, "_%d", sub_id);
+      name[l+4] = '\0';
     }
+
+    cs_field_t *f
+      = cs_field_create(name,
+                        CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
+                        location_id,
+                        1,
+                        false);
+    mwa->f_id = f->id;
+
   }
 
   mwa->val0 = 0.;
   mwa->val = NULL;
+
+  /* Update accumulated value if no location
+     (done later, when fields allocated, in case of location) */
+
+  if (mwa->restart_id > -1 && location_id == CS_MESH_LOCATION_NONE) {
+    const cs_time_step_t  *ts = cs_glob_time_step;
+    mwa->val0 = ts->t_prev - t_start;
+  }
 
   /* Structure is now initialized */
 
@@ -2140,6 +2156,9 @@ _cs_lagr_moment_associate_field(const char  *name,
   cs_field_set_key_int(f, log_key_id, 1);
   const int vis_key_id = cs_field_key_id("post_vis");
   cs_field_set_key_int(f, vis_key_id, 1);
+
+  if (have_previous)
+    cs_field_set_n_time_vals(f, 2);
 
   return f;
 }
@@ -3930,19 +3949,22 @@ cs_lagr_stat_accumulator_define(const char                *name,
 
   if (_restart_info != NULL) {
 
-    prev_wa_id = _check_restart(name,
-                                ts,
-                                _restart_info,
-                                location_id,
-                                wa_location_id,
-                                1,
-                                0,
-                                -1,
-                                stat_group,
-                                class_id,
-                                &_nt_start,
-                                &_t_start,
-                                restart_mode);
+    int prev_id = _check_restart(name,
+                                 ts,
+                                 _restart_info,
+                                 location_id,
+                                 wa_location_id,
+                                 1,  /* dim */
+                                 -1, /* no moment type */
+                                 -1,
+                                 stat_group,
+                                 class_id,
+                                 &_nt_start,
+                                 &_t_start,
+                                 restart_mode);
+
+    if (prev_id > -1)
+      prev_wa_id = _restart_info->wa_id[prev_id];
 
   }
 
@@ -3965,11 +3987,20 @@ cs_lagr_stat_accumulator_define(const char                *name,
                                     _t_start,
                                     prev_wa_id);
 
-  /* matching field */
+  /* Ensure matching field exists and has appropriate settings */
 
   bool have_previous = stat_group > CS_LAGR_STAT_GROUP_PARTICLE ? true : false;
 
-  _cs_lagr_moment_associate_field(name, location_id, 1, have_previous);
+  if (location_id > CS_MESH_LOCATION_NONE) {
+    cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + wa_id;
+    if (mwa->f_id < 0) {
+      cs_field_t *f
+        = _cs_lagr_moment_associate_field(name, location_id, 1, have_previous);
+      mwa->f_id = f->id;
+    }
+    else
+      _cs_lagr_moment_associate_field(name, location_id, 1, have_previous);
+  }
 
   return wa_id;
 }
@@ -5135,26 +5166,30 @@ cs_lagr_stat_log_iteration(void)
 
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
     cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
-    if (   mwa->nt_start > 0 && mwa->nt_start <= ts->nt_cur
-        && mwa->location_id > 0) {
-      const cs_lnum_t n_elts
-        = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-      const cs_mesh_location_type_t loc_type
-        = cs_mesh_location_get_type(mwa->location_id);
-      if (   loc_type == CS_MESH_LOCATION_CELLS
-          || loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
-        n_g_elts[n_active_wa] = n_elts;
-      else
-        n_g_elts[n_active_wa] = 0;
-
+    if (mwa->nt_start > 0 && mwa->nt_start <= ts->nt_cur) {
       const cs_real_t *val = _mwa_val(mwa);
-      cs_array_reduce_simple_stats_l(n_elts,
-                                     1,
-                                     NULL,
-                                     val,
-                                     vmin + n_active_wa,
-                                     vmax + n_active_wa,
-                                     vsum + n_active_wa);
+      n_g_elts[n_active_wa] = 0;
+      if (mwa->location_id > 0) {
+        const cs_lnum_t n_elts
+          = cs_mesh_location_get_n_elts(mwa->location_id)[0];
+        const cs_mesh_location_type_t loc_type
+          = cs_mesh_location_get_type(mwa->location_id);
+        if (   loc_type == CS_MESH_LOCATION_CELLS
+            || loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
+          n_g_elts[n_active_wa] = n_elts;
+        cs_array_reduce_simple_stats_l(n_elts,
+                                       1,
+                                       NULL,
+                                       val,
+                                       vmin + n_active_wa,
+                                       vmax + n_active_wa,
+                                       vsum + n_active_wa);
+      }
+      else {
+        vmin[n_active_wa] = val[0];
+        vmax[n_active_wa] = val[0];
+        vsum[n_active_wa] = val[0];
+      }
       n_active_wa += 1;
     }
   }
@@ -5172,8 +5207,7 @@ cs_lagr_stat_log_iteration(void)
 
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
     cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
-    if (   mwa->nt_start > 0 && mwa->nt_start <= ts->nt_cur
-        && mwa->location_id > 0) {
+    if (mwa->nt_start > 0 && mwa->nt_start <= ts->nt_cur) {
 
       int nt_acc = ts->nt_cur - mwa->nt_start + 1;
 
@@ -5229,7 +5263,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   /* ------------------- */
 
   BFT_MALLOC(active_wa_id, _n_lagr_moments_wa, int);
-  BFT_MALLOC(active_moment_id, _n_lagr_moments, int);
+  BFT_MALLOC(active_moment_id, _n_lagr_moments + _n_lagr_moments_wa, int);
 
   /* Check for active moments */
 
@@ -5251,6 +5285,21 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
     }
     else
       active_moment_id[i] = -1;
+  }
+
+  /* Append field-based moment accumulators as pseudo-moments
+     to track names */
+
+  for (int i = 0; i < _n_lagr_moments_wa; i++) {
+    cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
+    if (   active_wa_id[i] > -1
+        && mwa->location_id > CS_MESH_LOCATION_NONE
+        && mwa->f_id > -1) {
+      active_moment_id[_n_lagr_moments + i] = n_active_moments;
+      n_active_moments += 1;
+    }
+    else
+      active_moment_id[_n_lagr_moments + i] = -1;
   }
 
   if (n_active_moments < 1) {
@@ -5284,14 +5333,36 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
       else
         name = mt->name;
       const size_t l = strlen(name) + 1;
-      if (names_idx[i] + l > names_max_size) {
-        while (names_idx[i] + l > names_max_size)
+      if (names_idx[j] + l > names_max_size) {
+        while (names_idx[j] + l > names_max_size)
           names_max_size *= 2;
         BFT_REALLOC(names, names_max_size, char);
       }
       strcpy(names + names_idx[i], name);
-      names[names_idx[i] + l - 1] = '\0';
-      names_idx[i+1] = names_idx[i] + l;
+      names[names_idx[j] + l - 1] = '\0';
+      names_idx[j+1] = names_idx[j] + l;
+
+    }
+
+  }
+
+  for (int i = 0; i < _n_lagr_moments_wa; i++) {
+
+    const int j = active_moment_id[_n_lagr_moments + i];
+    if (j > -1) {
+
+      cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
+      const cs_field_t *f = cs_field_by_id(mwa->f_id);
+      const char *name = f->name;
+      const size_t l = strlen(name) + 1;
+      if (names_idx[j] + l > names_max_size) {
+        while (names_idx[j] + l > names_max_size)
+          names_max_size *= 2;
+        BFT_REALLOC(names, names_max_size, char);
+      }
+      strcpy(names + names_idx[j], name);
+      names[names_idx[j] + l - 1] = '\0';
+      names_idx[j+1] = names_idx[j] + l;
 
     }
 
@@ -5359,12 +5430,22 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   BFT_FREE(nt_start);
   BFT_FREE(location_id);
 
-  /* To be decided for wa save, already in lagout*/
+  /* To be decided for wa save, already in lagout */
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
     int j = active_wa_id[i];
     cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
     if (j > -1 && mwa->location_id > CS_MESH_LOCATION_NONE) {
       char s[64];
+      if (mwa->f_id > 0) {
+        cs_field_t *f = cs_field_by_id(mwa->f_id);
+        snprintf(s, 64, "lagr_stats:wa:%02d:name", i);
+        cs_restart_write_section(restart,
+                                 s,
+                                 CS_MESH_LOCATION_NONE,
+                                 strlen(f->name),
+                                 CS_TYPE_char,
+                                 f->name);
+      }
       snprintf(s, 64, "lagr_stats:wa:%02d:val", i);
       cs_restart_write_section(restart,
                                s,
@@ -5402,6 +5483,21 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
         l_id[j] = active_moment_id[mt->l_id];
       else
         l_id[j] = -1;
+    }
+  }
+
+  for (int i = 0; i < _n_lagr_moments_wa; i++) {
+    int j = active_moment_id[_n_lagr_moments + i];
+    if (j > -1) {
+      cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
+      m_type[j] = -1;
+      class[j] = mwa->class;
+      location_id[j] = mwa->location_id;
+      dimension[j] = 1;
+      wa_id[j] = active_wa_id[i];
+      stat_type[j] = -1;
+      stat_group[j] = mwa->group;
+      l_id[j] = -1;
     }
   }
 
@@ -5471,6 +5567,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   BFT_FREE(stat_group);
 
   /* Write of moments value */
+
   for (int i = 0; i < _n_lagr_moments; i++) {
 
     int j = active_moment_id[i];

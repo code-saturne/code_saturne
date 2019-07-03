@@ -93,6 +93,21 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * State of current face merging (working structure)
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  cs_lnum_t    *face_vertices;     /* current triangle vertices list */
+  cs_lnum_2_t  *e2v;               /* edge to vertices */
+
+  cs_lnum_t     n_edges;           /* number of edges */
+  int           n_edges_max;       /* Maximum number of edges */
+  int           n_vertices_max;    /* Maximum number of vertices */
+
+} cs_mesh_face_merge_state_t;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -334,8 +349,6 @@ _update_i_face_arrays(cs_mesh_t        *m,
                       cs_lnum_t         n_new,
                       const cs_lnum_t   f_n2o[])
 {
-  const cs_lnum_t n_old = m->n_i_faces;
-
   /* Allocate new arrays */
 
   cs_lnum_2_t *i_face_cells;
@@ -489,6 +502,193 @@ _merge_cells(cs_mesh_t       *m,
 
     BFT_FREE(i_f_n2o);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create face merge state structure.
+ *
+ * \return  face merge helper state structur
+ */
+/*----------------------------------------------------------------------------*/
+
+static  cs_mesh_face_merge_state_t *
+_face_merge_state_create(void)
+{
+  cs_mesh_face_merge_state_t *s;
+  BFT_MALLOC(s, 1, cs_mesh_face_merge_state_t);
+
+  s->n_edges_max = 3;
+  s->n_vertices_max = 3;
+
+  BFT_MALLOC(s->face_vertices, s->n_vertices_max, cs_lnum_t);
+  BFT_MALLOC(s->e2v, s->n_edges_max, cs_lnum_2_t);
+
+  return s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy face merge state structure.
+ *
+ * \param[in, out]  s  pointer to face merge state structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_face_merge_state_destroy(cs_mesh_face_merge_state_t  **s)
+{
+  if (*s != NULL) {
+    cs_mesh_face_merge_state_t  *_s = *s;
+
+    BFT_FREE(_s->face_vertices);
+    BFT_FREE(_s->e2v);
+
+    BFT_FREE(*s);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Remove edge from face merge state structure.
+ *
+ * \param[in, out]  s        face merge state structure
+ * \param[in, out]  edge_id  if of edge to remove
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_face_merge_state_remove_edge(cs_mesh_face_merge_state_t  *s,
+                              cs_lnum_t                    edge_id)
+{
+  assert(edge_id < s->n_edges);
+
+  /* Swap with last */
+
+  cs_lnum_t i = s->n_edges - 1;
+
+  s->e2v[edge_id][0] = s->e2v[i][0];
+  s->e2v[edge_id][1] = s->e2v[i][1];
+
+  s->n_edges -= 1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Merge existing faces into a new face
+ *
+ * This function also transforms some counts to indexes
+ * (grouping some conversions so as to reduce the number of required loops).
+ *
+ * \param[in]       n_faces      number of faces to merge
+ * \param[in]       face_ids     ids of faces to merge
+ * \param[in]       face_orient  optional face orientation (1/-1), or NULL
+ * \param[in]       f2v_idx      face->vertices index
+ * \param[in]       f2v_lst      face->vertices connectivity
+ * \param[in, out]  s            face merge state helper structure
+ *
+ * \return  new number of vertices, or -1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_build_merged_face(cs_lnum_t                    n_faces,
+                   cs_lnum_t                    face_ids[],
+                   short int                   *face_orient,
+                   cs_lnum_t                    f2v_idx[],
+                   cs_lnum_t                    f2v_lst[],
+                   cs_mesh_face_merge_state_t  *s)
+{
+  cs_lnum_t n_vertices = 0;
+
+  /* Loop over faces */
+
+  for (cs_lnum_t f_i = 0; f_i < n_faces; f_i++) {
+
+    cs_lnum_t f_id = face_ids[f_i];
+
+    int orient = 1;
+    if (face_orient != NULL)
+      orient = face_orient[f_i];
+
+    cs_lnum_t s_id = f2v_idx[f_id];
+    cs_lnum_t e_id = f2v_idx[f_id+1];
+    cs_lnum_t n_f_vtx = e_id - s_id;
+
+    cs_lnum_t e_vtx[2];
+
+    /* Loop over face edges */
+
+    for (cs_lnum_t i = 0; i < n_f_vtx; i++) {
+
+      if (orient > 0) {
+        e_vtx[0] = f2v_lst[s_id + i];
+        e_vtx[1] = f2v_lst[s_id + (i+1)%n_f_vtx];
+      }
+      else {
+        e_vtx[0] = f2v_lst[s_id + (n_f_vtx-i)%n_f_vtx];
+        e_vtx[1] = f2v_lst[s_id + (n_f_vtx-i-1)];
+      }
+
+      /* Compare to edges list: add if not present, cancel if present */
+
+      bool insert = true;
+
+      for (cs_lnum_t j = 0; j < s->n_edges; j++) {
+        /* If present, must be in opposite direction */
+        if (e_vtx[1] == s->e2v[j][0] && e_vtx[0] == s->e2v[j][1]) {
+          _face_merge_state_remove_edge(s, j);
+          insert = false;
+        }
+      }
+
+      if (insert) {
+        if (s->n_edges >= s->n_edges_max) {
+          s->n_edges_max *= 2;
+          BFT_REALLOC(s->e2v, s->n_edges_max, cs_lnum_2_t);
+        }
+        cs_lnum_t j = s->n_edges;
+        s->e2v[j][0] = e_vtx[0];
+        s->e2v[j][1] = e_vtx[1];
+        s->n_edges += 1;
+      }
+
+    }
+
+  }
+
+  /* We should now be able to rebuild the face */
+
+  if (s->n_edges > 1) {
+
+    s->face_vertices[0] = s->e2v[0][0];
+    s->face_vertices[1] = s->e2v[0][1];
+
+    n_vertices = 2;
+
+    _face_merge_state_remove_edge(s, 0);
+
+    while (s->n_edges > 0) {
+      for (cs_lnum_t i = 0; i < s->n_edges; i++) {
+        if (s->e2v[i][0] == s->face_vertices[n_vertices-1]) {
+          n_vertices += 1;
+          if (n_vertices > s->n_vertices_max) {
+            s->n_vertices_max *= 2;
+            BFT_REALLOC(s->face_vertices, s->n_vertices_max, cs_lnum_t);
+          }
+          s->face_vertices[n_vertices - 1] = s->e2v[0][1];
+          _face_merge_state_remove_edge(s, i);
+          break;
+        }
+      }
+      /* We should not arrive here */
+    }
+
+  }
+
+  /* Verification */
+
+  return n_vertices;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
