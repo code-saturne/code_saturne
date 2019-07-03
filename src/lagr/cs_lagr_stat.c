@@ -4378,8 +4378,14 @@ cs_lagr_stat_initialize(void)
             || attr_id == CS_LAGR_VELOCITY_SEEN
             || attr_id == CS_LAGR_TURB_STATE_1
             || attr_id == CS_LAGR_PRED_VELOCITY
-            || attr_id == CS_LAGR_PRED_VELOCITY_SEEN)
+            || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
+            || attr_id == CS_LAGR_ORIENTATION
+            || attr_id == CS_LAGR_RADII
+            || attr_id == CS_LAGR_ANGULAR_VEL)
           dim = 3;
+        else if (attr_id == CS_LAGR_SHAPE_PARAM
+            || attr_id == CS_LAGR_EULER)
+          dim = 4;
 
         for (cs_lagr_stat_moment_t m_type = CS_LAGR_MOMENT_MEAN;
              m_type <= CS_LAGR_MOMENT_VARIANCE;

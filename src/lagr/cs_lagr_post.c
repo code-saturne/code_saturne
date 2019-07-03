@@ -139,6 +139,9 @@ _activate_particle_output(void)
           case CS_LAGR_VELOCITY_SEEN:
           case CS_LAGR_PRED_VELOCITY:
           case CS_LAGR_PRED_VELOCITY_SEEN:
+          case CS_LAGR_ORIENTATION:
+          case CS_LAGR_RADII:
+          case CS_LAGR_ANGULAR_VEL:
             count = 1;
             break;
           default:

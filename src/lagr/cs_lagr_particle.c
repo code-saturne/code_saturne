@@ -97,7 +97,7 @@ BEGIN_C_DECLS
 
 /* keys to sort attributes by type.
 
-   rvar real values at current an previous time steps
+   rvar real values at current and previous time steps
    ivar integer values at current and previous time steps
    rprp real properties at current an previous time steps
    iprp integer properties at current and previous time steps
@@ -169,11 +169,23 @@ const char *cs_lagr_attribute_name[] = {
   "velocity_seen",
   "tr_truncate",
   "tr_reposition",
+
+  /* Arrays for 2nd order scheme */
   "turb_state_1",
   "pred_velocity",
   "pred_velocity_seen",
   "v_gauss",
   "br_gauss",
+
+  /* Non-spherical particles submodel additoinal parameters */
+  "shape",
+  "orientation",
+  "radii",
+  "angular_vel",
+  "euler",
+  "shape_param",
+
+  /* Deposition submodel additional parameters */
   "yplus",
   "interf",
   "neighbor_face_id",
@@ -702,6 +714,30 @@ cs_lagr_particle_attr_initialize(void)
 
   attr_keys[CS_LAGR_DIAMETER][0] = CS_LAGR_P_RVAR_TS;
   attr_keys[CS_LAGR_DIAMETER][1] = ++loc_count;
+
+  /* Non-sphere model
+   * TODO activate only required arrays */
+  if (lagr_model->shape != 0) {
+    attr_keys[CS_LAGR_SHAPE][0] = CS_LAGR_P_RPRP;
+    attr_keys[CS_LAGR_SHAPE][1] = ++loc_count;
+
+    attr_keys[CS_LAGR_ORIENTATION][1] = ++loc_count;
+    attr_keys[CS_LAGR_ORIENTATION][2] = 3;
+
+    attr_keys[CS_LAGR_RADII][0] = CS_LAGR_P_RPRP;
+    attr_keys[CS_LAGR_RADII][1] = ++loc_count;
+    attr_keys[CS_LAGR_RADII][2] = 3;
+
+    attr_keys[CS_LAGR_ANGULAR_VEL][1] = ++loc_count;
+    attr_keys[CS_LAGR_ANGULAR_VEL][2] = 3;
+
+    attr_keys[CS_LAGR_EULER][1] = ++loc_count;
+    attr_keys[CS_LAGR_EULER][2] = 4;
+
+    attr_keys[CS_LAGR_SHAPE_PARAM][0] = CS_LAGR_P_RPRP;
+    attr_keys[CS_LAGR_SHAPE_PARAM][1] = ++loc_count;
+    attr_keys[CS_LAGR_SHAPE_PARAM][2] = 4;
+  }
 
   attr_keys[CS_LAGR_COORDS][1] = ++loc_count;
   attr_keys[CS_LAGR_COORDS][2] = 3;

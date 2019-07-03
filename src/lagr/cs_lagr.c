@@ -99,6 +99,7 @@
 #include "cs_lagr_post.h"
 #include "cs_lagr_sde.h"
 #include "cs_lagr_sde_model.h"
+#include "cs_lagr_orientation.h"
 #include "cs_lagr_prototypes.h"
 #include "cs_lagr_agglo.h"
 #include "cs_lagr_fragmentation.h"
@@ -176,6 +177,7 @@ static cs_lagr_model_t  _lagr_model
      .roughness = 0,
      .resuspension = 0,
      .clogging = 0,
+     .shape = 0,
      .consolidation = 0,
      .precipitation = 0,
      .fouling = 0,
@@ -233,6 +235,11 @@ static cs_lagr_clogging_model_t _cs_glob_lagr_clogging_model = {0, 0, 0, 0};
 cs_lagr_clogging_model_t *cs_glob_lagr_clogging_model
   = &_cs_glob_lagr_clogging_model;
 
+/* lagr non-spherical model structure and associated pointer */
+static cs_lagr_shape_model_t _cs_glob_lagr_shape_model = {0};
+cs_lagr_shape_model_t *cs_glob_lagr_shape_model
+  = &_cs_glob_lagr_shape_model;
+
 /* lagr agglomeration model structure and associated pointer */
 static cs_lagr_agglomeration_model_t _cs_glob_lagr_agglomeration_model
   = {0, 0, NULL};
@@ -245,7 +252,7 @@ static cs_lagr_fragmentation_model_t _cs_glob_lagr_fragmentation_model
 cs_lagr_fragmentation_model_t *cs_glob_lagr_fragmentation_model
   = &_cs_glob_lagr_fragmentation_model;
 
-/* lagr clogging model structure and associated pointer */
+/* lagr consolidation model structure and associated pointer */
 static cs_lagr_consolidation_model_t _cs_glob_lagr_consolidation_model
   = {0, 0, 0, 0};
 cs_lagr_consolidation_model_t *cs_glob_lagr_consolidation_model
@@ -426,6 +433,9 @@ cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
                                   cs_real_t **csthpp);
 
 void
+cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb);
+
+void
 cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
                                        cs_real_t **rate_consol,
                                        cs_real_t **slope_consol,
@@ -532,6 +542,12 @@ cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
   *jamlim = &cs_glob_lagr_clogging_model->jamlim;
   *mporos = &cs_glob_lagr_clogging_model->mporos;
   *csthpp = &cs_glob_lagr_clogging_model->csthpp;
+}
+
+void
+cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb)
+{
+  *param_chmb = &cs_glob_lagr_shape_model->param_chmb;
 }
 
 void
@@ -1229,6 +1245,44 @@ cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
   for (int  i = 0; i < 3; i++)
     zis->velocity[i]        = - cs_math_big_r;
 
+  /* For spheroids without inertia  */
+  /* Default shape: sphere */
+  zis->shape = 0.;
+
+  /* Angular velocity */
+  for (int i = 0; i < 3; i++)
+    zis->angular_vel[i] = 0.;
+
+  /* Spheroids radii a b c */
+  for (int i = 0; i < 3; i++)
+    zis->radii[i] = 0.;
+
+  /* Shape parameters */
+  for (int i = 0; i < 4; i++)
+    zis->shape_param[i] = 0.;
+
+  /* For ellipsoids */
+  /* Default shape: sphere */
+  zis->shape = 0.;
+
+  /* Angular velocity */
+  for (int i = 0; i < 3; i++)
+    zis->angular_vel[i] = 0.;
+
+  /* Ellispoid radii a b c */
+  for (int i = 0; i < 3; i++)
+    zis->radii[i] = 0.;
+
+  /* First three Euler parameters */
+  for (int i = 0; i < 3; i++)
+    zis->euler[i] = 0.;
+
+  zis->euler[3] = 1.;
+
+  /* Shape parameters */
+  for (int i = 0; i < 4; i++)
+    zis->shape_param[i] = 0.;
+
   zis->stat_weight          = - cs_math_big_r;
   zis->diameter             = - cs_math_big_r;
   zis->diameter_variance    = - cs_math_big_r;
@@ -1365,6 +1419,18 @@ cs_lagr_clogging_model_t *
 cs_get_lagr_clogging_model(void)
 {
   return &_cs_glob_lagr_clogging_model;
+}
+
+/*----------------------------------------------------------------------------
+ * Provide access to cs_lagr_shape_model_t
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_lagr_shape_model_t *
+cs_get_lagr_shape_model(void)
+{
+  return &_cs_glob_lagr_shape_model;
 }
 
 /*----------------------------------------------------------------------------
@@ -1608,7 +1674,8 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
 
   BFT_MALLOC(extra->grad_pr, ncelet, cs_real_3_t);
-  if (cs_glob_lagr_time_scheme->modcpl > 0)
+  if (cs_glob_lagr_time_scheme->modcpl > 0
+      || cs_glob_lagr_model->shape > 0 )
     BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
 
   /* For frozen field:
@@ -1921,6 +1988,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
              &cs_glob_lagr_clogging_model->csthpp,
              &cs_glob_lagr_physico_chemical->lambda_vdw);
 
+  /* Initialization for the nonsphere model
+     ------------------------------------- */
+
+  if (lagr_model->shape == 1)
+    cs_glob_lagr_shape_model->param_chmb = 1.0;
+
   /* Update for new particles which entered the domain
      ------------------------------------------------- */
 
@@ -2121,6 +2194,20 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   terbru,
                   (const cs_real_t *)vislen,
                   &nresnew);
+
+      /* Integration of SDEs for orientation of spheroids without inertia */
+      if (lagr_model->shape == 1) {
+        cs_lagr_orientation_dyn_spheroids(iprev,
+                                          cs_glob_lagr_time_step->dtp,
+                                          extra->grad_vel);
+      }
+      /* Integration of Jeffrey equations for ellispoids */
+      else if (lagr_model->shape == 2) {
+        cs_lagr_orientation_dyn_ellipsoids(iprev,
+                                           cs_glob_lagr_time_step->dtp,
+                                           extra->grad_vel);
+      }
+
 
       /* Save bx values associated with particles for next pass */
 

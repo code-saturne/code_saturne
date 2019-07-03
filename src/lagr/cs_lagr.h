@@ -268,9 +268,14 @@ typedef struct {
      - 1: resuspension model */
   int  resuspension;
 
-  /* - 0: no clogging model
+  /*!- 0: no clogging model
      - 1: clogging model */
   int  clogging;
+
+  /*!- 0: spherical particles (default)
+     - 1: spheroid particles
+     - 2: ellipsoids */
+  int  shape;
 
   /* - 0: no consolidation model
      - 1: consolidation model */
@@ -451,6 +456,15 @@ typedef struct {
 
 } cs_lagr_clogging_model_t;
 
+/*! Parameters of model for non-spherical particles */
+/* ------------------------------------------------ */
+
+typedef struct {
+
+  cs_real_t          param_chmb;
+
+} cs_lagr_shape_model_t;
+
 /*! Parameters of the particle agglomeration model */
 /* ------------------------------------------ */
 
@@ -548,6 +562,19 @@ typedef struct {
   cs_real_t   diameter;             /*!< particle diameter */
   cs_real_t   diameter_variance;    /*!< particle diameter variance */
 
+  cs_real_t   shape;                /*!< particle shape for spheroids
+                        				       (if \ref shape_model is activated */
+  cs_real_t   orientation[3];       /*!< particle orintation for spheroids */
+  cs_real_t   radii[3];             /*!< particle radii for ellispoids */
+  cs_real_t   angular_vel[3];       /*!< particle angular velocity
+				                               (if \ref shape_model is activated */
+
+  cs_real_t   euler[4];             /*!< particle four Euler parameters
+				                               (if \ref shape_model is activated */
+  cs_real_t   shape_param[4];       /*!< particle shape parameters for ellispoids
+                                      (alpha_0, beta_0, gamma_0, chi _0)
+                                      in Brenner 1964
+				                               (if \ref shape_model is activated */
   cs_real_t   density;              /*!< particle density */
 
   cs_real_t   fouling_index;        /*!< fouling index */
@@ -998,6 +1025,7 @@ extern cs_lagr_specific_physics_t            *cs_glob_lagr_specific_physics;
 extern cs_lagr_reentrained_model_t           *cs_glob_lagr_reentrained_model;
 extern cs_lagr_precipitation_model_t         *cs_glob_lagr_precipitation_model;
 extern cs_lagr_clogging_model_t              *cs_glob_lagr_clogging_model;
+extern cs_lagr_shape_model_t                 *cs_glob_lagr_shape_model;
 
 extern cs_lagr_agglomeration_model_t         *cs_glob_lagr_agglomeration_model;
 extern cs_lagr_fragmentation_model_t         *cs_glob_lagr_fragmentation_model;
@@ -1115,6 +1143,15 @@ cs_get_lagr_precipitation_model(void);
 
 cs_lagr_clogging_model_t *
 cs_get_lagr_clogging_model(void);
+
+/*----------------------------------------------------------------------------
+ * Provide access to cs_lagr_shape_model_t
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_lagr_shape_model_t *
+cs_get_lagr_shape_model(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_lagr_consolidation_model_t

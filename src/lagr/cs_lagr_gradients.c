@@ -244,8 +244,9 @@ cs_lagr_gradients(int            time_id,
   /* Compute velocity gradient
      ========================= */
 
-  if (   cs_glob_lagr_time_scheme->modcpl > 0
-      && cs_glob_time_step->nt_cur >= cs_glob_lagr_time_scheme->modcpl) {
+  if ( (  cs_glob_lagr_time_scheme->modcpl > 0
+       && cs_glob_time_step->nt_cur >= cs_glob_lagr_time_scheme->modcpl )
+       || cs_glob_lagr_model->shape > 0 ) {
 
     cs_field_gradient_vector(extra->vel,
                              time_id,

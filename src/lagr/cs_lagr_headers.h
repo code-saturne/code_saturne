@@ -36,6 +36,7 @@
 #include "cs_lagr_coupling.h"
 #include "cs_lagr_deposition_model.h"
 #include "cs_lagr_dlvo.h"
+#include "cs_lagr_orientation.h"
 #include "cs_lagr_extract.h"
 #include "cs_lagr_gradients.h"
 #include "cs_lagr_head_losses.h"

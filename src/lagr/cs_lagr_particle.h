@@ -109,6 +109,15 @@ typedef enum {
   CS_LAGR_V_GAUSS,             /* 1st step Gaussian variable */
   CS_LAGR_BR_GAUSS,            /* 1st step Brownian motion Gaussian variable */
 
+  /* Non-spherical particles submodel additoinal parameters */
+
+  CS_LAGR_SHAPE,               /*!< Shape of spheroids */
+  CS_LAGR_ORIENTATION,         /*!< Orientation of spheroids */
+  CS_LAGR_RADII,               /*!< Radii a, b, c for ellispoids */
+  CS_LAGR_ANGULAR_VEL,         /*!< Angular velocity */
+  CS_LAGR_EULER,               /*!< Euler four parameters */
+  CS_LAGR_SHAPE_PARAM,         /*!< Shape parameters computed from a b c */
+
   /* Deposition submodel additional parameters */
 
   CS_LAGR_YPLUS,
