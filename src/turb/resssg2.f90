@@ -189,7 +189,7 @@ double precision, dimension(:,:,:), pointer :: coefbp, cofbfp
 double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
-double precision, dimension(:), pointer :: viscl
+double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_buoyancy
 
@@ -244,6 +244,7 @@ endif
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(iviscl, viscl)
+call field_get_val_s(ivisct, visct)
 
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.ne.31) call field_get_val_s(ivarfl(ial), cvar_al)
@@ -998,8 +999,7 @@ if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 else
 
   do iel = 1, ncel
-    trrij = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
-    rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
+    rctse = csrij * visct(iel) / cmu
     w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 

@@ -75,6 +75,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use field_operator
 use cavitation
 use vof
 use darcy_module
@@ -93,18 +94,23 @@ double precision dt(ncelet)
 
 character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
-integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm, iebdfm
+integer          ii    , jj    , iok   , iok1  , iok2  , iisct, idfm, iggafm, iebdfm
 integer          nn    , isou
 integer          mbrom , ifcvsl
 integer          iclipc, idftnp
+integer          iprev , inc, iccocg
+
 double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
+double precision xrij(3,3), xnal(3), xnoral
 double precision xfmu, xmu, xmut
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto
 double precision xttkmg, xttdrb
 double precision trrij,rottke
+double precision alpha3, xrnn
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
+double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
@@ -113,6 +119,7 @@ double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
 double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
+double precision, allocatable, dimension(:,:) :: grad
 
 integer          ipass
 data             ipass /0/
@@ -330,26 +337,97 @@ elseif (itytur.eq.3) then
   call field_get_val_s(ivisct, visct)
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ivarfl(iep), cvar_ep)
-
   if (irijco.eq.1) then
     call field_get_val_v(ivarfl(irij), cvar_rij)
-
-    do iel = 1, ncel
-      xk = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-      xe = cvar_ep(iel)
-      visct(iel) = crom(iel)*cmu*xk**2/xe
-    enddo
   else
     call field_get_val_s(ivarfl(ir11), cvar_r11)
     call field_get_val_s(ivarfl(ir22), cvar_r22)
     call field_get_val_s(ivarfl(ir33), cvar_r33)
-
-    do iel = 1, ncel
-      xk = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-      xe = cvar_ep(iel)
-      visct(iel) = crom(iel)*cmu*xk**2/xe
-    enddo
+    call field_get_val_s(ivarfl(ir12), cvar_r12)
+    call field_get_val_s(ivarfl(ir23), cvar_r23)
+    call field_get_val_s(ivarfl(ir13), cvar_r13)
   endif
+
+  ! In case we are in EB-RSM, we compute the normals
+  if (iturb.eq.32) then
+    call field_get_val_s(ivarfl(ial), cvar_al)
+
+    allocate(grad(3,ncelet))
+
+    ! Compute the gradient of Alpha
+    iprev  = 1
+    inc    = 1
+    iccocg = 1
+
+    call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
+                               iccocg,                              &
+                               grad)
+  endif
+
+  do iel = 1, ncel
+
+    if (irijco.eq.1) then
+      xrij(1,1) = cvar_rij(1,iel)
+      xrij(2,2) = cvar_rij(2,iel)
+      xrij(3,3) = cvar_rij(3,iel)
+      xrij(1,2) = cvar_rij(4,iel)
+      xrij(2,3) = cvar_rij(5,iel)
+      xrij(1,3) = cvar_rij(6,iel)
+      xrij(2,1) = xrij(1,2)
+      xrij(3,1) = xrij(1,3)
+      xrij(3,2) = xrij(2,3)
+    else
+      xrij(1,1) = cvar_r11(iel)
+      xrij(2,2) = cvar_r22(iel)
+      xrij(3,3) = cvar_r33(iel)
+      xrij(1,2) = cvar_r12(iel)
+      xrij(1,3) = cvar_r13(iel)
+      xrij(2,3) = cvar_r23(iel)
+      xrij(2,1) = xrij(1,2)
+      xrij(3,1) = xrij(1,3)
+      xrij(3,2) = xrij(2,3)
+    endif
+
+    alpha3 = 1.d0
+    xrnn = 0.d0
+
+    if (iturb.eq.32) then
+      ! Compute the magnitude of the Alpha gradient
+      xnoral = ( grad(1,iel)*grad(1,iel)          &
+             +   grad(2,iel)*grad(2,iel)          &
+             +   grad(3,iel)*grad(3,iel) )
+      xnoral = sqrt(xnoral)
+     ! Compute the unitary vector of Alpha
+      if (xnoral.le.epzero) then
+        xnal(1) = 0.d0
+        xnal(2) = 0.d0
+        xnal(3) = 0.d0
+      else
+        xnal(1) = grad(1,iel)/xnoral
+        xnal(2) = grad(2,iel)/xnoral
+        xnal(3) = grad(3,iel)/xnoral
+      endif
+
+      alpha3 = cvar_al(iel)**3
+
+      ! We compute the normal Reynolds Stresses
+      do ii = 1, 3
+        do jj = 1, 3
+          xrnn = xrnn + xrij(ii,jj)*xnal(ii)*xnal(jj)
+        enddo
+      enddo
+    endif
+
+    xk   = 0.5d0*(xrij(1,1)+xrij(2,2)+xrij(3,3))
+    xrnn = (1.d0-alpha3)*xrnn + alpha3*xk
+    xe = cvar_ep(iel)
+    visct(iel) = crom(iel)*cmu*xrnn*xk/xe
+  enddo
+
+  if (iturb.eq.32) then
+    deallocate(grad)
+  end if
+
 elseif (iturb.eq.40) then
 
 ! 4.5 LES Smagorinsky

@@ -486,12 +486,7 @@ if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 else
 
   do iel = 1, ncel
-    if (irijco.eq.1) then
-      trrij = 0.5d0 * (cvar_rij(1,iel) + cvar_rij(2,iel) + cvar_rij(3,iel))
-    else
-      trrij = 0.5d0 * (cvar_r11(iel) + cvar_r22(iel) + cvar_r33(iel))
-    end if
-    rctse = crom(iel) * csrij * trrij**2 / cvar_ep(iel)
+    rctse = csrij * visct(iel) / cmu
     w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 
