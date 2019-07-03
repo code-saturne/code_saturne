@@ -320,18 +320,24 @@ _volume_zone_compute_measure(bool       mesh_modified,
    * to be improved in a next patch
    */
   if (z->time_varying || mesh_modified) {
-    cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+    cs_real_t *cell_vol   = cs_glob_mesh_quantities->cell_vol;
+    cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
     z->measure = 0.;
+    z->f_measure = 0.;
     z->boundary_measure = 0.;
+    z->f_boundary_measure = 0.;
 
     for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
       cs_lnum_t c_id = z->elt_ids[e_id];
-      z->measure += cell_vol[c_id];
+      z->measure   += cell_vol[c_id];
+      z->f_measure += cell_f_vol[c_id];
     }
 
     cs_parall_sum(1, CS_REAL_TYPE, &z->measure);
+    cs_parall_sum(1, CS_REAL_TYPE, &z->f_measure);
     cs_parall_sum(1, CS_REAL_TYPE, &z->boundary_measure);
+    cs_parall_sum(1, CS_REAL_TYPE, &z->f_boundary_measure);
   }
 
   return;
