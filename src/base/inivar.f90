@@ -82,13 +82,12 @@ integer          ivar  , iscal
 integer          iel
 integer          iclip , iok   , ii
 integer          kscmin, kscmax, keyvar, n_fields
-integer          f_id, f_id_prv, c_id, f_dim
+integer          f_id, f_dim
 integer          iflid, iflidp
 integer          idimf
 integer          ivoid, uprtot
 
 double precision valmax, valmin, vfmin , vfmax
-double precision vdtmax, vdtmin
 double precision xekmin, xepmin, xomgmn, xphmin, xphmax
 double precision xnumin
 double precision x11min, x22min, x33min
@@ -685,8 +684,6 @@ endif
 
 write(nfecra,2000)
 
-call log_iteration
-
 !===============================================================================
 ! 6.  ARRET GENERAL SI PB
 !===============================================================================
@@ -699,7 +696,6 @@ endif
 !----
 ! Formats
 !----
-
 
 #if defined(_CS_LANG_FR)
 
@@ -733,25 +729,6 @@ endif
 '    ----------------------------',                             /,&
 '                                                             ')
 
- 3010 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES',     /,&
-'@    =========',                                               /,&
-'@    PAS DE TEMPS NEGATIF OU NUL',                             /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  La valeur minimale du pas de temps DT est ',e14.5,          /,&
-'@  Verifier l''initialisation ou le fichier de reprise.',      /,&
-'@',                                                            /,&
-'@  Dans le cas ou les valeurs lues dans le fichier',           /,&
-'@    de reprise sont incorrectes, on peut les modifier via',   /,&
-'@    cs_user_initialization.f90 ou via l''interface.',         /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  3020 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1057,24 +1034,6 @@ endif
 '    ------------------------',                                 /,&
 '                                                             ')
 
- 3010 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION',          /,&
-'@    ========',                                                /,&
-'@    NEGATIVE OR NULL TIME STEP',                              /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@  The minimum value of the time-step dt is ',e14.5,           /,&
-'@  Verify the initialization or the restart file.',            /,&
-'@  In the case where the values read in the restart file',     /,&
-'@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  3020 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
