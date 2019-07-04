@@ -158,9 +158,6 @@ call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
 call field_get_val_s(iflmas, ivolfl)
 call field_get_val_s(iflmab, bvolfl)
 
-call field_get_key_int(icrom, kimasf, iflmas)
-call field_get_key_int(icrom, kbmasf, iflmab)
-
 ! Key id for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
