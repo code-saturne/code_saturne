@@ -267,14 +267,23 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 self.ava.setMethods(material)
                 self.ava.setReferences(material, self.getMethod(fieldId))
                 ref = self.ava.whichReferences()
+
+                # Reference for methods
+                liqidx = 0
+                gasidx = 1
+                # if Refprop, the list has an additional element at position 0
+                if self.getMethod(fieldId) == "Refprop":
+                    liqidx += 1
+                    gasidx += 1
+
                 if len(ref) == 1 :
                    # cas des gaz par exemple
                    reference = ref[0]
                 else :
                    if phase == "liquid" :
-                      reference = ref[0]
+                      reference = ref[liqidx]
                    elif phase == "gas" :
-                      reference = ref[1]
+                      reference = ref[gasidx]
             else :
                 reference = material + phase
         # update XML
