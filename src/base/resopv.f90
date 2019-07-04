@@ -1501,7 +1501,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   iwarnp = vcopt_p%iwarni
   epsilp = vcopt_p%epsilo
 
-  ! Solver resiudal
+  ! Solver residual
   ressol = residu
 
   call sles_solve_native(ivarfl(ipr), '',                            &
