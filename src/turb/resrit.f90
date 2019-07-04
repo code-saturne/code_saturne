@@ -486,7 +486,7 @@ if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 else
 
   do iel = 1, ncel
-    rctse = csrij * visct(iel) / cmu
+    rctse = ctheta(iscal) * visct(iel) / cmu
     w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 
