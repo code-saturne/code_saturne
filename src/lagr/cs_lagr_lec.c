@@ -186,7 +186,7 @@ cs_restart_lagrangian_checkpoint_read(void)
                 ficsui);
 
     cs_log_printf(CS_LOG_DEFAULT,
-                  "      Debut de la lecture\n");
+                  _("    Start read"));
 
     /* Restart file type (ivers unused as yet) */
     {
@@ -444,97 +444,35 @@ cs_restart_lagrangian_checkpoint_read(void)
                "Steady boundary statistics statistics time (tstatp)");
         }
 
-        /*  --> Verif de coherence de l'avancement du calcul avec les   */
-        /*       indicateurs de calcul de la suite actuelle : */
+        /*  Check consistency of computation advancement with restart. */
 
         if (   cs_glob_lagr_boundary_interactions->npstf == 0
             && (   cs_glob_lagr_time_scheme->isttio == 1
                 &&    cs_glob_lagr_stat_options->nstist
                    <= cs_glob_time_step->nt_cur))
-          bft_error
-            (__FILE__, __LINE__, 0,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-             "@\n"
-             "@    LE CALCUL ACTUEL DES STATISTIQUES AUX FRONTIERES\n"
-             "@      EST EN MODE STATIONNAIRE, ALORS QUE LE FICHIER\n"
-             "@      SUITE CONTIENT DES STATISTIQUES INSTATIONNAIRES.\n"
-             "@\n"
-             "@    NSTBOR devrait etre un entier superieur ou egal\n"
-             "@      a l'iteration Lagrangienne absolue de redemarrage\n"
-             "@      du calcul (iteration : %d)\n"
-             "@\n"
-             "@      Il vaut ici NSTBOR = %d\n"
-             "@\n"
-             "@    Le calcul ne peut pas etre execute.\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             cs_glob_time_step->nt_cur+1,
-             cs_glob_lagr_stat_options->nstist);
-
-        if (   cs_glob_lagr_boundary_interactions->npstf > 0
-            && (   (   cs_glob_lagr_time_scheme->isttio == 1
-                    &&    cs_glob_time_step->nt_cur
-                       <= cs_glob_lagr_stat_options->nstist)
-                || cs_glob_lagr_time_scheme->isttio == 0))
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-             "@\n"
-             "@    LE CALCUL ACTUEL DES STATISTIQUES AUX FRONTIERES\n"
-             "@      EST EN MODE INSTATIONNAIRE, ALORS QUE LE FICHIER\n"
-             "@      SUITE CONTIENT DES STATISTIQUES STATIONNAIRES.\n"
-             "@\n"
-             "@    Les statistiques aux frontieres stationnaires amont\n"
-             "@      seront remises a zero.\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui);
+          cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("in Lagrangian module"),
+             _("The boundary statistics computation is in steady mode,\n"
+               "while the restart file contains unsteady statistics.\n\n"
+               "cs_glob_lagr_stat_options->nstist = %d, but should be greater\n"
+               "or equal to the current restart iteration (%d).\n"),
+             cs_glob_lagr_stat_options->nstist,
+             cs_glob_time_step->nt_cur);
 
         if (   cs_glob_lagr_boundary_interactions->npstf > 0
             && (   cs_glob_lagr_time_scheme->isttio == 1
                 &&    cs_glob_time_step->nt_cur
                    >= cs_glob_lagr_stat_options->nstist)) {
-
           if (mstbor != cs_glob_lagr_stat_options->nstist)
-            bft_error
-              (__FILE__, __LINE__, 0,
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-               "@    =========     LAGRANGIEN %s\n"
-               "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-               "@\n"
-               "@    LE CALCUL SE POURSUIT AVEC UN CALCUL DE\n"
-               "@      STATISTIQUES AUX FRONTIERES EN MODE STATIONNAIRE\n"
-               "@      MAIS LES INDICATEURS DE CONTROLES DES STATISTIQUES\n"
-               "@      ON ETE MODIFIEES.\n"
-               "@\n"
-               "@    Pour eviter les incoherences dans le calcul\n"
-               "@      NSTBOR ne devrait pas etre modifie entre deux calculs\n"
-               "@      de statistiques aux frontieres stationnaires.\n"
-               "@\n"
-               "@    Le calcul ne peut pas etre execute.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               ficsui);
-
+            cs_parameters_error
+              (CS_ABORT_IMMEDIATE,
+               _("in Lagrangian module"),
+               _("The boundary statistics computation is in steady mode,\n"
+                 "but the associated parameters have been modified.\n\n"
+                 "(cs_glob_lagr_stat_options->nstist = %d, changed from %d.)\n"),
+               cs_glob_lagr_stat_options->nstist,
+               mstbor);
         }
 
       }
@@ -613,34 +551,16 @@ cs_restart_lagrangian_checkpoint_read(void)
           if (extra->iturb == 60)
             sprintf(kar8, "k-omega");
 
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-             "@\n"
-             "@    Les indicateurs concernant le calcul\n"
-             "@      instationnaire/stationnaire des termes sources\n"
-             "@      de couplage retour sont modifies :\n"
-             "@\n"
-             "@                   ISTTIO    NSTITS    Turbulence\n"
-             "@       AMONT : %10d%10d%13s\n"
-             "@       ACTUEL: %10d%10d%13s\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             jsttio,
-             mstits,
-             car8,
-             cs_glob_lagr_time_scheme->isttio,
-             cs_glob_lagr_source_terms->nstits,
-             kar8);
+          cs_parameters_error
+            (CS_WARNING,
+             _("in Lagrangian module"),
+             _("Settings have changed compared to the restart file:\n\n"
+               "cs_glob_lagr_time_scheme->isttio = %d (was %d)\n"
+               "cs_glob_lagr_source_terms->nstits = %d (was %d)\n"
+               "turbulence model: %s (was %s)\n"),
+             cs_glob_lagr_time_scheme->isttio, jsttio,
+             cs_glob_lagr_source_terms->nstits, mstits,
+             kar8, car8);
 
         }
 
@@ -654,123 +574,37 @@ cs_restart_lagrangian_checkpoint_read(void)
                                            1, CS_TYPE_cs_int_t, tabvar);
           cs_glob_lagr_source_terms->npts = tabvar[0];
         }
-        if (ierror != 0)
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@\n"
-             "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-             "@ %s\n"
-             "@\n"
-             "@    Le mot cle est initialise avec sa valeur par defaut\n"
-             "@      ou celle donnee dans le sous-programme cs_user_lagr_model :\n"
-             "@        %s  = %d\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             "nombre_iterations_termes_sources_stationnaires",
-             "NPTS",
-             cs_glob_lagr_source_terms->npts);
 
-        /*  --> Verif de coherence de l'avancement du calcul avec les   */
-        /*       indicateurs de calcul de la suite actuelle : */
+        /* Check consistency */
 
         if (   cs_glob_lagr_source_terms->npts == 0
-               && (   cs_glob_lagr_time_scheme->isttio == 1
-                   && cs_glob_lagr_source_terms->nstits <= cs_glob_time_step->nt_cur))
-          bft_error
-            (__FILE__, __LINE__, 0,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-             "@\n"
-             "@    LE CALCUL ACTUEL DES TERMES SOURCES DE COUPLAGE RETOUR\n"
-             "@      EST EN MODE STATIONNAIRE, ALORS QUE LE FICHIER\n"
-             "@      SUITE CONTIENT DES TERMES SOURCES INSTATIONNAIRES.\n"
-             "@\n"
-             "@    NSTITS devrait etre un entier superieur ou egal\n"
-             "@      a l'iteration Lagrangienne absolue de redemarrage\n"
-             "@      du calcul (iteration : %d)\n"
-             "@\n"
-             "@      Il vaut ici NSTITS = %d\n"
-             "@\n"
-             "@    Le calcul ne peut pas etre execute.\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui,
-             cs_glob_time_step->nt_cur+1,
-             cs_glob_lagr_source_terms->nstits);
-
-        if (cs_glob_lagr_source_terms->npts > 0
-            && (   (   cs_glob_lagr_time_scheme->isttio == 1
-                    && cs_glob_time_step->nt_cur <= cs_glob_lagr_source_terms->nstits)
-                || cs_glob_lagr_time_scheme->isttio == 0))
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n"
-             "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-             "@    =========     LAGRANGIEN %s\n"
-             "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-             "@\n"
-             "@    LE CALCUL ACTUEL DES TERMES SOURCES DE COUPLAGE RETOUR\n"
-             "@      EST EN MODE INSTATIONNAIRE, ALORS QUE LE FICHIER\n"
-             "@      SUITE CONTIENT DES TERMES SOURCES STATIONNAIRES.\n"
-             "@\n"
-             "@    Les termes sources de couplage retour stationnaires\n"
-             "@      amont seront remises a zero.\n"
-             "@\n"
-             "@    Le calcul se poursuit...\n"
-             "@\n"
-             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-             "@\n",
-             ficsui);
+            && (   cs_glob_lagr_time_scheme->isttio == 1
+                && cs_glob_lagr_source_terms->nstits <= cs_glob_time_step->nt_cur))
+          cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("in Lagrangian module"),
+             _("The coupling source terms computation is in steady mode,\n"
+               "while the restart file contains unsteady terms.\n\n"
+               "cs_glob_lagr_source_terms->nstits = %d, but should be greater\n"
+               "or equal to the current restart iteration (%d).\n"),
+             cs_glob_lagr_source_terms->nstits,
+             cs_glob_time_step->nt_cur);
 
         if (cs_glob_lagr_source_terms->npts > 0
             && (   cs_glob_lagr_time_scheme->isttio == 1
                 && cs_glob_time_step->nt_cur >= cs_glob_lagr_source_terms->nstits)) {
-
           if (mstits != cs_glob_lagr_source_terms->nstits)
-            bft_error
-              (__FILE__, __LINE__, 0,
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-               "@    =========     LAGRANGIEN %s\n"
-               "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-               "@\n"
-               "@    LE CALCUL SE POURSUIT AVEC UN CALCUL DES TERMES\n"
-               "@      SOURCES DE COUPLAGE RETOUR EN MODE STATIONNAIRE\n"
-               "@      MAIS LES INDICATEURS DE CONTROLES DES TERMES SOURCES\n"
-               "@      ON ETE MODIFIEES.\n"
-               "@\n"
-               "@    Pour eviter les incoherences dans le calcul\n"
-               "@      NSTITS ne devrait pas etre modifie entre deux calculs\n"
-               "@      de termes sources de couplage retour stationnaires.\n"
-               "@\n"
-               "@    Le calcul ne peut pas etre execute.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               ficsui);
-
+            cs_parameters_error
+              (CS_ABORT_IMMEDIATE,
+               _("in Lagrangian module"),
+               _("The coupling source terms computation is in steady mode,\n"
+                 "but the associated parameters have been modified.\n\n"
+                 "(cs_glob_lagr_source_terms->nstits = %d, changed from %d.)\n"),
+               cs_glob_lagr_source_terms->nstits, mstits);
         }
 
-        /* On donne des labels au different TS pour les noms de rubriques
-         * On donne le meme label au keps, au v2f et au k-omega (meme variable k)*/
+        /* Assign labels to different ST for section names
+         * Same lable for keps, au v2f et au k-omega (same variable k)*/
         if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
           sprintf(nomtsl[cs_glob_lagr_source_terms->itsli],
@@ -871,15 +705,13 @@ cs_restart_lagrangian_checkpoint_read(void)
     cs_restart_read_fields(cs_lag_stat_restart, CS_RESTART_LAGR_STAT);
 
     cs_log_printf(CS_LOG_DEFAULT,
-                  _("      Fin   de la lecture\n"));
+                  _("      End read\n"));
 
-    /*  ---> Fermeture du fichier suite    */
     cs_restart_destroy(&cs_lag_stat_restart);
 
-    /* ---> En cas d'erreur, on continue quand meme  */
     cs_log_printf(CS_LOG_DEFAULT,
-                  _("    Fin de la lecture du fichier suite\n"
-                    "      sur les statistiques et TS couplage retour\n"));
+                  _("    End reading restart file\n"
+                    "      for statistics and return coupling STs\n"));
 
   }
 
@@ -912,10 +744,9 @@ cs_lagr_restart_read_p(void)
      ================================ */
 
   cs_log_printf(CS_LOG_DEFAULT,
-                _("   ** INFORMATIONS SUR LE CALCUL LAGRANGIEN\n"
+                _("   ** Information on the lagrangian computation\n"
                   "      -------------------------------------\n"
-                  "    Lecture d'un fichier suite\n"
-                  "    sur les variables liees aux particules\n"));
+                  "    Read restart file for particle values\n"));
 
   static cs_restart_t  *cs_lag_stat_restart = NULL;
   char ficsui[] = "lagrangian";
@@ -923,7 +754,7 @@ cs_lagr_restart_read_p(void)
   cs_lag_stat_restart = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_READ);
 
   cs_log_printf(CS_LOG_DEFAULT,
-                "      Debut de la lecture\n");
+                _("      Start read"));
 
   /* Restart file type; version number not used as yet. */
 
@@ -937,26 +768,12 @@ cs_lagr_restart_read_p(void)
   }
 
   if (ierror != 0)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n"
-       "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-       "@    =========     LAGRANGIEN %s\n"
-       "@      TYPE DE FICHIER INCORRECT\n"
-       "@\n"
-       "@    Ce fichier ne semble pas etre un fichier\n"
-       "@      suite Lagrangien.\n"
-       "@\n"
-       "@    Le calcul ne peut etre execute.\n"
-       "@\n"
-       "@    Verifier que le fichier suite utilise correspond bien\n"
-       "@        a un fichier suite Lagrangien.\n"
-       "@\n"
-       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-       "@\n",
-       ficsui);
+    cs_parameters_error
+      (CS_ABORT_IMMEDIATE,
+       _("in Lagrangian module"),
+       _("This file does not seem to be a Lagrangian restart file:\n"
+         "  %s"),
+         cs_restart_get_name(cs_lag_stat_restart));
 
   /* Mesh location dimensions */
   bool ncelok, nfaiok, nfabok, nsomok;
@@ -1478,8 +1295,8 @@ cs_restart_lagrangian_checkpoint_write(void)
       || cs_glob_lagr_dim->n_boundary_stats > 0) {
 
     cs_log_printf(CS_LOG_DEFAULT,
-                  _("   ** INFORMATION ON LAGRANGIAN CALCULATION\n"
-                    "-------------------------------------\n"
+                  _("   ** Information on lagrangian calculation\n"
+                    "      -------------------------------------\n"
                     "    Writing a restart file for volume\n"
                     "    and boundary statistics and for\n"
                     "    return coupling source terms\n"));
