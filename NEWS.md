@@ -3,6 +3,11 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
+  momentum equation) and ensure variable density indicator (irovar) is set to 1
+  when VoF / cavitation algorithm is enabled. Idem for variable viscosity
+  indicator. 
+
 - Fix momentum conservation for the variable density deprecated algorithm
   with mass flux prediction (option idilat>=2, ipredfl=1). The density
   which is coherent with the mass balance needs to be updated right after
@@ -194,7 +199,7 @@ Bug fixes:
 
 - Fix bugs in ALE and free surface condition.
 
-- Fix  in gas mix initialization.
+- Fix in gas mix initialization.
 
 - Update CGNS support for CGNS 3.4 compatibility.
 
@@ -206,7 +211,13 @@ Bug fixes:
 
 - GUI: fix crash on startup on some recent systems.
 
+<<<<<<< HEAD
 - Installation: fix detection of CGNS using --with-cgns=salome.
+=======
+- Move part of VoF module from Fortran 90 to C.
+
+- Remove VOFI (VoF initialization) library detection as it is not used anymore.
+>>>>>>> d24aea404... Fix time stepping of VOF algorithm (broken by commit a2ddc3b, 2018-10-19) and
 
 Release 5.3.0 - October 26, 2018
 --------------------------------

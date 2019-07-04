@@ -1285,7 +1285,7 @@ endif
 ! Update density (which is coherent with the mass)
 !-------------------------------------------------
 
-if (irovar.eq.1.and.idilat.gt.1) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0)) then
   do iel = 1, ncelet
     cpro_rho_mass(iel) = crom_eos(iel)
   enddo
