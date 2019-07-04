@@ -40,7 +40,7 @@ Bug fixes:
   which is coherent with the mass balance needs to be updated right after
   mass flux prediction step.
 
-- Fix time stepping for buoyancy term. Compute it with last density value (EOS) 
+- Fix time stepping for buoyancy term. Compute it with last density value (EOS)
   when using first order time stepping, to avoid a time shift.
   No changes for 2nd order time stepping.
 
