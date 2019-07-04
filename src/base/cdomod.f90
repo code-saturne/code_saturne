@@ -42,6 +42,44 @@ module cdomod
   !> If icdo=2 (CDO only)
   integer, save :: icdo
 
+  interface
+
+    ! Interface to C function to solve the unsteady state for related CDO
+    ! equations
+
+    subroutine cs_f_cdo_solve_unsteady_state_domain()  &
+      bind(C, name='cs_f_cdo_solve_unsteady_state_domain')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_cdo_solve_unsteady_state_domain
+
+    ! Interface to C function to solve the steady state for related CDO
+    ! equations
+
+    subroutine cs_f_cdo_solve_steady_state_domain()  &
+      bind(C, name='cs_f_cdo_solve_steady_state_domain')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_cdo_solve_steady_state_domain
+
+    ! Interface to C function related to the initialization CDO systems
+
+    subroutine cs_f_initialize_cdo_systems()  &
+      bind(C, name='cs_f_initialize_cdo_systems')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_initialize_cdo_systems
+
+    ! Interface to C function to postprocess data related to CDO schemes
+
+    subroutine cs_f_cdo_post_domain()  &
+      bind(C, name='cs_f_cdo_post_domain')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_cdo_post_domain
+
+  end interface
+
 end module cdomod
 
 !=============================================================================

@@ -74,6 +74,14 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_cdo_post_domain(void);
+
+/*============================================================================
  * Static global variables
  *============================================================================*/
 
@@ -369,6 +377,22 @@ _domain_post(void                      *input,
 }
 
 /*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve only steady-state equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_cdo_post_domain(void)
+{
+  cs_domain_post(cs_glob_domain);
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -400,22 +424,20 @@ cs_domain_post(cs_domain_t  *domain)
 {
   cs_timer_t  t0 = cs_timer_time();
 
+  assert(domain->cdo_context != NULL);
+
   /* Extra-operations */
   /* ================ */
 
   /* Predefined extra-operations related to advection fields */
-  assert(domain->cdo_context != NULL);
-
   cs_advection_field_update(domain->time_step->t_cur, true);
-
-  /* User-defined extra operations */
-  cs_user_extra_operations(domain);
 
   /* Log output */
   if (cs_domain_needs_log(domain)) {
 
     /* Basic statistic related to variables */
-    cs_log_iteration();
+    if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)
+      cs_log_iteration(); /* Otherwise called from the FORTRAN part */
 
     /* Post-processing */
     /* =============== */

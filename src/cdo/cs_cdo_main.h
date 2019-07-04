@@ -55,7 +55,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
- *         activated
+ *         activated and cs_user_model() has been called
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  */

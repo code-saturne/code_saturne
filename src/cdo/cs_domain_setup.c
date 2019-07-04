@@ -99,6 +99,14 @@ static const char _err_empty_cdo_context[] =
   " Please check your settings.\n";
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_initialize_cdo_systems(void);
+
+/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -236,6 +244,23 @@ _set_scheme_flags(cs_domain_t    *domain)
 
   } /* NavSto is activated */
 
+}
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize CDO systems
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_initialize_cdo_systems(void)
+{
+  assert(cs_glob_domain != NULL);
+  cs_domain_initialize_systems(cs_glob_domain);
 }
 
 /*============================================================================
@@ -464,18 +489,15 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last setup stage of the cs_domain_t structure
+ * \brief  After having read the mesh and the first setup stage build the
+ *         connectivities and mesh quantities related to CDO/HHO schemes
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
- * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
- * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_finalize_setup(cs_domain_t                 *domain,
-                         cs_mesh_t                   *mesh,
-                         const cs_mesh_quantities_t  *mesh_quantities)
+cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 {
   if (domain == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
@@ -492,15 +514,15 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   /* Build additional connectivity structures
      Update mesh structure with range set structures */
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
-  domain->connect = cs_cdo_connect_init(mesh,
+  domain->connect = cs_cdo_connect_init(domain->mesh,
                                         cc->vb_scheme_flag,
                                         cc->vcb_scheme_flag,
                                         cc->fb_scheme_flag,
                                         cc->hho_scheme_flag);
 
   /* Build additional mesh quantities in a seperate structure */
-  domain->cdo_quantities =  cs_cdo_quantities_build(mesh,
-                                                    mesh_quantities,
+  domain->cdo_quantities =  cs_cdo_quantities_build(domain->mesh,
+                                                    domain->mesh_quantities,
                                                     domain->connect);
 
   /* Shared main generic structure
@@ -513,21 +535,6 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
                                   domain->connect);
   cs_advection_field_set_shared_pointers(domain->cdo_quantities,
                                          domain->connect);
-
-  /* Groundwater flow module */
-  if (cs_gwf_is_activated()) {
-
-    /* Setup for the soil structures and the tracer equations */
-    cs_user_gwf_setup(domain);
-
-    /* Add if needed new terms (as diffusion or reaction) to tracer equations
-       according to the settings */
-    cs_gwf_add_tracer_terms();
-
-  }
-
-  /* Allocate all fields created during the setup stage */
-  cs_field_allocate_or_map_all();
 
   /* Allocate common structures for solving equations */
   cs_equation_common_init(domain->connect,
@@ -556,6 +563,38 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
                                     cc->fb_scheme_flag,
                                     cc->hho_scheme_flag);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last setup stage of the cs_domain_t structure
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_finalize_setup(cs_domain_t         *domain)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain->cdo_context == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
+
+  /* Groundwater flow module */
+  if (cs_gwf_is_activated()) {
+
+    /* Setup for the soil structures and the tracer equations */
+    cs_user_gwf_setup(domain);
+
+    /* Add if needed new terms (as diffusion or reaction) to tracer equations
+       according to the settings */
+    cs_gwf_add_tracer_terms();
+
+  }
+
+  /* Allocate all fields created during the setup stage */
+  cs_field_allocate_or_map_all();
 
   /* Set the definition of user-defined properties and/or advection
    * fields (no more fields are created at this stage)
@@ -568,7 +607,7 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
    * --> Source term
    */
 
-  cs_user_finalize_setup(cs_glob_domain);
+  cs_user_finalize_setup(domain);
 
   /* Assign to a cs_equation_t structure a list of function to manage this
    * structure during the computation.
@@ -726,9 +765,11 @@ cs_domain_setup_log(const cs_domain_t   *domain)
       cs_log_printf(CS_LOG_SETUP, " * Time step **constant**\n\n");
     else if (domain->time_options.idtvar == 1)
       cs_log_printf(CS_LOG_SETUP, " * Time step **variable in time**\n\n");
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid idtvar value for the CDO module.\n"));
+    else {
+      if (cdo_mode != CS_DOMAIN_CDO_MODE_WITH_FV)
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid idtvar value for the CDO module.\n"));
+    }
 
     cs_xdef_log("        Time step definition", domain->time_step_def);
     cs_log_printf(CS_LOG_SETUP, "\n");
