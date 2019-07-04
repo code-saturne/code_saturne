@@ -151,6 +151,15 @@ Bug fixes:
   * Use same time schemes for vector transport equation as for scalar transport
     equation.
 
+- Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
+  momentum equation) and ensure variable density indicator (irovar) is set to 1
+  when VoF / cavitation algorithm is enabled. Idem for variable viscosity
+  indicator. 
+
+- Fix update of density in VoF / Cavitation algorithm in case the convection
+  scheme for the void fraction is not upwind. Update was not ensuring proper
+  mass conservation at solver precision.
+
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
 
@@ -179,6 +188,8 @@ Architectural changes:
 
 - Move Reynolds stress tensor transformation matrix (alpha in clca66)
   computation to C. C translation is taken from NEPTUNE_CFD.
+
+- Move part of VoF module from Fortran 90 to C.
 
 - Remove VOFI (VoF initialization) library detection as it is not used anymore.
 

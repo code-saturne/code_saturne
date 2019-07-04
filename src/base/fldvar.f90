@@ -196,26 +196,33 @@ endif
 ! Cavitation: activate VoF
 if (icavit.ge.0.and.ivofmt.lt.0) ivofmt = 0
 
+! Mass balance equation options (pressure)
+
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-if (ippmod(icompf).ge.0) then
+
+! elliptic equation
+vcopt%iconv = 0
+
+if (ippmod(icompf).ge.0) then ! compressible algorithm
   vcopt%istat = 1
 else
   vcopt%istat = 0
 endif
-! VoF algorithm: activate the weighthening for the pressure
+
+! VoF algorithm: activate the weightening for the pressure
 if (ivofmt.ge.0) vcopt%iwgrec = 1
-vcopt%iconv = 0
+
 call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
-! Void fraction (Volume of Fluid algorithm)
+! void fraction (VoF algorithm)
 if (ivofmt.ge.0) then
   call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2, iloc1)
   call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
-  vcopt%idiff = 0
+  vcopt%idiff = 0  ! pure convection equation
   call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
 endif
 
-! --- Turbulence
+! Turbulence
 
 if (itytur.eq.2) then
   call add_variable_field('k', 'Turb Kinetic Energy', 1, ik, iloc1)

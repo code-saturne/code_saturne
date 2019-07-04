@@ -103,6 +103,12 @@ pflag = POST_ON_LOCATION + POST_MONITOR
 ! Additional physical properties
 !===============================================================================
 
+if (ivofmt.ge.0) then
+  ! variable density
+  irovar = 1
+  ivivar = 1
+endif
+
 ! CP when variable
 if (icp.ge.0) then
   call add_property_field_1d('specific_heat', 'Specific Heat', icp)
