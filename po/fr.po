@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-06-03 11:30+0200\n"
+"POT-Creation-Date: 2019-07-04 10:51+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -10006,7 +10006,7 @@ msgstr ""
 #, c-format
 msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-" Choice between hho_{p0, p1, p2} or cdo_fb"
+" Choice between \"no_block\", \"block_amg_cg\"..."
 msgstr ""
 
 #, c-format
@@ -12069,6 +12069,9 @@ msgid ""
 "Verify the existence and the name of the restart file: %s\n"
 msgstr ""
 
+msgid "    Start read"
+msgstr "    Début de lecture"
+
 #, c-format
 msgid ""
 "Abort while opening the lagrangian module restart file: %s\n"
@@ -12169,6 +12172,23 @@ msgstr ""
 
 #, c-format
 msgid ""
+"The boundary statistics computation is in steady mode,\n"
+"while the restart file contains unsteady statistics.\n"
+"\n"
+"cs_glob_lagr_stat_options->nstist = %d, but should be greater\n"
+"or equal to the current restart iteration (%d).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The boundary statistics computation is in steady mode,\n"
+"but the associated parameters have been modified.\n"
+"\n"
+"(cs_glob_lagr_stat_options->nstist = %d, changed from %d.)\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "Source terms from the previous computation are not available.\n"
 "\n"
 "Start of time averaging of statistics for return coupling\n"
@@ -12183,20 +12203,60 @@ msgid ""
 "not available or usable."
 msgstr ""
 
-msgid "      Fin   de la lecture\n"
+#, c-format
+msgid ""
+"Settings have changed compared to the restart file:\n"
+"\n"
+"cs_glob_lagr_time_scheme->isttio = %d (was %d)\n"
+"cs_glob_lagr_source_terms->nstits = %d (was %d)\n"
+"turbulence model: %s (was %s)\n"
 msgstr ""
 
+#, c-format
 msgid ""
-"    Fin de la lecture du fichier suite\n"
-"      sur les statistiques et TS couplage retour\n"
+"The coupling source terms computation is in steady mode,\n"
+"while the restart file contains unsteady terms.\n"
+"\n"
+"cs_glob_lagr_source_terms->nstits = %d, but should be greater\n"
+"or equal to the current restart iteration (%d).\n"
 msgstr ""
 
+#, c-format
 msgid ""
-"   ** INFORMATIONS SUR LE CALCUL LAGRANGIEN\n"
+"The coupling source terms computation is in steady mode,\n"
+"but the associated parameters have been modified.\n"
+"\n"
+"(cs_glob_lagr_source_terms->nstits = %d, changed from %d.)\n"
+msgstr ""
+
+msgid "      End read\n"
+msgstr "      Fin de lecture\n"
+
+msgid ""
+"    End reading restart file\n"
+"      for statistics and return coupling STs\n"
+msgstr ""
+"    Fin de la lecture du fichier suite de statistiques et TS de couplage "
+"retour.\n"
+
+msgid ""
+"   ** Information on the lagrangian computation\n"
 "      -------------------------------------\n"
-"    Lecture d'un fichier suite\n"
-"    sur les variables liees aux particules\n"
+"    Read restart file for particle values\n"
 msgstr ""
+"   ** Informations sur le calcul Lagrangien\n"
+"      -------------------------------------\n"
+
+msgid "      Start read"
+msgstr "      Début de lecture"
+
+#, c-format
+msgid ""
+"This file does not seem to be a Lagrangian restart file:\n"
+"  %s"
+msgstr ""
+"Ce fichier ne semble pas être un fichier de reprise Lagrangien :\n"
+"  %s"
 
 #, c-format
 msgid ""
@@ -12240,8 +12300,8 @@ msgid ""
 msgstr ""
 
 msgid ""
-"   ** INFORMATION ON LAGRANGIAN CALCULATION\n"
-"-------------------------------------\n"
+"   ** Information on lagrangian calculation\n"
+"      -------------------------------------\n"
 "    Writing a restart file for volume\n"
 "    and boundary statistics and for\n"
 "    return coupling source terms\n"
