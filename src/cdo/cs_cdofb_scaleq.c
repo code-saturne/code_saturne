@@ -923,12 +923,15 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     const cs_xdef_t *adv_def = eqp->adv_field->definition;
     if (adv_def != NULL && /* If linked to a NS equation, it might be null */
-        adv_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+        adv_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) {
+      /* Required by cs_advection_field_cw_face_flux */
+      eqb->msh_flag |= CS_FLAG_COMP_FEQ;
       eqb->msh_flag |= cs_quadrature_get_flag(adv_def->qtype,
                                               CS_FLAG_FACE | CS_FLAG_PRIMAL);
+    }
 
     /* Boundary conditions for advection */
-    eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_PFQ;
 
     switch (eqp->adv_formulation) {
 
