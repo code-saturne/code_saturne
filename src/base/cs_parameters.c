@@ -919,8 +919,8 @@ void
 cs_parameters_define_field_keys(void)
 {
   /* field ids of the mass or volume fluxes convecting the variable field */
-  cs_field_define_key_int("inner_mass_flux_id", -1, CS_FIELD_VARIABLE);
-  cs_field_define_key_int("boundary_mass_flux_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("inner_mass_flux_id", -1, 0);
+  cs_field_define_key_int("boundary_mass_flux_id", -1, 0);
 
   /* field ids of the fluxes of the variable field (it needs to be stored
      for some quantities such as void fraction flux for the VoF algo.) */
