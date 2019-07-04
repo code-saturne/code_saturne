@@ -32,6 +32,9 @@ Default option changes:
 
 Bug fixes:
 
+- Fix in turbulent isotropic diffusion (Shir model) with EB-RSM. The turbulent
+  viscosity did not take into account the effect of the wall.
+
 - Fix for turbulent heat fluxes computation when Boussinesq hypothesis is used.
   Variance was not taken into account.
 
