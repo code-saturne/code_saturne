@@ -25,12 +25,23 @@ Architectural changes:
   has loaded the default API, so compatibility with Salome
   versions 7 or older is dropped.
 
+- Move part of VoF module from Fortran 90 to C.
+
 Default option changes:
 
 - Set k-epsilon turbulence models to uncoupled option by default
   (it was already uncoupled by default for all models except standard k-epsilon)
 
 Bug fixes:
+
+- Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
+  momentum equation) and ensure variable density indicator (irovar) is set to 1
+  when VoF / cavitation algorithm is enabled. Idem for variable viscosity
+  indicator. 
+
+- Fix update of density in VoF / Cavitation algorithm in case the convection
+  scheme for the void fraction is not upwind. Update was not ensuring proper
+  mass conservation at solver precision.
 
 - Fix in turbulent isotropic diffusion (Shir model) with EB-RSM. The turbulent
   viscosity did not take into account the effect of the wall.

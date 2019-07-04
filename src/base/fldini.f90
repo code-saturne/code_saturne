@@ -728,7 +728,7 @@ call cs_parameters_set_n_buoyant_scalars
 ! For Low Mach and compressible (increment) algorithms, a particular care
 ! must be taken when dealing with density in the unsteady term in the velocity
 ! pressure loop
-if (irovar.eq.1.and.(idilat.gt.1.or.ippmod(icompf).eq.3)) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3)) then
   ! EOS density, imposed after the correction step, so we need
   ! to keep the previous one, which is in balance with the mass
   f_name = 'density_mass'

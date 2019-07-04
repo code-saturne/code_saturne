@@ -120,7 +120,7 @@ if (iappel.eq.1) then
     call field_current_to_previous(icrom)
     call field_current_to_previous(ibrom)
 
-    if (idilat.gt.1.or.ippmod(icompf).eq.3) then
+    if (idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3) then
       ! Save the latest density field seen by the mass equation
       ! it will be updated in the correction step.
       call field_get_id("density_mass", f_id)

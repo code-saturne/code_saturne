@@ -346,7 +346,7 @@ if (irovar.eq.1) then
   call field_get_val_prev_s(ibrom, broma)
 endif
 
-if (irovar.eq.1.and.(idilat.gt.1.or.ippmod(icompf).eq.3)) then
+if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3)) then
   call field_get_id("density_mass", f_id)
   call field_get_val_s(f_id, cpro_rho_mass)
   call field_get_id("boundary_density_mass", f_id)
