@@ -971,7 +971,7 @@ endif
 '@',                                                            /,&
 '@   ORDRE 2 EN TEMPS OU LES',                                  /,&
 '@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE NSWRSM POUR',      /,&
-'@     LA VARIABLE', a16, ' EST',  i10,                        /, &
+'@     LA VARIABLE ', a16, ' EST',  i10,                        /,&
 '@     NSWRSM A ETE IMPOSE ICI A', i10,                         /,&
 '@',                                                            /,&
 '@  Le calcul sera execute',                                    /,&
@@ -2174,9 +2174,9 @@ endif
 '@    =========',                                               /,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
 '@',                                                            /,&
-'@   ORDRE 2 EN TEMPS or the',                                  /,&
-'@   THE VALUE RECOMMANDED FOR THE PARAMETER NSWRSM FOR',       /,&
-'@        VARIABLE', a16, ' IS',    i10,                        /,&
+'@   ORDER 2 IN TIME or LES',                                   /,&
+'@   THE VALUE RECOMMENDED FOR THE PARAMETER NSWRSM FOR',       /,&
+'@        VARIABLE ', a16, ' IS',    i10,                       /,&
 '@     NSWRSM IS NOW IMPOSED AS',  i10,                         /,&
 '@',                                                            /,&
 '@  computation will go on',                                    /,&
