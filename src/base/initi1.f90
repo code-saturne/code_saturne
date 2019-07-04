@@ -172,7 +172,11 @@ if (icdo.lt.2) then
    call usipes(nmodpp)
 
    ! Avoid a second spurious call to this function
-   call user_finalize_setup_wrapper
+   ! Call in the C part if CDO is activated, i.e. when
+   ! additional geometric quantities and connectivities are built
+   if (icdo.lt.0) then
+      call user_finalize_setup_wrapper
+   endif
 endif
 
 !===============================================================================

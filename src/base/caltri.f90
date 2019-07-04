@@ -72,6 +72,7 @@ use ptrglo
 use turbomachinery
 use cs_c_bindings
 use cs_f_interfaces
+use cdomod
 
 use, intrinsic :: iso_c_binding
 
@@ -687,6 +688,10 @@ endif
 
 call inivar(nvar, nscal)
 
+if (icdo.ge.1) then ! CDO mode
+  call cs_f_initialize_cdo_systems
+endif
+
 !===============================================================================
 ! Initializations for the 1D thermal wall module
 !===============================================================================
@@ -799,6 +804,14 @@ if (iilagr.gt.0) then
 
   call timer_stats_stop(lagr_stats_id)
 
+endif
+
+! CDO module (user-defined equations)
+!====================================
+
+if (icdo.eq.1) then
+   ! FV and CDO activated
+   call cs_f_cdo_solve_steady_state_domain
 endif
 
 !===============================================================================
@@ -919,6 +932,14 @@ call dmtmps(titer1)
 call tridim(itrale, nvar, nscal, dt)
 
 if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
+
+  ! CDO module (user-defined equations)
+  !====================================
+
+  if (icdo.eq.1) then
+     ! FV and CDO activated
+     call cs_f_cdo_solve_unsteady_state_domain
+  endif
 
   ! Lagrangian module
   !==================
@@ -1058,6 +1079,14 @@ endif
 !===============================================================================
 
 call pstvar(nvar, nscal)
+
+! CDO module (user-defined equations)
+!====================================
+
+if (icdo.eq.1) then
+  ! FV and CDO activated
+  call cs_f_cdo_post_domain
+endif
 
 !===============================================================================
 ! Structures

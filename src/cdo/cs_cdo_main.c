@@ -81,6 +81,17 @@ BEGIN_C_DECLS
 static int  cs_cdo_ts_id;
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_cdo_solve_steady_state_domain(void);
+
+void
+cs_f_cdo_solve_unsteady_state_domain(void);
+
+/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -229,6 +240,17 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   /* User-defined equations */
   _compute_steady_user_equations(domain);
 
+  /* Extra operations and post-processing of the computed solutions */
+  cs_post_time_step_begin(domain->time_step);
+
+  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
+
+  /* User-defined extra operations */
+  cs_user_extra_operations(domain);
+
+  cs_domain_post(domain);
+
+  cs_post_time_step_end();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -316,13 +338,41 @@ _log_setup(const cs_domain_t   *domain)
 }
 
 /*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve only steady-state equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_cdo_solve_steady_state_domain(void)
+{
+  _solve_steady_state_domain(cs_glob_domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve all the equations of a computational domain for one time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_cdo_solve_unsteady_state_domain(void)
+{
+  _solve_domain(cs_glob_domain);
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
- *         activated
+ *         activated and cs_user_model() has been called
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  */
@@ -331,15 +381,11 @@ _log_setup(const cs_domain_t   *domain)
 void
 cs_cdo_initialize_setup(cs_domain_t   *domain)
 {
-  /* Add an automatic boundary zone gathering all "wall" boundaries */
-  cs_boundary_def_wall_zones(domain->boundaries);
-
   if (cs_domain_get_cdo_mode(domain) == CS_DOMAIN_CDO_MODE_OFF)
     return;
 
   /* Timer statistics */
   cs_cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
-  cs_timer_stats_start(cs_cdo_ts_id);
 
   /* Store the fact that the CDO/HHO module is activated */
   cs_domain_cdo_log(domain);
@@ -348,6 +394,11 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   cs_property_t  *pty = cs_property_add("unity", CS_PROPERTY_ISO);
 
   cs_property_def_iso_by_value(pty, "cells", 1.0);
+
+  cs_timer_stats_start(cs_cdo_ts_id);
+
+  /* Add an automatic boundary zone gathering all "wall" boundaries */
+  cs_boundary_def_wall_zones(domain->boundaries);
 
   cs_timer_t t0 = cs_timer_time();
 
@@ -398,23 +449,16 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   /* Timer statistics */
   cs_timer_stats_start(cs_cdo_ts_id);
 
+  cs_domain_init_cdo_structures(domain);
+
   /* Last setup stage */
-  cs_domain_finalize_setup(domain, m, mq);
+  cs_domain_finalize_setup(domain);
 
   /* Initialization default post-processing for the computational domain */
   cs_domain_post_init(domain);
 
   /* Summary of the settings */
   _log_setup(domain);
-
-  /* Output information */
-  cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
-  cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
-
-  /*  Build high-level structures and create algebraic systems
-      Set the initial values of the fields and properties */
-  cs_domain_initialize_systems(domain);
 
   /* Flush log files */
   cs_log_printf_flush(CS_LOG_DEFAULT);
@@ -518,24 +562,23 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Force the activation of writers for postprocessing */
   cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
+  /*  Build high-level structures and create algebraic systems
+      Set the initial values of the fields and properties */
+  cs_domain_initialize_systems(domain);
+
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
   cs_user_extra_operations_initialize(cs_glob_domain);
 
+  /* Output information */
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+  cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
+  cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
+
   /* Build and solve equations related to the computational domain in case of
      steady-state equations */
   _solve_steady_state_domain(domain);
-
-  /* Extra operations and post-processing of the computed solutions after the
-     steady-state computations or before the time loop */
-  cs_post_time_step_begin(domain->time_step);
-
-  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
-
-  cs_domain_post(domain);
-
-  cs_post_time_step_end();
 
   /* Main time loop */
   if (domain->time_step_def == NULL) /* No definition available yet. Try a
@@ -553,17 +596,18 @@ cs_cdo_main(cs_domain_t   *domain)
     /* Build and solve equations related to the computational domain */
     _solve_domain(domain);
 
-    /* Increment time */
-    cs_domain_increment_time(domain);
-
     /* Extra operations and post-processing of the computed solutions */
     cs_post_time_step_begin(domain->time_step);
+
+    /* User-defined extra operations */
+    cs_user_extra_operations(domain);
 
     cs_domain_post(domain);
 
     cs_post_time_step_end();
 
-    /* Increment time */
+    /* Increment time and time steps */
+    cs_domain_increment_time(domain);
     cs_domain_increment_time_step(domain);
 
     /* Read a control file if present */
