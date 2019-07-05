@@ -154,13 +154,21 @@ cs_domain_create(void)
 {
   cs_domain_t  *domain = NULL;
 
+  /* Initialization of several modules */
+  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
+  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
+
   BFT_MALLOC(domain, 1, cs_domain_t);
 
   domain->mesh = NULL;
   domain->mesh_quantities = NULL;
   domain->connect = NULL;
   domain->cdo_quantities = NULL;
-  domain->cdo_context = NULL;
+
+  /* By default a wall is defined for the whole boundary of the domain */
+  cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_WALL);
+  domain->boundaries = cs_glob_boundaries;
+  domain->ale_boundaries = cs_boundary_create(CS_BOUNDARY_ALE_FIXED);
 
   /* Default initialization of the time step */
   domain->only_steady = true;
@@ -170,26 +178,28 @@ cs_domain_create(void)
   /* Global structure for time step management */
   domain->time_step = cs_get_glob_time_step();
 
+  domain->time_options.iptlro = 0;
+  domain->time_options.idtvar = 0; /* constant time step by default */
+  domain->time_options.coumax = 1.;
+  domain->time_options.cflmmx = 0.99;
+  domain->time_options.foumax = 10.;
+  domain->time_options.varrdt = 0.1;
+  domain->time_options.dtmin  = -1.e13;
+  domain->time_options.dtmax  = -1.e13;
+  domain->time_options.relxst = 0.7; /* Not used in CDO schemes */
+
   /* Other options */
   domain->restart_nt = 0;
   domain->output_nt = -1;
   domain->verbosity = 1;
 
   /* By default: CDO-HHO schemes are not activated */
+  domain->cdo_context = NULL;
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
-
-  /* By default a wall is defined for the whole boundary of the domain */
-  cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_WALL);
-  domain->boundaries = cs_glob_boundaries;
-  domain->ale_boundaries = cs_boundary_create(CS_BOUNDARY_ALE_FIXED);
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
   CS_TIMER_COUNTER_INIT(domain->tcs); /* domain setup */
-
-  /* Initialization of several modules */
-  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
-  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
 
   return domain;
 }
