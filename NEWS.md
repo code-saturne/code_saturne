@@ -8,6 +8,8 @@ Bug fixes:
   when VoF / cavitation algorithm is enabled. Idem for variable viscosity
   indicator. 
 
+- Fix time stepping in pressure gradient weightening for VoF / Cavitation algo.
+
 - Fix momentum conservation for the variable density deprecated algorithm
   with mass flux prediction (option idilat>=2, ipredfl=1). The density
   which is coherent with the mass balance needs to be updated right after

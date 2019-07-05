@@ -219,13 +219,14 @@ double precision, dimension(:,:), allocatable :: tsexp
 double precision, dimension(:,:,:), allocatable :: tsimp
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
-double precision, dimension(:), pointer :: brom, broma, crom, croma, cromaa, pcrom
-double precision, dimension(:), pointer :: brom_eos, crom_eos
+double precision, dimension(:), pointer :: crom, croma, cromaa, pcrom
+double precision, dimension(:), pointer :: brom_eos, crom_eos, brom, broma
 double precision, dimension(:), allocatable, target :: cproa_rho_tc
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:,:), allocatable :: rij
-double precision, dimension(:), pointer :: coef1, coef2, coef3, coef4, coef5, coef6
+double precision, dimension(:), pointer :: coef1, coef2, coef3
+double precision, dimension(:), pointer :: coef4, coef5, coef6
 double precision, dimension(:,:), pointer :: coefap
 double precision, dimension(:,:,:), pointer :: coefbp
 double precision, dimension(:,:), allocatable :: coefat
@@ -240,10 +241,12 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
 double precision, dimension(:,:), pointer :: cpro_gradp
-double precision, dimension(:), pointer :: cpro_wgrec_s
+double precision, dimension(:), pointer :: cpro_wgrec_s, wgrec_crom
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: imasfl_prev, bmasfl_prev
+double precision, dimension(:), allocatable, target :: cpro_rho_tc
+double precision, dimension(:), pointer :: cpro_rho_mass
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -505,15 +508,41 @@ iprev = 0
 ! Namely for the VOF algorithm: consistency of the gradient
 ! with the diffusive flux scheme of the correction step
 if (vcopt_p%iwgrec.eq.1) then
+
+  ! retrieve density used in diffusive flux scheme (correction step)
+  if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3)) then
+    call field_get_id("density_mass", f_id)
+    call field_get_val_s(f_id, cpro_rho_mass)
+
+    ! Time interpolated density
+    if (vcopt_u%thetav.lt.1.d0.and.iterns.gt.1) then
+      allocate(cpro_rho_tc(ncelet))
+
+      do iel = 1, ncelet
+        cpro_rho_tc(iel) =           vcopt_u%thetav * cpro_rho_mass(iel) &
+                          + (1.d0 - vcopt_u%thetav) * croma(iel)
+      enddo
+
+      wgrec_crom => cpro_rho_tc
+    else
+      wgrec_crom => cpro_rho_mass
+    endif
+
+  ! Weakly variable density algo. (idilat <=1) or constant density
+  else
+    wgrec_crom => crom_eos
+  endif
+
   ! Id weighting field for gradient
   call field_get_key_int(ivarfl(ipr), kwgrec, iflwgr)
   call field_get_dim(iflwgr, f_dim)
   if (f_dim.gt.1) then
     call field_get_val_v(iflwgr, cpro_wgrec_v)
     do iel = 1, ncel
-      cpro_wgrec_v(1,iel) = dt(iel) / crom(iel) ! FIXME should take headlosses into account, not compatible neither with ipucou=1...
-      cpro_wgrec_v(2,iel) = dt(iel) / crom(iel)
-      cpro_wgrec_v(3,iel) = dt(iel) / crom(iel)
+      ! FIXME should take headlosses into account, not compatible neither with ipucou=1...
+      cpro_wgrec_v(1,iel) = dt(iel) / wgrec_crom(iel)
+      cpro_wgrec_v(2,iel) = dt(iel) / wgrec_crom(iel)
+      cpro_wgrec_v(3,iel) = dt(iel) / wgrec_crom(iel)
       cpro_wgrec_v(4,iel) = 0.d0
       cpro_wgrec_v(5,iel) = 0.d0
       cpro_wgrec_v(6,iel) = 0.d0
@@ -523,10 +552,11 @@ if (vcopt_p%iwgrec.eq.1) then
   else
     call field_get_val_s(iflwgr, cpro_wgrec_s)
     do iel = 1, ncel
-      cpro_wgrec_s(iel) = dt(iel) / crom(iel)
+      cpro_wgrec_s(iel) = dt(iel) / wgrec_crom(iel)
     enddo
     call synsca(cpro_wgrec_s)
   endif
+  if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
 endif
 
 call grdpor(inc)
