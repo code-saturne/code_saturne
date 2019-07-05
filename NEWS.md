@@ -46,6 +46,8 @@ Bug fixes:
   scheme for the void fraction is not upwind. Update was not ensuring proper
   mass conservation at solver precision.
 
+- Fix time stepping in pressure gradient weightening for VoF / Cavitation algo.
+
 - Fix in turbulent isotropic diffusion (Shir model) with EB-RSM. The turbulent
   viscosity did not take into account the effect of the wall.
 
