@@ -17,6 +17,12 @@ User changes:
   * With a high enough verbosity, the residual after each level's
     smoother or solver application is logged.
 
+Numerics and physical modelling:
+
+- Make clipping of Reynolds stresses more robust for the coupled solver.
+  When there is a negative eigen value, Rij is now clipped with a term of
+  return to isotropy (hence preventing increase of turbulent kinetic energy).
+
 Architectural changes:
 
 - Allow sourcing environment before launching with the
