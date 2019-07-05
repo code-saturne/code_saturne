@@ -609,11 +609,6 @@ pthermax= -1.d0
 sleak = 0.d0
 kleak = 2.9d0
 
-! --- VOF module (not activated by default)
-!       -1: module not activated
-!        0: module activated
-ivofmt = -1
-
 ! --- Cavitation module (not activated by default)
 !       -1: module not activated
 !        0: no vaporization/condensation model
