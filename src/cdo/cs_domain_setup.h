@@ -63,17 +63,6 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set to true the automatic update of all advection fields
- *
- * \param[in, out]  domain    pointer to a \ref cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_update_advfield(cs_domain_t       *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set to true the automatic update of all advection fields
  * \brief  Set auxiliary parameters related to the way output is done
  *
  * \param[in, out]  domain       pointer to a cs_domain_t structure

@@ -244,25 +244,6 @@ _set_scheme_flags(cs_domain_t    *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set to true the automatic update of all advection fields
- *
- * \param[in, out]  domain    pointer to a \ref cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_update_advfield(cs_domain_t       *domain)
-{
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-  if (domain->cdo_context == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
-
-  domain->cdo_context->force_advfield_update = true;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set auxiliary parameters related to the way output is done
  *
  * \param[in, out]  domain       pointer to a cs_domain_t structure
