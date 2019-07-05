@@ -100,6 +100,10 @@ typedef enum {
  * \var CS_ADVECTION_FIELD_NAVSTO
  * Advection field stemming from the velocity in the (Navier-)Stokes system
  *
+ * \var CS_ADVECTION_FIELD_LEGACY_NAVSTO
+ * Advection field stemming from the mass flux in the resolution of the
+ * Navier--Stokes system with the legacy Finite Volume solver
+ *
  * \var CS_ADVECTION_FIELD_GWF
  * Advection field stemming from the "GroundWater Flows" module. This is the
  * Darcean flux.
@@ -111,6 +115,7 @@ typedef enum {
 typedef enum {
 
   CS_ADVECTION_FIELD_NAVSTO,
+  CS_ADVECTION_FIELD_LEGACY_NAVSTO,
   CS_ADVECTION_FIELD_GWF,
   CS_ADVECTION_FIELD_USER,
   CS_N_ADVECTION_FIELD_STATUS
@@ -171,6 +176,12 @@ typedef struct {
    * the value of the normal flux across boundary faces. It's always
    * defined since it's used for dealing with the boundary conditions.
    *
+   * \var int_field_id
+   * id to retrieve the related cs_field_t structure corresponding to
+   * the value of the normal flux across interior faces. It's always
+   * defined when the advection field arise from the resolution of the
+   * Navier-Stokes system with the legacy FV solver.
+   *
    * \var definition
    * pointer to the generic structure used to define the advection field. We
    * assume that only one definition is available (i.e. there is not several
@@ -192,6 +203,7 @@ typedef struct {
   int                           vtx_field_id;
   int                           cell_field_id;
   int                           bdy_field_id;
+  int                           int_field_id;
 
   /* We assume that there is only one definition associated to an advection
      field inside the computational domain */
@@ -340,16 +352,24 @@ cs_advection_field_get_field(const cs_adv_field_t       *adv,
     return f;
 
   switch (ml_type) {
-  case CS_MESH_LOCATION_BOUNDARY_FACES:
-    if (adv->bdy_field_id > -1)
-      f = cs_field_by_id(adv->bdy_field_id);
-    else
-      f = NULL;
-    break;
 
   case CS_MESH_LOCATION_CELLS:
     if (adv->cell_field_id > -1)
       f = cs_field_by_id(adv->cell_field_id);
+    else
+      f = NULL;
+    break;
+
+  case CS_MESH_LOCATION_INTERIOR_FACES:
+    if (adv->int_field_id > -1)
+      f = cs_field_by_id(adv->int_field_id);
+    else
+      f = NULL;
+    break;
+
+  case CS_MESH_LOCATION_BOUNDARY_FACES:
+    if (adv->bdy_field_id > -1)
+      f = cs_field_by_id(adv->bdy_field_id);
     else
       f = NULL;
     break;
@@ -771,7 +791,7 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      adv        pointer to a cs_adv_field_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in, out] fluxes     array of values attached to dual faces of a cell
+ * \param[in, out] fluxes     array of values attached to primal faces of a cell
  */
 /*----------------------------------------------------------------------------*/
 

@@ -175,10 +175,26 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
       cs_field_t  *f = (cs_field_t *)input;
 
       d->input = f;
+      assert(f != NULL);
+
+      const cs_mesh_location_type_t  loc_type =
+        cs_mesh_location_get_type(f->location_id);
 
       /* Update state flag */
-      if (f->location_id == cs_mesh_location_get_id_by_name(N_("cells")))
+      switch(loc_type) {
+
+      case CS_MESH_LOCATION_CELLS:
         d->state |= CS_FLAG_STATE_CELLWISE;
+        d->meta |= CS_FLAG_FULL_LOC;
+        break;
+      case CS_MESH_LOCATION_VERTICES:
+        d->meta |= CS_FLAG_FULL_LOC;
+        break;
+
+      default:
+        break; /* Nothing to do */
+      }
+
     }
     break;
 

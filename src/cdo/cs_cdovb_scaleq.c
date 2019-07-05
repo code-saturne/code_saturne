@@ -1113,12 +1113,25 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     cs_xdef_type_t  adv_deftype =
       cs_advection_field_get_deftype(eqp->adv_field);
 
-    if (adv_deftype == CS_XDEF_BY_VALUE)
+    switch (adv_deftype) {
+
+    case CS_XDEF_BY_VALUE:
       eqb->msh_flag |= CS_FLAG_COMP_DFQ;
-    else if (adv_deftype == CS_XDEF_BY_ARRAY)
+      break;
+    case CS_XDEF_BY_ARRAY:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ;
-    else if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
+      break;
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EFQ | CS_FLAG_COMP_PFQ;
+      break;
+    case CS_XDEF_BY_FIELD:
+      if (eqp->adv_field->status == CS_ADVECTION_FIELD_LEGACY_NAVSTO)
+        eqb->msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
+      break;
+
+    default: /* Nothing to add */
+      break;
+    }
 
     switch (eqp->adv_formulation) {
 
