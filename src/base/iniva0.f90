@@ -596,19 +596,27 @@ ifmaip = -1
 bfmaip = -1
 
 do iflid = 0, nfld - 1
+  call field_get_type(iflid, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    ! Is this field not managed by CDO ? Not useful with CDO
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-  call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
-  call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
+      call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
+      call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 
-  if (iflmas.ge.0 .and. iflmas.ne.ifmaip) then
-    call field_current_to_previous(iflid)
-    ifmaip = iflmas
-  endif
+      if (iflmas.ge.0 .and. iflmas.ne.ifmaip) then
+        call field_current_to_previous(iflid)
+        ifmaip = iflmas
+      endif
 
-  if (iflmab.ge.0 .and. iflmab.ne.bfmaip) then
-    call field_current_to_previous(iflid)
-    bfmaip = iflmab
-  endif
+      if (iflmab.ge.0 .and. iflmab.ne.bfmaip) then
+        call field_current_to_previous(iflid)
+        bfmaip = iflmab
+      endif
+
+    endif ! CDO ?
+  endif ! VARIABLE ?
 
 enddo
 
@@ -638,8 +646,13 @@ do iflid = 0, nfld - 1
   call field_get_type(iflid, f_type)
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_current_to_previous(iflid)
-  endif
+    ! Is this field not managed by CDO ? Perfomed elsewhere with CDO
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
+
+      call field_current_to_previous(iflid)
+
+    endif ! CDO ?
+  endif ! VARIABLE ?
 enddo
 
 !----

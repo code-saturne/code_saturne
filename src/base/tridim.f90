@@ -85,6 +85,7 @@ use cs_tagms, only: t_metal, tmet0
 use cs_nz_tagmr
 use cs_nz_condensation
 use turbomachinery
+use cdomod
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
 
@@ -354,24 +355,28 @@ if (irangp.ge.0 .or. iperio.eq.1) then
 
     ! Is the field of type FIELD_VARIABLE?
     if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-      if (f_dim.eq.1) then
+      ! Is this field not managed by CDO?
+      if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-        call field_get_val_s(f_id, cvar_sca)
-        call synsce (cvar_sca)
+        if (f_dim.eq.1) then
 
-      else if (f_dim.eq.3) then
+          call field_get_val_s(f_id, cvar_sca)
+          call synsce (cvar_sca)
 
-        call field_get_val_v(f_id, cvar_vec)
-        call synvie(cvar_vec)
+        else if (f_dim.eq.3) then
 
-      else if (f_dim.eq.6) then
+          call field_get_val_v(f_id, cvar_vec)
+          call synvie(cvar_vec)
 
-        call field_get_val_v(f_id, cvar_vec)
-        call syntis(cvar_vec)
-      else
-        call csexit(1)
+        else if (f_dim.eq.6) then
+
+          call field_get_val_v(f_id, cvar_vec)
+          call syntis(cvar_vec)
+        else
+          call csexit(1)
+        endif
+
       endif
-
     endif
   enddo
 
@@ -644,12 +649,17 @@ do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_current_to_previous(f_id)
+    ! Is this field not managed by CDO ?
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-    ! For buoyant scalar with source termes, current to previous for them
-    call field_get_key_int(f_id, kst, st_id)
-    if (st_id .ge.0) then
-      call field_current_to_previous(st_id)
+      call field_current_to_previous(f_id)
+
+      ! For buoyant scalar with source termes, current to previous for them
+      call field_get_key_int(f_id, kst, st_id)
+      if (st_id .ge.0) then
+        call field_current_to_previous(st_id)
+      endif
+
     endif
   endif
 enddo

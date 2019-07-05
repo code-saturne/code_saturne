@@ -74,6 +74,9 @@ BEGIN_C_DECLS
 /*! user-defined */
 #define CS_FIELD_USER                (1 << 6)
 
+/*! field associated to a CDO equation */
+#define CS_FIELD_CDO                 (1 << 7)
+
 /*! @} */
 
 /*============================================================================
