@@ -124,8 +124,6 @@ _create_cdo_context(int     cdo_mode)
 
   cc->mode = cdo_mode;
 
-  cc->force_advfield_update = false;
-
   /* Metadata related to each family of schemes */
   cc->vb_scheme_flag = 0;
   cc->vcb_scheme_flag = 0;

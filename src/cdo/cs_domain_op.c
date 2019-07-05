@@ -406,8 +406,7 @@ cs_domain_post(cs_domain_t  *domain)
   /* Predefined extra-operations related to advection fields */
   assert(domain->cdo_context != NULL);
 
-  if (domain->cdo_context->force_advfield_update)
-    cs_advection_field_update(domain->time_step->t_cur, true);
+  cs_advection_field_update(domain->time_step->t_cur, true);
 
   /* User-defined extra operations */
   cs_user_extra_operations(domain);
@@ -467,7 +466,7 @@ cs_domain_post(cs_domain_t  *domain)
     if (cs_gwf_is_activated())
       cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
 
-    /* 5. Specific operations for the GWF module */
+    /* 5. Specific operations for the Navier-Stokes module */
     if (cs_navsto_system_is_activated())
       cs_navsto_system_extra_op(domain->connect, domain->cdo_quantities);
 

@@ -1060,6 +1060,11 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
     break;
 
   case CS_XDEF_BY_FIELD:
+    if (adv->vtx_field_id < 0 && adv->cell_field_id < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Field support is not available for this functionnality.\n",
+                __func__);
+
     cs_xdef_cw_eval_vector_at_xyz_by_field(cm, 1, xyz, time_eval, def->input,
                                            vector_values);
     cs_nvec3(vector_values, eval);
@@ -1657,6 +1662,14 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
 
   assert(bf_id > -1);
   assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+
+  if (adv->bdy_def_ids > -1) { /* Use the previously computed advection field
+                                  across the boundary */
+
+    cs_field_t  *fld = cs_field_by_id(adv->bdy_def_ids);
+
+    return fld->val[bf_id];
+  }
 
   if (adv->n_bdy_flux_defs == 0) { /* No specific definition of the boundary
                                       flux. Use the definition related to the
@@ -2450,6 +2463,9 @@ cs_advection_field_update(cs_real_t    t_eval,
 
     /* Sanity checks */
     assert(adv != NULL);
+
+    if (t_eval > 0 && (adv->flag & CS_ADVECTION_FIELD_STEADY))
+      continue;
 
     /* GWF and NAVSTO type advection fields are updated elsewhere
        except if there is a field defined at vertices */

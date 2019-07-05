@@ -71,9 +71,6 @@ typedef struct {
   /* Mode for CDO: activated, switched off... */
   int                       mode;
 
-  /* Metadata for CDO */
-  bool                      force_advfield_update;
-
   /* Flag to know if scalar or vector equations are requested and which kind
      of numerical schemes is requested to solve these equations */
   cs_flag_t                 fb_scheme_flag;
