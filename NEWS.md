@@ -109,6 +109,10 @@ Physical modelling:
   displacement. To activate it use "cs_glob_ale = 2" in C or "iale = 2" in
   Fortran.
 
+- Make clipping of Reynolds stresses more robust for the coupled solver.
+  When there is a negative eigen value, Rij is now clipped with a term of
+  return to isotropy (hence preventing increase of turbulent kinetic energy).
+
 Default option changes:
 
 - Disable CS_FACE_RECONSTRUCTION_CLIP bad cells correction by default
