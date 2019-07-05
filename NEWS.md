@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add the possibility to define in the GUI postprocessing meshes based on the
+  volume and boundary zones defined beforehand by the user.
+
 - Add the possibility to compute a porosity from a file containing
   points (*.pts) coming from a 3D scan. To use it set the scan file
   with "cs_porosity_from_scan_set_file_name("my_scan.pts")" in
