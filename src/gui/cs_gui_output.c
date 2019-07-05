@@ -51,6 +51,7 @@
 #include "mei_evaluate.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_gui.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
@@ -64,6 +65,7 @@
 #include "cs_parameters.h"
 #include "cs_thermal_model.h"
 #include "cs_time_moment.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -444,8 +446,18 @@ cs_gui_postprocess_meshes(void)
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
     }
-    else if(cs_gui_strcmp(type, "boundary_faces")) {
-      cs_post_define_surface_mesh(id, label, NULL, location,
+    else if(cs_gui_strcmp(type, "VolumicZone")) {
+      const cs_zone_t *z = cs_volume_zone_by_name(location);
+      const char *criteria =
+        cs_mesh_location_get_selection_string(z->location_id);
+      cs_post_define_volume_mesh(id, label, criteria, add_groups, auto_vars,
+                                 n_writers, writer_ids);
+    }
+    else if(cs_gui_strcmp(type, "BoundaryZone")) {
+      const cs_zone_t *z = cs_boundary_zone_by_name(location);
+      const char *criteria =
+        cs_mesh_location_get_selection_string(z->location_id);
+      cs_post_define_surface_mesh(id, label, NULL, criteria,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
     }

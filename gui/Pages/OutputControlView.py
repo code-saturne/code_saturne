@@ -62,6 +62,7 @@ from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.LocalizationModel import LocalizationModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -263,6 +264,18 @@ class TypeMeshDelegate(QItemDelegate):
             editor.addItem("cells")
             editor.addItem("interior faces")
             editor.addItem("boundary faces")
+            editor.addItem("volume zone")
+            editor.addItem("boundary zone")
+
+            vlm = LocalizationModel('VolumicZone', self.mdl.case)
+            if len(vlm.getZones()) == 0:
+                idx = editor.findText('volume zone')
+                editor.model().item(idx).setEnabled(False)
+            blm = LocalizationModel('BoundaryZone', self.mdl.case)
+            if len(blm.getZones()) == 0:
+                idx = editor.findText('boundary zone')
+                editor.model().item(idx).setEnabled(False)
+
         else:
             editor.addItem("particles")
             editor.addItem("trajectories")
@@ -272,7 +285,8 @@ class TypeMeshDelegate(QItemDelegate):
 
     def setEditorData(self, comboBox, index):
         if self.lag == 0:
-            dico = {"cells": 0, "interior_faces": 1, "boundary_faces": 2}
+            dico = {"cells": 0, "interior_faces": 1, "boundary_faces": 2,
+                    "VolumicZone": 3, "BoundaryZone": 4}
         else:
             dico = {"particles": 0, "trajectories": 1}
         row = index.row()
@@ -324,29 +338,45 @@ class LocationSelectorDelegate(QItemDelegate):
         super(LocationSelectorDelegate, self).__init__(parent)
         self.parent = parent
         self.mdl = mdl
+        self.editor_type = 'line'
 
 
     def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
 
-        # Autocompletion for selection criteria!
-        comp_list = ['all[]']
-        comp_list += ['plane[a, b, c, d, epsilon]',
-                      'plane[a, b, c, d, inside]',
-                      'plane[a, b, c, d, outside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
-                      'box[xmin, ymin, zmin, xmax, ymax, zmax]',
-                      'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
-                      'cylinder[x0, y0, z0, x1, y1, z1, radius]',
-                      'sphere[x_c, y_c, z_c, radius]']
+        row = index.row()
+        mesh_id = self.mdl.getMeshIdList()[row]
+        mesh_type = self.mdl.getMeshType(mesh_id)
 
-        completer = QCompleter()
-        editor.setCompleter(completer)
-        model = QStringListModel()
-        completer.setModel(model)
-        model.setStringList(comp_list)
+        if mesh_type in ['BoundaryZone', 'VolumicZone']:
+            editor = QComboBox(parent)
+            lm = LocalizationModel(mesh_type, self.mdl.case)
+            for zone in lm.getZones():
+                editor.addItem(zone.getLabel())
+
+            self.editor_type = 'combo'
+        else:
+            editor = QLineEdit(parent)
+
+            # Autocompletion for selection criteria!
+            comp_list = ['all[]']
+            comp_list += ['plane[a, b, c, d, epsilon]',
+                          'plane[a, b, c, d, inside]',
+                          'plane[a, b, c, d, outside]',
+                          'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
+                          'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
+                          'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
+                          'box[xmin, ymin, zmin, xmax, ymax, zmax]',
+                          'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
+                          'cylinder[x0, y0, z0, x1, y1, z1, radius]',
+                          'sphere[x_c, y_c, z_c, radius]']
+
+            completer = QCompleter()
+            editor.setCompleter(completer)
+            model = QStringListModel()
+            completer.setModel(model)
+            model.setStringList(comp_list)
+
+            self.editor_type = 'line'
 
         return editor
 
@@ -356,11 +386,19 @@ class LocationSelectorDelegate(QItemDelegate):
         editor.setAutoFillBackground(True)
         self.value = from_qvariant(index.model().data(index, Qt.DisplayRole),
                                    to_text_string)
-        editor.setText(self.value)
+        if self.editor_type == 'line':
+            editor.setText(self.value)
+        else:
+            idx = editor.findText(self.value)
+            editor.setCurrentIndex(idx)
 
 
     def setModelData(self, editor, model, index):
-        value = editor.text()
+
+        if self.editor_type == 'line':
+            value = editor.text()
+        else:
+            value = editor.currentText()
 
         if str(value) == "" :
            title = self.tr("Warning")
@@ -475,18 +513,23 @@ class StandardItemModelMesh(QStandardItemModel):
     def populateModel(self):
         self.dicoV2M= {"cells": 'cells',
                        "interior faces" : 'interior_faces',
-                       "boundary faces": 'boundary_faces'}
+                       "boundary faces": 'boundary_faces',
+                       "volume zone" : 'VolumicZone',
+                       "boundary zone" : 'BoundaryZone'}
         self.dicoM2V= {"cells" : 'cells',
                        "interior_faces" : 'interior faces',
-                       "boundary_faces": 'boundary faces'}
+                       "boundary_faces": 'boundary faces',
+                       "VolumicZone": 'volume zone',
+                       "BoundaryZone": 'boundary zone'}
+        type_list = ["cells", "interior_faces", "boundary_faces",
+                     "VolumicZone", "BoundaryZone"]
         for id in self.mdl.getMeshIdList():
             dico  = {}
             dico['name'] = self.mdl.getMeshLabel(id)
             dico['id'] = id
             dico['type'] = self.mdl.getMeshType(id)
             dico['location'] = self.mdl.getMeshLocation(id)
-
-            if dico['type'] in ["cells", "interior_faces", "boundary_faces"]:
+            if dico['type'] in type_list:
                 row = self.rowCount()
                 self.setRowCount(row + 1)
                 self.dataMesh.append(dico)
@@ -558,6 +601,10 @@ class StandardItemModelMesh(QStandardItemModel):
         row = index.row()
         col = index.column()
 
+        # Lists to better handle the difference between elements and zones
+        elts_list = ['cells', 'interior_faces', 'boundary_faces']
+        zone_list = ['VolumicZone', 'BoundaryZone']
+
         # Label
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
@@ -566,7 +613,17 @@ class StandardItemModelMesh(QStandardItemModel):
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
-            self.dataMesh[row]['type'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            old_type = self.dataMesh[row]['type']
+            new_type = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+
+            if new_type in zone_list and old_type != new_type:
+                self.dataMesh[row]['location'] = \
+                    LocalizationModel(new_type, self.mdl.case).getZones()[0].getLabel()
+
+            elif new_type in elts_list and old_type in zone_list:
+                self.dataMesh[row]['location'] = 'all[]'
+
+            self.dataMesh[row]['type'] = new_type
             self.mdl.setMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
@@ -1375,10 +1432,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.tableViewMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
             self.tableViewMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
             self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+            self.tableViewMesh.horizontalHeader().setResizeMode(3, QHeaderView.ResizeToContents)
         elif QT_API == "PYQT5":
             self.tableViewMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
             self.tableViewMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
             self.tableViewMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            self.tableViewMesh.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.tableViewMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_mesh = LabelMeshDelegate(self.tableViewMesh)
@@ -1401,12 +1460,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
             self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
             self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
-            self.tableViewLagrangianMesh.horizontalHeader().setResizeMode(3, QHeaderView.ResizeToContents)
         elif QT_API == "PYQT5":
             self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
             self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
             self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-            self.tableViewLagrangianMesh.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.tableViewLagrangianMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_lag_mesh = LabelMeshDelegate(self.tableViewLagrangianMesh)

@@ -63,6 +63,7 @@ from code_saturne.Pages.LocalizationForm import Ui_LocalizationForm
 from code_saturne.Pages.VolumicZoneAdvancedDialogForm import Ui_VolumicZoneAdvancedDialogForm
 from code_saturne.Pages.PreProcessingInformationsView import Informations, preprocessorFile
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
+from code_saturne.model.OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -968,6 +969,9 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         for row in lst:
             [label, codeNumber, nature, localization] = self.modelLocalization.getItem(row)
             if not (label == "all_cells" and self.zoneType == 'VolumicZone'):
+                # We also need to delete postprocessing meshes based on the zone
+                OutputControlModel(self.case).deleteZone(label, self.zoneType)
+                # Delete the zone itself
                 self.mdl.deleteZone(label)
                 self.modelLocalization.deleteItem(row)
         self.slotChangeSelection()

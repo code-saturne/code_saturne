@@ -730,6 +730,18 @@ class OutputControlModel(Model):
             self.__deleteMesh(mesh)
 
 
+    def deleteZone(self, zone_label, zone_type):
+        """
+        Public method.
+        Remove all postprocessing meshes based on a given zone
+        """
+
+        for mid in self.getMeshIdList():
+            if self.getMeshLocation(mid) == zone_label and \
+                    self.getMeshType(mid) == zone_type:
+                self.deleteMesh(mid)
+
+
     @Variables.noUndo
     def getMeshLabelList(self):
         """
@@ -785,7 +797,9 @@ class OutputControlModel(Model):
         Set the type of a mesh
         """
         self.isInList(mesh_id, self.getMeshIdList())
-        self.isInList(mesh_type, ('cells', 'interior_faces', 'boundary_faces'))
+        types_list = ('cells', 'interior_faces', 'boundary_faces',
+                      'VolumicZone', 'BoundaryZone')
+        self.isInList(mesh_type, types_list)
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
         node['type'] = mesh_type
 

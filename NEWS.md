@@ -22,6 +22,9 @@ Changes expected between the current version and 6.0.0 final:
 
 User changes:
 
+- Add the possibility to define in the GUI postprocessing meshes based on the
+  volume and boundary zones defined beforehand by the user.
+
 - Lagrangian module: add particle event structure and associated statistics.
   * This allow handling boundary statistics in a manner more consistent
     with volume statistics.
@@ -158,7 +161,7 @@ Bug fixes:
 - Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
   momentum equation) and ensure variable density indicator (irovar) is set to 1
   when VoF / cavitation algorithm is enabled. Idem for variable viscosity
-  indicator. 
+  indicator.
 
 - Fix update of density in VoF / Cavitation algorithm in case the convection
   scheme for the void fraction is not upwind. Update was not ensuring proper
