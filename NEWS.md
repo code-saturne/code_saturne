@@ -160,6 +160,8 @@ Bug fixes:
   scheme for the void fraction is not upwind. Update was not ensuring proper
   mass conservation at solver precision.
 
+- Fix time stepping in pressure gradient weightening for VoF / Cavitation algo.
+
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
 
