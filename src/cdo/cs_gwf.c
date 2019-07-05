@@ -986,7 +986,7 @@ cs_gwf_init_setup(void)
               __func__);
 
   const bool has_previous = cs_equation_is_steady(gw->richards) ? false : true;
-  const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
+  const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
   const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
   const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
   const int  log_key = cs_field_key_id("log");

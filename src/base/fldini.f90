@@ -362,19 +362,23 @@ do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    ! Is this field not managed by CDO? Not useful for CDO
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%iwgrec.eq.1 .and. vcopt%idiff .ge. 1) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+      if (vcopt%iwgrec.eq.1 .and. vcopt%idiff .ge. 1) then
 
-      call field_get_name(f_id, name)
-      f_name = 'gradient_weighting_'//trim(name)
-      if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
-        idimf = 1
-      else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-        idimf = 6
+        call field_get_name(f_id, name)
+        f_name = 'gradient_weighting_'//trim(name)
+        if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
+          idimf = 1
+        else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+          idimf = 6
+        endif
+        call field_create(f_name, itycat, ityloc, idimf, inoprv, iflid)
+        call field_set_key_int(f_id, kwgrec, iflid)
+
       endif
-      call field_create(f_name, itycat, ityloc, idimf, inoprv, iflid)
-      call field_set_key_int(f_id, kwgrec, iflid)
 
     endif
   endif
@@ -389,23 +393,28 @@ ityloc = 1 ! cells
 
 do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
-  ! Is the field of type FIELD_VARIABLE?
+  ! Is the field of type FIELD_VARIABLE ?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_key_int(f_id, kislts, ifctsl)
-    if (ifctsl.ge.0) then
-      call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    ! Is this field not managed by CDO ?
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-      ! Now create matching field
-      if (vcopt%iconv.gt.0 .and. vcopt%blencv.gt.0 .and. vcopt%isstpc.eq.0) then
-        ! Build name and label
-        call field_get_name(f_id, f_name)
-        name  = trim(f_name) // '_slope_upwind'
-        call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-        call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
-        call field_set_key_int(f_id, kislts, ifctsl)
+      call field_get_key_int(f_id, kislts, ifctsl)
+      if (ifctsl.ge.0) then
+        call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+        ! Now create matching field
+        if (vcopt%iconv.gt.0 .and. vcopt%blencv.gt.0 .and. vcopt%isstpc.eq.0) then
+          ! Build name and label
+          call field_get_name(f_id, f_name)
+          name  = trim(f_name) // '_slope_upwind'
+          call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
+          call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
+          call field_set_key_int(f_id, kislts, ifctsl)
+        endif
       endif
-    endif
-  endif
+
+    endif ! CDO ?
+  endif ! VARIABLE ?
 enddo
 
 ! Postprocessing of clippings
@@ -417,22 +426,27 @@ ityloc = 1 ! cells
 
 do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
-  ! Is the field of type FIELD_VARIABLE?
+  ! Is the field of type FIELD_VARIABLE ?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_key_int(f_id, kclipp, clip_id)
-    if (clip_id.ge.0) then
+    ! Is this field not managed by CDO ?
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-      ! Now create matching field
-      ! Build name and label
-      call field_get_name(f_id, f_name)
+      call field_get_key_int(f_id, kclipp, clip_id)
+      if (clip_id.ge.0) then
 
-      call field_get_dim(f_id, f_dim)
-      name  = trim(f_name) // '_clipped'
-      call field_create(name, itycat, ityloc, f_dim, inoprv, clip_id)
-      call field_set_key_int(clip_id, keyvis, POST_ON_LOCATION)
-      call field_set_key_int(f_id, kclipp, clip_id)
-    endif
-  endif
+        ! Now create matching field
+        ! Build name and label
+        call field_get_name(f_id, f_name)
+
+        call field_get_dim(f_id, f_dim)
+        name  = trim(f_name) // '_clipped'
+        call field_create(name, itycat, ityloc, f_dim, inoprv, clip_id)
+        call field_set_key_int(clip_id, keyvis, POST_ON_LOCATION)
+        call field_set_key_int(f_id, kclipp, clip_id)
+      endif
+
+    endif ! CDO ?
+  endif ! VARIABLE ?
 enddo
 
 ! Fans output
@@ -504,26 +518,30 @@ do f_id = 0, nfld - 1
 
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    ! Is this field not managed by CDO ? Not useful with CDO schemes
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-    call field_get_key_int(f_id, kdflim, ifctsl)
+      call field_get_key_int(f_id, kdflim, ifctsl)
 
-    if (ifctsl.ne.-1) then
-      ! Now create matching field
-      ! Build name and label
-      call field_get_name(f_id, f_name)
+      if (ifctsl.ne.-1) then
+        ! Now create matching field
+        ! Build name and label
+        call field_get_name(f_id, f_name)
 
-      call field_get_dim(f_id, f_dim)
-      name = trim(f_name) // '_diff_lim'
+        call field_get_dim(f_id, f_dim)
+        name = trim(f_name) // '_diff_lim'
 
-      ityloc = 1 ! cells
+        ityloc = 1 ! cells
 
-      call field_create(name, itycat, ityloc, f_dim, inoprv, ifctsl)
-      call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
-      call field_set_key_int(ifctsl, keylog, 1)
+        call field_create(name, itycat, ityloc, f_dim, inoprv, ifctsl)
+        call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
+        call field_set_key_int(ifctsl, keylog, 1)
 
-      call field_set_key_int(f_id, kdflim, ifctsl)
-    endif
-  endif
+        call field_set_key_int(f_id, kdflim, ifctsl)
+      endif
+
+    endif ! CDO ?
+  endif ! VARIABLE ?
 enddo
 
 !===============================================================================

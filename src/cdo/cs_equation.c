@@ -2002,7 +2002,7 @@ cs_equation_create_fields(void)
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
     int  location_id = -1; /* initialize values to avoid a warning */
-    int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
+    int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
 
     cs_equation_t  *eq = _equations[eq_id];
 

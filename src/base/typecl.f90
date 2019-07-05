@@ -984,40 +984,44 @@ do f_id = 0, nfld - 1
 
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_dim (f_id, f_dim)
-    call field_get_key_int(f_id, keyvar, ivar)
+    ! Is this field not managed by CDO
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
 
-    ! Loop over faces
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      ! Special treatment for uncoupled version of Rij models,
-      ! will be removed with the coupled solver
-      if (icodcl(ifac,ivar).eq.0.and.irijco.eq.0.and.        &
-          (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
-           ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
-        icodcl(ifac,ivar)   = 4
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
-      endif
+      call field_get_dim (f_id, f_dim)
+      call field_get_key_int(f_id, keyvar, ivar)
 
-      ! Homogeneous Neumann on scalars
-      if (f_dim.eq.1.and.icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar)   = 3
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
+      ! Loop over faces
+      do ii = ideb, ifin
+        ifac = itrifb(ii)
+        ! Special treatment for uncoupled version of Rij models,
+        ! will be removed with the coupled solver
+        if (icodcl(ifac,ivar).eq.0.and.irijco.eq.0.and.        &
+            (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
+            ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
+          icodcl(ifac,ivar)   = 4
+          rcodcl(ifac,ivar,1) = 0.d0
+          rcodcl(ifac,ivar,2) = rinfin
+          rcodcl(ifac,ivar,3) = 0.d0
+        endif
 
-      ! Symmetry BC if nothing is set by the user on vector and tensors
-      else if (icodcl(ifac,ivar).eq.0) then
-        do i_dim = 0, f_dim - 1
-          icodcl(ifac,ivar + i_dim)    = 4
-          rcodcl(ifac,ivar + i_dim, 1) = 0.d0
-          rcodcl(ifac,ivar + i_dim, 2) = rinfin
-          rcodcl(ifac,ivar + i_dim, 3) = 0.d0
-        enddo
-      endif
-    enddo
+        ! Homogeneous Neumann on scalars
+        if (f_dim.eq.1.and.icodcl(ifac,ivar).eq.0) then
+          icodcl(ifac,ivar)   = 3
+          rcodcl(ifac,ivar,1) = 0.d0
+          rcodcl(ifac,ivar,2) = rinfin
+          rcodcl(ifac,ivar,3) = 0.d0
+
+          ! Symmetry BC if nothing is set by the user on vector and tensors
+        else if (icodcl(ifac,ivar).eq.0) then
+          do i_dim = 0, f_dim - 1
+            icodcl(ifac,ivar + i_dim)    = 4
+            rcodcl(ifac,ivar + i_dim, 1) = 0.d0
+            rcodcl(ifac,ivar + i_dim, 2) = rinfin
+            rcodcl(ifac,ivar + i_dim, 3) = 0.d0
+          enddo
+        endif
+      enddo
+    endif
   endif
 enddo
 
@@ -1532,20 +1536,23 @@ do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_dim (f_id, f_dim)
-    call field_get_key_int(f_id, keyvar, ivar)
+    ! Is this field not managed by CDO
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
+      call field_get_dim (f_id, f_dim)
+      call field_get_key_int(f_id, keyvar, ivar)
 
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        do i_dim = 0, f_dim-1
-          icodcl(ifac,ivar+i_dim) = 3
-          rcodcl(ifac,ivar+i_dim,1) = 0.d0
-          rcodcl(ifac,ivar+i_dim,2) = rinfin
-          rcodcl(ifac,ivar+i_dim,3) = 0.d0
-        enddo
-      endif
-    enddo
+      do ii = ideb, ifin
+        ifac = itrifb(ii)
+        if(icodcl(ifac,ivar).eq.0) then
+          do i_dim = 0, f_dim-1
+            icodcl(ifac,ivar+i_dim) = 3
+            rcodcl(ifac,ivar+i_dim,1) = 0.d0
+            rcodcl(ifac,ivar+i_dim,2) = rinfin
+            rcodcl(ifac,ivar+i_dim,3) = 0.d0
+          enddo
+        endif
+      enddo
+    endif
   endif
 enddo
 
@@ -1563,20 +1570,22 @@ do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_dim (f_id, f_dim)
-    call field_get_key_int(f_id, keyvar, ivar)
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
+      call field_get_dim (f_id, f_dim)
+      call field_get_key_int(f_id, keyvar, ivar)
 
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        do i_dim = 0, f_dim-1
-          icodcl(ifac,ivar+i_dim) = 3
-          rcodcl(ifac,ivar+i_dim,1) = 0.d0
-          rcodcl(ifac,ivar+i_dim,2) = rinfin
-          rcodcl(ifac,ivar+i_dim,3) = 0.d0
-        enddo
-      endif
-    enddo
+      do ii = ideb, ifin
+        ifac = itrifb(ii)
+        if(icodcl(ifac,ivar).eq.0) then
+          do i_dim = 0, f_dim-1
+            icodcl(ifac,ivar+i_dim) = 3
+            rcodcl(ifac,ivar+i_dim,1) = 0.d0
+            rcodcl(ifac,ivar+i_dim,2) = rinfin
+            rcodcl(ifac,ivar+i_dim,3) = 0.d0
+          enddo
+        endif
+      enddo
+    endif
   endif
 enddo
 
@@ -1588,16 +1597,18 @@ do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    call field_get_dim (f_id, f_dim)
-    call field_get_key_int(f_id, keycpl, icpl)
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
+      call field_get_dim (f_id, f_dim)
+      call field_get_key_int(f_id, keycpl, icpl)
 
-    if (f_dim.gt.1.and.icpl.eq.1) then
-      call field_get_key_int(f_id, keyvar, ivar)
-      do ifac = 1, nfabor
-        do i_dim = 1, f_dim-1
-          icodcl(ifac,ivar+i_dim) = icodcl(ifac,ivar)
+      if (f_dim.gt.1.and.icpl.eq.1) then
+        call field_get_key_int(f_id, keyvar, ivar)
+        do ifac = 1, nfabor
+          do i_dim = 1, f_dim-1
+            icodcl(ifac,ivar+i_dim) = icodcl(ifac,ivar)
+          enddo
         enddo
-      enddo
+      endif
     endif
   endif
 enddo
