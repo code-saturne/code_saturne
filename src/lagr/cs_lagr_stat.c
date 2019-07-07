@@ -1121,7 +1121,7 @@ _statistical_weight_name(cs_lagr_stat_group_t  stat_group,
   case CS_LAGR_STAT_GROUP_TRACKING_EVENT:
       snprintf(name,
                63 - l0,
-               "particle_events_cumulative_weight");
+               "particle_events_weight");
       break;
     default:
     assert(0);
@@ -1359,6 +1359,33 @@ _ensure_init_moment(cs_lagr_moment_t  *mt)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update particle-based mesh statistics.
+ *
+ * \param[in]  ts  time step structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cs_lagr_stat_update_mesh_stats(cs_time_step_t  *ts)
+{
+  for (int ms_id = 0; ms_id < _n_lagr_mesh_stats; ms_id++) {
+
+    cs_lagr_mesh_stat_t *ms = _lagr_mesh_stats + ms_id;
+
+    /* Check if statistic matches group and is active */
+
+    if (ms->group != CS_LAGR_STAT_GROUP_PARTICLE || ms->nt_start > ts->nt_cur)
+      continue;
+
+    cs_field_t *f = cs_field_by_id(ms->f_id);
+    cs_real_t *restrict val = f->val;
+
+    ms->m_data_func(ms->data_input, NULL, f->location_id, ms->class, val);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize statistics value if required
  *
  * \param[in, out]  ms  mesh-based statistics
@@ -1397,6 +1424,12 @@ _prepare_mesh_stat(cs_lagr_mesh_stat_t  *ms)
     if (ms->group < CS_LAGR_STAT_GROUP_N_GROUPS)
       _is_active[ms->group] = true;
   }
+
+  /* In case of restart, we may need to recompute the mesh statistics,
+     as they are not saved in the restart file */
+
+  if (ts->nt_cur <= ts->nt_prev + 1)
+    _cs_lagr_stat_update_mesh_stats(ts);
 }
 
 /*----------------------------------------------------------------------------
@@ -1790,8 +1823,7 @@ _restart_info_read(void)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  if (   ts->nt_prev < 1
-      || !cs_file_isreg("restart/lagrangian_stats")
+  if (   !cs_file_isreg("restart/lagrangian_stats")
       || cs_glob_lagr_stat_options->isuist < 1) {
     _restart_info_checked = true;
     return;
@@ -2784,21 +2816,7 @@ _cs_lagr_stat_update_all(void)
 
   /* First, update mesh-based statistics */
 
-  for (int ms_id = 0; ms_id < _n_lagr_mesh_stats; ms_id++) {
-
-    cs_lagr_mesh_stat_t *ms = _lagr_mesh_stats + ms_id;
-
-    /* Check if statistic matches group and is active */
-
-    if (ms->group != CS_LAGR_STAT_GROUP_PARTICLE || ms->nt_start > ts->nt_cur)
-      continue;
-
-    cs_field_t *f = cs_field_by_id(ms->f_id);
-    cs_real_t *restrict val = f->val;
-
-    ms->m_data_func(ms->data_input, NULL, f->location_id, ms->class, val);
-
-  }
+  _cs_lagr_stat_update_mesh_stats(ts);
 
   /* Outer loop in weight accumulators, to avoid recomputing weights
      too many times */
