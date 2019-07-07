@@ -1639,10 +1639,7 @@ _write_header(const char     *sec_name,
   header_vals[2] = location_id;
   header_vals[3] = index_id;
 
-  if (n_vals > 0)
-    header_vals[4] = n_location_vals;
-  else
-    header_vals[4] = 0;
+  header_vals[4] = n_location_vals;
 
   name_size = strlen(sec_name);
   name_pad_size = 8-(name_size%8); /* At least 1 NULL
@@ -1681,49 +1678,47 @@ _write_header(const char     *sec_name,
 
   outp->type_name = (char *)outp->buffer + 48;
 
-  if (n_vals > 0) {
-    switch(elt_type) {
-    case CS_FLOAT:
-      outp->type_name[0] = 'r';
-      if (sizeof(float) == 4)
-        outp->type_name[1] = '4';
-      else
-        outp->type_name[1] = '8';
-      assert(sizeof(float) == 4 || sizeof(float) == 8);
-      break;
-    case CS_DOUBLE:
-      outp->type_name[0] = 'r';
-      if (sizeof(double) == 8)
-        outp->type_name[1] = '8';
-      else {
-        outp->type_name[1] = '1';
-        outp->type_name[2] = '6';
-      }
-      assert(sizeof(double) == 8 || sizeof(float) == 16);
-      break;
-    case CS_INT32:
-      outp->type_name[0] = 'i';
+  switch(elt_type) {
+  case CS_FLOAT:
+    outp->type_name[0] = 'r';
+    if (sizeof(float) == 4)
       outp->type_name[1] = '4';
-      break;
-    case CS_INT64:
-      outp->type_name[0] = 'i';
+    else
       outp->type_name[1] = '8';
-      break;
-    case CS_UINT32:
-      outp->type_name[0] = 'u';
-      outp->type_name[1] = '4';
-      break;
-    case CS_UINT64:
-      outp->type_name[0] = 'u';
+    assert(sizeof(float) == 4 || sizeof(float) == 8);
+    break;
+  case CS_DOUBLE:
+    outp->type_name[0] = 'r';
+    if (sizeof(double) == 8)
       outp->type_name[1] = '8';
-      break;
-    case CS_CHAR:
-      outp->type_name[0] = 'c';
-      outp->type_name[1] = ' ';
-      break;
-    default:
-      break;
+    else {
+      outp->type_name[1] = '1';
+      outp->type_name[2] = '6';
     }
+    assert(sizeof(double) == 8 || sizeof(float) == 16);
+    break;
+  case CS_INT32:
+    outp->type_name[0] = 'i';
+    outp->type_name[1] = '4';
+    break;
+  case CS_INT64:
+    outp->type_name[0] = 'i';
+    outp->type_name[1] = '8';
+    break;
+  case CS_UINT32:
+    outp->type_name[0] = 'u';
+    outp->type_name[1] = '4';
+    break;
+  case CS_UINT64:
+    outp->type_name[0] = 'u';
+    outp->type_name[1] = '8';
+    break;
+  case CS_CHAR:
+    outp->type_name[0] = 'c';
+    outp->type_name[1] = ' ';
+    break;
+  default:
+    break;
   }
 
   if (embed == true)

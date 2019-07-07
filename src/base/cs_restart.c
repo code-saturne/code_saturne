@@ -1316,7 +1316,7 @@ _read_section(cs_restart_t           *restart,
 
   /* In parallel mode for a distributed mesh location */
 
-  else
+  else if (n_glob_ents > 0)
     _read_ent_values(restart,
                      &header,
                      n_glob_ents,
@@ -1421,7 +1421,7 @@ _write_section(cs_restart_t           *restart,
                        restart->fh);
 
 
-  else if (cs_glob_n_ranks == 1) {
+  else if (cs_glob_n_ranks == 1 || n_glob_ents == 0) {
 
     cs_byte_t  *val_tmp = NULL;
 
