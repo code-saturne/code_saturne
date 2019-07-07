@@ -12,4 +12,18 @@ See the COPYING file for details.
 Installation
 ============
 
-See the file 'INSTALL'.
+The installation system is based on the GNU autotools.
+
+To create a standalone installation of PLE, it is recommended
+to create a specific build directory, and run PLE's configure script
+from there:
+
+mkdir ple_build
+cd ple_build
+<path_to_ple_sources>/configure
+make
+make install
+
+The "configure" script takes several options, so runnning:
+<path_to_ple_sources>/configure --help
+first is recommended to list the available options.
