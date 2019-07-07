@@ -113,9 +113,12 @@ BEGIN_C_DECLS
         For the restart calculations, \ref t_cur takes
         into account the physical time of the previous calculations.\n
         If the time step is uniform (\ref cs_time_step_options_t::idtvar "idtvar"
-        = 0 or 1), \ref t_cur increases of \ref dt (value of the time step) at each iteration.
-        If the time step is non-uniform (\ref cs_time_step_options_t::idtvar "idtvar"=2),
-        \ref t_cur increases of \ref cs_time_step_t::dt_ref "dt_ref" at each time step.\n
+        = 0 or 1), \ref t_cur increases of \ref dt (value of the time step)
+        at each iteration.
+        If the time step is non-uniform (\ref cs_time_step_options_t::idtvar
+        "idtvar"=2),
+        \ref t_cur increases of \ref cs_time_step_t::dt_ref "dt_ref" at each
+        time step.\n
         \ref t_cur is initialised and updated automatically by the code,
         its value is not to be modified by the user.
   \var  cs_time_step_t::t_max
