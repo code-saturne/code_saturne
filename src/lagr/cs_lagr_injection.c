@@ -1422,7 +1422,6 @@ cs_lagr_injection(int        time_id,
               cs_lnum_t p_id = particle_range[0] + i;
 
               cs_lnum_t event_id = events->n_events;
-              events->n_events += 1;
 
               if (event_id >= events->n_events_max) {
                 /* flush events */
@@ -1431,6 +1430,8 @@ cs_lagr_injection(int        time_id,
                 events->n_events = 0;
                 event_id = 0;
               }
+
+              events->n_events += 1;
 
               cs_lagr_event_init_from_particle(events, p_set, event_id, p_id);
 
