@@ -1444,8 +1444,12 @@ _mpi_file_read_block_eo(cs_file_t  *f,
     MPI_Type_free(&ent_type);
     retval = count;
   }
-  else
-    retval = count / size;
+  else {
+    if (count > 0)
+      retval = count / size;
+    else
+      retval = 0;
+  }
 
   return retval;
 }
