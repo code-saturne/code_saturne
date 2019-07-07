@@ -94,6 +94,7 @@ class config:
                         'petsc',                        # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
+                        'cuda',                         # CUDA
                         'blas',                         # BLAS (benchmark use)
                         'system']                       # User & system libraries
 
@@ -157,6 +158,7 @@ class config:
         self.features['frontend'] = "@cs_have_frontend@"
         self.features['mpi'] = "@cs_have_mpi@"
         self.features['openmp'] = "@cs_have_openmp@"
+        self.features['cuda'] = "@cs_have_cuda@"
         self.features['long-gnum'] = "@cs_have_long_gnum@"
         self.features['nls'] = '@USE_NLS@'
         self.features['build_os'] = "@build_os@"
@@ -298,6 +300,13 @@ class config:
                          flags = {'cppflags': "@MPI_CPPFLAGS@",
                                   'ldflags': "@MPI_LDFLAGS@",
                                   'libs': "@MPI_LIBS@"})
+
+        self.libs['cuda'] = \
+            prerequisite("CUDA",
+                         have = "@cs_have_cuda@",
+                         flags = {'cppflags': "@CUDA_CPPFLAGS@",
+                                  'ldflags': "@CUDA_LDFLAGS@",
+                                  'libs': "@CUDA_LIBS@"})
 
         self.libs['petsc'] = \
             prerequisite("PETSc",

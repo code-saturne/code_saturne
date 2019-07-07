@@ -58,6 +58,10 @@
 #include <spi/include/kernel/location.h>
 #endif
 
+#if defined(HAVE_CUDA)
+#include "cs_base_cuda.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -512,6 +516,12 @@ _system_info(bool  log)
       }
     }
   }
+#endif
+
+#if defined(HAVE_CUDA)
+  for (log_id = 0; log_id < n_logs; log_id++)
+    cs_base_cuda_device_info(log_id);
+#else
 #endif
 }
 

@@ -1049,6 +1049,24 @@ if test -f $outfile ; then
 fi
 
 
+###################
+#                 #
+#  CUDA compiler  #
+#                 #
+###################
+
+# Practical version info
+cs_nvcc_version="`$NVCC -version 2>&1 |grep 'release' |\
+                  sed 's/.*release \([-a-z0-9\.]*\).*/\1/'`"
+
+echo "compiler '${NVCC}' version ${cs_nvcc_version}"
+
+# Default compiler flags
+nvccflags_default=""
+nvccflags_default_dbg="-g"
+nvccflags_default_opt="-O2"
+nvccflags_default_prf="-g"
+
 ############
 #          #
 #  Linker  #

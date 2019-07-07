@@ -30,6 +30,10 @@ else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
 endif
 
+# Libtool modified for CUDA
+
+LIBTOOL_CUDA = $(SHELL) $(top_builddir)/libtool_cuda
+
 # Main part
 
 AM_CPPFLAGS = \
@@ -169,6 +173,10 @@ cs_wall_functions.h \
 cs_zone.h \
 cs_base_headers.h \
 cs_headers.h
+
+if HAVE_CUDA
+pkginclude_HEADERS += cs_base_cuda.h
+endif
 
 # Library source files
 
@@ -386,6 +394,10 @@ visecv.f90
 libcsbase_la_LDFLAGS = -no-undefined
 libcsbase_la_LIBADD =
 
+if HAVE_CUDA
+libcsbase_la_SOURCES += cs_base_cuda.cu
+endif
+
 # Renumbering (may require extra headers)
 
 libcsrenumber_la_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -543,3 +555,7 @@ endif
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+
+.cu.lo:
+	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCC_FLAGS) -c -o $@ $<
+

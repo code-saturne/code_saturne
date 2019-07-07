@@ -36,6 +36,10 @@ Architectural changes:
 
 - Move part of VoF module from Fortran 90 to C.
 
+- Added optional support for of CUDA in build system.
+  At this stage, only device info is added to system information,
+  no compute kernels are added yet.
+
 Default option changes:
 
 - Set k-epsilon turbulence models to uncoupled option by default

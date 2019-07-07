@@ -157,7 +157,8 @@ bin/code_saturne \
 bin/cs_package.py \
 extras/salome/fsi_appli_config.xml \
 cs_config.h \
-cs_version.h
+cs_version.h \
+libtool_cuda
 
 ACLOCAL_AMFLAGS = -I m4
 

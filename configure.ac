@@ -331,6 +331,7 @@ AC_SUBST(enable_shared)
 
 # Initialize libtool.
 
+m4_pushdef([cs_lt_init_args], [disable-static, win32-dll, no-pic])
 LT_INIT([disable-static, win32-dll])
 
 # In static mode, multiple definitions must be allowed for the linker.
@@ -523,6 +524,29 @@ AC_SUBST(cs_have_openmp)
 
 if test "x$cs_have_openmp_f" = "xyes" ; then
   AC_FC_LIBRARY_LDFLAGS
+fi
+
+#------------------------------------------------------------------------------
+# Determine CUDA support
+#------------------------------------------------------------------------------
+
+CS_AC_TEST_CUDA
+
+if test "x$auto_flags" = "xyes" ; then
+  if test "$cs_have_cuda" = "yes"; then
+    $NVCCFLAGS="$NVCCFLAGS $nvccflags_default"
+    if test "x$debug" = xyes; then
+      $NVCCFLAGS_DBG="$nvccflags_default_dbg"
+    else
+      $NVCCFLAGS="$NVCCFLAGS $nvccflags_default_opt"
+      if test "x$profile" = xyes; then
+        $NVCCFLAGS="$NVCCFLAGS $nvccflags_default_prf"
+      fi
+    fi
+    AC_SUBST(NVCCFLAGS_DBG)
+    AC_SUBST(NVCCFLAGS_OPT)
+    AC_SUBST(NVCCCFLAGS_HOT)
+  fi
 fi
 
 #------------------------------------------------------------------------------
@@ -1217,6 +1241,15 @@ q
 EOF
 fi
 
+# Copy modified version of libtool to avoid issues with " -fPIC -DPIC"
+# insertion in CUDA compiler options. The -no-fpic option cannot be used
+# as pic_mode propagates to sub-libraries.
+
+if test "$cs_have_cuda" = "yes"; then
+  sed -e "s/ -fPIC -DPIC//" libtool > libtool_cuda
+  chmod +x libtool_cuda
+fi
+
 #------------------------------------------------------------------------------
 
 echo
@@ -1247,6 +1280,7 @@ echo " OpenMP support: "$cs_have_openmp""
 if test x$cs_have_openmp = xyes ; then
   echo " OpenMP Fortran support: "$cs_have_openmp_f""
 fi
+echo " CUDA support: "$cs_have_cuda""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
 if test x$cs_have_parmetis = xno ; then
