@@ -46,7 +46,7 @@ Bug fixes:
 - Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
   momentum equation) and ensure variable density indicator (irovar) is set to 1
   when VoF / cavitation algorithm is enabled. Idem for variable viscosity
-  indicator. 
+  indicator.
 
 - Fix update of density in VoF / Cavitation algorithm in case the convection
   scheme for the void fraction is not upwind. Update was not ensuring proper
