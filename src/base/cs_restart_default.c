@@ -2779,23 +2779,42 @@ cs_restart_read_time_step_info(cs_restart_t  *r)
 
   /* First syntax */
 
-  retval = cs_restart_read_section(r,
-                                   "nbre_pas_de_temps",
-                                   0,
-                                   1,
-                                   CS_TYPE_cs_int_t,
-                                   &_n_ts);
-  if (retval == CS_RESTART_SUCCESS)
+  retval = cs_restart_check_section(r,
+                                    "nbre_pas_de_temps",
+                                    0,
+                                    1,
+                                    CS_TYPE_cs_int_t);
+
+  if (retval == CS_RESTART_SUCCESS) {
     retval = cs_restart_read_section(r,
-                                     "instant_precedent",
+                                     "nbre_pas_de_temps",
                                      0,
                                      1,
-                                     CS_TYPE_cs_real_t,
-                                     &_ts);
+                                     CS_TYPE_cs_int_t,
+                                     &_n_ts);
+    if (retval == CS_RESTART_SUCCESS)
+      retval = cs_restart_read_section(r,
+                                       "instant_precedent",
+                                       0,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       &_ts);
+
+    if (retval == CS_RESTART_SUCCESS)
+      cs_time_step_define_prev(_n_ts, _ts);
+
+    return;
+  }
 
   /* Second syntax */
 
-  else {
+  retval = cs_restart_check_section(r,
+                                    "ntcabs",
+                                    0,
+                                    1,
+                                    CS_TYPE_cs_int_t);
+
+  if (retval == CS_RESTART_SUCCESS) {
     retval = cs_restart_read_section(r,
                                      "ntcabs",
                                      0,
@@ -2809,10 +2828,11 @@ cs_restart_read_time_step_info(cs_restart_t  *r)
                                        1,
                                        CS_TYPE_cs_real_t,
                                        &_ts);
-  }
 
-  if (retval == CS_RESTART_SUCCESS)
-    cs_time_step_define_prev(_n_ts, _ts);
+    if (retval == CS_RESTART_SUCCESS)
+      cs_time_step_define_prev(_n_ts, _ts);
+    return;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
