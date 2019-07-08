@@ -248,6 +248,66 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the face
+ *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
+ *        the normal flux across faces.
+ *
+ * \param[in]   c2f           cell -> faces connectivity
+ * \param[in]   quant         pointer to the additional quantities struct.
+ * \param[in]   i_face_vals   array of DoF values for interior faces
+ * \param[in]   b_face_vals   array of DoF values for border faces
+ * \param[out]  cell_reco     vector-valued reconstruction inside cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cell_vect_from_face_dofs(const cs_adjacency_t       *c2f,
+                                 const cs_cdo_quantities_t  *cdoq,
+                                 const cs_real_t             i_face_vals[],
+                                 const cs_real_t             b_face_vals[],
+                                 cs_real_t                  *cell_reco)
+{
+  /* Sanity checks */
+  assert(c2f != NULL && i_face_vals != NULL && b_face_vals != NULL);
+
+  /* Initialization */
+  memset(cell_reco, 0, 3*cdoq->n_cells*sizeof(cs_real_t));
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    cs_real_t  *cval = cell_reco + 3*c_id;
+
+    /* Loop on cell faces */
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_lnum_t  f_id = c2f->ids[j];
+      const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
+      const cs_real_t  *dedge_vect = cdoq->dedge_vector + 3*j;
+
+      if (bf_id > -1) { /* Border face */
+
+        for (int k = 0; k < 3; k++)
+          cval[k] += b_face_vals[bf_id] * dedge_vect[k];
+
+      }
+      else {  /* Interior face */
+
+        for (int k = 0; k < 3; k++)
+          cval[k] += i_face_vals[f_id] * dedge_vect[k];
+
+      }
+
+    } /* Loop on cell faces */
+
+    const cs_real_t  invvol = 1./cdoq->cell_vol[c_id];
+    for (int k =0; k < 3; k++) cval[k] *= invvol;
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center from an array of values
  *         defined on primal vertices.
  *
@@ -665,6 +725,64 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++)
     val_xc[k] *= invvol;
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the face
+ *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
+ *        the normal flux across faces.
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      i_face_vals    array of DoF values for interior faces
+ * \param[in]      b_face_vals    array of DoF values for border faces
+ * \param[out]     cell_reco      vector-valued reconstruction inside the cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_vect_from_face_dofs(const cs_cell_mesh_t    *cm,
+                                    const cs_real_t          i_face_vals[],
+                                    const cs_real_t          b_face_vals[],
+                                    cs_real_t               *cell_reco)
+{
+  /* Sanity checks */
+  assert(cm != NULL && i_face_vals != NULL && b_face_vals != NULL);
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
+
+  /* Initialization */
+  cell_reco[0] = cell_reco[1] = cell_reco[2] = 0.;
+
+  /* Loop on cell faces */
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    /* Related dual edge quantity */
+    const cs_lnum_t  f_id = cm->f_ids[f];
+    const cs_nvec3_t  deq = cm->dedge[f];
+
+    if (cm->f_ids[f] < cm->bface_shift) { /* Interior face */
+
+      const cs_real_t  coef = i_face_vals[f_id] * deq.meas;
+
+      cell_reco[0] += coef*deq.unitv[0];
+      cell_reco[1] += coef*deq.unitv[1];
+      cell_reco[2] += coef*deq.unitv[2];
+
+    }
+    else {
+
+      const cs_real_t  coef = b_face_vals[f_id - cm->bface_shift] * deq.meas;
+
+      cell_reco[0] += coef*deq.unitv[0];
+      cell_reco[1] += coef*deq.unitv[1];
+      cell_reco[2] += coef*deq.unitv[2];
+
+    }
+
+  } /* Loop on cell faces */
+
+  const cs_real_t  invvol = 1./cm->vol_c;
+  for (int k =0; k < 3; k++) cell_reco[k] *= invvol;
 }
 
 /*----------------------------------------------------------------------------*/
