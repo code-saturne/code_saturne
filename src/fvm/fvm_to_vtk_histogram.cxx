@@ -52,9 +52,7 @@
 #include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkPNGWriter.h>
-#include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
-#include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
 #include <vtkTable.h>
 #include <vtkTextProperty.h>
