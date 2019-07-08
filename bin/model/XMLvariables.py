@@ -223,7 +223,7 @@ class Model:
 #-------------------------------------------------------------------------------
 
 
-class Variables:
+class Variables(object):
     """
     This class creates <variable> and <property> markups.
     Each new markup has a 'name' and a 'label' attribute.
