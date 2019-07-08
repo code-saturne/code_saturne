@@ -537,6 +537,8 @@ cs_run(void)
   cs_gui_radiative_transfers_finalize();
   cs_gui_finalize();
 
+  cs_notebook_destroy_all();
+
   cs_field_pointer_destroy_all();
   cs_field_destroy_all();
   cs_field_destroy_all_keys();
