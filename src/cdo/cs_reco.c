@@ -675,8 +675,6 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
  * \param[in]      cm             pointer to a cs_cell_mesh_t structure
  * \param[in]      pdi            array of DoF values at vertices
  * \param[out]     cell_gradient  gradient inside the cell
- *
- * \return the value of the reconstructed potential at the evaluation point
  */
 /*----------------------------------------------------------------------------*/
 
