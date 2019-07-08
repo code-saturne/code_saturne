@@ -216,6 +216,27 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the face
+ *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
+ *        the normal flux across faces.
+ *
+ * \param[in]   c2f           cell -> faces connectivity
+ * \param[in]   quant         pointer to the additional quantities struct.
+ * \param[in]   i_face_vals   array of DoF values for interior faces
+ * \param[in]   b_face_vals   array of DoF values for border faces
+ * \param[out]  cell_reco     vector-valued reconstruction inside cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cell_vect_from_face_dofs(const cs_adjacency_t       *c2f,
+                                 const cs_cdo_quantities_t  *cdoq,
+                                 const cs_real_t             i_face_vals[],
+                                 const cs_real_t             b_face_vals[],
+                                 cs_real_t                  *cell_reco);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center from an array of values
  *         defined on primal vertices.
  *
@@ -389,6 +410,25 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
                           const cs_cdo_quantities_t   *quant,
                           const cs_real_t             *pdi,
                           cs_real_t                    val_xc[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the face
+ *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
+ *        the normal flux across faces.
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      i_face_vals    array of DoF values for interior faces
+ * \param[in]      b_face_vals    array of DoF values for border faces
+ * \param[out]     cell_reco      vector-valued reconstruction inside the cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_vect_from_face_dofs(const cs_cell_mesh_t    *cm,
+                                    const cs_real_t          i_face_vals[],
+                                    const cs_real_t          b_face_vals[],
+                                    cs_real_t               *cell_reco);
 
 /*----------------------------------------------------------------------------*/
 /*!
