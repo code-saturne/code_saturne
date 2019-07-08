@@ -77,11 +77,12 @@ class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, idx, name, value, oturns_var, description):
+    def __init__(self, idx, name, value, oturns_var, editable, description):
         self.index  = idx
         self.name   = name
         self.value  = value
         self.oturns = oturns_var
+        self.edit   = editable
         self.descr  = description
 
     def __repr__(self):
@@ -116,7 +117,7 @@ class TreeItem(object):
 
 
     def columnCount(self):
-        return 4
+        return 5
 
 
     def data(self, column, role):
@@ -133,6 +134,8 @@ class TreeItem(object):
             elif column == 2 and role == Qt.DisplayRole:
                 return self.item.oturns
             elif column == 3 and role == Qt.DisplayRole:
+                return self.item.edit
+            elif column == 4 and role == Qt.DisplayRole:
                 return self.item.descr
         return None
 
@@ -257,6 +260,39 @@ class OTVariableDelegate(QItemDelegate):
 #
 #-------------------------------------------------------------------------------
 
+class VariableEditableDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+
+    def __init__(self, parent = None):
+        super(VariableEditableDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        editor.addItem("No")
+        editor.addItem("Yes")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        row = index.row()
+        col = index.column()
+        string = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        comboBox.setEditText(string)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        model.setData(index, value)
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
 class DescrDelegate(QItemDelegate):
     """
     """
@@ -316,7 +352,7 @@ class VariableStandardItemModel(QAbstractItemModel):
         if parent and parent.isValid():
             return parent.internalPointer().columnCount()
         else:
-            return 4
+            return 5
 
 
     def data(self, index, role):
@@ -338,6 +374,8 @@ class VariableStandardItemModel(QAbstractItemModel):
             elif index.column() == 2:
                 return self.tr("OpenTurns Variable")
             elif index.column() == 3:
+                return self.tr("Editable")
+            elif index.column() == 4:
                 return self.tr("Description")
 
         # Display
@@ -368,6 +406,8 @@ class VariableStandardItemModel(QAbstractItemModel):
             elif section == 2:
                 return self.tr("OpenTurns Variable")
             elif section == 3:
+                return self.tr("Editable")
+            elif section == 4:
                 return self.tr("Description")
         return None
 
@@ -424,8 +464,9 @@ class VariableStandardItemModel(QAbstractItemModel):
             cname  = self.mdl.getVariableName(idx)
             value  = self.mdl.getVariableValue(idx)
             oturns = self.mdl.getVariableOt(idx)
+            edit   = self.mdl.getVariableEditable(idx)
             descr  = self.mdl.getVariableDescription(idx)
-            item = item_class(idx, cname, value, oturns, descr)
+            item = item_class(idx, cname, value, oturns, edit, descr)
             new_item = TreeItem(item, cname, parentItem)
             parentItem.appendChild(new_item)
 
@@ -449,10 +490,14 @@ class VariableStandardItemModel(QAbstractItemModel):
             self.mdl.setVariableOt(item.item.index, item.item.oturns)
 
         elif index.column() == 3:
+            editable = from_qvariant(value, to_text_string)
+            item.item.edit = editable
+            self.mdl.setVariableEditable(item.item.index, item.item.edit)
+
+        elif index.column() == 4:
             description = from_qvariant(value, to_text_string)
             item.item.descr = description
             self.mdl.setVariableDescription(item.item.index, item.item.descr)
-
         self.dataChanged.emit(QModelIndex(), QModelIndex())
 
         return True
@@ -500,10 +545,15 @@ class NotebookView(QWidget, Ui_NotebookForm):
         otvalDelegate = OTVariableDelegate(self.treeViewNotebook)
         self.treeViewNotebook.setItemDelegateForColumn(2, otvalDelegate)
 
+        editableDelegate = VariableEditableDelegate(self.treeViewNotebook)
+        self.treeViewNotebook.setItemDelegateForColumn(3, editableDelegate)
+
         descriptionDelegate = DescrDelegate(self.treeViewNotebook)
-        self.treeViewNotebook.setItemDelegateForColumn(3, descriptionDelegate)
+        self.treeViewNotebook.setItemDelegateForColumn(4, descriptionDelegate)
 
         self.treeViewNotebook.resizeColumnToContents(0)
+        self.treeViewNotebook.resizeColumnToContents(2)
+        self.treeViewNotebook.resizeColumnToContents(4)
 
         # Connections
         self.toolButtonAdd.clicked.connect(self.slotAddVariable)

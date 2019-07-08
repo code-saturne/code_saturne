@@ -27,6 +27,8 @@
 
 BEGIN_C_DECLS
 
+//typedef struct _cs_notebook_entry_t cs_notebook_entry_t;
+
 /*----------------------------------------------------------------------------*/
 /*!
  *  \brief Initialize the notebook object (based on cs_tree_node_t)
@@ -87,6 +89,42 @@ cs_notebook_parameter_get_openturns_status(char *name);
 
 const char *
 cs_notebook_parameter_get_description(char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy the notebook structure
+ *
+ * Destroys the structures related to the notebook
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_notebook_destroy_all(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief dump the notebook structure to the listing file
+ *
+ * Dumps the notebook structure information to the listing file
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_notebook_dump_info(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Writes uncertain values to output file
+ *
+ * If input and output uncertain variables are provided, output values
+ * are written to an output file : cs_uncertain_output.dat
+ * Results are ordered in the definition order in the notebook.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_notebook_uncertain_output(void);
+
 
 END_C_DECLS
 

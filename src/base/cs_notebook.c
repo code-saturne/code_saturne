@@ -43,9 +43,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
+#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "cs_gui_util.h"
+#include "cs_map.h"
 #include "cs_parameters.h"
 
 
@@ -60,14 +62,254 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
+#define _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE       16
+
+/*============================================================================
+ * Structure definition
+ *============================================================================*/
+
+typedef struct {
+  const char *name;       /* Name of the notebook entry */
+
+  char *description; /* Description */
+
+  int         id;         /* Entry id */
+
+  cs_real_t   val;        /* Value of the entry */
+
+  int         uncertain; /* Is is an uncertain variable ?
+                             0: No
+                             1: Yes, as input
+                             2: Yes, as output */
+
+  bool        editable;   /* Can the value be modified */
+
+} _cs_notebook_entry_t;
 
 
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-static cs_tree_node_t *_notebook = NULL;
+static int _n_entries           = 0;
+static int _n_entries_max       = 0;
+static int _n_uncertain_inputs  = 0;
+static int _n_uncertain_outputs = 0;
 
+static _cs_notebook_entry_t **_entries = NULL;
+
+static cs_map_name_to_id_t *_entry_map = NULL;
+
+/*============================================================================
+ * Local functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a notebook entry by its name.
+ *
+ * Reruns the cs_notebook_entry_t object for a given name.
+ * If it does not exist, bft_error is called.
+ *
+ * \param[in] name  notebook entry name
+ *
+ * \return _cs_notebook_entry_t pointer
+ */
+/*----------------------------------------------------------------------------*/
+_cs_notebook_entry_t *
+cs_notebook_entry_by_name(const char *name)
+{
+
+  int id = cs_map_name_to_id_try(_entry_map, name);
+
+  if (id > -1)
+    return _entries[id];
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Entry \"%s\" is not defined."), name);
+    return NULL;
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief create a notebook entry
+ *
+ * Creates an entry in the notebook structure based on what the user provided
+ * in the GUI.
+ *
+ * \param[in] name       name of the entry
+ * \param[in] uncertain  flag (int) indicating if it is an uncertain input/output
+ * \param[in] editable   flag (bool) indicating if the value can be modified
+ *
+ * \return a _cs_notebook_entry_t pointer
+ */
+/*----------------------------------------------------------------------------*/
+static _cs_notebook_entry_t *
+_entry_create(const char *name,
+              int         uncertain,
+              bool        editable)
+{
+
+  size_t l = strlen(name);
+  const char *addr_0 = NULL, *addr_1 = NULL;
+
+  /* Check that the name is not allready used */
+  int id = cs_map_name_to_id_try(_entry_map, name);
+  if (id > -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error creating entry:\n"
+                "  name:        \"%s\"\n\n"
+                "An entry with that name has allready been defined:\n"
+                "  id: %d\n"),
+              name, id);
+
+  /* Initialize the map is necessary */
+  if (_entry_map == NULL)
+    _entry_map = cs_map_name_to_id_create();
+
+  else
+    addr_0 = cs_map_name_to_id_reverse(_entry_map, 0);
+
+  if (l == 0)
+    bft_error(__FILE__, __LINE__, 0, _("Defining an entry requires a name."));
+
+  /* Insert the entry in map */
+  int entry_id = cs_map_name_to_id(_entry_map, name);
+
+  /* Move name pointers of previous entries if necessary */
+  addr_1 = cs_map_name_to_id_reverse(_entry_map, 0);
+
+  if (addr_1 != addr_0) {
+    int i;
+    ptrdiff_t addr_shift = addr_1 - addr_0;
+    for (i = 0; i < entry_id; i++)
+      _entries[i]->name += addr_shift;
+  }
+
+  if (entry_id == _n_entries)
+    _n_entries = entry_id + 1;
+
+  /* Reallocate fields pointer if necessary */
+  if (_n_entries > _n_entries_max) {
+    if (_n_entries_max == 0)
+      _n_entries_max = 8;
+    else
+      _n_entries_max *= 2;
+    BFT_REALLOC(_entries, _n_entries_max, _cs_notebook_entry_t *);
+  }
+
+  /* Allocate entries descriptor block if necessary (same as for cs_field_t) */
+  int shift_in_alloc_block = entry_id % _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE;
+  if (shift_in_alloc_block == 0)
+    BFT_MALLOC(_entries[entry_id],
+               _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE,
+               _cs_notebook_entry_t);
+
+  else
+    _entries[entry_id] = _entries[entry_id - shift_in_alloc_block]
+                       + shift_in_alloc_block;
+
+  /* Assign the entry */
+  _cs_notebook_entry_t *e = _entries[entry_id];
+
+  e->name = cs_map_name_to_id_reverse(_entry_map, entry_id);
+
+  e->id = entry_id;
+
+  e->val = 0.;
+
+  e->uncertain = uncertain;
+  if (uncertain == 0)
+    _n_uncertain_inputs += 1;
+  else if (uncertain == 1)
+    _n_uncertain_outputs += 1;
+
+  e->editable  = editable;
+
+  return e;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the entry description
+ *
+ * Set the description of the notebook parameter.
+ *
+ * \param[in] e            pointer to _cs_notebook_entry_t
+ * \param[in] description  description of the entry
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static void
+_entry_set_description(_cs_notebook_entry_t *e,
+                       const char           *description)
+{
+
+  int l = strlen(description);
+  BFT_MALLOC(e->description, l+1, char);
+  if (l == 0)
+    strcpy(e->description, "");
+  else
+    strcpy(e->description, description);
+
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the entry value
+ *
+ * Set the value of the notebook parameter.
+ *
+ * \param[in] e      pointer to _cs_notebook_entry_t
+ * \param[in] value  value to set to the entry
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static void
+_entry_set_value(_cs_notebook_entry_t *e,
+                 cs_real_t             value)
+{
+
+  e->val = value;
+
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief dump the notebook structure to the listing file
+ *
+ * Dumps the notebook structure information to the listing file
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_notebook_dump_info(void)
+{
+
+  if (_n_entries == 0)
+    return;
+
+  bft_printf(" --------------------------- \n");
+  bft_printf("     NOTEBOOK PARAMETERS \n");
+  bft_printf(" --------------------------- \n");
+  for (int i = 0; i < _n_entries; i++) {
+    bft_printf(" Entry #%d\n", i);
+    bft_printf(" Name        : %s\n", _entries[i]->name);
+    bft_printf(" Description : %s\n", _entries[i]->description);
+    bft_printf(" Uncertain   : %d\n", _entries[i]->uncertain);
+    bft_printf(" Editable    : %d\n", _entries[i]->editable);
+    bft_printf(" Value       : %f\n", _entries[i]->val);
+    bft_printf_flush();
+  }
+  bft_printf(" --------------------------- \n");
+  bft_printf_flush();
+
+  return;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  *  \brief Initialize the notebook object (based on cs_tree_node_t)
@@ -80,9 +322,68 @@ static cs_tree_node_t *_notebook = NULL;
 void
 cs_notebook_load_from_file(void)
 {
-  _notebook = cs_tree_get_node(cs_glob_tree, "physical_properties/notebook/var");
+
+  cs_tree_node_t *tnb = cs_tree_get_node(cs_glob_tree, "physical_properties/notebook");
+  for (cs_tree_node_t *n = cs_tree_find_node(tnb, "var");
+       n != NULL;
+       n = cs_tree_node_get_next_of_name(n)) {
+
+    const char *name   = cs_tree_node_get_tag(n, "name");
+    const char *oturns = cs_tree_node_get_tag(n, "oturns");
+    const char *d      = cs_tree_node_get_tag(n, "description");
+    const char *c_val  = cs_tree_node_get_tag(n, "value");
+    const char *c_edit = cs_tree_node_get_tag(n, "editable");
+
+    if (d == NULL || d == "")
+      d = "NA";
+
+    int uncertain = -1;
+    if (oturns != NULL) {
+      if (strcmp(oturns, "Yes: Input") == 0)
+        uncertain = 0;
+      else if (strcmp(oturns, "Yes: Output") == 0)
+        uncertain = 1;
+    }
+    bool editable = false;
+    if (c_edit != NULL)
+      if (strcmp(c_edit, "Yes") == 0)
+        editable = true;
+
+    /* If the variable is an uncertain output, it has to be modified
+     * by the code, hence editable=true
+     */
+    if (uncertain == 1)
+      editable = true;
+
+    _cs_notebook_entry_t *e = _entry_create(name, uncertain, editable);
+
+    _entry_set_description(e, d);
+    cs_real_t val = atof(c_val);
+    _entry_set_value(e, val);
+
+  }
+  cs_notebook_dump_info();
+
 }
 
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+void
+cs_notebook_parameter_set_value(const char *name,
+                                cs_real_t   val)
+{
+
+  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+
+  if (e->editable == false)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Entry \"%s\" was defined as not editable in the notebook.\n"),
+              e->name);
+
+  _entry_set_value(e, val);
+
+  return;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return a parameter value (real).
@@ -100,18 +401,8 @@ cs_real_t
 cs_notebook_parameter_value_by_name(const char *name)
 {
 
-  cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook, "name", name);
-
-  if (n == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              "Variable %s was not defined in the notebook\n",
-              name);
-  }
-
-  const char *c_value = cs_tree_node_get_tag(n, "value");
-
-  cs_real_t val = atof(c_value);
-  return val;
+  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  return e->val;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -133,27 +424,8 @@ cs_notebook_parameter_value_by_name(const char *name)
 int
 cs_notebook_parameter_get_openturns_status(char *name)
 {
-  cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook,
-                                                        "name",
-                                                        name);
-
-  if (n == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              "Variable %s was not defined in the notebook\n",
-              name);
-  }
-
-  const char *c_value = cs_tree_node_get_tag(n, "oturns");
-
-  int status = -1;
-  if (c_value != NULL) {
-    if (strcmp(c_value, "Yes: Input") == 0)
-      status = 0;
-    else if (strcmp(c_value, "Yes: Output") == 0)
-      status = 1;
-  }
-
-  return status;
+  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  return e->uncertain;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -170,18 +442,88 @@ cs_notebook_parameter_get_openturns_status(char *name)
 const char *
 cs_notebook_parameter_get_description(char *name)
 {
-  cs_tree_node_t *n = cs_tree_node_get_sibling_with_tag(_notebook,
-                                                        "name",
-                                                        name);
+  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  return e->description;
+}
 
-  if (n == NULL) {
-    bft_error(__FILE__, __LINE__, 0,
-              "Variable %s was not defined in the notebook\n",
-              name);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Writes uncertain values to output file
+ *
+ * If input and output uncertain variables are provided, output values
+ * are written to an output file : cs_uncertain_output.dat
+ * Results are ordered in the definition order in the notebook.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_notebook_uncertain_output(void)
+{
+
+  if (_n_uncertain_inputs == 0 || _n_uncertain_outputs == 0)
+    return;
+
+  if (cs_glob_rank_id <= 0) {
+    FILE *file = fopen("cs_uncertain_output.dat", "w");
+
+    /* Write header */
+    fprintf(file, "#");
+    for (int i = 0; i < _n_entries; i++) {
+      if (_entries[i]->uncertain == 1)
+        fprintf(file, " %s", _entries[i]->name);
+    }
+    fprintf(file, "\n");
+
+    /* Write values */
+    int count = 0;
+    for (int i = 0; i < _n_entries; i++) {
+      if (_entries[i]->uncertain == 1) {
+        if (count == 0)
+          count += 1;
+        else
+          fprintf(file, ", ");
+
+        fprintf(file, "%f", _entries[i]->val);
+      }
+    }
+    fflush(file);
+    fclose(file);
   }
 
-  const char *d = cs_tree_node_get_tag(n, "description");
-  return d;
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy the notebook structure
+ *
+ * Destroys the structures related to the notebook
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_notebook_destroy_all(void)
+{
+
+  /* Before destruction, we dump the results */
+  cs_notebook_uncertain_output();
+
+  for (int i = 0; i < _n_entries; i++) {
+    _cs_notebook_entry_t *e = _entries[i];
+    BFT_FREE(e->description);
+  }
+
+  for (int i = 0; i < _n_entries; i++) {
+    if (i % _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE == 0)
+      BFT_FREE(_entries[i]);
+  }
+
+  BFT_FREE(_entries);
+
+  cs_map_name_to_id_destroy(&_entry_map);
+
+  _n_entries     = 0;
+  _n_entries_max = 0;
 }
 
 /*----------------------------------------------------------------------------*/

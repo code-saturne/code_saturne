@@ -68,6 +68,7 @@ class NotebookModel(Model):
         default['val']         = 0.0
         default['name']        = "var"
         default['oturns']      = "No"
+        default['editable']    = "No"
         default['description'] = ""
 
         return default
@@ -248,6 +249,28 @@ class NotebookModel(Model):
         node = self.node_note.xmlInitChildNode("var", id = idx)
         node['oturns'] = otval
 
+
+    @Variables.noUndo
+    def getVariableEditable(self, idx):
+        """
+        Return Yes or No to indicate if the parameter value can be modified.
+        """
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        editable = node['editable']
+        if not editable:
+            editable = self.defaultNotebookValues()['editable']
+            self.setVariableEditable(idx, editable)
+
+        return editable
+
+
+    @Variables.undoGlobal
+    def setVariableEditable(self, idx, editable):
+        """
+        Set Yes or No to indicate if the parameter value can be modified.
+        """
+        node = self.node_note.xmlInitChildNode("var", id = idx)
+        node['editable'] = editable
 
     @Variables.noUndo
     def getVariableDescription(self, idx):
