@@ -78,11 +78,17 @@ def define_domain_parameters(domain):
     # To continue a calculation from a previous checkpoint, set:
     #  domain.restart_input = 'RESU/<run_id>/checkpoint'
 
+    # To continue a calculation from a previous checkpoint with
+    # a different mesh, it may be necessary to provide a mesh_input
+    # matching that checkoint if is not contained, so set:
+    #  domain.restart_mesh_input = 'RESU/<run_id>/restart_mesh_input'
+
     if domain.param == None:
         domain.preprocess_on_restart = False
         domain.mesh_input = None
         domain.partition_input = None
         domain.restart_input = None
+        domain.restart_mesh_input = None
 
     # Defining meshes to import (only if domain.mesh_input = None)
     #-------------------------------------------------------------
