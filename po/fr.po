@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-07-04 10:32+0200\n"
+"POT-Creation-Date: 2019-07-09 17:24+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6745,6 +6745,26 @@ msgstr "Le jeu de mesures \"%s\" n'est pas défini."
 msgid "Interpol grid \"%s\" is not defined."
 msgstr "La grille d'interpolation \"%s\" n'est pas définie."
 
+#, c-format
+msgid "Entry \"%s\" is not defined."
+msgstr "L'entrée \"%s\" n'est pas défini."
+
+#, c-format
+msgid ""
+"Error creating entry:\n"
+"  name:        \"%s\"\n"
+"\n"
+"An entry with that name has allready been defined:\n"
+"  id: %d\n"
+msgstr ""
+
+msgid "Defining an entry requires a name."
+msgstr "La définition d'une zone nécessite un nom."
+
+#, c-format
+msgid "Entry \"%s\" was defined as not editable in the notebook.\n"
+msgstr ""
+
 msgid "vectorization"
 msgstr "vectorisation"
 
@@ -12132,12 +12152,6 @@ msgid ""
 "  No particles will be injected for this time step.\n"
 msgstr ""
 
-#, c-format
-msgid ""
-"Abort while opening the lagrangian module restart file in read mode.\n"
-"Verify the existence and the name of the restart file: %s\n"
-msgstr ""
-
 msgid "    Start read"
 msgstr "    Début de lecture"
 
@@ -12752,13 +12766,80 @@ msgid ""
 msgstr ""
 
 msgid ""
-"The transport of coal particles is not implemented with the\n"
-"second order scheme (cs_glob_lagr_time_scheme->torder == 2)."
+"Lagrangian transport of coal particles is not implemented in\n"
+"second-order integration scheme, so first-order scheme will be used.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian transport of coal particles is not implemented with\n"
+"thermal return coupling (cs_glob_lagr_source_terms->ltsthe = %d)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Particle fouling is active (lagr_model->fouling = %d)\n"
+"with an incorrect critical viscosity for coal %d.\n"
+"cs_glob_lagr_encrustation->visref[%d] = %g but should be > 0.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Particle fouling is active (lagr_model->fouling = %d)\n"
+"with an incorrect temperature threshold for coal %d.\n"
+"cs_glob_lagr_encrustation->tprenc[%d] = %g degrees Celcius\n"
+"but should be > %g.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The pulverized coal model coupled to Lagrangian particle transport\n"
+"is active (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = %d)\n"
+"while coal particle transport is not active (lagr_model->physical_model = "
+"%d, where 2 is expected).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Coal particle transport is activated (lagr_model->physical_model = %d)\n"
+"but the matching model coupling is not active:\n"
+" cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = %d\n"
+" cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Restart of lagrangian statistics and source terms is requested\n"
+"(cs_glob_lagr_stat_options->isuist = %d), but the matching file\n"
+"is not present in the checkpoint.\n"
 msgstr ""
 
 msgid ""
-"The transport of coal particles is not implemented with the\n"
-"thermal return coupling (cs_glob_lagr_source_terms->ltsthe == 1)."
+"\n"
+"Reset statitics and source terms.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The temperature model for particles is active\n"
+"(cs_glob_lagr_specific_physics->itpvar = %d)\n"
+"but no Eulerian thermal scalar is available (iscalt = %d)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The return coupling on the flow field is activated\n"
+"(cs_glob_lagr_source_terms->ltsdyn = %d)\n"
+"but the carrier field is frozen (iccvfg = %d)?\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The two-way coupling option is activated\n"
+"but all coupling sub-options are deactivated:\n"
+"  cs_glob_lagr_source_terms->ltsdyn = %d\n"
+"  cs_glob_lagr_source_terms->ltsthe = %d\n"
+"  cs_glob_lagr_source_terms->ltsmas = %d\n"
 msgstr ""
 
 #, c-format
