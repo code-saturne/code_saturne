@@ -137,7 +137,6 @@ SolverSaveAsAction             = 102
 SolverCloseAction              = 103
 SolverUndoAction               = 104
 SolverRedoAction               = 105
-SolverOpenTurnsModeAction      = 108
 
 SolverToolsMenu                = 110
 SolverOpenShellAction          = 111
@@ -616,19 +615,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._ActionMap[action_id] = action
         self._SolverActionIdMap[SolverRedoAction] = action_id
         action.triggered.connect(self.slotRedo)
-
-        # OpenTurns Study Mode action
-        action = sgPyQt.createAction(-1, \
-                                     "OpenTurns Study Mode", \
-                                     "OpenTurns Study Mode", \
-                                     "OpenTurns Study Mode", \
-                                     ObjectTR.tr("OPENTURNS_MODE_CFD_GUI_ACTION_ICON")
-                                     )
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.actionId(action)
-        self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverOpenTurnsModeAction] = action_id
-        action.triggered.connect(self.slotOTStudyMode)
 
         # Tools Menu
         action = sgPyQt.createSeparator()
@@ -1841,8 +1827,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def slotRedo(self):
         self._SolverGUI.onRedo()
 
-    def slotOTStudyMode(self):
-        self._SolverGUI.onOTStudyMode()
 
     def slotLaunchGUI(self, study=None, case=None):
         """

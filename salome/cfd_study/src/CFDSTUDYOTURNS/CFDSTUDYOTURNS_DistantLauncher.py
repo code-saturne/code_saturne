@@ -66,7 +66,7 @@ class CFDSTUDY_DistantLauncher:
 
         self.package_name    = self.cfg.get('study_parameters', 'code_name')
         self.paramfile       = self.cfg.get('study_parameters', 'xmlfile')
-        self.results_file    = self.cfg.get('study_parameters', 'results_file')
+        self.results_file    = "cs_uncertain_output.dat"
 
         self.run_prefix = None
         if run_prefix:
