@@ -47,6 +47,7 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_file.h"
 #include "cs_gui_particles.h"
 #include "cs_gui_util.h"
 #include "cs_mesh_location.h"
@@ -258,7 +259,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   lagr_time_scheme->iilagr = CS_LAGR_OFF;
   lagr_time_scheme->isuila = 0;
 
-  cs_glob_lagr_stat_options->isuist = 0;
+  cs_glob_lagr_stat_options->isuist = 1;
 
   lagr_model->physical_model = 0;
 
@@ -441,23 +442,25 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_parameters_error_barrier();
 
-  int iok = 0;
-
   if (lagr_model->physical_model == 2) {
 
-    if (lagr_time_scheme->t_order == 2)
+    if (lagr_time_scheme->t_order == 2) {
+      lagr_time_scheme->t_order = 1;
       cs_parameters_error
-        (CS_ABORT_DELAYED,
+        (CS_WARNING,
          _("in Lagrangian module"),
-         _("The transport of coal particles is not implemented with the\n"
-           "second order scheme (cs_glob_lagr_time_scheme->torder == 2)."));
+         _("Lagrangian transport of coal particles is not implemented in\n"
+           "second-order integration scheme, "
+           "so first-order scheme will be used.\n"));
+    }
 
     if (cs_glob_lagr_source_terms->ltsthe == 1)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
-         _("The transport of coal particles is not implemented with the\n"
-           "thermal return coupling (cs_glob_lagr_source_terms->ltsthe == 1)."));
+         _("Lagrangian transport of coal particles is not implemented with\n"
+           "thermal return coupling (cs_glob_lagr_source_terms->ltsthe = %d)\n"),
+         cs_glob_lagr_source_terms->ltsthe);
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
@@ -465,363 +468,133 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                   lagr_model->fouling,
                                   0, 2);
 
-    for (int icha = 0; icha < extra->ncharb; icha++) {
+    if (lagr_model->fouling == 1) {
 
-      if (lagr_model->fouling == 1 &&
-          cs_glob_lagr_encrustation->visref[icha] < 0) {
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L''INDICATEUR SUR L''ENCRASSEMENT DES PARTICULES\n"
-                   "@       DE CHARBON EST ACTIVE (IENCRA = %d)\n"
-                   "@       AVEC UNE VALEUR DE VISCOSITE CRITIQUE\n"
-                   "@       NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@     VISREF DEVRAIT ETRE UN REEL STRICTEMENT POSITIF (Pa.s)\n"
-                   "@       IL VAUT ICI VISREF = %14.5E\n"
-                   "@       POUR LE CHARBON :%d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de VISREF.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   lagr_model->fouling,
-                   cs_glob_lagr_encrustation->visref[icha],
-                   icha);
-        iok++;
+      for (int icha = 0; icha < extra->ncharb; icha++) {
+        if (cs_glob_lagr_encrustation->visref[icha] <= 0)
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in Lagrangian module"),
+             _("Particle fouling is active (lagr_model->fouling = %d)\n"
+               "with an incorrect critical viscosity for coal %d.\n"
+               "cs_glob_lagr_encrustation->visref[%d] = %g "
+               "but should be > 0.\n"),
+             lagr_model->fouling, icha, icha,
+             cs_glob_lagr_encrustation->visref[icha]);
 
+        if (cs_glob_lagr_encrustation->tprenc[icha] < 150.)
+          cs_parameters_error
+            (CS_ABORT_DELAYED,
+             _("in Lagrangian module"),
+             _("Particle fouling is active (lagr_model->fouling = %d)\n"
+               "with an incorrect temperature threshold for coal %d.\n"
+               "cs_glob_lagr_encrustation->tprenc[%d] = %g degrees Celcius\n"
+               "but should be > %g.\n"),
+             lagr_model->fouling, icha, icha,
+             cs_glob_lagr_encrustation->tprenc[icha], 150.);
       }
-
-      if (lagr_model->fouling == 1 &&
-          cs_glob_lagr_encrustation->tprenc[icha] < 150.0) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR SUR L'ENCRASSEMENT DES PARTICULES\n"
-                   "@       DE CHARBON EST ACTIVE (IENCRA = %d)\n"
-                   "@       AVEC UNE VALEUR DE TEMPERATURE SEUIL\n"
-                   "@       NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@     TPRENC DEVRAIT ETRE UN REEL SUPERIEUR A %14.5E\n"
-                   "@       (EN DEGRES CELSIUS)\n"
-                   "@       IL VAUT ICI TPRENC = %14.5E\n"
-                   "@       POUR LE CHARBON :%d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute. Risque de division par\n"
-                   "@  zero lors du calcul de la viscosite du charbon dans\n"
-                   "@  cs_lagr_tracking\n"
-                   "@\n"
-                   "@  Verifier la valeur de TPRENC.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   lagr_model->fouling,
-                   150.0e0,
-                   cs_glob_lagr_encrustation->tprenc[icha],
-                   icha);
-        iok++;
-
-      }
-
     }
 
   }
   else
     lagr_model->fouling = 0;
 
-  if (lagr_model->physical_model != 2 &&
-      cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
+  if (   lagr_model->physical_model != 2
+      && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in Lagrangian module"),
+       _("The pulverized coal model coupled to Lagrangian particle transport\n"
+         "is active (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = %d)\n"
+         "while coal particle transport is not active "
+         "(lagr_model->physical_model = %d, where 2 is expected).\n"),
+       cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
+       lagr_model->physical_model);
 
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    LA PHYSIQUE PARTICULIERE COMBUTION CHARBON PULVERISE\n"
-               "@      COUPLE AU TRANSPORT LAGRANGIEN DES PARTICULES\n"
-               "@      DE CHARBON EST ACTIVEE (USPPMO), ALORS QUE L'OPTION\n"
-               "@      TRANSPORT DE PARTICULE DE CHARBON\n"
-               "@      N'EST PAS ENCLENCHEE (LAGOPT).\n"
-               "@\n"
-               "@       IPHYLA = %d\n"
-               "@       IPPMOD(ICPL3C) = %d\n"
-               "@\n"
-               "@  Le module lagrangien doit etre active en mode transport\n"
-               "@   de particules de charbon pour etre couple avec la\n"
-               "@   combustion d'une flamme de charbon pulverise en phase\n"
-               "@   continue.\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IPHYLA et\n"
-               "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_model->physical_model,
-               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC]);
-    iok++;
+  if (   lagr_model->physical_model == 2
+      && (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0
+          && cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0))
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in Lagrangian module"),
+       _("Coal particle transport is activated "
+         "(lagr_model->physical_model = %d)\n"
+         "but the matching model coupling is not active:\n"
+         " cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = %d\n"
+         " cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = %d\n"),
+       lagr_model->physical_model,
+       cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
+       cs_glob_physical_model_flag[CS_COMBUSTION_COAL]);
 
-  }
-  if (lagr_model->physical_model == 2 &&
-      (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0 &&
-       cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)) {
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_time_scheme->isuila",
+                                lagr_time_scheme->isuila,
+                                0, 2);
 
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    LA PHYSIQUE PARTICULIERE COMBUTION CHARBON PULVERISE\n"
-               "@      COUPLE AU TRANSPORT LAGRANGIEN DES PARTICULES\n"
-               "@      DE CHARBON EST ACTIVEE (USPPMO), ALORS QUE LE COUPLAGE\n"
-               "@      RETOUR DE LA PHASE DISPERSEE SUR LE PHASE CONTINUE\n"
-               "@      N''EST PAS ENCLENCHE (LAGOPT).\n"
-               "@\n"
-               "@       IILAGR = %d\n"
-               "@       IPPMOD(ICPL3C) = %d\n"
-               "@\n"
-               "@  Le module lagrangien doit etre active en mode couplage\n"
-               "@   retour pour etre couple avec la combustion d'une\n"
-               "@   flamme de charbon pulverise en phase continue.\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IILAGR et\n"
-               "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_time_scheme->iilagr,
-               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC]);
-    iok++;
-
-  }
-
-  /* ISUILA ISUIST   */
-  if (lagr_time_scheme->isuila < 0 ||
-      lagr_time_scheme->isuila > 1) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR DE SUITE DU MODULE LAGRANGIEN A UNE\n"
-               "@       VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    ISUILA DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI ISUILA = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IILAGR.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_time_scheme->isuila);
-    iok++;
-
-  }
-
-  if (lagr_time_scheme->isuila == 1
-      && *isuite == 0) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ALERTE A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@                                                  (LAGOPT).\n"
-               "@\n"
-               "@  Le module lagrangien est active en suite de calcul,\n"
-               "@   alors que le calcul de la phase continue n'est pas\n"
-               "@   une suite.\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de ISUILA.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n");
-    iok++;
-
-  }
-
-  if (lagr_time_scheme->isuila == 1) {
-
-    if (   cs_glob_lagr_stat_options->isuist < 0
-           || cs_glob_lagr_stat_options->isuist > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE SUITE DE CALCUL SUR LES STATISTIQUES\n"
-                 "@       VOLUMIQUE ET AUX FRONTIERES, AINSI QUE SUR LES\n"
-                 "@       TERMES SOURCES DE COUPLAGES RETOUR\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    ISUIST DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI ISUIST = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de ISUIST.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_stat_options->isuist);
-      iok++;
-
+  if (   cs_glob_time_step->nt_prev > 0
+      && cs_glob_lagr_stat_options->isuist > 0) {
+    if (!cs_file_isreg("restart/lagrangian_stats")) {
+      cs_parameter_error_behavior_t err_type = CS_WARNING;
+      if (cs_glob_lagr_stat_options->isuist > 1)
+        err_type = CS_ABORT_DELAYED;
+      cs_parameters_error
+        (err_type,
+         _("in Lagrangian module"),
+         _("Restart of lagrangian statistics and source terms is requested\n"
+           "(cs_glob_lagr_stat_options->isuist = %d), but the matching file\n"
+           "is not present in the checkpoint.\n"),
+         cs_glob_lagr_stat_options->isuist);
+        cs_glob_lagr_stat_options->isuist = 0;
+        bft_printf(_("\nReset statitics and source terms.\n"));
     }
-
-  }
-  else
     cs_glob_lagr_stat_options->isuist = 0;
-
-  /* IPHYLA     */
-  if (   lagr_model->physical_model < 0
-         || lagr_model->physical_model > 2) {
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR DES MODELES PHYSIQUES LIES AUX PARTICULES\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IPHYLA DEVRAIT ETRE UN ENTIER EGAL A 0 1 OU 2\n"
-               "@       IL VAUT ICI IPHYLA = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IPHYLA.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_model->physical_model);
-    iok++;
-
+    if (cs_glob_time_step->nt_prev >= cs_glob_lagr_stat_options->idstnt)
+      cs_glob_lagr_stat_options->idstnt = cs_glob_time_step->nt_prev + 1;
+    if (cs_glob_time_step->nt_prev >= cs_glob_lagr_stat_options->nstist)
+      cs_glob_lagr_stat_options->nstist = cs_glob_time_step->nt_prev + 1;
   }
 
-  if (iok != 0)
-    cs_exit(1);
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "lagr_model->physical_model",
+                                lagr_model->physical_model,
+                                0, 3);
+
+  cs_parameters_error_barrier();
 
   /* IDPVAR ITPVAR IMPVAR */
-  /* Couplage-retour uniquement vers la phase continue  */
+
   if (lagr_model->physical_model == 1) {
 
-    if (cs_glob_lagr_specific_physics->idpvar < 0 ||
-        cs_glob_lagr_specific_physics->idpvar > 1) {
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_specific_physics->idpvar",
+                                  cs_glob_lagr_specific_physics->idpvar,
+                                  0, 2);
 
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR L'EQUATION DU DIAMETRE DES\n"
-                 "@       PARTICULES A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@     IDPVAR DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IDPVAR = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IDPVAR.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_specific_physics->idpvar);
-      iok++;
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_specific_physics->itpvar",
+                                  cs_glob_lagr_specific_physics->itpvar,
+                                  0, 2);
 
-    }
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_specific_physics->impvar",
+                                  cs_glob_lagr_specific_physics->impvar,
+                                  0, 2);
 
-    if (cs_glob_lagr_specific_physics->itpvar < 0 ||
-        cs_glob_lagr_specific_physics->itpvar > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR L'EQUATION DE LA TEMPERATURE DES\n"
-                 "@       PARTICULES A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@     ITPVAR DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI ITPVAR = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de ITPVAR.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_specific_physics->itpvar);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_specific_physics->impvar < 0 ||
-        cs_glob_lagr_specific_physics->impvar > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR L'EQUATION DE LA MASSE DES\n"
-                 "@       PARTICULES A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@     IMPVAR DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IMPVAR = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IMPVAR.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "",
-                 cs_glob_lagr_specific_physics->impvar);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_specific_physics->itpvar == 1 &&
-        *iscalt == -1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR L'EQUATION DE LA TEMPERATURE DES\n"
-                 "@       PARTICULES EST ACTIVE (ITPVAR = %d)\n"
-                 "@       ALORS QU'AUCUN SCALAIRE THERMIQUE N'EST DISPONIBLE\n"
-                 "@\n"
-                 "@     ISCALT DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL 1\n"
-                 "@       IL VAUT ICI ISCALT = %d\n"
-                 "@\n"
-                 "@  La valeur de ISCALT est renseignee automatiquement\n"
-                 "@    si une physique particuliere est activee dans USPPMO.\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_specific_physics->itpvar,
-                 *iscalt);
-      iok++;
-
-    }
+    if (   cs_glob_lagr_specific_physics->itpvar == 1
+        && *iscalt == -1)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in Lagrangian module"),
+         _("The temperature model for particles is active\n"
+           "(cs_glob_lagr_specific_physics->itpvar = %d)\n"
+           "but no Eulerian thermal scalar is available (iscalt = %d)\n"),
+         cs_glob_lagr_specific_physics->itpvar,
+         *iscalt);
 
   }
   else {
@@ -836,365 +609,33 @@ cs_lagr_option_definition(cs_int_t   *isuite,
       && lagr_model->physical_model == 1
       && cs_glob_lagr_specific_physics->itpvar == 1) {
 
-    if (cs_glob_lagr_specific_physics->cppart < 0) {
+    cs_parameters_is_greater_double
+      (CS_ABORT_DELAYED,
+       _("in Lagrangian module"),
+       "cs_glob_lagr_specific_physics->cppart",
+       cs_glob_lagr_specific_physics->cppart,
+       0);
 
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    LA CHALEUR MASSIQUE D'INITIALISATION DES PARTICULES\n"
-                 "@       DEJA PRESENTE DANS LE DOMAINE DE CALCUL\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@     CPPART DEVRAIT ETRE UN REEL STRICTEMENT POSITIF\n"
-                 "@       IL VAUT ICI CPPART = %14.5E\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de CPPART.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_specific_physics->cppart);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_specific_physics->tpart <  -273.15) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    LA TEMPERATURE D'INITIALISATION DES PARTICULES\n"
-                 "@       DEJA PRESENTE DANS LE DOMAINE DE CALCUL\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@     TPART DEVRAIT ETRE UN REEL SUPERIEUR A %14.5E\n"
-                 "@       (EN DEGRES CELSIUS)\n"
-                 "@       IL VAUT ICI TPART = %14.5E@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de TPART.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 -273.15,
-                 cs_glob_lagr_specific_physics->tpart);
-      iok++;
-
-    }
+    cs_parameters_is_greater_double
+      (CS_ABORT_DELAYED,
+       _("in Lagrangian module"),
+       "cs_glob_lagr_specific_physics->tpart",
+       cs_glob_lagr_specific_physics->tpart,
+       -273.15);
 
   }
 
+  cs_parameters_error_barrier();
 
-  if (iok != 0)
-    cs_exit(1);
-
-
-  /* IENCRA TPRENC VISREF */
-  if (lagr_model->physical_model == 2) {
-
-    if (lagr_time_scheme->t_order == 2) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON\n"
-                 "@      EST ACTIVE (LAGOPT) AVEC UN SCHEMA D'INTEGRATION\n"
-                 "@      AU SECOND ORDRE\n"
-                 "@\n"
-                 "@       IPHYLA = %d\n"
-                 "@       NORDRE = %d\n"
-                 "@\n"
-                 "@  Le transport Lagrangien de particule de charbon ne peut\n"
-                 "@   etre resolu au second ordre. Il faudrait mettre\n"
-                 "@   à jour les équations\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de NORDRE\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_model->physical_model,
-                 lagr_time_scheme->t_order);
-      iok++;
-
-    }
-
-    if (cs_glob_lagr_source_terms->ltsthe == 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON\n"
-                 "@      EST ACTIVE (LAGOPT) AVEC COUPLAGE RETOUR THERMIQUE\n"
-                 "@\n"
-                 "@       IPHYLA = %d\n"
-                 "@       LTSTHE = %d\n"
-                 "@\n"
-                 "@  Le transport Lagrangien de particule de charbon ne peut\n"
-                 "@   etre couple avec la phase Eulerienne. Il faudrait mettre\n"
-                 "@   à jour les équations\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de LTSTHE\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_model->physical_model,
-                 cs_glob_lagr_source_terms->ltsthe);
-      iok++;
-
-    }
-
-    if (lagr_model->fouling < 0 ||
-        lagr_model->fouling > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR L'ENCRASSEMENT DES PARTICULES\n"
-                 "@       DE CHARBON A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@     IENCRA DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI IENCRA = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IENCRA.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_model->fouling);
-      iok++;
-
-    }
-
-    for (int icha = 0; icha < extra->ncharb; icha++) {
-
-      if (lagr_model->fouling == 1 &&
-          cs_glob_lagr_encrustation->visref[icha] < 0) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR SUR L'ENCRASSEMENT DES PARTICULES\n"
-                   "@       DE CHARBON EST ACTIVE (IENCRA = %d)\n"
-                   "@       AVEC UNE VALEUR DE VISCOSITE CRITIQUE\n"
-                   "@       NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@     VISREF DEVRAIT ETRE UN REEL STRICTEMENT POSITIF (Pa.s)\n"
-                   "@       IL VAUT ICI VISREF = %14.5E\n"
-                   "@       POUR LE CHARBON : %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de VISREF.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   lagr_model->fouling,
-                   cs_glob_lagr_encrustation->visref[icha],
-                   icha);
-        iok++;
-
-      }
-
-      if (lagr_model->fouling == 1 &&
-          cs_glob_lagr_encrustation->tprenc[icha] < 150.0) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR SUR L'ENCRASSEMENT DES PARTICULES\n"
-                   "@       DE CHARBON EST ACTIVE (IENCRA = %d)\n"
-                   "@       AVEC UNE VALEUR DE TEMPERATURE SEUIL\n"
-                   "@       NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@     TPRENC DEVRAIT ETRE UN REEL SUPERIEUR A %14.5E\n"
-                   "@       (EN DEGRES CELSIUS)\n"
-                   "@       IL VAUT ICI TPRENC = %14.5E\n"
-                   "@       POUR LE CHARBON :%d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute. Risque de division par\n"
-                   "@  zero lors du calcul de la viscosite du charbon dans\n"
-                   "@  cs_lagr_tracking\n"
-                   "@\n"
-                   "@  Verifier la valeur de TPRENC.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   lagr_model->fouling,
-                   150.0e0,
-                   cs_glob_lagr_encrustation->tprenc[icha],
-                   icha);
-        iok++;
-
-      }
-
-    }
-
-  }
-  else
-    lagr_model->fouling = 0;
-
-
-  if (lagr_model->physical_model != 2 &&
-      cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    LA PHYSIQUE PARTICULIERE COMBUTION CHARBON PULVERISE\n"
-               "@      COUPLE AU TRANSPORT LAGRANGIEN DES PARTICULES\n"
-               "@      DE CHARBON EST ACTIVEE (USPPMO), ALORS QUE L'OPTION\n"
-               "@      TRANSPORT DE PARTICULE DE CHARBON\n"
-               "@      N'EST PAS ENCLENCHEE (LAGOPT).\n"
-               "@\n"
-               "@       IPHYLA = %d\n"
-               "@       IPPMOD(ICPL3C) = %d\n"
-               "@\n"
-               "@  Le module lagrangien doit etre active en mode transport\n"
-               "@   de particules de charbon pour etre couple avec la\n"
-               "@   combustion d'une flamme de charbon pulverise en phase\n"
-               "@   continue.\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IPHYLA et\n"
-               "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_model->physical_model,
-               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC]);
-    iok++;
-
-  }
-
-  if (   lagr_model->physical_model == 2
-      && (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0
-          && cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0)) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON\n"
-               "@      EST ACTIVE (LAGOPT), ALORS QU'AUCUNE PHYSIQUE\n"
-               "@      PARTICULIERE SUR LA COMBUSTION DU CHABON PULVERISE\n"
-               "@      N'EST PAS ENCLENCHE (USPPMO).\n"
-               "@\n"
-               "@       IPHYLA = %d\n"
-               "@       IPPMOD(ICPL3C) = %d\n"
-               "@       IPPMOD(ICP3PL) = %d\n"
-               "@\n"
-               "@  Le transport lagrangien de particule de charbon doit\n"
-               "@   etre couple avec la combustion d'une flamme de charbon\n"
-               "@   pulverise en phase continue.\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IPHYLA et\n"
-               "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_model->physical_model,
-               cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
-               cs_glob_physical_model_flag[CS_COMBUSTION_COAL]);
-    iok++;
-
-  }
-
-  if (lagr_model->physical_model == 2 &&
-      const_dim->nlayer < 1) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON\n"
-               "@      EST ACTIVE (LAGOPT), ALORS QUE LA PARTICULE N'EST\n"
-               "@      DISCRETISEE EN AUCUN COUCHE\n"
-               "@\n"
-               "@       IPHYLA = %d\n"
-               "@       NLAYER = %d\n"
-               "@\n"
-               "@  Il doit y avoir au moins une couche par particule pour\n"
-               "@    que le transport lagrangien de particule de charbon\n"
-               "@    soit calculé.\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de NLAYER dans la subroutine LAGPAR\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_model->physical_model,
-               const_dim->nlayer);
-    iok++;
-
-  }
-
-  if (lagr_model->physical_model == 2 &&
-      const_dim->nlayer > 99) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    LE TRANSPORT LAGRANGIEN DE PARTICULES DE CHARBON\n"
-               "@      EST ACTIVE (LAGOPT) AVEC CALCUL DES STATISTIQUES\n"
-               "@    LA PARTICULE EST DISCRETISEE EN COUCHE:\n"
-               "@\n"
-               "@       IPHYLA = %d\n"
-               "@       NLAYER = %d\n"
-               "@\n"
-               "@  Il y a trop de couche de discrétisation. nlayer devrait\n"
-               "@    etre inferieur à 99. Sinon, il y a un problème au\n"
-               "@    niveau du nom des variables (XXXXXX_layer_XX).\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de NLAYER dans la subroutine LAGPAR\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_model->physical_model,
-               const_dim->nlayer);
-    iok++;
-
-  }
-
-  if (iok != 0)
-    cs_exit(1);
-
-  if (iok != 0)
-    cs_exit(1);
+  if (lagr_model->physical_model == 2)
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "const_dim->nlayer",
+                                  const_dim->nlayer,
+                                  1, 99);
 
   /* ISTTIO NSTITS LTSDYN LTSMAS LTSTHE  */
-  /* Si champs figes alors forcement en stationnaire    */
+
   if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     lagr_time_scheme->isttio = 1;
 
@@ -1206,31 +647,9 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   if (lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
-    if (lagr_time_scheme->isttio == 1 &&
-        cs_glob_lagr_source_terms->nstits < 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR LE DECLENCHEMENT DU CALCUL\n"
-                 "@       STATIONNAIRE DES STATISTIQUES POUR UN COUPLAGE RETOUR\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    NSTITS DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL A 1\n"
-                 "@       IL VAUT ICI NSTITS = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de NSTITS.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_source_terms->nstits);
-      iok++;
-
-    }
+    if (   lagr_time_scheme->isttio == 1
+        && cs_glob_lagr_source_terms->nstits < 1)
+      cs_glob_lagr_source_terms->nstits = 1;
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
@@ -1239,8 +658,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                   0, 2);
 
     if (     lagr_model->physical_model == 1
-        && (  cs_glob_lagr_specific_physics->impvar == 1
-            ||cs_glob_lagr_specific_physics->idpvar == 1)) {
+        && (   cs_glob_lagr_specific_physics->impvar == 1
+            || cs_glob_lagr_specific_physics->idpvar == 1)) {
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_source_terms->ltsmas",
@@ -1250,167 +669,62 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     else
       cs_glob_lagr_source_terms->ltsmas = 0;
 
-    if ((lagr_model->physical_model == 1 && cs_glob_lagr_specific_physics->itpvar == 1)
+    if (   (   lagr_model->physical_model == 1
+            && cs_glob_lagr_specific_physics->itpvar == 1)
         || lagr_model->physical_model == 2) {
 
-      if (cs_glob_lagr_source_terms->ltsthe < 0 ||
-          cs_glob_lagr_source_terms->ltsthe > 1) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR SUR LE COUPLAGE RETOUR SUR LA THERMIQUE\n"
-                   "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@    LTSTHE DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                   "@       IL VAUT ICI LTSTHE = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de LTSTHE.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_source_terms->ltsthe);
-        iok++;
-
-      }
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _("in Lagrangian module"),
+                                    "cs_glob_lagr_source_terms->ltsthe",
+                                    cs_glob_lagr_source_terms->ltsthe,
+                                    0, 2);
 
     }
     else
       cs_glob_lagr_source_terms->ltsthe = 0;
 
-    if (cs_glob_lagr_source_terms->ltsdyn == 1 && *iccvfg == 1) {
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR LE COUPLAGE RETOUR SUR LA DYNAMIQUE\n"
-                 "@       EST ACTIVE (LTSDYN = %d) (LAGOPT)\n"
-                 "@       ALORS QUE LA PHASE PORTEUSE EST CALCULEE AVEC\n"
-                 "@       L'OPTION CHAMP FIGE  (ICCVFG = %d).\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de LTSDYN et\n"
-                 "@  verifier la valeur de ICCVFG.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_source_terms->ltsdyn,
-                 *iccvfg);
-      iok++;
-    }
+    if (cs_glob_lagr_source_terms->ltsdyn == 1 && *iccvfg == 1)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in Lagrangian module"),
+         _("The return coupling on the flow field is activated\n"
+           "(cs_glob_lagr_source_terms->ltsdyn = %d)\n"
+           "but the carrier field is frozen (iccvfg = %d)?\n"),
+         cs_glob_lagr_source_terms->ltsdyn,
+         *iccvfg);
 
-    if (cs_glob_lagr_source_terms->ltsdyn != 1 &&
-        cs_glob_lagr_source_terms->ltsthe != 1 &&
-        cs_glob_lagr_source_terms->ltsmas != 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========   (LAGOPT).\n"
-                 "@\n"
-                 "@    L'INDICATEUR SUR LE COUPLAGE RETOUR EST ACTIVE\n"
-                 "@        IILAGR = %d\n"
-                 "@      ALORS QU'AUCUN COUPLAGE RETOUR N'EST ENCLENCHE\n"
-                 "@        DYNAMIQUE : LTSDYN = %d\n"
-                 "@        THERMIQUE : LTSTHE = %d\n"
-                 "@        MASSIQUE  : LTSMAS = %d\n"
-                 "@\n"
-                 "@    LES COUPLAGES RETOUR SUR LA THERMIQUE ET SUR LA MASSE\n"
-                 "@      NECESSITENT L'ACTIVATION D'UNE PHYSIQUE ADEQUATE\n"
-                 "@      ASSOCIEE AUX PARTICULES.\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IILAGR.\n"
-                 "@  Verifier la valeur de IPHYLA.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 lagr_time_scheme->iilagr,
-                 cs_glob_lagr_source_terms->ltsdyn,
-                 cs_glob_lagr_source_terms->ltsthe,
-                 cs_glob_lagr_source_terms->ltsmas);
-      iok++;
-
-    }
+    if (   cs_glob_lagr_source_terms->ltsdyn != 1
+        && cs_glob_lagr_source_terms->ltsthe != 1
+        && cs_glob_lagr_source_terms->ltsmas != 1)
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The two-way coupling option is activated\n"
+           "but all coupling sub-options are deactivated:\n"
+           "  cs_glob_lagr_source_terms->ltsdyn = %d\n"
+           "  cs_glob_lagr_source_terms->ltsthe = %d\n"
+           "  cs_glob_lagr_source_terms->ltsmas = %d\n"),
+         cs_glob_lagr_source_terms->ltsdyn,
+         cs_glob_lagr_source_terms->ltsthe,
+         cs_glob_lagr_source_terms->ltsmas);
 
   }
   else {
-
     cs_glob_lagr_source_terms->ltsdyn = 0;
     cs_glob_lagr_source_terms->ltsmas = 0;
     cs_glob_lagr_source_terms->ltsthe = 0;
   }
 
-  if (iok != 0)
-    cs_exit(1);
+  if (cs_glob_lagr_stat_options->idstnt < 1)
+    cs_glob_lagr_stat_options->idstnt = 1;
 
   {
-    if (cs_glob_lagr_stat_options->idstnt < 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR DE SEUIL POUR LE CALCUL DES STATISTIQUES\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    IDSTNT DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL A 1\n"
-                 "@       IL VAUT ICI IDSTNT = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de IDSTNT.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_stat_options->idstnt);
-      iok++;
-
-    }
-
     if (lagr_time_scheme->isttio == 1) {
-
-      if (cs_glob_lagr_stat_options->nstist < cs_glob_lagr_stat_options->idstnt) {
-
-        bft_printf("@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n"
-                   "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                   "@    =========\n"
-                   "@    L'INDICATEUR DE CALCUL STATIONNAIRE DES STATISTIQUES\n"
-                   "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                   "@\n"
-                   "@    NSTIST DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL\n"
-                   "@       A IDSTNT = %d\n"
-                   "@       IL VAUT ICI NSTIST = %d\n"
-                   "@\n"
-                   "@  Le calcul ne sera pas execute.\n"
-                   "@\n"
-                   "@  Verifier la valeur de NSTIST.\n"
-                   "@\n"
-                   "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n",
-                   cs_glob_lagr_stat_options->idstnt, cs_glob_lagr_stat_options->nstist);
-        iok++;
-
-      }
-
+      if (  cs_glob_lagr_stat_options->nstist
+          < cs_glob_lagr_stat_options->idstnt)
+        cs_glob_lagr_stat_options->idstnt = cs_glob_lagr_stat_options->nstist;
     }
-
   }
-
-
-  if (iok != 0)
-    cs_exit(1);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Lagrangian module"),
@@ -1499,9 +813,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
      "cs_glob_lagr_boundary_interactions->has_part_impact_nbr",
      cs_glob_lagr_boundary_interactions->has_part_impact_nbr,
      0, 2);
-
-  if (iok != 0)
-    cs_exit (1);
 
   cs_parameters_error_barrier();
 
