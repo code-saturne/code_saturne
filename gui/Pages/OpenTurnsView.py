@@ -157,7 +157,6 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.spinBoxNumberMinutes.valueChanged[int].connect(self.slotUpdateWCMinutes)
         self.spinBoxNumberSeconds.valueChanged[int].connect(self.slotUpdateWCSeconds)
         self.lineEditWCKEY.textChanged[str].connect(self.slotUpdateWckey)
-        self.lineEditOutputFile.textChanged[str].connect(self.slotUpdateResultsFile)
 
         self.pushButtonLaunchOT.clicked.connect(self.slotLaunchCsOt)
 
@@ -178,7 +177,6 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
         # ---------------------------------------
         # Initial values
-        self.lineEditOutputFile.setText(self.mdl.resfile_name)
         if dist_hosts != None:
             self.modelOtStudyHosts.setItem(str_model=self.mdl.host_name)
         else:
@@ -198,7 +196,6 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.spinBoxNumberSeconds.setValue(int(wct[3]))
 
         self.lineEditWCKEY.setText(self.mdl.getWCKEY())
-        self.lineEditOutputFile.setText(self.mdl.getResultsFile())
 
 
     @pyqtSlot(str)
@@ -330,15 +327,6 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         """
 
         self.mdl.setWCKEY(text)
-
-
-    @pyqtSlot(str)
-    def slotUpdateResultsFile(self, text):
-        """
-        Update the outputfile name
-        """
-
-        self.mdl.setResultsFile(text)
 
 
     @pyqtSlot()

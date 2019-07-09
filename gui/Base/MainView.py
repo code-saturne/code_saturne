@@ -1359,7 +1359,7 @@ class MainView(object):
         """
         Save user defined laws with MEI to C functions
         """
-        if self.case['run_type'] == 'standard' and self.case['oturns'] == False:
+        if self.case['run_type'] == 'standard':
             mci = mei_to_c_interpreter(self.case)
             state = mci.save_all_functions()
 
@@ -1826,22 +1826,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.slotUndoRedoView()
 
             p = displaySelectedPage(last_record[0],
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    tree=self.Browser)
-            self.scrollArea.setWidget(p)
-
-
-    def slotOpenTurnsMode(self):
-        """
-        OpenTurns mode study slot
-        """
-        self.case['oturns'] = True
-        self.initCase()
-        self.Browser.configureTree(self.case)
-        if self.case['current_page'] == 'OpenTurns study':
-            p = displaySelectedPage(self.case['current_page'],
                                     self,
                                     self.case,
                                     stbar=self.statusbar,

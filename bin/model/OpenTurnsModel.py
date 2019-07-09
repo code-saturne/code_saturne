@@ -93,8 +93,6 @@ class OpenTurnsModel(Model):
         if self.otstudy_name != tmp_study_name:
             self.otstudy_name = tmp_study_name
 
-        self.resfile_name = self.cfg_ot.get('study_parameters', 'results_file')
-
         # SUBMISSION
         self.wall_clock   = self.cfg_ot.get('batch_parameters', 'wall_clock')
         self.nprocs       = self.cfg_ot.get('batch_parameters', 'nprocs')
@@ -288,16 +286,6 @@ class OpenTurnsModel(Model):
 
         return self.wckey
 
-    # ---------------------------------------
-    def setResultsFile(self, v):
-
-        self.resfile_name = str(v)
-
-
-    def getResultsFile(self):
-
-        return self.resfile_name
-
 
     # ---------------------------------------
     def setInputVars(self, vlist):
@@ -423,7 +411,6 @@ class OpenTurnsModel(Model):
             self.cfg_ot.set('study_parameters', 'ref_case', self.ref_case_name)
             self.cfg_ot.set('study_parameters', 'xmlfile',
                             os.path.split(self.case['xmlfile'])[-1])
-            self.cfg_ot.set('study_parameters', 'results_file', self.resfile_name)
 
             self.cfg_ot.set('batch_parameters', 'wall_clock', self.wall_clock)
             self.cfg_ot.set('batch_parameters', 'wckey', self.wckey)

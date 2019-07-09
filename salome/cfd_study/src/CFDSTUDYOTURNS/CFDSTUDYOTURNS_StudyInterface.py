@@ -182,7 +182,7 @@ class cfd_openturns_study:
         """
 
 
-        resfile = self.cfg.get('study_parameters', 'results_file')
+        resfile = "cs_uncertain_output.dat"
 
         rspth = os.path.join(self.study_path,
                              self.case_id,
