@@ -50,7 +50,6 @@
 #include "cs_map.h"
 #include "cs_parameters.h"
 
-
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -62,6 +61,7 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
+
 #define _CS_NOTEBOOK_ENTRY_S_ALLOC_SIZE       16
 
 /*============================================================================
@@ -69,9 +69,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef struct {
+
   const char *name;       /* Name of the notebook entry */
 
-  char *description; /* Description */
+  char       *description; /* Description */
 
   int         id;         /* Entry id */
 
@@ -85,7 +86,6 @@ typedef struct {
   bool        editable;   /* Can the value be modified */
 
 } _cs_notebook_entry_t;
-
 
 /*============================================================================
  * Static global variables
@@ -116,10 +116,10 @@ static cs_map_name_to_id_t *_entry_map = NULL;
  * \return _cs_notebook_entry_t pointer
  */
 /*----------------------------------------------------------------------------*/
+
 _cs_notebook_entry_t *
 cs_notebook_entry_by_name(const char *name)
 {
-
   int id = cs_map_name_to_id_try(_entry_map, name);
 
   if (id > -1)
@@ -129,7 +129,6 @@ cs_notebook_entry_by_name(const char *name)
               _("Entry \"%s\" is not defined."), name);
     return NULL;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -146,12 +145,12 @@ cs_notebook_entry_by_name(const char *name)
  * \return a _cs_notebook_entry_t pointer
  */
 /*----------------------------------------------------------------------------*/
+
 static _cs_notebook_entry_t *
 _entry_create(const char *name,
               int         uncertain,
               bool        editable)
 {
-
   size_t l = strlen(name);
   const char *addr_0 = NULL, *addr_1 = NULL;
 
@@ -191,7 +190,7 @@ _entry_create(const char *name,
   if (entry_id == _n_entries)
     _n_entries = entry_id + 1;
 
-  /* Reallocate fields pointer if necessary */
+  /* Reallocate entries pointer if necessary */
   if (_n_entries > _n_entries_max) {
     if (_n_entries_max == 0)
       _n_entries_max = 8;
@@ -242,6 +241,7 @@ _entry_create(const char *name,
  *
  */
 /*----------------------------------------------------------------------------*/
+
 static void
 _entry_set_description(_cs_notebook_entry_t *e,
                        const char           *description)
@@ -253,8 +253,6 @@ _entry_set_description(_cs_notebook_entry_t *e,
     strcpy(e->description, "");
   else
     strcpy(e->description, description);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -268,14 +266,12 @@ _entry_set_description(_cs_notebook_entry_t *e,
  *
  */
 /*----------------------------------------------------------------------------*/
+
 static void
 _entry_set_value(_cs_notebook_entry_t *e,
                  cs_real_t             value)
 {
-
   e->val = value;
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -289,7 +285,6 @@ _entry_set_value(_cs_notebook_entry_t *e,
 void
 cs_notebook_dump_info(void)
 {
-
   if (_n_entries == 0)
     return;
 
@@ -307,8 +302,6 @@ cs_notebook_dump_info(void)
   }
   bft_printf(" --------------------------- \n");
   bft_printf_flush();
-
-  return;
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -323,7 +316,8 @@ void
 cs_notebook_load_from_file(void)
 {
 
-  cs_tree_node_t *tnb = cs_tree_get_node(cs_glob_tree, "physical_properties/notebook");
+  cs_tree_node_t *tnb = cs_tree_get_node(cs_glob_tree,
+                                         "physical_properties/notebook");
   for (cs_tree_node_t *n = cs_tree_find_node(tnb, "var");
        n != NULL;
        n = cs_tree_node_get_next_of_name(n)) {
@@ -367,7 +361,16 @@ cs_notebook_load_from_file(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a parameter value (real) for an editable parameter.
+ *
+ * The name used is the same as the one in the GUI
+ *
+ * \param[in] name  name of the parameter
+ * \param[in] val   value of the parameter
+ */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_notebook_parameter_set_value(const char *name,
                                 cs_real_t   val)
@@ -381,9 +384,8 @@ cs_notebook_parameter_set_value(const char *name,
               e->name);
 
   _entry_set_value(e, val);
-
-  return;
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return a parameter value (real).
@@ -393,14 +395,12 @@ cs_notebook_parameter_set_value(const char *name,
  * \param[in] name  name of the parameter
  *
  * \return value of the given parameter
- *
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
 cs_notebook_parameter_value_by_name(const char *name)
 {
-
   _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
   return e->val;
 }
@@ -456,10 +456,10 @@ cs_notebook_parameter_get_description(char *name)
  *
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_notebook_uncertain_output(void)
 {
-
   if (_n_uncertain_inputs == 0 || _n_uncertain_outputs == 0)
     return;
 
@@ -489,8 +489,6 @@ cs_notebook_uncertain_output(void)
     fflush(file);
     fclose(file);
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -501,10 +499,10 @@ cs_notebook_uncertain_output(void)
  *
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_notebook_destroy_all(void)
 {
-
   /* Before destruction, we dump the results */
   cs_notebook_uncertain_output();
 
