@@ -218,11 +218,11 @@ cs_dbg_fprintf_system(const char        *eqname,
   BFT_MALLOC(filename, len, char);
 
   sprintf(filename, "%s-sol-%04d.log", eqname, nt);
-  if (sol != NULL && level > 2)
+  if (sol != NULL && level > 4)
     cs_dbg_array_fprintf(NULL, filename, 1e-16, size, sol, 6);
 
   sprintf(filename, "%s-rhs-%04d.log", eqname, nt);
-  if (rhs != NULL && level > 3)
+  if (rhs != NULL && level > 5)
     cs_dbg_array_fprintf(NULL, filename, 1e-16, size, rhs, 6);
 
   BFT_FREE(filename);
