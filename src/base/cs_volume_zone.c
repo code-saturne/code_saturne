@@ -259,8 +259,8 @@ _zone_define(const char  *name)
   z->time_varying = false;
   z->allow_overlay = true;
 
-  z->measure = 0.;
-  z->boundary_measure = 0.;
+  z->measure = -1.;
+  z->boundary_measure = -1.;
 
   return z;
 }
@@ -316,7 +316,7 @@ _volume_zone_compute_measure(bool       mesh_modified,
                              cs_zone_t *z)
 {
   /* We recompute values only if mesh is modified or zone is time varying.
-   * FIXME: For the moment, the boundary measure is not computed, but set to 0.
+   * FIXME: For the moment, the boundary measure is not computed, but set to -1.
    * to be improved in a next patch
    */
   if (z->time_varying || mesh_modified) {
@@ -325,8 +325,8 @@ _volume_zone_compute_measure(bool       mesh_modified,
 
     z->measure = 0.;
     z->f_measure = 0.;
-    z->boundary_measure = 0.;
-    z->f_boundary_measure = 0.;
+    z->boundary_measure = -1.;
+    z->f_boundary_measure = -1.;
 
     for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
       cs_lnum_t c_id = z->elt_ids[e_id];
