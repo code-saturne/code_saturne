@@ -1473,7 +1473,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC */
+     to detect vertices with an enforcement */
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
@@ -1668,7 +1668,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC */
+     to detect vertices with an enforcement */
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
@@ -1911,9 +1911,8 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   cs_real_t  rhs_norm = 0.;
 
-  /* Build an array storing the Dirichlet values at vertices
-     and another one with a tags to detect vertices related to a
-     Neumann BC */
+  /* Build an array storing the Dirichlet values at vertices and another one
+     to detect vertices with an enforcement */
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
