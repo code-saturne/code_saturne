@@ -70,12 +70,11 @@ typedef struct {
   bool              allow_overlay;       /*!< allow overlaying of this zone ? */
 
   cs_real_t         measure;             /*!< Geometrical measure of the zone */
-  cs_real_t         f_measure;           /*!< Fluid geometrical measure of the
-                                           zone */
+  cs_real_t         f_measure;           /*!< Fluid measure of the zone */
 
   cs_real_t         boundary_measure;    /*!< Boundary geometrical measure of
                                            the zone */
-  cs_real_t         f_boundary_measure;  /*!< Fluid boundary geometrical measure
+  cs_real_t         f_boundary_measure;  /*!< Fluid boundary measure
                                            of the zone */
 
 } cs_zone_t;
@@ -102,9 +101,6 @@ typedef struct {
                                       with time ? */
   bool              allow_overlay;  /*!< allow overlaying of this zone ? */
 
-  cs_real_t         surface;        /*!< Geometrical measure of the zone */
-  cs_real_t         perimeter;      /*!< Boundary geometrical measure of the zone */
-
 } cs_boundary_zone_t;
 
 /*! Volume zone description
@@ -128,9 +124,6 @@ typedef struct {
   bool              time_varying;   /*!< does the selected zone change
                                       with time ? */
   bool              allow_overlay;  /*!< allow overlaying of this zone ? */
-
-  cs_real_t         volume;         /*!< Geometrical measure of the zone */
-  cs_real_t         surface;        /*!< Boundary geometrical measure of the zone */
 
 } cs_volume_zone_t;
 

@@ -247,8 +247,8 @@ _zone_define(const char  *name)
   z->time_varying = false;
   z->allow_overlay = false;
 
-  z->measure = 0.;
-  z->boundary_measure = 0.;
+  z->measure = -1.;
+  z->boundary_measure = -1.;
 
   return z;
 }
@@ -306,7 +306,7 @@ _boundary_zone_compute_measure(bool       mesh_modified,
                                cs_zone_t *z)
 {
   /* We recompute values only if mesh is modified or zone is time varying.
-   * FIXME: For the moment, the boundary measure is not computed, but set to 0.
+   * FIXME: For the moment, the boundary measure is not computed, but set to -1.
    * to be improved in a next patch
    */
   if (z->time_varying || mesh_modified) {
@@ -314,7 +314,7 @@ _boundary_zone_compute_measure(bool       mesh_modified,
     cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
 
     z->measure = 0.;
-    z->boundary_measure = 0.;
+    z->boundary_measure = -1.;
 
     for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
       cs_lnum_t f_id = z->elt_ids[e_id];
@@ -327,8 +327,6 @@ _boundary_zone_compute_measure(bool       mesh_modified,
     cs_parall_sum(1, CS_REAL_TYPE, &z->boundary_measure);
     cs_parall_sum(1, CS_REAL_TYPE, &z->f_boundary_measure);
   }
-
-  return;
 }
 
 /*============================================================================
