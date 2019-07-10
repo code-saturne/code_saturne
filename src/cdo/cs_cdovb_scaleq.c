@@ -1507,10 +1507,6 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
 
@@ -1698,10 +1694,6 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _vbs_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);
@@ -1979,10 +1971,6 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
     cs_cell_sys_t  *csys = _vbs_cell_system[t_id];
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, time_eval, cb);

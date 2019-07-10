@@ -1969,10 +1969,6 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, t_eval, cb);
 
@@ -2207,10 +2203,6 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
 
     cs_cdofb_navsto_builder_t  nsb
       = cs_cdofb_navsto_create_builder(connect);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, t_eval, cb);
@@ -2477,10 +2469,6 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
     cs_cell_builder_t  *cb = NULL;
 
     cs_cdofb_vecteq_get(&csys, &cb);
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, t_eval, cb);
