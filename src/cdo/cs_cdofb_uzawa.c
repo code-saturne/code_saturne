@@ -963,10 +963,6 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
     cs_cdofb_vecteq_get(&csys, &cb);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, time_eval, cb);
 
@@ -1421,10 +1417,6 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
     cs_cdofb_vecteq_get(&csys, &cb);
 
     const cs_real_t  inv_dtcur = 1./dt_cur;
-
-  /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, time_eval, cb);
@@ -1903,10 +1895,6 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
     cs_cdofb_vecteq_get(&csys, &cb);
 
     const cs_real_t  inv_dtcur = 1./dt_cur;
-
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
 
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, time_eval, cb);

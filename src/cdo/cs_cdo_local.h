@@ -106,7 +106,6 @@ typedef struct {
   double     *val_n;    /*!< values of the unkown at previous time t_n */
 
   /* Boundary conditions for the local system */
-  cs_lnum_t   face_shift;  /*!< shift related to the border face numbering */
   short int   n_bc_faces;  /*!< Number of border faces associated to a cell */
   short int  *_f_ids;      /*!< List of face ids in the cell numbering */
   cs_lnum_t  *bf_ids;      /*!< List of face ids in the border face numbering */
