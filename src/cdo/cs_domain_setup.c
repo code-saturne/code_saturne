@@ -297,6 +297,38 @@ cs_domain_set_time_param(cs_domain_t       *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set time step parameters for unsteady computations when this is not
+ *         already done. This situation should occur when the GUI is used to
+ *         set a constant time step.
+ *
+ * \param[in, out]  domain    pointer to a \ref cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_automatic_time_step_settings(cs_domain_t       *domain)
+{
+  if (domain == NULL)  bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  cs_time_step_t  *ts = domain->time_step;
+
+  if (ts->t_max < 0 && ts->nt_max < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Please check your settings.\n"
+              " Unsteady computation but no definition available.\n",
+              __func__);
+  if (ts->dt_ref < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Please check your settings.\n"
+              " Unsteady computation but no dt_ref available.\n",
+              __func__);
+
+  cs_domain_set_time_param(domain, ts->nt_max, ts->t_max);
+  cs_domain_def_time_step_by_value(domain, ts->dt_ref);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the value of the time step thanks to a predefined function
  *
  * \param[in, out] domain      pointer to a cs_domain_t structure
@@ -363,6 +395,7 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
   domain->time_step->dt[0] = dt;
   domain->time_step->dt_ref = dt;
+  domain->time_step->dt_next = dt;
   domain->time_options.dtmin = dt;
   domain->time_options.dtmax = dt;
 

@@ -538,6 +538,10 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_post_time_step_end();
 
   /* Main time loop */
+  if (domain->time_step_def == NULL) /* No definition available yet. Try a
+                                        definition by value */
+    cs_domain_automatic_time_step_settings(domain);
+
   if (domain->time_step->nt_cur == 0)
     domain->time_step->nt_cur = 1; /* Same numbering as Finite Volume part */
 

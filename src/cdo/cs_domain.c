@@ -372,10 +372,19 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
   cs_time_step_t  *ts = domain->time_step;
   cs_xdef_t  *ts_def = domain->time_step_def;
 
-  if (ts_def == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Please check your settings: Unsteady computation but no"
-              " current time step defined.\n", __func__);
+  if (ts_def == NULL) {
+
+    if (ts->dt_ref < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Please check your settings.\n"
+                " Unsteady computation but no current time step defined.\n",
+                __func__);
+    else {
+
+
+    }
+
+  } /* No definition (Settings is perhaps done using the GUI) */
 
   const double  t_cur = ts->t_cur;
   const int  nt_cur = ts->nt_cur;
@@ -401,8 +410,8 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
 
       /* TODO: Check how the following value is set in FORTRAN
        * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
-      if (domain->time_step->dt_ref < 0) /* Should be the initial val. */
-        domain->time_step->dt_ref = ts->dt[0];
+      if (ts->dt_ref < 0) /* Should be the initial val. */
+        ts->dt_ref = ts->dt[0];
 
     }
     else
