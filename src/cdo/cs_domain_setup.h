@@ -96,6 +96,19 @@ cs_domain_set_time_param(cs_domain_t       *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set time step parameters for unsteady computations when this is not
+ *         already done. This situation should occur when the GUI is used to
+ *         set a constant time step.
+ *
+ * \param[in, out]  domain    pointer to a \ref cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_automatic_time_step_settings(cs_domain_t       *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the value of the time step thanks to a predefined function
  *
  * \param[in, out] domain      pointer to a cs_domain_t structure
