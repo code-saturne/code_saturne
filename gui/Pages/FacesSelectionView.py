@@ -130,7 +130,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setEditorData(self, lineEdit, index):
         # This line is used to avoid an overlay of old and new text
-        editor.setAutoFillBackground(True)
+        lineEdit.setAutoFillBackground(True)
 
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
         lineEdit.setText(value)
