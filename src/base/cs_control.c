@@ -61,6 +61,7 @@
 
 #include "cs_file.h"
 #include "cs_log.h"
+#include "cs_notebook.h"
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_resource.h"
@@ -844,7 +845,7 @@ _read_next_double(const char   *cur_line,
  * Read next value, expecting string
  *
  * parameters:
- *   skip_prev <-- skipe previous string ?
+ *   skip_prev <-- skip previous string ?
  *   s         <-> current string position
  *   s_val     --> pointer to string read
  *----------------------------------------------------------------------------*/
@@ -944,11 +945,48 @@ _control_checkpoint(const char   *cur_line,
                    "checkpoint_wall_time_interval", wt);
       }
       else
-        bft_printf("  %-32s %12.5g %s\n",
+         bft_printf("  %-32s %12.5g %s\n",
                    "checkpoint_wall_time_interval", wt, _("ignored"));
     }
   }
   else
+    bft_printf(_("   ignored: \"%s\"\n"), cur_line);
+}
+
+/*----------------------------------------------------------------------------
+ * Handle command file line relative to notebook
+ *
+ * parameters:
+ *   ts       <-- pointer to time step status
+ *   s        <-> pointer to current position in line
+ *----------------------------------------------------------------------------*/
+
+static void
+_control_notebook(const cs_time_step_t   *ts,
+                  char                   *cur_line,
+                  const char            **s)
+{
+  *s += 9; /* shift in string by lenght of "postprocess_" part */
+
+  bool ignored = true;
+  if (strncmp(*s, "set ", 4) == 0) {
+    char *name;
+    double val = 0.;
+    _read_next_string(false, &s, &name);
+    if (_read_next_double(cur_line, s, &val) == 1) {
+      int editable;
+      int is_present = cs_notebook_parameter_is_present(name,
+                                                        &editable);
+      if (editable) {
+        cs_notebook_parameter_set_value(name, val);
+        bft_printf("  %-32s \"%s\" set to %12.5g\n",
+                   "notebook", name, val);
+      }
+      ignored = false;
+    }
+ }
+
+  if (ignored)
     bft_printf(_("   ignored: \"%s\"\n"), cur_line);
 }
 
@@ -1146,6 +1184,11 @@ _parse_control_buffer(const char         *name,
 
     else if (strncmp(s, "postprocess_", 12) == 0)
       _control_postprocess(ts, cur_line, (const char **)&s);
+
+    /* Notebook options */
+
+    else if (strncmp(s, "notebook_", 9) == 0)
+      _control_notebook(ts, cur_line, (const char **)&s);
 
     /* Force flush of logs */
 

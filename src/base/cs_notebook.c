@@ -58,6 +58,8 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -274,6 +276,12 @@ _entry_set_value(_cs_notebook_entry_t *e,
   e->val = value;
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief dump the notebook structure to the listing file
@@ -282,6 +290,7 @@ _entry_set_value(_cs_notebook_entry_t *e,
  *
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_notebook_dump_info(void)
 {
@@ -303,6 +312,7 @@ cs_notebook_dump_info(void)
   bft_printf(" --------------------------- \n");
   bft_printf_flush();
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  *  \brief Initialize the notebook object (based on cs_tree_node_t)
@@ -362,28 +372,33 @@ cs_notebook_load_from_file(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a parameter value (real) for an editable parameter.
+ * \brief Check if a parameter value is present.
  *
- * The name used is the same as the one in the GUI
+ * \param[in]   name      name of the parameter
+ * \param[out]  editable  1 if the value is editable, 0 otherwise (optional)
  *
- * \param[in] name  name of the parameter
- * \param[in] val   value of the parameter
+ * \return 0 if not present, 1 if present
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_notebook_parameter_set_value(const char *name,
-                                cs_real_t   val)
+int
+cs_notebook_parameter_is_present(const char  *name,
+                                 int         *editable)
 {
+  int retval = 0;
+  int id = cs_map_name_to_id_try(_entry_map, name);
 
-  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  if (editable != NULL)
+    *editable = 0;
 
-  if (e->editable == false)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Entry \"%s\" was defined as not editable in the notebook.\n"),
-              e->name);
-
-  _entry_set_value(e, val);
+  if (id > -1) {
+    retval = 1;
+    if (editable != NULL) {
+      if (_entries[id]->editable)
+        *editable = 1;
+    }
+  }
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -403,6 +418,31 @@ cs_notebook_parameter_value_by_name(const char *name)
 {
   _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
   return e->val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a parameter value (real) for an editable parameter.
+ *
+ * The name used is the same as the one in the GUI
+ *
+ * \param[in] name  name of the parameter
+ * \param[in] val   value of the parameter
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_parameter_set_value(const char *name,
+                                cs_real_t   val)
+{
+  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+
+  if (e->editable == false)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Entry \"%s\" was defined as not editable in the notebook.\n"),
+              e->name);
+
+  _entry_set_value(e, val);
 }
 
 /*----------------------------------------------------------------------------*/

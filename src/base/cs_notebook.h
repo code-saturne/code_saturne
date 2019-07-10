@@ -48,6 +48,21 @@ cs_notebook_load_from_file(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if a parameter value is present.
+ *
+ * \param[in]   name      name of the parameter
+ * \param[out]  editable  1 if the value is editable, 0 otherwise (optional)
+ *
+ * \return 0 if not present, 1 if present
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_notebook_parameter_is_present(const char  *name,
+                                 int         *editable);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return a parameter value (real).
  *
  * The name used is the same as the one in the GUI
@@ -60,6 +75,21 @@ cs_notebook_load_from_file(void);
 
 cs_real_t
 cs_notebook_parameter_value_by_name(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a parameter value (real) for an editable parameter.
+ *
+ * The name used is the same as the one in the GUI
+ *
+ * \param[in] name  name of the parameter
+ * \param[in] val   value of the parameter
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_parameter_set_value(const char *name,
+                                cs_real_t   val);
 
 /*----------------------------------------------------------------------------*/
 /*!
