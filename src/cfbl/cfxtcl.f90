@@ -475,7 +475,7 @@ do ifac = 1, nfabor
       rcodcl(ifac,iu,1)  = bc_vel(1,ifac)
       rcodcl(ifac,iv,1)  = bc_vel(2,ifac)
       rcodcl(ifac,iw,1)  = bc_vel(3,ifac)
-      if (ippmod(icompf).gt.1) then ! FIXME fill bc_frac...
+      if (ippmod(icompf).eq.2) then ! FIXME fill bc_frac...
         rcodcl(ifac,isca(ifracv),1) = bc_fracv(ifac)
         rcodcl(ifac,isca(ifracm),1) = bc_fracm(ifac)
         rcodcl(ifac,isca(ifrace),1) = bc_frace(ifac)
@@ -487,7 +487,7 @@ do ifac = 1, nfabor
       rcodcl(ifac,iu,3)  = 0.d0
       rcodcl(ifac,iv,3)  = 0.d0
       rcodcl(ifac,iw,3)  = 0.d0
-      if (ippmod(icompf).gt.1) then
+      if (ippmod(icompf).eq.2) then
         rcodcl(ifac,isca(ifracv),3) = 0.d0
         rcodcl(ifac,isca(ifracm),3) = 0.d0
         rcodcl(ifac,isca(ifrace),3) = 0.d0
@@ -519,7 +519,7 @@ do ifac = 1, nfabor
       ! temperature
       icodcl(ifac,itk)   = 1
       ! mixture fractions
-      if (ippmod(icompf).gt.1) then
+      if (ippmod(icompf).eq.2) then
         icodcl(ifac,isca(ifracv))   = 1
         icodcl(ifac,isca(ifracm))   = 1
         icodcl(ifac,isca(ifrace))   = 1
@@ -532,7 +532,7 @@ do ifac = 1, nfabor
       icodcl(ifac,ien)   = 3
       icodcl(ifac,itk)   = 3
       ! mixture fractions
-      if (ippmod(icompf).gt.1) then
+      if (ippmod(icompf).eq.2) then
         icodcl(ifac,isca(ifracv))   = 3
         icodcl(ifac,isca(ifracm))   = 3
         icodcl(ifac,isca(ifrace))   = 3
