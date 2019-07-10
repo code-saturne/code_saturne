@@ -676,6 +676,23 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the flag related to a cs_equation_param_t structure
+ *
+ * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in]      flag         flag to add
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_equation_param_set_flag(cs_equation_param_t     *eqp,
+                           cs_flag_t                flag)
+{
+  assert(eqp != NULL);
+  eqp->flag |= flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Ask if the parameters of the equation needs a diffusion term
  *
  * \param[in] eqp          pointer to a \ref cs_equation_param_t
