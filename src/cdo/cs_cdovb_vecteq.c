@@ -1331,7 +1331,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC*/
+     to detect vertices with an enforcement */
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 

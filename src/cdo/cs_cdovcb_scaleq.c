@@ -227,7 +227,7 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      mesh          pointer to a cs_mesh_t structure
  * \param[in]      eqp           pointer to a cs_equation_param_t structure
  * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
- * \param[in, out] vtx_bc_flag   pointer to an array of BC flag for each vtx
+ * \param[in, out] vtx_bc_flag   pointer to an array of BC flag for each vertex
  * \param[in, out] p_dir_values  pointer to the Dirichlet values to set
  */
 /*----------------------------------------------------------------------------*/
@@ -1282,8 +1282,7 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC */
+  /* Build an array storing the Dirichlet values at vertices */
   cs_real_t  *dir_values = NULL;
 
   /* First argument is set to t_cur even if this is a steady computation since
@@ -1491,8 +1490,7 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC */
+  /* Build an array storing the Dirichlet values at vertices */
   cs_real_t  *dir_values = NULL;
 
   _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
@@ -1757,8 +1755,7 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at vertices and another one
-     with a tags to detect vertices related to a Neumann BC */
+  /* Build an array storing the Dirichlet values at vertices */
   cs_real_t  *dir_values = NULL;
 
   _setup_vcb(t_cur + dt_cur, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
