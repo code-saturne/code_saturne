@@ -135,7 +135,7 @@ cs_lagr_print(cs_real_t ttcabs)
         int col_id = 11;
         if (cs_glob_lagr_model->agglomeration) {
           fprintf(flal,
-                  "# column %2d: inst. number of merged particles\n",
+                  "# column %2d: inst. number of merged particles\n"
                   "# column %2d: inst. number of merged particles (weighted)\n",
                   col_id, col_id+1);
           col_id += 2;
@@ -145,14 +145,16 @@ cs_lagr_print(cs_real_t ttcabs)
             && lagr_model->fouling == 1) {
           fprintf(flal,
                   "# column %2d: inst. number of fouled particles (coal)\n"
-                  "# column %2d: inst. number of fouled particles (coal, weighted)\n");
+                  "# column %2d: inst. number of fouled particles (coal, weighted)\n",
+                  col_id, col_id+1);
           col_id += 2;
         }
 
         else if (lagr_model->resuspension > 0) {
           fprintf(flal,
                   "# column %2d: inst. number of resuspended particles\n"
-                  "# column %2d: inst. number of resuspended particles (weighted)\n");
+                  "# column %2d: inst. number of resuspended particles (weighted)\n",
+                  col_id, col_id+1);
           col_id += 2;
         }
 

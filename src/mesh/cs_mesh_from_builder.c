@@ -555,7 +555,6 @@ _extract_face_r_gen(cs_mesh_t        *mesh,
                     const char        face_type[])
 {
   size_t n_i_faces = 0;
-  size_t n_b_faces = 0;
 
   /* Allocate arrays */
 
@@ -1371,8 +1370,6 @@ static void
 _decompose_data_l(cs_mesh_t          *mesh,
                   cs_mesh_builder_t  *mb)
 {
-  cs_lnum_t i;
-
   cs_lnum_t _n_faces = 0;
 
   cs_lnum_2_t *_face_cells = NULL;
@@ -1403,7 +1400,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_cells, _n_faces, cs_lnum_2_t);
 
-  for (i = 0; i < _n_faces; i++) {
+  for (cs_lnum_t i = 0; i < _n_faces; i++) {
     _face_cells[i][0] = mb->face_cells[i*2] - 1;
     _face_cells[i][1] = mb->face_cells[i*2+1] - 1;
   }
@@ -1414,14 +1411,14 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
-  for (i = 0; i < _n_faces+1; i++)
+  for (cs_lnum_t i = 0; i < _n_faces+1; i++)
     _face_vertices_idx[i] = mb->face_vertices_idx[i];
 
   BFT_FREE(mb->face_vertices_idx);
 
   BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
-  for (i = 0; i < _face_vertices_idx[_n_faces]; i++)
+  for (cs_lnum_t i = 0; i < _face_vertices_idx[_n_faces]; i++)
     _face_vertices[i] = mb->face_vertices[i];
 
   BFT_FREE(mb->face_vertices);

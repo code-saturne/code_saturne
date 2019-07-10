@@ -233,7 +233,7 @@ cs_elec_convert_h_t(int         mode,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_physical_properties(const cs_domain_t             *domain);
+cs_elec_physical_properties(cs_domain_t             *domain);
 
 /*----------------------------------------------------------------------------
  * compute source terms for energy

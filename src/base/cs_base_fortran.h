@@ -235,6 +235,9 @@ void
 cs_user_extra_operations_initialize_wrapper(void);
 
 void
+cs_user_physical_properties_wrapper(void);
+
+void
 cs_user_extra_operations_wrapper(void);
 
 void

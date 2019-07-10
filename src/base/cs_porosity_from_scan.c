@@ -146,8 +146,9 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  * parameters:
  *----------------------------------------------------------------------------*/
 
-void _count_from_file(const cs_mesh_t *m,
-                      const cs_mesh_quantities_t *mq) {
+static void
+_count_from_file(const cs_mesh_t *m,
+                 const cs_mesh_quantities_t *mq) {
 
   char line[512];
 
@@ -159,7 +160,7 @@ void _count_from_file(const cs_mesh_t *m,
 
   bft_printf("  Transformation       %12.5g %12.5g %12.5g %12.5g\n"
              "  matrix:              %12.5g %12.5g %12.5g %12.5g\n"
-             "                       %12.5g %12.5g %12.5g %12.5g\n",
+             "                       %12.5g %12.5g %12.5g %12.5g\n"
              "    (last column is translation vector)\n",
              _porosity_from_scan_opt.transformation_matrix[0][0],
              _porosity_from_scan_opt.transformation_matrix[0][1],

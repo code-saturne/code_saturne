@@ -1042,12 +1042,12 @@ cs_elec_convert_h_t(int        mode,
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_physical_properties(const cs_domain_t *domain)
+cs_elec_physical_properties(cs_domain_t  *domain)
 {
   static long ipass = 0;
   int nt_cur = cs_glob_time_step->nt_cur;
   int isrrom = 0;
-  cs_lnum_t  n_cells = domain->mesh->n_cells;
+  const cs_lnum_t  n_cells = domain->mesh->n_cells;
   const int keysca = cs_field_key_id("diffusivity_id");
   int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
   cs_field_t *c_prop = NULL;

@@ -140,21 +140,8 @@ void
 cs_f_atmo_chem_finalize(void);
 
 /*============================================================================
- * Private function definitions
+ * Fortran wrapper function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Convert string to lower case
- *----------------------------------------------------------------------------*/
-
-char *
-strtolower(char       *dest,
-           const char *src)
-{
-  char *result = dest;
-  while (*dest++ = tolower(*src++));
-  return result;
-}
 
 /*----------------------------------------------------------------------------
  * Get pointer
@@ -196,6 +183,23 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.species_to_scalar_id);
   BFT_FREE(_atmo_chem.molar_mass);
   BFT_FREE(_atmo_chem.chempoint);
+}
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Convert string to lower case
+ *----------------------------------------------------------------------------*/
+
+static char *
+_strtolower(char       *dest,
+           const char *src)
+{
+  char *result = dest;
+  while (*dest++ = tolower(*src++));
+  return result;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -446,14 +450,16 @@ cs_atmo_declare_chem_from_spack(void)
 
   FILE* file = fopen(_atmo_chem.spack_file_name, "rt");
   if (file == NULL)
-    bft_error(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: Could not open file."));
+    bft_error(__FILE__,__LINE__, 0,
+              _("Atmo chemistry from SPACK file: Could not open file."));
 
   bool loop = true;
 
   /* Read "[species]" */
   for (int i = 1; loop; i++ ) {
     if (fscanf(file, "%s\n", line) != 1)
-      bft_error(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: Could not open file."));
+      bft_error(__FILE__,__LINE__, 0,
+                _("Atmo chemistry from SPACK file: Could not open file."));
 
     if (strcmp("[species]", line) == 0)
       loop = false;
@@ -464,7 +470,9 @@ cs_atmo_declare_chem_from_spack(void)
   for (int i = 1; loop; i++ ) {
     /* Read species */
     if (fscanf(file, "%s\n", line) != 1)
-      bft_printf(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: Could not read line %d."), i);
+      bft_error(__FILE__,__LINE__, 0,
+                _("Atmo chemistry from SPACK file: Could not read line %d."),
+                i);
 
     /* When reach [molecular_waight]: break */
     if (strcmp("[molecular_weight]", line) == 0)
@@ -483,7 +491,8 @@ cs_atmo_declare_chem_from_spack(void)
   for (int i = 0; i < _atmo_chem.n_species; i++ ) {
     /* Read species */
     if (fscanf(file, "%s %f\n", line, &(_atmo_chem.molar_mass[i])) != 1)
-      bft_printf(__FILE__,__LINE__, 0, _("Atmo chemistry from SPACK file: warning, may be end of file."));
+      bft_error(__FILE__,__LINE__, 0,
+                _("Atmo chemistry from SPACK file: warning, may be end of file."));
 
     /* The order is already ok */
     _atmo_chem.chempoint[i] = i+1;//FIXME ?
@@ -491,7 +500,7 @@ cs_atmo_declare_chem_from_spack(void)
     /* Build name of the field:
      * species_name in lower case */
     strcpy(name, "species_");
-    strtolower(label, line);
+    _strtolower(label, line);
     strcat(name, label);
 
     /* Field of dimension 1 */
