@@ -387,6 +387,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.checkBoxALE.hide()
             self.checkBoxFans.hide()
 
+        elif homogeneous != 'off':
+            self.modelHgn.setItem(str_model=homogeneous)
+
         else:
             self.modelSinglePhase.setItem(str_model=compressible)
 
@@ -396,9 +399,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Atmospheric = self.atmo.getAtmosphericFlowsModel() != 'off'
         JouleEffect = self.elect.getElectricalModel() != 'off'
         Groundwater = self.darc.getGroundwaterModel() != 'off'
-
         ReactiveFlows = self.gas.getGasCombustionModel()  != 'off' \
                         or self.pcoal.getCoalCombustionModel() != 'off'
+        Hgn = homogeneous != 'off'
 
         self.checkPrev = 'SinglePhase'
         combo = None
@@ -406,7 +409,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         for ind in ['Atmospheric',
                     'JouleEffect',
                     'Groundwater',
-                    'ReactiveFlows']:
+                    'ReactiveFlows',
+                    'Hgn']:
 
             radioButton = eval('self.radioButton'+ind)
             model_on = eval(ind)

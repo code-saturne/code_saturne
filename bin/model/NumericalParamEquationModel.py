@@ -84,6 +84,8 @@ class NumericalParamEquationModel(Model):
             self.var.append(node['name'])
         for node in self._getAdditionalScalarNodes():
             self.var.append(node['name'])
+        for node in self._getHgnVariablesNodes():
+            self.var.append(node['name'])
 
         self.thermo = []
         for node in self._getThermalScalarNode():
@@ -243,6 +245,13 @@ class NumericalParamEquationModel(Model):
             nodList =  n.xmlGetNodeList('variable')
         return nodList
 
+    def _getHgnVariablesNodes(self):
+        """ Private method: return list of nodes for Homogeneous model"""
+        nodList = []
+        n = self.node_models.xmlGetNode('hgn_model')
+        if n['status'] != 'off':
+            nodList =  n.xmlGetNodeList('variable')
+        return nodList
 
     def _getClippingNodesList(self):
         """ Return list of nodes for class view Scheme"""
@@ -254,7 +263,8 @@ class NumericalParamEquationModel(Model):
                      self._getMeteoScalarsNodes(),
                      self._getElectricalScalarsNodes(),
                      self._getCompressibleScalarsNodes(),
-                     self._getAdditionalScalarNodes()):
+                     self._getAdditionalScalarNodes(),
+                     self._getHgnVariablesNodes()):
             self.var_clip.append(part)
         return self.var_clip
 
@@ -272,7 +282,8 @@ class NumericalParamEquationModel(Model):
                      self._getElectricalScalarsNodes(),
                      self._getCompressibleScalarsNodes(),
                      self._getAdditionalScalarNodes(),
-                     self._getAleVariablesNodes()):
+                     self._getAleVariablesNodes(),
+                     self._getHgnVariablesNodes()):
             self.var_shem.append(part)
         return self.var_shem
 
@@ -289,7 +300,8 @@ class NumericalParamEquationModel(Model):
                      self._getElectricalScalarsNodes(),
                      self._getAdditionalScalarNodes(),
                      self._getCompressibleScalarsNodes(),
-                     self._getAleVariablesNodes()):
+                     self._getAleVariablesNodes(),
+                     self._getHgnVariablesNodes()):
             self.var_solv.append(part)
         return self.var_solv
 
@@ -330,7 +342,7 @@ class NumericalParamEquationModel(Model):
 
     @Variables.undoGlobal
     def setSchemeDefaultValues(self):
-        """Usefull for TurbulenceModel in case of LES"""
+        """Useful for TurbulenceModel in case of LES"""
         for name in self.var:
             try:
                 self.setBlendingFactor(name, self._defaultValues(name)['blending_factor'])
