@@ -26,7 +26,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Solve the transport equation of the variances of the scalars defined in the species transport section.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Variance of transported variables</string>
+      <string>Variance of model or additional transported variables</string>
      </property>
      <layout class="QGridLayout">
       <property name="margin">
@@ -137,7 +137,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Solve additional user scalars transport equations. Thermal scalars defined in the thermal model menu are also shown here.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Species transport</string>
+      <string>Model or additional transported variables</string>
      </property>
      <layout class="QGridLayout">
       <property name="margin">
