@@ -647,11 +647,11 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
   bool use_previous_t = false;
   int inc = 1;
-  int _recompute_cocg = 1;
+  int recompute_cocg = 1;
   cs_field_gradient_potential(CS_F_(p),
                               use_previous_t,
                               inc,
-                              _recompute_cocg,
+                              recompute_cocg,
                               hyd_p_flag,
                               f_ext,
                               gradp);
@@ -665,6 +665,39 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
                                             diipb[face_id]);
     pres[iloc] =   CS_F_(p)->bc_coeffs->a[face_id]
                  + CS_F_(p)->bc_coeffs->b[face_id]*pip;
+
+
+  }
+  BFT_FREE(gradp);
+
+  const cs_turb_model_t *turb_model = cs_glob_turb_model;
+  if (   turb_model->itytur == 2
+      && turb_model->itytur == 6
+      && turb_model->itytur == 5) {
+    cs_real_3_t *gradk;
+    BFT_MALLOC(gradk, m->n_cells_with_ghosts, cs_real_3_t);
+
+    use_previous_t = false;
+    inc = 1;
+    recompute_cocg = 1;
+    cs_field_gradient_scalar(CS_F_(k),
+                             use_previous_t,
+                             inc,
+                             recompute_cocg,
+                             gradk);
+
+    for (cs_lnum_t iloc = 0 ; iloc < n_b_faces; iloc++) {
+      cs_lnum_t face_id = b_face_ids[iloc];
+      cs_lnum_t cell_id = m->b_face_cells[face_id];
+
+      cs_real_t kip =   CS_F_(k)->val[cell_id]
+        + cs_math_3_dot_product(gradk[cell_id],
+                                diipb[face_id]);
+      pres[iloc] -= 2./3.*CS_F_(rho_b)->val[face_id]
+                         *(  CS_F_(k)->bc_coeffs->a[face_id]
+                           + CS_F_(k)->bc_coeffs->b[face_id]*kip);
+    }
+    BFT_FREE(gradk);
   }
 }
 
@@ -692,7 +725,6 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  cs_real_3_t *cell_cen = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
 
   if (   turb_model->itytur != 2
       && turb_model->itytur != 6
