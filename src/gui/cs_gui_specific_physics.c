@@ -1379,7 +1379,7 @@ cs_gui_physical_model_select(void)
     else if (cs_gui_strcmp(vars->model, "hgn_model")) {
       cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
       if (cs_gui_strcmp(vars->model_value, "merkle_model")) {
-        vof_param = CS_VOF_ENABLED | CS_VOF_MERKLE_MASS_TRANSFER;
+        vof_param->vof_model = CS_VOF_ENABLED | CS_VOF_MERKLE_MASS_TRANSFER;
       } else {
         vof_param->vof_model = CS_VOF_ENABLED + CS_VOF_FREE_SURFACE;
       }
@@ -1561,7 +1561,8 @@ cs_gui_get_activ_thermophysical_model(void)
                           "joule_effect",
                           "atmospheric_flows",
                           "compressible_model",
-                          "groundwater_model"};
+                          "groundwater_model",
+                          "hgn_model"};
   const char *name_o[] = {"gas_combustion"};
 
   int n_names_m = sizeof(name_m) / sizeof(name_m[0]);
