@@ -308,9 +308,13 @@
 
   This is an example of \ref cs_user_extra_operations which computes boundary forces
 
-  Example: compute total forces on a boundary zone (subset of boundary faces).
+  Example 1: compute total forces on a boundary zone (subset of boundary faces).
 
   \snippet cs_user_extra_operations-boundary_forces.c boundary_forces_ex1
+
+  Example 2: compute pressure forces on a boundary zone (subset of boundary faces).
+
+  \snippet cs_user_extra_operations-boundary_forces.c boundary_forces_ex2
 
 */
 // __________________________________________________________________________________

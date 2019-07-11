@@ -122,27 +122,58 @@ void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
   /*! [boundary_forces_ex1] */
-  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
+  {
+    const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
 
-  cs_field_t *b_forces = cs_field_by_name_try("boundary_forces");
+    cs_field_t *b_forces = cs_field_by_name_try("boundary_forces");
 
-  if (b_forces != NULL) {
-    cs_real_3_t total_b_forces = {0., 0., 0.};
+    if (b_forces != NULL) {
+      cs_real_3_t total_b_forces = {0., 0., 0.};
+      cs_lnum_t n_elts, *lst_elts;
+      BFT_MALLOC(lst_elts, n_b_faces, cs_lnum_t);
+      cs_selector_get_b_face_list("2 or 3", &n_elts, lst_elts);
+
+      for (cs_lnum_t i_elt = 0; i_elt < n_elts; i_elt++) {
+        cs_lnum_t face_id = lst_elts[i_elt];
+        for (int ii = 0; ii < 3; ii++)
+          total_b_forces[ii] += b_forces->val[3*face_id + ii];
+      }
+      BFT_FREE(lst_elts);
+
+      /* parallel sum */
+      cs_parall_sum(3, CS_DOUBLE, total_b_forces);
+    }
+  }
+  /*! [boundary_forces_ex1] */
+
+  /*! [boundary_forces_ex2] */
+  {
+    const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
+    const cs_real_t *b_f_face_normal =
+      domain->mesh_quantities->b_f_face_normal;
+
+    cs_real_3_t total_b_p_forces = {0., 0., 0.};
     cs_lnum_t n_elts, *lst_elts;
     BFT_MALLOC(lst_elts, n_b_faces, cs_lnum_t);
-    cs_selector_get_b_face_list('2 or 3', n_elts, lst_elts);
+    cs_selector_get_b_face_list("2 or 3", &n_elts, lst_elts);
+
+    /* compute static pressure on selected boundary faces */
+    cs_real_t *p_b_val;
+    BFT_MALLOC(p_b_val, n_elts, cs_real_t);
+    cs_post_b_pressure(n_elts, lst_elts, p_b_val);
 
     for (cs_lnum_t i_elt = 0; i_elt < n_elts; i_elt++) {
       cs_lnum_t face_id = lst_elts[i_elt];
       for (int ii = 0; ii < 3; ii++)
-        total_b_forces[ii] = b_forces->val[3*face_id + ii];
+        total_b_p_forces[ii] += p_b_val[i_elt]*b_f_face_normal[3*face_id+ii];
     }
     BFT_FREE(lst_elts);
+    BFT_FREE(p_b_val);
 
     /* parallel sum */
-    cs_parall_sum(3, CS_DOUBLE, total_b_force);
+    cs_parall_sum(3, CS_DOUBLE, total_b_p_forces);
   }
-  /*! [boundary_forces_ex1] */
+  /*! [boundary_forces_ex2] */
 }
 
 END_C_DECLS
