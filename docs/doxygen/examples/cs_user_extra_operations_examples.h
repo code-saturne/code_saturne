@@ -40,7 +40,7 @@
   - \subpage cs_user_extra_operations_examples_energy_balance_p
   - \subpage cs_user_extra_operations_examples_balance_by_zone_p
   - \subpage cs_user_extra_operations_examples_force_temperature_p
-  - \subpage cs_user_extra_operations_examples_global_efforts_p
+  - \subpage cs_user_extra_operations_examples_boundary_forces_p
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
   - \subpage cs_user_extra_operations_examples_stopping_criterion_p
 
@@ -302,22 +302,15 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_global_efforts_p Global efforts
+  \page cs_user_extra_operations_examples_boundary_forces_p Boundary forces
 
-  \section cs_user_extra_operations_examples_global_efforts Global efforts
+  \section cs_user_extra_operations_examples_boundary_forces Boundary forces
 
-  This is an example of \ref cs_user_extra_operations which computes global efforts
+  This is an example of \ref cs_user_extra_operations which computes boundary forces
 
-  \subsection cs_user_extra_operations_examples_loc_var_geff Local variables to be added
+  Example: compute total forces on a boundary zone (subset of boundary faces).
 
-  \snippet cs_user_extra_operations-global_efforts.f90 loc_var_dec
-
-  \subsection cs_user_extra_operations_examples_geff_body Body
-
-  Example: compute global efforts on a subset of faces.
-  If boundary stresses have been calculated correctly:
-
-  \snippet cs_user_extra_operations-global_efforts.f90 example_1
+  \snippet cs_user_extra_operations-boundary_forces.c boundary_forces_ex1
 
 */
 // __________________________________________________________________________________

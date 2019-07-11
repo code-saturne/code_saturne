@@ -84,6 +84,7 @@ cs_user_coupling-syrthes.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations-balance_by_zone.c \
+cs_user_extra_operations-boundary_forces.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
@@ -144,7 +145,6 @@ cs_user_boundary_mass_source_terms-condensation.f90 \
 cs_user_boundary_mass_source_terms-nzones_condensation.f90 \
 cs_user_extra_operations-energy_balance.f90 \
 cs_user_extra_operations-force_temperature.f90 \
-cs_user_extra_operations-global_efforts.f90 \
 cs_user_extra_operations-nusselt_calculation.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
