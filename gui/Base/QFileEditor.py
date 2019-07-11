@@ -120,29 +120,50 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
     """
 
     # ---------------------------------------------------------------
-    def __init__(self, parent):
+    def __init__(self, parent, extension):
 
         QtGui.QSyntaxHighlighter.__init__(self, parent)
         self.parent = parent
         self.highlightingRules = []
 
         # Keywords (C or Fortran)
-        self.kw = ['if', 'else', 'endif', '\#', 'include',
-                   'void', 'int', 'integer', 'double', 'const',
-                   'fprintf', 'bft_printf', 'bft_printf_flush',
-                   'cs_real_t',
-                   'subroutine', 'function', 'def',
-                   'double precision', 'use', 'implicit none',
-                   'allocatable', 'dimension', 'string', 'float',
-                   'allocate', 'deallocate',
-                   'char', 'for', 'while', 'assert',
-                   'continue', 'break', 'switch',
-                   'del', 'pass', 'return', 'true', 'false']
+        fortran_kw = ['if', 'else', 'endif', 'do', 'enddo', 'end',
+                      'implicit none', 'use', 'subroutine', 'function',
+                      'double precision', 'real', 'integer', 'char',
+                      'allocatable', 'allocate', 'deallocate', 'dimension',
+                      'select case']
+
+        c_kw       = ['if', 'else', 'for', 'switch', 'while',
+                      '\#', 'include', 'pass', 'return', 'del', 'delete',
+                      'assert', 'true', 'false', 'continue', 'break',
+                      'fprintf', 'bft_printf', 'bft_printf_flush', 'bft_error',
+                      'cs_real_t', 'cs_lnum_t', 'cs_real_3_t', 'int', 'char',
+                      'string', 'void', 'double', 'const']
+
+        py_kw      = ['if', 'elif', 'for', 'range', 'while', 'return', 'def',
+                      'True', 'False']
+
+        self.kw = []
+        # Fortran
+        if extension in ['f90', 'F90', 'F', 'f77']:
+            for kw in fortran_kw:
+                self.kw.append(kw)
+                self.kw.append(kw.upper())
+        # C/C++
+        elif extension in ['c', 'cpp', 'cxx', 'c++']:
+            for kw in c_kw:
+                self.kw.append(kw)
+                self.kw.append(kw.upper())
+        # Python
+        elif extension == 'py':
+            for kw in py_kw:
+                self.kw.append(kw)
+
 
         # Operators
         self.op = ['=', '==', '!=', '<', '>', '<=', '>=',
                    '\+', '-', '\*', '/', '\%', '\*\*',
-                   '\+=', '-=', '\*=', '/=',
+                   '\+=', '-=', '\*=', '/=', '->', '=>',
                    '\^', '\|', '\&', '\|\|', '\&\&']
 
         # Braces
@@ -468,6 +489,7 @@ class QFileEditor(QMainWindow):
 
         # file attributes
         self.filename = ""
+        self.file_extension  = ""
 
         self.mainWidget = FormWidget(self, [self.explorer, self.textEdit])
         self.setCentralWidget(self.mainWidget)
@@ -852,6 +874,7 @@ class QFileEditor(QMainWindow):
 
         if self.filename != None and self.filename != '':
             file = open(self.filename,'r')
+            self.file_extension = self.filename.split('.')[-1]
 
             self.newFile()
             with file:
@@ -877,7 +900,7 @@ class QFileEditor(QMainWindow):
         self.opened = True
         self.updateFileState(False)
         if self.useHighlight:
-            hl = QtextHighlighter(self.textEdit)
+            hl = QtextHighlighter(self.textEdit, self.file_extension)
         self.textEdit.show()
     # ---------------------------------------------------------------
 
@@ -930,7 +953,7 @@ class QFileEditor(QMainWindow):
         Close an opened file
         """
 
-        if self.saved == False:
+        if self.saved == False and self.readOnly == False:
             choice = QMessageBox.question(self, 'Built-in editor',
                                           'File changed.\nDo you want to save?',
                                           QMessageBox.Yes | QMessageBox.No)
@@ -967,14 +990,17 @@ class QFileEditor(QMainWindow):
                               self.saveGeometry())
 
             self.close()
+            return 0
         else:
-            pass
+            return 1
     # ---------------------------------------------------------------
 
     # ---------------------------------------------------------------
     def closeEvent(self, event):
 
-        self.closeApplication()
+        decision = self.closeApplication()
+        if decision == 1:
+            event.ignore()
     # ---------------------------------------------------------------
 
 
