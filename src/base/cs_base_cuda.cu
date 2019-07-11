@@ -97,11 +97,13 @@ cs_base_cuda_device_info(cs_log_t  log_id)
 
   cudaError_t retval = cudaGetDeviceCount(&n_devices);
 
-  if (retval == cudaErrorNoDevice )
+  if (retval == cudaErrorNoDevice)
     cs_log_printf(log_id,
                   _("  CUDA device:         none available\n"));
-  else
-    CS_CUDA_CHECK(retval);
+  else if (retval)
+    cs_log_printf(log_id,
+                  _("  CUDA device:         %s\n"),
+		  cudaGetErrorString(retval));
 
   char buffer[256] = "";
 
