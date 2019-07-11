@@ -1011,6 +1011,13 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       break;
 
+    case CS_PARAM_HODGE_ALGO_BUBBLE:
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
+      eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_aniso_stiffness;
+      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
+      break;
+
     case CS_PARAM_HODGE_ALGO_OCS2:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EFQ;
       eqc->get_stiffness_matrix = cs_hodge_vb_ocs2_get_aniso_stiffness;
@@ -3151,6 +3158,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
+    case CS_PARAM_HODGE_ALGO_BUBBLE:
       get_diffusion_hodge = cs_hodge_epfd_cost_get;
       compute_flux = cs_cdo_diffusion_svb_cost_get_dfbyc_flux;
       break;
@@ -3168,8 +3176,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
       break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0,
-                "Invalid Hodge algorithm");
+      bft_error(__FILE__, __LINE__, 0, "Invalid Hodge algorithm");
       break;
 
     } /* Switch hodge algo. */

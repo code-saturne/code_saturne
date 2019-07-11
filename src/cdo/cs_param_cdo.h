@@ -121,6 +121,7 @@ typedef enum {
   CS_PARAM_HODGE_ALGO_WBS,     // WBS: Whitney Barycentric Subdivision
   CS_PARAM_HODGE_ALGO_COST,    // COST: COnsistency & STabilization splitting
   CS_PARAM_HODGE_ALGO_OCS2,    // Orthogonal Consistancy/Sub-Stabilization
+  CS_PARAM_HODGE_ALGO_BUBBLE,  // Orthogonal Consistancy/Bubble-Stabilization
   CS_PARAM_HODGE_ALGO_AUTO,    /* Switch between the previous algo. according to
                                   the type of cell and its property */
   CS_PARAM_N_HODGE_ALGOS

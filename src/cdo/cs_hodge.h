@@ -153,6 +153,22 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build a local stiffness matrix using the generic Bubble algo.
+ *          Case of CDO vertex-based schemes
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vb_bubble_get_aniso_stiffness(const cs_param_hodge_t    h_info,
+                                       const cs_cell_mesh_t     *cm,
+                                       cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local stiffness matrix using the Orthogonal
  *          Consistent/Sub-Stabilization decomposition (OCS2) with a
  *          subdivision of pvol_{e,c}.

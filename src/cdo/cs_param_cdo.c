@@ -90,6 +90,7 @@ cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
     N_("Whitney on the Barycentric Subdivision (WBS)"),
     N_("Orthogonal Consistency/Stabilization (OCS)"),
     N_("Orthogonal Consistency/Sub-Stabilization (OCS2)"),
+    N_("Orthogonal Consistency/Bubble-Stabilization (BUBBLE)"),
     N_("Automatic switch") };
 
 /*============================================================================
@@ -159,7 +160,8 @@ cs_param_hodge_log(const char               *prefix,
   cs_log_printf(CS_LOG_SETUP, "%s | Property inversion: %s\n",
                 _p, cs_base_strtf(hp.inv_pty));
   if (hp.algo == CS_PARAM_HODGE_ALGO_COST ||
-      hp.algo == CS_PARAM_HODGE_ALGO_OCS2)
+      hp.algo == CS_PARAM_HODGE_ALGO_OCS2 ||
+      hp.algo == CS_PARAM_HODGE_ALGO_BUBBLE)
     cs_log_printf(CS_LOG_SETUP, "%s | Algo.Coef: %.3e\n",
                   _p, hp.coef);
 }

@@ -563,6 +563,8 @@ _set_key(const char            *label,
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
     else if (strcmp(keyval, "ocs2") == 0)
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_OCS2;
+    else if (strcmp(keyval, "bubble") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_BUBBLE;
     else if (strcmp(keyval, "voronoi") == 0)
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
     else if (strcmp(keyval, "wbs") == 0)
@@ -583,6 +585,8 @@ _set_key(const char            *label,
       eqp->diffusion_hodge.coef = 1./sqrt(3.);
     else if (strcmp(keyval, "gcr") == 0)
       eqp->diffusion_hodge.coef = 1.0;
+    else if (strcmp(keyval, "frac23") == 0 || strcmp(keyval, "2/3") == 0)
+      eqp->diffusion_hodge.coef = 2./3.;
     else
       eqp->diffusion_hodge.coef = atof(keyval);
     break;
@@ -916,9 +920,9 @@ cs_equation_create_param(const char            *name,
     .is_unity = false,
     .is_iso = true,
     .inv_pty = false,
-    .algo = CS_PARAM_HODGE_ALGO_COST,
+    .algo = CS_PARAM_HODGE_ALGO_BUBBLE,
     .type = CS_PARAM_HODGE_TYPE_EPFD,
-    .coef = 1./3.,
+    .coef = 2./3.,
   };
 
   /* Advection term */
