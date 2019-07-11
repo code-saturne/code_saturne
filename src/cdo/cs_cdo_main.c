@@ -581,8 +581,8 @@ cs_cdo_main(cs_domain_t   *domain)
   _solve_steady_state_domain(domain);
 
   /* Main time loop */
-  if (domain->time_step_def == NULL) /* No definition available yet. Try a
-                                        definition by value */
+  if (domain->time_step_def == NULL && domain->only_steady == false)
+    /* No definition available yet. Try a definition by value */
     cs_domain_automatic_time_step_settings(domain);
 
   if (domain->time_step->nt_cur == 0)
