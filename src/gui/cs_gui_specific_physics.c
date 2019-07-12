@@ -1531,7 +1531,7 @@ cs_gui_get_thermophysical_model(const char  *model_thermo)
 }
 
 /*-----------------------------------------------------------------------------
- * Return 1 if a specific physics model is activated, 0 othewise.
+ * Return 1 if a specific physics model is activated, 0 otherwise.
  *
  * Updates the cs_glob_vars global structure.
  *----------------------------------------------------------------------------*/

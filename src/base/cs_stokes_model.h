@@ -112,7 +112,7 @@ typedef struct {
                                  - 1: true
                                  - 0: false (default) */
   bool          fluid_solid;  /* Has a solid zone where dynamics must be killed?
-                                 - fasle (default)
+                                 - false (default)
                                  - true */
 
 } cs_stokes_model_t;
