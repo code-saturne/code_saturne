@@ -47,6 +47,8 @@ User changes:
   * Preprocessor/calculation modes replaced by run type in mesh page
   * Many minor changes
 
+- GUI: add Volume of Fluid feature to GUI.
+
 - Save mesh_input in restart by default. To avoid using excess disk space when
   meshes do not change, use hard links where appropriate (and move mesh_output
   to checkpoint/mesh_input upon checkpointing).
@@ -125,6 +127,9 @@ Default option changes:
   (INTERNAL_COUPLING, PERMEABILITY_GRADIENT, PLANE_COUETTE_FLOW).
 
 Bug fixes:
+
+- Fix missing variable change for computed pressure with EVM in a
+  postprocessing utility function.
 
 - Fix for turbulent heat fluxes computation when Boussinesq hypothesis is used.
   Variance was not taken into account.
