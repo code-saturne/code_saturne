@@ -90,6 +90,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_selector.h"
 #include "cs_rad_transfer.h"
+#include "cs_vof.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
