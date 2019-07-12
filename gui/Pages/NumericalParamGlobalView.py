@@ -130,7 +130,8 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         import code_saturne.model.FluidCharacteristicsModel as FluidCharacteristics
         fluid = FluidCharacteristics.FluidCharacteristicsModel(self.case)
-        modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal, modl_comp = fluid.getThermoPhysicalModel()
+        modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal, modl_comp, modl_hgn = \
+            fluid.getThermoPhysicalModel()
 
         if self.model.getHydrostaticPressure() == 'on':
             self.checkBoxImprovedPressure.setChecked(True)

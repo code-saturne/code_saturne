@@ -83,6 +83,17 @@ module vof
 
      ! Interface to C function updating mixture physical properties in VOF model
 
+     subroutine vof_compute_linear_rho_mu() &
+       bind(C, name='cs_f_vof_compute_linear_rho_mu')
+       use, intrinsic :: iso_c_binding
+       implicit none
+     end subroutine vof_compute_linear_rho_mu
+
+     !---------------------------------------------------------------------------
+
+     ! Interface to C function updating mixture physical properties and mass
+     ! fluxes in VOF model
+
      subroutine vof_update_phys_prop() &
        bind(C, name='cs_f_vof_update_phys_prop')
        use, intrinsic :: iso_c_binding

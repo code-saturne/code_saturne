@@ -183,7 +183,7 @@ call field_current_to_previous(icrom)
 call field_current_to_previous(ibrom)
 call field_current_to_previous(ibrom)
 
-! Moleacular viscosity
+! Molecular viscosity
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
 

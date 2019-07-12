@@ -939,6 +939,12 @@ if (nscal.gt.0) then
   enddo
 endif
 
+! VoF model enabled
+if (ivofmt.gt.0) then
+  ro0    = rho2
+  viscl0 = mu2
+endif
+
 ! Anisotropic diffusion/permeability for Darcy module
 if (ippmod(idarcy).eq.1) then
 
