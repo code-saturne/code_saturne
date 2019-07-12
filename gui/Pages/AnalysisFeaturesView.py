@@ -623,6 +623,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 self.comp.setCompressibleModel('off')
             if self.checkPrev == 'Atmospheric':
                 self.atmo.setAtmosphericFlowsModel('off')
+            if self.checkPrev == 'Hgn':
+                self.hgn.setHgnModel('off')
             if self.checkPrev == 'JouleEffect':
                 self.elect.setElectricalModel('off')
             if self.checkPrev == 'Groundwater':
