@@ -93,6 +93,7 @@
 #include "cs_fan.h"
 #include "cs_volume_zone.h"
 #include "cs_gwf_physical_properties.h"
+#include "cs_vof.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -2277,10 +2278,17 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
     }
   }
 
+  cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
+
   /* ro0, viscl0, cp0, isls0[iscalt-1] si tables */
-  if (_thermal_table_needed("density") == 0)
+  if (_thermal_table_needed("density") == 0) {
     cs_gui_properties_value("density", &phys_pp->ro0);
-  else
+    if (vof_param->vof_model & CS_VOF_ENABLED) {
+      cs_gui_properties_value_by_fluid_id(0, "density", &vof_param->rho1);
+      cs_gui_properties_value_by_fluid_id(1, "density", &vof_param->rho2);
+    }
+  }
+  else {
     cs_phys_prop_compute(CS_PHYS_PROP_DENSITY,
                          1,
                          0,
@@ -2288,10 +2296,17 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
                          &phys_pp->p0,
                          &phys_pp->t0,
                          &phys_pp->ro0);
+  }
 
-  if (_thermal_table_needed("molecular_viscosity") == 0)
-    cs_gui_properties_value("molecular_viscosity", &phys_pp->viscl0);
-  else
+  const char *mv_name = "molecular_viscosity";
+  if (_thermal_table_needed(mv_name) == 0) {
+    cs_gui_properties_value(mv_name, &phys_pp->viscl0);
+    if (vof_param->vof_model & CS_VOF_ENABLED) {
+      cs_gui_properties_value_by_fluid_id(0, mv_name, &vof_param->mu1);
+      cs_gui_properties_value_by_fluid_id(1, mv_name, &vof_param->mu2);
+    }
+  }
+  else {
     cs_phys_prop_compute(CS_PHYS_PROP_DYNAMIC_VISCOSITY,
                          1,
                          0,
@@ -2299,6 +2314,7 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
                          &phys_pp->p0,
                          &phys_pp->t0,
                          &phys_pp->viscl0);
+  }
 
   if (_thermal_table_needed("specific_heat") == 0)
     cs_gui_properties_value("specific_heat", &phys_pp->cp0);
@@ -4713,6 +4729,43 @@ cs_gui_properties_value(const char  *property_name,
   tn = cs_tree_get_node(tn, "initial_value");
 
   cs_gui_node_get_real(tn, value);
+}
+
+/*-----------------------------------------------------------------------------
+ * Get value of property markup for fluid of given id
+ *
+ * parameters:
+ *   fluid_id           <--   fluid index
+ *   property_name      <--   name of the property
+ *   value              -->   new initial value of the property
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_properties_value_by_fluid_id(const int    fluid_id,
+                                    const char  *property_name,
+                                    double      *value)
+{
+  cs_tree_node_t *tn = cs_tree_find_node(cs_glob_tree, "property");
+  while (tn != NULL) {
+    const char *name_tn = cs_tree_node_get_child_value_str(tn, "name");
+    if (cs_gui_strcmp(name_tn, property_name))
+      break;
+    else
+      tn = cs_tree_find_node_next(cs_glob_tree, tn, "property");
+  }
+
+  char *label = NULL;
+
+  const char *prefix = "value_";
+  size_t len = strlen(prefix) + 1;
+  BFT_MALLOC(label, len+1, char);
+
+  sprintf(label, "%s%1i", prefix, fluid_id);
+
+  tn = cs_tree_get_node(tn, label);
+  cs_gui_node_get_real(tn, value);
+
+  BFT_FREE(label);
 }
 
 /*-----------------------------------------------------------------------------

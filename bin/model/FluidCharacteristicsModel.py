@@ -320,6 +320,10 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         default = {}
 
+        # Particular default values init. taking into account chosen model
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp, mdl_hgn=\
+            self.getThermoPhysicalModel()
+
         default['reference_pressure']    = 1.01325e+5
 
         if self.tsm == "temperature_celsius":
@@ -332,18 +336,25 @@ class FluidCharacteristicsModel(Variables, Model):
         # molar mass for dry air
         default['reference_molar_mass'] = 28.966e-3
 
-        #Initial values for properties: 20 Celsius degrees air at atmospheric
-        #pressure
+        # Initial values for properties: 20 Celsius degrees air at atmospheric
+        # pressure except for VoF
 
-        default['density']              = 1.17862
-        default['molecular_viscosity']  = 1.83e-05
-        default['specific_heat']        = 1017.24
-        default['thermal_conductivity'] = 0.02495
-        default['dynamic_diffusion']    = 0.01
-        default['volume_viscosity']     = 0.
-        default['material']             = "user_material"
-        default['method']               = "user_properties"
-        default['reference']            = None
+        default['density']                = 1.17862
+        default['density_0']              = 1000.
+        default['density_1']              = 1.
+        default['molecular_viscosity']    = 1.83e-05
+        default['molecular_viscosity_0']  = 1.e-03
+        default['molecular_viscosity_1']  = 1.e-05
+        if mdl_hgn != "off":
+           default['density']             = default['density_1']
+           default['molecular_viscosity'] = default['molecular_viscosity_1']
+        default['specific_heat']          = 1017.24
+        default['thermal_conductivity']   = 0.02495
+        default['dynamic_diffusion']      = 0.01
+        default['volume_viscosity']       = 0.
+        default['material']               = "user_material"
+        default['method']                 = "user_properties"
+        default['reference']              = None
 
         return default
 
@@ -468,7 +479,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
         for mdl in ['atmospheric_flows', 'compressible_model',
                     'gas_combustion', 'joule_effect', 'solid_fuels',
-                    'thermal_scalar']:
+                    'thermal_scalar', 'hgn_model']:
             d[mdl] = 'off'
 
             node = self.node_models.xmlGetNode(mdl, 'model')
@@ -484,7 +495,8 @@ class FluidCharacteristicsModel(Variables, Model):
                d['thermal_scalar'],    \
                d['gas_combustion'],    \
                d['solid_fuels'],       \
-               d['compressible_model']
+               d['compressible_model'],\
+               d['hgn_model']
 
 
     @Variables.noUndo
@@ -671,10 +683,25 @@ class FluidCharacteristicsModel(Variables, Model):
         return pp
 
 
+    @Variables.noUndo
+    def getValue(self, f_id, tag):
+        """
+        Return value of the markup tag : 'density', or
+        'molecular_viscosity' for fluid of id f_id
+        """
+        self.isInList(tag, ('density', 'molecular_viscosity'))
+        node = self.node_fluid.xmlGetNode('property', name=tag)
+        pp = node.xmlGetDouble('value' + '_' + str(f_id))
+        if pp == None:
+            pp = self.defaultFluidCharacteristicsValues()[tag+'_'+str(f_id)]
+            self.setValue(f_id, tag, pp)
+        return pp
+
+
     @Variables.undoLocal
     def setInitialValue(self, tag, val):
         """
-        Put initial value for the markup tag : 'density', or
+        Set initial value for the markup tag : 'density', or
         'molecular_viscosity', or 'specific_heat'or 'thermal_conductivity'
         """
         self.isInList(tag, ('density', 'molecular_viscosity',
@@ -688,10 +715,27 @@ class FluidCharacteristicsModel(Variables, Model):
         node.xmlSetData('initial_value', val)
 
 
+    @Variables.undoLocal
+    def setValue(self, f_id, tag, val):
+        """
+        Set initial value for the markup tag : 'density', or
+        'molecular_viscosity'
+        """
+        self.isInList(tag, ('density', 'molecular_viscosity'))
+        node = self.node_fluid.xmlGetNode('property', name=tag)
+        node.xmlSetData('value'+'_'+str(f_id), val)
+
+
     @Variables.noUndo
     def getInitialValueDensity(self):
         """Return initial value of density"""
         return self.getInitialValue('density')
+
+
+    @Variables.noUndo
+    def getVofValueDensity(self, f_id):
+        """Return value of density of fluid of id f_id"""
+        return self.getValue(f_id, 'density')
 
 
     @Variables.undoLocal
@@ -700,16 +744,34 @@ class FluidCharacteristicsModel(Variables, Model):
         self.setInitialValue('density', val)
 
 
+    @Variables.undoLocal
+    def setVofValueDensity(self, f_id, val):
+        """Set value for density of fluid of id f_id"""
+        self.setValue(f_id, 'density', val)
+
+
     @Variables.noUndo
     def getInitialValueViscosity(self):
         """Return initial value of viscosity"""
         return self.getInitialValue('molecular_viscosity')
 
 
+    @Variables.noUndo
+    def getVofValueViscosity(self, f_id):
+        """Return value of viscosity of fluid of id f_id"""
+        return self.getValue(f_id, 'molecular_viscosity')
+
+
     @Variables.undoLocal
     def setInitialValueViscosity(self, val):
         """Put initial value for viscosity"""
         self.setInitialValue('molecular_viscosity', val)
+
+
+    @Variables.undoLocal
+    def setVofValueViscosity(self, f_id, val):
+        """Set value for viscosity of fluid of id f_id"""
+        self.setValue(f_id, 'molecular_viscosity', val)
 
 
     @Variables.noUndo
@@ -1050,7 +1112,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         from code_saturne.model.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
-        assert mdl.getThermoPhysicalModel() == ('off', 'off', 'temperature_celsius', 'off', 'off', 'off'),\
+        assert mdl.getThermoPhysicalModel() == ('off', 'off', 'temperature_celsius', 'off', 'off', 'off', 'off'),\
         'Could not get thermophysical models in FluidCaracteristicsModel'
 
     def checkSetandGetInitialValue(self):

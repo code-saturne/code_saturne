@@ -132,17 +132,37 @@ cs_get_glob_vof_parameters(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the mixture density, mixture dynamic viscosity and mixture
- *        mass flux given the volumetric flux, the volume fraction and the
- *        reference density and dynamic viscosity \f$ \rho_l, \mu_l \f$
- *        (liquid), \f$ \rho_v, \mu_v \f$ (gas) as follows:
+ * \brief  Compute the mixture density, mixture dynamic viscosity given fluid
+ *         volume fractions and the reference density and dynamic viscosity
+ *         \f$ \rho_l, \mu_l \f$ (liquid), \f$ \rho_v, \mu_v \f$ (gas).
  *
+ * Computation is done as follows on cells:
  * \f[
  * \rho_\celli = \alpha_\celli \rho_v + (1-\alpha_\celli) \rho_l,
  * \f]
  * \f[
  * \mu_\celli = \alpha_\celli \mu_v + (1-\alpha_\celli) \mu_l,
  * \f]
+ *
+ * A similar linear formula is followed on boundary using fluid volume fraction
+ * value on the boundary.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_compute_linear_rho_mu(const cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the mixture density, mixture dynamic viscosity and mixture
+ *        mass flux given the volumetric flux, the volume fraction and the
+ *        reference density and dynamic viscosity \f$ \rho_l, \mu_l \f$
+ *        (liquid), \f$ \rho_v, \mu_v \f$ (gas).
+ *
+ * For the computation of mixture density, mixture dynamic viscosity, see
+ * \ref cs_vof_compute_linear_rho_mu.
+ *
+ * Computation of mass flux is as follows:
  * \f[
  * \left( \rho\vect{u}\cdot\vect{S} \right)_\ij = \\ \left\lbrace
  * \begin{array}{ll}

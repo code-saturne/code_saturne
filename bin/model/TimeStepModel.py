@@ -99,7 +99,8 @@ class TimeStepModel(Model):
         """
         thermal_case = 0
         from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel
-        n_atmo, n_joul, n_thermo, n_gas, n_coal, n_comp = FluidCharacteristicsModel(self.case).getThermoPhysicalModel()
+        n_atmo, n_joul, n_thermo, n_gas, n_coal, n_comp, n_hgn = \
+            FluidCharacteristicsModel(self.case).getThermoPhysicalModel()
 
         if n_atmo != 'off' or n_joul != 'off' or  n_thermo != 'off' or  n_gas != 'off' or  n_coal != 'off':
            thermal_case = 1

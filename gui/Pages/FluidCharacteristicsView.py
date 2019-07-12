@@ -195,9 +195,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         s = self.m_th.getThermalScalarName()
         tsm = self.mdl.tsm
 
-        # Particular Widget initialization taking into account of "Calculation Features"
-        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp \
-           = self.mdl.getThermoPhysicalModel()
+        # Particular Widget init. taking into account chosen fluid model
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp, mdl_hgn=\
+            self.mdl.getThermoPhysicalModel()
 
         # Combo models
 
@@ -218,6 +218,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelRho.addItem(self.tr('material law'), 'thermal_law')
         if mdl_atmo != 'off':
             self.modelRho.addItem(self.tr('defined in atphyv'), 'predefined_law')
+        if mdl_hgn != "off":
+            self.modelRho.addItem(self.tr('Linear law'), 'predefined_law')
         elif mdl_joule == 'arc':
             self.modelRho.addItem(self.tr('defined in elphyv'), 'predefined_law')
         elif mdl_comp != 'off':
@@ -230,6 +232,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelMu.addItem(self.tr('material law'), 'thermal_law')
         if mdl_joule == 'arc':
             self.modelMu.addItem(self.tr('defined in elphyv'), 'predefined_law')
+        if mdl_hgn != "off":
+            self.modelMu.addItem(self.tr('Linear law'), 'predefined_law')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
@@ -288,7 +292,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditMassMolar.setValidator(validatorMM)
 
         validatorRho    = DoubleValidator(self.lineEditRho,    min = 0.0)
+        validatorRho1   = DoubleValidator(self.lineEditRho1,   min = 0.0)
+        validatorRho2   = DoubleValidator(self.lineEditRho2,   min = 0.0)
         validatorMu     = DoubleValidator(self.lineEditMu,     min = 0.0)
+        validatorMu1    = DoubleValidator(self.lineEditMu1,    min = 0.0)
+        validatorMu2    = DoubleValidator(self.lineEditMu2,    min = 0.0)
         validatorCp     = DoubleValidator(self.lineEditCp,     min = 0.0)
         validatorAl     = DoubleValidator(self.lineEditAl,     min = 0.0)
         validatorDiff   = DoubleValidator(self.lineEditDiff,   min = 0.0)
@@ -296,14 +304,22 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         validatorDiftl0 = DoubleValidator(self.lineEditDiftl0, min = 0.0)
 
         validatorRho.setExclusiveMin(True)
+        validatorRho1.setExclusiveMin(True)
+        validatorRho2.setExclusiveMin(True)
         validatorMu.setExclusiveMin(True)
+        validatorMu1.setExclusiveMin(True)
+        validatorMu2.setExclusiveMin(True)
         validatorCp.setExclusiveMin(True)
         validatorAl.setExclusiveMin(True)
         validatorDiff.setExclusiveMin(True)
         validatorDiftl0.setExclusiveMin(True)
 
         self.lineEditRho.setValidator(validatorRho)
+        self.lineEditRho1.setValidator(validatorRho1)
+        self.lineEditRho2.setValidator(validatorRho2)
         self.lineEditMu.setValidator(validatorMu)
+        self.lineEditMu1.setValidator(validatorMu1)
+        self.lineEditMu2.setValidator(validatorMu2)
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditAl.setValidator(validatorAl)
         self.lineEditDiff.setValidator(validatorDiff)
@@ -329,7 +345,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.comboBoxMethod.activated[str].connect(self.slotMethod)
         self.comboBoxReference.activated[str].connect(self.slotReference)
         self.lineEditRho.textChanged[str].connect(self.slotRho)
+        self.lineEditRho1.textChanged[str].connect(self.slotRho1)
+        self.lineEditRho2.textChanged[str].connect(self.slotRho2)
         self.lineEditMu.textChanged[str].connect(self.slotMu)
+        self.lineEditMu1.textChanged[str].connect(self.slotMu1)
+        self.lineEditMu2.textChanged[str].connect(self.slotMu2)
         self.lineEditCp.textChanged[str].connect(self.slotCp)
         self.lineEditAl.textChanged[str].connect(self.slotAl)
         self.lineEditDiff.textChanged[str].connect(self.slotDiff)
@@ -351,7 +371,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         """
         mdls = self.mdl.getThermoPhysicalModel()
-        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp = mdls
+        mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp, mdl_hgn = mdls
 
         self.groupBoxMassMolar.hide()
 
@@ -409,7 +429,19 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.modelMaterial.setItem(str_model=material)
             self.updateMethod()
 
-        #compressible
+        # VoF
+        if mdl_hgn != 'off':
+            self.widgetRefRho.hide()
+            self.widgetVofRho.show()
+            self.widgetRefMu.hide()
+            self.widgetVofMu.show()
+        else:
+            self.widgetRefRho.show()
+            self.widgetVofRho.hide()
+            self.widgetRefMu.show()
+            self.widgetVofMu.hide()
+
+        # compressible
         self.groupBoxViscv0.hide()
 
         # combustion
@@ -479,8 +511,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             else:
                 __label.setText(self.tr("Reference value"))
 
-            self.mdl.getInitialValue(tag)
             __line.setText(str(self.mdl.getInitialValue(tag)))
+
 
         # If no thermal scalar, hide specific heat and thermal conductivity.
         if mdl_thermal == 'off':
@@ -541,6 +573,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __button.setEnabled(False)
                     __button.hide()
 
+            # VoF
+            if mdl_hgn != 'off':
+                if tag == 'molecular_viscosity' or tag == 'density':
+                    __model.disableItem(str_model='constant')
+                    __model.disableItem(str_model='predefined_law')
+                    __model.setItem(str_model='predefined_law')
+                    __combo.setEnabled(False)
+                    __button.setEnabled(False)
+                    __button.hide()
+
             # Compressible Flows
             if mdl_comp != 'off':
                 self.groupBoxViscv0.show()
@@ -571,6 +613,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             else:
                 if tag == 'specific_heat':
                     self.groupBoxCp.setTitle('Specific heat')
+
+
+        if mdl_hgn != 'off':
+            self.lineEditRho1.setText(str(self.mdl.getVofValueDensity(0)))
+            self.lineEditRho2.setText(str(self.mdl.getVofValueDensity(1)))
+
+            self.lineEditMu1.setText(str(self.mdl.getVofValueViscosity(0)))
+            self.lineEditMu2.setText(str(self.mdl.getVofValueViscosity(1)))
 
 
     def updateTypeChoice(self, old_choice):
@@ -890,6 +940,23 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             rho = from_qvariant(text, float)
             self.mdl.setInitialValueDensity(rho)
 
+    @pyqtSlot(str)
+    def slotRho1(self, text):
+        """
+        Update the density of fluid 1 for VoF module
+        """
+        if self.lineEditRho1.validator().state == QValidator.Acceptable:
+            rho = from_qvariant(text, float)
+            self.mdl.setVofValueDensity(0, rho)
+
+    @pyqtSlot(str)
+    def slotRho2(self, text):
+        """
+        Update the density of fluid 2 for VoF module
+        """
+        if self.lineEditRho2.validator().state == QValidator.Acceptable:
+            rho = from_qvariant(text, float)
+            self.mdl.setVofValueDensity(1, rho)
 
     @pyqtSlot(str)
     def slotMu(self, text):
@@ -899,6 +966,26 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if self.lineEditMu.validator().state == QValidator.Acceptable:
             mu = from_qvariant(text, float)
             self.mdl.setInitialValueViscosity(mu)
+
+
+    @pyqtSlot(str)
+    def slotMu1(self, text):
+        """
+        Update the molecular viscosity
+        """
+        if self.lineEditMu1.validator().state == QValidator.Acceptable:
+            mu = from_qvariant(text, float)
+            self.mdl.setVofValueViscosity(0, mu)
+
+
+    @pyqtSlot(str)
+    def slotMu2(self, text):
+        """
+        Update the molecular viscosity
+        """
+        if self.lineEditMu2.validator().state == QValidator.Acceptable:
+            mu = from_qvariant(text, float)
+            self.mdl.setVofValueViscosity(1, mu)
 
 
     @pyqtSlot(str)

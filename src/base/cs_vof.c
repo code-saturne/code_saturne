@@ -241,6 +241,9 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
                       double   **mu2);
 
 void
+cs_f_vof_compute_linear_rho_mu(void);
+
+void
 cs_f_vof_update_phys_prop(void);
 
 void
@@ -289,18 +292,20 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
 }
 
 /*----------------------------------------------------------------------------
- * wrapper to a vof function, intended for use by Fortran wrapper only.
+ * wrapper vof functions, intended for use by Fortran wrapper only.
  *----------------------------------------------------------------------------*/
+
+void
+cs_f_vof_compute_linear_rho_mu(void)
+{
+  cs_vof_compute_linear_rho_mu(cs_glob_domain);
+}
 
 void
 cs_f_vof_update_phys_prop(void)
 {
   cs_vof_update_phys_prop(cs_glob_domain);
 }
-
-/*----------------------------------------------------------------------------
- * wrapper to a vof function, intended for use by Fortran wrapper only.
- *----------------------------------------------------------------------------*/
 
 void
 cs_f_vof_log_mass_budget(void)
@@ -365,49 +370,31 @@ cs_get_glob_vof_parameters(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the mixture density, mixture dynamic viscosity and mixture
- *        mass flux given the volumetric flux, the volume fraction and the
- *        reference density and dynamic viscosity \f$ \rho_l, \mu_l \f$
- *        (liquid), \f$ \rho_v, \mu_v \f$ (gas) as follows:
+ * \brief  Compute the mixture density, mixture dynamic viscosity given fluid
+ *         volume fractions and the reference density and dynamic viscosity
+ *         \f$ \rho_l, \mu_l \f$ (liquid), \f$ \rho_v, \mu_v \f$ (gas).
  *
+ * Computation is done as follows on cells:
  * \f[
  * \rho_\celli = \alpha_\celli \rho_v + (1-\alpha_\celli) \rho_l,
  * \f]
  * \f[
  * \mu_\celli = \alpha_\celli \mu_v + (1-\alpha_\celli) \mu_l,
  * \f]
- * \f[
- * \left( \rho\vect{u}\cdot\vect{S} \right)_\ij = \\ \left\lbrace
- * \begin{array}{ll}
- *   \rho_\celli (\vect{u}\cdot\vect{S})_\ij
- *  &\text{ if } (\vect{u}\cdot\vect{S})_\ij>0, \\
- *   \rho_\cellj (\vect{u}\cdot\vect{S})_\ij
- *  &\text{ otherwise },
- * \end{array} \right.
- * \f]
- * \f[
- * \left( \rho\vect{u}\cdot\vect{S} \right)_\ib = \\ \left\lbrace
- * \begin{array}{ll}
- *   \rho_\celli (\vect{u}\cdot\vect{S})_\ib
- *  &\text{ if } (\vect{u}\cdot\vect{S})_\ib>0, \\
- *   \rho_b (\vect{u}\cdot\vect{S})_\ib
- *  &\text{ otherwise }.
- * \end{array} \right.
- * \f]
+ *
+ * A similar linear formula is followed on boundary using fluid volume fraction
+ * value on the boundary.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_update_phys_prop(const cs_domain_t *domain)
+cs_vof_compute_linear_rho_mu(const cs_domain_t *domain)
 {
   const cs_mesh_t *m = domain->mesh;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_t *b_face_cells = m->b_face_cells;
-
-  cs_halo_type_t halo_type = m->halo_type;
 
   cs_real_t *cvar_voidf = CS_F_(void_f)->val;
   cs_real_t *a_voidf = CS_F_(void_f)->bc_coeffs->a;
@@ -432,6 +419,7 @@ cs_vof_update_phys_prop(const cs_domain_t *domain)
     cpro_viscl[c_id] =  mu2*vf +  mu1*(1. - vf);
   }
 
+  cs_halo_type_t halo_type = m->halo_type;
   cs_field_synchronize(CS_F_(rho), halo_type);
   cs_field_synchronize(CS_F_(mu), halo_type);
 
@@ -443,6 +431,52 @@ cs_vof_update_phys_prop(const cs_domain_t *domain)
 
     bpro_rom[f_id]   = rho2*vf + rho1*(1. - vf);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the mixture density, mixture dynamic viscosity and mixture
+ *        mass flux given the volumetric flux, the volume fraction and the
+ *        reference density and dynamic viscosity \f$ \rho_l, \mu_l \f$
+ *        (liquid), \f$ \rho_v, \mu_v \f$ (gas).
+ *
+ * For the computation of mixture density, mixture dynamic viscosity, see
+ * \ref cs_vof_compute_linear_rho_mu.
+ *
+ * Computation of mass flux is as follows:
+ * \f[
+ * \left( \rho\vect{u}\cdot\vect{S} \right)_\ij = \\ \left\lbrace
+ * \begin{array}{ll}
+ *   \rho_\celli (\vect{u}\cdot\vect{S})_\ij
+ *  &\text{ if } (\vect{u}\cdot\vect{S})_\ij>0, \\
+ *   \rho_\cellj (\vect{u}\cdot\vect{S})_\ij
+ *  &\text{ otherwise },
+ * \end{array} \right.
+ * \f]
+ * \f[
+ * \left( \rho\vect{u}\cdot\vect{S} \right)_\ib = \\ \left\lbrace
+ * \begin{array}{ll}
+ *   \rho_\celli (\vect{u}\cdot\vect{S})_\ib
+ *  &\text{ if } (\vect{u}\cdot\vect{S})_\ib>0, \\
+ *   \rho_b (\vect{u}\cdot\vect{S})_\ib
+ *  &\text{ otherwise }.
+ * \end{array} \right.
+ * \f]
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_update_phys_prop(const cs_domain_t *domain)
+{
+  /* update rho and mu with linear laws */
+  cs_vof_compute_linear_rho_mu(domain);
+
+  const cs_mesh_t *m = domain->mesh;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_real_t rho1 =_vof_parameters.rho1;
+  const cs_real_t rho2 = _vof_parameters.rho2;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");

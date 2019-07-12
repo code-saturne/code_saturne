@@ -508,6 +508,20 @@ cs_gui_properties_value(const char  *property_name,
                         double      *value);
 
 /*-----------------------------------------------------------------------------
+ * Get value of property markup for fluid of given id
+ *
+ * parameters:
+ *   fluid_id           <--   fluid index
+ *   property_name      <--   name of the property
+ *   value              -->   new initial value of the property
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_properties_value_by_fluid_id(const int    fluid_id,
+                                    const char  *property_name,
+                                    double      *value);
+
+/*-----------------------------------------------------------------------------
  * Get value of reference fluid properties parameter.
  *
  * parameters:

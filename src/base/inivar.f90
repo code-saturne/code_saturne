@@ -62,6 +62,7 @@ use cfpoin, only:ithvar
 use cs_c_bindings
 use cs_cf_bindings
 use cs_f_interfaces
+use vof
 
 use, intrinsic :: iso_c_binding
 
@@ -214,6 +215,16 @@ else
 endif
 
 call user_initialization()
+
+! VoF algorithm
+if (ivofmt.gt.0) then
+  call vof_compute_linear_rho_mu
+  ! density is stored at the two previous time steps
+  call field_current_to_previous(icrom)
+  call field_current_to_previous(ibrom)
+  call field_current_to_previous(icrom)
+  call field_current_to_previous(ibrom)
+endif
 
 if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
                              .or.isuite.eq.1.and.ileaux.eq.0)) then
