@@ -48,7 +48,9 @@ class master_script:
                          'info':self.info,
                          'run':self.run,
                          'salome':self.salome,
-                         'submit':self.submit}
+                         'submit':self.submit,
+                         'update':self.update,
+                         'up':self.update}
 
         if package != None:
             sys.path.insert(1, package.get_dir('pythondir'))
@@ -111,6 +113,8 @@ Topics:
   studymanagergui
   smgrgui
   trackcvg
+  update
+  up
   info
   run
   salome
@@ -172,6 +176,10 @@ Options:
     def submit(self, options = None):
         import cs_submit
         return cs_submit.main(options, self.package)
+
+    def update(self, options = None):
+        import cs_update
+        return cs_update.main(options, self.package)
 
 #-------------------------------------------------------------------------------
 # End
