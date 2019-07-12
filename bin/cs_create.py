@@ -260,6 +260,11 @@ class Study:
             self.use_ref = False
             self.copy = None
 
+            # Options is now deprecated, print info
+            sys.stdout.write("  o '%s create --import-only' is deprecated.\n" % \
+                    self.package.name)
+            sys.stdout.write("  o Use '%s update' instead\n\n" % self.package.name)
+
 
     def create(self):
         """

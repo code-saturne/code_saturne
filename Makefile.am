@@ -303,6 +303,7 @@ bin/cs_salome.py \
 bin/cs_script.py \
 bin/cs_submit.py \
 bin/cs_mei_to_c.py \
+bin/cs_update.py \
 bin/cs_xml_reader.py
 
 studymanagerdir = $(pkgpythondir)/studymanager
