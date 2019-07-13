@@ -268,25 +268,7 @@ _build_v2v_through_cell(const cs_cdo_connect_t     *connect)
   /* Update index (v2v has a diagonal entry. We remove it since we have in
      mind an matrix structure stored using the MSR format (with diagonal terms
      counted outside the index) */
-  cs_lnum_t  shift = 0;
-  cs_lnum_t  prev_start = v2v->idx[0];
-  cs_lnum_t  prev_end = v2v->idx[1];
-
-  for (cs_lnum_t i = 0; i < n_vertices; i++) {
-
-    for (cs_lnum_t j = prev_start; j < prev_end; j++)
-      if (v2v->ids[j] != i)
-        v2v->ids[shift++] = v2v->ids[j];
-
-    if (i != n_vertices - 1) { /* Update prev_start and prev_end */
-      prev_start = v2v->idx[i+1];
-      prev_end = v2v->idx[i+2];
-    }
-    v2v->idx[i+1] = shift;
-
-  } /* Loop on vertices */
-
-  BFT_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
+  cs_adjacency_remove_self_entries(v2v);
 
   /* Free temporary buffers */
   cs_adjacency_destroy(&v2c);
@@ -317,25 +299,7 @@ _build_f2f_through_cell(const cs_cdo_connect_t     *connect)
 
   /* Update index (f2f has a diagonal entry. We remove it since we have in
      mind an index structure for a matrix stored using the MSR format */
-  cs_lnum_t  shift = 0;
-  cs_lnum_t  prev_start = f2f->idx[0];
-  cs_lnum_t  prev_end = f2f->idx[1];
-
-  for (cs_lnum_t i = 0; i < n_faces; i++) {
-
-    for (cs_lnum_t j = prev_start; j < prev_end; j++)
-      if (f2f->ids[j] != i)
-        f2f->ids[shift++] = f2f->ids[j];
-
-    if (i != n_faces - 1) { /* Update prev_start and prev_end */
-      prev_start = f2f->idx[i+1];
-      prev_end = f2f->idx[i+2];
-    }
-    f2f->idx[i+1] = shift;
-
-  } /* Loop on faces */
-
-  BFT_REALLOC(f2f->ids, f2f->idx[n_faces], cs_lnum_t);
+  cs_adjacency_remove_self_entries(f2f);
 
   return f2f;
 }

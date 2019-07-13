@@ -266,6 +266,19 @@ cs_adjacency_sort(cs_adjacency_t   *adj);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   In an indexed list, remove id(s) corresponding to the current
+ *          index. Useful for instance in order to prepare a matrix structure
+ *          in MSR storage
+ *
+ * \param[in, out] adj     pointer to the cs_adjacency_t structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_adjacency_remove_self_entries(cs_adjacency_t   *adj);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Dump a cs_adjacency_t structure to a file or into the
  *          standard output
  *
