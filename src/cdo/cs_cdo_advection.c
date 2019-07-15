@@ -1323,6 +1323,86 @@ cs_cdo_advection_fb_bc_cen(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Add the contribution of the boundary conditions to the local system
+ *          in CDO-Fb schemes (without diffusion).  Vector-valued case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb      pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_fb_bc_cen_v(const cs_equation_param_t   *eqp,
+                             const cs_cell_mesh_t        *cm,
+                             cs_cell_builder_t           *cb,
+                             cs_cell_sys_t               *csys)
+{
+  CS_UNUSED(eqp);
+
+  /* Sanity checks */
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(csys->n_dofs == 3*(cm->n_fc + 1));
+
+  const cs_real_t  *fluxes = cb->adv_fluxes;
+  const cs_real_t eps = cs_math_get_machine_epsilon();
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    const short int  f = csys->_f_ids[i];
+    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
+
+    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
+
+    if (fabs(beta_flx) > eps) {
+
+      const cs_real_t  _A_minus = - 0.5 * beta_flx;
+      const cs_real_t  _A_plus =  + 0.5 * beta_flx;
+
+      for (short int k = 0; k < 3; k++) {
+        /* Outward flux */
+        ff_bl[4*k] += _A_plus;
+
+        /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
+           to a boundary face */
+        csys->rhs[3*f+k] += _A_minus * csys->dir_values[3*f+k];
+      } /* Loop on k */
+
+    }
+    else { /* If non diffusion, add this term to avoid a singularity in the
+              linear system. Set the value at the current face as the mean value
+              of the two adjacent cells */
+
+      if (   (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
+          || (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET)) {
+
+        for (short int k = 0; k < 3; k++) {
+          ff_bl[4*k]       += 1.0;
+          csys->rhs[3*f+k] += csys->dir_values[3*f+k];
+        } /* Loop on k */
+
+      }
+      else { /* The convective flux is equal to beta.pot. Since beta is equal to
+                zero, pot_f = pot_c */
+
+        cs_real_t *fc_bl = cs_sdm_get_block(csys->mat, f, cm->n_fc)->val;
+
+        for (short int k = 0; k < 3; k++) {
+          fc_bl[4*k] += -1;
+          ff_bl[4*k] +=  1;
+        } /* Loop on k */
+
+      }
+
+    }
+
+  } /* Loop on border faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add the contribution of the boundary conditions to the local system
  *          in CDO-Fb schemes (with a diffusion term activated)
  *
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
@@ -1544,6 +1624,59 @@ cs_cdo_advection_fb_bc_cen_wdi(const cs_equation_param_t   *eqp,
     /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
        to a boundary face */
     csys->rhs[f] += _A_minus * csys->dir_values[f];
+
+  } /* Loop on border faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add the contribution of the boundary conditions to the local system
+ *          in CDO-Fb schemes (with a diffusion term activated). Vector-valued
+ *          case.
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb      pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_fb_bc_cen_wdi_v(const cs_equation_param_t   *eqp,
+                                 const cs_cell_mesh_t        *cm,
+                                 cs_cell_builder_t           *cb,
+                                 cs_cell_sys_t               *csys)
+{
+  CS_UNUSED(eqp);
+  /* Sanity checks */
+  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(csys->n_dofs == 3*(cm->n_fc + 1));
+
+  const cs_real_t  *fluxes = cb->adv_fluxes;
+
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    const short int  f = csys->_f_ids[i];
+    const cs_real_t  beta_flx = cm->f_sgn[f]*fluxes[f];
+
+    cs_real_t *ff_bl = cs_sdm_get_block(csys->mat, f, f)->val;
+
+    const cs_real_t  _A_minus = - 0.5 * beta_flx;
+    const cs_real_t  _A_plus =  + 0.5 * beta_flx;
+
+    /* Outward flux */
+    if (eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_CONSERV)
+      for (short int k = 0; k < 3; k++)
+        ff_bl[4*k] += _A_minus;
+    else
+      for (short int k = 0; k < 3; k++)
+        ff_bl[4*k] += _A_plus;
+
+    /* Weak enforcement of the Dirichlet BCs. Update RHS for faces attached
+       to a boundary face */
+    for (short int k = 0; k < 3; k++)
+      csys->rhs[3*f+k] += _A_minus * csys->dir_values[3*f+k];
 
   } /* Loop on border faces */
 

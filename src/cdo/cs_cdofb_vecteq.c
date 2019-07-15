@@ -692,7 +692,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. */
-      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqc, cm, csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(time_eval, eqp, eqc, cm, csys, cb);
 
       const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
       if (has_sourceterm) { /* SOURCE TERM
@@ -903,7 +903,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. */
-      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqc, cm, csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(time_eval, eqp, eqc, cm, csys, cb);
 
       const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
       if (has_sourceterm) { /* SOURCE TERM
@@ -1148,7 +1148,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. */
-      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqc, cm, csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(time_eval, eqp, eqc, cm, csys, cb);
 
       const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
       if (has_sourceterm) { /* SOURCE TERM
@@ -1615,6 +1615,25 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
           eqc->adv_func_bc = cs_cdo_advection_fb_bc_v;
         }
         break;
+      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_cennoc_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_wdi_v;
+        }
+        else {
+          if (! cs_equation_param_has_time(eqp)) {
+            /* Remark 5 about static condensation of paper (DiPietro, Droniou,
+             * Ern, 2015) */
+            bft_error(__FILE__, __LINE__, 0,
+                      " %s: Centered advection scheme not valid for face-based"
+                      " discretization and steady pure convection.", __func__);
+          }
+          else {
+            eqc->adv_func = cs_cdo_advection_fb_cennoc;
+            eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen;
+          } /* else has time */
+        } /* else has diffusion */
+        break;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -1636,6 +1655,25 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
           eqc->adv_func = cs_cdo_advection_fb_upwnoc;
           eqc->adv_func_bc = cs_cdo_advection_fb_bc_v;
         }
+        break;
+      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_cencsv_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_wdi;
+        }
+        else {
+          if (! cs_equation_param_has_time(eqp)) {
+            /* Remark 5 about static condensation of paper (DiPietro, Droniou,
+             * Ern, 2015) */
+            bft_error(__FILE__, __LINE__, 0,
+                      " %s: Centered advection scheme not valid for face-based"
+                      " discretization and steady pure convection.", __func__);
+          }
+          else {
+            eqc->adv_func = cs_cdo_advection_fb_cencsv;
+            eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_v;
+          } /* else has time */
+        } /* else has diffusion */
         break;
 
       default:
