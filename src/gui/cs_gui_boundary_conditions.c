@@ -1668,9 +1668,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
           case DIRICHLET_FORMULA:
             {
-              cs_real_t *new_vals = cs_meg_boundary_function(f->name,
-                                                             "dirichlet_formula",
-                                                             bz);
+              cs_real_t *new_vals =
+                cs_meg_boundary_function(bz, f->name, "dirichlet_formula");
 
               for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
                 for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
@@ -1686,9 +1685,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
           case NEUMANN_FORMULA:
             {
-              cs_real_t *new_vals = cs_meg_boundary_function(f->name,
-                                                             "neumann_formula",
-                                                             bz);
+              cs_real_t *new_vals =
+                cs_meg_boundary_function(bz, f->name, "neumann_formula");
 
               for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
                 for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
@@ -1704,9 +1702,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
           case EXCHANGE_COEFF_FORMULA:
             {
-              cs_real_t *new_vals = cs_meg_boundary_function(f->name,
-                                                             "exchange_coefficient_formula",
-                                                             bz);
+              cs_real_t *new_vals =
+                cs_meg_boundary_function(bz, f->name, "exchange_coefficient_formula");
 
               for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
                 for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
@@ -1831,13 +1828,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             || cs_gui_strcmp(choice_v, "flow2_formula")) {
 
           if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
-                                                        "flow1_formula",
-                                                        bz);
+            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
+                                                         "velocity",
+                                                         "flow1_formula");
           } else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
-                                                        "flow2_formula",
-                                                        bz);
+            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
+                                                         "velocity",
+                                                         "flow2_formula");
           }
         }
         else {
@@ -1876,13 +1873,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       else {
         if (boundaries->velocity[izone] != NULL) {
           if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
-                                                        "flow1_formula",
-                                                        bz);
-          } else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function("velocity",
-                                                        "flow2_formula",
-                                                        bz);
+            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
+                                                         "velocity",
+                                                         "flow1_formula");
+          }
+          else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
+            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
+                                                         "velocity",
+                                                         "flow2_formula");
           }
         }
         else {
@@ -1958,9 +1956,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           t0 = cs_timer_wtime();
-          cs_real_t *new_vals = cs_meg_boundary_function("velocity",
-                                                         "norm_formula",
-                                                         bz);
+          cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                         "velocity",
+                                                         "norm_formula");
 
           for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
             cs_lnum_t ifbr = bz->elt_ids[ifac];
@@ -2018,10 +2016,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           t0 = cs_timer_wtime();
-
-          cs_real_t *new_vals = cs_meg_boundary_function("velocity",
-                                                         "norm_formula",
-                                                         bz);
+          cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                         "velocity",
+                                                         "norm_formula");
 
           for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
             cs_lnum_t ifbr = bz->elt_ids[ifac];
@@ -2049,9 +2046,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       else if (cs_gui_strcmp(choice_d, "formula")) {
         t0 = cs_timer_wtime();
 
-        cs_real_t *xvals = cs_meg_boundary_function("direction",
-                                                    "formula",
-                                                    bz);
+        cs_real_t *xvals = cs_meg_boundary_function(bz,
+                                                    "direction",
+                                                    "formula");
 
         if (cs_gui_strcmp(choice_v, "norm")) {
           for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
@@ -2096,9 +2093,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           }
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          cs_real_t *norm_vals = cs_meg_boundary_function("velocity",
-                                                          "norm_formula",
-                                                          bz);
+          cs_real_t *norm_vals = cs_meg_boundary_function(bz,
+                                                          "velocity",
+                                                          "norm_formula");
 
           for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
             cs_lnum_t ifbr = bz->elt_ids[ifac];
@@ -2122,9 +2119,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           if (boundaries->itype[izone] == CS_EPHCF) {
-            xvals = cs_meg_boundary_function("direction",
-                                             "formula",
-                                             bz);
+            xvals = cs_meg_boundary_function(bz,
+                                             "direction",
+                                             "formula");
             for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
               cs_lnum_t ifbr = bz->elt_ids[ifac];
 
@@ -2158,9 +2155,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           if (   cs_gui_strcmp(model, "k-epsilon")
               || cs_gui_strcmp(model, "k-epsilon-PL")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_ke",
-                                                           "formula",
-                                                           bz);
+            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                           "turbulence_ke",
+                                                           "formula");
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2179,9 +2176,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           else if (  cs_gui_strcmp(model, "Rij-epsilon")
                    ||cs_gui_strcmp(model, "Rij-SSG")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_rije",
-                                                           "formula",
-                                                           bz);
+            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                           "turbulence_rije",
+                                                           "formula");
             cs_field_t *cfld_rij;
             if (cs_glob_turb_rans_model->irijco == 1)
               cfld_rij = cs_field_by_name("rij");
@@ -2207,9 +2204,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
 
-            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_rij_ebrsm",
-                                                           "formula",
-                                                           bz);
+            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                           "turbulence_rij_ebrsm",
+                                                           "formula");
 
             cs_field_t *cfld_rij;
             if (cs_glob_turb_rans_model->irijco == 1)
@@ -2240,9 +2237,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_v2f",
-                                                           "formula",
-                                                           bz);
+            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                           "turbulence_v2f",
+                                                           "formula");
 
             cs_field_t *c_k   = cs_field_by_name("k");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -2267,9 +2264,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "k-omega-SST")) {
-            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_kw",
-                                                           "formula",
-                                                           bz);
+            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                           "turbulence_kw",
+                                                           "formula");
 
             cs_field_t *c_k = cs_field_by_name("k");
             cs_field_t *c_o = cs_field_by_name("omega");
@@ -2286,9 +2283,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             BFT_FREE(new_vals);
           }
           else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-            cs_real_t *new_vals = cs_meg_boundary_function("turbulence_spalart",
-                                                           "formula",
-                                                           bz);
+            cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                           "turbulence_spalart",
+                                                           "formula");
 
             cs_field_t *c_nu = cs_field_by_name("nu_tilda");
             int ivarnu = cs_field_get_key_int(c_nu, var_key_id) -1;
@@ -2478,10 +2475,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       }
 
       if (boundaries->headLoss[izone] != NULL) {
-        t0 = cs_timer_wtime();
-        cs_real_t *new_vals = cs_meg_boundary_function("head_loss",
-                                                       "formula",
-                                                       bz);
+        cs_real_t *new_vals =
+          cs_meg_boundary_function(bz, "head_loss", "formula");
 
         const cs_field_t  *fp = cs_field_by_name_try("pressure");
         const int var_key_id = cs_field_key_id("variable_id");
@@ -2555,9 +2550,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           }
         }
         else if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
-          cs_real_t *new_vals = cs_meg_boundary_function("hydraulic_head",
-                                                         "dirichlet_formula",
-                                                         bz);
+          cs_real_t *new_vals = cs_meg_boundary_function(bz,
+                                                         "hydraulic_head",
+                                                         "dirichlet_formula");
 
           for (cs_lnum_t ifac = 0; ifac < bz->n_elts; ifac++) {
             cs_lnum_t ifbr = bz->elt_ids[ifac];

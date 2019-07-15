@@ -87,20 +87,20 @@ END_C_DECLS
 
 _function_header = { \
 'vol':"""void
-cs_meg_volume_function(cs_field_t       *f[],
-                       const cs_zone_t  *vz)
+cs_meg_volume_function(const cs_zone_t  *zone,
+                       cs_field_t       *f[])
 {
 """,
 'bnd':"""cs_real_t *
-cs_meg_boundary_function(const char      *field_name,
-                         const char      *condition,
-                         const cs_zone_t *bz)
+cs_meg_boundary_function(const cs_zone_t *zone,
+                         const char      *field_name,
+                         const char      *condition)
 {
   cs_real_t *new_vals = NULL;
 
 """,
 'src':"""cs_real_t *
-cs_meg_source_terms(const cs_zone_t *vz,
+cs_meg_source_terms(const cs_zone_t *zone,
                     const char      *name,
                     const char      *source_type)
 {
@@ -108,8 +108,8 @@ cs_meg_source_terms(const cs_zone_t *vz,
 
 """,
 'ini':"""cs_real_t *
-cs_meg_initialization(const char      *field_name,
-                      const cs_zone_t *vz)
+cs_meg_initialization(const cs_zone_t *zone,
+                      const char      *field_name)
 {
   cs_real_t *new_vals = NULL;
 
@@ -996,7 +996,7 @@ def parse_gui_expression(expression,
                     elif func_type == 'bnd':
                         ir = req.index(lf[0].strip())
                         if need_for_loop:
-                            new_v = 'new_vals[%d * bz->n_elts + e_id]' % (ir)
+                            new_v = 'new_vals[%d * zone->n_elts + e_id]' % (ir)
                         else:
                             new_v = 'new_vals[%d]' % (ir)
 
@@ -1202,6 +1202,10 @@ class mei_to_c_interpreter:
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
+                    elif sn == "volume":
+                        usr_defs += ntabs*tab
+                        usr_defs += 'const cs_real_t volume = zone->measure;\n'
+                        known_symbols.append(sn)
                     elif sn in self.notebook.keys():
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
                                 % (sn, sn)
@@ -1292,12 +1296,12 @@ class mei_to_c_interpreter:
         for i in range(1,len(nsplit)):
             usr_blck += tab + '    strcmp(f[%d]->name, "%s") == 0 &&\n' % (i, nsplit[i])
 
-        usr_blck += tab + '    strcmp(vz->name, "%s") == 0) {\n' % (zone)
+        usr_blck += tab + '    strcmp(zone->name, "%s") == 0) {\n' % (zone)
 
         usr_blck += usr_defs + '\n'
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->elt_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
 
         usr_blck += usr_code
         usr_blck += 2*tab + '}\n'
@@ -1349,7 +1353,7 @@ class mei_to_c_interpreter:
 
         # allocate the new array
         if need_for_loop:
-            usr_defs += ntabs*tab + 'const int vals_size = bz->n_elts * %d;\n' % (len(required))
+            usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
         else:
             usr_defs += ntabs*tab + 'const int vals_size = %d;\n' % (len(required))
 
@@ -1379,6 +1383,10 @@ class mei_to_c_interpreter:
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
+                    elif sn == "surface":
+                        usr_defs += ntabs*tab
+                        usr_defs += 'const cs_real_t surface = zone->measure;\n'
+                        known_symbols.append(sn)
                     elif sn in _ref_turb_values:
                         l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
                         usr_defs += ntabs*tab + l
@@ -1437,14 +1445,14 @@ class mei_to_c_interpreter:
         # Write the block
         block_cond  = tab + 'if (strcmp(field_name, "%s") == 0 &&\n' % (field_name)
         block_cond += tab + '    strcmp(condition, "%s") == 0 &&\n' % (cname)
-        block_cond += tab + '    strcmp(bz->name, "%s") == 0) {\n' % (zone)
+        block_cond += tab + '    strcmp(zone->name, "%s") == 0) {\n' % (zone)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs + '\n'
 
         if need_for_loop:
-            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < bz->n_elts; e_id++) {\n'
-            usr_blck += 3*tab + 'cs_lnum_t f_id = bz->elt_ids[e_id];\n'
+            usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
+            usr_blck += 3*tab + 'cs_lnum_t f_id = zone->elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -1491,7 +1499,7 @@ class mei_to_c_interpreter:
         coords = ['x', 'y', 'z']
         need_coords = False
 
-        usr_defs += ntabs*tab + 'const int vals_size = vz->n_elts * %d;\n' % (len(required))
+        usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
@@ -1518,6 +1526,10 @@ class mei_to_c_interpreter:
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
+                    elif sn == "volume":
+                        usr_defs += ntabs*tab
+                        usr_defs += 'const cs_real_t volume = zone->measure;\n'
+                        known_symbols.append(sn)
                     elif sn in self.notebook.keys():
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
                                 % (sn, sn)
@@ -1567,15 +1579,15 @@ class mei_to_c_interpreter:
             usr_defs += parsed_exp[1]
 
         # Write the block
-        block_cond  = tab + 'if (strcmp(vz->name, "%s") == 0 &&\n' % (zone)
+        block_cond  = tab + 'if (strcmp(zone->name, "%s") == 0 &&\n' % (zone)
         block_cond += tab + '    strcmp(name, "%s") == 0 && \n' % (name)
         block_cond += tab + '    strcmp(source_type, "%s") == 0 ) {\n' % (source_type)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs + '\n'
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->elt_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -1617,7 +1629,7 @@ class mei_to_c_interpreter:
         coords = ['x', 'y', 'z']
         need_coords = False
 
-        usr_defs += ntabs*tab + 'const int vals_size = vz->n_elts * %d;\n' % (len(required))
+        usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
@@ -1632,6 +1644,11 @@ class mei_to_c_interpreter:
                         usr_code += (ntabs+1)*tab + lxyz
                         known_symbols.append(sn)
                         need_coords = True
+
+                    elif sn == "volume":
+                        usr_defs += ntabs*tab
+                        usr_defs += 'const cs_real_t volume = zone->measure;\n'
+                        known_symbols.append(sn)
 
                     elif sn in self.notebook.keys():
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
@@ -1705,14 +1722,14 @@ class mei_to_c_interpreter:
             usr_defs += parsed_exp[1]
 
         # Write the block
-        block_cond  = tab + 'if (strcmp(vz->name, "%s") == 0 &&\n' % (zone)
+        block_cond  = tab + 'if (strcmp(zone->name, "%s") == 0 &&\n' % (zone)
         block_cond += tab + '    strcmp(field_name, "%s") == 0 ) {\n' % (name)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs + '\n'
 
-        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < vz->n_elts; e_id++) {\n'
-        usr_blck += 3*tab + 'cs_lnum_t c_id = vz->elt_ids[e_id];\n'
+        usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
 
         usr_blck += usr_code
 
@@ -1891,15 +1908,14 @@ class mei_to_c_interpreter:
                 if 'inlet' in zone._nature and zone._nature != 'free_inlet_outlet':
                     c = boundary.getVelocityChoice()
                     if '_formula' in c:
+                        sym = ['t', 'dt', 'iter', 'surface']
                         if c == 'norm_formula':
                             req = ['u_norm']
-                            sym = ['x', 'y', 'z', 't', 'dt', 'iter']
+                            sym += ['x', 'y', 'z']
                         elif c == 'flow1_formula':
                             req = ['q_m']
-                            sym = ['t', 'dt', 'iter']
                         elif c == 'flow2_formula':
                             req = ['q_v']
-                            sym = ['t', 'dt', 'iter']
 
                         for (name, val) in NotebookModel(self.case).getNotebookList():
                             sym.append((name, 'value (notebook) = ' + str(val)))
@@ -1930,7 +1946,7 @@ class mei_to_c_interpreter:
                     tc = boundary.getTurbulenceChoice()
                     if tc == 'formula':
                         turb_model = tm.getTurbulenceModel()
-                        sym = ['x', 'y', 'z', 't', 'dt', 'iter']
+                        sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
 
                         for (name, val) in NotebookModel(self.case).getNotebookList():
                             sym.append((name, 'value (notebook) = ' + str(val)))
@@ -1971,7 +1987,7 @@ class mei_to_c_interpreter:
                 if zone._nature == 'free_inlet_outlet':
                     name = "head_loss"
                     req  = ['K']
-                    sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
+                    sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
                     for (nb_var, val) in NotebookModel(self.case).getNotebookList():
                         sym.append((nb_var, 'value (notebook) = ' + str(val)))
 
@@ -1983,7 +1999,7 @@ class mei_to_c_interpreter:
                 # Hydraulic head for groundwater flow
                 if zone._nature == 'groundwater':
                     c = boundary.getHydraulicHeadChoice()
-                    sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
+                    sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
                     for (name, val) in NotebookModel(self.case).getNotebookList():
                         sym.append((name, 'value (notebook) = ' + str(val)))
 
@@ -2007,7 +2023,7 @@ class mei_to_c_interpreter:
                                         'imposed_p_outlet']:
                   for sca in scalar_list:
                       c = boundary.getScalarChoice(sca)
-                      sym  = ['x', 'y', 'z', 't', 'dt', 'iter']
+                      sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
                       for (name, val) in NotebookModel(self.case).getNotebookList():
                           sym.append((name, 'value (notebook) = ' + str(val)))
 
@@ -2048,7 +2064,7 @@ class mei_to_c_interpreter:
                                 req = ['u_norm']
                             elif c == 'flow1_formula':
                                 req = ['q_m']
-                            sym = ['x', 'y', 'z', 't', 'dt', 'iter']
+                            sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
 
                             for (name, val) in NotebookModel(self.case).getNotebookList():
                                 sym.append((name, 'value (notebook) = ' + str(val)))
@@ -2069,7 +2085,7 @@ class mei_to_c_interpreter:
                         if d == 'formula':
                             exp = boundary.getDirection(fId, 'direction_formula')
                             req = ['dir_x', 'dir_y', 'dir_z']
-                            sym = ['x', 'y', 'z', 't', 'dt', 'iter']
+                            sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
                             for (name, val) in NotebookModel(self.case).getNotebookList():
                                 sym.append((name, 'value (notebook) = ' + str(val)))
 
@@ -2141,7 +2157,7 @@ class mei_to_c_interpreter:
                                             exp, req, sym, [],
                                             source_type="momentum_source_term")
                         else:
-                            exp, req, sym = getRichardsFormulaComponents(z_id)
+                            exp, req, sym = stm.getRichardsFormulaComponents(z_id)
                             self.init_block('src', zone_name, 'richards',
                                             exp, req, sym, [],
                                             source_type="momentum_source_term")

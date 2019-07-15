@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  *
  * \brief This function is used to compute source terms over a volume zone
  *
- * \param[in]       z            pointer to cs_volume_zone_t
+ * \param[in]       zone         pointer to cs_volume_zone_t
  * \param[in]       name         char pointer: variable name
  * \param[in]       source_type  char pointer: source term type
  *
@@ -67,12 +67,12 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_source_terms(const cs_zone_t  *vz,
+cs_meg_source_terms(const cs_zone_t  *zone,
                     const char       *name,
                     const char       *source_type)
 {
 
-  CS_UNUSED(vz);
+  CS_UNUSED(zone);
   CS_UNUSED(name);
   CS_UNUSED(source_type);
 

@@ -464,7 +464,8 @@ class InletBoundary(Boundary):
                ('z','face center coordinate'),
                ('t','time'),
                ('dt','time step'),
-               ('iter','number of time step')]
+               ('iter','number of time step'),
+               ('surface', 'Boundary zone surface')]
         for (name, val) in NotebookModel(self.case).getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
 
