@@ -226,7 +226,7 @@ cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_MODEL_OSEEN:
     /* Nothing to do: the Oseen field is set by the user via
-     * cs_navsto_add_oseen_field */
+     * cs_navsto_add_oseen_field() */
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
     break;
 
@@ -234,13 +234,15 @@ cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
     bft_error(__FILE__, __LINE__, 0,
         " %s: Model not available yet for the Augmented Lagrangian - Uzawa"
         " coupling" , __func__);
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
         " %s: Invalid choice for the equation model.\n"
-        "Possible choices are: CS_NAVSTO_MODEL_STOKES, "
+        " Possible choices are: CS_NAVSTO_MODEL_STOKES, "
         "CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES, "
         "CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
+    break;
   }
 
   /* All considered models needs a viscous term */
@@ -448,13 +450,15 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
     bft_error(__FILE__, __LINE__, 0,
         " %s: Model not available yet for the Artificial Compressibility"
         " coupling" , __func__);
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
         " %s: Invalid choice for the equation model.\n"
-        "Possible choices are: CS_NAVSTO_MODEL_STOKES, "
+        " Possible choices are: CS_NAVSTO_MODEL_STOKES, "
         "CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES, "
         "CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
+    break;
   }
 
   /* All considered models needs a viscous term */
@@ -672,13 +676,16 @@ cs_navsto_ac_vpp_init_setup(const cs_navsto_param_t    *nsp,
   case CS_NAVSTO_MODEL_OSEEN:
     bft_error(__FILE__, __LINE__, 0,
         " %s: Model not available yet for the VPP coupling" , __func__);
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-        " %s: Invalid choice for the equation model.\n"
-        "Possible choices are: CS_NAVSTO_MODEL_STOKES, "
-        "CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES, "
-        "CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
+              " %s: Invalid choice for the equation model.\n"
+              " Possible choices are: CS_NAVSTO_MODEL_STOKES,"
+              " CS_NAVSTO_MODEL_OSEEN,"
+              " CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,"
+              " CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
+    break;
   }
 
   /* All considered models needs a viscous term */
@@ -888,13 +895,15 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   case CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES:
     bft_error(__FILE__, __LINE__, 0,
         " %s: Model not available yet for the monolithic coupling" , __func__);
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
         " %s: Invalid choice for the equation model.\n"
-        "Possible choices are: CS_NAVSTO_MODEL_STOKES, "
-        "CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES, "
-        "CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
+        " Possible choices are: CS_NAVSTO_MODEL_STOKES,"
+        " CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,"
+        " CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
+    break;
   }
 
   /* All considered models needs a viscous term */
