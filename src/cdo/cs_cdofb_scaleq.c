@@ -925,6 +925,42 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       } /* Scheme */
       break; /* Non-conservative formulation */
 
+    case CS_PARAM_ADVECTION_FORM_SKEWSYM:
+      switch (eqp->adv_scheme) {
+
+      case CS_PARAM_ADVECTION_SCHEME_UPWIND:
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_upwskw_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_skw_wdi;
+        }
+        else {
+          eqc->adv_func = cs_cdo_advection_fb_upwskw;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_skw;
+        }
+        break;
+      case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+        if (cs_equation_param_has_diffusion(eqp)) {
+          eqc->adv_func = cs_cdo_advection_fb_censkw_di;
+          eqc->adv_func_bc = cs_cdo_advection_fb_bc_skw_wdi;
+        }
+        else {
+          /* Remark 5 about static condensation of paper (DiPietro, Droniou,
+           * Ern, 2015). Time contribution on cells only won't solve the
+           * problem */
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Centered advection scheme not valid for face-based"
+                    " discretization pure convection.", __func__);
+        } /* else has diffusion */
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid advection scheme for face-based discretization",
+                  __func__);
+
+      } /* Scheme */
+      break; /* Skew-symmetric formulation */
+
     default:
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid type of formulation for the advection term",

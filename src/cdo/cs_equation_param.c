@@ -507,6 +507,8 @@ _set_key(const char            *label,
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
     else if (strcmp(keyval, "non_conservative") == 0)
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+    else if (strcmp(keyval, "skew_symmetric") == 0)
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_SKEWSYM;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1902,6 +1904,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       break;
     case CS_PARAM_ADVECTION_FORM_NONCONS:
       cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
+      break;
+    case CS_PARAM_ADVECTION_FORM_SKEWSYM:
+      cs_log_printf(CS_LOG_SETUP, " Skew-symmetric\n");
       break;
 
     default:

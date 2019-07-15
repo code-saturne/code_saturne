@@ -211,12 +211,16 @@ typedef enum {
  * non-conservative formation (i.e advection field times
  * the gradient)
  *
+ * \var CS_PARAM_ADVECTION_FORM_SKEWSYM
+ * skew-symmetric form
+ *
  */
 
 typedef enum {
 
   CS_PARAM_ADVECTION_FORM_CONSERV,
   CS_PARAM_ADVECTION_FORM_NONCONS,
+  CS_PARAM_ADVECTION_FORM_SKEWSYM,
 
   CS_PARAM_N_ADVECTION_FORMULATIONS
 

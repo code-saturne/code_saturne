@@ -144,7 +144,8 @@ static const char
 _adv_formulation_key[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
   {
     "conservative",
-    "non_conservative"
+    "non_conservative",
+    "skew_symmetric"
   };
 
 static const char
@@ -413,6 +414,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->adv_form = CS_PARAM_ADVECTION_FORM_CONSERV;
     else if (strcmp(val, "non_conservative") == 0)
       nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
+    else if (strcmp(val, "skew_symmetric") == 0)
+      nsp->adv_form = CS_PARAM_ADVECTION_FORM_SKEWSYM;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
