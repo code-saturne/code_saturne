@@ -206,6 +206,7 @@ class TurbulenceModel(Variables, Model):
         """
         self.isInList(model_turb, self.turbulenceModelsList())
 
+        model_turb_old = self.node_turb['model']
         self.node_turb['model'] = model_turb
 
         NumericalParamGlobalModel(self.case).setTimeSchemeOrder(1)
@@ -252,10 +253,6 @@ class TurbulenceModel(Variables, Model):
 
             NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
 
-            from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
-            NumericalParamEquationModel(self.case).setSchemeDefaultValues()
-            del NumericalParamEquationModel
-
         elif model_turb == 'v2f-BL-v2/k':
             lst = ('k', 'epsilon', 'phi', 'alpha')
             for v in lst:
@@ -290,6 +287,13 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties([], 'smagorinsky_constant^2')
             wall_function = 0
             self.setWallFunction(wall_function)
+
+        # If the user changes the turbulence model, reset the default
+        # numerical parameters
+        if model_turb != model_turb_old:
+            from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
+            NumericalParamEquationModel(self.case).setSchemeDefaultValues()
+            del NumericalParamEquationModel
 
         DefineUserScalarsModel(self.case).setTurbulentFluxGlobalModel(model_turb)
 
