@@ -3,6 +3,9 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix crash when using Coriolis forces outside turbomachinery model
+  (such as is Atmospheric cases).
+
 - Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
   momentum equation) and ensure variable density indicator (irovar) is set to 1
   when VoF / cavitation algorithm is enabled. Idem for variable viscosity
