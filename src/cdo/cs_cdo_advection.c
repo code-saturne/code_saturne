@@ -1232,8 +1232,7 @@ cs_cdo_advection_fb_bc(const cs_equation_param_t   *eqp,
               linear system. Set the value at the current face as the mean value
               of the two adjacent cells */
 
-      if (   (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
-          || (csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET)) {
+      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
         f_row[f]     += 1.0;
         csys->rhs[f] += csys->dir_values[f];
@@ -1352,13 +1351,27 @@ cs_cdo_advection_fb_bc_v(const cs_equation_param_t   *eqp,
               linear system. Set the value at the current face as the mean value
               of the two adjacent cells */
 
-      cs_real_t *fc_bl = cs_sdm_get_block(csys->mat, f, cm->n_fc)->val;
+      if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
-      for (short int k = 0; k < 3; k++) {
-        /* Diagonal terms */
-        fc_bl[4*k]  = -1.0;
-        ff_bl[4*k] +=  1.0;
-      } /* Loop on k */
+        for (short int k = 0; k < 3; k++) {
+          /* Diagonal terms */
+          ff_bl[4*k]       += 1.0;
+          csys->rhs[3*f+k] += csys->dir_values[3*f+k];
+        }
+
+      }
+      else { /* The convective flux is equal to beta.pot. Since beta is equal to
+                zero, pot_f = pot_c */
+
+        cs_real_t *fc_bl = cs_sdm_get_block(csys->mat, f, cm->n_fc)->val;
+
+        for (short int k = 0; k < 3; k++) {
+          /* Diagonal terms */
+          fc_bl[4*k]  = -1.0;
+          ff_bl[4*k] +=  1.0;
+        } /* Loop on k */
+
+      }
 
     }
 
