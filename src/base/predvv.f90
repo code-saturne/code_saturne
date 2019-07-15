@@ -928,12 +928,14 @@ if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.ne.1) then
         call add_coriolis_v(0, romvom, vela(:,iel), trav(:,iel))
       enddo
       ! Turbomachinery frozen rotors rotation
-      do iel = 1, ncel
-        if (irotce(iel).gt.0) then
-          romvom = -crom(iel)*cell_f_vol(iel)
-          call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trav(:,iel))
-        endif
-      enddo
+      if (iturbo.eq.1) then
+        do iel = 1, ncel
+          if (irotce(iel).gt.0) then
+            romvom = -crom(iel)*cell_f_vol(iel)
+            call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trav(:,iel))
+          endif
+        enddo
+      endif
 
     ! Si on itere sur navsto : TRAVA
     else
@@ -944,12 +946,14 @@ if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.ne.1) then
         call add_coriolis_v(0, romvom, vela(:,iel), trava(:,iel))
       enddo
       ! Turbomachinery frozen rotors rotation
-      do iel = 1, ncel
-        if (irotce(iel).gt.0) then
-          romvom = -crom(iel)*cell_f_vol(iel)
-          call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trava(:,iel))
-        endif
-      enddo
+      if (iturbo.eq.1) then
+        do iel = 1, ncel
+          if (irotce(iel).gt.0) then
+            romvom = -crom(iel)*cell_f_vol(iel)
+            call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trava(:,iel))
+          endif
+        enddo
+      endif
 
     endif
   endif
@@ -958,23 +962,31 @@ endif
 ! --->  Implicit part
 
 !  At the second call, fimp is not needed anymore
-if(iappel.eq.1) then
+if (iappel.eq.1) then
   if (icorio.eq.1 .or. iturbo.eq.1) then
     ! The theta-scheme for the Coriolis term is the same as the other terms
     thetap = vcopt_u%thetav
 
-    ! Reference frame rotation
-    do iel = 1, ncel
-      romvom = -2.d0*crom(iel)*cell_f_vol(iel)*thetap
-      call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
-    enddo
     ! Turbomachinery frozen rotors rotation
-    do iel = 1, ncel
-      if (irotce(iel).gt.0) then
-        romvom = -crom(iel)*cell_f_vol(iel)*thetap
+    if (iturbo.eq.1) then
+      ! Reference frame rotation
+      do iel = 1, ncel
+        romvom = -2.d0*crom(iel)*cell_f_vol(iel)*thetap
         call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
-      endif
-    enddo
+      enddo
+      do iel = 1, ncel
+        if (irotce(iel).gt.0) then
+          romvom = -crom(iel)*cell_f_vol(iel)*thetap
+          call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
+        endif
+      enddo
+    else if (icorio.eq.1) then
+      ! Reference frame rotation
+      do iel = 1, ncel
+        romvom = -2.d0*crom(iel)*cell_f_vol(iel)*thetap
+        call add_coriolis_t(0, romvom, fimp(:,:,iel))
+      enddo
+    endif
 
   endif
 endif
@@ -1336,12 +1348,21 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       call add_coriolis_v(0, rom, vela(:,iel), dfrcxt(:,iel))
     enddo
     ! Turbomachinery frozen rotors rotation
-    do iel = 1, ncel
-      if (irotce(iel).gt.0) then
-        rom = -crom(iel)
-        call add_coriolis_v(irotce(iel), rom, vela(:,iel), dfrcxt(:,iel))
-      endif
-    enddo
+    if (iturbo.eq.1) then
+      do iel = 1, ncel
+        if (irotce(iel).gt.0) then
+          rom = -crom(iel)
+          call add_coriolis_v(irotce(iel), rom, vela(:,iel), dfrcxt(:,iel))
+        endif
+      enddo
+    else if (icorio.eq.1) then
+      do iel = 1, ncel
+        if (irotce(iel).gt.0) then
+          rom = -crom(iel)
+          call add_coriolis_v(0, rom, vela(:,iel), dfrcxt(:,iel))
+        endif
+      enddo
+    endif
   endif
 
   ! Add -div( rho R) as external force
