@@ -250,7 +250,9 @@ _zone_define(const char  *name)
   z->n_g_elts = 0;
 
   z->measure = -1.;
+  z->f_measure = -1.;
   z->boundary_measure = -1.;
+  z->f_boundary_measure = -1.;
 
   return z;
 }
