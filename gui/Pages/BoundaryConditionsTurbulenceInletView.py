@@ -255,7 +255,8 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
-                   ('iter','number of time step')]
+                   ('iter','number of time step'),
+                   ('surface', 'Boundary zone surface')]
 
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -331,7 +332,8 @@ r23 = 0;
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
-                   ('iter','number of time step')]
+                   ('iter','number of time step'),
+                   ('surface', 'Boundary zone surface')]
 
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -407,7 +409,8 @@ alpha =  1.;
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
-                   ('iter','number of time step')]
+                   ('iter','number of time step'),
+                   ('surface', 'Boundary zone surface')]
 
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -473,7 +476,8 @@ alpha = 0;"""
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
-                   ('iter','number of time step')]
+                   ('iter','number of time step'),
+                   ('surface', 'Boundary zone surface')]
 
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -536,7 +540,8 @@ omega = eps/(cmu * k);"""
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
-                   ('iter','number of time step')]
+                   ('iter','number of time step'),
+                   ('surface', 'Boundary zone surface')]
 
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -599,7 +604,8 @@ nu_tilda = eps/(cmu * k);"""
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
-                   ('iter','number of time step')]
+                   ('iter','number of time step'),
+                   ('surface', 'Boundary zone surface')]
 
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))

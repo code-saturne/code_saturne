@@ -780,47 +780,47 @@ cs_user_gwf_setup(cs_domain_t   *domain);
  * \brief This function is used to compute user defined values for fields over a
  * given boundary zone
  *
+ * \param[in]  zone         pointer to cs_zone_t structure related to boundary
  * \param[in]  field_name   name of the field (const char *)
  * \param[in]  condition    condition type (const char *)
- * \param[in]  bz           pointer to cs_zone_t structure related to boundary
  *
  * \return a pointer to an array of cs_real_t values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_boundary_function(const char       *field_name,
-                         const char       *condition,
-                         const cs_zone_t  *bz);
+cs_meg_boundary_function(const cs_zone_t  *zone,
+                         const char       *field_name,
+                         const char       *condition);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is used to compute user defined values for fields over a
  *        given volume zone
  *
+ * \param[in]       zone        pointer to cs_zone_t structure related to a volume
  * \param[in, out]  f[]         array of pointers to cs_field_t
- * \param[in]       vz          pointer to cs_zone_t structure related to a volume
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_volume_function(cs_field_t       *f[],
-                       const cs_zone_t  *vz);
+cs_meg_volume_function(const cs_zone_t  *zone,
+                       cs_field_t       *f[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate GUI defined mathematical expressions over volume zones for
  *         initialization.
  *
- * \param[in]   f   char pointer: variable name
- * \param[in]   vz  pointer to a cs_volume_zone_t structure
+ * \param[in]   zone  pointer to a cs_volume_zone_t structure
+ * \param[in]   f     char pointer: variable name
  *
 */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_initialization(const char      *field_name,
-                      const cs_zone_t *vz);
+cs_meg_initialization(const cs_zone_t *zone,
+                      const char      *field_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -828,7 +828,7 @@ cs_meg_initialization(const char      *field_name,
  *
  * \brief This function is used to compute source terms over a volume zone
  *
- * \param[in]       vz           pointer to cs_volume_zone_t
+ * \param[in]       zone         pointer to cs_volume_zone_t
  * \param[in]       name         char pointer: variable name
  * \param[in]       source_type  char pointer: source term type
  *
@@ -838,7 +838,7 @@ cs_meg_initialization(const char      *field_name,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_meg_source_terms(const cs_zone_t  *vz,
+cs_meg_source_terms(const cs_zone_t  *zone,
                     const char       *name,
                     const char       *source_type);
 

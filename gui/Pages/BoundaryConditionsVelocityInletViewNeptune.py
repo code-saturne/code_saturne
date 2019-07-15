@@ -239,7 +239,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                    ('z', "Z face's gravity center"),
                    ('dt', 'time step'),
                    ('t', 'current time'),
-                   ('iter', 'number of iteration')]
+                   ('iter', 'number of iteration'),
+                   ('surface', 'Boundary zone surface')]
 
         elif c == 'flow1_formula':
             sym = [('x', "X face's gravity center"),
@@ -247,7 +248,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                    ('z', "Z face's gravity center"),
                    ('dt', 'time step'),
                    ('t', 'current time'),
-                   ('iter', 'number of iteration')]
+                   ('iter', 'number of iteration'),
+                   ('surface', 'Boundary zone surface')]
 
         for (name, val) in self.notebook.getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))

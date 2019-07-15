@@ -283,7 +283,7 @@ _physical_property(cs_field_t          *c_prop,
 
     if (law != NULL) {
       cs_field_t *fmeg[1] = {c_prop};
-      cs_meg_volume_function(fmeg, z);
+      cs_meg_volume_function(z, fmeg);
     }
 
   }
@@ -2482,11 +2482,11 @@ void CS_PROCF(uiporo, UIPORO)(void)
       if (formula != NULL) {
         if (cs_gui_strcmp(mdl, "anisotropic")) {
           cs_field_t *fmeg[2] = {fporo, ftporo};
-          cs_meg_volume_function(fmeg, z);
+          cs_meg_volume_function(z, fmeg);
 
         } else {
           cs_field_t *fmeg[1] = {fporo};
-          cs_meg_volume_function(fmeg, z);
+          cs_meg_volume_function(z, fmeg);
         }
 
       }
@@ -2812,7 +2812,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         cs_field_t *c_vel = cs_field_by_name("velocity");
 
         if (formula_uvw != NULL) {
-          cs_real_t *ini_vals = cs_meg_initialization("velocity", z);
+          cs_real_t *ini_vals = cs_meg_initialization(z, "velocity");
           if (ini_vals != NULL) {
             for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
               cs_lnum_t c_id = cell_ids[e_id];
@@ -2842,8 +2842,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           cs_field_t *c = cs_field_by_name_try("hydraulic_head");
 
           if (formula != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization("hydraulic_head",
-                                                        z);
+            cs_real_t *ini_vals = cs_meg_initialization(z, "hydraulic_head");
             if (ini_vals != NULL) {
               for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                 cs_lnum_t c_id = cell_ids[e_id];
@@ -2875,7 +2874,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             if (cs_gui_strcmp(model, "off"))
               break;
 
-            cs_real_t *ini_vals = cs_meg_initialization("turbulence", z);
+            cs_real_t *ini_vals = cs_meg_initialization(z, "turbulence");
 
             if (ini_vals != NULL) {
 
@@ -3026,7 +3025,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           assert(c != NULL);
 
           if (formula_sca != NULL) {
-            cs_real_t *ini_vals = cs_meg_initialization("thermal", z);
+            cs_real_t *ini_vals = cs_meg_initialization(z, "thermal");
             if (ini_vals != NULL) {
               for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                 cs_lnum_t c_id = cell_ids[e_id];
@@ -3062,7 +3061,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             formula_sca = cs_tree_node_get_value_str(tn_sca);
 
             if (formula_sca != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(f->name, z);
+              cs_real_t *ini_vals = cs_meg_initialization(z, f->name);
               if (ini_vals != NULL) {
                 for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                   cs_lnum_t c_id = cell_ids[e_id];
@@ -3111,7 +3110,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             formula_meteo = cs_tree_node_get_value_str(tn_meteo2);
 
             if (formula_meteo != NULL) {
-              cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
+              cs_real_t *ini_vals = cs_meg_initialization(z, c->name);
               if (ini_vals != NULL) {
                 for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                   cs_lnum_t c_id = cell_ids[e_id];
@@ -3178,7 +3177,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
               formula = cs_tree_node_get_value_str(tn);
 
               if (formula != NULL) {
-                cs_real_t *ini_vals = cs_meg_initialization(c->name, z);
+                cs_real_t *ini_vals = cs_meg_initialization(z, c->name);
                 if (ini_vals != NULL) {
                   for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
                     cs_lnum_t c_id = cell_ids[e_id];
@@ -3590,7 +3589,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
 
         if (formula != NULL) {
           cs_field_t *fmeg[3] = {fcapacity, fsaturation, fpermeability};
-          cs_meg_volume_function(fmeg, z);
+          cs_meg_volume_function(z, fmeg);
         }
       }
 

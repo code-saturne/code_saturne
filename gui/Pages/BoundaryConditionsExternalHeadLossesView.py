@@ -134,7 +134,8 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
                ('z', "Z face's gravity center"),
                ('dt', 'time step'),
                ('t', 'current time'),
-               ('iter', 'number of iteration')]
+               ('iter', 'number of iteration'),
+               ('surface', 'Boundary zone surface')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))

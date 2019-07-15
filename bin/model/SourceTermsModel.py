@@ -107,7 +107,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('dSwdw', "z component z velocity derivative")]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('t', 'current time'),
+               ('volume', 'Source terms zone volume')]
 
         sym.append( ("velocity[0]", 'x velocity component'))
         sym.append( ("velocity[1]", 'y velocity component'))
@@ -158,7 +160,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('dS', 'species source term derivative')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('t', 'current time'),
+               ('volume', 'Source terms zone volume')]
         name = self.th_sca.getScalarName(species)
         sym.append((name, 'current species'))
 
@@ -213,7 +217,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
-               ('t', 'current time')]
+               ('t', 'current time'),
+               ('volume', 'Source terms zone volume')]
 
         name = self.th_sca.getScalarName(species)
         sym.append((name, 'current species'))
@@ -268,7 +273,8 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
-               ('t', 'current time')]
+               ('t', 'current time'),
+               ('volume', 'Source terms zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -316,7 +322,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('dS', 'thermal source term derivative')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('t', 'current time'),
+               ('volume', 'Source terms zone volume')]
 
         if self.case['package'].name == 'code_saturne':
             if self.therm.getThermalScalarModel() == 'enthalpy':
