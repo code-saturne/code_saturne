@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-07-09 17:24+0200\n"
+"POT-Creation-Date: 2019-07-15 21:52+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5178,6 +5178,33 @@ msgid "Error calling dlsym for %s: %s\n"
 msgstr "Erreur à l'appel de dlsym pour %s : %s\n"
 
 #, c-format
+msgid "CUDA error: %s"
+msgstr "erreur CUDA : %s"
+
+msgid "  CUDA device:         none available\n"
+msgstr ""
+
+#, c-format
+msgid "  CUDA device:         %s\n"
+msgstr ""
+
+#, c-format
+msgid "  CUDA device %d:       %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"                       Compute capability: %d.%d\n"
+"                       Memory: %llu %s\n"
+"                       Integrated: %d\n"
+"                       Can map host memory: %d\n"
+"                       Compute mode: %s\n"
+msgstr ""
+
+msgid "MB"
+msgstr "Mo"
+
+#, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
 "whereas the print buffer is of size %d."
@@ -5323,6 +5350,26 @@ msgstr "La définition d'une zone nécessite un nom."
 #, c-format
 msgid "    type:                       %d"
 msgstr "    type :                      %d"
+
+#, c-format
+msgid ""
+"  Boundary zone \"%s\"\n"
+"    id              = %d\n"
+"    Number of faces = %llu\n"
+"    Surface         = %14.7e\n"
+"    Fluid surface   = %14.7e\n"
+msgstr ""
+
+msgid ""
+"    Perimeter       = -1 (not computed)\n"
+"    Fluid perimeter = -1 (not computed)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"    Perimeter       = %14.7e\n"
+"    Fluid perimeter = %14.7e\n"
+msgstr ""
 
 #, c-format
 msgid "Boundary zone with id %d is not defined."
@@ -9217,9 +9264,6 @@ msgstr "Processeur :         "
 msgid "Memory:              "
 msgstr "Mémoire :            "
 
-msgid "MB"
-msgstr "Mo"
-
 msgid "User:                "
 msgstr "Utilisateur :        "
 
@@ -9764,6 +9808,12 @@ msgid ""
 "Check your restart directory."
 msgstr ""
 
+#, c-format
+msgid ""
+"   ** VOF MODEL, MASS BALANCE at iteration %6i: %12.4e\n"
+"\n"
+msgstr ""
+
 msgid "initialization"
 msgstr "initialisation"
 
@@ -9780,6 +9830,26 @@ msgid "mass source term"
 msgstr "terme source de masse"
 
 msgid "groundwater soil"
+msgstr ""
+
+#, c-format
+msgid ""
+"  Volume zone \"%s\"\n"
+"    id              = %d\n"
+"    Number of cells = %llu\n"
+"    Volume          = %14.7e\n"
+"    Fluid volume    = %14.7e\n"
+msgstr ""
+
+msgid ""
+"    Surface         = -1 (not computed)\n"
+"    Fluid surface   = -1 (not computed)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"    Surface         = %14.7e\n"
+"    Fluid surface   = %14.7e\n"
 msgstr ""
 
 msgid "cell with forbidden zone overlap"
@@ -10079,6 +10149,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+" %s: Invalid val %s related to key CS_NSKEY_ADVECTION_FORMULATION\n"
+" Choice between conservative, non_conservative"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid val %s related to key CS_NSKEY_ADVECTION_SCHEME\n"
+" Choice between upwind, samarskii, sg, centered, cip mix_cenetered_upwind"
+msgstr ""
+
+#, c-format
+msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_DOF_REDUCTION\n"
 " Choice between \"derham\" or \"average\"."
 msgstr ""
@@ -10215,6 +10297,9 @@ msgid "Orthogonal Consistency/Stabilization (OCS)"
 msgstr ""
 
 msgid "Orthogonal Consistency/Sub-Stabilization (OCS2)"
+msgstr ""
+
+msgid "Orthogonal Consistency/Bubble-Stabilization (BUBBLE)"
 msgstr ""
 
 msgid "Automatic switch"
@@ -14436,16 +14521,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Edge for extrusion joining vertices at coordinates\n"
-" [%12.3g, %12.3g, %12.3g] and\n"
-" [%12.3g, %12.3g, %12.3g] has %d adjacent faces."
-msgstr ""
-"l'arête pour l'extrusion joignant les sommets de coordonnées\n"
-" [%12.3g, %12.3g, %12.3g] et\n"
-" [%12.3g, %12.3g, %12.3g] a %d faces adjacentes."
-
-#, c-format
-msgid ""
 "\n"
 " Extrusion: %llu boundary faces selected.\n"
 msgstr ""
@@ -16333,6 +16408,15 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid ""
+#~ "Edge for extrusion joining vertices at coordinates\n"
+#~ " [%12.3g, %12.3g, %12.3g] and\n"
+#~ " [%12.3g, %12.3g, %12.3g] has %d adjacent faces."
+#~ msgstr ""
+#~ "l'arête pour l'extrusion joignant les sommets de coordonnées\n"
+#~ " [%12.3g, %12.3g, %12.3g] et\n"
+#~ " [%12.3g, %12.3g, %12.3g] a %d faces adjacentes."
 
 #~ msgid "    number of additional user statistics: %d\n"
 #~ msgstr "    nombre de statistiques utilisateur supplémentaires : %10d\n"
