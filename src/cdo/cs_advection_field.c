@@ -1724,8 +1724,8 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
   assert(bf_id > -1);
   assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
-  if (adv->bdy_def_ids > -1) { /* Use the previously computed advection field
-                                  across the boundary */
+  if (adv->bdy_field_id > -1) { /* Use the previously computed advection field
+                                   across the boundary */
 
     cs_field_t  *fld = cs_field_by_id(adv->bdy_field_id);
 
