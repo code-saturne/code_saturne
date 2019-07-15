@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-07-04 10:51+0200\n"
+"POT-Creation-Date: 2019-07-15 22:32+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4120,7 +4120,7 @@ msgid ""
 "%11.4e\n"
 msgstr ""
 "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e, norme : %11.4e, "
-"res_init :%11.4e\n"
+"res_init : %11.4e\n"
 
 #, c-format
 msgid "  n_iter : %5d, res_abs : %11.4e\n"
@@ -5280,6 +5280,26 @@ msgstr "La définition d'une zone nécessite un nom."
 #, c-format
 msgid "    type:                       %d"
 msgstr "    type :                      %d"
+
+#, c-format
+msgid ""
+"  Boundary zone \"%s\"\n"
+"    id              = %d\n"
+"    Number of faces = %llu\n"
+"    Surface         = %14.7e\n"
+"    Fluid surface   = %14.7e\n"
+msgstr ""
+
+msgid ""
+"    Perimeter       = -1 (not computed)\n"
+"    Fluid perimeter = -1 (not computed)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"    Perimeter       = %14.7e\n"
+"    Fluid perimeter = %14.7e\n"
+msgstr ""
 
 #, c-format
 msgid "Boundary zone with id %d is not defined."
@@ -6701,6 +6721,26 @@ msgstr "Le jeu de mesures \"%s\" n'est pas défini."
 #, c-format
 msgid "Interpol grid \"%s\" is not defined."
 msgstr "La grille d'interpolation \"%s\" n'est pas définie."
+
+#, c-format
+msgid "Entry \"%s\" is not defined."
+msgstr "L'entrée \"%s\" n'est pas défini."
+
+#, c-format
+msgid ""
+"Error creating entry:\n"
+"  name:        \"%s\"\n"
+"\n"
+"An entry with that name has allready been defined:\n"
+"  id: %d\n"
+msgstr ""
+
+msgid "Defining an entry requires a name."
+msgstr "La définition d'une zone nécessite un nom."
+
+#, c-format
+msgid "Entry \"%s\" was defined as not editable in the notebook.\n"
+msgstr ""
 
 msgid "vectorization"
 msgstr "vectorisation"
@@ -9694,6 +9734,26 @@ msgid "mass source term"
 msgstr "terme source de masse"
 
 msgid "groundwater soil"
+msgstr ""
+
+#, c-format
+msgid ""
+"  Volume zone \"%s\"\n"
+"    id              = %d\n"
+"    Number of cells = %llu\n"
+"    Volume          = %14.7e\n"
+"    Fluid volume    = %14.7e\n"
+msgstr ""
+
+msgid ""
+"    Surface         = -1 (not computed)\n"
+"    Fluid surface   = -1 (not computed)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"    Surface         = %14.7e\n"
+"    Fluid surface   = %14.7e\n"
 msgstr ""
 
 msgid "cell with forbidden zone overlap"
