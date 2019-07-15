@@ -561,7 +561,7 @@ _compute_residual(int              iter,
 static void
 _apply_bc_partly(const cs_cdofb_uzawa_t        *sc,
                  const cs_equation_param_t     *eqp,
-                 const cs_cdofb_scaleq_t       *eqc,
+                 const cs_cdofb_vecteq_t       *eqc,
                  const cs_cell_mesh_t          *cm,
                  const cs_boundary_type_t      *bf_type,
                  const cs_real_t                prs_c,
