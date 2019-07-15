@@ -3,6 +3,10 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Improve mesh extrusion robustness: in the rare case where a boundary edge
+  is connected to more than 2 faces, extrusion is prevented for the
+  matching vertices, rather than provoking a global error.
+
 - Fix crash when using Coriolis forces outside turbomachinery model
   (such as is Atmospheric cases).
 
