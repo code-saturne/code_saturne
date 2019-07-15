@@ -314,8 +314,8 @@ _log_type(int type)
 /*----------------------------------------------------------------------------*/
 
 void
-_volume_zone_compute_measure(bool       mesh_modified,
-                             cs_zone_t *z)
+_volume_zone_compute_metadata(bool       mesh_modified,
+                              cs_zone_t *z)
 {
   /* We recompute values only if mesh is modified or zone is time varying.
    * FIXME: For the moment, the boundary measure is not computed, but set to -1.
