@@ -247,6 +247,8 @@ _zone_define(const char  *name)
   z->time_varying = false;
   z->allow_overlay = false;
 
+  z->n_g_elts = 0;
+
   z->measure = -1.;
   z->boundary_measure = -1.;
 
@@ -301,20 +303,22 @@ _build_zone_class_id(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-_boundary_zone_compute_measure(bool       mesh_modified,
-                               cs_zone_t *z)
+static void
+_boundary_zone_compute_metadata(bool       mesh_modified,
+                                cs_zone_t *z)
 {
   /* We recompute values only if mesh is modified or zone is time varying.
    * FIXME: For the moment, the boundary measure is not computed, but set to -1.
-   * to be improved in a next patch
+   * to be improved in the future.
    */
   if (z->time_varying || mesh_modified) {
     cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
     cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
 
     z->measure = 0.;
+    z->f_measure = 0.;
     z->boundary_measure = -1.;
+    z->f_boundary_measure = -1.;
 
     for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
       cs_lnum_t f_id = z->elt_ids[e_id];
@@ -322,21 +326,30 @@ _boundary_zone_compute_measure(bool       mesh_modified,
       z->f_measure += b_f_face_surf[f_id];
     }
 
-    cs_parall_sum(1, CS_REAL_TYPE, &z->measure);
-    cs_parall_sum(1, CS_REAL_TYPE, &z->f_measure);
-    cs_parall_sum(1, CS_REAL_TYPE, &z->boundary_measure);
-    cs_parall_sum(1, CS_REAL_TYPE, &z->f_boundary_measure);
+    cs_real_t measures[4] = {z->measure, z->f_measure,
+                             z->boundary_measure, z->f_boundary_measure};
+
+    cs_gnum_t n_g_elts = z->n_elts;
+    cs_parall_sum(1, CS_GNUM_TYPE, &n_g_elts);
+
+    cs_parall_sum(4, CS_REAL_TYPE, measures);
+
+    z->n_g_elts = n_g_elts;
+
+    z->measure = measures[0];
+    z->f_measure = measures[1];
+    z->boundary_measure = measures[2];
+    z->f_boundary_measure = measures[3];
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print boundary zones information to listing file
- *
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _boundary_zone_print_info(void)
 {
 
@@ -346,25 +359,24 @@ _boundary_zone_print_info(void)
   for (int i = 0; i < _n_zones; i++) {
     cs_zone_t *z = _zones[i];
     bft_printf(_("  Boundary zone \"%s\"\n"
-                 "     id              = %d\n"
-                 "     Number of faces = %d\n"
-                 "     Surface         = %14.7e\n"
-                 "     Fluid surface   = %14.7e\n"),
-               z->name, z->id, z->n_elts, z->measure, z->f_measure);
+                 "    id              = %d\n"
+                 "    Number of faces = %llu\n"
+                 "    Surface         = %14.7e\n"
+                 "    Fluid surface   = %14.7e\n"),
+               z->name, z->id, (unsigned long long)z->n_g_elts,
+               z->measure, z->f_measure);
     if (z->boundary_measure < 0.)
-      bft_printf(_("     Perimeter       = -1 (not computed)\n"
-                   "     Fluid perimeter = -1 (not computed)\n"));
+      bft_printf(_("    Perimeter       = -1 (not computed)\n"
+                   "    Fluid perimeter = -1 (not computed)\n"));
     else
-      bft_printf(_("     Perimeter       = %14.7e\n"
-                   "     Fluid perimeter = %14.7e\n"),
+      bft_printf(_("    Perimeter       = %14.7e\n"
+                   "    Fluid perimeter = %14.7e\n"),
                  z->boundary_measure, z->f_boundary_measure);
-
-    bft_printf("\n");
   }
 
   bft_printf_flush();
-
 }
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -601,7 +613,7 @@ cs_boundary_zone_build_all(bool  mesh_modified)
     /* Compute or update zone geometrical measures */
     for (int i = 0; i < _n_zones; i++) {
       cs_zone_t *z = _zones[i];
-      _boundary_zone_compute_measure(mesh_modified, z);
+      _boundary_zone_compute_metadata(mesh_modified, z);
     }
     _boundary_zone_print_info();
   }

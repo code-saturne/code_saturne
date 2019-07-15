@@ -61,13 +61,15 @@ typedef struct {
 
   int               location_id;         /*!< associated mesh location id */
 
-  cs_lnum_t         n_elts;              /*!< local number of associated faces */
-  const cs_lnum_t  *elt_ids;             /*!< associated face ids */
+  cs_lnum_t         n_elts;              /*!< local number of elements */
+  const cs_lnum_t  *elt_ids;             /*!< associated element ids */
 
   bool              time_varying;        /*!< does the selected zone change
                                            with time ? */
 
   bool              allow_overlay;       /*!< allow overlaying of this zone ? */
+
+  cs_gnum_t         n_g_elts;            /*!< global number of elements */
 
   cs_real_t         measure;             /*!< Geometrical measure of the zone */
   cs_real_t         f_measure;           /*!< Fluid measure of the zone */
