@@ -433,12 +433,17 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       /* Automatically switch to a non-conservative formulation */
       nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
     }
+    else if (strcmp(val, "cip_cw") == 0) {
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP_CW;
+      /* Automatically switch to a non-conservative formulation */
+      nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid val %s related to key"
                   " CS_NSKEY_ADVECTION_SCHEME\n"
-                  " Choice between upwind, samarskii, sg, centered, cip"
+                  " Choice between upwind, samarskii, sg, centered, cip, cip_cw,"
                   " mix_cenetered_upwind"),
                 __func__, _val);
     }

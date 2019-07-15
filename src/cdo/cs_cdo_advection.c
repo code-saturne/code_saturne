@@ -2087,8 +2087,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB);
   assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_advection_field_is_cellwise(eqp->adv_field));
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW);
   assert(cs_flag_test(cm->flag,
                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
                       CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_FEQ |
@@ -2447,7 +2446,8 @@ cs_cdo_advection_vcb_bc(const cs_cell_mesh_t        *cm,
   assert(cm != NULL && eqp != NULL);
   assert(csys->mat->n_rows == cm->n_vc + 1);
   assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
-  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
+  assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP ||
+         eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW);
   assert(cs_flag_test(cm->flag,
                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
