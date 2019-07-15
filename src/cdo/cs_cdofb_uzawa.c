@@ -810,10 +810,6 @@ _steady_build(const cs_mesh_t          *mesh,
 
     cs_cdofb_vecteq_get(&csys, &cb);
 
-    /* Store the shift to access border faces (first interior faces and
-       then border faces: shift = n_i_faces */
-    csys->face_shift = connect->n_faces[CS_INT_FACES];
-
     /* Initialization of the values of properties */
     cs_equation_init_properties(mom_eqp, mom_eqb, time_eval, cb);
 
