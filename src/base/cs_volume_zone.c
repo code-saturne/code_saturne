@@ -311,7 +311,7 @@ _log_type(int type)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _volume_zone_compute_measure(bool       mesh_modified,
                              cs_zone_t *z)
 {
@@ -350,7 +350,7 @@ _volume_zone_compute_measure(bool       mesh_modified,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _volume_zone_print_info(void)
 {
 

@@ -301,7 +301,7 @@ _build_zone_class_id(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _boundary_zone_compute_measure(bool       mesh_modified,
                                cs_zone_t *z)
 {
@@ -336,7 +336,7 @@ _boundary_zone_compute_measure(bool       mesh_modified,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _boundary_zone_print_info(void)
 {
 
