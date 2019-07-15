@@ -428,6 +428,11 @@ _set_key(const char            *label,
       /* Automatically switch to a non-conservative formulation */
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
     }
+    else if (strcmp(keyval, "cip_cw") == 0) {
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP_CW;
+      /* Automatically switch to a non-conservative formulation */
+      eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+    }
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1728,6 +1733,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
       break;
     case CS_PARAM_ADVECTION_SCHEME_CIP:
       cs_log_printf(CS_LOG_SETUP, " continuous interior penalty\n");
+      break;
+    case CS_PARAM_ADVECTION_SCHEME_CIP_CW:
+      cs_log_printf(CS_LOG_SETUP, " continuous interior penalty (CellWise)\n");
       break;
     case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
       cs_log_printf(CS_LOG_SETUP, " centered-upwind (%3.2f %% of upwind)\n",

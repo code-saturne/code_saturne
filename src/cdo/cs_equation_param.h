@@ -424,6 +424,9 @@ typedef struct {
  *   the weight (cf. \ref CS_PARAM_ADVECTION_SCHEME_SG). Only for CDO-Vb schemes
  * - "cip" --> means "continuous interior penalty" (only for CDOVCB schemes).
  *   Enable a better accuracy. (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP)
+ * - "cip_cw" --> means "continuous interior penalty" (only for CDOVCB schemes).
+ *   Enable a better accuracy. Consider a cellwise approximation of the advection
+ *   field (cf. \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW)
  *
  * \var CS_EQKEY_ADV_UPWIND_PORTION
  * Value between 0 and 1 specifying the portion of upwind added to a centered

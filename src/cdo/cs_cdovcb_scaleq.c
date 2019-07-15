@@ -1013,14 +1013,19 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       eqb->msh_flag |= CS_FLAG_COMP_EF;
       _set_cip_coef(eqp);
-
       eqc->add_advection_bc = cs_cdo_advection_vcb_bc;
 
       if (cs_advection_field_is_cellwise(eqp->adv_field))
         eqc->get_advection_matrix = cs_cdo_advection_vcb_cw_cst;
       else
         eqc->get_advection_matrix = cs_cdo_advection_vcb;
+      break;
 
+    case CS_PARAM_ADVECTION_SCHEME_CIP_CW:
+      eqb->msh_flag |= CS_FLAG_COMP_EF;
+      _set_cip_coef(eqp);
+      eqc->add_advection_bc = cs_cdo_advection_vcb_bc;
+      eqc->get_advection_matrix = cs_cdo_advection_vcb_cw_cst;
       break;
 
     case CS_PARAM_ADVECTION_SCHEME_UPWIND:
@@ -1029,6 +1034,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
     default:
       bft_error(__FILE__, __LINE__, 0,
                 " Invalid advection scheme for vertex-based discretization");
+
     } /* Scheme */
 
   }
