@@ -151,6 +151,7 @@ _adv_scheme_key[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
   {
     "centered",
     "cip",
+    "cip_cw",
     "mix_centered_upwind",
     "samarskii",
     "sg",
@@ -444,7 +445,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                 _(" %s: Invalid val %s related to key"
                   " CS_NSKEY_ADVECTION_SCHEME\n"
                   " Choice between upwind, samarskii, sg, centered, cip, cip_cw,"
-                  " mix_cenetered_upwind"),
+                  " mix_centered_upwind"),
                 __func__, _val);
     }
     break;
