@@ -876,6 +876,10 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqc->get_stiffness_matrix = cs_hodge_fb_cost_get_stiffness;
       break;
 
+    case CS_PARAM_HODGE_ALGO_BUBBLE:
+      eqc->get_stiffness_matrix = cs_hodge_fb_bubble_get_stiffness;
+      break;
+
     case CS_PARAM_HODGE_ALGO_VORONOI:
       eqc->get_stiffness_matrix = cs_hodge_fb_voro_get_stiffness;
       break;
