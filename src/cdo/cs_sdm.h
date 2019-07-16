@@ -214,6 +214,26 @@ cs_sdm_add_scalvect(int               n,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Set the lower left according to the upper right part in order to
+ *          get a symmetric matrix.
+ *
+ * \param[in, out]      mat    pointer to a cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_sdm_symm_ur(cs_sdm_t      *mat)
+{
+  assert(mat != NULL);
+  for (int i = 1; i < mat->n_rows; i++) {
+    cs_real_t  *m_i = mat->val + i*mat->n_rows;
+    for (int j = 0; j < i; j++)
+      m_i[j] = mat->val[j*mat->n_rows + i];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Allocate and initialize a cs_sdm_t structure
  *          Most generic function to create a cs_sdm_t structure
  *
