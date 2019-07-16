@@ -896,9 +896,13 @@ _tree_node_get_field(cs_tree_node_t  *tn)
   }
 
   /* General case */
-
-  if (f == NULL)
-    f = cs_field_by_name_try(name);
+  if (f == NULL) {
+    if (strcmp(name, "local_time_step") == 0)
+      /* Fix time step output */
+      f = CS_F_(dt);
+    else
+      f = cs_field_by_name_try(name);
+  }
 
   if (f == NULL)
     bft_error(__FILE__, __LINE__, 0,
