@@ -753,6 +753,8 @@ _set_key(const char            *label,
       eqp->space_poly_degree = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_BUBBLE;
+      eqp->diffusion_hodge.coef = 2*cs_math_1ov3;
       eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
     }
@@ -925,9 +927,9 @@ cs_equation_create_param(const char            *name,
     .is_unity = false,
     .is_iso = true,
     .inv_pty = false,
-    .algo = CS_PARAM_HODGE_ALGO_BUBBLE,
+    .algo = CS_PARAM_HODGE_ALGO_COST,
     .type = CS_PARAM_HODGE_TYPE_EPFD,
-    .coef = 2./3.,
+    .coef = 1./3.,
   };
 
   /* Advection term */
