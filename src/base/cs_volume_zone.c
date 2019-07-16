@@ -353,40 +353,6 @@ _volume_zone_compute_metadata(bool       mesh_modified,
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print volume zones information to listing file
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_volume_zone_print_info(void)
-{
-
-  bft_printf("\n");
-  bft_printf(" --- Information on volume zones\n");
-
-  for (int i = 0; i < _n_zones; i++) {
-    cs_zone_t *z = _zones[i];
-    bft_printf(_("  Volume zone \"%s\"\n"
-                 "    id              = %d\n"
-                 "    Number of cells = %llu\n"
-                 "    Volume          = %14.7e\n"
-                 "    Fluid volume    = %14.7e\n"),
-               z->name, z->id, (unsigned long long)z->n_g_elts,
-               z->measure, z->f_measure);
-    if (z->boundary_measure < 0.)
-      bft_printf(_("    Surface         = -1 (not computed)\n"
-                   "    Fluid surface   = -1 (not computed)\n"));
-    else
-      bft_printf(_("    Surface         = %14.7e\n"
-                   "    Fluid surface   = %14.7e\n"),
-                 z->boundary_measure, z->f_boundary_measure);
-  }
-
-  bft_printf_flush();
-}
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -588,7 +554,6 @@ cs_volume_zone_build_all(bool  mesh_modified)
       cs_zone_t *z = _zones[i];
       _volume_zone_compute_metadata(mesh_modified, z);
     }
-    _volume_zone_print_info();
   }
 }
 
@@ -973,6 +938,40 @@ cs_volume_zone_select_type_cells(int        type_flag,
       }
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print volume zones information to listing file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_volume_zone_print_info(void)
+{
+
+  bft_printf("\n");
+  bft_printf(" --- Information on volume zones\n");
+
+  for (int i = 0; i < _n_zones; i++) {
+    cs_zone_t *z = _zones[i];
+    bft_printf(_("  Volume zone \"%s\"\n"
+                 "    id              = %d\n"
+                 "    Number of cells = %llu\n"
+                 "    Volume          = %14.7e\n"
+                 "    Fluid volume    = %14.7e\n"),
+               z->name, z->id, (unsigned long long)z->n_g_elts,
+               z->measure, z->f_measure);
+    if (z->boundary_measure < 0.)
+      bft_printf(_("    Surface         = -1 (not computed)\n"
+                   "    Fluid surface   = -1 (not computed)\n"));
+    else
+      bft_printf(_("    Surface         = %14.7e\n"
+                   "    Fluid surface   = %14.7e\n"),
+                 z->boundary_measure, z->f_boundary_measure);
+  }
+
+  bft_printf_flush();
 }
 
 /*----------------------------------------------------------------------------*/

@@ -420,7 +420,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_init_selectors();
   cs_mesh_location_build(cs_glob_mesh, -1);
   cs_volume_zone_build_all(true);
+  cs_volume_zone_print_info();
   cs_boundary_zone_build_all(true);
+  cs_boundary_zone_print_info();
 
   /* For debugging purposes */
 

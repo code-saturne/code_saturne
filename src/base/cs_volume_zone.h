@@ -352,6 +352,14 @@ cs_volume_zone_select_type_cells(int        type_flag,
                                  cs_lnum_t  cell_ids[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print volume zones information to listing file
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_volume_zone_print_info(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
