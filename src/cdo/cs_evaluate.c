@@ -2391,12 +2391,27 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
+    if (elt_ids == NULL)
+      memset(retval, 0, cs_cdo_quant->n_cells*sizeof(cs_real_t));
+    else {
+      for (cs_lnum_t i = 0; i < z->n_elts; i++)
+        retval[z->elt_ids[i]] = 0;
+    }
+
     _pcsa_by_analytic(time_eval,
                       anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
     break;
 
   case 3: /* Vector-valued */
+    if (elt_ids == NULL)
+      memset(retval, 0, 3*cs_cdo_quant->n_cells*sizeof(cs_real_t));
+    else {
+      for (cs_lnum_t i = 0; i < z->n_elts; i++)
+        for (int k = 0; k < 3; k++)
+          retval[3*z->elt_ids[i]+k] = 0;
+    }
+
     _pcva_by_analytic(time_eval,
                       anai->func, anai->input, z->n_elts, elt_ids, qfunc,
                       retval);
