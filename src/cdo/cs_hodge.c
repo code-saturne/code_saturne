@@ -2599,7 +2599,7 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
   cs_sdm_square_init(cm->n_fc, hdg);
 
   double  *kappa = cb->values;
-  double  *alpha = cb->values + cm->n_ec;
+  double  *alpha = cb->values + cm->n_fc;
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_fc;
 
