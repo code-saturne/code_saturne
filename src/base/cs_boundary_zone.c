@@ -345,40 +345,6 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print boundary zones information to listing file
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_boundary_zone_print_info(void)
-{
-
-  bft_printf("\n");
-  bft_printf(" --- Information on boundary zones\n");
-
-  for (int i = 0; i < _n_zones; i++) {
-    cs_zone_t *z = _zones[i];
-    bft_printf(_("  Boundary zone \"%s\"\n"
-                 "    id              = %d\n"
-                 "    Number of faces = %llu\n"
-                 "    Surface         = %14.7e\n"
-                 "    Fluid surface   = %14.7e\n"),
-               z->name, z->id, (unsigned long long)z->n_g_elts,
-               z->measure, z->f_measure);
-    if (z->boundary_measure < 0.)
-      bft_printf(_("    Perimeter       = -1 (not computed)\n"
-                   "    Fluid perimeter = -1 (not computed)\n"));
-    else
-      bft_printf(_("    Perimeter       = %14.7e\n"
-                   "    Fluid perimeter = %14.7e\n"),
-                 z->boundary_measure, z->f_boundary_measure);
-  }
-
-  bft_printf_flush();
-}
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -617,7 +583,6 @@ cs_boundary_zone_build_all(bool  mesh_modified)
       cs_zone_t *z = _zones[i];
       _boundary_zone_compute_metadata(mesh_modified, z);
     }
-    _boundary_zone_print_info();
   }
 }
 
@@ -1053,6 +1018,40 @@ cs_boundary_zone_max_class_or_zone_id(void)
     retval = _max_zone_class_id;
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print boundary zones information to listing file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_print_info(void)
+{
+
+  bft_printf("\n");
+  bft_printf(" --- Information on boundary zones\n");
+
+  for (int i = 0; i < _n_zones; i++) {
+    cs_zone_t *z = _zones[i];
+    bft_printf(_("  Boundary zone \"%s\"\n"
+                 "    id              = %d\n"
+                 "    Number of faces = %llu\n"
+                 "    Surface         = %14.7e\n"
+                 "    Fluid surface   = %14.7e\n"),
+               z->name, z->id, (unsigned long long)z->n_g_elts,
+               z->measure, z->f_measure);
+    if (z->boundary_measure < 0.)
+      bft_printf(_("    Perimeter       = -1 (not computed)\n"
+                   "    Fluid perimeter = -1 (not computed)\n"));
+    else
+      bft_printf(_("    Perimeter       = %14.7e\n"
+                   "    Fluid perimeter = %14.7e\n"),
+                 z->boundary_measure, z->f_boundary_measure);
+  }
+
+  bft_printf_flush();
 }
 
 /*----------------------------------------------------------------------------*/
