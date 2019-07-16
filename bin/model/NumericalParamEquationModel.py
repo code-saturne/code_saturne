@@ -249,7 +249,7 @@ class NumericalParamEquationModel(Model):
         """ Private method: return list of nodes for Homogeneous model"""
         nodList = []
         n = self.node_models.xmlGetNode('hgn_model')
-        if n['status'] != 'off':
+        if n and n['status'] != 'off':
             nodList =  n.xmlGetNodeList('variable')
         return nodList
 
