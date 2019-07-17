@@ -53,6 +53,7 @@
 #include "cs_equation_assemble.h"
 #include "cs_gwf.h"
 #include "cs_log.h"
+#include "cs_log_iteration.h"
 #include "cs_parall.h"
 #include "cs_param.h"
 #include "cs_param_cdo.h"
@@ -200,8 +201,21 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
-  if (!cs_equation_needs_steady_state_solve())
+  if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY) {
+    /* Otherwise log is called from the FORTRAN part */
+
+    if (!cs_equation_needs_steady_state_solve()) {
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "-ite- 0; >> Initial state");
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
+
+      /* Basic statistic related to variables */
+      if (cs_domain_needs_log(domain))
+        cs_log_iteration();
+    }
     return;
+  }
 
   bool  do_output = cs_domain_needs_log(domain);
 
