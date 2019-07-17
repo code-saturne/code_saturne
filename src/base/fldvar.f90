@@ -293,13 +293,15 @@ endif
 ! Mesh velocity with ALE
 if (iale.ge.1) then
 
-  ityloc = 1
   ! field defined on vertices if CDO-Vb scheme is used
   if (iale.eq.2) then
     ityloc = 4
+    call add_cdo_variable_field('mesh_velocity', 'Mesh Velocity', &
+                                3, iuma, ityloc, 0)
+  else
+    ityloc = 1
+    call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma, ityloc)
   endif
-
-  call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma, ityloc)
 
   call field_set_key_int(ivarfl(iuma), keycpl, 1)
 
@@ -720,6 +722,88 @@ endif
 return
 
 end subroutine add_variable_field
+
+!===============================================================================
+
+!> \brief Add a field defining a general solved variable, with default options
+!>        This variable is solved with a CDO scheme.
+!
+!> It is recommended not to define variable names of more than 16
+!> characters, to get a clear execution log (some advanced writing
+!> levels take into account only the first 16 characters).
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]  name          field name
+!> \param[in]  label         field default label, or empty
+!> \param[out] ivar          variable number for defined field
+!> \param[in]  dim           field dimension
+!> \param[in]  location_id   id of the mesh location where the field is defined
+!> \param[in]  has_previous  if greater than 0 then stores previous state
+!_______________________________________________________________________________
+
+subroutine add_cdo_variable_field &
+ ( name, label, dim, ivar, location_id, has_previous )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character(len=*), intent(in) :: name, label
+integer, intent(in)          :: dim, location_id, has_previous
+integer, intent(out)         :: ivar
+
+! Local variables
+
+integer  id, ii
+
+integer, save :: keyvar = -1
+
+! Create field
+
+call variable_cdo_field_create(name, label, location_id, dim, has_previous, id)
+
+if (keyvar.lt.0) then
+  call field_get_key_id("variable_id", keyvar)
+endif
+
+ivar = nvar + 1
+nvar = nvar + dim
+
+! Check we have enough slots
+call fldvar_check_nvar
+
+ivarfl(ivar) = id
+
+call field_set_key_int(id, keyvar, ivar)
+
+call init_var_cal_opt(id)
+
+if (dim .gt. 1) then
+  do ii = 2, dim
+    ivarfl(ivar + ii - 1) = id
+  enddo
+endif
+
+return
+
+end subroutine add_cdo_variable_field
 
 !===============================================================================
 

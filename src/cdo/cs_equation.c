@@ -56,6 +56,7 @@
 #include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
+#include "cs_field_default.h"
 #include "cs_hho_scaleq.h"
 #include "cs_hho_vecteq.h"
 #include "cs_log.h"
@@ -2011,7 +2012,9 @@ cs_equation_create_fields(void)
 
     const cs_equation_param_t  *eqp = eq->param;
 
-    _Bool has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+    /* Redondant definition to handle C/FORTRAN */
+    int  has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
+    bool  previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
@@ -2039,19 +2042,12 @@ cs_equation_create_fields(void)
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid mesh location id (= -1) for the current field\n"));
 
-    cs_field_t  *fld = cs_field_find_or_create(eq->varname,
-                                               field_mask,
-                                               location_id,
-                                               eqp->dim,
-                                               has_previous);
-
-    /* Set default value for default keys */
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
-
     /* Store the related field id */
-    eq->field_id = cs_field_id_by_name(eq->varname);
+    eq->field_id = cs_variable_cdo_field_create(eq->varname,
+                                                NULL, /* label */
+                                                location_id,
+                                                eqp->dim,
+                                                has_previous);
 
     if (eqp->process_flag & CS_EQUATION_POST_NORMAL_FLUX) {
 
@@ -2066,21 +2062,23 @@ cs_equation_create_fields(void)
 
       /* If a scalar: the scalar diffusive flux across the boundary
        *  If a vector: the vector dot the normal of the boundary face */
+      int  flx_dim = (eqp->dim > 5) ? 3 : 1;
       cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
-                                                          0,
+                                                          0, /* field_mask */
                                                           location_id,
-                                                          1, // eqp->dim,
-                                                          has_previous);
+                                                          flx_dim,
+                                                          previous);
 
       eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
 
+      const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
       cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
       cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"),
                            post_flag);
 
       BFT_FREE(bdy_flux_name);
 
-    } /* Create a boundary field */
+    } /* Create a boundary flux field */
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
