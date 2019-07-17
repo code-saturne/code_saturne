@@ -687,6 +687,11 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                   domain->cdo_quantities,
                   domain->time_step,
                   false); /* operate current to previous ? */
+
+  /* Last word for the user function */
+  int  cdo_mode = cs_domain_get_cdo_mode(domain);
+  if (cdo_mode == CS_DOMAIN_CDO_MODE_ONLY)
+    cs_user_initialization(domain);
 }
 
 /*----------------------------------------------------------------------------*/
