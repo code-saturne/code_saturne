@@ -55,6 +55,28 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a field shared between CDO and legacy schemes. This field is
+ *         related to a general solved variable, with default options.
+ *
+ * \param[in]  name          field name
+ * \param[in]  label         field default label, or empty
+ * \param[in]  location_id   id of associated location
+ * \param[in]  dim           field dimension
+ * \param[in]  has_previous  no if lower than 1
+ *
+ * \return  newly defined field id
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_variable_cdo_field_create(const char  *name,
+                             const char  *label,
+                             int          location_id,
+                             int          dim,
+                             int          has_previous);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add field defining a general solved variable, with default options.
  *
  * \param[in]  name         field name
