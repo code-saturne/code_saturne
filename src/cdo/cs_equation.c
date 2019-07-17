@@ -989,8 +989,9 @@ cs_equation_add(const char            *eqname,
     break;
 
   case CS_EQUATION_TYPE_PREDEFINED:
-  case CS_EQUATION_TYPE_NAVSTO:
   case CS_EQUATION_TYPE_GROUNDWATER:
+  case CS_EQUATION_TYPE_MAXWELL:
+  case CS_EQUATION_TYPE_NAVSTO:
     _n_predef_equations++;
     break;
 

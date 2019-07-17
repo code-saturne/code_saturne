@@ -54,12 +54,13 @@
 #include "cs_gwf.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
+#include "cs_maxwell.h"
+#include "cs_navsto_system.h"
 #include "cs_parall.h"
 #include "cs_param.h"
 #include "cs_param_cdo.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
-#include "cs_navsto_system.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_volume_zone.h"
@@ -247,6 +248,12 @@ _solve_steady_state_domain(cs_domain_t  *domain)
                                 domain->connect,
                                 domain->cdo_quantities);
 
+  if (cs_maxwell_is_activated())
+    cs_maxwell_compute_steady_state(domain->mesh,
+                                    domain->time_step,
+                                    domain->connect,
+                                    domain->cdo_quantities);
+
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute_steady_state(domain->mesh,
                                           domain->time_step);
@@ -303,6 +310,12 @@ _solve_domain(cs_domain_t  *domain)
                    domain->connect,
                    domain->cdo_quantities);
 
+  if (cs_maxwell_is_activated())
+    cs_maxwell_compute(domain->mesh,
+                       domain->time_step,
+                       domain->connect,
+                       domain->cdo_quantities);
+
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute(domain->mesh, domain->time_step);
 
@@ -343,6 +356,9 @@ _log_setup(const cs_domain_t   *domain)
 
     /* Summary of the groundwater module */
     cs_gwf_log_setup();
+
+    /* Summary of the Maxwell module */
+    cs_maxwell_log_setup();
 
     /* Summary of the Navier-Stokes system */
     cs_navsto_system_log_setup();
@@ -525,6 +541,9 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* Free memory related to the groundwater flow module */
   cs_gwf_destroy_all();
+
+  /* Free memory related to the Maxwell module */
+  cs_maxwell_destroy_all();
 
   /* Navier-Stokes system */
   cs_navsto_system_destroy();

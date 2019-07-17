@@ -50,6 +50,7 @@
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
+#include "cs_maxwell.h"
 #include "cs_mesh_deform.h"
 #include "cs_mesh_location.h"
 #include "cs_navsto_system.h"
@@ -479,6 +480,10 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_ale_is_activated())
     cs_ale_init_setup(domain);
 
+  /* Maxwell module */
+  if (cs_maxwell_is_activated())
+    cs_maxwell_init_setup();
+
   /* Add variables related to user-defined and predefined equations */
   cs_equation_create_fields();
   cs_advection_field_create_fields();
@@ -646,6 +651,9 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
   if (cs_gwf_is_activated())
     cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);
 
+  if (cs_maxwell_is_activated())
+    cs_maxwell_finalize_setup(domain->connect, domain->cdo_quantities);
+
   if (cs_navsto_system_is_activated())
     cs_navsto_system_finalize_setup(domain->mesh,
                                     domain->connect,
@@ -694,6 +702,14 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                                 domain->connect,
                                 domain->cdo_quantities,
                                 domain->time_step);
+
+  /* Set the initial state for the Maxwell module */
+  if (cs_maxwell_is_activated())
+    cs_maxwell_update(domain->mesh,
+                      domain->connect,
+                      domain->cdo_quantities,
+                      domain->time_step,
+                      false); /* operate current to previous ? */
 
   /* Set the initial state for the groundawater flow module */
   if (cs_gwf_is_activated())

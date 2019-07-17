@@ -91,6 +91,7 @@ cs_hho_scaleq.h \
 cs_hho_vecteq.h \
 cs_hho_stokes.h \
 cs_hodge.h \
+cs_maxwell.h \
 cs_mesh_deform.h \
 cs_navsto_coupling.h \
 cs_navsto_param.h \
@@ -154,6 +155,7 @@ cs_hho_scaleq.c \
 cs_hho_vecteq.c \
 cs_hho_stokes.c \
 cs_hodge.c \
+cs_maxwell.c \
 cs_mesh_deform.c \
 cs_navsto_coupling.c \
 cs_navsto_param.c \

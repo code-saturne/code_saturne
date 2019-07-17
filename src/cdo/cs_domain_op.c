@@ -50,6 +50,7 @@
 #include "cs_gwf.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
+#include "cs_maxwell.h"
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
 #include "cs_post.h"
@@ -484,11 +485,15 @@ cs_domain_post(cs_domain_t  *domain)
                              domain->cdo_quantities,
                              domain->time_step);
 
-    /* 5. Specific operations for the GWF module */
+    /* 5.a Specific operations for the GWF module */
     if (cs_gwf_is_activated())
       cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
 
-    /* 5. Specific operations for the Navier-Stokes module */
+    /* 5.b Specific operations for the Maxwell module */
+    if (cs_maxwell_is_activated())
+      cs_maxwell_extra_op(domain->connect, domain->cdo_quantities);
+
+    /* 5.c Specific operations for the Navier-Stokes module */
     if (cs_navsto_system_is_activated())
       cs_navsto_system_extra_op(domain->connect, domain->cdo_quantities);
 
@@ -498,6 +503,7 @@ cs_domain_post(cs_domain_t  *domain)
      - the domain (advection fields and properties),
      - equations
      - groundwater flows
+     - Maxwell module
      are also handled during the call of this function thanks to
      cs_post_add_time_mesh_dep_output() function pointer
   */

@@ -121,6 +121,9 @@ BEGIN_C_DECLS
  * \var CS_EQUATION_TYPE_GROUNDWATER
  * Equation related to the groundwater flow module
  *
+ * \var CS_EQUATION_TYPE_MAXWELL
+ * Equation related to the Maxwell module
+ *
  * \var CS_EQUATION_TYPE_NAVSTO
  * Equation related to the resolution of the Navier-Stokes system
  * - Example: momentum, prediction, correction, energy...
@@ -134,6 +137,7 @@ typedef enum {
 
   CS_EQUATION_TYPE_USER,
   CS_EQUATION_TYPE_GROUNDWATER,
+  CS_EQUATION_TYPE_MAXWELL,
   CS_EQUATION_TYPE_NAVSTO,
   CS_EQUATION_TYPE_PREDEFINED,
   CS_EQUATION_N_TYPES
