@@ -41,6 +41,8 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_cdofb_priv.h"
+#include "cs_equation_assemble.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"

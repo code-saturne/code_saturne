@@ -48,7 +48,6 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -58,10 +57,7 @@
 #include "cs_quadrature.h"
 #include "cs_reco.h"
 #include "cs_search.h"
-#include "cs_sles.h"
-#include "cs_source_term.h"
 #include "cs_static_condensation.h"
-#include "cs_cdofb_priv.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
