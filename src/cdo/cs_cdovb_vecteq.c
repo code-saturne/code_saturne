@@ -987,7 +987,20 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
-      eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
+      if (eqp->diffusion_hodge.is_iso || eqp->diffusion_hodge.is_unity)
+        eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
+      else
+        eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_aniso_stiffness;
+      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
+      break;
+
+    case CS_PARAM_HODGE_ALGO_BUBBLE:
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
+      if (eqp->diffusion_hodge.is_iso || eqp->diffusion_hodge.is_unity)
+        eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_iso_stiffness;
+      else
+        eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_aniso_stiffness;
+      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
