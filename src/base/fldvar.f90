@@ -655,10 +655,11 @@ end subroutine
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]  name           field name
-!> \param[in]  label          field default label, or empty
-!> \param[in]  dim            field dimension
-!> \param[out] ivar           variable number for defined field
+!> \param[in]  name          field name
+!> \param[in]  label         field default label, or empty
+!> \param[in]  dim           field dimension
+!> \param[out] ivar          variable number for defined field
+!> \param[in]  location_id   id of the mesh location where the field is defined
 !_______________________________________________________________________________
 
 subroutine add_variable_field &

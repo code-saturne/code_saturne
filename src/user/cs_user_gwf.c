@@ -98,7 +98,6 @@ cs_user_gwf_setup(cs_domain_t   *domain)
   CS_UNUSED(domain);
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the bulk density related to a soil structure

@@ -846,7 +846,7 @@ cs_gwf_set_darcian_flux_location(cs_flag_t      location_flag)
  *         reaction eq.
  *         Tracer is advected thanks to the darcian velocity and
  *         diffusion/reaction parameters result from a physical modelling.
- *         Terms are activated according to the settings.
+ *         Terms solved in the equation are activated according to the settings.
  *
  * \param[in]  eq_name    name of the tracer equation
  * \param[in]  var_name   name of the related variable

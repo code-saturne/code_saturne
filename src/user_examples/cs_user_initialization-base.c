@@ -117,10 +117,10 @@ BEGIN_C_DECLS
 void
 cs_user_initialization(cs_domain_t     *domain)
 {
-//!< [init]
+  //!< [init]
   const cs_mesh_t *m = domain->mesh;
 
-  /* Initialiase "scalar1" field to 25 only if it exists and if
+  /* Initialize "scalar1" field to 25 only if it exists and if
    * there is not restart computation */
   if (!cs_restart_present()) {
     cs_field_t *f = cs_field_by_name_try("scalar1");
@@ -130,7 +130,7 @@ cs_user_initialization(cs_domain_t     *domain)
         f->val[cell_id] = 25.;
     }
   }
-//!< [init]
+  //!< [init]
 }
 
 /*----------------------------------------------------------------------------*/

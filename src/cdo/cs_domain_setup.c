@@ -700,20 +700,20 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 void
 cs_domain_setup_log(const cs_domain_t   *domain)
 {
-  cs_log_printf(CS_LOG_SETUP, "\n# Summary of the CDO domain settings\n");
+  cs_log_printf(CS_LOG_SETUP, "\nSummary of the CDO domain settings\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
 
   int  cdo_mode = cs_domain_get_cdo_mode(domain);
   switch (cdo_mode) {
 
   case CS_DOMAIN_CDO_MODE_OFF:
-    cs_log_printf(CS_LOG_SETUP, "\n * CDO mode: **off**\n");
+    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **off**\n");
     return;
   case CS_DOMAIN_CDO_MODE_WITH_FV:
-    cs_log_printf(CS_LOG_SETUP, "\n * CDO mode: **on with legacy FV**\n");
+    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on with legacy FV**\n");
     break;
   case CS_DOMAIN_CDO_MODE_ONLY:
-    cs_log_printf(CS_LOG_SETUP, "\n * CDO mode: **on, stand-alone**\n");
+    cs_log_printf(CS_LOG_SETUP, " * CDO mode: **on, stand-alone**\n");
     break;
 
   default:
