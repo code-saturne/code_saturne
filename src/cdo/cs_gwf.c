@@ -1046,7 +1046,7 @@ cs_gwf_init_setup(void)
     gw->flag |= CS_GWF_SOIL_ALL_SATURATED;
 
   /* Create a moisture field attached to cells */
-  int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+  int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
   gw->moisture_field = cs_field_create("moisture_content",
                                        pty_mask,
                                        c_loc_id,
