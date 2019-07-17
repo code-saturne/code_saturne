@@ -217,21 +217,23 @@ static cs_field_key_val_t  *_key_vals = NULL;
 
 /* Names for logging */
 
-static const int _n_type_flags = 6;
+static const int _n_type_flags = 8;
 static const int _type_flag_mask[] = {CS_FIELD_INTENSIVE,
                                       CS_FIELD_EXTENSIVE,
                                       CS_FIELD_VARIABLE,
                                       CS_FIELD_PROPERTY,
                                       CS_FIELD_POSTPROCESS,
                                       CS_FIELD_ACCUMULATOR,
-                                      CS_FIELD_USER};
+                                      CS_FIELD_USER,
+                                      CS_FIELD_CDO};
 static const char *_type_flag_name[] = {N_("intensive"),
                                         N_("extensive"),
                                         N_("variable"),
                                         N_("property"),
                                         N_("postprocess"),
                                         N_("accumulator"),
-                                        N_("user")};
+                                        N_("user"),
+                                        N_("CDO")};
 
 /*============================================================================
  * Global variables
@@ -3592,7 +3594,7 @@ cs_field_log_defs(void)
   int n_cat_fields = 0;
 
   int mask_id_start = 2; /* _type_flag_*[CS_FIELD_VARIABLE] */
-  int mask_id_end = 6;   /* _type_flag_*[CS_FIELD_USER] */
+  int mask_id_end = 7;   /* _type_flag_*[CS_FIELD_CDO] */
   int mask_prev = 0;
 
   if (_n_fields == 0)
