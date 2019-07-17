@@ -420,9 +420,6 @@ class ImmersedBoundariesModel(Variables, Model):
 
 
     def getObjectFormula(self, objId):
-        print("--------------")
-        print(len(self.getObjectsNodeList()))
-        print("--------------")
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[objId]
         formula = node.xmlGetString('explicit_formula')
 
@@ -442,7 +439,7 @@ class ImmersedBoundariesModel(Variables, Model):
                ('t', 'current time')]
 
         for (name, val) in self.notebook.getNotebookList():
-            sym.append((nme, 'value (notebook) = ' + str(val)))
+            sym.append((name, 'value (notebook) = ' + str(val)))
 
         return exp, req, sym
     # ----------------------------------

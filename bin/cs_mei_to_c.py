@@ -2515,7 +2515,7 @@ class mei_to_c_interpreter:
             ibm = ImmersedBoundariesModel(self.case)
 
             if ibm.getOnOff() == 'on' and ibm.getMethod() == 'explicit':
-                for objId in len(ibm.getObjectsNodeList()):
+                for objId in range(len(ibm.getObjectsNodeList())):
                     node = ibm.getObjectsNodeList()[objId]
 
                     object_name = ibm.getObjectName(objId+1)
