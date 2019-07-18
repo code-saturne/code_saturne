@@ -213,8 +213,8 @@ _solve_steady_state_domain(cs_domain_t  *domain)
       /* Basic statistic related to variables */
       if (cs_domain_needs_log(domain))
         cs_log_iteration();
+      return;
     }
-    return;
   }
 
   bool  do_output = cs_domain_needs_log(domain);
