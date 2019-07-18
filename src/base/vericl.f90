@@ -112,8 +112,8 @@ double precision rcodcl(nfabor,nvar,3)
 character(len=80) :: chaine
 
 double precision grav2
-integer          ifac, ivar, icode, f_dim
-integer          nstoni        , nstvit, nstopp
+integer          ifac, ivar, icode, f_dim, f_type
+integer          nstoni, nstvit, nstopp
 integer          nstoke, nstosc, nstovf
 integer          nstuvw, nstoup, nstuke
 integer          nstrij, nsurij, nstov2
@@ -200,28 +200,40 @@ nstonu = 0
 ! --- Premiere boucle rapide
 iokcod = 0
 do ivar = 1, nvar
-  do ifac = 1, nfabor
-    icode = icodcl(ifac,ivar)
-    if(icode.eq. 0) then
-      iokcod = 1
-    endif
-  enddo
+  call field_get_type(ivarfl(ivar), f_type)
+  ! Is this field not managed by CDO?
+  if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
+
+    do ifac = 1, nfabor
+      icode = icodcl(ifac,ivar)
+      if(icode.eq. 0) then
+        iokcod = 1
+      endif
+    enddo
+
+  endif ! CDO ?
 enddo
 
 ! --- Seconde boucle lente si pb plus haut
 if (iokcod.ne.0) then
   do ivar = 1, nvar
-    do ifac = 1, nfabor
-      icode = icodcl(ifac,ivar)
-      if(icode.eq. 0) then
-        if (itypfb(ifac).gt.0) then
-          itypfb(ifac) = -itypfb(ifac)
+    call field_get_type(ivarfl(ivar), f_type)
+    ! Is this field not managed by CDO?
+    if (iand(f_type, FIELD_CDO)/=FIELD_CDO) then
+
+      do ifac = 1, nfabor
+        icode = icodcl(ifac,ivar)
+        if(icode.eq. 0) then
+          if (itypfb(ifac).gt.0) then
+            itypfb(ifac) = -itypfb(ifac)
+          endif
+          icodni(1) = ivar
+          icodni(2) = ifac
+          nstoni = nstoni + 1
         endif
-        icodni(1) = ivar
-        icodni(2) = ifac
-        nstoni = nstoni + 1
-      endif
-    enddo
+      enddo
+
+    endif ! CDO ?
   enddo
 endif
 

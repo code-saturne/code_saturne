@@ -297,7 +297,7 @@ if (iale.ge.1) then
   if (iale.eq.2) then
     ityloc = 4
     call add_cdo_variable_field('mesh_velocity', 'Mesh Velocity', &
-                                3, iuma, ityloc, 0)
+                                3, iuma, ityloc, 1)
   else
     ityloc = 1
     call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma, ityloc)
