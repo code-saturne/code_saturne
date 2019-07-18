@@ -738,8 +738,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
       ns->init_velocity = NULL;
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
-      /*ns->compute_steady = cs_cdofb_uzawa_compute_steady;*/
-      ns->compute_steady = cs_cdofb_uzawa_compute_steady_rebuild;
+      if (nsp->model == CS_NAVSTO_MODEL_STOKES)
+        ns->compute_steady = cs_cdofb_uzawa_compute_steady;
+      else
+        ns->compute_steady = cs_cdofb_uzawa_compute_steady_rebuild;
 
       switch (nsp->time_scheme) {
 
