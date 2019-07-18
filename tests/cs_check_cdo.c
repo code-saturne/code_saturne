@@ -1115,7 +1115,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
-    cs_cdo_diffusion_svb_cost_weak_dirichlet(eqp, cm, fm, cb, csys);
+    cs_cdo_diffusion_svb_ocs_weak_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
 
@@ -1124,7 +1124,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
-    cs_cdo_diffusion_svb_cost_wsym_dirichlet(eqp, cm, fm, cb, csys);
+    cs_cdo_diffusion_svb_ocs_wsym_dirichlet(eqp, cm, fm, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;

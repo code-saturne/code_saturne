@@ -1071,7 +1071,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_cost_weak_dirichlet;
+    case CS_PARAM_HODGE_ALGO_BUBBLE:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_ocs_weak_dirichlet;
       break;
     case CS_PARAM_HODGE_ALGO_WBS:
       eqc->enforce_dirichlet = cs_cdo_diffusion_svb_wbs_weak_dirichlet;
@@ -1091,7 +1092,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_cost_wsym_dirichlet;
+    case CS_PARAM_HODGE_ALGO_BUBBLE:
+      eqc->enforce_dirichlet = cs_cdo_diffusion_svb_ocs_wsym_dirichlet;
       break;
     case CS_PARAM_HODGE_ALGO_WBS:
       eqc->enforce_dirichlet = cs_cdo_diffusion_svb_wbs_wsym_dirichlet;

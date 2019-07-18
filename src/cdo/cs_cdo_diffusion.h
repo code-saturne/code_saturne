@@ -345,7 +345,8 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique. Case of CDO-Vb schemes with a CO+ST algorithm.
+ *          technique. Case of scalar-valued CDO-Vb schemes with an orthogonal
+ *          splitting between the consistency/stabilization parts (OCS)
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -356,18 +357,18 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                         const cs_cell_mesh_t           *cm,
-                                         cs_face_mesh_t                 *fm,
-                                         cs_cell_builder_t              *cb,
-                                         cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique.
- *          A Dirichlet is set for the three components of the vector.
- *          Case of vector-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          technique. A Dirichlet is set for the three components of the
+ *          vector. Case of vector-valued CDO-Vb schemes with an orthogonal
+ *          splitting between the consistency/stabilization parts (OCS)
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -378,16 +379,17 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                         const cs_cell_mesh_t           *cm,
-                                         cs_face_mesh_t                 *fm,
-                                         cs_cell_builder_t              *cb,
-                                         cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account a sliding BCs.
- *          Case of vector-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          Case of vector-valued CDO-Vb schemes with a OCS algorithm.
+ *          Orthogonal splitting betwwen Consistency/Stabilization parts.
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -398,17 +400,18 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
-                                  const cs_cell_mesh_t           *cm,
-                                  cs_face_mesh_t                 *fm,
-                                  cs_cell_builder_t              *cb,
-                                  cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
+                                 const cs_cell_mesh_t           *cm,
+                                 cs_face_mesh_t                 *fm,
+                                 cs_cell_builder_t              *cb,
+                                 cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
- *          CO+ST algorithm.
+ *          COST/Bubble or Voronoi algorithm. One assumes an Orthogonal
+ *          splitting between Consistency/Stabilization parts (OCS).
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -419,11 +422,11 @@ cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                         const cs_cell_mesh_t           *cm,
-                                         cs_face_mesh_t                 *fm,
-                                         cs_cell_builder_t              *cb,
-                                         cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

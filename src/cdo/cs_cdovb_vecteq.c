@@ -1039,7 +1039,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
     eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ;
-    eqc->enforce_dirichlet = cs_cdo_diffusion_vvb_cost_weak_dirichlet;
+    eqc->enforce_dirichlet = cs_cdo_diffusion_vvb_ocs_weak_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
@@ -1054,7 +1054,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   if (eqb->face_bc->n_sliding_faces > 0) {
     /* There is at least one face with a sliding condition to handle */
     eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ;
-    eqc->enforce_sliding = cs_cdo_diffusion_vvb_cost_sliding;
+    eqc->enforce_sliding = cs_cdo_diffusion_vvb_ocs_sliding;
   }
 
   /* Advection */

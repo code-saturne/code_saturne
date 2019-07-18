@@ -207,8 +207,7 @@ _cdofb_normal_flux_reco(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the cellwise consistent gradient for Vb schemes using a
- *          CO+ST algorithm
+ * \brief   Compute the cellwise consistent gradient for Vb schemes
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in, out] grd_cell  cellwise gradient vector attached to each vertex
@@ -217,8 +216,8 @@ _cdofb_normal_flux_reco(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_cost_cellwise_grd(const cs_cell_mesh_t   *cm,
-                       cs_real_3_t             grd_cell[])
+_svb_cellwise_grd(const cs_cell_mesh_t   *cm,
+                  cs_real_3_t             grd_cell[])
 {
   /* Reset array */
   for (short int v = 0; v < cm->n_vc; v++)
@@ -250,11 +249,11 @@ _svb_cost_cellwise_grd(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the normal diffusive flux reconstruction for Vb schemes
- *          using the CO+ST algorithm. This normal flux is constant in t_{ek,f}
- *          the triangle with base e_k and apex xf
+ *          using the COST/VORONOI/BUBBLE algorithm. This normal flux is
+ *          computed in each t_{ek,f}: the triangle with base e_k and apex xf
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      beta      value of the stabilization coef. related to reco.
+ * \param[in]      dbeta     d times the value of the stabilization coef.
  * \param[in]      ek        edge id to handle (related to p_{ek,c} and t_{ek,f}
  * \param[in]      pekq      edge quantities for ek
  * \param[in]      dfkq      dual face quantities for ek
@@ -266,14 +265,14 @@ _svb_cost_cellwise_grd(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_nflux_reco_svb_cost_in_pec(const cs_cell_mesh_t   *cm,
-                            const double            beta,
-                            const short int         ek,
-                            const cs_quant_t        pekq,
-                            const cs_nvec3_t        dfkq,
-                            const cs_real_3_t       grd_cell[],
-                            const cs_real_3_t       mnu,
-                            cs_real_t               nflux[])
+_nflux_reco_svb_ocs_in_pec(const cs_cell_mesh_t   *cm,
+                           const double            dbeta,
+                           const short int         ek,
+                           const cs_quant_t        pekq,
+                           const cs_nvec3_t        dfkq,
+                           const cs_real_3_t       grd_cell[],
+                           const cs_real_3_t       mnu,
+                           cs_real_t               nflux[])
 {
   /* Reset the normal flux for each vertex of the cell */
   for (short int v = 0; v < cm->n_vc; v++) nflux[v] = 0;
@@ -288,7 +287,7 @@ _nflux_reco_svb_cost_in_pec(const cs_cell_mesh_t   *cm,
    *    + beta*fd_ek(c)/(p_{ek,c} * (GRAD(p)|ek - ek.Gc(p) ) ──> Stabili. part
    */
 
-  const cs_real_t  stab_ek = 3*beta/(_dp3(pekq.unitv, dfkq.unitv));
+  const cs_real_t  stab_ek = dbeta/(_dp3(pekq.unitv, dfkq.unitv));
   const short int  *_vk = cm->e2v_ids + 2*ek; /* vk0 = _v[0], vk1 = _v[1] */
   const short int  sgn_vk0 = cm->e2v_sgn[ek]; /* sgn_vk1 = - sgn_vk0 */
 
@@ -331,12 +330,13 @@ _nflux_reco_svb_cost_in_pec(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the normal trace operator for a given border face when a
- *          COST algo. is used for reconstructing the degrees of freedom
+ *          COST/BUBLLE or Voronoï algo. is used for reconstructing a flux
+ *          from the degrees of freedom
  *
  * \param[in]      fm      pointer to a cs_face_mesh_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      mnu     property tensor times the face normal
- * \param[in]      beta    value of the stabilization coef. related to reco.
+ * \param[in]      dbeta   d times the  value of the stabilization coef.
  * \param[in, out] cb      pointer to a cell builder structure
  * \param[in, out] ntrgrd  local matrix related to the normal trace op. i.e.
  *                         the flux operator
@@ -344,12 +344,12 @@ _nflux_reco_svb_cost_in_pec(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_vb_cost_normal_flux_op(const short int           f,
-                        const cs_cell_mesh_t     *cm,
-                        const cs_real_3_t         mnu,
-                        double                    beta,
-                        cs_cell_builder_t        *cb,
-                        cs_sdm_t                 *ntrgrd)
+_vb_ocs_normal_flux_op(const short int           f,
+                       const cs_cell_mesh_t     *cm,
+                       const cs_real_3_t         mnu,
+                       double                    dbeta,
+                       cs_cell_builder_t        *cb,
+                       cs_sdm_t                 *ntrgrd)
 {
   cs_real_t  *nflux = cb->values;       /* size = cm->n_vc */
   cs_real_3_t  *grd_cell = cb->vectors; /* size = cm->n_vc */
@@ -357,7 +357,7 @@ _vb_cost_normal_flux_op(const short int           f,
   /* Compute the cellwise-constant gradient for each array of the canonical
    * basis of the potential DoFs (size = cm->n_vc)
    */
-  _svb_cost_cellwise_grd(cm, grd_cell);
+  _svb_cellwise_grd(cm, grd_cell);
 
   /* Loop on border face edges */
   for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f+1]; fe_idx++) {
@@ -369,7 +369,7 @@ _vb_cost_normal_flux_op(const short int           f,
     const short int  *_vk = cm->e2v_ids + 2*ek; /* v1 = _v[0], v2 = _v[1] */
 
     /* Compute the reconstructed normal flux */
-    _nflux_reco_svb_cost_in_pec(cm, beta, ek, pekq, dfkq,
+    _nflux_reco_svb_ocs_in_pec(cm, dbeta, ek, pekq, dfkq,
            (const cs_real_3_t *)grd_cell,
                                 mnu,
                                 nflux);
@@ -430,7 +430,7 @@ _vb_cost_full_flux_op(const short int           f,
   /* Compute the cellwise-constant gradient for each array of the canonical
    * basis of the potential DoFs (size = cm->n_vc)
    */
-  _svb_cost_cellwise_grd(cm, grd_cell);
+  _svb_cellwise_grd(cm, grd_cell);
 
   /* Loop on border face edges */
   for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f+1]; fe_idx++) {
@@ -442,10 +442,10 @@ _vb_cost_full_flux_op(const short int           f,
     const short int  *_vk = cm->e2v_ids + 2*ek; /* v1 = _v[0], v2 = _v[1] */
 
     /* Compute the reconstructed normal flux */
-    _nflux_reco_svb_cost_in_pec(cm, beta, ek, pekq, dfkq,
-           (const cs_real_3_t *)grd_cell,
-                                mnu,
-                                nflux);
+    _nflux_reco_svb_ocs_in_pec(cm, beta, ek, pekq, dfkq,
+          (const cs_real_3_t *)grd_cell,
+                               mnu,
+                               nflux);
 
     for (short int vi = 0; vi < cm->n_vc; vi++) {
 
@@ -735,7 +735,7 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Weak enforcement of Dirichlet BCs using a Nitsche technique.
- *          Scalar-valued case of CO+ST algorithm for CDO-VB or CDO-VCb schemes
+ *          Scalar-valued case for CDO-VB or CDO-VCb schemes
  *
  * \param[in]       pcoef     value of the penalization coefficient
  * \param[in]       fm        pointer to a cs_face_mesh_t structure
@@ -745,10 +745,10 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_svb_cost_nitsche(const double              pcoef,
-                  const cs_face_mesh_t     *fm,
-                  cs_sdm_t                 *ntrgrd,
-                  cs_cell_sys_t            *csys)
+_svb_nitsche(const double              pcoef,
+             const cs_face_mesh_t     *fm,
+             cs_sdm_t                 *ntrgrd,
+             cs_cell_sys_t            *csys)
 {
   /* Sanity checks */
   assert(pcoef > 0);
@@ -1910,7 +1910,8 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique. Case of CDO-Vb schemes with a CO+ST algorithm.
+ *          technique. Case of scalar-valued CDO-Vb schemes with an orthogonal
+ *          splitting between the consistency/stabilization parts (OCS)
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -1921,11 +1922,11 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                         const cs_cell_mesh_t           *cm,
-                                         cs_face_mesh_t                 *fm,
-                                         cs_cell_builder_t              *cb,
-                                         cs_cell_sys_t                  *csys)
+cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys)
 {
   assert(csys != NULL);  /* Sanity checks */
 
@@ -1938,6 +1939,8 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_real_t  dbeta =
+    (h_info.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? h_info.coef : 3*h_info.coef;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -1962,10 +1965,10 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
-      _vb_cost_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
+      _vb_ocs_normal_flux_op(f, cm, pty_nuf, dbeta, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
-      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
@@ -1984,9 +1987,9 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique.
- *          A Dirichlet is set for the three components of the vector.
- *          Case of vector-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          technique. A Dirichlet is set for the three components of the
+ *          vector. Case of vector-valued CDO-Vb schemes with an orthogonal
+ *          splitting between the consistency/stabilization parts (OCS)
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -1997,11 +2000,11 @@ cs_cdo_diffusion_svb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
-                                         const cs_cell_mesh_t           *cm,
-                                         cs_face_mesh_t                 *fm,
-                                         cs_cell_builder_t              *cb,
-                                         cs_cell_sys_t                  *csys)
+cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys)
 {
   assert(csys != NULL);
 
@@ -2012,6 +2015,8 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_real_t  dbeta =
+    (h_info.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? h_info.coef : 3*h_info.coef;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2035,7 +2040,7 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
-      _vb_cost_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
+      _vb_ocs_normal_flux_op(f, cm, pty_nuf, dbeta, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
       const double  pcoef = chi/sqrt(cm->face[f].meas);
@@ -2088,7 +2093,8 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account a sliding BCs.
- *          Case of vector-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          Case of vector-valued CDO-Vb schemes with a OCS algorithm.
+ *          Orthogonal splitting betwwen Consistency/Stabilization parts.
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -2099,13 +2105,15 @@ cs_cdo_diffusion_vvb_cost_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
-                                  const cs_cell_mesh_t           *cm,
-                                  cs_face_mesh_t                 *fm,
-                                  cs_cell_builder_t              *cb,
-                                  cs_cell_sys_t                  *csys)
+cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
+                                 const cs_cell_mesh_t           *cm,
+                                 cs_face_mesh_t                 *fm,
+                                 cs_cell_builder_t              *cb,
+                                 cs_cell_sys_t                  *csys)
 {
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_real_t  dbeta =
+    (h_info.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? h_info.coef : 3*h_info.coef;
 
   /* Enforcement of the sliding BCs */
   if (csys->has_sliding == false)
@@ -2142,7 +2150,7 @@ cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
        * of the normal gradient
        * cb->values (size = cm->n_vc) is used inside
        */
-      _vb_cost_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
+      _vb_ocs_normal_flux_op(f, cm, pty_nuf, dbeta, cb, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
@@ -2206,7 +2214,8 @@ cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
- *          CO+ST algorithm.
+ *          COST/Bubble or Voronoi algorithm. One assumes an Orthogonal
+ *          splitting between Consistency/Stabilization parts (OCS).
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
@@ -2217,11 +2226,11 @@ cs_cdo_diffusion_vvb_cost_sliding(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                         const cs_cell_mesh_t           *cm,
-                                         cs_face_mesh_t                 *fm,
-                                         cs_cell_builder_t              *cb,
-                                         cs_cell_sys_t                  *csys)
+cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
+                                        const cs_cell_mesh_t           *cm,
+                                        cs_face_mesh_t                 *fm,
+                                        cs_cell_builder_t              *cb,
+                                        cs_cell_sys_t                  *csys)
 {
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
@@ -2256,7 +2265,7 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
-      _vb_cost_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
+      _vb_ocs_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
 
       /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
       cs_sdm_square_add_transpose(ntrgrd, ntrgrd_tr);
@@ -2267,7 +2276,7 @@ cs_cdo_diffusion_svb_cost_wsym_dirichlet(const cs_equation_param_t      *eqp,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 
       /* Add contribution to the linear system */
       cs_sdm_add(csys->mat, ntrgrd);
@@ -2434,7 +2443,7 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update the RHS and the local system matrix */
 #if 1 /* Default choice */
-      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
@@ -2519,7 +2528,7 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 
       /* Update the RHS and the local system matrix */
 #if 1 /* Default choice */
-      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
@@ -2592,7 +2601,7 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update the RHS and the local system matrix */
 #if 1 /* Default choice */
-      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
@@ -2677,7 +2686,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update the RHS and the local system matrix */
 #if 1 /* Default choice */
-      _svb_cost_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
       _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
