@@ -77,7 +77,7 @@ extern const int  *cs_glob_bc_face_zone;
 /*----------------------------------------------------------------------------
  * Handling of boundary condition definition errors and associated output.
  *
- * This function checks for errors, and simply returns if no errors are
+ * This function checks for errors, and simply returns if no error is
  * encountered. In case of error, it outputs helpful information so as to
  * make it easier to locate the matching faces.
  *

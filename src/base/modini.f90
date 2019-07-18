@@ -59,9 +59,9 @@ implicit none
 
 ! Local variables
 
-integer          n_fields, f_id, n_moments
+integer          f_id, n_moments
 integer          ii, jj, imom, iok, ikw
-integer          nbccou, keyvar, flag
+integer          nbccou, flag
 integer          nscacp, iscal
 integer          imrgrp
 integer          kcpsyr, icpsyr
@@ -81,10 +81,6 @@ type(var_cal_opt) :: vcopt , vcopt1
 
 ! Indicateur erreur (0 : pas d'erreur)
 iok = 0
-
-call field_get_n_fields(n_fields)
-
-call field_get_key_id("variable_id", keyvar)
 
 call field_get_key_id("syrthes_coupling", kcpsyr)
 

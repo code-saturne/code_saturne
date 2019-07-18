@@ -263,13 +263,13 @@ const cs_data_joule_effect_t  *cs_glob_transformer     = NULL;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*!
- * vaccum magnetic permeability constant (H/m). (= 1.2566e-6)
+ * vacuum magnetic permeability constant (H/m). (= 1.2566e-6)
  *
  */
 const cs_real_t cs_elec_permvi = 1.2566e-6;
 
 /*!
- * vaccum permittivity constant (F/m). (= 8.854e-12)
+ * vacuum permittivity constant (F/m). (= 8.854e-12)
  *
  */
 const cs_real_t cs_elec_epszer = 8.854e-12;

@@ -441,7 +441,7 @@ if (iale.ge.1) then
     rcodcl , xyzno0 , disale )
 
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
-  !       remet le deplacement initial
+  !     remet le deplacement initial
   do ii  = 1, nnod
     if (impale(ii).eq.0) then
       disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
@@ -5116,7 +5116,7 @@ if (iale.ge.1) then
     rcodcl , xyzno0 , disale )
 
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
-  !       remet le deplacement initial
+  !     remet le deplacement initial
   do ii  = 1, nnod
     if (impale(ii).eq.0) then
       disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)

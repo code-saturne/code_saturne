@@ -100,7 +100,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar, nscal
 
 integer          itypfb(nfabor)
 integer          icodcl(nfabor,nvar)
@@ -170,7 +170,7 @@ enddo
 !  donne, pour l'instant, les contraintes suivantes :
 
 !   - meme type de c.l pour les 3 composantes de vitesse
-!   - pas de conditions de frottemt sur la pression
+!   - pas de conditions de frottement sur la pression
 !   - coherence entre les c.l vitesses et pression
 !   - coherence entre les c.l vitesses et turbulence
 

@@ -317,7 +317,7 @@ cs_f_boundary_conditions_get_pointers(int **itypfb,
  * \brief Handling of boundary condition definition errors and
  *        associated output.
  *
- * This function checks for errors, and simply returns if no errors are
+ * This function checks for errors, and simply returns if no error is
  * encountered. In case of error, it outputs helpful information so as to
  * make it easier to locate the matching faces.
  *
@@ -346,7 +346,7 @@ cs_boundary_conditions_error(const int       *bc_flag,
     _type_name = type_name;
 
   /* Check for faces with problems;
-     bc_flag[] used to determine if we have an error */
+     bc_flag[] used to determine if there is an error */
 
   int have_errors
     = cs_flag_check(_("face with boundary condition definition error"),
@@ -361,8 +361,8 @@ cs_boundary_conditions_error(const int       *bc_flag,
   if (have_errors)
     bft_error
       (__FILE__, __LINE__, 0,
-       _("\nSome boundary condition definitions are incomplete or incorrect.\n\n"
-         "  For details, read the end of the calculation log,\n"
+       _("\nSome boundary condition definitions are incomplete or incorrect.\n"
+         "\n  For details, read the end of the calculation log,\n"
          "  or visualize the error postprocessing output."));
 }
 
