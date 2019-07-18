@@ -95,6 +95,7 @@ if test "x$with_medcoupling" != "xno" ; then
 
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 [[#include <MEDCouplingFieldDouble.hxx>
+#include <MEDCouplingPartDefinition.hxx>
 #include <MEDLoader.hxx>
 #include <MEDFileField1TS.hxx>]],
 [[using namespace MEDCoupling;
