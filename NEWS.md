@@ -3,6 +3,8 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix restart of time moments defined by starting physical time.
+
 - Improve mesh extrusion robustness: in the rare case where a boundary edge
   is connected to more than 2 faces, extrusion is prevented for the
   matching vertices, rather than provoking a global error.
