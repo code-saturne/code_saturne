@@ -50,7 +50,9 @@ cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_create(char       *name,
                               const char *sel_criteria,
                               char        *fileName,
-                              char        *meshName);
+                              char        *meshName,
+                              cs_real_t   center[3],
+                              cs_real_t   radius);
 
 /* -------------------------------------------------------------------------- */
 /*!
@@ -77,9 +79,53 @@ cs_paramedmem_remapper_create(char       *name,
 cs_real_t *
 cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
                           char                     *fieldName,
+                          cs_real_t                 dval,
                           int                       time_choice,
                           double                    tval);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief get a remapper by its name
+ *
+ * \param[in] name  name of the remapper
+ *
+ * \return  pointer to cs_paramedmem_remapper_t struct
+ */
+/*----------------------------------------------------------------------------*/
+cs_paramedmem_remapper_t *
+cs_paramedmem_remapper_by_name_try(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief translate the mesh using a given vector
+ *
+ * \param[in] r            pointer to the cs_paramedmem_remapper_t struct
+ * \param[in] translation  translation vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_remapper_translate(cs_paramedmem_remapper_t  *r,
+                                 cs_real_t                  translation[3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Rotate the mesh using a center point, axis and angle
+ *
+ * \param[in] r          pointer to the cs_paramedmem_remapper_t struct
+ * \param[in] invariant  coordinates of the invariant point
+ * \param[in] axis       rotation axis vector
+ * \param[in] angle      rotation angle in radians
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
+                              cs_real_t                  invariant[3],
+                              cs_real_t                  axis[3],
+                              cs_real_t                  angle);
+
+/*----------------------------------------------------------------------------*/
 END_C_DECLS
 #endif
 #endif /* __CS_PARAMEDMEM_REMAPPER_HXX__ */

@@ -101,6 +101,7 @@
 
 #if defined(HAVE_PARAMEDMEM)
 #include "cs_paramedmem_coupling.hxx"
+#include "cs_paramedmem_remapper.hxx"
 #endif
 
 /*----------------------------------------------------------------------------*/
