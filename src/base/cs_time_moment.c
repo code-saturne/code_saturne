@@ -729,7 +729,7 @@ _check_restart(const char                     *name,
   int prev_wa_id = -1;
 
   if (   (*nt_start > -1 && *nt_start >= ri->nt_prev)
-      || (*t_start >= 0 && *t_start >= ri->nt_prev))
+      || (*t_start >= 0 && *t_start >= ri->t_prev))
     return prev_id;
 
   /* Adjust accumulator info if moment should be restarted */
