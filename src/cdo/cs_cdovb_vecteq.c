@@ -167,7 +167,7 @@ _vbv_create_cell_builder(const cs_cdo_connect_t   *connect)
   /* Local square dense matrices used during the construction of
      operators */
   cb->hdg = cs_sdm_square_create(n_ec);
-  cb->aux = cs_sdm_square_create(n_vc);
+  cb->aux = cs_sdm_square_create(n_ec);
   cb->loc = cs_sdm_block33_create(n_vc, n_vc);
 
   return cb;
