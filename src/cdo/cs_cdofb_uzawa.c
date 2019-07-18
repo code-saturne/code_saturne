@@ -310,8 +310,13 @@ _amg_block_hook(void     *context,
     _ksp = uvw_subksp[id];
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
+
+#if defined(PETSC_HAVE_HYPRE)
     PCSetType(_pc, PCHYPRE);
     PCHYPRESetType(_pc, "boomeramg");
+#else
+    PCSetType(_pc, PCGAMG);
+#endif
 
     PCSetFromOptions(_pc);
     PCSetUp(_pc);

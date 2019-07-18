@@ -90,6 +90,58 @@ static const char _err_empty_eqp[] =
 
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------
+ * \brief Predefined settings for GAMG as a preconditionner
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_petsc_pcgamg_hook(void)
+{
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
+  PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
+  PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
+  PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
+  PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
+  PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
+  PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
+#else
+  PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
+  PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+  PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+  PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
+  PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
+  PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
+  PetscOptionsSetValue("-pc_gamg_square_graph", "4");
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * \brief Predefined settings for BoomerAMG in HYPRE as a preconditionner
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_petsc_pchypre_hook(void)
+{
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL,"-pc_hypre_type","boomeramg");
+  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_coarsen_type","HMIS");
+  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_interp_type","ext+i-cc");
+  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_agg_nl","2");
+  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_P_max","4");
+  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_strong_threshold","0.5");
+  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_no_CF","");
+#else
+  PetscOptionsSetValue("-pc_hypre_type","boomeramg");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
+#endif
+}
+
+/*----------------------------------------------------------------------------
  * \brief Set PETSc solver and preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
@@ -218,45 +270,22 @@ _petsc_setup_hook(void   *context,
       switch (info.amg_type) {
 
       case CS_PARAM_AMG_GAMG:
-#if PETSC_VERSION_GE(3,7,0)
-        PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
-        PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
-        PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
-        PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
-        PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
-        PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
-        PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
-#else
-        PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
-        PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-        PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-        PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
-        PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
-        PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
-        PetscOptionsSetValue("-pc_gamg_square_graph", "4");
-#endif
         PCSetType(pc, PCGAMG);
+        _petsc_pcgamg_hook();
         break;
 
       case CS_PARAM_AMG_BOOMER:
-#if PETSC_VERSION_GE(3,7,0)
-        PetscOptionsSetValue(NULL,"-pc_hypre_type","boomeramg");
-        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_coarsen_type","HMIS");
-        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_interp_type","ext+i-cc");
-        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_agg_nl","2");
-        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_P_max","4");
-        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_strong_threshold","0.5");
-        PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_no_CF","");
-#else
-        PetscOptionsSetValue("-pc_hypre_type","boomeramg");
-        PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
-        PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
-        PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
-        PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
-        PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
-        PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
-#endif
+#if defined(PETSC_HAVE_HYPRE)
         PCSetType(pc, PCHYPRE);
+        _petsc_pchypre_hook();
+#else
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "%s: Switch to GAMG since BoomerAMG is not available.\n",
+                      __func__);
+        PCSetType(pc, PCMG);
+        _petsc_pcgamg_hook();
+#endif
         break;
 
       default:
@@ -348,13 +377,24 @@ _petsc_amg_block_hook(void     *context,
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
 
+  /* Predefined settings when using AMG as a preconditionner */
+#if defined(PETSC_HAVE_HYPRE)
+  _petsc_pchypre_hook();
+#else
+  _petsc_pcgamg_hook();
+#endif
+
   for (id = 0; id < 3; id++) {
 
     _ksp = xyz_subksp[id];
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
+#if defined(PETSC_HAVE_HYPRE)
     PCSetType(_pc, PCHYPRE);
     PCHYPRESetType(_pc, "boomeramg");
+#else
+    PCSetType(_pc, PCGAMG);
+#endif
 
     PCSetFromOptions(_pc);
     PCSetUp(_pc);
@@ -719,7 +759,11 @@ _set_key(const char            *label,
       else {
         eqp->sles_param.precond = CS_PARAM_PRECOND_AMG_BLOCK;
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
-        eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;    /* Default choice */
+#if defined(PETSC_HAVE_HYPRE)
+        eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;  /* Default choice */
+#else
+        eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
+#endif
       }
     }
     else if (strcmp(keyval, "as") == 0)

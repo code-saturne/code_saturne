@@ -236,11 +236,12 @@ static cs_matrix_assembler_t  *cs_shared_matrix_assembler = NULL;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Setup advanced parameters for the AMG related to the velocity field
+ *         when BoomerAMG from the HYPRE library is used
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_setup_velocity_amg(void)
+_setup_velocity_boomeramg(void)
 {
 #if PETSC_VERSION_GE(3,7,0)
   PetscOptionsSetValue(NULL,
@@ -262,6 +263,35 @@ _setup_velocity_amg(void)
   PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_P_max","4");
   PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_strong_threshold","0.5");
   PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup advanced parameters for the AMG related to the velocity field
+ *         when GAMG from the PETSc library is used
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_velocity_gamg(void)
+{
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL, "-pc_velocity_gamg_agg_nsmooths", "1");
+  PetscOptionsSetValue(NULL, "-mg_velocity_levels_ksp_type", "richardson");
+  PetscOptionsSetValue(NULL, "-mg_velocity_levels_pc_type", "sor");
+  PetscOptionsSetValue(NULL, "-mg_velocity_levels_ksp_max_it", "1");
+  PetscOptionsSetValue(NULL, "-pc_velocity_gamg_threshold", "0.02");
+  PetscOptionsSetValue(NULL, "-pc_velocity_gamg_reuse_interpolation", "TRUE");
+  PetscOptionsSetValue(NULL, "-pc_velocity_gamg_square_graph", "4");
+#else
+  PetscOptionsSetValue("-pc_velocity_gamg_agg_nsmooths", "1");
+  PetscOptionsSetValue("-mg_velocity_levels_ksp_type", "richardson");
+  PetscOptionsSetValue("-mg_velocity_levels_pc_type", "sor");
+  PetscOptionsSetValue("-mg_velocity_levels_ksp_max_it", "1");
+  PetscOptionsSetValue("-pc_velocity_gamg_threshold", "0.02");
+  PetscOptionsSetValue("-pc_velocity_gamg_reuse_interpolation", "TRUE");
+  PetscOptionsSetValue("-pc_velocity_gamg_square_graph", "4");
 #endif
 }
 
@@ -406,10 +436,15 @@ _additive_amg_gmres_hook(void     *context,
   KSP  u_ksp = up_subksp[0];
   KSPSetType(u_ksp, KSPPREONLY);
   KSPGetPC(u_ksp, &u_pc);
+
+#if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
-
-  _setup_velocity_amg();
+  _setup_velocity_boomeramg();
+#else
+  PCSetType(u_pc, PCGAMG);
+  _setup_velocity_gamg();
+#endif
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -511,15 +546,22 @@ _diag_schur_gmres_hook(void     *context,
   KSP  u_ksp = up_subksp[0];
   KSPSetType(u_ksp, KSPCG);
   KSPGetPC(u_ksp, &u_pc);
+
+#if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+  _setup_velocity_boomeramg();
+#else
+  PCSetType(u_pc, PCGAMG);
+  _setup_velocity_gamg();
+#endif
+
   KSPSetTolerances(u_ksp,
                    slesp.eps,   /* relative convergence tolerance */
                    abstol,      /* absolute convergence tolerance */
                    dtol,        /* divergence tolerance */
                    5);          /* max number of iterations */
 
-  _setup_velocity_amg();
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -621,15 +663,20 @@ _upper_schur_gmres_hook(void     *context,
   KSP  u_ksp = up_subksp[0];
   KSPSetType(u_ksp, KSPCG);
   KSPGetPC(u_ksp, &u_pc);
+#if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+  _setup_velocity_boomeramg();
+#else
+  PCSetType(u_pc, PCGAMG);
+  _setup_velocity_gamg();
+#endif
+
   KSPSetTolerances(u_ksp,
                    slesp.eps,   /* relative convergence tolerance */
                    abstol,      /* absolute convergence tolerance */
                    dtol,        /* divergence tolerance */
                    5);          /* max number of iterations */
-
-  _setup_velocity_amg();
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -715,16 +762,21 @@ _gkb_hook(void     *context,
   PetscInt  maxit;
   KSPSetType(u_ksp, KSPFGMRES);
   KSPGetPC(u_ksp, &u_pc);
+#if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+  _setup_velocity_boomeramg();
+#else
+  PCSetType(u_pc, PCGAMG);
+  _setup_velocity_gamg();
+#endif
+
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(u_ksp,
                    slesp.eps,   /* relative convergence tolerance */
                    abstol,      /* absolute convergence tolerance */
                    dtol,        /* divergence tolerance */
                    slesp.n_max_iter); /* max number of iterations */
-
-  _setup_velocity_amg();
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -815,16 +867,21 @@ _gkb_gmres_hook(void     *context,
   /* Set KSP tolerances */
   KSPSetType(u_ksp, KSPFGMRES);
   KSPGetPC(u_ksp, &u_pc);
+#if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+  _setup_velocity_boomeramg();
+#else
+  PCSetType(u_pc, PCGAMG);
+  _setup_velocity_gamg();
+#endif
+
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(u_ksp,
                    1e-2,    /* relative convergence tolerance */
                    abstol,  /* absolute convergence tolerance */
                    dtol,    /* divergence tolerance */
                    50);     /* max number of iterations */
-
-  _setup_velocity_amg();
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
