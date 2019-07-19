@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_dbg_cw_test(const cs_equation_param_t   *eqp,
                const cs_cell_mesh_t        *cm,
                const cs_cell_sys_t         *csys)

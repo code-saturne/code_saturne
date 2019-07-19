@@ -171,7 +171,7 @@ typedef struct {
   int     n_tokens;               /* Number of tokens in expression */
   int    *infix_id;               /* Starting id in infix for each token */
   int    *token_id;               /* Starting id for each token */
-  _Bool  *protected;              /* Indicates if a token was protected
+  bool   *protected;              /* Indicates if a token was protected
                                      by quotes or a backslash character
                                      (and thus cannot be a keyword) */
 
@@ -247,8 +247,8 @@ typedef struct {
 
 struct _fvm_selector_postfix_t {
 
-  _Bool   coords_dependency;      /* Does evaluation require coordinates ? */
-  _Bool   normals_dependency;     /* Does evaluation require normals ? */
+  bool    coords_dependency;      /* Does evaluation require coordinates ? */
+  bool    normals_dependency;     /* Does evaluation require normals ? */
 
   size_t  size;                   /* Current memory size */
   size_t  max_size;               /* Maximum memory size */
@@ -586,7 +586,7 @@ _tokenize(const char  *infix)
 
   BFT_MALLOC(te.infix_id, l, int);
   BFT_MALLOC(te.token_id, l, int);
-  BFT_MALLOC(te.protected, l, _Bool);
+  BFT_MALLOC(te.protected, l, bool);
   BFT_MALLOC(te.tokens, te.max_size, char);
 
   for (i = 0; i < l; i++)
@@ -764,7 +764,7 @@ _tokenize(const char  *infix)
 
   BFT_REALLOC(te.infix_id, te.n_tokens, int);
   BFT_REALLOC(te.token_id, te.n_tokens, int);
-  BFT_REALLOC(te.protected, te.n_tokens, _Bool);
+  BFT_REALLOC(te.protected, te.n_tokens, bool);
   BFT_REALLOC(te.tokens, te.size, char);
 
   /* Return tokenization structure */
@@ -1169,7 +1169,7 @@ _postfix_add_missing(fvm_selector_postfix_t  *pf,
  *   true if the string defines an integer, false otherwise
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _is_int(const char  *str,
         int         *value)
 {
@@ -1177,7 +1177,7 @@ _is_int(const char  *str,
   int retcode, int_len;
 
   *value = 0;
-  retcode = (_Bool)(sscanf(str, "%i%n", &_value, &int_len));
+  retcode = (bool)(sscanf(str, "%i%n", &_value, &int_len));
 
   if (retcode) {
     if (int_len != (int)strlen(str))
@@ -1201,7 +1201,7 @@ _is_int(const char  *str,
  *   true if the string defines a floating-point number, false otherwise
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _is_float(const char  *str,
           double      *value)
 {
@@ -1209,7 +1209,7 @@ _is_float(const char  *str,
   int retcode, flt_len;
 
   *value = 0.0;
-  retcode = (_Bool)(sscanf(str, "%f%n", &_value, &flt_len));
+  retcode = (bool)(sscanf(str, "%f%n", &_value, &flt_len));
 
   if (retcode) {
     if (flt_len != (int)strlen(str))
@@ -1326,7 +1326,7 @@ _check_left_right(const char               *infix,
                   const _tokenized_t       *te,
                   int                       token_id,
                   _operator_type_t          otype,
-                  _Bool                     has_r_operand,
+                  bool                      has_r_operand,
                   _stack_t                 *os,
                   fvm_selector_postfix_t  **postfix)
 {
@@ -1371,7 +1371,7 @@ _find_group_or_attribute(int          n_groups,
                          const char  *group_name[],
                          const int    attribute[],
                          const char  *token,
-                         _Bool        protected,
+                         bool         protected,
                          int         *group_id,
                          int         *attribute_id)
 {
@@ -1614,8 +1614,8 @@ _parse_geometric_args(_operator_code_t          opcode,
                       1 extra slot for error checking */
   int inout = 0;   /* 0: undefined; -1: inside; 1: outside */
   double epsilon = 1.e-2, norm = 1.0;
-  _Bool error = false;
-  _Bool have_epsilon = false;
+  bool  error = false;
+  bool  have_epsilon = false;
 
   const char *func_syntax = NULL;
   const char *normals_syntax
@@ -1838,7 +1838,7 @@ _parse_for_function(const _parser_t          *this_parser,
                     const char               *group_name[],
                     const int                 attribute[],
                     int                      *token_id,
-                    _Bool                    *has_r_operand,
+                    bool                     *has_r_operand,
                     _stack_t                 *os,
                     fvm_selector_postfix_t  **postfix)
 {
@@ -1921,7 +1921,7 @@ _parse_for_function(const _parser_t          *this_parser,
   else if (op->code == OC_RANGE) {
 
     const char *t[3] = {NULL, NULL, NULL};
-    _Bool force_group = false, force_attrib = false, error = false;
+    bool  force_group = false, force_attrib = false, error = false;
 
     i++;
     k = 0;
@@ -2005,14 +2005,14 @@ static void
 _parse_for_coord_conditions(const char               *infix,
                             const _tokenized_t       *te,
                             int                      *token_id,
-                            _Bool                    *has_r_operand,
+                            bool                     *has_r_operand,
                             _stack_t                 *os,
                             fvm_selector_postfix_t  **postfix)
 {
   const char *t1;
   size_t      t1_len;
   double      val;
-  _Bool has_coord_cond = false;
+  bool  has_coord_cond = false;
   int coord_id = -1;
   int i = *token_id + 1, j = 0;
 
@@ -2202,7 +2202,7 @@ _parse_tokenized(const _parser_t     *this_parser,
 {
   int i, j;
   _stack_t os;
-  _Bool has_r_operand = false;
+  bool  has_r_operand = false;
   fvm_selector_postfix_t *pf = NULL;
 
   /* Initialization */
@@ -2299,7 +2299,7 @@ _parse_tokenized(const _parser_t     *this_parser,
       case OT_R_PAREN:
         {
           const _operator_t *op_2 = NULL;
-          _Bool matched = false;
+          bool  matched = false;
           while (_stack_size(&os) > 0) {
             _stack_entry_t e = _stack_pop(&os);
             op_2 = e.op;
@@ -2384,7 +2384,7 @@ _parse_tokenized(const _parser_t     *this_parser,
  *   true or false depending on evaluation
  *----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 _eval_normal(const fvm_selector_postfix_t  *pf,
              const double                   normal[],
              size_t                        *i)
@@ -2393,7 +2393,7 @@ _eval_normal(const fvm_selector_postfix_t  *pf,
   double val[4];
   int j;
   const int n_vals = 4; /* 3 values for coordinates, 1 for tolerance */
-  _Bool retval = false;
+  bool  retval = false;
 
   assert(*((_postfix_type_t *)(pf->elements + *i)) == PF_INT);
   assert(*((int *)(pf->elements + *i + _postfix_type_size)) == n_vals);
@@ -2433,7 +2433,7 @@ _eval_normal(const fvm_selector_postfix_t  *pf,
  *   true or false depending on evaluation
  *----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 _eval_plane(const fvm_selector_postfix_t  *pf,
             const double                   coords[],
             size_t                        *i)
@@ -2442,7 +2442,7 @@ _eval_plane(const fvm_selector_postfix_t  *pf,
   double val[4];
   int j;
   _postfix_type_t pf_type;
-  _Bool retval = false;
+  bool  retval = false;
 
   assert(*((_postfix_type_t *)(pf->elements + *i)) == PF_INT);
   assert(*((int *)(pf->elements + *i + _postfix_type_size)) == 5);
@@ -2497,7 +2497,7 @@ _eval_plane(const fvm_selector_postfix_t  *pf,
  *   true or false depending on evaluation
  *----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 _eval_box(const fvm_selector_postfix_t  *pf,
           const double                   coords[],
           size_t                        *i)
@@ -2505,7 +2505,7 @@ _eval_box(const fvm_selector_postfix_t  *pf,
   double val[12];
   int j;
   int n_vals; /* number of box coefficients */
-  _Bool retval = false;
+  bool  retval = false;
 
   assert(*((_postfix_type_t *)(pf->elements + *i)) == PF_INT);
   n_vals = *((int *)(pf->elements + *i + _postfix_type_size));
@@ -2560,7 +2560,7 @@ _eval_box(const fvm_selector_postfix_t  *pf,
  *   true or false depending on evaluation
  *----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 _eval_cylinder(const fvm_selector_postfix_t  *pf,
                const double                   coords[],
                size_t                        *i)
@@ -2568,7 +2568,7 @@ _eval_cylinder(const fvm_selector_postfix_t  *pf,
   double val[7];
   int j;
   const int n_vals = 7; /* number of cylinder coefficients */
-  _Bool retval = false;
+  bool  retval = false;
 
   assert(*((_postfix_type_t *)(pf->elements + *i)) == PF_INT);
   assert(*((int *)(pf->elements + *i + _postfix_type_size)) == n_vals);
@@ -2623,7 +2623,7 @@ _eval_cylinder(const fvm_selector_postfix_t  *pf,
  *   true or false depending on evaluation
  *----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 _eval_sphere(const fvm_selector_postfix_t  *pf,
              const double                   coords[],
              size_t                        *i)
@@ -2631,7 +2631,7 @@ _eval_sphere(const fvm_selector_postfix_t  *pf,
   double val[4];
   int j;
   const int n_vals = 4; /* number of sphere coefficients */
-  _Bool retval = false;
+  bool  retval = false;
 
   assert(*((_postfix_type_t *)(pf->elements + *i)) == PF_INT);
   assert(*((int *)(pf->elements + *i + _postfix_type_size)) == n_vals);
@@ -2675,7 +2675,7 @@ _eval_sphere(const fvm_selector_postfix_t  *pf,
  *   true or false depending on evaluation
  *----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 _eval_coord_gt(const fvm_selector_postfix_t  *pf,
                const double                   coords[],
                size_t                        *i)
@@ -2693,7 +2693,7 @@ _eval_coord_gt(const fvm_selector_postfix_t  *pf,
   return (coords[coord_id] > cmp_val ? true : false);
 }
 
-static inline _Bool
+static inline bool
 _eval_coord_lt(const fvm_selector_postfix_t  *pf,
                const double                   coords[],
                size_t                        *i)
@@ -2711,7 +2711,7 @@ _eval_coord_lt(const fvm_selector_postfix_t  *pf,
   return (coords[coord_id] < cmp_val ? true : false);
 }
 
-static inline _Bool
+static inline bool
 _eval_coord_ge(const fvm_selector_postfix_t  *pf,
                const double                   coords[],
                size_t                        *i)
@@ -2729,7 +2729,7 @@ _eval_coord_ge(const fvm_selector_postfix_t  *pf,
   return (coords[coord_id] >= cmp_val ? true : false);
 }
 
-static inline _Bool
+static inline bool
 _eval_coord_le(const fvm_selector_postfix_t  *pf,
                const double                   coords[],
                size_t                        *i)
@@ -2844,7 +2844,7 @@ fvm_selector_postfix_get_infix(const fvm_selector_postfix_t  *pf)
  *   true if expression depends on coordinates, false otherwise
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_selector_postfix_coords_dep(const fvm_selector_postfix_t  *pf)
 {
   assert(pf != NULL);
@@ -2862,7 +2862,7 @@ fvm_selector_postfix_coords_dep(const fvm_selector_postfix_t  *pf)
  *   true if expression depends on normals, false otherwise
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_selector_postfix_normals_dep(const fvm_selector_postfix_t  *pf)
 {
   assert(pf != NULL);
@@ -2930,7 +2930,7 @@ fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
  *   true or false base on expression evaluation
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
                           int                            n_groups,
                           int                            n_attributes,
@@ -2939,9 +2939,9 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
                           const double                   coords[],
                           const double                   normal[])
 {
-  _Bool retval;
-  _Bool _eval_stack[BASE_STACK_SIZE];
-  _Bool *eval_stack = _eval_stack;
+  bool  retval;
+  bool  _eval_stack[BASE_STACK_SIZE];
+  bool  *eval_stack = _eval_stack;
   size_t i = 0, eval_size = 0, eval_max_size = BASE_STACK_SIZE;
 
   /* Evaluate postfix_string */
@@ -3136,11 +3136,11 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
     if (eval_size == eval_max_size) {
       eval_max_size *= 2;
       if (eval_stack == _eval_stack) {
-        BFT_MALLOC(eval_stack, eval_max_size, _Bool);
-        memcpy(eval_stack, _eval_stack, BASE_STACK_SIZE*sizeof(_Bool));
+        BFT_MALLOC(eval_stack, eval_max_size, bool);
+        memcpy(eval_stack, _eval_stack, BASE_STACK_SIZE*sizeof(bool));
       }
       else
-        BFT_REALLOC(eval_stack, eval_max_size, _Bool);
+        BFT_REALLOC(eval_stack, eval_max_size, bool);
     }
 
   } /* End of loop on postfix elements */

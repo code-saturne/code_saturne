@@ -79,8 +79,8 @@ struct _fvm_triangulate_state_t {
                                       - (x ,-1): boundary edge, triangle x
                                       - (x ,-1): internal edge, triangles x
                                                  and y */
-  _Bool        *edge_is_delaunay;  /* Delaunay edge indicator */
-  _Bool        *concave;           /* Concave vertex indicator */
+  bool         *edge_is_delaunay;  /* Delaunay edge indicator */
+  bool         *concave;           /* Concave vertex indicator */
 
   int           n_vertices_max;    /* Maximum number vertices; a larger
                                       size requires resizing work arrays */
@@ -293,7 +293,7 @@ _polygon_plane_3d(const int   n_vertices,
  *   coords      <-- coordinates of the polygon's vertices (2d).
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _polygon_vertex_is_convex(int               previous,
                           int               current,
                           int               next,
@@ -327,12 +327,12 @@ _polygon_vertex_is_convex(int               previous,
  *   epsilon       <-- associated relative tolerance.
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _polygon_vertex_is_ear(int               n_vertices,
                        int               current,
                        int               list_previous[],
                        int               list_next[],
-                       _Bool             concave[],
+                       bool              concave[],
                        const cs_coord_t  coords[],
                        double            epsilon)
 
@@ -412,7 +412,7 @@ _polygon_vertex_is_ear(int               n_vertices,
  *   coords            <-- coordinates of the triangulation's vertices (2d).
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _edge_is_locally_delaunay(int               edge_vertex_0,
                           int               edge_vertex_1,
                           int               flip_vertex_0,
@@ -543,7 +543,7 @@ _polygon_delaunay_flip(int               n_vertices,
                        int               triangle_vertices[],
                        int               edge_vertices[],
                        int               edge_neighbors[],
-                       _Bool             edge_is_delaunay[],
+                       bool              edge_is_delaunay[],
                        const cs_coord_t  coords[])
 {
   int    triangle_id, edge_id, vertex_id;
@@ -555,8 +555,8 @@ _polygon_delaunay_flip(int               n_vertices,
 
   int    i, i_0, i_1, i_min, i_max, j;
 
-  _Bool   face_is_delaunay, edge_locally_delaunay;
-  _Bool   restart, convex_quad;
+  bool    face_is_delaunay, edge_locally_delaunay;
+  bool    restart, convex_quad;
 
   const int  n_edges = n_vertices*(n_vertices - 1)/2;
   const int  n_triangles = n_vertices - 2;
@@ -985,8 +985,8 @@ fvm_triangulate_state_create(const int  n_vertices_max)
     BFT_MALLOC(this_state->list_next, n_vertices_max, int);
     BFT_MALLOC(this_state->edge_vertices, n_edges_tot_max*2, int);
     BFT_MALLOC(this_state->edge_neighbors, n_edges_tot_max*2, int);
-    BFT_MALLOC(this_state->edge_is_delaunay, n_edges_tot_max, _Bool);
-    BFT_MALLOC(this_state->concave, n_vertices_max, _Bool);
+    BFT_MALLOC(this_state->edge_is_delaunay, n_edges_tot_max, bool);
+    BFT_MALLOC(this_state->concave, n_vertices_max, bool);
   }
   else {
     this_state->triangle_vertices = NULL;
@@ -1102,14 +1102,14 @@ fvm_triangulate_polygon(int                             dim,
     BFT_REALLOC(state->list_next, n_vertices_max, int);
     BFT_REALLOC(state->edge_vertices, n_edges_tot_max*2, int);
     BFT_REALLOC(state->edge_neighbors, n_edges_tot_max*2, int);
-    BFT_REALLOC(state->edge_is_delaunay, n_edges_tot_max, _Bool);
-    BFT_REALLOC(state->concave, n_vertices_max, _Bool);
+    BFT_REALLOC(state->edge_is_delaunay, n_edges_tot_max, bool);
+    BFT_REALLOC(state->concave, n_vertices_max, bool);
 
   }
 
   int  *const list_previous = state->list_previous;
   int  *const list_next = state->list_next;
-  _Bool  *const concave = state->concave;
+  bool   *const concave = state->concave;
 
   if (parent_vertex_num != NULL) {
     if (polygon_vertices != NULL) {

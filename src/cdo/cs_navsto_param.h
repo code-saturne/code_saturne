@@ -398,7 +398,7 @@ typedef struct {
    *  divergence constraint.
    */
 
-  _Bool        velocity_ic_is_owner;
+  bool         velocity_ic_is_owner;
   int          n_velocity_ic_defs;
   cs_xdef_t  **velocity_ic_defs;
 
@@ -416,7 +416,7 @@ typedef struct {
    *  of the resulting pressure and subtract it
    */
 
-  _Bool        pressure_ic_is_owner;
+  bool         pressure_ic_is_owner;
   int          n_pressure_ic_defs;
   cs_xdef_t  **pressure_ic_defs;
 
@@ -448,7 +448,7 @@ typedef struct {
    * field
    */
 
-  _Bool        velocity_bc_is_owner;
+  bool         velocity_bc_is_owner;
   int          n_velocity_bc_defs;
   cs_xdef_t  **velocity_bc_defs;
 
@@ -465,7 +465,7 @@ typedef struct {
    *  pressure field.
    */
 
-  _Bool        pressure_bc_is_owner;
+  bool         pressure_bc_is_owner;
   int          n_pressure_bc_defs;
   cs_xdef_t  **pressure_bc_defs;
 
@@ -921,7 +921,7 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
                                    const char           *z_name,
                                    cs_flag_t             loc,
                                    cs_real_t            *array,
-                                   _Bool                 is_owner,
+                                   bool                  is_owner,
                                    cs_lnum_t            *index);
 
 /*----------------------------------------------------------------------------*/

@@ -200,7 +200,7 @@ static int
 _combine_transforms_check(const fvm_periodicity_t  *this_periodicity,
                           int                       tr_id_0,
                           int                       tr_id_1,
-                          _Bool                     abort_on_error)
+                          bool                      abort_on_error)
 {
   int i;
   int eq[3];
@@ -742,7 +742,7 @@ fvm_periodicity_add_by_matrix(fvm_periodicity_t       *this_periodicity,
 
     for (i = 0; i < this_periodicity->n_transforms - 1; i++) {
       const _transform_t *tr = this_periodicity->transform[i];
-      _Bool is_equiv = true;
+      bool  is_equiv = true;
       for (j = 0; j < 3; j++) {
         for (k = 0; k < 4; k++) {
           if (  CS_ABS(transform->m[j][k] - tr->m[j][k])
@@ -1263,7 +1263,7 @@ fvm_periodicity_combine(fvm_periodicity_t  *this_periodicity,
         retval = _combine_transforms_check(this_periodicity,
                                            i,
                                            j,
-                                           (_Bool)abort_on_error);
+                                           (bool)abort_on_error);
 
         if (retval == 0) {
 

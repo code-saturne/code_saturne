@@ -298,7 +298,7 @@ _free_surface(const cs_domain_t  *domain,
 static void
 _update_bc_list(const cs_mesh_t   *mesh,
                 const cs_zone_t   *z,
-                _Bool              vtag[])
+                bool               vtag[])
 {
   const cs_lnum_t  *bf2v_idx = mesh->b_face_vtx_idx;
   const cs_lnum_t  *bf2v_lst = mesh->b_face_vtx_lst;
@@ -312,7 +312,7 @@ _update_bc_list(const cs_mesh_t   *mesh,
   BFT_REALLOC(_cdo_bc->vtx_select, _cdo_bc->n_selections, cs_lnum_t *);
 
   /* Reset vtag */
-  memset(vtag, 0, n_vertices*sizeof(_Bool));
+  memset(vtag, 0, n_vertices*sizeof(bool));
 
   /* Count the number of vertices to select */
   for (cs_lnum_t  i = 0; i < z->n_elts; i++) {
@@ -336,7 +336,7 @@ _update_bc_list(const cs_mesh_t   *mesh,
   BFT_MALLOC(_cdo_bc->vtx_select[id], counter, cs_lnum_t);
 
   /* Fill the list of selected vertices */
-  memset(vtag, 0, n_vertices*sizeof(_Bool));
+  memset(vtag, 0, n_vertices*sizeof(bool));
   counter = 0;
   for (cs_lnum_t  i = 0; i < z->n_elts; i++) {
 
@@ -1329,8 +1329,8 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
 
   }
 
-  _Bool  *vtag = NULL;
-  BFT_MALLOC(vtag, n_vertices, _Bool);
+  bool   *vtag = NULL;
+  BFT_MALLOC(vtag, n_vertices, bool);
 
   for (int i = 0;  i < domain->ale_boundaries->n_boundaries; i++) {
 

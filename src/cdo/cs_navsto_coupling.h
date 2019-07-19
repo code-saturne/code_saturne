@@ -534,7 +534,7 @@ cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
 void
 cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
                                 int                         loc_id,
-                                _Bool                       has_previous,
+                                bool                        has_previous,
                                 void                       *context);
 
 /*----------------------------------------------------------------------------*/

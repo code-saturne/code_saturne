@@ -60,7 +60,7 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  _Bool        init_step;    /*!< true if this is the initialization step */
+  bool         init_step;    /*!< true if this is the initialization step */
 
   /*!
    * @name Flags to know what to build and how to build such terms

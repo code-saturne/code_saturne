@@ -507,7 +507,7 @@ _get_cell_type(cs_lnum_t                 c_id,
   /* Hexahedron ? */
   else if (n_vc == 8 && n_ec == 12 && n_fc == 6) { // Potentially a hexahedron
 
-    _Bool  is_hexa = true;
+    bool  is_hexa = true;
 
     /* Loop on cell faces */
     for (cs_lnum_t i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1];

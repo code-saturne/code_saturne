@@ -1915,7 +1915,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < n_vertices; i++) rhs[i] = 0.0;
 
   /* Detect the first call (in this case, we compute the initial source term)*/
-  _Bool  compute_initial_source = false;
+  bool  compute_initial_source = false;
   if (eqb->init_step) {
 
     compute_initial_source = true;

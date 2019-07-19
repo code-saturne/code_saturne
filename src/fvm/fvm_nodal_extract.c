@@ -611,7 +611,7 @@ _update_elt_extents(int                 dim,
                     const cs_lnum_t    *parent_vertex_num,
                     const cs_coord_t    vertex_coords[],
                     double              elt_extents[],
-                    _Bool              *elt_initialized)
+                    bool               *elt_initialized)
 {
   cs_lnum_t   i, coord_idx;
 
@@ -744,7 +744,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
     for (i = 0; i < this_section->n_elements; i++) {
 
-      _Bool elt_initialized = false;
+      bool elt_initialized = false;
 
       for (j = this_section->face_index[i];
            j < this_section->face_index[i + 1];
@@ -781,7 +781,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
     for (i = 0; i < n_faces; i++) {
 
-      _Bool elt_initialized = false;
+      bool elt_initialized = false;
 
       for (j = this_section->vertex_index[i];
            j < this_section->vertex_index[i + 1];
@@ -810,7 +810,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
     for (i = 0; i < this_section->n_elements; i++) {
 
-      _Bool elt_initialized = false;
+      bool elt_initialized = false;
 
       for (j = 0; j < this_section->stride; j++) {
 

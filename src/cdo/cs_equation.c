@@ -381,7 +381,7 @@ cs_equation_by_name(const char    *eqname)
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_equation_has_field_name(const cs_equation_t  *eq,
                            const char           *fld_name)
 {
@@ -890,7 +890,7 @@ cs_equation_get_type(const cs_equation_t    *eq)
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_equation_is_steady(const cs_equation_t    *eq)
 {
   if (eq == NULL)
@@ -914,7 +914,7 @@ cs_equation_is_steady(const cs_equation_t    *eq)
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
 {
   if (eq == NULL)
@@ -1667,7 +1667,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_equation_set_functions(void)
 {
   if (_n_equations == 0)
@@ -1679,7 +1679,7 @@ cs_equation_set_functions(void)
     "%s: Only the scalar-valued and vector-valued case are handled"
     "for this scheme.\n";
 
-  _Bool  all_are_steady = true;
+  bool  all_are_steady = true;
 
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 

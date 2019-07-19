@@ -223,7 +223,7 @@ _reorder_coords_lexicographic(int               dim,
                               cs_lnum_t         order[])
 {
   size_t  i;
-  _Bool g_swap;
+  bool g_swap;
 
   do {
 
@@ -232,7 +232,7 @@ _reorder_coords_lexicographic(int               dim,
     for (i = start_id + 1; i < end_id; i++) {
 
       size_t j_prev = order[i-1], j = order[i];
-      _Bool l_swap = false;
+      bool l_swap = false;
 
       if (dim == 3) {
         if (coords[j_prev*3] < coords[j*3])
@@ -371,7 +371,7 @@ _fvm_io_num_local_max(const fvm_io_num_t  *this_io_num)
 static void
 _fvm_io_num_order_finalize(fvm_io_num_t     *this_io_num,
                            const cs_lnum_t   n_sub_entities[],
-                           _Bool             may_be_shared)
+                           bool              may_be_shared)
 {
   if (n_sub_entities != NULL) {
 
@@ -438,7 +438,7 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
 {
   cs_gnum_t   num_prev, num_cur;
 
-  _Bool       may_be_shared = false;
+  bool        may_be_shared = false;
 
   cs_gnum_t   current_gnum = 0;
 
@@ -657,7 +657,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 {
   cs_gnum_t   num_prev, num_cur;
 
-  _Bool       may_be_shared = false;
+  bool        may_be_shared = false;
 
   cs_lnum_t  *b_nsub = NULL;
   int         have_sub_loc = 0, have_sub_glob = 0;
@@ -993,7 +993,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
  *  true or false
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _indexed_is_greater(size_t            i1,
                     size_t            i2,
                     const cs_lnum_t   index[],

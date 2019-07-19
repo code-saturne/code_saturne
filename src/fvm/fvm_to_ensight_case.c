@@ -125,10 +125,10 @@ struct _fvm_to_ensight_case_t {
 
   fvm_writer_time_dep_t   time_dependency;    /* Mesh time dependency */
 
-  _Bool          geom_info_queried;           /* Indicated if current
+  bool           geom_info_queried;           /* Indicated if current
                                                  geometry file name queried */
 
-  _Bool          modified;                    /* Modified since last output ? */
+  bool           modified;                    /* Modified since last output ? */
 
 } _fvm_to_ensight_case_t;
 
@@ -1018,7 +1018,7 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
 {
   int      i, j;
   FILE    *f;
-  _Bool    write_time_sets = false;
+  bool     write_time_sets = false;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 

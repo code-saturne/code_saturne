@@ -428,7 +428,7 @@ cs_advection_field_destroy_all(void)
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_advection_field_check_name(const cs_adv_field_t   *adv,
                               const char             *ref_name)
 {
@@ -522,13 +522,13 @@ cs_advection_field_log_setup(void)
                     "  * %s | Postprocess the Courant number\n", adv->name);
 
     /* Where fields are defined */
-    _Bool  at_cells =
+    bool  at_cells =
       (adv->cell_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
-    _Bool  at_vertices =
+    bool  at_vertices =
       (adv->vtx_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
-    _Bool  at_bfaces =
+    bool  at_bfaces =
       (adv->bdy_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
-    _Bool  at_ifaces =
+    bool  at_ifaces =
       (adv->int_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Fields defined at cells: %s;"
@@ -671,7 +671,7 @@ void
 cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                 cs_flag_t          loc,
                                 cs_real_t         *array,
-                                _Bool              is_owner,
+                                bool               is_owner,
                                 cs_lnum_t         *index)
 {
   if (adv == NULL)
@@ -822,7 +822,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               const char        *zname,
                                               cs_flag_t          loc,
                                               cs_real_t         *array,
-                                              _Bool              is_owner,
+                                              bool               is_owner,
                                               cs_lnum_t         *index)
 {
   if (adv == NULL)
@@ -871,7 +871,7 @@ cs_advection_field_create_fields(void)
     cs_adv_field_t  *adv = _adv_fields[i];
     assert(adv != NULL);
 
-    _Bool  has_previous = (adv->flag & CS_ADVECTION_FIELD_STEADY) ? true:false;
+    bool  has_previous = (adv->flag & CS_ADVECTION_FIELD_STEADY) ? true:false;
     int  field_mask = CS_FIELD_PROPERTY | CS_FIELD_CDO;
 
     { /* Always add a field attached to cells (it may be used to define the
@@ -2631,7 +2631,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
 void
 cs_advection_field_update(cs_real_t    t_eval,
-                          _Bool        cur2prev)
+                          bool         cur2prev)
 {
   for (int i = 0; i < _n_adv_fields; i++) {
 
@@ -2719,7 +2719,7 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
   cs_real_3_t  ptydir;
   cs_nvec3_t  adv_c;
 
-  const _Bool  pty_uniform = cs_property_is_uniform(diff);
+  const bool  pty_uniform = cs_property_is_uniform(diff);
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
 
   /* Get the value of the material property at the first cell center */

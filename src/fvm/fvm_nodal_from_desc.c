@@ -355,7 +355,7 @@ _nodal_from_desc_cnv_cel_tetra(const cs_lnum_t   cell_vtx_tria[],
   cs_lnum_t   direction;
   cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
-  _Bool  warn_orient = false;
+  bool  warn_orient = false;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("face 1 : %d %d %d\n",
@@ -463,7 +463,7 @@ _nodal_from_desc_cnv_cel_pyram(const cs_lnum_t   cell_vtx_tria[],
   cs_lnum_t   direction;
   cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
-  _Bool  warn_orient = false;
+  bool  warn_orient = false;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("face 1 : %d %d %d %d\n",
@@ -574,7 +574,7 @@ _nodal_from_desc_cnv_cel_prism(const cs_lnum_t   cell_vtx_tria[],
   cs_lnum_t   ipass, direction;
   cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
-  _Bool  warn_orient = false;
+  bool  warn_orient = false;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("face 1 : %d %d %d\n",
@@ -693,7 +693,7 @@ _nodal_from_desc_cnv_cel_hexa(const cs_lnum_t   cell_vtx_quad[],
   cs_lnum_t   ipass, direction;
   cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
-  _Bool  warn_orient = false;
+  bool  warn_orient = false;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("face 1 : %d %d %d %d\n",

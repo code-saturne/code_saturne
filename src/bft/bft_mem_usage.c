@@ -373,8 +373,8 @@ _bft_mem_usage_pr_size_init(void)
   char  buf[512]; /* should be large enough for "/proc/%lu/status"
                      then beginning of file content */
   size_t  r_size, i;
-  _Bool   status_has_size = false;
-  _Bool   status_has_peak = false;
+  bool    status_has_size = false;
+  bool    status_has_peak = false;
   int  fd;
   const pid_t  pid = getpid();
 

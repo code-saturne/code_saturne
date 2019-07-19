@@ -736,19 +736,19 @@ cs_gwf_log_setup(void)
                   "  * GWF | Rescale head w.r.t zero mean value\n");
 
   /* Display information on the post-processing options */
-  _Bool  post_capacity = (gw->post_flag & CS_GWF_POST_CAPACITY) ? true : false;
-  _Bool  post_moisture = (gw->post_flag & CS_GWF_POST_MOISTURE) ? true : false;
-  _Bool  post_perm = (gw->post_flag & CS_GWF_POST_PERMEABILITY) ? true : false;
+  bool  post_capacity = (gw->post_flag & CS_GWF_POST_CAPACITY) ? true : false;
+  bool  post_moisture = (gw->post_flag & CS_GWF_POST_MOISTURE) ? true : false;
+  bool  post_perm = (gw->post_flag & CS_GWF_POST_PERMEABILITY) ? true : false;
   cs_log_printf(CS_LOG_SETUP, "  * GWF | Post: Capacity %s Moisture %s"
                 " Permeability %s\n",
                 cs_base_strtf(post_capacity), cs_base_strtf(post_moisture),
                 cs_base_strtf(post_perm));
 
-  _Bool  do_balance =
+  bool  do_balance =
     (gw->post_flag & CS_GWF_POST_DARCY_FLUX_BALANCE) ? true : false;
-  _Bool  do_divergence =
+  bool  do_divergence =
     (gw->post_flag & CS_GWF_POST_DARCY_FLUX_DIVERGENCE) ? true : false;
-  _Bool  post_boundary =
+  bool  post_boundary =
     (gw->post_flag & CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY) ? true : false;
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Darcy Flux: Balance %s Divergence %s"
@@ -1666,8 +1666,8 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
   const cs_equation_t  *richards = gw->richards;
   const cs_equation_param_t  *eqp = cs_equation_get_param(richards);
 
-  _Bool  *is_counted = NULL;
-  BFT_MALLOC(is_counted, n_b_faces, _Bool);
+  bool  *is_counted = NULL;
+  BFT_MALLOC(is_counted, n_b_faces, bool);
 # pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (int i = 0; i < n_b_faces; i++) is_counted[i] = false;
 
@@ -1714,7 +1714,7 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
 
   } /* Loop on BC definitions */
 
-  _Bool  display = false;
+  bool  display = false;
   balances[eqp->n_bc_defs] = 0.;
   for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
     if (is_counted[bf_id] == false) {

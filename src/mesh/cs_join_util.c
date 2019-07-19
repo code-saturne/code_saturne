@@ -1073,7 +1073,7 @@ _add_s_edge(cs_lnum_t        vertex_tag[],
 
   if (vertex_tag[v1_id] > 0 && vertex_tag[v2_id] > 0) {
 
-    _Bool  is_found = false;
+    bool  is_found = false;
 
     cs_lnum_t  tmp_size = *p_tmp_size;
     cs_lnum_t  max_size = *p_max_size;

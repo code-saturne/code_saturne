@@ -119,7 +119,7 @@ cs_boundary_get_name(cs_boundary_type_t  type);
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_boundary_has_pressure_boundary(const cs_boundary_t  *boundaries);
 
 /*----------------------------------------------------------------------------*/

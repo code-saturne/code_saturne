@@ -95,7 +95,7 @@ _assign_vb_dirichlet_values(int                dim,
                             int                n_vf,
                             const cs_lnum_t   *lst,
                             const cs_real_t   *eval,
-                            _Bool              is_constant,
+                            bool               is_constant,
                             cs_real_t         *vvals,
                             int                counter[])
 {

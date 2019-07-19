@@ -942,7 +942,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
-      const _Bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
+      const bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
       if (has_sourceterm) {
 
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp,
@@ -1154,7 +1154,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   cs_timer_t  t_bld = cs_timer_time();
 
   /* Detect the first call (in this case, we compute the initial source term)*/
-  _Bool  compute_initial_source = false;
+  bool  compute_initial_source = false;
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
@@ -1263,7 +1263,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
-      const _Bool has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
+      const bool has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
       if (has_sourceterm) { /* SOURCE TERM
                              * =========== */
         if (compute_initial_source) { /* First time step */

@@ -670,8 +670,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
     = cs_advection_field_get_field(adv_field, CS_MESH_LOCATION_BOUNDARY_FACES);
 
   /* 1. Compute for each boundary the integrated flux */
-  _Bool  *belong_to_default = NULL;
-  BFT_MALLOC(belong_to_default, quant->n_b_faces, _Bool);
+  bool  *belong_to_default = NULL;
+  BFT_MALLOC(belong_to_default, quant->n_b_faces, bool);
 # pragma omp parallel for if  (quant->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
     belong_to_default[i] = true;
@@ -804,7 +804,7 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
   assert(bd->n_row_blocks == cm->n_fc || bd->n_row_blocks == cm->n_fc + 1);
 
   /* Build x_dir */
-  _Bool  is_non_homogeneous = true;
+  bool  is_non_homogeneous = true;
 
   memset(cb->values, 0, 6*sizeof(double));
 
@@ -900,7 +900,7 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
   const cs_flag_t  *_flag = csys->dof_flag + 3*f;
   const cs_real_t  *_dir_val = csys->dir_values + 3*f;
 
-  _Bool  is_non_homogeneous = true;
+  bool  is_non_homogeneous = true;
   for (int k = 0; k < 3; k++) {
     if (_flag[k] & CS_CDO_BC_DIRICHLET)
       is_non_homogeneous = true;

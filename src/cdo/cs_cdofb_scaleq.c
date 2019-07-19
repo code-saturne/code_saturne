@@ -1650,7 +1650,7 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
          quant->n_faces*sizeof(cs_real_t));
 
   /* Detect the first call (in this case, we compute the initial source term)*/
-  _Bool  compute_initial_source = false;
+  bool  compute_initial_source = false;
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
