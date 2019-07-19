@@ -64,6 +64,7 @@
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_PARAMEDMEM)
+
 #include <MEDLoader.hxx>
 #include <MEDCoupling_version.h>
 #include <MEDFileField.hxx>
@@ -80,7 +81,7 @@
 #include <ParaMEDFileMesh.hxx>
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_medcoupling_utils.hxx"
@@ -140,20 +141,22 @@ struct _mesh_transformation_t {
 static int                         _n_remappers = 0;
 static cs_paramedmem_remapper_t  **_remapper = NULL;
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
+
 static int                      _n_transformations = 0;
 static _mesh_transformation_t **_transformations = NULL;
 
 static bool _transformations_applied = false;
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Create a mesh transformation (rotation or translation)
  *
  * \return  a mesh_transformation pointer
  */
-/* -------------------------------------------------------------------------- */
-_mesh_transformation_t *
+/*----------------------------------------------------------------------------*/
+
+static _mesh_transformation_t *
 _cs_paramedmem_create_transformation(int             type,
                                      const cs_real_t center[3],
                                      const cs_real_t vector[3],
@@ -172,17 +175,16 @@ _cs_paramedmem_create_transformation(int             type,
   }
 
   return mt;
-
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Reset all mesh transformations
  *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_paramedmem_reset_transformations(void)
 {
   if (_transformations != NULL) {
@@ -195,22 +197,19 @@ _cs_paramedmem_reset_transformations(void)
   _n_transformations = 0;
 
   _transformations_applied = false;
-
-  return;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Apply the different mesh transformations and update the bounding
  *          sphere
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_paramedmem_apply_transformations(MEDCouplingFieldDouble   *field,
                                      cs_paramedmem_remapper_t *r)
 {
-
   if (_transformations_applied == false) {
     for (int i = 0; i < _n_transformations; i++) {
       _mesh_transformation_t *mt = _transformations[i];
@@ -258,21 +257,18 @@ _cs_paramedmem_apply_transformations(MEDCouplingFieldDouble   *field,
   }
 
   _transformations_applied = true;
-
-  return;
-
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Returns an array containing the ranks of Code_Saturne processes in
  *          MPI_COMM_WORLD.
  *
  * \return  array of ranks in MPI_COMM_WORLD
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
-int *
+static int *
 _cs_paramedmem_get_mpi_comm_world_ranks(void)
 {
   /* Global rank of current rank */
@@ -291,7 +287,7 @@ _cs_paramedmem_get_mpi_comm_world_ranks(void)
   return world_ranks;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Create the parallel remapper structure based on ParaMEDMEM OverlapDEC
  *
@@ -299,9 +295,9 @@ _cs_paramedmem_get_mpi_comm_world_ranks(void)
  *
  * \return  pointer to cs_paramedmem_remapper_t struct
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
-cs_paramedmem_remapper_t *
+static cs_paramedmem_remapper_t *
 _cs_paramedmem_overlap_create(const char  *name)
 {
   cs_paramedmem_remapper_t *r = NULL;
@@ -336,18 +332,17 @@ _cs_paramedmem_overlap_create(const char  *name)
   return r;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the target mesh for interpolation
  *
  * \param[in] r               pointer to cs_paramedmem_remapper_t struct
  * \param[in] name            mesh name
  * \param[in] select_criteria selection criteria for needed cells
- *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
                                     const char                *name,
                                     const char                *select_criteria)
@@ -370,8 +365,6 @@ _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
 }
 
 /*----------------------------------------------------------------------------*/
-
-/* -------------------------------------------------------------------------- */
 /*!
  * \brief   Load the mesh parts on each process
  *
@@ -380,14 +373,13 @@ _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
  * \param[in] meshName  name of the mesh to read in the med file
  *
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
-void
+static void
 _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
                              char                     *fileName,
                              char                     *meshName)
 {
-
   int myPart;
   MPI_Comm_rank(cs_glob_mpi_comm, &myPart);
   int nParts;
@@ -432,7 +424,6 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
 
     r->time_steps[i] = fts->getTimeStep(it,ord)->getTime(it,ord);
   }
-
 }
 
 /*============================================================================
@@ -441,7 +432,7 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
 
 BEGIN_C_DECLS
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Creates a new cs_paramedmem_remapper_t instance
  *
@@ -452,7 +443,7 @@ BEGIN_C_DECLS
  *
  * \return  cs_paramedmem_remapper_t struct
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_create(char       *name,
@@ -481,7 +472,6 @@ cs_paramedmem_remapper_create(char       *name,
   _n_remappers++;
 
   return r;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -493,10 +483,10 @@ cs_paramedmem_remapper_create(char       *name,
  * \return  pointer to cs_paramedmem_remapper_t struct
  */
 /*----------------------------------------------------------------------------*/
+
 cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_by_name_try(const char *name)
 {
-
   if (_n_remappers > 0) {
     for (int r_id = 0; r_id < _n_remappers; r_id++) {
       const char *r_name = _remapper[r_id]->name;
@@ -510,7 +500,7 @@ cs_paramedmem_remapper_by_name_try(const char *name)
   return NULL;
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Remaps a field from the med file to the local mesh for a given time
  *
@@ -521,7 +511,7 @@ cs_paramedmem_remapper_by_name_try(const char *name)
  *
  * \return  cs_real_t pointer containing the new values on target mesh
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
 cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
@@ -530,13 +520,11 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
                                    int                       dt,
                                    int                       it)
 {
-
   /* Source Field */
   const std::string fname(fieldName);
 
   MCAuto<MEDFileAnyTypeField1TS> f =
     r->MEDFields->getFieldWithName(fname)->getTimeStep(dt,it);
-
 
   MCAuto<MEDFileField1TS>
     sf(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,MEDFileField1TS>(f));
@@ -556,7 +544,8 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
   r->odec->attachSourceLocalField(src_field);
 
   /* Target Field */
-  MEDCouplingFieldDouble *trg_field = MEDCouplingFieldDouble::New(ON_CELLS,ONE_TIME);
+  MEDCouplingFieldDouble *trg_field
+    = MEDCouplingFieldDouble::New(ON_CELLS,ONE_TIME);
   trg_field->setMesh(r->local_mesh->med_mesh);
 
   DataArrayDouble *arr = DataArrayDouble::New();
@@ -598,10 +587,9 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
   }
 
   return new_vals;
-
 }
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Interpolate a given field on the local mesh for a given time
  *
@@ -621,7 +609,7 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
  *
  * \return  cs_real_t pointer containing the new values on target mesh
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
 cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
@@ -630,12 +618,11 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
                           int                       time_choice,
                           double                    tval)
 {
-
   cs_real_t *new_vals = NULL;
 
-  if ( (time_choice == 0 && tval < r->time_steps[0]) ||
-        time_choice == 1 ||
-        r->ntsteps == 1) {
+  if ((time_choice == 0 && tval < r->time_steps[0]) ||
+      time_choice == 1 ||
+      r->ntsteps == 1) {
     /* First instance */
     int it    = r->iter[0];
     int order = r->order[0];
@@ -687,7 +674,6 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
 
   r->synced = 0;
   _cs_paramedmem_reset_transformations();
-
 
   return new_vals;
 }
@@ -745,9 +731,6 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
   _n_transformations++;
 
 }
-
-/*----------------------------------------------------------------------------*/
-
 
 /*----------------------------------------------------------------------------*/
 

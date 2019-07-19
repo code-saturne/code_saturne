@@ -25,6 +25,12 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -33,7 +39,7 @@ BEGIN_C_DECLS
 
 typedef struct _cs_paramedmem_remapper_t cs_paramedmem_remapper_t;
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief   Creates a new cs_paramedmem_remapper_t instance
  *
@@ -44,7 +50,7 @@ typedef struct _cs_paramedmem_remapper_t cs_paramedmem_remapper_t;
  *
  * \return  cs_paramedmem_remapper_t struct
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_create(char       *name,
@@ -54,7 +60,7 @@ cs_paramedmem_remapper_create(char       *name,
                               cs_real_t   center[3],
                               cs_real_t   radius);
 
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Interpolate a given field on the local mesh for a given time
  *
@@ -74,7 +80,7 @@ cs_paramedmem_remapper_create(char       *name,
  *
  * \return  cs_real_t pointer containing the new values on target mesh
  */
-/* -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t *
 cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
@@ -92,6 +98,7 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
  * \return  pointer to cs_paramedmem_remapper_t struct
  */
 /*----------------------------------------------------------------------------*/
+
 cs_paramedmem_remapper_t *
 cs_paramedmem_remapper_by_name_try(const char *name);
 
@@ -126,6 +133,9 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
                               cs_real_t                  angle);
 
 /*----------------------------------------------------------------------------*/
+
+#endif // HAVE_MEDCOUPLING_LOADER
+
 END_C_DECLS
-#endif
+
 #endif /* __CS_PARAMEDMEM_REMAPPER_HXX__ */
