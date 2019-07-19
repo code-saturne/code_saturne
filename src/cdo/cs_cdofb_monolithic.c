@@ -233,6 +233,7 @@ static cs_matrix_assembler_t  *cs_shared_matrix_assembler = NULL;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 #if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Setup advanced parameters for the AMG related to the velocity field
@@ -265,6 +266,7 @@ _setup_velocity_boomeramg(void)
   PetscOptionsSetValue("-pc_velocity_hypre_boomeramg_no_CF","");
 #endif
 }
+#endif  /* PETSC_HAVE_HYPRE */
 
 /*----------------------------------------------------------------------------*/
 /*!

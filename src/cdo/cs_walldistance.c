@@ -297,9 +297,9 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
 
   if (count > 0) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" %d degree(s) of freedom have a negative value and have been"
+    bft_printf(" %s: %d degrees of freedom have a negative value and have been"
                " modified\n"
-               " This may result from a bad mesh quality.", count);
+               " This may result from a bad mesh quality.", __func__, count);
   }
 
   /* Post-processing */

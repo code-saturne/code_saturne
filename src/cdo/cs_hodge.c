@@ -102,7 +102,7 @@ static const double  cs_hodge_vc_coef = 3./20;
  * Private function prototypes for debugging purpose
  *============================================================================*/
 
-#if defined(DEBUG) && !defined(NDEBUG)
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Check the coherency of the values of a stiffness matrix
@@ -1232,7 +1232,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   /* (c, c) diagonal entry */
   sval_crow[cm->n_fc] = full_sum;
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1292,7 +1292,7 @@ cs_hodge_fb_bubble_get_stiffness(const cs_param_hodge_t    h_info,
   /* (c, c) diagonal entry */
   sval_crow[cm->n_fc] = full_sum;
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1350,7 +1350,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   /* (c, c) diagonal entry */
   sval_crow[cm->n_fc] = full_sum;
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1400,7 +1400,7 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    h_info,
   cs_sdm_t  *sloc = cb->loc;
   _define_vb_stiffness(cm, hloc, sloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1450,7 +1450,7 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    h_info,
   cs_sdm_t  *sloc = cb->loc;
   _define_vb_stiffness(cm, hloc, sloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1500,7 +1500,7 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_param_hodge_t    h_info,
   cs_sdm_t  *sloc = cb->loc;
   _define_vb_stiffness(cm, hloc, sloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1550,7 +1550,7 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_param_hodge_t    h_info,
   cs_sdm_t  *sloc = cb->loc;
   _define_vb_stiffness(cm, hloc, sloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1592,7 +1592,7 @@ cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_param_hodge_t    h_info,
   cs_sdm_t  *sloc = cb->loc;
   _define_vb_stiffness(cm, hloc, sloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1798,7 +1798,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
       si[ej] = sloc->val[ej*sloc->n_rows + ei];
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -1886,7 +1886,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 
   } /* Tensor-valued property */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -2012,7 +2012,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   /* Matrix is symmetric by construction */
   cs_sdm_symm_ur(sloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -2150,7 +2150,7 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
   /* Matrix is symmetric by construction */
   cs_sdm_symm_ur(sloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
 #endif
 }
@@ -2337,7 +2337,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
       hdg->val[vi*msize + vj] = mj[vi];
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
@@ -2447,7 +2447,7 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
       hdg->val[vi*cm->n_vc + vj] = mj[vi];
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
@@ -2496,7 +2496,7 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
 
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
@@ -2557,7 +2557,7 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
 
   } /* Loop on cell edges */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
@@ -2627,7 +2627,7 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
   double  beta2 = h_info.coef*h_info.coef;
   _compute_hodge_cost(cm->n_ec, beta2, alpha, kappa, hdg->val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])pq, (const cs_real_t (*)[3])dq,
                       hdg, h_info, cb);
@@ -2688,7 +2688,7 @@ cs_hodge_epfd_bubble_get(const cs_param_hodge_t    h_info,
   /* Hodge matrix is symmetric by construction */
   cs_sdm_symm_ur(hloc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])pq, (const cs_real_t (*)[3])dq,
                       hdg, h_info, cb);
@@ -2732,7 +2732,7 @@ cs_hodge_epfd_ocs2_get(const cs_param_hodge_t    h_info,
   /* Hodge operator leads to a symmetric matrix by construction */
   cs_sdm_symm_ur(hdg);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
@@ -2788,7 +2788,7 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    h_info,
 
   } /* Isotropic or anisotropic */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
@@ -2857,7 +2857,7 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
   _compute_hodge_cost(cm->n_fc, h_info.coef*h_info.coef, alpha, kappa,
                       hdg->val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])pq, (const cs_real_t (*)[3])dq,
                       hdg, h_info, cb);
@@ -2919,7 +2919,7 @@ cs_hodge_fped_bubble_get(const cs_param_hodge_t    h_info,
   /* Hodge operator is symmetric */
   cs_sdm_symm_ur(hdg);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
                       hdg, h_info, cb);
@@ -2974,7 +2974,7 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    h_info,
 
   } /* Isotropic or anistropic */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
@@ -3043,7 +3043,7 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
   _compute_hodge_cost(cm->n_fc, h_info.coef*h_info.coef, alpha, kappa,
                       hdg->val);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
                       hdg, h_info, cb);
@@ -3105,7 +3105,7 @@ cs_hodge_edfp_cost_get_opt(const cs_param_hodge_t    h_info,
   /* Hodge operator is symmetric */
   cs_sdm_symm_ur(hdg);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
                       hdg, h_info, cb);
@@ -3167,7 +3167,7 @@ cs_hodge_edfp_bubble_get(const cs_param_hodge_t    h_info,
   /* Hodge operator is symmetric */
   cs_sdm_symm_ur(hdg);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
                       hdg, h_info, cb);
@@ -3493,7 +3493,7 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
 
   } /* Loop on face edges */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (fm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Surfacic Hodge op.   ");
     cs_sdm_dump(fm->f_id, NULL, NULL, hf);

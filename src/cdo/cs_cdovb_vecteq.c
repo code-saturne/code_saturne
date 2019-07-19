@@ -109,8 +109,6 @@ BEGIN_C_DECLS
 /* Algebraic system for CDO vertex-based discretization */
 typedef struct _cs_cdovb_t cs_cdovb_vecteq_t;
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -125,13 +123,9 @@ static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
 static const cs_matrix_structure_t  *cs_shared_ms;
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -783,6 +777,8 @@ _vbv_solve_system(cs_sles_t                    *sles,
 
   return (sinfo.n_it);
 }
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function prototypes

@@ -1270,6 +1270,7 @@ cs_cdo_advection_fb_bc_wdi(const cs_equation_param_t   *eqp,
                            cs_cell_builder_t           *cb,
                            cs_cell_sys_t               *csys)
 {
+  CS_UNUSED(eqp);
   /* Sanity checks */
   assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
   assert(csys->n_dofs == cm->n_fc + 1);
