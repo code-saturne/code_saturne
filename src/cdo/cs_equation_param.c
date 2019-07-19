@@ -95,21 +95,35 @@ static const char _err_empty_eqp[] =
  *----------------------------------------------------------------------------*/
 
 static inline void
-_petsc_pcgamg_hook(void)
+_petsc_pcmg_hook(void)
 {
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
   PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
   PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
   PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
+#else
+  PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+  PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+  PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * \brief Predefined settings for GAMG as a preconditionner
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_petsc_pcgamg_hook(void)
+{
+  _petsc_pcmg_hook();
+
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
   PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
   PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
   PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
 #else
   PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
-  PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-  PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-  PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
   PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
   PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
   PetscOptionsSetValue("-pc_gamg_square_graph", "4");
@@ -173,7 +187,11 @@ _petsc_setup_hook(void   *context,
     break;
 
   case CS_PARAM_ITSOL_CG:    /* Preconditioned Conjugate Gradient */
-    KSPSetType(ksp, KSPCG);
+    if (info.precond == CS_PARAM_PRECOND_AMG ||
+        info.precond == CS_PARAM_PRECOND_AMG_BLOCK)
+      KSPSetType(ksp, KSPFCG);
+    else
+      KSPSetType(ksp, KSPCG);
     break;
 
   case CS_PARAM_ITSOL_FCG:   /* Flexible Conjuguate Gradient */
@@ -273,22 +291,27 @@ _petsc_setup_hook(void   *context,
     {
       switch (info.amg_type) {
 
-      case CS_PARAM_AMG_GAMG:
+      case CS_PARAM_AMG_PETSC_GAMG:
         PCSetType(pc, PCGAMG);
         _petsc_pcgamg_hook();
         break;
 
-      case CS_PARAM_AMG_BOOMER:
+      case CS_PARAM_AMG_PETSC_PCMG:
+        PCSetType(pc, PCMG);
+        _petsc_pcmg_hook();
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER:
 #if defined(PETSC_HAVE_HYPRE)
         PCSetType(pc, PCHYPRE);
         _petsc_pchypre_hook();
 #else
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_DEFAULT,
-                      "%s: Switch to GAMG since BoomerAMG is not available.\n",
+                      "%s: Switch to MG since BoomerAMG is not available.\n",
                       __func__);
         PCSetType(pc, PCMG);
-        _petsc_pcgamg_hook();
+        _petsc_pcmg_hook();
 #endif
         break;
 
@@ -315,8 +338,13 @@ _petsc_setup_hook(void   *context,
   /* User function for additional settings */
   cs_user_sles_petsc_hook((void *)eqp, a, ksp);
 
-  /* Update with the new defined options */
+  /* Update the preconditionner with the new defined options */
+  PCSetFromOptions(pc);
+  PCSetUp(pc);
+
+  /* Update with the solver with the new defined options */
   KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!info.setup_done) {
@@ -509,11 +537,15 @@ _set_key(const char            *label,
       assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
     }
     else if (strcmp(keyval, "boomer") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;
+      eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
       assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
     }
     else if (strcmp(keyval, "gamg") == 0) {
-      eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;
+      eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
+    }
+    else if (strcmp(keyval, "pcmg") == 0) {
+      eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_PCMG;
       assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
     }
     else {
@@ -749,28 +781,40 @@ _set_key(const char            *label,
     else if (strcmp(keyval, "icc0") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_ICC0;
     else if (strcmp(keyval, "amg") == 0) {
+
       eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;
+
+      /* Set the default choice */
       if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
-        eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K; /* Default choice */
+        eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
       if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
-        eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
+        eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+
     }
     else if (strcmp(keyval, "amg_block") == 0) {
       if (eqp->dim == 1) {  /* Swith to a classical AMG preconditioner */
+
         eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;
+
+        /* Set the default choice */
         if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
-          eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K; /* Default choice */
+          eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
         if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
-          eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
+          eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+
       }
       else {
+
         eqp->sles_param.precond = CS_PARAM_PRECOND_AMG_BLOCK;
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+
+        /* Set the default choice */
 #if defined(PETSC_HAVE_HYPRE)
-        eqp->sles_param.amg_type = CS_PARAM_AMG_BOOMER;  /* Default choice */
+        eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
 #else
-        eqp->sles_param.amg_type = CS_PARAM_AMG_GAMG;    /* Default choice */
+        eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
 #endif
+
       }
     }
     else if (strcmp(keyval, "as") == 0)
