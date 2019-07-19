@@ -253,7 +253,7 @@ cs_advection_field_set_type(cs_adv_field_t              *adv,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
 {
   if (adv == NULL)
@@ -276,7 +276,7 @@ cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline _Bool
+static inline bool
 cs_advection_field_is_cellwise(const cs_adv_field_t   *adv)
 {
   if (adv == NULL)
@@ -497,7 +497,7 @@ cs_advection_field_destroy_all(void);
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_advection_field_check_name(const cs_adv_field_t   *adv,
                               const char             *ref_name);
 
@@ -568,7 +568,7 @@ void
 cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                 cs_flag_t          loc,
                                 cs_real_t         *array,
-                                _Bool              is_owner,
+                                bool               is_owner,
                                 cs_lnum_t         *index);
 
 /*----------------------------------------------------------------------------*/
@@ -638,7 +638,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               const char        *zname,
                                               cs_flag_t          loc,
                                               cs_real_t         *array,
-                                              _Bool              is_owner,
+                                              bool               is_owner,
                                               cs_lnum_t         *index);
 
 /*----------------------------------------------------------------------------*/
@@ -831,7 +831,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
 void
 cs_advection_field_update(cs_real_t    t_eval,
-                          _Bool        cur2prev);
+                          bool         cur2prev);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -2634,9 +2634,9 @@ cs_mesh_update_b_cells(cs_mesh_t  *mesh)
   cs_lnum_t  i;
 
   cs_lnum_t n_b_cells = 0;
-  _Bool *flag = NULL;
+  bool *flag = NULL;
 
-  BFT_MALLOC(flag, mesh->n_cells, _Bool);
+  BFT_MALLOC(flag, mesh->n_cells, bool);
 
   for (i = 0; i < mesh->n_cells; i++)
     flag[i] = false;

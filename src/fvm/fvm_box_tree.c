@@ -75,7 +75,7 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  _Bool              is_leaf;      /* True for leaf nodes */
+  bool               is_leaf;      /* True for leaf nodes */
 
   fvm_morton_code_t  morton_code;  /* Level and coordinates in the grid
                                       according to Morton encoding */
@@ -188,7 +188,7 @@ _box_max(const fvm_box_set_t   *boxes,
  *   true or false
  *---------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _boxes_intersect_3d(const cs_coord_t  *extents,
                     cs_lnum_t          id_0,
                     cs_lnum_t          id_1)
@@ -204,7 +204,7 @@ _boxes_intersect_3d(const cs_coord_t  *extents,
     return true;
 }
 
-inline static _Bool
+inline static bool
 _boxes_intersect_2d(const cs_coord_t  *extents,
                     cs_lnum_t          id_0,
                     cs_lnum_t          id_1)
@@ -219,7 +219,7 @@ _boxes_intersect_2d(const cs_coord_t  *extents,
     return true;
 }
 
-inline static _Bool
+inline static bool
 _boxes_intersect_1d(const cs_coord_t  *extents,
                     cs_lnum_t          id_0,
                     cs_lnum_t          id_1)
@@ -358,7 +358,7 @@ _get_grid_coords_1d(fvm_morton_int_t  level,
  *   true or false
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _node_intersect_box_3d(fvm_morton_code_t  morton_code,
                        const cs_coord_t   min_box[3],
                        const cs_coord_t   max_box[3])
@@ -379,7 +379,7 @@ _node_intersect_box_3d(fvm_morton_code_t  morton_code,
     return true;
 }
 
-inline static _Bool
+inline static bool
 _node_intersect_box_2d(fvm_morton_code_t  morton_code,
                        const cs_coord_t   min_box[2],
                        const cs_coord_t   max_box[2])
@@ -399,7 +399,7 @@ _node_intersect_box_2d(fvm_morton_code_t  morton_code,
     return true;
 }
 
-inline static _Bool
+inline static bool
 _node_intersect_box_1d(fvm_morton_code_t  morton_code,
                        const cs_coord_t   min_box[1],
                        const cs_coord_t   max_box[1])
@@ -687,7 +687,7 @@ _count_next_level(fvm_box_tree_t           *bt,
  *   true if we should continue, false otherwise.
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _recurse_tree_build(fvm_box_tree_t       *bt,
                     const fvm_box_set_t  *boxes,
                     fvm_box_tree_sync_t   build_type,
@@ -696,7 +696,7 @@ _recurse_tree_build(fvm_box_tree_t       *bt,
   int  state = 0;
   cs_lnum_t   _next_size = 0;
 
-  _Bool retval = false;
+  bool retval = false;
 
 #if defined(HAVE_MPI)
 

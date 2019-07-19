@@ -280,7 +280,7 @@ _order_gnum_s(const cs_gnum_t   number[],
  *   true if element i1 is greater or equal than element i2, false otherwise
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _indexed_is_greater_or_equal(size_t            i1,
                              size_t            i2,
                              const cs_lnum_t   index[],
@@ -331,7 +331,7 @@ _indexed_is_greater_or_equal(size_t            i1,
  *   true if element i1 is strictly greater than element i2, false otherwise
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _indexed_is_greater(size_t            i1,
                     size_t            i2,
                     const cs_lnum_t   index[],

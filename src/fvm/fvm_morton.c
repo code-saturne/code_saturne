@@ -136,7 +136,7 @@ _local_to_global_extents(int         dim,
  *  true or false
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _a_ge_b(fvm_morton_code_t  code_a,
         fvm_morton_code_t  code_b)
 {
@@ -190,7 +190,7 @@ _a_ge_b(fvm_morton_code_t  code_a,
  *  true or false
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _a_gt_b(fvm_morton_code_t  code_a,
         fvm_morton_code_t  code_b)
 {
@@ -1268,7 +1268,7 @@ fvm_morton_compare(int                dim,
  *  true or false
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_morton_a_gt_b(fvm_morton_code_t  a,
                   fvm_morton_code_t  b)
 {
@@ -1286,7 +1286,7 @@ fvm_morton_a_gt_b(fvm_morton_code_t  a,
  *  true or false
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_morton_a_ge_b(fvm_morton_code_t  a,
                   fvm_morton_code_t  b)
 {

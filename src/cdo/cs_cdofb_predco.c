@@ -1191,7 +1191,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
-      const _Bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
+      const bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
       if (has_sourceterm) {
 
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp,

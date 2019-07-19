@@ -140,13 +140,13 @@ typedef struct {
   int        *time_steps;      /* Array of meshes time steps */
   double     *time_values;     /* Array of meshes time values */
 
-  _Bool       allow_update;       /* Allow updates of existing data */
-  _Bool       is_open;            /* True if MED file is open, else false */
+  bool        allow_update;       /* Allow updates of existing data */
+  bool        is_open;            /* True if MED file is open, else false */
 
-  _Bool       discard_polygons;   /* Option to discard polygonal elements */
-  _Bool       discard_polyhedra;  /* Option to discard polyhedral elements */
-  _Bool       divide_polygons;    /* Option to tesselate polygonal elements */
-  _Bool       divide_polyhedra;   /* Option to tesselate polyhedral elements */
+  bool        discard_polygons;   /* Option to discard polygonal elements */
+  bool        discard_polyhedra;  /* Option to discard polyhedral elements */
+  bool        divide_polygons;    /* Option to tesselate polygonal elements */
+  bool        divide_polyhedra;   /* Option to tesselate polyhedral elements */
 
   int         rank;            /* Rank of current process in communicator */
   int         n_ranks;         /* Number of processes in communicator */
@@ -1777,7 +1777,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
   cs_part_to_block_t  *d = NULL;
 
   int         n_sections = 0;
-  _Bool       have_tesselation = false;
+  bool        have_tesselation = false;
   cs_lnum_t   start_id = 0;
   cs_lnum_t   part_size = 0, block_size = 0;
   cs_gnum_t   block_sub_size = 0, block_end = 0;

@@ -2174,7 +2174,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             const char                 *z_name,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
-                            _Bool                       is_owner,
+                            bool                        is_owner,
                             cs_lnum_t                  *index)
 {
   if (eqp == NULL)
@@ -2550,7 +2550,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      const char             *z_name,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
-                                     _Bool                   is_owner,
+                                     bool                    is_owner,
                                      cs_lnum_t              *index)
 {
   if (eqp == NULL)

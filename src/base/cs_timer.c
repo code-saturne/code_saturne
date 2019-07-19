@@ -179,7 +179,7 @@ _cs_timer_cpu_stdc_clock(cs_timer_t  *timer);
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
 
-static _Bool _cs_timer_initialized = false;
+static bool  _cs_timer_initialized = false;
 static cs_timer_method_t _cs_timer_wall_method = CS_TIMER_DISABLE;
 static cs_timer_method_t _cs_timer_cpu_method = CS_TIMER_DISABLE;
 static _cs_timer_wall_func_t *_cs_timer_wall = _cs_timer_wall_null;

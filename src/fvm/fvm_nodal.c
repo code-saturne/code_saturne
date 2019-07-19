@@ -280,10 +280,10 @@ _fvm_nodal_section_copy(const fvm_nodal_section_t *this_section)
  *   true if connectivity has been reduced
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _fvm_nodal_section_reduce(fvm_nodal_section_t  * this_section)
 {
-  _Bool retval = false;
+  bool retval = false;
 
   /* If we have a tesselation of polyhedra (face index != NULL),
      we may need to keep the connectivity information, to
@@ -356,7 +356,7 @@ _renumber_parent_num(cs_lnum_t          parent_num_size,
   int  i;
   cs_lnum_t   old_num_id;
   cs_lnum_t *parent_num_p = _parent_num;
-  _Bool trivial = true;
+  bool trivial = true;
 
   if (parent_num_size > 0 && new_parent_num != NULL) {
 
@@ -903,10 +903,10 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
 
 void
 fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
-                                _Bool                 copy_face_index,
-                                _Bool                 copy_face_num,
-                                _Bool                 copy_vertex_index,
-                                _Bool                 copy_vertex_num)
+                                bool                  copy_face_index,
+                                bool                  copy_face_num,
+                                bool                  copy_vertex_index,
+                                bool                  copy_vertex_num)
 {
   cs_lnum_t   n_faces;
   size_t  i;
@@ -1326,7 +1326,7 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
                  int           del_vertex_num)
 {
   int  i;
-  _Bool reduce_vertices = true;
+  bool reduce_vertices = true;
 
   /* Connectivity */
 

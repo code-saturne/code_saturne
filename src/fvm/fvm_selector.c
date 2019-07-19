@@ -318,7 +318,7 @@ static int _compare_attributes(const void *x, const void *y)
  *   true if the string defines an integer, false otherwise
  *----------------------------------------------------------------------------*/
 
-static _Bool
+static bool
 _is_int(const char  *str,
         int         *value)
 {
@@ -326,7 +326,7 @@ _is_int(const char  *str,
   int retcode, int_len;
 
   *value = 0;
-  retcode = (_Bool)(sscanf(str, "%i%n", &_value, &int_len));
+  retcode = (bool)(sscanf(str, "%i%n", &_value, &int_len));
 
   if (retcode) {
     if (int_len != (int)strlen(str))

@@ -864,7 +864,7 @@ cs_xdef_t *
 cs_property_def_by_array(cs_property_t    *pty,
                          cs_flag_t         loc,
                          cs_real_t        *array,
-                         _Bool             is_owner,
+                         bool              is_owner,
                          cs_lnum_t        *index)
 {
   int  id = _add_new_def(pty);

@@ -4292,7 +4292,7 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
                           (const cs_lnum_t  *)(mesh->i_face_cells));
 
   cs_lnum_t l_s = 0, l_e = 0;
-  _Bool  boot = false;
+  bool   boot = false;
 
   if (_cells_adjacent_to_halo_last) {
 

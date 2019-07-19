@@ -468,7 +468,7 @@ typedef enum {
 
 typedef struct {
 
-  _Bool                    setup_done;   /*!< SLES setup step has been done */
+  bool                     setup_done;   /*!< SLES setup step has been done */
   int                      verbosity;    /*!< SLES verbosity */
 
   cs_param_sles_class_t    solver_class; /*!< class of SLES to consider  */

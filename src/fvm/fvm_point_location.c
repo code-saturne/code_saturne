@@ -176,13 +176,13 @@ static cs_lnum_t   _octree_threshold = 4;   /* Number of points in octree node
  *   true if extents intersect, false otherwise
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _intersect_extents(int           dim,
                    const double  extents_1[],
                    const double  extents_2[])
 {
   int i;
-  _Bool retval = true;
+  bool retval = true;
 
   for (i = 0; i < dim; i++) {
     if (   (extents_1[i] > extents_2[i + dim])
@@ -209,13 +209,13 @@ _intersect_extents(int           dim,
  *   true if point lies within extents, false otherwise
  *----------------------------------------------------------------------------*/
 
-inline static _Bool
+inline static bool
 _within_extents(int               dim,
                 const cs_coord_t  coords[],
                 const double      extents[])
 {
   int i;
-  _Bool retval = true;
+  bool retval = true;
 
   for (i = 0; i < dim; i++) {
     if (   (coords[i] < extents[i])
@@ -248,7 +248,7 @@ _update_elt_extents(int                dim,
                     const cs_lnum_t   *parent_vertex_num,
                     const cs_coord_t   vertex_coords[],
                     double             elt_extents[],
-                    _Bool             *elt_initialized)
+                    bool              *elt_initialized)
 {
   cs_lnum_t   i, coord_idx;
 
@@ -2368,7 +2368,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
 
   for (i = 0; i < this_section->n_elements; i++) {
 
-    _Bool elt_initialized = false;
+    bool elt_initialized = false;
 
     /* Compute extents */
 
@@ -2602,7 +2602,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
 
   for (i = 0; i < this_section->n_elements; i++) {
 
-    _Bool elt_initialized = false;
+    bool elt_initialized = false;
 
     for (j = this_section->vertex_index[i];
          j < this_section->vertex_index[i + 1];
@@ -2764,7 +2764,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
 
     for (i = 0; i < this_section->n_elements; i++) {
 
-      _Bool elt_initialized = false;
+      bool elt_initialized = false;
 
       if (base_element_num < 0) {
         if (this_section->parent_element_num != NULL)
@@ -2965,7 +2965,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
 
   for (i = 0; i < this_section->n_elements; i++) {
 
-    _Bool elt_initialized = false;
+    bool elt_initialized = false;
 
     if (this_section->type == FVM_FACE_POLY) {
 

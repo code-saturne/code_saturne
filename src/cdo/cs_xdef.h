@@ -200,7 +200,7 @@ typedef struct {
   cs_flag_t     loc;
   cs_real_t    *values;
   cs_lnum_t    *index;
-  _Bool         is_owner;
+  bool          is_owner;
 
 } cs_xdef_array_input_t;
 

@@ -108,7 +108,7 @@ fvm_selector_postfix_get_infix(const fvm_selector_postfix_t  *pf);
  *   true if expression depends on coordinates, false otherwise
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_selector_postfix_coords_dep(const fvm_selector_postfix_t  *pf);
 
 /*----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ fvm_selector_postfix_coords_dep(const fvm_selector_postfix_t  *pf);
  *   true if expression depends on normals, false otherwise
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_selector_postfix_normals_dep(const fvm_selector_postfix_t  *pf);
 
 /*----------------------------------------------------------------------------
@@ -170,7 +170,7 @@ fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
  *   true or false base on expression evaluation
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
                           int                            n_groups,
                           int                            n_attributes,

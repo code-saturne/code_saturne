@@ -188,7 +188,7 @@ struct _cs_file_t {
   cs_file_access_t   method;       /* File access method */
   int                rank;         /* MPI rank */
   int                n_ranks;      /* MPI rank */
-  _Bool              swap_endian;  /* Swap big-endian and little-endian ? */
+  bool               swap_endian;  /* Swap big-endian and little-endian ? */
 
   FILE              *sh;           /* Serial file handle */
 

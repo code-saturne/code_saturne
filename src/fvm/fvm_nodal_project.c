@@ -98,7 +98,7 @@ _faces_to_edges(int                         dim,
                 const cs_coord_t            vertex_coords[],
                 const cs_lnum_t             parent_vertex_num[],
                 const fvm_nodal_section_t  *base_section,
-                _Bool                      *selected_vertices,
+                bool                       *selected_vertices,
                 cs_lnum_t                  *error_count)
 {
   cs_lnum_t n_vertices, n_elements;
@@ -247,7 +247,7 @@ _faces_to_edges(int                         dim,
 
 static void
 _compact_mesh(fvm_nodal_t   *this_nodal,
-              _Bool         *selected_vertices)
+              bool          *selected_vertices)
 {
   int i, j, section_id;
 
@@ -417,12 +417,12 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
   cs_lnum_t n_edges = 0;
   cs_lnum_t section_error_count = 0;
 
-  _Bool *selected_vertices = NULL;
+  bool *selected_vertices = NULL;
 
   assert(this_nodal != NULL);
 
   n_vertices = this_nodal->n_vertices;
-  BFT_MALLOC(selected_vertices, n_vertices, _Bool);
+  BFT_MALLOC(selected_vertices, n_vertices, bool);
 
   for (i = 0; i < n_vertices; i++)
     selected_vertices[i] = false;
