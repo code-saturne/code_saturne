@@ -321,11 +321,14 @@ cs_param_get_amg_type_name(cs_param_amg_type_t   type)
   case CS_PARAM_AMG_NONE:
     return  "None";
     break;
-  case CS_PARAM_AMG_BOOMER:
+  case CS_PARAM_AMG_HYPRE_BOOMER:
     return  "Boomer (Hypre)";
     break;
-  case CS_PARAM_AMG_GAMG:
+  case CS_PARAM_AMG_PETSC_GAMG:
     return  "GAMG (PETSc)";
+    break;
+  case CS_PARAM_AMG_PETSC_PCMG:
+    return  "PCMG (PETSc)";
     break;
   case CS_PARAM_AMG_HOUSE_V:
     return  "In-house (V-cycle)";
