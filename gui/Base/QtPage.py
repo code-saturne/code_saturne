@@ -461,8 +461,18 @@ class ComboModel:
             self.combo.setCurrentIndex(index)
 
         elif str_model:
-            index = self.items.index(str_model)
-            self.combo.setCurrentIndex(index)
+            try:
+                index = self.items.index(str_model)
+                self.combo.setCurrentIndex(index)
+            except Exception:
+                # import traceback
+                # exc_info = sys.exc_info()
+                # bt = traceback.format_exception(*exc_info)
+                # for l in bt:
+                #      print(l.rstrip())
+                # del exc_info
+                print(str_model, " is not in list: ", str(self.items))
+                index = self.items.index(str_model)
 
         elif str_view:
             str_model = self.dicoV2M[str_view]
