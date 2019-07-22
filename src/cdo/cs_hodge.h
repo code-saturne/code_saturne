@@ -65,6 +65,41 @@ typedef void
              cs_cell_builder_t        *cb);
 
 /*============================================================================
+ * Static inline public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Check if two sets of parameters related to how build a discrete
+ *          Hodge operator are similar.
+ *
+ * \param[in]  h1_info     pointer to a first cs_param_hodge_t structure
+ * \param[in]  h2_info     pointer to a second cs_param_hodge_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_hodge_info_is_similar(const cs_param_hodge_t    h1_info,
+                         const cs_param_hodge_t    h2_info)
+{
+  if (h1_info.type != h2_info.type)
+    return false;
+  if (h1_info.algo != h2_info.algo)
+    return false;
+  if (h1_info.algo == CS_PARAM_HODGE_ALGO_COST ||
+      h1_info.algo == CS_PARAM_HODGE_ALGO_BUBBLE) {
+    if (fabs(h1_info.coef - h2_info.coef) > 0)
+      return false;
+    else
+      return true;
+  }
+  else
+    return true;
+}
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
