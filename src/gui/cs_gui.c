@@ -213,6 +213,25 @@ _thermal_table_choice(const char *name)
 }
 
 /*----------------------------------------------------------------------------
+ * Return the value of the reference table for a given method, ...
+ *
+ * parameters:
+ *   name        <--  name of the option
+ *----------------------------------------------------------------------------*/
+
+static const char*
+_thermal_table_option(const char *name)
+{
+  cs_tree_node_t *tn
+    = cs_tree_get_node(cs_glob_tree,
+                       "physical_properties/fluid_properties/method");
+
+  const char *option = cs_tree_node_get_child_value_str(tn, name);
+
+  return option;
+}
+
+/*----------------------------------------------------------------------------
  * Return the value of the choice attribute from a property name.
  *
  * parameters:
@@ -2130,8 +2149,6 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
 {
   int choice;
   const char *material = NULL;
-  const char *phas = NULL;
-  const char s_undef[] = "undef";
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -2181,10 +2198,6 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
   material = _thermal_table_choice("material");
   if (material != NULL) {
     if (!(cs_gui_strcmp(material, "user_material"))) {
-      phas = _thermal_table_choice("phas");
-      if (!phas)
-        phas = s_undef;
-
       cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
       if (itherm <= CS_THERMAL_MODEL_TEMPERATURE)
         thermal_plane = CS_PHYS_PROP_PLANE_PT;
@@ -2196,8 +2209,7 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
 
       cs_thermal_table_set(material,
                            _thermal_table_choice("method"),
-                           phas,
-                           _thermal_table_choice("reference"),
+                           _thermal_table_option("reference"),
                            thermal_plane,
                            itpscl);
     }

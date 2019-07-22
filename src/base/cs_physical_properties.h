@@ -78,10 +78,9 @@ typedef enum {
 void
 cs_thermal_table_set(const char                        *material,
                      const char                        *method,
-                     const char                        *phas,
                      const char                        *reference,
                      cs_phys_prop_thermo_plane_type_t   thermo_plane,
-                     const int                          temp_scale);
+                     int                                temp_scale);
 
 /*----------------------------------------------------------------------------
  * Finalize thermal table
