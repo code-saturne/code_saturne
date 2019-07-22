@@ -1763,6 +1763,8 @@ cs_equation_set_functions(void)
         eq->get_cell_values = cs_cdovb_scaleq_get_cell_values;
         eq->get_face_values = NULL;
 
+        eq->get_cw_build_structures = cs_cdovb_scaleq_get;
+
       }
       else if (eqp->dim == 3) {
 
@@ -1801,6 +1803,8 @@ cs_equation_set_functions(void)
         eq->get_vertex_values = cs_cdovb_vecteq_get_vertex_values;
         eq->get_cell_values = cs_cdovb_vecteq_get_cell_values;
         eq->get_face_values = NULL;
+
+        eq->get_cw_build_structures = cs_cdovb_vecteq_get;
 
       }
       else
@@ -1852,6 +1856,8 @@ cs_equation_set_functions(void)
         eq->get_vertex_values = cs_cdovcb_scaleq_get_vertex_values;
         eq->get_cell_values = cs_cdovcb_scaleq_get_cell_values;
         eq->get_face_values = NULL;
+
+        eq->get_cw_build_structures = cs_cdovcb_scaleq_get;
 
       }
       else
@@ -1906,6 +1912,8 @@ cs_equation_set_functions(void)
         eq->get_cell_values = cs_cdofb_scaleq_get_cell_values;
         eq->get_face_values = cs_cdofb_scaleq_get_face_values;
 
+        eq->get_cw_build_structures = cs_cdofb_scaleq_get;
+
       }
       else if (eqp->dim == 3) {
 
@@ -1952,6 +1960,7 @@ cs_equation_set_functions(void)
         eq->get_cell_values = cs_cdofb_vecteq_get_cell_values;
         eq->get_face_values = cs_cdofb_vecteq_get_face_values;
 
+        eq->get_cw_build_structures = cs_cdofb_vecteq_get;
       }
       else
         bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
@@ -1992,8 +2001,8 @@ cs_equation_set_functions(void)
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid scheme for the space discretization.\n"
-                  " Please check your settings."));
+                _(" %s: Eq. %s. Invalid scheme for the space discretization.\n"
+                  " Please check your settings."), __func__, eqp->name);
       break;
     }
 
@@ -2360,6 +2369,32 @@ cs_equation_solve(const cs_mesh_t            *mesh,
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  For a given equation, retrieve the related cellwise builder
+ *         structures: cs_cell_builder_t and cs_cell_system_t structures
+ *
+ * \param[in]   eq       pointer to a \ref cs_equation_t structure
+ * \param[out]  cb       pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  csys     pointer to a pointer on a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
+                                  cs_cell_sys_t         **csys,
+                                  cs_cell_builder_t     **cb)
+{
+  *csys = NULL;
+  *cb = NULL;
+
+  if (eq == NULL)
+    return;
+
+  if (eq->get_cw_build_structures != NULL)
+    eq->get_cw_build_structures(csys, cb);
 }
 
 /*----------------------------------------------------------------------------*/

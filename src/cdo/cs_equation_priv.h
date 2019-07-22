@@ -267,6 +267,20 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve cellwise structure including work buffers used to build
+ *         a CDO system cellwise. Generic prototype for all CDO schemes.
+ *
+ * \param[out]  csys   pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  cb     pointer to a pointer on a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_get_builders_t)(cs_cell_sys_t       **csys,
+                             cs_cell_builder_t   **cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute or retrieve an array of values at a given mesh location
  *         Currently, vertices, cells or faces are possible locations
  *         The lifecycle of this array is managed by the code. So one does not
@@ -369,6 +383,8 @@ struct _cs_equation_t {
   cs_equation_get_values_t         *get_face_values;
   cs_equation_get_values_t         *get_cell_values;
   cs_equation_get_values_t         *get_vertex_values;
+
+  cs_equation_get_builders_t       *get_cw_build_structures;
 
   /* Deprecated functions --> use rather solve() and solve_steady_state() */
   cs_equation_initialize_system_t  *initialize_system;

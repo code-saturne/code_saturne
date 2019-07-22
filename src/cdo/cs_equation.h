@@ -686,6 +686,22 @@ cs_equation_get_type(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  For a given equation, retrieve the related cellwise builder
+ *         structures: cs_cell_builder_t and cs_cell_system_t structures
+ *
+ * \param[in]   eq       pointer to a \ref cs_equation_t structure
+ * \param[out]  cb       pointer to a pointer on a cs_cell_sys_t structure
+ * \param[out]  csys     pointer to a pointer on a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
+                                  cs_cell_sys_t         **csys,
+                                  cs_cell_builder_t     **cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  For a given equation, retrieve an array of values related to each
  *         face of the mesh for the unknowns
  *
