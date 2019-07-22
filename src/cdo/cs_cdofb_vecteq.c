@@ -1738,20 +1738,31 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 
   if (eqp->n_ic_defs > 0) {
 
-    /* Initialize values at mesh vertices */
-    cs_flag_t  f_dof_flag = CS_FLAG_VECTOR | cs_flag_primal_face;
-    cs_flag_t  c_dof_flag = CS_FLAG_VECTOR | cs_flag_primal_cell;
+    cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+    cs_lnum_t  *def2f_idx = NULL;
+    BFT_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
+
+    cs_equation_sync_definitions_at_faces(connect,
+                                          eqp->n_ic_defs,
+                                          eqp->ic_defs,
+                                          def2f_idx,
+                                          def2f_ids);
 
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
       /* Get and then set the definition of the initial condition */
       const cs_xdef_t  *def = eqp->ic_defs[def_id];
+      const cs_lnum_t  n_f_selected = def2f_idx[def_id+1] - def2f_idx[def_id];
+      const cs_lnum_t  *selected_lst = def2f_ids + def2f_idx[def_id];
 
       switch(def->type) {
 
       case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_by_value(f_dof_flag, def, f_vals);
-        cs_evaluate_potential_by_value(c_dof_flag, def, c_vals);
+        cs_evaluate_potential_at_faces_by_value(def,
+                                                n_f_selected,
+                                                selected_lst,
+                                                f_vals);
+        cs_evaluate_potential_at_cells_by_value(def, c_vals);
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1760,11 +1771,20 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
           switch (red) {
 
           case CS_PARAM_REDUCTION_DERHAM:
-            cs_evaluate_potential_by_analytic(f_dof_flag, def, t_eval, f_vals);
-            cs_evaluate_potential_by_analytic(c_dof_flag, def, t_eval, c_vals);
+            cs_evaluate_potential_at_faces_by_analytic(def,
+                                                       t_eval,
+                                                       n_f_selected,
+                                                       selected_lst,
+                                                       f_vals);
+            cs_evaluate_potential_at_cells_by_analytic(def, t_eval, c_vals);
             break;
+
           case CS_PARAM_REDUCTION_AVERAGE:
-            cs_evaluate_average_on_faces_by_analytic(def, t_eval, f_vals);
+            cs_evaluate_average_on_faces_by_analytic(def,
+                                                     t_eval,
+                                                     n_f_selected,
+                                                     selected_lst,
+                                                     f_vals);
             cs_evaluate_average_on_cells_by_analytic(def, t_eval, c_vals);
             break;
 
@@ -1793,13 +1813,11 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
-  const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
-
   cs_equation_compute_dirichlet_fb(mesh,
                                    quant,
                                    connect,
                                    eqp,
-                                   face_bc,
+                                   eqb->face_bc,
                                    t_eval,
                                    cs_cdofb_cell_bld[0],
                                    f_vals + 3*quant->n_i_faces);

@@ -104,10 +104,49 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the quantity attached to a potential field for all the DoFs
+ * \brief  Evaluate the quantity attached to a potential field at vertices
  *         when the definition relies on an analytic expression
  *
- * \param[in]      dof_flag    indicate where the evaluation has to be done
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      n_v_selected  number of selected vertices
+ * \param[in]      selected_lst  list of selected vertices
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
+                                              const cs_real_t    time_eval,
+                                              const cs_lnum_t    n_v_selected,
+                                              const cs_lnum_t   *selected_lst,
+                                              cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at face centers
+ *         when the definition relies on an analytic expression
+ *
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      n_f_selected  number of selected faces
+ * \param[in]      selected_lst  list of selected faces
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
+                                           const cs_real_t    time_eval,
+                                           const cs_lnum_t    n_f_selected,
+                                           const cs_lnum_t   *selected_lst,
+                                           cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at cell centers
+ *         when the definition relies on an analytic expression
+ *
  * \param[in]      def         pointer to a cs_xdef_t pointer
  * \param[in]      time_eval   physical time at which one evaluates the term
  * \param[in, out] retval      pointer to the computed values
@@ -115,10 +154,9 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
-                                  const cs_xdef_t    *def,
-                                  cs_real_t           time_eval,
-                                  cs_real_t           retval[]);
+cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
+                                           const cs_real_t     time_eval,
+                                           cs_real_t           retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -142,46 +180,89 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the quantity attached to a potential field for all the DoFs
+ * \brief  Evaluate a potential field at vertices from a definition by a
+ *         constant value
  *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def             pointer to a cs_xdef_t pointer
+ * \param[in]      n_v_selected    number of selected vertices
+ * \param[in]      selected_lst    list of selected vertices
+ * \param[in, out] retval          pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
+                                           const cs_lnum_t    n_v_selected,
+                                           const cs_lnum_t   *selected_lst,
+                                           cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate a potential field atface centers from a definition by a
+ *         constant value
+ *
+ * \param[in]      def             pointer to a cs_xdef_t pointer
+ * \param[in]      n_f_selected    number of selected faces
+ * \param[in]      selected_lst    list of selected faces
+ * \param[in, out] retval          pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
+                                        const cs_lnum_t    n_f_selected,
+                                        const cs_lnum_t   *selected_lst,
+                                        cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate a potential field at cell centers from a definition by
+ *         value
+ *
  * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
-                               const cs_xdef_t   *def,
-                               cs_real_t          retval[]);
+cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
+                                        cs_real_t          retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate the average of a function on the faces
  *
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      n_f_selected   number of selected faces
+ * \param[in]      selected_lst   list of selected faces
+ * \param[in, out] retval         pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
+                                      const cs_lnum_t    n_f_selected,
+                                      const cs_lnum_t   *selected_lst,
                                       cs_real_t          retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the average of a function on the faces
+ * \brief  Evaluate the average of a function on the faces.
  *         Warning: retval has to be initialize before calling this function.
  *
- * \param[in]      def        pointer to a cs_xdef_t pointer
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in, out] retval     pointer to the computed values
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval      physical time at which one evaluates the term
+ * \param[in]      n_f_selected   number of selected faces
+ * \param[in]      selected_lst   list of selected faces
+ * \param[in, out] retval         pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t   *def,
-                                         cs_real_t          time_eval,
+                                         const cs_real_t    time_eval,
+                                         const cs_lnum_t    n_f_selected,
+                                         const cs_lnum_t   *selected_lst,
                                          cs_real_t          retval[]);
 
 /*----------------------------------------------------------------------------*/
@@ -250,15 +331,19 @@ cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
 /*!
  * \brief  Evaluate the average of a function on the faces
  *
- * \param[in]      def        pointer to a cs_xdef_t pointer
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in, out] retval     pointer to the computed values
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval      physical time at which one evaluates the term
+ * \param[in]      n_f_selected   number of selected faces
+ * \param[in]      selected_lst   list of selected faces
+ * \param[in, out] retval         pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 cs_evaluate_average_on_faces(const cs_xdef_t   *def,
                              cs_real_t          time_eval,
+                             const cs_lnum_t    n_f_selected,
+                             const cs_lnum_t   *selected_lst,
                              cs_real_t          retval[])
 {
   /* Sanity checks */
@@ -267,11 +352,16 @@ cs_evaluate_average_on_faces(const cs_xdef_t   *def,
   switch (def->type) {
 
   case CS_XDEF_BY_VALUE:
-    cs_evaluate_average_on_faces_by_value(def, retval);
+    cs_evaluate_average_on_faces_by_value(def,
+                                          n_f_selected, selected_lst,
+                                          retval);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_evaluate_average_on_faces_by_analytic(def, time_eval, retval);
+    cs_evaluate_average_on_faces_by_analytic(def,
+                                             time_eval,
+                                             n_f_selected, selected_lst,
+                                             retval);
     break;
 
   default:

@@ -802,8 +802,6 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                             const cs_cdo_quantities_t   *quant,
                             const cs_time_step_t        *ts)
 {
-  CS_UNUSED(connect);
-
   cs_navsto_system_t  *ns = cs_navsto_system;
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
@@ -857,7 +855,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
         cs_real_t  *pr_f
           = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
 
-        cs_cdofb_navsto_init_face_pressure(nsp, quant, ts, pr_f);
+        cs_cdofb_navsto_init_face_pressure(nsp, connect, ts, pr_f);
 
         cs_equation_t  *mom_eq = cs_equation_by_name("velocity_prediction");
         face_vel = cs_equation_get_face_values(mom_eq);

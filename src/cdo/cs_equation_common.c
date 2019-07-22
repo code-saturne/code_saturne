@@ -891,5 +891,261 @@ cs_equation_balance_destroy(cs_equation_balance_t   **p_balance)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Synchronize the definition to consider at each vertex
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       n_defs      number of definitions
+ * \param[in]       defs        number of times the values has been updated
+ * \param[in, out]  def2v_idx   index array  to define
+ * \param[in, out]  def2v_ids   array of ids to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_definitions_at_vertices(const cs_cdo_connect_t  *connect,
+                                         int                      n_defs,
+                                         cs_xdef_t              **defs,
+                                         cs_lnum_t                def2v_idx[],
+                                         cs_lnum_t                def2v_ids[])
+{
+  if (n_defs == 0)
+    return;
+
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+  int  *v2def_ids = NULL;
+  BFT_MALLOC(v2def_ids, n_vertices, int);
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t v = 0; v < n_vertices; v++)
+    v2def_ids[v] = -1;          /* default */
+
+  for (int def_id = 0; def_id < n_defs; def_id++) {
+
+    /* Get and then set the definition of the initial condition */
+    const cs_xdef_t  *def = defs[def_id];
+
+    if (def->meta & CS_FLAG_FULL_LOC) {
+
+#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
+      for (cs_lnum_t v = 0; v < n_vertices; v++)
+        v2def_ids[v] = def_id;
+
+    }
+    else {
+
+      const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on selected cells */
+        const cs_lnum_t  c_id = z->elt_ids[i];
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          v2def_ids[c2v->ids[j]] = def_id;
+      }
+
+    }
+
+  } /* Loop on definitions */
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+    /* Last definition is used if there is a conflict between several
+       definitions */
+    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         n_vertices,
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
+                         CS_INT_TYPE,   /* int */
+                         v2def_ids);
+
+  }
+
+  /* 0. Initialization */
+  cs_lnum_t  *count = NULL;
+  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  memset(count, 0, n_defs*sizeof(cs_lnum_t));
+  memset(def2v_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+
+  /* 1. Count number of vertices related to each definition */
+  for (cs_lnum_t v = 0; v < n_vertices; v++)
+    def2v_idx[v2def_ids[v]+1] += 1;
+
+  /* 2. Build index */
+  for (int def_id = 0; def_id < n_defs; def_id++)
+    def2v_idx[def_id+1] += def2v_idx[def_id];
+
+  /* 3. Build list */
+  for (cs_lnum_t v = 0; v < n_vertices; v++) {
+    const int def_id = v2def_ids[v];
+    def2v_ids[def2v_idx[def_id] + count[def_id]] = v;
+    count[def_id] += 1;
+  }
+
+  /* Free memory */
+  BFT_FREE(v2def_ids);
+  BFT_FREE(count);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Synchronize the definition to consider at each face
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       n_defs      number of definitions
+ * \param[in]       defs        number of times the values has been updated
+ * \param[in, out]  def2f_idx   index array  to define
+ * \param[in, out]  def2f_ids   array of ids to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_definitions_at_faces(const cs_cdo_connect_t    *connect,
+                                      int                        n_defs,
+                                      cs_xdef_t                **defs,
+                                      cs_lnum_t                  def2f_idx[],
+                                      cs_lnum_t                  def2f_ids[])
+{
+  if (n_defs == 0)
+    return;
+
+  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_adjacency_t  *c2f = connect->c2f;
+
+  int  *f2def_ids = NULL;
+  BFT_MALLOC(f2def_ids, n_faces, int);
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
+  for (cs_lnum_t f = 0; f < n_faces; f++)
+    f2def_ids[f] = -1;          /* default */
+
+  for (int def_id = 0; def_id < n_defs; def_id++) {
+
+    /* Get and then set the definition of the initial condition */
+    const cs_xdef_t  *def = defs[def_id];
+
+    if (def->meta & CS_FLAG_FULL_LOC) {
+
+#     pragma omp parallel for if (n_faces > CS_THR_MIN)
+      for (cs_lnum_t f = 0; f < n_faces; f++)
+        f2def_ids[f] = def_id;
+
+    }
+    else {
+
+      const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on selected cells */
+        const cs_lnum_t  c_id = z->elt_ids[i];
+        for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
+          f2def_ids[c2f->ids[j]] = def_id;
+      }
+
+    }
+
+  } /* Loop on definitions */
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    assert(connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL);
+    /* Last definition is used if there is a conflict between several
+       definitions */
+    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         n_faces,
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
+                         CS_INT_TYPE,   /* int */
+                         f2def_ids);
+
+  }
+
+  /* 0. Initialization */
+  cs_lnum_t  *count = NULL;
+  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  memset(count, 0, n_defs*sizeof(cs_lnum_t));
+  memset(def2f_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+
+  /* 1. Count number of vertices related to each definition */
+  for (cs_lnum_t f = 0; f < n_faces; f++)
+    def2f_idx[f2def_ids[f]+1] += 1;
+
+  /* 2. Build index */
+  for (int def_id = 0; def_id < n_defs; def_id++)
+    def2f_idx[def_id+1] += def2f_idx[def_id];
+
+  /* 3. Build list */
+  for (cs_lnum_t f = 0; f < n_faces; f++) {
+    const int def_id = f2def_ids[f];
+    def2f_ids[def2f_idx[def_id] + count[def_id]] = f;
+    count[def_id] += 1;
+  }
+
+  /* Free memory */
+  BFT_FREE(f2def_ids);
+  BFT_FREE(count);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the mean-value across ranks at each vertex
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       dim         number of entries for each vertex
+ * \param[in]       counter     number of occurences on this rank
+ * \param[in, out]  values      array to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_vertex_mean_values(const cs_cdo_connect_t     *connect,
+                                    int                         dim,
+                                    int                        *counter,
+                                    cs_real_t                  *values)
+{
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         n_vertices,
+                         1,           /* stride */
+                         false,       /* interlace (not useful here) */
+                         CS_INT_TYPE, /* int */
+                         counter);
+
+    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                         n_vertices,
+                         dim,         /* stride */
+                         true,        /* interlace */
+                         CS_REAL_TYPE,
+                         values);
+
+  }
+
+  if (dim == 1) {
+
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+      if (counter[v_id] > 1)
+        values[v_id] /= counter[v_id];
+
+  }
+  else { /* dim > 1 */
+
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+      if (counter[v_id] > 1) {
+        const cs_real_t  inv_count = 1./counter[v_id];
+        for (int k = 0; k < dim; k++)
+          values[dim*v_id + k] *= inv_count;
+      }
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -1421,10 +1421,12 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_flag_t  dof_flag = cs_flag_primal_vtx | CS_FLAG_VECTOR;
-
       assert(adv->type == CS_ADVECTION_FIELD_TYPE_VELOCITY);
-      cs_evaluate_potential_by_analytic(dof_flag, def, time_eval, vtx_values);
+      cs_evaluate_potential_at_vertices_by_analytic(def,
+                                                    time_eval,
+                                                    cdoq->n_vertices,
+                                                    NULL,
+                                                    vtx_values);
     }
     break; /* definition by analytic */
 

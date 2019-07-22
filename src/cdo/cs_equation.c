@@ -2738,6 +2738,7 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
                                   v_gradient);
     break;
 
+  case CS_SPACE_SCHEME_CDOVB:   /* --> wall distance */
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of scheme for equation %s when computing"

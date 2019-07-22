@@ -41,6 +41,7 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
+#include "cs_equation_common.h"
 #include "cs_xdef.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -464,22 +465,21 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                  const cs_cdo_bc_face_t     *face_bc,
                                  cs_cell_builder_t          *cb,
                                  cs_flag_t                  *bcflag,
-                                 cs_real_t                  *bcvals)
+                                 cs_real_t                  *values)
 {
-  assert(face_bc != NULL && bcflag != NULL && bcvals != NULL);
+  assert(face_bc != NULL && bcflag != NULL && values != NULL);
 
   const cs_lnum_t  *bf2v_idx = mesh->b_face_vtx_idx;
   const cs_lnum_t  *bf2v_lst = mesh->b_face_vtx_lst;
 
   /* Initialization */
+  cs_real_t  *bcvals = cs_equation_get_tmpbuf();
   memset(bcvals, 0, eqp->dim*quant->n_vertices*sizeof(cs_real_t));
 
+  /* Number of faces with a Dir. related to a vertex */
   int  *counter = NULL;
   BFT_MALLOC(counter, quant->n_vertices, int);
-
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-    counter[v_id] = 0;   /* Number of faces with a Dir. related to a vertex */
+  memset(counter, 0, quant->n_vertices*sizeof(int));
 
   if (face_bc->is_steady == false) /* Update bcflag if needed */
     cs_equation_set_vertex_bc_flag(connect, face_bc, bcflag);
@@ -524,7 +524,6 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                     false, /* is constant for all vertices ? */
                                     bcvals,
                                     counter);
-
       }
       break; /* By array */
 
@@ -560,68 +559,49 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
   } /* Loop on faces with a non-homogeneous Dirichlet BC */
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
-
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                         quant->n_vertices,
-                         1,             /* stride */
-                         false,         /* interlace (not useful here) */
-                         CS_INT_TYPE,   /* int */
-                         counter);
-
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                         quant->n_vertices,
-                         eqp->dim,       /* stride */
-                         true,           /* interlace */
-                         CS_REAL_TYPE,
-                         bcvals);
-
-  }
+  cs_equation_sync_vertex_mean_values(connect, eqp->dim, counter, bcvals);
 
   /* Homogeneous Dirichlet are always enforced (even in case of multiple BCs).
      If multi-valued Dirichlet BCs are set, a weighted sum is used to set the
      Dirichlet value at each corresponding vertex */
   if (eqp->dim == 1) {
 
-#   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-    for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-
-      if (bcflag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
-        bcvals[v_id] = 0.;
-      else if (bcflag[v_id] & CS_CDO_BC_DIRICHLET) {
-        assert(counter[v_id] > 0);
-        if (counter[v_id] > 1)
-          bcvals[v_id] /= counter[v_id];
+#   pragma omp parallel if (quant->n_vertices > CS_THR_MIN)
+    {
+#     pragma omp for
+      for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+        if (bcflag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
+          bcvals[v_id] = 0.;
       }
 
-    } /* Loop on vertices */
+      /* BC value overwrites the initial value */
+#     pragma omp for
+      for (cs_lnum_t v = 0; v < quant->n_vertices; v++)
+        if (cs_cdo_bc_is_dirichlet(bcflag[v]))
+          values[v] = bcvals[v];
+    }
 
   }
   else { /* eqp->dim > 1 */
 
-#   pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-    for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-
-      if (bcflag[v_id] & CS_CDO_BC_HMG_DIRICHLET) {
-
-        for (int j = 0; j < eqp->dim; j++)
-          bcvals[eqp->dim*v_id + j] = 0.;
-
+#   pragma omp parallel if (quant->n_vertices > CS_THR_MIN)
+    {
+#     pragma omp for
+      for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+        if (bcflag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
+          memset(bcvals + eqp->dim*v_id, 0, eqp->dim*sizeof(cs_real_t));
       }
-      else if (bcflag[v_id] & CS_CDO_BC_DIRICHLET) {
 
-        assert(counter[v_id] > 0);
-        if (counter[v_id] > 1) {
-          const cs_real_t  inv_count = 1./counter[v_id];
-          for (int j = 0; j < eqp->dim; j++)
-            bcvals[eqp->dim*v_id + j] *= inv_count;
+      /* BC value overwrites the initial value */
+#     pragma omp for
+      for (cs_lnum_t v = 0; v < quant->n_vertices; v++) {
+        if (cs_cdo_bc_is_dirichlet(bcflag[v])) {
+          for (int k = 0; k < 3; k++)
+            values[3*v+k] = bcvals[3*v+k];
         }
-
       }
 
-    } /* Loop on vertices */
+    }
 
   } /* eqp->dim ? */
 

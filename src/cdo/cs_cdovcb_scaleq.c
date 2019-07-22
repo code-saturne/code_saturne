@@ -1203,6 +1203,16 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 
   if (eqp->n_ic_defs > 0) {
 
+    cs_lnum_t  *def2v_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+    cs_lnum_t  *def2v_idx = NULL;
+    BFT_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
+
+    cs_equation_sync_definitions_at_vertices(connect,
+                                             eqp->n_ic_defs,
+                                             eqp->ic_defs,
+                                             def2v_idx,
+                                             def2v_ids);
+
     /* Initialize values at mesh vertices */
     cs_flag_t  v_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_vtx;
     cs_flag_t  c_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
@@ -1211,16 +1221,21 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 
       /* Get and then set the definition of the initial condition */
       const cs_xdef_t  *def = eqp->ic_defs[def_id];
+      const cs_lnum_t  n_v_selected = def2v_idx[def_id+1] - def2v_idx[def_id];
+      const cs_lnum_t  *selected_lst = def2v_ids + def2v_idx[def_id];
 
       switch(def->type) {
 
       case CS_XDEF_BY_VALUE:
-        cs_evaluate_potential_by_value(v_dof_flag, def, v_vals);
-        cs_evaluate_potential_by_value(c_dof_flag, def, c_vals);
+        cs_evaluate_potential_at_vertices_by_value(def,
+                                                   n_v_selected,
+                                                   selected_lst,
+                                                   v_vals);
+        cs_evaluate_potential_at_cells_by_value(def, c_vals);
         break;
 
       case CS_XDEF_BY_QOV:
-        cs_evaluate_potential_by_qov(v_dof_flag | cs_flag_primal_cell, def,
+        cs_evaluate_potential_by_qov(v_dof_flag | c_dof_flag, def,
                                      v_vals, c_vals);
         break;
 
@@ -1229,8 +1244,12 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
           bft_error(__FILE__, __LINE__, 0,
                     " %s: Incompatible reduction for equation %s.\n",
                     __func__, eqp->name);
-        cs_evaluate_potential_by_analytic(v_dof_flag, def, t_eval, v_vals);
-        cs_evaluate_potential_by_analytic(c_dof_flag, def, t_eval, c_vals);
+        cs_evaluate_potential_at_vertices_by_analytic(def,
+                                                      t_eval,
+                                                      n_v_selected,
+                                                      selected_lst,
+                                                      v_vals);
+        cs_evaluate_potential_at_cells_by_analytic(def, t_eval, c_vals);
         break;
 
       default:
@@ -1244,10 +1263,8 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 
   } /* Initial values to set */
 
-  /* Set the boundary values as initial values: Compute the values of the
-     Dirichlet BC */
-  cs_real_t  *work_v = cs_equation_get_tmpbuf();
-
+ /* Set the boundary values as initial values: Compute the values of the
+    Dirichlet BC */
   cs_equation_compute_dirichlet_vb(t_eval,
                                    mesh,
                                    quant,
@@ -1256,12 +1273,8 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
                                    eqb->face_bc,
                                    _vcbs_cell_builder[0], /* static variable */
                                    eqc->vtx_bc_flag,
-                                   work_v);
+                                   v_vals);
 
-
-  for (cs_lnum_t v = 0; v < quant->n_vertices; v++)
-    if (cs_cdo_bc_is_dirichlet(eqc->vtx_bc_flag[v]))
-      v_vals[v] = work_v[v];
 }
 
 /*----------------------------------------------------------------------------*/

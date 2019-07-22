@@ -49,6 +49,21 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Strategy of synchronization of values shared across several cells
+ * This applies to vertices, edges and faces
+ *
+ * CS_EQUATION_SYNC_ZERO_VALUE
+ * If zero is a possible value then set this value, otherwise one takes
+ * the mean-value
+ *
+ * CS_EQUATION_SYNC_MEAN_VALUE
+ * Compute the mean-value across values to set
+ *
+ */
+
+#define  CS_EQUATION_SYNC_ZERO_VALUE    1
+#define  CS_EQUATION_SYNC_MEAN_VALUE    2
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -593,6 +608,61 @@ cs_equation_balance_sync(const cs_cdo_connect_t    *connect,
 
 void
 cs_equation_balance_destroy(cs_equation_balance_t   **p_balance);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Synchronize the definition to consider at each vertex
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       n_defs      number of definitions
+ * \param[in]       defs        number of times the values has been updated
+ * \param[in, out]  def2v_idx   index array  to define
+ * \param[in, out]  def2v_ids   array of ids to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_definitions_at_vertices(const cs_cdo_connect_t  *connect,
+                                         int                      n_defs,
+                                         cs_xdef_t              **defs,
+                                         cs_lnum_t                def2v_idx[],
+                                         cs_lnum_t                def2v_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Synchronize the definition to consider at each face
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       n_defs      number of definitions
+ * \param[in]       defs        number of times the values has been updated
+ * \param[in, out]  def2f_idx   index array  to define
+ * \param[in, out]  def2f_ids   array of ids to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_definitions_at_faces(const cs_cdo_connect_t  *connect,
+                                      int                      n_defs,
+                                      cs_xdef_t              **defs,
+                                      cs_lnum_t                def2f_idx[],
+                                      cs_lnum_t                def2f_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the mean-value across ranks at each vertex
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       dim         number of entries for each vertex
+ * \param[in]       counter     number of occurences on this rank
+ * \param[in, out]  values      array to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_vertex_mean_values(const cs_cdo_connect_t     *connect,
+                                    int                         dim,
+                                    int                        *counter,
+                                    cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/
 

@@ -188,7 +188,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
                                  const cs_cdo_bc_face_t     *face_bc,
                                  cs_cell_builder_t          *cb,
                                  cs_flag_t                  *bcflag,
-                                 cs_real_t                  *bcvals);
+                                 cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
