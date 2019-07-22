@@ -734,7 +734,7 @@ _set_key(const char            *label,
     else if (strcmp(keyval, "weighted_rhs") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_WEIGHTED_RHS;
     else if (strcmp(keyval, "matrix_diag") == 0)
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_MAT_DIAG;
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_DIAG_RHS;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1903,7 +1903,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                 slesp.eps);
 
   switch (slesp.resnorm_type) {
-  case CS_PARAM_RESNORM_MAT_DIAG:
+  case CS_PARAM_RESNORM_DIAG_RHS:
     cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
                   "Matrix diagonal (\"matrix_diag\")");
     break;

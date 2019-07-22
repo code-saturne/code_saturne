@@ -455,7 +455,7 @@ typedef enum {
                                         the computational domain */
   CS_PARAM_RESNORM_WEIGHTED_RHS,   /*!< Renormalization based on a weighted
                                         L2-norm of the right-hand side */
-  CS_PARAM_RESNORM_MAT_DIAG,
+  CS_PARAM_RESNORM_DIAG_RHS,
   CS_PARAM_N_RESNORM_TYPES
 
 } cs_param_resnorm_type_t;

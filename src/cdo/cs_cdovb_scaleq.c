@@ -654,12 +654,12 @@ _vbs_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
     *rhs_norm += cm->vol_c * _rhs_norm;
 
   }
-  else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_MAT_DIAG) {
+  else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_DIAG_RHS) {
 
     cs_real_t  _rhs_norm = 0;
     for (short int v = 0; v < cm->n_vc; v++) {
       const double  d_val = csys->mat->val[v*(cm->n_vc+1)];
-      _rhs_norm += cm->wvc[v] * d_val *d_val;
+      _rhs_norm += csys->rhs[v] * d_val * csys->rhs[v];
     }
 
     *rhs_norm += cm->vol_c * _rhs_norm;
@@ -686,7 +686,7 @@ _vbs_sync_sles_normalization(const cs_equation_param_t    *eqp,
   switch (eqp->sles_param.resnorm_type) {
 
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
-  case CS_PARAM_RESNORM_MAT_DIAG:
+  case CS_PARAM_RESNORM_DIAG_RHS:
     *rhs_norm = sqrt(1/cs_shared_quant->vol_tot*(*rhs_norm));
     if (*rhs_norm < 10*FLT_MIN)
       *rhs_norm = cs_shared_quant->vol_tot/cs_shared_quant->n_g_cells;

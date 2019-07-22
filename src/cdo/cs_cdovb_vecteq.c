@@ -622,20 +622,20 @@ _vbv_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
     *rhs_norm += cm->vol_c * _rhs_norm;
 
   }
-  else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_MAT_DIAG) {
+  else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_DIAG_RHS) {
 
     const cs_sdm_t  *m = csys->mat;
 
+    cs_real_3_t  mv;
     cs_real_t  _rhs_norm = 0;
+
     for (int v = 0; v < cm->n_vc; v++) {
-
       const cs_sdm_t  *mVV = cs_sdm_get_block(m, v, v);
-      const cs_real_t  d[3] = {mVV->val[0], mVV->val[4], mVV->val[8]};
-
-      _rhs_norm += cm->wvc[v] * _dp3(d, d);
+      cs_sdm_33_matvec(mVV, csys->rhs + 3*v, mv);
+      _rhs_norm += _dp3(mv, csys->rhs + 3*v);
     }
 
-    *rhs_norm += cm->vol_c * _rhs_norm;
+    *rhs_norm += _rhs_norm;
 
   }
 }
@@ -659,10 +659,12 @@ _vbv_sync_sles_normalization(const cs_equation_param_t    *eqp,
   switch (eqp->sles_param.resnorm_type) {
 
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
-  case CS_PARAM_RESNORM_MAT_DIAG:
     *rhs_norm = sqrt(1/cs_shared_quant->vol_tot*(*rhs_norm));
     if (*rhs_norm < 10*FLT_MIN)
       *rhs_norm = cs_shared_quant->vol_tot/cs_shared_quant->n_g_cells;
+    break;
+
+  case CS_PARAM_RESNORM_DIAG_RHS:
     break;
 
   case CS_PARAM_RESNORM_VOLTOT:
