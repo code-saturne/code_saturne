@@ -100,8 +100,6 @@ typedef struct {
   char        *material;             /* material choice (water, ...) */
   char        *method;               /* method choice
                                         (cathare, thetis, freesteam, ...) */
-  char        *reference;            /* reference (automatic) */
-  char        *phas;                 /* phase choice (liquid/gas) */
   int          type;                 /* 0 for user
                                       * 1 for freesteam
                                       * 2 for eos
@@ -181,8 +179,6 @@ _thermal_table_create(void)
 
   tt->material     = NULL;
   tt->method       = NULL;
-  tt->reference    = NULL;
-  tt->phas         = NULL;
   tt->type         = 0;
   tt->temp_scale   = 0;
   tt->thermo_plane = CS_PHYS_PROP_PLANE_PH;
@@ -203,27 +199,23 @@ _thermal_table_create(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_table_set(const char *material,
-                     const char *method,
-                     const char *phas,
-                     const char *reference,
-                     cs_phys_prop_thermo_plane_type_t thermo_plane,
-                     const int   temp_scale)
+cs_thermal_table_set(const char                        *material,
+                     const char                        *method,
+                     const char                        *reference,
+                     cs_phys_prop_thermo_plane_type_t   thermo_plane,
+                     int                                temp_scale)
 {
+  const char _reference_default[] = "";
+  const char *_reference = (reference != NULL) ? reference : _reference_default;
   if (cs_glob_thermal_table == NULL)
     cs_glob_thermal_table = _thermal_table_create();
 
   BFT_MALLOC(cs_glob_thermal_table->material,  strlen(material) +1,  char);
-  BFT_MALLOC(cs_glob_thermal_table->reference, strlen(reference) +1, char);
-  BFT_MALLOC(cs_glob_thermal_table->phas,      strlen(phas) +1,      char);
   strcpy(cs_glob_thermal_table->material,  material);
-  strcpy(cs_glob_thermal_table->reference, reference);
-  strcpy(cs_glob_thermal_table->phas,      phas);
 
   if (strcmp(method, "freesteam") == 0 ||
       strcmp(material, "user_material") == 0) {
     BFT_MALLOC(cs_glob_thermal_table->method,    strlen(method) +1,    char);
-    strcpy(cs_glob_thermal_table->reference, reference);
     if (strcmp(method, "freesteam") == 0)
       cs_glob_thermal_table->type = 1;
     else
@@ -231,7 +223,6 @@ cs_thermal_table_set(const char *material,
   }
   else if (strcmp(method, "CoolProp") == 0) {
     BFT_MALLOC(cs_glob_thermal_table->method,    strlen(method) +1,    char);
-    strcpy(cs_glob_thermal_table->reference, reference);
     cs_glob_thermal_table->type = 3;
 #if defined(HAVE_COOLPROP)
 #if defined(HAVE_PLUGINS)
@@ -280,7 +271,7 @@ cs_thermal_table_set(const char *material,
         cs_base_get_dl_function_pointer(_cs_eos_dl_lib, "cs_phys_prop_eos", true);
 
       _cs_eos_create(cs_glob_thermal_table->method,
-                     cs_glob_thermal_table->reference);
+                     _reference);
     }
 #endif
   }
@@ -315,8 +306,6 @@ cs_thermal_table_finalize(void)
 #endif
     BFT_FREE(cs_glob_thermal_table->material);
     BFT_FREE(cs_glob_thermal_table->method);
-    BFT_FREE(cs_glob_thermal_table->phas);
-    BFT_FREE(cs_glob_thermal_table->reference);
     BFT_FREE(cs_glob_thermal_table);
   }
 }
