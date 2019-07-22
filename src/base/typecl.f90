@@ -121,6 +121,7 @@ integer          iut  , ivt   , iwt, ialt, iscal
 integer          keyvar, keycpl
 integer          iivar, icpl
 integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus
+integer          modntl
 
 double precision pref
 double precision flumbf, flumty(ntypmx)
@@ -1653,9 +1654,20 @@ enddo
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
 ! Writings: mass flux if verbosity or when log is on, and at the first two
-! iterations and the two last iteration. Only the first iteration on navstv.
-if (vcopt%iwarni.ge.1 .or. (iterns.eq.1.and.(mod(ntcabs,ntlist).eq.0 &
-  .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)))) then
+! iterations and the two last iterations. Only the first iteration on navstv.
+
+! Always print 2 first iterations and the last 2 iterations
+if (ntcabs - ntpabs.le.2.or.(ntcabs.ge.ntmabs-1).or.vcopt%iwarni.ge.1) then
+  modntl = 0
+else if (ntlist.gt.0) then
+  modntl = mod(ntcabs,ntlist)
+
+! No outpout
+else
+  modntl = 1
+endif
+
+if (modntl.eq.0) then
 
   ! Header
   write(nfecra,7010)
