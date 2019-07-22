@@ -624,6 +624,7 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   /* face --> edges connectivity */
   BFT_MALLOC(cm->f2e_idx, cm->n_max_fbyc + 1, short int);
   BFT_MALLOC(cm->f2e_ids, 2*cm->n_max_ebyc, short int);
+  BFT_MALLOC(cm->f2e_sgn, 2*cm->n_max_ebyc, short int);
   BFT_MALLOC(cm->tef, 2*cm->n_max_ebyc, double);
 
   /* edge --> vertices connectivity */
@@ -726,7 +727,9 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
     cm->f2e_idx[f] = cm->f2v_idx[f] = -1;
 
   for (int i = 0; i < 2*cm->n_max_ebyc; i++) {
-    cm->e2v_ids[i] = cm->e2f_ids[i] = cm->f2e_ids[i] = cm->f2v_ids[i] = -1;
+    cm->e2v_ids[i] = cm->e2f_ids[i] = -1;
+    cm->f2e_ids[i] = cm->f2v_ids[i] = -1;
+    cm->f2e_sgn[i] = 0;
     cm->tef[i] = cm->sefc[i].meas = -DBL_MAX;
     cm->sefc[i].unitv[0]=cm->sefc[i].unitv[1]=cm->sefc[i].unitv[2] = -DBL_MAX;
   }
@@ -818,7 +821,8 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
       bft_printf(" %4d |",
                  cm->f2e_idx[f+1] - cm->f2e_idx[f]);
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
-        bft_printf(" %2d:%.4e|", cm->f2e_ids[i], cm->tef[i]);
+        bft_printf(" %2d:%.4e (%1d)|",
+                   cm->f2e_ids[i], cm->tef[i], cm->f2e_sgn[i]);
       bft_printf("\n");
     }
 
@@ -881,6 +885,7 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
 
   BFT_FREE(cm->f2e_idx);
   BFT_FREE(cm->f2e_ids);
+  BFT_FREE(cm->f2e_sgn);
   BFT_FREE(cm->tef);
 
   BFT_FREE(cm->e2f_ids);
@@ -1185,19 +1190,44 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     const cs_adjacency_t  *f2e = connect->f2e;
 
     cm->f2e_idx[0] = 0;
-    for (short int f = 0; f < cm->n_fc; f++) {
+    if (build_flag & CS_FLAG_COMP_FES) {
 
-      const cs_lnum_t  f_id = cm->f_ids[f];
-      const cs_lnum_t  *idx = f2e->idx + f_id;
-      const cs_lnum_t  *ids = f2e->ids + idx[0];
-      const cs_lnum_t  n_ef = idx[1] - idx[0];
+      for (short int f = 0; f < cm->n_fc; f++) {
 
-      cm->f2e_idx[f+1] = cm->f2e_idx[f] + n_ef;
-      short int  *_ids = cm->f2e_ids + cm->f2e_idx[f];
-      for (cs_lnum_t i = 0; i < n_ef; i++)
-        _ids[i] = kbuf[ids[i] - shift];
+        const cs_lnum_t  *idx = f2e->idx + cm->f_ids[f];
+        const cs_lnum_t  *ids = f2e->ids + idx[0];
+        const short int  *sgn = f2e->sgn + idx[0];
+        const cs_lnum_t  n_ef = idx[1]-idx[0];
 
-    } /* Loop on cell faces */
+        short int  *_ids = cm->f2e_ids + cm->f2e_idx[f];
+        short int  *_sgn = cm->f2e_sgn + cm->f2e_idx[f];
+
+        cm->f2e_idx[f+1] = cm->f2e_idx[f] + n_ef;
+        for (cs_lnum_t i = 0; i < n_ef; i++) {
+          _ids[i] = kbuf[ids[i] - shift]; /* cellwise numbering */
+          _sgn[i] = sgn[i];
+        }
+
+      } /* Loop on cell faces */
+
+    }
+    else {
+
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_lnum_t  *idx = f2e->idx + cm->f_ids[f];
+        const cs_lnum_t  *ids = f2e->ids + idx[0];
+        const cs_lnum_t  n_ef = idx[1]-idx[0];
+
+        short int  *_ids = cm->f2e_ids + cm->f2e_idx[f];
+
+        cm->f2e_idx[f+1] = cm->f2e_idx[f] + n_ef;
+        for (cs_lnum_t i = 0; i < n_ef; i++)
+          _ids[i] = kbuf[ids[i] - shift]; /* cellwise numbering */
+
+      } /* Loop on cell faces */
+
+    }   /* Build f2e_sgn ? */
 
     /* Sanity check */
     assert(cm->f2e_idx[cm->n_fc] == 2*cm->n_ec);

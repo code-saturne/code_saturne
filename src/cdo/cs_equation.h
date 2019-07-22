@@ -438,6 +438,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
  *
  * \param[in]  vb_scheme_flag   metadata for Vb schemes
  * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  eb_scheme_flag   metadata for Eb schemes
  * \param[in]  fb_scheme_flag   metadata for Fb schemes
  * \param[in]  hho_scheme_flag  metadata for HHO schemes
  */
@@ -446,6 +447,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
 void
 cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
                                     cs_flag_t    vcb_scheme_flag,
+                                    cs_flag_t    eb_scheme_flag,
                                     cs_flag_t    fb_scheme_flag,
                                     cs_flag_t    hho_scheme_flag);
 
@@ -702,6 +704,20 @@ cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the values at each cell centers for the field unknowns
+ *         related to this equation.
+ *
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ *
+ * \return a pointer to the cell values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_get_cell_values(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  For a given equation, retrieve an array of values related to each
  *         face of the mesh for the unknowns
  *
@@ -716,17 +732,17 @@ cs_equation_get_face_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each cell centers for the field unknowns
- *         related to this equation.
+ * \brief  For a given equation, retrieve an array of values related to each
+ *         edge of the mesh for the unknowns
  *
  * \param[in]   eq        pointer to a \ref cs_equation_t structure
  *
- * \return a pointer to the cell values
+ * \return a pointer to an array of edge values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_cell_values(const cs_equation_t    *eq);
+cs_equation_get_edge_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

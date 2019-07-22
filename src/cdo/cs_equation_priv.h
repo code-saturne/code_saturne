@@ -380,8 +380,9 @@ struct _cs_equation_t {
   cs_equation_restart_t            *read_restart;
   cs_equation_restart_t            *write_restart;
 
-  cs_equation_get_values_t         *get_face_values;
   cs_equation_get_values_t         *get_cell_values;
+  cs_equation_get_values_t         *get_face_values;
+  cs_equation_get_values_t         *get_edge_values;
   cs_equation_get_values_t         *get_vertex_values;
 
   cs_equation_get_builders_t       *get_cw_build_structures;

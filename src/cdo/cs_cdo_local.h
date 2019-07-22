@@ -189,21 +189,22 @@ typedef struct {
   cs_nvec3_t  *dedge;    /*!< dual edge quantities (length and unit vector) */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
-  short int   *e2v_ids; /*!< cell-wise edge->vertices connectivity */
-  short int   *e2v_sgn; /*!< cell-wise edge->vertices orientation (-1 or +1) */
+  short int   *e2v_ids;  /*!< cell-wise edge->vertices connectivity */
+  short int   *e2v_sgn;  /*!< cell-wise edge->vertices orientation (-1 or +1) */
 
   /* Local f2v connectivity: size = 2*n_max_ebyc */
-  short int   *f2v_idx; /*!< size n_fc + 1 */
-  short int   *f2v_ids; /*!< size 2*n_max_ebyc */
+  short int   *f2v_idx;  /*!< size n_fc + 1 */
+  short int   *f2v_ids;  /*!< size 2*n_max_ebyc */
 
   /* Local f2e connectivity: size = 2*n_max_ebyc */
-  short int   *f2e_idx; /*!< size n_fc + 1 */
-  short int   *f2e_ids; /*!< size 2*n_max_ebyc */
-  double      *tef;     /*!< area of the triangle of base |e| and apex xf */
+  short int   *f2e_idx;  /*!< cellwise face->edges connectivity (size n_fc+1) */
+  short int   *f2e_ids;  /*!< cellwise face->edges ids (size 2*n_max_ebyc) */
+  short int   *f2e_sgn;  /*!< cellwise face->edges orientation (-1 or +1) */
+  double      *tef;      /*!< area of the triangle of base |e| and apex xf */
 
   /* Local e2f connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
-  short int   *e2f_ids; /*!< cell-wise edge -> faces connectivity */
-  cs_nvec3_t  *sefc;    /*!< portion of dual faces (2 triangles by edge) */
+  short int   *e2f_ids;  /*!< cell-wise edge -> faces connectivity */
+  cs_nvec3_t  *sefc;     /*!< portion of dual faces (2 triangles by edge) */
 
 } cs_cell_mesh_t;
 

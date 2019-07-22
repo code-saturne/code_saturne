@@ -158,7 +158,7 @@ _set_scalar_assembly_func(void)
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
       return cs_equation_assemble_matrix_mpis;
-    else                      /* With OpenMP */
+    else                       /* With OpenMP */
       return cs_equation_assemble_matrix_mpit;
 
   }
@@ -169,7 +169,7 @@ _set_scalar_assembly_func(void)
 
     if (cs_glob_n_threads < 2) /* Without OpenMP */
       return cs_equation_assemble_matrix_seqs;
-    else                      /* With OpenMP */
+    else                       /* With OpenMP */
       return cs_equation_assemble_matrix_seqt;
 
   }
@@ -1326,11 +1326,16 @@ cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
       return _set_block_assembly_func();
     break;
 
+  case CS_SPACE_SCHEME_CDOEB:
+    if (ma_id == CS_CDO_CONNECT_EDGE_SCAL)
+      return _set_scalar_assembly_func();
+    break;
+
   default:
     return NULL; /* Case not handle */
   }
 
-  return NULL; /* Avoid a compilation warning */
+  return NULL;
 }
 
 #if defined(HAVE_MPI)

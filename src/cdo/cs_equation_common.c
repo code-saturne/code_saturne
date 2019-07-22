@@ -1306,6 +1306,106 @@ cs_equation_sync_definitions_at_vertices(const cs_cdo_connect_t  *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Synchronize the definition to consider at each edge
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       n_defs      number of definitions
+ * \param[in]       defs        number of times the values has been updated
+ * \param[in, out]  def2v_idx   index array  to define
+ * \param[in, out]  def2v_ids   array of ids to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_definitions_at_edges(const cs_cdo_connect_t  *connect,
+                                      int                      n_defs,
+                                      cs_xdef_t              **defs,
+                                      cs_lnum_t                def2e_idx[],
+                                      cs_lnum_t                def2e_ids[])
+{
+  if (n_defs == 0)
+    return;
+
+  const cs_lnum_t  n_edges = connect->n_edges;
+  const cs_adjacency_t  *c2e = connect->c2e;
+
+  int  *e2def_ids = NULL;
+  BFT_MALLOC(e2def_ids, n_edges, int);
+# pragma omp parallel for if (n_edges > CS_THR_MIN)
+  for (cs_lnum_t e = 0; e < n_edges; e++)
+    e2def_ids[e] = -1;          /* default */
+
+  for (int def_id = 0; def_id < n_defs; def_id++) {
+
+    /* Get and then set the definition of the initial condition */
+    const cs_xdef_t  *def = defs[def_id];
+
+    if (def->meta & CS_FLAG_FULL_LOC) {
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < n_edges; e++)
+        e2def_ids[e] = def_id;
+
+    }
+    else {
+
+      const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on selected cells */
+        const cs_lnum_t  c_id = z->elt_ids[i];
+        for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++)
+          e2def_ids[c2e->ids[j]] = def_id;
+      }
+
+    }
+
+  } /* Loop on definitions */
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    assert(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL);
+    /* Last definition is used if there is a conflict between several
+       definitions */
+    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
+                         n_edges,
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
+                         CS_INT_TYPE,   /* int */
+                         e2def_ids);
+
+  }
+
+  /* 0. Initialization */
+  cs_lnum_t  *count = NULL;
+  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  memset(count, 0, n_defs*sizeof(cs_lnum_t));
+  memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+
+  /* 1. Count the number of edges related to each definition */
+  for (cs_lnum_t e = 0; e < n_edges; e++)
+    if (e2def_ids[e] > -1)
+      def2e_idx[e2def_ids[e]+1] += 1;
+
+  /* 2. Build the index */
+  for (int def_id = 0; def_id < n_defs; def_id++)
+    def2e_idx[def_id+1] += def2e_idx[def_id];
+
+  /* 3. Build the list */
+  for (cs_lnum_t e = 0; e < n_edges; e++) {
+    const int def_id = e2def_ids[e];
+    if (def_id > -1) {
+      def2e_ids[def2e_idx[def_id] + count[def_id]] = e;
+      count[def_id] += 1;
+    }
+  }
+
+  /* Free memory */
+  BFT_FREE(e2def_ids);
+  BFT_FREE(count);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Synchronize the definition to consider at each face
  *
  * \param[in]       connect     pointer to a cs_cdo_connect_t structure

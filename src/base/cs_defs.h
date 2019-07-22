@@ -295,8 +295,8 @@ typedef enum {
 
 /* Other types */
 
-typedef int                 cs_lnum_t;    /* Local integer index or number */
-typedef double              cs_coord_t;   /* Real number (coordinate value) */
+typedef int               cs_lnum_t;   /* Local integer index or number */
+typedef double            cs_coord_t;  /* Real number (coordinate value) */
 
 typedef int                 cs_int_t;    /* Fortran integer */
 typedef double              cs_real_t;   /* Fortran double precision */

@@ -301,6 +301,11 @@ typedef enum {
  * Sliding conditions. Homogeneous Dirichlet for the normal componenent and
  * homogeneous Neumann for the tangential components. Only available for
  * vector-valued equations.
+ *
+ * \var CS_PARAM_BC_CIRCULATION
+ * Set the tangential part of a vector-valued field. This is the part lying on
+ * the boundary of a part of the computatinal domain. Nothing is prescribed for
+ * the normal part of the vector-valued field.
  */
 
 typedef enum {
@@ -311,6 +316,7 @@ typedef enum {
   CS_PARAM_BC_NEUMANN,
   CS_PARAM_BC_ROBIN,
   CS_PARAM_BC_SLIDING,
+  CS_PARAM_BC_CIRCULATION,
   CS_PARAM_N_BC_TYPES
 
 } cs_param_bc_type_t;

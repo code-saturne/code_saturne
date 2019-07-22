@@ -900,7 +900,9 @@ _set_key(const char            *label,
     else if (strcmp(keyval, "cdo_eb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOEB;
       eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_FPED;
+      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
     }
 
     /* Only diffusion is implemented for HHO schemes up to now */

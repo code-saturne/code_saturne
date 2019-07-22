@@ -554,6 +554,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Free common structures relatated to equations */
   cs_equation_unset_shared_structures(domain->cdo_context->vb_scheme_flag,
                                       domain->cdo_context->vcb_scheme_flag,
+                                      domain->cdo_context->eb_scheme_flag,
                                       domain->cdo_context->fb_scheme_flag,
                                       domain->cdo_context->hho_scheme_flag);
 

@@ -50,7 +50,7 @@
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovb_vecteq.h"
 #include "cs_cdovcb_scaleq.h"
-#include "cs_cdoeb_vecteq.h"
+#include "cs_cdoeb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_equation_bc.h"
@@ -266,8 +266,9 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
 
   /* Function pointers to retrieve values at mesh locations */
   eq->get_vertex_values = NULL;
-  eq->get_cell_values = cs_hho_scaleq_get_cell_values;
+  eq->get_edge_values = NULL;
   eq->get_face_values = cs_hho_scaleq_get_face_values;
+  eq->get_cell_values = cs_hho_scaleq_get_cell_values;
 
   /* Deprecated functions */
   eq->initialize_system = cs_hho_scaleq_initialize_system;
@@ -306,8 +307,9 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
 
   /* Function pointers to retrieve values at mesh locations */
   eq->get_vertex_values = NULL;
-  eq->get_cell_values = cs_hho_vecteq_get_cell_values;
+  eq->get_edge_values = NULL;
   eq->get_face_values = cs_hho_vecteq_get_face_values;
+  eq->get_cell_values = cs_hho_vecteq_get_cell_values;
 
   /* Deprecated functions */
   eq->initialize_system = cs_hho_vecteq_initialize_system;
@@ -1037,8 +1039,9 @@ cs_equation_add(const char            *eqname,
 
   /* Function pointers to retrieve values at mesh locations */
   eq->get_vertex_values = NULL;
-  eq->get_cell_values = NULL;
+  eq->get_edge_values = NULL;
   eq->get_face_values = NULL;
+  eq->get_cell_values = NULL;
 
   /* New functions */
   eq->init_field_values = NULL;
@@ -1380,7 +1383,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
       cs_matrix_structure_t  *ms
         = cs_equation_get_matrix_structure(CS_CDO_CONNECT_EDGE_SCAL);
 
-      cs_cdoeb_vecteq_init_common(quant, connect, time_step, ms);
+      cs_cdoeb_scaleq_init_common(quant, connect, time_step, ms);
 
     } /* scalar-valued DoFs */
 
@@ -1449,6 +1452,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
  *
  * \param[in]  vb_scheme_flag   metadata for Vb schemes
  * \param[in]  vcb_scheme_flag  metadata for V+C schemes
+ * \param[in]  eb_scheme_flag   metadata for Eb schemes
  * \param[in]  fb_scheme_flag   metadata for Fb schemes
  * \param[in]  hho_scheme_flag  metadata for HHO schemes
  */
@@ -1457,6 +1461,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
 void
 cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
                                     cs_flag_t    vcb_scheme_flag,
+                                    cs_flag_t    eb_scheme_flag,
                                     cs_flag_t    fb_scheme_flag,
                                     cs_flag_t    hho_scheme_flag)
 {
@@ -1469,6 +1474,9 @@ cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
 
   if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdovcb_scaleq_finalize_common();
+
+  if (eb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+    cs_cdoeb_scaleq_finalize_common();
 
   if (fb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdofb_scaleq_finalize_common();
@@ -1762,8 +1770,9 @@ cs_equation_set_functions(void)
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = cs_cdovb_scaleq_get_vertex_values;
-        eq->get_cell_values = cs_cdovb_scaleq_get_cell_values;
+        eq->get_edge_values = NULL;
         eq->get_face_values = NULL;
+        eq->get_cell_values = cs_cdovb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdovb_scaleq_get;
 
@@ -1803,8 +1812,9 @@ cs_equation_set_functions(void)
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = cs_cdovb_vecteq_get_vertex_values;
-        eq->get_cell_values = cs_cdovb_vecteq_get_cell_values;
+        eq->get_edge_values = NULL;
         eq->get_face_values = NULL;
+        eq->get_cell_values = cs_cdovb_vecteq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdovb_vecteq_get;
 
@@ -1856,8 +1866,9 @@ cs_equation_set_functions(void)
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = cs_cdovcb_scaleq_get_vertex_values;
-        eq->get_cell_values = cs_cdovcb_scaleq_get_cell_values;
+        eq->get_edge_values = NULL;
         eq->get_face_values = NULL;
+        eq->get_cell_values = cs_cdovcb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdovcb_scaleq_get;
 
@@ -1911,8 +1922,9 @@ cs_equation_set_functions(void)
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = NULL;
-        eq->get_cell_values = cs_cdofb_scaleq_get_cell_values;
+        eq->get_edge_values = NULL;
         eq->get_face_values = cs_cdofb_scaleq_get_face_values;
+        eq->get_cell_values = cs_cdofb_scaleq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdofb_scaleq_get;
 
@@ -1959,13 +1971,59 @@ cs_equation_set_functions(void)
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = NULL;
-        eq->get_cell_values = cs_cdofb_vecteq_get_cell_values;
+        eq->get_edge_values = NULL;
         eq->get_face_values = cs_cdofb_vecteq_get_face_values;
+        eq->get_cell_values = cs_cdofb_vecteq_get_cell_values;
 
         eq->get_cw_build_structures = cs_cdofb_vecteq_get;
       }
       else
         bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_CDOEB:
+      if (eqp->dim == 1) {
+
+        eq->init_context = cs_cdoeb_scaleq_init_context;
+        eq->free_context = cs_cdoeb_scaleq_free_context;
+        eq->init_field_values = cs_cdoeb_scaleq_init_values;
+
+        /* Deprecated */
+        eq->set_dir_bc = NULL;
+        eq->initialize_system = NULL;
+        eq->build_system = NULL;
+        eq->prepare_solving = NULL;
+        eq->update_field = NULL;
+
+        /* New mechanism */
+        eq->solve_steady_state = cs_cdoeb_scaleq_solve_steady_state;
+        switch (eqp->time_scheme) {
+        case CS_TIME_SCHEME_STEADY:
+          eq->solve = eq->solve_steady_state;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. This time scheme is not yet implemented",
+                    __func__, eqp->name);
+        }
+
+        eq->postprocess = cs_cdoeb_scaleq_extra_op;
+        eq->read_restart = cs_cdoeb_scaleq_read_restart;
+        eq->write_restart = cs_cdoeb_scaleq_write_restart;
+
+        /* Function pointers to retrieve values at mesh locations */
+        eq->get_vertex_values = NULL;
+        eq->get_edge_values = cs_cdoeb_scaleq_get_edge_values;
+        eq->get_face_values = NULL;
+        eq->get_cell_values = cs_cdoeb_scaleq_get_cell_values;
+
+        eq->get_cw_build_structures = cs_cdoeb_scaleq_get;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
 
       break;
 
@@ -2405,6 +2463,30 @@ cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  For a given equation, retrieve an array of values related to each
+ *         cell of the mesh for the unknowns
+ *
+ * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ *
+ * \return a pointer to an array of cell values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_get_cell_values(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return NULL;
+
+  cs_real_t  *c_values = NULL;
+  if (eq->get_cell_values != NULL)
+    c_values = eq->get_cell_values(eq->scheme_context);
+
+  return c_values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  For a given equation, retrieve an array of values related to each
  *         face of the mesh for the unknowns
  *
  * \param[in]   eq        pointer to a \ref cs_equation_t structure
@@ -2429,25 +2511,25 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  For a given equation, retrieve an array of values related to each
- *         cell of the mesh for the unknowns
+ *         edge of the mesh for the unknowns
  *
  * \param[in]   eq        pointer to a \ref cs_equation_t structure
  *
- * \return a pointer to an array of cell values
+ * \return a pointer to an array of edge values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_cell_values(const cs_equation_t    *eq)
+cs_equation_get_edge_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)
     return NULL;
 
-  cs_real_t  *c_values = NULL;
-  if (eq->get_cell_values != NULL)
-    c_values = eq->get_cell_values(eq->scheme_context);
+  cs_real_t  *e_values = NULL;
+  if (eq->get_edge_values != NULL)
+    e_values = eq->get_edge_values(eq->scheme_context);
 
-  return c_values;
+  return e_values;
 }
 
 /*----------------------------------------------------------------------------*/
