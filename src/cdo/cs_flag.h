@@ -155,6 +155,7 @@ typedef unsigned char       cs_mask_t;   /* Elementary flag */
 
 /* Default locations */
 extern const cs_flag_t  cs_flag_primal_vtx;
+extern const cs_flag_t  cs_flag_primal_edge;
 extern const cs_flag_t  cs_flag_primal_face;
 extern const cs_flag_t  cs_flag_primal_cell;
 extern const cs_flag_t  cs_flag_dual_vtx;

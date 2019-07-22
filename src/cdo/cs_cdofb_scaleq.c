@@ -895,7 +895,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
     const cs_xdef_t *diff_def = eqp->diffusion_property->defs[0];
     if (diff_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
       eqb->msh_flag |= cs_quadrature_get_flag(diff_def->qtype,
-                                              CS_FLAG_CELL | CS_FLAG_PRIMAL);
+                                              cs_flag_primal_cell);
 
   } /* Diffusion */
 
@@ -940,7 +940,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       /* Required by cs_advection_field_cw_face_flux */
       eqb->msh_flag |= CS_FLAG_COMP_FEQ;
       eqb->msh_flag |= cs_quadrature_get_flag(adv_def->qtype,
-                                              CS_FLAG_FACE | CS_FLAG_PRIMAL);
+                                              cs_flag_primal_face);
     }
 
     /* Boundary conditions for advection */
@@ -1014,7 +1014,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       const cs_xdef_t *rea_def = eqp->reaction_properties[ir]->defs[0];
       if (rea_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
         eqb->msh_flag |= cs_quadrature_get_flag(rea_def->qtype,
-                                                CS_FLAG_FACE | CS_FLAG_PRIMAL);
+                                                cs_flag_primal_face);
     } /* Loop on ir */
   }
 

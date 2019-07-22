@@ -517,7 +517,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
 
   } /* Switch */
 
-  if (cs_flag_test(loc, CS_FLAG_CELL | CS_FLAG_PRIMAL)) {
+  if (cs_flag_test(loc, cs_flag_primal_cell)) {
 
     switch (qtype) {
 
@@ -536,7 +536,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
     } /* Switch */
 
   } /* Primal cells */
-  else if (cs_flag_test(loc, CS_FLAG_FACE | CS_FLAG_PRIMAL)) {
+  else if (cs_flag_test(loc, cs_flag_primal_face)) {
 
     switch (qtype) {
 
@@ -556,8 +556,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
     } /* Switch */
 
   } /* Primal faces */
-  else if (cs_flag_test(loc, CS_FLAG_EDGE | CS_FLAG_PRIMAL) ||
-           cs_flag_test(loc, CS_FLAG_FACE | CS_FLAG_DUAL)) {
+  else if (cs_flag_test(loc, cs_flag_dual_face)) {
 
     switch (qtype) {
 
@@ -576,7 +575,24 @@ cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
 
     } /* Switch */
 
-  } /* Primal edge or dual faces */
+  } /* Dual faces */
+  else if (cs_flag_test(loc, cs_flag_primal_edge)) {
+
+    switch (qtype) {
+
+    case CS_QUADRATURE_HIGHER:
+    case CS_QUADRATURE_HIGHEST:
+    case CS_QUADRATURE_BARY_SUBDIV:
+      ret_flag |= CS_FLAG_COMP_PEQ;
+      break;
+
+    default:
+      /* Nothing to do */
+      break;
+
+    } /* Switch */
+
+  } /* Primal edge */
 
   return ret_flag;
 }
