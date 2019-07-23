@@ -386,15 +386,31 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
   MPI_Comm_size(cs_glob_mpi_comm, &nParts);
 
   const std::string fname = fileName;
-  const std::string mname = meshName;
 
-  // Mesh is stored with -1, -1 indices in MED files
-  r->src_mesh = ParaMEDFileUMesh::New(myPart,
-                                      nParts,
-                                      fname,
-                                      mname,
-                                      -1,
-                                      -1);
+  if (meshName != NULL) {
+    const std::string mname = meshName;
+
+    // Mesh is stored with -1, -1 indices in MED files
+    r->src_mesh = ParaMEDFileUMesh::New(myPart,
+                                        nParts,
+                                        fname,
+                                        mname,
+                                        -1,
+                                        -1);
+  } else {
+    MEDFileMeshes *MeshList = ParaMEDFileMeshes::New(myPart, nParts, fname);
+    const std::string mname = MeshList->getMeshAtPos(0)->getName();
+
+
+    // Mesh is stored with -1, -1 indices in MED files
+    r->src_mesh = ParaMEDFileUMesh::New(myPart,
+                                        nParts,
+                                        fname,
+                                        mname,
+                                        -1,
+                                        -1);
+
+  }
 
   r->src_mesh->forceComputationOfParts();
 
@@ -424,6 +440,31 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
 
     r->time_steps[i] = fts->getTimeStep(it,ord)->getTime(it,ord);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a remapper
+ *
+ * \param[in] r remapper to destroy
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_paramedmem_remapper_destroy(cs_paramedmem_remapper_t *r)
+{
+
+  BFT_FREE(r->name);
+  BFT_FREE(r->src_mesh);
+  BFT_FREE(r->MEDFields);
+  BFT_FREE(r->iter);
+  BFT_FREE(r->order);
+  BFT_FREE(r->time_steps);
+  BFT_FREE(r->odec);
+
+  cs_medcoupling_mesh_destroy(r->local_mesh);
+
+  return;
 }
 
 /*============================================================================
@@ -729,6 +770,23 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
     _cs_paramedmem_create_transformation(0, invariant, axis, angle);
 
   _n_transformations++;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all remappers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_remapper_destroy_all(void)
+{
+
+  for (int r_id = 0; r_id < _n_remappers; r_id++)
+    _cs_paramedmem_remapper_destroy(_remapper[r_id]);
+
+  return;
 
 }
 

@@ -486,6 +486,38 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a remapper
+ *
+ * \param[in] r a remapper
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
+{
+
+  BFT_FREE(r->name);
+  BFT_FREE(r->medfile_path);
+  BFT_FREE(r->bbox_source_mesh);
+  BFT_FREE(r->remapper);
+
+  for (int i = 0; i < r->n_fields; i++) {
+    BFT_FREE(r->field_names[i]);
+    BFT_FREE(r->source_fields[i]);
+  }
+  BFT_FREE(r->field_names);
+  BFT_FREE(r->source_fields);
+
+  cs_medcoupling_mesh_destroy(r->target_mesh);
+
+  BFT_FREE(r);
+
+  return;
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -701,6 +733,23 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
   for (int i = 0; i < r->n_fields; i++) {
     r->source_fields[i]->getMesh()->rotate(invariant, axis, angle);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all remappers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_remapper_destroy_all(void)
+{
+
+  for (int r_id = 0; r_id < _n_remappers; r_id++)
+    _cs_medcoupling_remapper_destroy(_remapper[r_id]);
+
+  return;
+
 }
 
 /*----------------------------------------------------------------------------*/

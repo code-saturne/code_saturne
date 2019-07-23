@@ -133,6 +133,15 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
                               cs_real_t                  angle);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all remappers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_remapper_destroy_all(void);
+
+/*----------------------------------------------------------------------------*/
 
 #endif // HAVE_MEDCOUPLING_LOADER
 
