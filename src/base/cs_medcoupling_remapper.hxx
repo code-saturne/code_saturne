@@ -187,6 +187,15 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
                                cs_real_t                   angle);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all remappers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_remapper_destroy_all(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

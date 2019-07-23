@@ -601,6 +601,30 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief Destroy a cs_medcoupling_mesh_t
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ */
+/* -------------------------------------------------------------------------- */
+
+void
+cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t *mesh)
+{
+
+  BFT_FREE(mesh->sel_criteria);
+  BFT_FREE(mesh->elt_list);
+  BFT_FREE(mesh->new_to_old);
+  BFT_FREE(mesh->med_mesh);
+  BFT_FREE(mesh->bbox);
+
+  BFT_FREE(mesh);
+
+  return;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

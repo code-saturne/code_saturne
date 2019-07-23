@@ -117,6 +117,18 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
                                    cs_medcoupling_mesh_t  *pmmesh,
                                    int                     use_bbox);
 
+/* -------------------------------------------------------------------------- */
+/*!
+ * \brief Destroy a cs_medcoupling_mesh_t
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ *
+ */
+/* -------------------------------------------------------------------------- */
+
+void
+cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t *mesh);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
