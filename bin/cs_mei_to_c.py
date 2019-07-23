@@ -1197,7 +1197,10 @@ class mei_to_c_interpreter:
         # Add to definitions useful arrays or scalars
         for line_comp in exp_lines_comp:
             for s in symbols:
-                sn = s[0]
+                if type(s) == tuple:
+                    sn = s[0]
+                else:
+                    sn = s
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
@@ -1378,7 +1381,10 @@ class mei_to_c_interpreter:
         # Add to definitions useful arrays or scalars
         for line_comp in exp_lines_comp:
             for s in symbols:
-                sn = s[0]
+                if type(s) == tuple:
+                    sn = s[0]
+                else:
+                    sn = s
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
@@ -1521,7 +1527,10 @@ class mei_to_c_interpreter:
         # Add to definitions useful arrays or scalars
         for line_comp in exp_lines_comp:
             for s in symbols:
-                sn = s[0]
+                if type(s) == tuple:
+                    sn = s[0]
+                else:
+                    sn = s
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
@@ -1651,7 +1660,10 @@ class mei_to_c_interpreter:
         # Add to definitions useful arrays or scalars
         for line_comp in exp_lines_comp:
             for s in symbols:
-                sn = s[0]
+                if type(s) == tuple:
+                    sn = s[0]
+                else:
+                    sn = s
                 if sn in line_comp and sn not in known_symbols:
                     if sn in coords:
                         ic = coords.index(sn)
@@ -1786,7 +1798,10 @@ class mei_to_c_interpreter:
         # Add to definitions useful arrays or scalars
         for line_comp in exp_lines_comp:
             for s in symbols:
-                sn = s[0]
+                if type(s) == tuple:
+                    sn = s[0]
+                else:
+                    sn = s
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
