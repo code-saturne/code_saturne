@@ -340,14 +340,15 @@ _petsc_setup_hook(void   *context,
 
   /* Update the preconditionner with the new defined options */
   PCSetFromOptions(pc);
-  PCSetUp(pc);
 
   /* Update with the solver with the new defined options */
   KSPSetFromOptions(ksp);
-  KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!info.setup_done) {
+
+    KSPSetUp(ksp);
+
     cs_sles_petsc_log_setup(ksp);
     eqp->sles_param.setup_done = true;
   }
