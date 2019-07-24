@@ -285,9 +285,7 @@ _apply_bc_partly(const cs_cdofb_predco_t       *sc,
       const cs_real_t f_prs = pfq.meas * prs_c;
       cs_real_t *f_rhs = csys->rhs + 3*f;
 
-      switch (bf_type[i]) {
-
-      case CS_BOUNDARY_INLET:
+      if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
           sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
@@ -295,42 +293,31 @@ _apply_bc_partly(const cs_cdofb_predco_t       *sc,
           f_rhs[1] -= f_prs * pfq.unitv[1];
           f_rhs[2] -= f_prs * pfq.unitv[2];
         }
-        break;
+      }
 
-      case CS_BOUNDARY_SLIDING_WALL:
+      else if (bf_type[i] & CS_BOUNDARY_WALL) {
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-          sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
+            sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          else
+            sc->apply_fixed_wall(f, eqp, cm, cb, csys);
           f_rhs[0] -= f_prs * pfq.unitv[0];
           f_rhs[1] -= f_prs * pfq.unitv[1];
           f_rhs[2] -= f_prs * pfq.unitv[2];
         }
-        break;
+      }
 
-      case CS_BOUNDARY_WALL:
-        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-          sc->apply_fixed_wall(f, eqp, cm, cb, csys);
-          f_rhs[0] -= f_prs * pfq.unitv[0];
-          f_rhs[1] -= f_prs * pfq.unitv[1];
-          f_rhs[2] -= f_prs * pfq.unitv[2];
-        }
-        break;
-
-      case CS_BOUNDARY_SYMMETRY:
+      else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
         /* Always weakly enforce the symmetric constraint on the
            velocity-block */
         sc->apply_symmetry(f, eqp, cm, cb, csys);
         f_rhs[0] -= f_prs * pfq.unitv[0];
         f_rhs[1] -= f_prs * pfq.unitv[1];
         f_rhs[2] -= f_prs * pfq.unitv[2];
-        break;
+      }
 
-      default: /* Nothing to do */
-        /* Remark: Case of a "natural" outlet */
-        break;
-
-      } /* End of switch */
+      /* default: nothing to do (case of a "natural" outlet) */
 
     } /* Loop on boundary faces */
 
@@ -375,44 +362,34 @@ _apply_remaining_bc(const cs_cdofb_predco_t       *sc,
       /* Get the boundary face in the cell numbering */
       const short int  f = csys->_f_ids[i];
 
-      switch (bf_type[i]) {
-
-      case CS_BOUNDARY_INLET:
+      if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
         }
-        break;
+      }
 
-      case CS_BOUNDARY_SLIDING_WALL:
+      else if (bf_type[i] & CS_BOUNDARY_WALL) {
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
-          sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
+            sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          else
+            sc->apply_fixed_wall(f, eqp, cm, cb, csys);
         }
-        break;
+      }
 
-      case CS_BOUNDARY_WALL:
-        /* Enforcement of the velocity for the velocity-block
-         * Dirichlet on the three components of the velocity field */
-        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
-          sc->apply_fixed_wall(f, eqp, cm, cb, csys);
-        }
-        break;
-
-      case CS_BOUNDARY_SYMMETRY:
+#if 0
+      else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
         /* Weak-enforcement for the velocity-block (cf. _apply_bc_partly) */
-        break;
+      }
+#endif
 
-      default: /* Nothing to do */
-        /* Remark: Case of a "natural" outlet */
-        break;
-
-      } /* End of switch */
+      /* default: nothing to do (case of a "natural" outlet) */
 
     } /* Loop boundary faces */
 

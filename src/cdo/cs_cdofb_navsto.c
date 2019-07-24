@@ -239,7 +239,9 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
     nsb->bf_type[i] = bf_type[bf_id];
 
     /* Set the pressure BC if required */
-    if (nsb->bf_type[i] == CS_BOUNDARY_PRESSURE_INLET_OUTLET) {
+    if (nsb->bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
+
+      assert(nsb->bf_type[i] & (CS_BOUNDARY_INLET | CS_BOUNDARY_OUTLET));
 
       /* Add a Dirichlet for the pressure field */
       const short int  def_id = pr_bc->def_ids[bf_id];
@@ -731,55 +733,26 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     const cs_zone_t  *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
 
-    switch (boundaries->types[b_id]) {
-    case CS_BOUNDARY_WALL:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                    "Wall", z->name, boundary_fluxes[b_id]);
-      break;
-    case CS_BOUNDARY_SLIDING_WALL:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                    "Sliding_wall", z->name, boundary_fluxes[b_id]);
-      break;
-    case CS_BOUNDARY_INLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                    "Inlet", z->name, boundary_fluxes[b_id]);
-      break;
-    case CS_BOUNDARY_OUTLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                    "Outlet", z->name, boundary_fluxes[b_id]);
-      break;
-    case CS_BOUNDARY_PRESSURE_INLET_OUTLET:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                    "Pressure Inlet/Outlet", z->name, boundary_fluxes[b_id]);
-      break;
-    case CS_BOUNDARY_SYMMETRY:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                    "Symmetry", z->name, boundary_fluxes[b_id]);
-      break;
-    default:
-      cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                    "Other", z->name, boundary_fluxes[b_id]);
-      break;
+    char descr[33];
+    cs_boundary_get_type_descr(boundaries, boundaries->types[b_id], 33, descr);
 
-    } /* End of switch */
+    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
+                  descr, z->name, boundary_fluxes[b_id]);
 
   } /* Loop on boundaries */
 
   /* Default boundary */
   switch (boundaries->default_type) {
-
   case CS_BOUNDARY_SYMMETRY:
     cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                  "Symmetry", "Default boundary",
+                  "symmetry", "default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
     break;
-
   case CS_BOUNDARY_WALL:
     cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                  "Wall", "Default boundary",
+                  "wall", "default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
     break;
-
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Invalid type of default boundary.\n"

@@ -33,12 +33,13 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft_mem.h"
 
 #include "cs_boundary_zone.h"
 #include "cs_log.h"
@@ -74,22 +75,11 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static const char
-cs_boundary_name[CS_BOUNDARY_N_TYPES][CS_BASE_STRING_LEN] =
-  { N_("wall"),
-    N_("sliding wall"),
-    N_("inlet"),
-    N_("outlet"),
-    N_("imposed pressure (inlet/outlet)"),
-    N_("symmetry"),
-    /* ALE boundaries */
-    N_("ALE fixed surface"),
-    N_("ALE sliding surface"),
-    N_("ALE imposed velocity"),
-    N_("ALE imposed displacement"),
-    N_("ALE internal coupling"),
-    N_("ALE external coupling"),
-    N_("ALE free surface")
-  };
+_boundary_category_name[][CS_BASE_STRING_LEN]
+= { N_("flow conditions"),
+    N_("ALE"),
+    N_("radiative")
+};
 
 /*============================================================================
  * Static global variables
@@ -218,6 +208,147 @@ _wall_boundary_selection(void              *input,
   *elt_ids = wall_elts;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a subtype description
+ *
+ * \param[in]       len_max     maximum description length
+ * \param[in, out]  descr       description
+ * \param[in]       descr_add   addition to description
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_descr_append(int         name_len_max,
+              char        descr[],
+              const char  descr_add[])
+{
+  if (descr[0] == '\0')
+    strncpy(descr, descr_add, name_len_max-1);
+  else {
+    int l = strlen(descr);
+    strncat(descr, ", ", name_len_max-l-1);
+    descr[name_len_max-1] = '\0';
+    l = strlen(descr);
+    strncat(descr, descr_add, name_len_max-l-1);
+  }
+
+  descr[name_len_max-1] = '\0';
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a flow type description
+ *
+ * \param[in]       b_type         type flag
+ * \param[in]       descr_len_max  maximum name length
+ * \param[in, out]  descr          ype name
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_flow_type_descr(cs_boundary_type_t  b_type,
+                 int                 descr_len_max,
+                 char                descr[])
+{
+  /* Main types */
+
+  if (b_type & CS_BOUNDARY_WALL)
+    _descr_append(descr_len_max, descr, _("wall"));
+
+  if (b_type & CS_BOUNDARY_INLET && b_type & CS_BOUNDARY_OUTLET)
+    _descr_append(descr_len_max, descr, _("inlet-outlet"));
+  else if (b_type & CS_BOUNDARY_INLET)
+    _descr_append(descr_len_max, descr, _("inlet"));
+  else if (b_type & CS_BOUNDARY_OUTLET)
+    _descr_append(descr_len_max, descr, _("outlet"));
+
+  if (b_type & CS_BOUNDARY_SYMMETRY)
+    _descr_append(descr_len_max, descr, _("symmetry"));
+
+  /* Additional flags */
+
+  if (b_type & CS_BOUNDARY_ROUGH_WALL)
+    _descr_append(descr_len_max, descr, _("rough"));
+
+  if (b_type & CS_BOUNDARY_SLIDING_WALL)
+    _descr_append(descr_len_max, descr, _("sliding"));
+
+  if (b_type & CS_BOUNDARY_IMPOSED_VEL)
+    _descr_append(descr_len_max, descr, _("imposed velocity"));
+  if (b_type & CS_BOUNDARY_IMPOSED_P)
+    _descr_append(descr_len_max, descr, _("imposed pressure"));
+
+  if (b_type & CS_BOUNDARY_FREE_INLET_OUTLET)
+    _descr_append(descr_len_max, descr,
+                  _("free"));
+
+  if (b_type & CS_BOUNDARY_CONVECTIVE_INLET)
+    _descr_append(descr_len_max, descr, _("convective"));
+
+  if (b_type & CS_BOUNDARY_INLET_QH)
+    _descr_append(descr_len_max, descr,
+                  _("imposed flux and enthalpy"));
+  if (b_type & CS_BOUNDARY_INLET_SUBSONIC_PH)
+    _descr_append(descr_len_max, descr,
+                  _("imposed pressure and enthalpy"));
+  if (b_type & CS_BOUNDARY_SUBSONIC)
+    _descr_append(descr_len_max, descr,
+                  _("subsonic"));
+  if (b_type & CS_BOUNDARY_SUPERSONIC)
+    _descr_append(descr_len_max, descr,
+                  _("supersonic"));
+
+  if (b_type & CS_BOUNDARY_FREE_SURFACE)
+    _descr_append(descr_len_max, descr,
+                  _("free surface"));
+
+  if (b_type & CS_BOUNDARY_COUPLED)
+    _descr_append(descr_len_max, descr,
+                  _("coupled"));
+
+  if (b_type & CS_BOUNDARY_COUPLED_DF)
+    _descr_append(descr_len_max, descr,
+                  _("decentered flux"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build an ALE type description
+ *
+ * \param[in]       b_type         type flag
+ * \param[in]       descr_len_max  maximum name length
+ * \param[in, out]  descr          type name
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ale_type_descr(cs_boundary_type_t  b_type,
+                int                 descr_len_max,
+                char                descr[])
+{
+  if (b_type & CS_BOUNDARY_ALE_FIXED)
+    _descr_append(descr_len_max, descr, _("fixed"));
+
+  if (b_type & CS_BOUNDARY_ALE_SLIDING)
+    _descr_append(descr_len_max, descr, _("sliding"));
+
+  if (b_type & CS_BOUNDARY_ALE_IMPOSED_VEL)
+    _descr_append(descr_len_max, descr, _("imposed velocity"));
+
+  if (b_type & CS_BOUNDARY_ALE_IMPOSED_DISP)
+    _descr_append(descr_len_max, descr, _("imposed displacement"));
+
+  if (b_type & CS_BOUNDARY_ALE_INTERNAL_COUPLING)
+    _descr_append(descr_len_max, descr, _("internal coupling"));
+
+  if (b_type & CS_BOUNDARY_ALE_INTERNAL_COUPLING)
+    _descr_append(descr_len_max, descr, _("external coupling"));
+
+  if (b_type & CS_BOUNDARY_ALE_FREE_SURFACE)
+    _descr_append(descr_len_max, descr, _("free surface"));
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -226,43 +357,24 @@ _wall_boundary_selection(void              *input,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the domain boundary condition
- *          This name is also used as a name for zone definition
+ * \brief  Check if a boundary with a given flag is present.
  *
- * \param[in] type     type of boundary
- *
- * \return the associated boundary name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_boundary_get_name(cs_boundary_type_t  type)
-{
-  if (type == CS_BOUNDARY_N_TYPES)
-    return "Undefined";
-  else
-    return cs_boundary_name[type];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Check if there is a pressure-related boundary among the prescribed
- *          bounadries
- *
- * \param[in] boundaries       pointer to a cs_boundary_t structure
+ * \param[in]  boundaries   pointer to a cs_boundary_t structure
+ * \param[in]  type_flag    boundary type flag
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_boundary_has_pressure_boundary(const cs_boundary_t  *boundaries)
+cs_boundary_has_type(const cs_boundary_t  *boundaries,
+                     int                   type_flag)
 {
   if (boundaries == NULL)
     return false;
 
   for (int i = 0; i < boundaries->n_boundaries; i++) {
-    if (boundaries->types[i] == CS_BOUNDARY_PRESSURE_INLET_OUTLET)
+    if (boundaries->types[i] & type_flag)
       return true;
   }
 
@@ -326,20 +438,23 @@ cs_boundary_set_default(cs_boundary_t        *boundaries,
 /*!
  * \brief  Create a default boundary structure for the computational domain
  *
- * \param[in]        type         default type of boundary to set
+ * \param[in]  category       default type of boundary to set
+ * \param[in]  default_type   default type of boundary to set
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_boundary_t *
-cs_boundary_create(cs_boundary_type_t    type)
+cs_boundary_create(cs_boundary_category_t  category,
+                   cs_boundary_type_t      default_type)
 {
   cs_boundary_t  *b = NULL;
 
   BFT_MALLOC(b, 1, cs_boundary_t);
 
-  b->default_type = type;
+  b->category = category;
+  b->default_type = default_type;
   b->n_boundaries = 0;
   b->zone_ids = NULL;
   b->types = NULL;
@@ -380,9 +495,9 @@ cs_boundary_free(cs_boundary_t    **p_boundaries)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_add(cs_boundary_t        *bdy,
-                cs_boundary_type_t    type,
-                const char           *zone_name)
+cs_boundary_add(cs_boundary_t          *bdy,
+                cs_boundary_type_t      type,
+                const char             *zone_name)
 {
   if (bdy == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -392,8 +507,8 @@ cs_boundary_add(cs_boundary_t        *bdy,
 
   if (zone == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Invalid zone name %s.\n"
-                " This zone is not already defined.\n"), __func__, zone_name);
+              _(" %s: Unknown zone name %s.\n"
+                " No matching zone is defined.\n"), __func__, zone_name);
 
   int  new_id = bdy->n_boundaries;
 
@@ -409,7 +524,7 @@ cs_boundary_add(cs_boundary_t        *bdy,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an array on boundary faces which specify the type of boundary
+ * \brief  Build an array on boundary faces which specifies the boundary type
  *         for each face.
  *
  * \param[in]       boundaries    pointer to the domain boundaries
@@ -419,9 +534,9 @@ cs_boundary_add(cs_boundary_t        *bdy,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_build_type_array(const cs_boundary_t    *boundaries,
-                             cs_lnum_t               n_b_faces,
-                             cs_boundary_type_t     *bf_type)
+cs_boundary_build_type_array(const cs_boundary_t   *boundaries,
+                             cs_lnum_t              n_b_faces,
+                             cs_boundary_type_t     bf_type[])
 {
   if (boundaries == NULL || bf_type == NULL)
     return;
@@ -471,21 +586,62 @@ cs_boundary_def_wall_zones(cs_boundary_t   *bdy)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summarize the setup of the boundary of the computational domain
+ * \brief  Build a boundary type description
  *
- * \param[in] bdy          pointer to a structure storing boundary info
+ * \param[in]   b_type         type flag
+ * \param[in]   descr_len_max  maximum name length
+ * \param[out]  descr          subtype name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_log_setup(const cs_boundary_t     *bdy)
+cs_boundary_get_type_descr(const cs_boundary_t  *bdy,
+                           cs_boundary_type_t    b_type,
+                           int                   descr_len_max,
+                           char                  descr[])
+{
+  descr[0] = '\0';
+
+  switch(bdy->category) {
+  case CS_BOUNDARY_CATEGORY_FLOW:
+    _flow_type_descr(b_type, descr_len_max, descr);
+    break;
+  case CS_BOUNDARY_CATEGORY_ALE:
+    _ale_type_descr(b_type, descr_len_max, descr);
+    break;
+  default:
+    break;
+  }
+
+  if (descr[0] == '\0') {
+    strncpy(descr, "undefined", descr_len_max-1);
+    descr[descr_len_max-1] = '\0';
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summarize the setup of the boundary of the computational domain
+ *
+ * \param[in]  bdy   pointer to a structure storing boundary info
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_log_setup(const cs_boundary_t  *bdy)
 {
   if (bdy == NULL)
     return;
 
+  char descr[128];
+
   cs_log_printf(CS_LOG_SETUP, "\n## Domain boundary settings\n");
+  cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Category: %s\n",
+                _(_boundary_category_name[bdy->category]));
+
+  cs_boundary_get_type_descr(bdy, bdy->default_type, 127, descr);
   cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Default: %s\n",
-                cs_boundary_get_name(bdy->default_type));
+                descr);
   cs_log_printf(CS_LOG_SETUP,
                 " * Domain boundary | Number of definitions: %d\n",
                 bdy->n_boundaries);
@@ -500,14 +656,17 @@ cs_boundary_log_setup(const cs_boundary_t     *bdy)
     if (cs_glob_n_ranks > 1)
       cs_parall_counter(&n_g_elts, 1);
 
-    cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Type: %s\n",
-                  z->name);
-    cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Number of faces: %9u |"
-                  " Zone: %s\n", (unsigned int)n_g_elts,
-                  cs_boundary_get_name(bdy->types[i]));
+    cs_boundary_get_type_descr(bdy, bdy->types[i], 127, descr);
 
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\n"
+                    "  Boundary:   %s\n"
+                    "    type:     %s\n"
+                    "    zone id:  %d\n"
+                    "    n_faces:  %llu\n"),
+                  z->name, descr, z_id,
+                  (unsigned long long)n_g_elts);
   } /* Loop on domain boundaries */
-
 }
 
 /*----------------------------------------------------------------------------*/

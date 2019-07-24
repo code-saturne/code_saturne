@@ -1228,40 +1228,30 @@ _apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
       /* Get the boundary face in the cell numbering */
       const short int  f = csys->_f_ids[i];
 
-      switch (bf_type[i]) {
-
-      case CS_BOUNDARY_INLET:
+      if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
           sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
         }
-        break;
+      }
 
-      case CS_BOUNDARY_SLIDING_WALL:
+      else if (bf_type[i] & CS_BOUNDARY_WALL) {
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-          sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
+            sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          else
+            sc->apply_fixed_wall(f, eqp, cm, cb, csys);
         }
-        break;
+      }
 
-      case CS_BOUNDARY_WALL:
-        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-          sc->apply_fixed_wall(f, eqp, cm, cb, csys);
-        }
-        break;
-
-      case CS_BOUNDARY_SYMMETRY:
+      else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
         /* Always weakly enforce the symmetric constraint on the
            velocity-block */
         sc->apply_symmetry(f, eqp, cm, cb, csys);
-        break;
+      }
 
-      default: /* Nothing to do */
-        /* Remark: Case of a "natural" outlet */
-        break;
-
-      } /* End of switch */
+      /* default: nothing to do (case of a "natural" outlet) */
 
     } /* Loop on boundary faces */
 
@@ -1311,9 +1301,7 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
       /* Get the boundary face in the cell numbering */
       const short int  f = csys->_f_ids[i];
 
-      switch (bf_type[i]) {
-
-      case CS_BOUNDARY_INLET:
+      if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
         /* Update mass RHS from the knowledge of the mass flux
          * TODO: multiply by rho */
         mass_rhs[0] -= cs_math_3_dot_product(csys->dir_values + 3*f,
@@ -1328,15 +1316,16 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
         }
-        break;
+      }
 
-      case CS_BOUNDARY_PRESSURE_INLET_OUTLET:
+      else if (bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
         /* Close the definition of the pressure grandient for this face */
         for (int k = 0; k < 3; k++)
           csys->rhs[3*f+k] += div_op[3*f+k] * nsb->pressure_bc_val[i];
         break;
+      }
 
-      case CS_BOUNDARY_SLIDING_WALL:
+      else if (bf_type[i] & CS_BOUNDARY_WALL) {
         /* No need to update the mass RHS since there is no mass flux */
 
         /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
@@ -1346,25 +1335,14 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
          * Dirichlet on the three components of the velocity field */
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
-          sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
+            sc->apply_sliding_wall(f, eqp, cm, cb, csys);
+          else
+            sc->apply_fixed_wall(f, eqp, cm, cb, csys);
         }
-        break;
+      }
 
-      case CS_BOUNDARY_WALL:
-        /* No need to update the mass RHS since there is no mass flux */
-
-        /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
-        for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
-
-        /* Enforcement of the velocity for the velocity-block
-         * Dirichlet on the three components of the velocity field */
-        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
-          sc->apply_fixed_wall(f, eqp, cm, cb, csys);
-        }
-        break;
-
-      case CS_BOUNDARY_SYMMETRY:
+      else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
 
         /* No need to update the mass RHS since there is no mass flux */
 
@@ -1373,15 +1351,11 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
         /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
         for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
 
-        break;
+      }
 
-      default: /* Nothing to do */
-        /* Remark: Case of a "natural" outlet */
-        break;
+      /* default: nothing to do (case of a "natural" outlet) */
 
-      } /* End of switch */
-
-    } /* Loop boundary faces */
+    } /* Loop over boundary faces */
 
   } /* Boundary cell */
 }

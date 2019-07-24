@@ -1054,7 +1054,8 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t    *nsp)
   const cs_boundary_t  *bdy = nsp->boundaries;
 
   for (int i = 0; i < bdy->n_boundaries; i++) {
-    if (bdy->types[i] == CS_BOUNDARY_WALL) {
+    if (    bdy->types[i] & CS_BOUNDARY_WALL
+        && !(bdy->types[i] & CS_BOUNDARY_SLIDING_WALL)) {
 
       /* Homogeneous Dirichlet on the velocity field. Nothing to enforce on the
          pressure field */
@@ -1101,7 +1102,7 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp)
   const cs_boundary_t  *bdy = nsp->boundaries;
 
   for (int i = 0; i < bdy->n_boundaries; i++) {
-    if (bdy->types[i] == CS_BOUNDARY_SYMMETRY) {
+    if (bdy->types[i] & CS_BOUNDARY_SYMMETRY) {
 
       /* Homogeneous Dirichlet on the normal component of the velocity field
          and homogenous Neumann on the normal stress (balance betwwen the
@@ -1150,8 +1151,11 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
 
   const cs_boundary_t  *bdy = nsp->boundaries;
 
+  int exclude_filter = CS_BOUNDARY_IMPOSED_P | CS_BOUNDARY_IMPOSED_VEL;
+
   for (int i = 0; i < bdy->n_boundaries; i++) {
-    if (bdy->types[i] == CS_BOUNDARY_OUTLET) {
+    if (   bdy->types[i] & CS_BOUNDARY_OUTLET
+        && ! (bdy->types[i] & exclude_filter)) {
 
       /* Add the homogeneous Neumann on the normal component */
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
@@ -1207,7 +1211,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
               " %s: Zone \"%s\" does not belong to an existing boundary.\n"
               " Please check your settings.", __func__, z_name);
 
-  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_PRESSURE_INLET_OUTLET)
+  if (!(nsp->boundaries->types[bdy_id] & CS_BOUNDARY_IMPOSED_P))
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" is not related to a pressure boundary.\n"
               " Please check your settings.", __func__, z_name);
@@ -1289,7 +1293,7 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
               " %s: Zone \"%s\" does not belong to an existing boundary.\n"
               " Please check your settings.", __func__, z_name);
 
-  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_SLIDING_WALL)
+  if (! (nsp->boundaries->types[bdy_id] & CS_BOUNDARY_SLIDING_WALL))
     bft_error(__FILE__, __LINE__, 0,
               " %s: Zone \"%s\" is not related to a sliding wall boundary.\n"
               " Please check your settings.", __func__, z_name);
@@ -1345,10 +1349,11 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
               " %s: Zone \"%s\" does not belong to an existing boundary.\n"
               " Please check your settings.", __func__, z_name);
 
-  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_INLET)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Zone \"%s\" is not related to an inlet boundary.\n"
-              " Please check your settings.", __func__, z_name);
+  if (!(nsp->boundaries->types[bdy_id] & CS_BOUNDARY_IMPOSED_VEL))
+    bft_error
+      (__FILE__, __LINE__, 0,
+       " %s: Zone \"%s\" is not related to an imposed velocity boundary.\n"
+       " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
@@ -1403,10 +1408,11 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
               " %s: Zone \"%s\" does not belong to an existing boundary.\n"
               " Please check your settings.", __func__, z_name);
 
-  if (nsp->boundaries->types[bdy_id] != CS_BOUNDARY_INLET)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Zone \"%s\" is not related to an inlet boundary.\n"
-              " Please check your settings.", __func__, z_name);
+  if (!(nsp->boundaries->types[bdy_id] & CS_BOUNDARY_IMPOSED_VEL))
+    bft_error
+      (__FILE__, __LINE__, 0,
+       " %s: Zone \"%s\" is not related to an imposed velocity boundary.\n"
+       " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
   cs_xdef_analytic_input_t  anai = {.func = ana, .input = input };

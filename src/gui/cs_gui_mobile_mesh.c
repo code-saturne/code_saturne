@@ -447,7 +447,7 @@ _get_ale_boundary_type(cs_tree_node_t  *tn_bndy)
     else if (cs_gui_strcmp(nat, "free_surface"))
       return CS_BOUNDARY_ALE_FREE_SURFACE;
     else
-      return CS_BOUNDARY_N_TYPES;
+      return CS_BOUNDARY_UNDEFINED;
   }
 }
 
@@ -1140,7 +1140,7 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain)
 
     cs_boundary_type_t ale_bdy = _get_ale_boundary_type(tn_bndy);
 
-    if (ale_bdy == CS_BOUNDARY_N_TYPES)
+    if (ale_bdy == CS_BOUNDARY_UNDEFINED)
       continue;
 
     cs_boundary_add(domain->ale_boundaries,

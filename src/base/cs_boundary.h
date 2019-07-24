@@ -29,8 +29,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
 #include "cs_defs.h"
+
+#include "cs_base.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -41,46 +42,120 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Name of the boundary zone gathering all domain boundary walls */
-#define CS_BOUNDARY_WALLS_NAME   "cs_boundary_walls"
+#define CS_BOUNDARY_WALLS_NAME   "auto:wall"
+
+#define CS_BOUNDARY_UNDEFINED   0
 
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
-/* Physic-driven boundary */
+/* Boundary categories */
+
 typedef enum {
 
-  CS_BOUNDARY_WALL,
-  CS_BOUNDARY_SLIDING_WALL,
-  CS_BOUNDARY_INLET,
-  CS_BOUNDARY_OUTLET,
-  CS_BOUNDARY_PRESSURE_INLET_OUTLET,
-  CS_BOUNDARY_SYMMETRY,
+  CS_BOUNDARY_CATEGORY_FLOW,       /*< flow related boundaries */
+  CS_BOUNDARY_CATEGORY_ALE,        /*< ALE related boundaries */
+  CS_BOUNDARY_CATEGORY_RADIATIVE   /*< Radiative boundaries */
 
-  /* Physic-driven boundary types for ALE*/
-  CS_BOUNDARY_ALE_FIXED,
-  CS_BOUNDARY_ALE_SLIDING,
-  CS_BOUNDARY_ALE_IMPOSED_VEL,
-  CS_BOUNDARY_ALE_IMPOSED_DISP,
-  CS_BOUNDARY_ALE_INTERNAL_COUPLING,
-  CS_BOUNDARY_ALE_EXTERNAL_COUPLING,
-  CS_BOUNDARY_ALE_FREE_SURFACE,
+} cs_boundary_category_t;
 
-  CS_BOUNDARY_N_TYPES
+/*! Flag values defining boundary condition subtypes (0 for none) */
 
-} cs_boundary_type_t;
+typedef int  cs_boundary_type_t;
+
+/* Bit values for flow boundaries
+   ------------------------------ */
+
+typedef enum {
+
+  /* Main types
+     ---------- */
+
+  /*! wall */
+  CS_BOUNDARY_WALL                = 1<<0,
+
+  /*! inlet */
+  CS_BOUNDARY_INLET               = 1<<1,
+
+  /*! outlet */
+  CS_BOUNDARY_OUTLET              = 1<<2,
+
+  /*! symmetry */
+  CS_BOUNDARY_SYMMETRY            = 1<<3,
+
+  /* Additional flags
+     ---------------- */
+
+  /*! rough wall */
+  CS_BOUNDARY_ROUGH_WALL          = 1<<4,
+
+  /*! sliding wall */
+  CS_BOUNDARY_SLIDING_WALL        = 1<<5,
+
+  /*! imposed velocity */
+  CS_BOUNDARY_IMPOSED_VEL         = 1<<6,
+
+  /*! imposed pressure*/
+  CS_BOUNDARY_IMPOSED_P           = 1<<7,
+
+  /*! free inlet-outlet */
+  CS_BOUNDARY_FREE_INLET_OUTLET   = 1<<8,
+
+  /*! convective inlet */
+  CS_BOUNDARY_CONVECTIVE_INLET    = 1<<9,
+
+  /*! compressible inlet, imposed flux and enthalpy */
+  CS_BOUNDARY_INLET_QH            = 1<<10,
+
+  /*! compressible (subsonic) inlet, imposed pressure and enthalpy */
+  CS_BOUNDARY_INLET_SUBSONIC_PH   = 1<<11,
+
+  /*! compressible subsonic */
+  CS_BOUNDARY_SUBSONIC             = 1<<12,
+
+  /*! compressible supersonic */
+  CS_BOUNDARY_SUPERSONIC           = 1<<13,
+
+  /*! free surface */
+  CS_BOUNDARY_FREE_SURFACE        = 1<<14,
+
+  /*! coupled */
+  CS_BOUNDARY_COUPLED             = 1<<15,
+
+  /*! coupled with decentered flux */
+  CS_BOUNDARY_COUPLED_DF          = 1<<16
+
+} cs_boundary_flow_subtype_bits_t;
+
+/* Bit values for ALE boundaries
+   ----------------------------- */
+
+typedef enum {
+
+  CS_BOUNDARY_ALE_FIXED               = 1<<0, /*!< fixed */
+  CS_BOUNDARY_ALE_SLIDING             = 1<<1, /*!< sliding */
+  CS_BOUNDARY_ALE_IMPOSED_VEL         = 1<<2, /*!< imposed velocity */
+  CS_BOUNDARY_ALE_IMPOSED_DISP        = 1<<3, /*!< imposed displacement */
+  CS_BOUNDARY_ALE_INTERNAL_COUPLING   = 1<<4, /*!< internal coupling */
+  CS_BOUNDARY_ALE_EXTERNAL_COUPLING   = 1<<5, /*!< external coupling */
+  CS_BOUNDARY_ALE_FREE_SURFACE        = 1<<6  /*!< free surface */
+
+} cs_boundary_ale_subtype_bits_t;
 
 /*! \struct cs_boundary_t
- *  \brief Structure storing information related to the "physical" boundaries
- *  that one want to set on the computational domain
+ *  \brief Structure storing information related to the "physical"
+ *  boundaries associated with the computational domain
  */
+
 typedef struct {
 
-  cs_boundary_type_t    default_type;  /*!< default boundary */
+  cs_boundary_category_t  category;      /*!< boundary category */
+  cs_boundary_type_t      default_type;  /*!< default boundary */
 
-  int                   n_boundaries;  /*!< number of boundaries */
-  cs_boundary_type_t   *types;         /*!< type related to each boundary */
-  int                  *zone_ids;      /*!< zone id related to each boundary */
+  int                     n_boundaries;  /*!< number of boundaries */
+  cs_boundary_type_t     *types;         /*!< type of each boundary */
+  int                    *zone_ids;      /*!< associated zone ids */
 
 } cs_boundary_t;
 
@@ -97,30 +172,18 @@ extern cs_boundary_t  *cs_glob_boundaries; /* Pointer to the shared boundaries
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the domain boundary condition
+ * \brief  Check if a boundary with a given flag is present.
  *
- * \param[in] type     type of domain boundary
- *
- * \return the associated boundary name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_boundary_get_name(cs_boundary_type_t  type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Check if there is a pressure-related boundary among the prescribed
- *          bounadries
- *
- * \param[in] boundaries       pointer to a cs_boundary_t structure
+ * \param[in]  boundaries   pointer to a cs_boundary_t structure
+ * \param[in]  type_flag    boundary type flag
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_boundary_has_pressure_boundary(const cs_boundary_t  *boundaries);
+cs_boundary_has_type(const cs_boundary_t  *boundaries,
+                     int                   type_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -155,14 +218,16 @@ cs_boundary_set_default(cs_boundary_t        *boundaries,
 /*!
  * \brief  Create a default boundary structure for the computational domain
  *
- * \param[in]        type         default type of boundary to set
+ * \param[in]  category       default type of boundary to set
+ * \param[in]  default_type   default type of boundary to set
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_boundary_t *
-cs_boundary_create(cs_boundary_type_t    type);
+cs_boundary_create(cs_boundary_category_t  category,
+                   cs_boundary_type_t      default_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -192,23 +257,23 @@ cs_boundary_add(cs_boundary_t        *bdy,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an array on boundary faces which specify the type of boundary
+ * \brief  Build an array on boundary faces which specifies the boundary type
  *         for each face.
  *
  * \param[in]       boundaries    pointer to the domain boundaries
  * \param[in]       n_b_faces     number of boundaries faces
- * \param[in, out]  bf_type       array to define the type of boundary
+ * \param[in, out]  bf_type       boundary type flag
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_build_type_array(const cs_boundary_t    *boundaries,
-                             cs_lnum_t               n_b_faces,
-                             cs_boundary_type_t     *bf_type);
+cs_boundary_build_type_array(const cs_boundary_t   *boundaries,
+                             cs_lnum_t              n_b_faces,
+                             cs_boundary_type_t     bf_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new zone gathering all CS_BOUNDARY_WALL zone type
+ * \brief  Add a new zone gathering all CS_BOUNDARY_WALL type zones
  *
  * \param[in, out]  boundaries    pointer to the domain boundaries
  */
@@ -216,6 +281,22 @@ cs_boundary_build_type_array(const cs_boundary_t    *boundaries,
 
 void
 cs_boundary_def_wall_zones(cs_boundary_t   *boundaries);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a boundary type description
+ *
+ * \param[in]   b_type         type flag
+ * \param[in]   descr_len_max  maximum name length
+ * \param[out]  descr          subtype name
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_get_type_descr(const cs_boundary_t  *bdy,
+                           cs_boundary_type_t    b_type,
+                           int                   descr_len_max,
+                           char                  descr[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

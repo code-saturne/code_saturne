@@ -165,9 +165,11 @@ cs_domain_create(void)
   domain->cdo_quantities = NULL;
 
   /* By default a wall is defined for the whole boundary of the domain */
-  cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_WALL);
+  cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_CATEGORY_FLOW,
+                                          CS_BOUNDARY_WALL);
   domain->boundaries = cs_glob_boundaries;
-  domain->ale_boundaries = cs_boundary_create(CS_BOUNDARY_ALE_FIXED);
+  domain->ale_boundaries = cs_boundary_create(CS_BOUNDARY_CATEGORY_ALE,
+                                              CS_BOUNDARY_ALE_FIXED);
 
   /* Default initialization of the time step */
   domain->only_steady = true;
