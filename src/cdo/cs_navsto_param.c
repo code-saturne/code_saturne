@@ -109,6 +109,7 @@ _space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
   { "fv",
     "cdo_vb",
     "cdo_vcb",
+    "cdo_eb",
     "cdo_fb",
     "hho_p0",
     "hho_p1",
