@@ -556,7 +556,7 @@ if test "x$cs_gxx" = "xg++"; then
     g++-[45]*)
       ;;
     *)
-      cxxflags_default="$cxxflags_default -Wmisleading-indentation -Wduplicated-cond"
+      cxxflags_default="$cxxflags_default -std=c++11 -Wmisleading-indentation -Wduplicated-cond"
       ;;
   esac
 
