@@ -34,8 +34,8 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage user_coupling
 
 \section example_model_selection Model selection and global parameters setting
-   - \subpage f_parameters
    - \subpage parameters
+   - \subpage f_parameters
    - \subpage turbomachinery
    - \subpage cavit
    - \subpage cs_lagrangian_particle_tracking_module

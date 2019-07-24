@@ -25,7 +25,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page f_parameters Input of calculation parameters (Fortran modules)
+  \page f_parameters Input of calculation parameters (Fortran subroutines in cs_user_parameters.f90)
 
   \section cs_f_user_parameters_h_intro Introduction
 

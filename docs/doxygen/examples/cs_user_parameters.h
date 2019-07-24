@@ -25,7 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \page parameters Input of calculation parameters (C functions: cs_user_parameters.c)
+  \page parameters Input of calculation parameters (C functions in cs_user_parameters.c)
 
   \section cs_user_parameters_h_intro Introduction
 
@@ -48,7 +48,7 @@
   \section cs_user_parameters_h_cs_user_parameters General options (\ref cs_user_parameters)
 
   Most definitions should be done in the \ref cs_user_parameters
-  function, which is the C equivalent of the \ref usipsu Fortran routine.
+  function (Fortran equivalent is \ref usipsu subroutine).
 
   For example, to change the log (run_solver.log) verbosity of all the variables:
 
