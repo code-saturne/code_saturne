@@ -140,8 +140,10 @@ if test "x$with_coolprop" != "xno" ; then
 
   # Check that CoolProp files exist
 
-  # Coolprop is in C++, though it also provides a C wrapper.
+  # CoolProp is in C++, though it also provides a C wrapper.
   AC_LANG_PUSH([C++])
+
+  AC_MSG_CHECKING([for CoolProp library)])
 
   for coolprop_ldadd in "" "-ldl"
   do
@@ -159,6 +161,8 @@ if test "x$with_coolprop" != "xno" ; then
                                        [cs_have_coolprop=no])
     fi
   done
+
+  AC_MSG_RESULT($cs_have_coolprop)
 
   AC_LANG_POP
 
