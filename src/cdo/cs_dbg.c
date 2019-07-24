@@ -86,10 +86,8 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
                const cs_cell_sys_t         *csys)
 {
   CS_UNUSED(eqp);
-  CS_UNUSED(cm);
-  CS_UNUSED(csys);
 
-#if 0 /* First example: Look for debug information related the cell number 0 */
+#if 1 /* First example: Look for debug information related the cell number 0 */
   if (cm != NULL)
     if (cm->c_id == 0)
       return true;
@@ -123,7 +121,7 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
   }
 #endif
 
-  return false;
+  return false; /* Default behavior */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -298,6 +296,43 @@ cs_dbg_iarray_to_listing(const char        *header,
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump a linear system. Case of scalar-valued entries.
+ *
+ * \param[in] eqname     name of the equation related to the current system
+ * \param[in] matrix     pointer to the matrix to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_dump_local_scalar_msr_matrix(const char          *name,
+                                    const cs_matrix_t   *matrix)
+{
+  if (cs_matrix_get_type(matrix) != CS_MATRIX_MSR)
+    return;
+
+  cs_log_printf(CS_LOG_DEFAULT, "\nDUMP MSR MATRIX FOR THE EQUATION >> %s\n",
+                name);
+
+  const cs_lnum_t  size = cs_matrix_get_n_rows(matrix);
+  const cs_lnum_t  *row_index, *col_id;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(matrix, &row_index, &col_id, &d_val, &x_val);
+
+  for (cs_lnum_t i = 0; i < size; i++) {
+
+    const cs_lnum_t  *idx = row_index + i;
+
+    cs_log_printf(CS_LOG_DEFAULT, "%4d |D|% -6.4e |E", i, d_val[i]);
+    for (cs_lnum_t j = idx[0]; j < idx[1]; j++)
+      cs_log_printf(CS_LOG_DEFAULT, "|% -6.4e c%4d", x_val[j], col_id[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+
+  } /* Loop on rows */
 }
 
 /*----------------------------------------------------------------------------*/

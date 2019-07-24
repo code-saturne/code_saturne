@@ -37,6 +37,7 @@
 #include "cs_defs.h"
 #include "cs_equation_param.h"
 #include "cs_math.h"
+#include "cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -181,6 +182,19 @@ cs_dbg_iarray_to_listing(const char        *header,
                          const cs_lnum_t    size,
                          const cs_lnum_t    array[],
                          int                n_cols);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump a linear system. Case of scalar-valued entries.
+ *
+ * \param[in] eqname     name of the equation related to the current system
+ * \param[in] matrix     pointer to the matrix to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dbg_dump_local_scalar_msr_matrix(const char          *name,
+                                    const cs_matrix_t   *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
