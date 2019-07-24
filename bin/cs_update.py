@@ -160,8 +160,13 @@ def update_case(options, pkg):
     for case in options.case_names:
         os.chdir(repbase)
 
+        if case == ".":
+            casename = os.path.split(repbase)[-1]
+        else:
+            casename = case
+
         if options.verbose > 0:
-            sys.stdout.write("  o Importing case  '%s'...\n" % case)
+            sys.stdout.write("  o Updating case '%s' paths...\n" % casename)
 
         datadir = os.path.join(pkg.get_dir("pkgdatadir"))
 
@@ -264,6 +269,15 @@ def main(argv, pkg):
 %(name)s %(vers)s case update
 """
     opts, args = process_cmd_line(argv, pkg)
+
+    if opts.case_names == []:
+        if len(args) > 0:
+            opts.case_names = args
+        else:
+            # Value is set to "." instead of "" to avoid chdir errors due
+            # to non existant paths
+            opts.case_names = ["."]
+
     if opts.verbose > 0:
         sys.stdout.write(welcome % {'name':pkg.name, 'vers':pkg.version})
 
