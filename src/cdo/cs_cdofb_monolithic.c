@@ -233,8 +233,6 @@ static cs_matrix_assembler_t  *cs_shared_matrix_assembler = NULL;
  * Private function prototypes
  *============================================================================*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
@@ -1711,6 +1709,8 @@ _compute_and_update_fields(const cs_matrix_t             *matrix,
   cs_sles_free(sles);
 
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes
