@@ -29,6 +29,14 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+/* Disable some compiler warnings */
+
+#if defined __INTEL_COMPILER
+pragma warning disable 2259
+#endif
+
+/* Include headers by groups */
+
 #include "cs_bft_headers.h"
 #include "cs_base_headers.h"
 #include "fvm_headers.h"
