@@ -32,7 +32,7 @@
 /* Disable some compiler warnings */
 
 #if defined __INTEL_COMPILER
-pragma warning disable 2259
+#pragma warning disable 2259
 #endif
 
 /* Include headers by groups */
