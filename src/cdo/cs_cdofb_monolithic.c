@@ -64,6 +64,7 @@
 #include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
+#include "cs_fp_exception.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_navsto_coupling.h"
@@ -374,6 +375,9 @@ _additive_amg_gmres_hook(void     *context,
 
   const int  n_max_restart = 30;
 
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
   KSPSetType(ksp, KSPFGMRES);
   KSPGMRESSetRestart(ksp, n_max_restart);
 
@@ -470,6 +474,10 @@ _additive_amg_gmres_hook(void     *context,
   PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
 }
 
 /*----------------------------------------------------------------------------
@@ -493,6 +501,9 @@ _diag_schur_gmres_hook(void     *context,
   cs_param_sles_t  slesp = eqp->sles_param;
 
   const int  n_max_restart = 30;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 
   KSPSetType(ksp, KSPFGMRES);
   KSPGMRESSetRestart(ksp, n_max_restart);
@@ -587,6 +598,9 @@ _diag_schur_gmres_hook(void     *context,
   PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 }
 
 /*----------------------------------------------------------------------------
@@ -610,6 +624,9 @@ _upper_schur_gmres_hook(void     *context,
   cs_param_sles_t  slesp = eqp->sles_param;
 
   const int  n_max_restart = 30;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 
   KSPSetType(ksp, KSPFGMRES);
   KSPGMRESSetRestart(ksp, n_max_restart);
@@ -702,6 +719,9 @@ _upper_schur_gmres_hook(void     *context,
   PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 }
 
 #if PETSC_VERSION_GE(3,11,0)
@@ -725,6 +745,9 @@ _gkb_hook(void     *context,
 
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  slesp = eqp->sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 
   KSPSetType(ksp, KSPPREONLY);
 
@@ -802,6 +825,9 @@ _gkb_hook(void     *context,
   PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 }
 
 /*----------------------------------------------------------------------------
@@ -823,6 +849,9 @@ _gkb_gmres_hook(void     *context,
 
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  slesp = eqp->sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 
   KSPSetType(ksp, KSPFGMRES);
 
@@ -907,6 +936,9 @@ _gkb_gmres_hook(void     *context,
   PetscFree(up_subksp);
   ISDestroy(&isp);
   ISDestroy(&isv);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 }
 #endif  /* GKB available only if version >= 3.11 */
 #endif  /* HAVE_PETSC */

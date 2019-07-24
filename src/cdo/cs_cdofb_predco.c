@@ -64,6 +64,7 @@
 #include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
+#include "cs_fp_exception.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_param.h"
@@ -259,6 +260,9 @@ _amg_block_hook(void     *context,
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  slesp = eqp->sles_param;
 
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
   KSPSetType(ksp, KSPFCG);
 
   /* Set KSP tolerances */
@@ -328,6 +332,9 @@ _amg_block_hook(void     *context,
   }
 
   PetscFree(uvw_subksp);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 }
 #endif
 

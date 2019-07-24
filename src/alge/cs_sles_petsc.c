@@ -59,6 +59,7 @@
 
 #include "cs_base.h"
 #include "cs_log.h"
+#include "cs_fp_exception.h"
 #include "cs_halo.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
@@ -1403,7 +1404,11 @@ cs_sles_petsc_solve(void                *context,
 
   /* Resolution */
 
+  cs_fp_exception_disable_trap();
+
   KSPSolve(sd->ksp, b, x);
+
+  cs_fp_exception_restore_trap();
 
   if (getenv("CS_PETSC_SYSTEM_VIEWER") != NULL)
     _export_petsc_system(name, sd->ksp, b);
