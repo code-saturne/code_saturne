@@ -48,6 +48,7 @@
 
 #include "cs_boundary_zone.h"
 #include "cs_cdo_bc.h"
+#include "cs_fp_exception.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_multigrid.h"
@@ -104,6 +105,9 @@ _petsc_setup_hook(void   *context,
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  info = eqp->sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 
   /* Set the solver */
   switch (info.solver) {
@@ -290,6 +294,9 @@ _petsc_setup_hook(void   *context,
     cs_sles_petsc_log_setup(ksp);
     eqp->sles_param.setup_done = true;
   }
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 }
 
 /*----------------------------------------------------------------------------
@@ -309,6 +316,9 @@ _petsc_amg_block_hook(void     *context,
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  slesp = eqp->sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 
   KSPSetType(ksp, KSPFCG);
 
@@ -374,6 +384,9 @@ _petsc_amg_block_hook(void     *context,
   }
 
   PetscFree(xyz_subksp);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
 }
 #endif /* defined(HAVE_PETSC) */
 
