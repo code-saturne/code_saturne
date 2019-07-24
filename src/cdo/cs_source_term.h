@@ -187,42 +187,6 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution related to a source term in the case of
- *         an input data which is a density
- *
- * \param[in]      loc        describe where is located the associated DoF
- * \param[in]      source     pointer to a cs_xdef_t structure
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_source_term_compute_from_density(cs_flag_t                loc,
-                                    const cs_xdef_t         *source,
-                                    cs_real_t                time_eval,
-                                    double                  *p_values[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the contribution related to a source term in the case of
- *         an input data which is a potential
- *
- * \param[in]      loc        describe where is located the associated DoF
- * \param[in]      source     pointer to a cs_xdef_t structure
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_source_term_compute_from_potential(cs_flag_t                loc,
-                                      const cs_xdef_t         *source,
-                                      cs_real_t                time_eval,
-                                      double                  *p_values[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it the given array of values.
  *         Case of a scalar potential defined at primal vertices by a constant

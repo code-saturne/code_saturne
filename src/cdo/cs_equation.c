@@ -1773,7 +1773,7 @@ cs_equation_set_functions(void)
         eq->init_field_values = cs_cdovb_vecteq_init_values;
 
         /* Deprecated */
-        eq->set_dir_bc = cs_cdovb_vecteq_set_dir_bc;
+        eq->set_dir_bc = NULL;
         eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
