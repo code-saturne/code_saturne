@@ -3200,6 +3200,9 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 {
   if (in_vals == NULL)
     return;
+
+  const char *func_name = __func__;
+
   if (result == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               "%s: Resulting vector must be allocated", __func__);
@@ -3208,7 +3211,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
   assert(connect != NULL && quant != NULL); /* Sanity checks */
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
-  shared(quant, connect, in_vals, t_eval, result, pty)                     \
+  shared(quant, connect, in_vals, t_eval, result, pty, func_name)          \
   firstprivate(h_info)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -3248,7 +3251,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Vp->Cd Hodge operator", __func__);
+                  " %s: Invalid algorithm for Vp->Cd Hodge operator", func_name);
       }
       break;
 
@@ -3278,7 +3281,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Ep->Fd Hodge operator", __func__);
+                  " %s: Invalid algorithm for Ep->Fd Hodge operator", func_name);
       }
       break;
 
@@ -3303,7 +3306,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Ed->Fp Hodge operator", __func__);
+                  " %s: Invalid algorithm for Ed->Fp Hodge operator", func_name);
       }
       break;
 
@@ -3328,7 +3331,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Fp->Ed Hodge operator", __func__);
+                  " %s: Invalid algorithm for Fp->Ed Hodge operator", func_name);
       }
       break;
 
@@ -3349,13 +3352,13 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Vp->Cd Hodge operator", __func__);
+                  " %s: Invalid algorithm for Vp->Cd Hodge operator", func_name);
       }
       break;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of discrete Hodge operator", __func__);
+                " %s: Invalid type of discrete Hodge operator", func_name);
     }
 
     if (pty == NULL) {
@@ -3434,7 +3437,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid type of discrete Hodge operator", __func__);
+                  " %s: Invalid type of discrete Hodge operator", func_name);
 
       } /* Hodge type */
 
