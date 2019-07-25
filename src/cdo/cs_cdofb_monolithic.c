@@ -280,7 +280,6 @@ static void
 _setup_velocity_gamg(void)
 {
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-pc_velocity_gamg_agg_nsmooths", "1");
   PetscOptionsSetValue(NULL, "-mg_velocity_levels_ksp_type", "richardson");
   PetscOptionsSetValue(NULL, "-mg_velocity_levels_pc_type", "sor");
   PetscOptionsSetValue(NULL, "-mg_velocity_levels_ksp_max_it", "1");
@@ -288,7 +287,6 @@ _setup_velocity_gamg(void)
   PetscOptionsSetValue(NULL, "-pc_velocity_gamg_reuse_interpolation", "TRUE");
   PetscOptionsSetValue(NULL, "-pc_velocity_gamg_square_graph", "4");
 #else
-  PetscOptionsSetValue("-pc_velocity_gamg_agg_nsmooths", "1");
   PetscOptionsSetValue("-mg_velocity_levels_ksp_type", "richardson");
   PetscOptionsSetValue("-mg_velocity_levels_pc_type", "sor");
   PetscOptionsSetValue("-mg_velocity_levels_ksp_max_it", "1");
@@ -443,14 +441,33 @@ _additive_amg_gmres_hook(void     *context,
   KSPSetType(u_ksp, KSPPREONLY);
   KSPGetPC(u_ksp, &u_pc);
 
+  switch(slesp.amg_type) {
+
+  case CS_PARAM_AMG_HYPRE_BOOMER:
 #if defined(PETSC_HAVE_HYPRE)
-  PCSetType(u_pc, PCHYPRE);
-  PCHYPRESetType(u_pc, "boomeramg");
-  _setup_velocity_boomeramg();
+    PCSetType(u_pc, PCHYPRE);
+    PCHYPRESetType(u_pc, "boomeramg");
+
+    _setup_velocity_boomeramg();
 #else
-  PCSetType(u_pc, PCGAMG);
-  _setup_velocity_gamg();
+    _setup_velocity_gamg();
 #endif
+    break;
+
+  case CS_PARAM_AMG_PETSC_PCMG:
+  case CS_PARAM_AMG_PETSC_GAMG:
+    PCSetType(u_pc, PCGAMG);
+    PCGAMGSetType(u_pc, PCGAMGAGG);
+    PCGAMGSetNSmooths(u_pc, 1);
+
+    _setup_velocity_gamg();
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid choice of AMG type.\n", __func__);
+    break;
+  }
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -563,9 +580,13 @@ _diag_schur_gmres_hook(void     *context,
 #if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+
   _setup_velocity_boomeramg();
 #else
   PCSetType(u_pc, PCGAMG);
+  PCGAMGSetType(u_pc, PCGAMGAGG);
+  PCGAMGSetNSmooths(u_pc, 1);
+
   _setup_velocity_gamg();
 #endif
 
@@ -685,9 +706,13 @@ _upper_schur_gmres_hook(void     *context,
 #if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+
   _setup_velocity_boomeramg();
 #else
   PCSetType(u_pc, PCGAMG);
+  PCGAMGSetType(u_pc, PCGAMGAGG);
+  PCGAMGSetNSmooths(u_pc, 1);
+
   _setup_velocity_gamg();
 #endif
 
@@ -790,9 +815,13 @@ _gkb_hook(void     *context,
 #if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+
   _setup_velocity_boomeramg();
 #else
   PCSetType(u_pc, PCGAMG);
+  PCGAMGSetType(u_pc, PCGAMGAGG);
+  PCGAMGSetNSmooths(u_pc, 1);
+
   _setup_velocity_gamg();
 #endif
 
@@ -901,9 +930,13 @@ _gkb_gmres_hook(void     *context,
 #if defined(PETSC_HAVE_HYPRE)
   PCSetType(u_pc, PCHYPRE);
   PCHYPRESetType(u_pc, "boomeramg");
+
   _setup_velocity_boomeramg();
 #else
   PCSetType(u_pc, PCGAMG);
+  PCGAMGSetType(u_pc, PCGAMGAGG);
+  PCGAMGSetNSmooths(u_pc, 1);
+
   _setup_velocity_gamg();
 #endif
 
@@ -1882,6 +1915,10 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   int  field_id = cs_equation_get_field_id(nsc->momentum);
+
+  mom_eqp->sles_param.field_id = field_id;
+  if (mom_eqp->sles_param.amg_type == CS_PARAM_AMG_NONE)
+    mom_eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
 
   /* Initialization must be called before setting options;
      it does not need to be called before calling

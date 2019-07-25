@@ -118,12 +118,10 @@ _petsc_pcgamg_hook(void)
   _petsc_pcmg_hook();
 
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
   PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
   PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
   PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
 #else
-  PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
   PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
   PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
   PetscOptionsSetValue("-pc_gamg_square_graph", "4");
@@ -159,24 +157,15 @@ _petsc_pchypre_hook(void)
 /*----------------------------------------------------------------------------
  * \brief Set PETSc solver and preconditioner
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in]      slesp    pointer to SLES parameters
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
-_petsc_setup_hook(void   *context,
-                  Mat     a,
-                  KSP     ksp)
+_petsc_set_krylov_solver(cs_param_sles_t   slesp,
+                         KSP               ksp)
 {
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_sles_t  info = eqp->sles_param;
-
-  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-
-  /* Set the solver */
-  switch (info.solver) {
+  switch (slesp.solver) {
 
   case CS_PARAM_ITSOL_BICG: /* Improved Bi-CG stab */
     KSPSetType(ksp, KSPIBCGS);
@@ -187,8 +176,8 @@ _petsc_setup_hook(void   *context,
     break;
 
   case CS_PARAM_ITSOL_CG:    /* Preconditioned Conjugate Gradient */
-    if (info.precond == CS_PARAM_PRECOND_AMG ||
-        info.precond == CS_PARAM_PRECOND_AMG_BLOCK)
+    if (slesp.precond == CS_PARAM_PRECOND_AMG ||
+        slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
       KSPSetType(ksp, KSPFCG);
     else
       KSPSetType(ksp, KSPCG);
@@ -226,13 +215,36 @@ _petsc_setup_hook(void   *context,
   PetscInt  maxit;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(ksp,
-                   info.eps,          /* relative convergence tolerance */
+                   slesp.eps,          /* relative convergence tolerance */
                    abstol,            /* absolute convergence tolerance */
                    dtol,              /* divergence tolerance */
-                   info.n_max_iter);  /* max number of iterations */
+                   slesp.n_max_iter);  /* max number of iterations */
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
+}
+
+/*----------------------------------------------------------------------------
+ * \brief Set PETSc solver and preconditioner
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_petsc_setup_hook(void   *context,
+                  Mat     a,
+                  KSP     ksp)
+{
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  /* Set the solver */
+  _petsc_set_krylov_solver(slesp, ksp);
 
   /* Set the preconditioner */
   PC pc;
@@ -240,21 +252,21 @@ _petsc_setup_hook(void   *context,
   KSPGetPC(ksp, &pc);
 
   if (cs_glob_n_ranks > 1) {
-    if (info.precond == CS_PARAM_PRECOND_SSOR ||
-        info.precond == CS_PARAM_PRECOND_ILU0) {
+    if (slesp.precond == CS_PARAM_PRECOND_SSOR ||
+        slesp.precond == CS_PARAM_PRECOND_ILU0) {
 
-      info.precond = CS_PARAM_PRECOND_BJACOB;
+      slesp.precond = CS_PARAM_PRECOND_DIAG;
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
                     " %s: Modify the requested preconditioner to enable a"
                     " parallel computation with PETSC.\n"
-                    " Switch to a block jacobi preconditioner.\n"
+                    " Switch to a jacobi preconditioner.\n"
                     " Please check your settings.", __func__);
 
     }
   } /* Advanced check for parallel run */
 
-  switch (info.precond) {
+  switch (slesp.precond) {
 
   case CS_PARAM_PRECOND_NONE:
     PCSetType(pc, PCNONE);
@@ -289,10 +301,13 @@ _petsc_setup_hook(void   *context,
 
   case CS_PARAM_PRECOND_AMG:
     {
-      switch (info.amg_type) {
+      switch (slesp.amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG:
         PCSetType(pc, PCGAMG);
+        PCGAMGSetType(pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(pc, 1);
+
         _petsc_pcgamg_hook();
         break;
 
@@ -345,7 +360,7 @@ _petsc_setup_hook(void   *context,
   KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
-  if (!info.setup_done) {
+  if (!slesp.setup_done) {
 
     KSPSetUp(ksp);
 
@@ -375,10 +390,13 @@ _petsc_amg_block_hook(void     *context,
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  slesp = eqp->sles_param;
 
+  assert(eqp->dim == 3);        /* This designed for this case */
+
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  KSPSetType(ksp, KSPFCG);
+  /* Set the solver */
+  _petsc_set_krylov_solver(slesp, ksp);
 
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
@@ -393,25 +411,22 @@ _petsc_amg_block_hook(void     *context,
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
-  /* Apply modifications to the KSP structure */
-  PetscInt  id, n_split;
-  KSP  *xyz_subksp, _ksp;
-  PC pc, _pc;
-
+  PC  pc;
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCFIELDSPLIT);
-  PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
+  PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
+
+  /* Apply modifications to the KSP structure */
+  PetscInt  id, n_split;
+  KSP  *xyz_subksp;
 
   PCFieldSplitSetBlockSize(pc, 3);
   id = 0;
-  PCFieldSplitSetFields(pc, "ux", 1, &id, &id);
+  PCFieldSplitSetFields(pc, "x", 1, &id, &id);
   id = 1;
-  PCFieldSplitSetFields(pc, "uy", 1, &id, &id);
+  PCFieldSplitSetFields(pc, "y", 1, &id, &id);
   id = 2;
-  PCFieldSplitSetFields(pc, "uz", 1, &id, &id);
-
-  PCSetFromOptions(pc);
-  PCSetUp(pc);
+  PCFieldSplitSetFields(pc, "z", 1, &id, &id);
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
@@ -423,9 +438,10 @@ _petsc_amg_block_hook(void     *context,
   _petsc_pcgamg_hook();
 #endif
 
+  PC  _pc;
   for (id = 0; id < 3; id++) {
 
-    _ksp = xyz_subksp[id];
+    KSP  _ksp = xyz_subksp[id];
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
 #if defined(PETSC_HAVE_HYPRE)
@@ -439,6 +455,9 @@ _petsc_amg_block_hook(void     *context,
     PCSetUp(_pc);
 
   }
+
+  PCSetFromOptions(pc);
+  PCSetUp(pc);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
