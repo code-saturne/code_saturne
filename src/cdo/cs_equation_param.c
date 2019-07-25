@@ -1072,6 +1072,7 @@ cs_equation_create_param(const char            *name,
   eqp->sles_param = (cs_param_sles_t) {
 
     .verbosity = 0,                         /* SLES verbosity */
+    .field_id = -1,                         /* associated field id */
     .solver_class = CS_PARAM_SLES_CLASS_CS, /* in-house solverq */
     .precond = CS_PARAM_PRECOND_DIAG,       /* preconditioner */
     .solver = CS_PARAM_ITSOL_GMRES,         /* iterative solver */
@@ -1184,7 +1185,8 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
            dst->n_enforced_dofs*sizeof(cs_real_t));
   }
 
-  /* Settings for driving the linear algebra */
+  /* Settings for driving the linear algebra.
+     Field id is not copied at this stage. */
   dst->sles_param.verbosity = ref->sles_param.verbosity;
   dst->sles_param.solver_class = ref->sles_param.solver_class;
   dst->sles_param.precond = ref->sles_param.precond;
@@ -1315,6 +1317,8 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                            int                       field_id)
 {
   cs_param_sles_t  slesp = eqp->sles_param;
+
+  slesp.field_id = field_id;
 
   switch (slesp.solver_class) {
   case CS_PARAM_SLES_CLASS_CS: /* Code_Saturne solvers */
@@ -1908,6 +1912,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   cs_log_printf(CS_LOG_SETUP, "        SLES | Verbosity:          %d\n",
                 slesp.verbosity);
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Field id:           %d\n",
+                slesp.field_id);
   cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.MaxIter:     %d\n",
                 slesp.n_max_iter);
 

@@ -474,6 +474,8 @@ typedef struct {
 
   bool                     setup_done;   /*!< SLES setup step has been done */
   int                      verbosity;    /*!< SLES verbosity */
+  int                      field_id;     /*!< Field id related to a SLES
+                                           By default, this is set to -1 */
 
   cs_param_sles_class_t    solver_class; /*!< class of SLES to consider  */
   cs_param_precond_type_t  precond;      /*!< type of preconditioner */
