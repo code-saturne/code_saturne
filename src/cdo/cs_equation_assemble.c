@@ -488,12 +488,13 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
 {
   assert(ma->d_r_idx == NULL); /* local-id-based function, need to adapt */
 
-  const cs_lnum_t  l_r_id = row->l_id; // g_r_id - ma->l_range[0];
+  const cs_lnum_t  l_r_id = row->l_id; /* g_r_id - ma->l_range[0]; */
   const cs_lnum_t  l_start = ma->r_idx[l_r_id], l_end = ma->r_idx[l_r_id+1];
   const int  n_l_cols = l_end - l_start;
   const cs_lnum_t  *col_ids = ma->c_id + l_start;
 
-  /* Loop on columns to fill col_idx for extra-diag entries */
+  /* Loop on columns to fill col_idx for extra-diag entries
+   *  Diagonal is treated separately */
   for (int j = 0; j < row->i; j++) { /* Lower part */
     row->col_idx[j] = _l_binary_search(0,
                                        n_l_cols,
@@ -1596,7 +1597,7 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_cell_sys_t           *csys,
 
     } /* Loop on column-wise blocks */
 
-    /* dof_ids is an interlaced array (get access to the next 3 values */
+    /* dof_ids is an interlaced array (get access to the next 3 values) */
     for (int k = 0; k < 3; k++) {
       row->i = 3*bi+k;                          /* cellwise numbering */
       row->g_id = row->col_g_id[3*bi+k];        /* global numbering */

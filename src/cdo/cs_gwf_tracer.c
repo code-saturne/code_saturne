@@ -356,9 +356,9 @@ _update_diff_pty4std_tracer(void                        *input,
         }
       }
 
-    } // Loop on cells attached to this soil
+    } /* Loop on cells attached to this soil */
 
-  } // Loop on soils
+  } /* Loop on soils */
 
 }
 
@@ -489,7 +489,7 @@ cs_gwf_tracer_init(int                      tracer_id,
     break;
 
   case CS_GWF_TRACER_USER:
-    break; // All is done during the finalization of the setup
+    break; /* All is done during the finalization of the setup */
 
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid model of tracer.");
@@ -575,7 +575,7 @@ cs_gwf_set_standard_tracer(cs_gwf_tracer_t   *tracer,
       sti->wmd[soil_id] = wmd;
       sti->reaction_rate[soil_id] = reaction_rate;
 
-    } // Loop on soils
+    } /* Loop on soils */
 
   }
   else { /* Set this tracer equation for a specific soil */
@@ -627,7 +627,7 @@ cs_gwf_tracer_standard_add_terms(cs_gwf_tracer_t     *tracer)
   cs_equation_param_t  *eqp = cs_equation_get_param(tracer->eq);
 
   const int n_soils = cs_gwf_get_n_soils();
-  const double  thd = 100*DBL_MIN; // threshold to avoid a wrong activation
+  const double  thd = 100*DBL_MIN; /* threshold to avoid a wrong activation */
   const char *eq_name = cs_equation_get_name(tracer->eq);
 
   bool  do_diffusion = false, do_reaction = false;
@@ -660,8 +660,8 @@ cs_gwf_tracer_standard_add_terms(cs_gwf_tracer_t     *tracer)
 
     /* Create a new field related to this property */
     const int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
-    const bool  pty_has_previous = false; // No storage of different snapshots
-    const int  field_dim = 9; // anisotropic
+    const bool  pty_has_previous = false; /* No storage of different snapshots */
+    const int  field_dim = 9; /* anisotropic */
     const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
 
     tracer->diffusivity = cs_field_create(pty_name,
@@ -672,7 +672,7 @@ cs_gwf_tracer_standard_add_terms(cs_gwf_tracer_t     *tracer)
 
     cs_field_set_key_int(tracer->diffusivity, cs_field_key_id("log"), 1);
 
-  } // diffusion
+  } /* diffusion */
 
   if (do_reaction) { /* Add a new reaction property for this equation */
 
@@ -687,7 +687,7 @@ cs_gwf_tracer_standard_add_terms(cs_gwf_tracer_t     *tracer)
 
     tracer->reaction_id = cs_equation_add_reaction(eqp, r_pty);
 
-  } // reaction
+  } /* reaction */
 
   BFT_FREE(pty_name);
 }
@@ -750,13 +750,13 @@ cs_gwf_tracer_standard_setup(const cs_cdo_connect_t      *connect,
   if (eq_flag & CS_EQUATION_DIFFUSION) { /* Setup the diffusion property */
 
     assert(tracer->diffusivity != NULL &&
-           tracer->diffusivity->val != NULL); // Should be done previously
+           tracer->diffusivity->val != NULL); /* Should be done previously */
 
     cs_property_t  *diff_pty = cs_equation_get_diffusion_property(tracer->eq);
 
     cs_property_def_by_field(diff_pty, tracer->diffusivity);
 
-  } // diffusion
+  } /* diffusion */
 
   if (eq_flag & CS_EQUATION_REACTION) { /* Setup the reaction property */
 
