@@ -692,6 +692,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.radioButtonImport.clicked.connect(self.slotSetImportMesh)
         self.radioButtonExists.clicked.connect(self.slotSetInputMesh)
         self.toolButtonMeshInput.pressed.connect(self.selectInputMesh)
+        self.lineEditMeshInput.textChanged[str].connect(self.modifyInputMesh)
 
         # 1) Meshes directory
 
@@ -1056,9 +1057,17 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             mi = os.path.abspath(mi)
             mi = RelOrAbsPath(mi, self.case['case_path'])
 
-            self.lineEditMeshInput.setText(mi)
-            self.mdl.setMeshInput(mi)
-            self.mesh_input = mi
+            self.modifyInputMesh(mi)
+
+    @pyqtSlot(str)
+    def modifyInputMesh(self, text):
+	"""
+	Modify the mesh_input/mesh_output value
+	"""
+
+        self.lineEditMeshInput.setText(text)
+        self.mdl.setMeshInput(text)
+        self.mesh_input = text
 
 
     @pyqtSlot()
