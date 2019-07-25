@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2016 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -56,30 +56,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_writer.h"
-
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_thermal_model.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_post_util.h"
-#include "cs_rotation.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_turbulence_model.h"
-#include "cs_selector.h"
-
-#include "cs_post.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -97,8 +74,7 @@ BEGIN_C_DECLS
  *
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
- * user subroutine)
- *
+ * user function)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -112,6 +88,8 @@ BEGIN_C_DECLS
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -260,5 +238,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
     }
   }
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
