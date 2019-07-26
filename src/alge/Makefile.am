@@ -60,6 +60,7 @@ pkginclude_HEADERS = \
 cs_alge_headers.h \
 cs_balance.h \
 cs_benchmark.h \
+cs_benchmark_matrix.h \
 cs_blas.h \
 cs_balance_by_zone.h \
 cs_convection_diffusion.h \
@@ -100,6 +101,7 @@ $(FCFLAGS_DBG) $(FCFLAGS_HOT)
 libcsalge_la_SOURCES = \
 cs_balance.c \
 cs_benchmark.c \
+cs_benchmark_matrix.c \
 cs_blas.c \
 cs_bw_time_diff.c \
 cs_balance_by_zone.c \

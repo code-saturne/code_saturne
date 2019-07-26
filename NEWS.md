@@ -27,8 +27,9 @@ Numerics and physical modelling:
 
 Architectural changes:
 
-- Allow sourcing environment before launching with the
-  --with-shell-env configure option.
+- Simplify handling of SpMV tuning, as various contraints on the type
+  of matrix used for a given solver limited to use of the cross-type
+  tuning, while that tuning added significant complexity.
 
 - GUI: force SIP API version to 2 for PqQt4. This allows removing
   the "to_qvariant" wrapper function and makes code more readable;
@@ -227,6 +228,9 @@ Numerics:
   since there is no need for a high precision (1e-8 to 1e-5).
 
 Architectural changes:
+
+- Allow sourcing environment before launching with the
+  --with-shell-env configure option.
 
 - Scripts: add library dependency paths to LD_LIBRARY_PATH for better
   robustness when "rpath" does not have priority.

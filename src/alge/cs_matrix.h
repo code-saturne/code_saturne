@@ -1053,23 +1053,27 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
  * Currently, possible variant functions are:
  *
  *   CS_MATRIX_NATIVE  (all fill types)
+ *     default
  *     standard
  *     fixed           (for CS_MATRIX_??_BLOCK_D or CS_MATRIX_??_BLOCK_D_SYM)
  *     omp             (for OpenMP with compatible numbering)
  *     vector          (For vector machine with compatible numbering)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     default
  *     standard
  *     mkl             (with MKL)
  *
  *   CS_MATRIX_CSR_SYM (for CS_MATRIX_SCALAR_SYM)
+ *     default
  *     standard
  *     mkl             (with MKL)
  *
  *   CS_MATRIX_MSR     (all fill types except CS_MATRIX_33_BLOCK)
+ *     default
  *     standard
- *     generic         (for CS_MATRIX_??_BLOCK_D or CS_MATRIX_??_BLOCK_D_SYM)
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     omp_sched       (For OpenMP with scheduling)
  *
  * parameters:
  *   mv        <-> pointer to matrix variant
@@ -1116,26 +1120,6 @@ cs_matrix_variant_merge(cs_matrix_variant_t        *mv,
 
 cs_matrix_type_t
 cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
-
-/*----------------------------------------------------------------------------
- * Test local matrix.vector product operations.
- *
- * parameters:
- *   n_rows         <-- number of local rows
- *   n_cols_ext     <-- number of columns + ghosts
- *   n_edges        <-- local number of (undirected) graph edges
- *   edges          <-- edges (symmetric row <-> column) connectivity
- *   halo           <-- cell halo structure
- *   numbering      <-- vectorization or thread-related numbering info, or NULL
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_variant_test(cs_lnum_t              n_rows,
-                       cs_lnum_t              n_cols_ext,
-                       cs_lnum_t              n_edges,
-                       const cs_lnum_2_t     *edges,
-                       const cs_halo_t       *halo,
-                       const cs_numbering_t  *numbering);
 
 /*----------------------------------------------------------------------------*/
 

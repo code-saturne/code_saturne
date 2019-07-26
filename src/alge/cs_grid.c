@@ -5821,7 +5821,6 @@ cs_grid_coarsen(const cs_grid_t  *f,
                                               NULL, /* matrix_types, */
                                               fill_types,
                                               fill_weights,
-                                              n_min_products,
                                               c->n_rows,
                                               c->n_cols_ext,
                                               c->n_faces,

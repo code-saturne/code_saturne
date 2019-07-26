@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_TUNING_H__
-#define __CS_MATRIX_TUNING_H__
+#ifndef __CS_BENCHMARK_MATRIX_H__
+#define __CS_BENCHMARK_MATRIX_H__
 
 /*============================================================================
  * Sparse Matrix Representation and Operations
@@ -58,52 +58,38 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Tune local matrix.vector product operations.
- *
- * To avoid multiplying structures for multiple matrix fill-ins,
- * an array of tuning types may be provided, and weights may be
- * associated to each type based on the expected usage of each fill-in
- * type. If n_fill_types is set to 0, these arrays are ignored, and their
- * following default is used:
- *
- *   CS_MATRIX_SCALAR      0.5
- *   CS_MATRIX_SCALAR_SYM  0.25
- *   CS_MATRIX_33_BLOCK_D  0.25
+ * Time matrix operations.
  *
  * parameters:
  *   t_measure      <-- minimum time for each measure
- *   n_types        <-- number of matrix types tuned for, or 0
- *   n_fill_types   <-- number of fill types tuned for, or 0
- *   types          <-- array of matrix types tuned for, or NULL
- *   fill_types     <-- array of fill types tuned for, or NULL
- *   fill_weights   <-- weight of fill types tuned for, or NULL
+ *   n_types        <-- number of matrix types timed, or 0
+ *   n_fill_types   <-- number of fill types timed, or 0
+ *   types          <-- array of matrix types timed, or NULL
+ *   fill_types     <-- array of fill types timed, or NULL
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
+ *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
  *   face_cell      <-- face -> cells connectivity
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
- *
- * returns:
- *   pointer to tuning results structure
  *----------------------------------------------------------------------------*/
 
-cs_matrix_variant_t *
-cs_matrix_variant_tuned(double                 t_measure,
-                        int                    n_types,
-                        int                    n_fill_types,
-                        cs_matrix_type_t       types[],
-                        cs_matrix_fill_type_t  fill_types[],
-                        double                 fill_weights[],
-                        cs_lnum_t              n_cells,
-                        cs_lnum_t              n_cells_ext,
-                        cs_lnum_t              n_faces,
-                        const cs_lnum_2_t     *face_cell,
-                        const cs_halo_t       *halo,
-                        const cs_numbering_t  *numbering);
+void
+cs_benchmark_matrix(double                 t_measure,
+                    int                    n_types,
+                    int                    n_fill_types,
+                    cs_matrix_type_t       types[],
+                    cs_matrix_fill_type_t  fill_types[],
+                    cs_lnum_t              n_cells,
+                    cs_lnum_t              n_cells_ext,
+                    cs_lnum_t              n_faces,
+                    const cs_lnum_2_t     *face_cell,
+                    const cs_halo_t       *halo,
+                    const cs_numbering_t  *numbering);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_TUNING_H__ */
+#endif /* __CS_BENCHMARK_MATRIX_H__ */

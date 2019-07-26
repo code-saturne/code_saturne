@@ -93,6 +93,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_benchmark.h"
+#include "cs_benchmark_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -118,18 +119,18 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES][2]
-  = {{N_("y <- A.x"),
-      N_("y <- (A-D).x")},
-     {N_("Symmetric y <- A.x"),
-      N_("Symmetric y <- (A-D).x")},
-     {N_("Block diagonal y <- A.x"),
-      N_("Block diagonal y <- (A-D).x")},
-     {N_("Block 6 diagonal y <- A.x"),
-      N_("Block 6 diagonal y <- (A-D).x")},
-     {N_("Block diagonal symmetric y <- A.x"),
-      N_("Block diagonal symmetric y <- (A-D).x")},
-     {N_("Block y <- A.x"),
-      N_("Block y <- (A-D).x")}};
+  = {{"y <- A.x",
+      "y <- (A-D).x"},
+     {"Symmetric y <- A.x",
+      "Symmetric y <- (A-D).x"},
+     {"Block diagonal y <- A.x",
+      "Block diagonal y <- (A-D).x"},
+     {"Block 6 diagonal y <- A.x",
+      "Block 6 diagonal y <- (A-D).x"},
+     {"Block diagonal symmetric y <- A.x",
+      "Block diagonal symmetric y <- (A-D).x"},
+     {"Block y <- A.x",
+      "Block y <- (A-D).x"}};
 
 /*============================================================================
  * Private function definitions
@@ -156,9 +157,9 @@ _print_stats(long    n_runs,
 
   if (cs_glob_n_ranks == 1)
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  N ops:       %12ld\n"
-                    "  Wall clock:  %12.5e\n"
-                    "  GFLOPS:      %12.5e\n"),
+                  "  N ops:       %12ld\n"
+                  "  Wall clock:  %12.5e\n"
+                  "  GFLOPS:      %12.5e\n",
                   n_ops, wt/n_runs, n_ops*fm);
 
 #if defined(HAVE_MPI)
@@ -195,10 +196,10 @@ _print_stats(long    n_runs,
     if (n_ops_single == 0)
       cs_log_printf
         (CS_LOG_PERFORMANCE,
-         _("               Mean         Min          Max          Total\n"
-           "  N ops:       %12ld %12ld %12ld %12ld\n"
-           "  Wall clock:  %12.5e %12.5e %12.5e\n"
-           "  GFLOPS:      %12.5e %12.5e %12.5e %12.5e\n"),
+         "               Mean         Min          Max          Total\n"
+         "  N ops:       %12ld %12ld %12ld %12ld\n"
+         "  Wall clock:  %12.5e %12.5e %12.5e\n"
+         "  GFLOPS:      %12.5e %12.5e %12.5e %12.5e\n",
          n_ops_tot/cs_glob_n_ranks, n_ops_min, n_ops_max, n_ops_tot,
          glob_sum[0]/cs_glob_n_ranks, glob_min[0], glob_max[0],
          glob_sum[1]/cs_glob_n_ranks, glob_min[1], glob_max[1], n_ops_tot*fmg);
@@ -206,11 +207,11 @@ _print_stats(long    n_runs,
     else
       cs_log_printf
         (CS_LOG_PERFORMANCE,
-         _("               Mean         Min          Max          Total"
-           "        Single\n"
-           "  N ops:       %12ld %12ld %12ld %12ld %12ld\n"
-           "  Wall clock:  %12.5e %12.5e %12.5e\n"
-           "  GFLOPS:      %12.5e %12.5e %12.5e %12.5e %12.5e\n"),
+         "               Mean         Min          Max          Total"
+         "        Single\n"
+         "  N ops:       %12ld %12ld %12ld %12ld %12ld\n"
+         "  Wall clock:  %12.5e %12.5e %12.5e\n"
+         "  GFLOPS:      %12.5e %12.5e %12.5e %12.5e %12.5e\n",
          n_ops_tot/cs_glob_n_ranks, n_ops_min, n_ops_max, n_ops_tot,
          n_ops_single,
          glob_sum[0]/cs_glob_n_ranks, glob_min[0], glob_max[0],
@@ -221,220 +222,6 @@ _print_stats(long    n_runs,
 #endif
 
   cs_log_printf_flush(CS_LOG_PERFORMANCE);
-}
-
-/*----------------------------------------------------------------------------
- * Measure matrix.vector product related performance.
- *
- * parameters:
- *   t_measure   <-- minimum time for each measure (< 0 for single pass)
- *   m_variant   <-- matrix type
- *   sym_coeffs  <-- symmetric coefficients
- *   n_cells     <-- number of local cells
- *   n_cells_ext <-- number of cells including ghost cells (array size)
- *   n_faces     <-- local number of internal faces
- *   cell_num    <-- global cell numbers (1 to n)
- *   face_cell   <-- face -> cells connectivity
- *   halo        <-- cell halo structure
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
- *   da          <-- diagonal values
- *   xa          <-- extradiagonal values
- *   x           <-> vector
- *   y           --> vector
- *----------------------------------------------------------------------------*/
-
-static void
-_matrix_vector_test(double                 t_measure,
-                    cs_matrix_variant_t   *m_variant,
-                    bool                   sym_coeffs,
-                    cs_int_t               n_cells,
-                    cs_int_t               n_cells_ext,
-                    cs_int_t               n_faces,
-                    const cs_lnum_2_t     *face_cell,
-                    const cs_halo_t       *halo,
-                    const cs_numbering_t  *numbering,
-                    const cs_real_t       *restrict da,
-                    const cs_real_t       *restrict xa,
-                    cs_real_t             *restrict x,
-                    cs_real_t             *restrict y)
-{
-  cs_lnum_t ii;
-  double wt0, wt1;
-  int    run_id, n_runs;
-  long   n_ops, n_ops_glob;
-
-  double test_sum = 0.0;
-  cs_matrix_structure_t *ms = NULL;
-  cs_matrix_t *m = NULL;
-  cs_matrix_type_t m_type = cs_matrix_variant_type(m_variant);
-
-  /* n_cells + n_faces*2 nonzeroes,
-     n_row_elts multiplications + n_row_elts-1 additions per row */
-
-  n_ops = n_cells + n_faces*4;
-
-  if (cs_glob_n_ranks == 1)
-    n_ops_glob = n_ops;
-  else
-    n_ops_glob = (cs_glob_mesh->n_g_cells + cs_glob_mesh->n_g_i_faces*4);
-
-  ms = cs_matrix_structure_create(m_type,
-                                  true,
-                                  n_cells,
-                                  n_cells_ext,
-                                  n_faces,
-                                  face_cell,
-                                  halo,
-                                  numbering);
-
-  m = cs_matrix_create_by_variant(ms, m_variant);
-
-  cs_matrix_set_coefficients(m,
-                             sym_coeffs,
-                             NULL,
-                             NULL,
-                             n_faces,
-                             face_cell,
-                             da,
-                             xa);
-
-  /* Matrix.vector product */
-
-  test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, m, x, y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      run_id++;
-#if 0
-      for (ii = 0; ii < n_cells; ii++)
-        cs_log_printf(CS_LOG_PERFORMANCE,
-                      "y[%d] = %12.4f\n", ii, y[ii]);
-#endif
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
-  }
-
-  if (sym_coeffs == true)
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\n"
-                    "Matrix.vector product (symm coeffs)\n"
-                    "---------------------\n"));
-  else
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\n"
-                    "Matrix.vector product\n"
-                    "---------------------\n"));
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
-                n_runs, test_sum);
-
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
-
-  /* Local timing in parallel mode */
-
-  if (cs_glob_n_ranks > 1) {
-
-    test_sum = 0.0;
-    wt0 = cs_timer_wtime(), wt1 = wt0;
-    if (t_measure > 0)
-      n_runs = 8;
-    else
-      n_runs = 1;
-    run_id = 0;
-    while (run_id < n_runs) {
-      double test_sum_mult = 1.0/n_runs;
-      while (run_id < n_runs) {
-        cs_matrix_vector_multiply_nosync(m,
-                                         x,
-                                         y);
-        test_sum += y[n_cells-1]*test_sum_mult;
-        if (run_id > 0 && run_id % 64) {
-          for (ii = n_cells; ii < n_cells_ext; ii++)
-            y[ii] = 0;
-        }
-        run_id++;
-      }
-      wt1 = cs_timer_wtime();
-      if (wt1 - wt0 < t_measure)
-        n_runs *= 2;
-    }
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\n"
-                    "Local matrix.vector product\n"
-                    "---------------------------\n"));
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  (calls: %d;  test sum: %12.5f)\n"),
-                  n_runs, test_sum);
-
-    _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
-
-  }
-
-  /* (Matrix - diagonal).vector product */
-
-  /* n_faces*2 nonzeroes,
-     n_row_elts multiplications + n_row_elts-1 additions per row */
-
-  n_ops = n_faces*4 - n_cells;
-
-  if (cs_glob_n_ranks == 1)
-    n_ops_glob = n_ops;
-  else
-    n_ops_glob = (cs_glob_mesh->n_g_i_faces*4 - cs_glob_mesh->n_g_cells);
-
-  test_sum = 0.0;
-  wt0 = cs_timer_wtime(), wt1 = wt0;
-  if (t_measure > 0)
-    n_runs = 8;
-  else
-    n_runs = 1;
-  run_id = 0;
-  while (run_id < n_runs) {
-    double test_sum_mult = 1.0/n_runs;
-    while (run_id < n_runs) {
-      cs_matrix_exdiag_vector_multiply(CS_HALO_ROTATION_COPY,
-                                       m,
-                                       x,
-                                       y);
-      test_sum += y[n_cells-1]*test_sum_mult;
-      if (run_id > 0 && run_id % 64) {
-        for (ii = n_cells; ii < n_cells_ext; ii++)
-          y[ii] = 0;
-      }
-      run_id++;
-    }
-    wt1 = cs_timer_wtime();
-    if (wt1 - wt0 < t_measure)
-      n_runs *= 2;
-  }
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "(Matrix-diagonal).vector product (%s)\n"
-                  "--------------------------------\n"),
-                _(cs_matrix_type_name[m_type]));
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
-                n_runs, test_sum);
-
-  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
-
-  cs_matrix_destroy(&m);
-  cs_matrix_structure_destroy(&ms);
 }
 
 /*----------------------------------------------------------------------------
@@ -652,12 +439,12 @@ _sub_matrix_vector_test(double               t_measure,
   }
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Matrix.vector product, extradiagonal part, variant 0\n"
-                  "---------------------\n"));
+                "\n"
+                "Matrix.vector product, extradiagonal part, variant 0\n"
+                "---------------------\n");
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
+                "  (calls: %d;  test sum: %12.5f)\n",
                 n_runs, test_sum);
 
   _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
@@ -689,12 +476,12 @@ _sub_matrix_vector_test(double               t_measure,
   }
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Matrix.vector product, extradiagonal part, variant 1\n"
-                  "---------------------\n"));
+                "\n"
+                "Matrix.vector product, extradiagonal part, variant 1\n"
+                "---------------------\n");
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
+                "  (calls: %d;  test sum: %12.5f)\n",
                 n_runs, test_sum);
 
   _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
@@ -736,16 +523,15 @@ _sub_matrix_vector_test(double               t_measure,
   BFT_FREE(ya);
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Matrix.vector product, face values only\n"
-                  "---------------------\n"));
+                "\n"
+                "Matrix.vector product, face values only\n"
+                "---------------------\n");
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  (calls: %d;  test sum: %12.5f)\n"),
+                "  (calls: %d;  test sum: %12.5f)\n",
                 n_runs, test_sum);
 
   _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1170,12 +956,10 @@ cs_benchmark(int  mpi_trace_mode)
 
   size_t ii;
 
-  double t_measure = (mpi_trace_mode) ? -1.0 : 3.0;
+  double t_measure = (mpi_trace_mode) ? -1.0 : 0.8;
 
   cs_real_t *x = NULL, *y = NULL;
   cs_real_t *da = NULL, *xa = NULL;
-
-  cs_matrix_variant_t *mv = NULL;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_v = cs_glob_mesh_quantities;
@@ -1193,8 +977,6 @@ cs_benchmark(int  mpi_trace_mode)
                                               CS_MATRIX_BLOCK};
   cs_matrix_fill_type_t  fill_types_sym[] = {CS_MATRIX_SCALAR_SYM,
                                              CS_MATRIX_BLOCK_D_SYM};
-  double                 fill_weights_nsym[] = {0.5, 0.3, 0.1, 0.1};
-  double                 fill_weights_sym[] = {0.8, 0.2};
 
   cs_mesh_adjacencies_initialize();
   cs_mesh_adjacencies_update_mesh();
@@ -1202,9 +984,9 @@ cs_benchmark(int  mpi_trace_mode)
   cs_matrix_initialize();
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Benchmark mode activated\n"
-                  "========================\n"));
+                "\n"
+                "Benchmark mode activated\n"
+                "========================\n");
 
   /* Run some feature tests */
   /*------------------------*/
@@ -1242,70 +1024,41 @@ cs_benchmark(int  mpi_trace_mode)
   /* Call matrix tuning */
   /*--------------------*/
 
-  /* Test local matrix.vector product operations. */
-
-  cs_matrix_variant_test(n_cells,
-                         n_cells_ext,
-                         n_faces,
-                         i_face_cells,
-                         mesh->halo,
-                         mesh->i_face_numbering);
-
   /* Enter tuning phase */
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "General tuning for matrices\n"
-                  "=====================================\n"));
+                "\n"
+                "General timing for matrices\n"
+                "===========================\n");
 
-  mv = cs_matrix_variant_tuned(t_measure,
-                               0,
-                               n_fill_types_nsym,
-                               NULL,
-                               fill_types_nsym,
-                               fill_weights_nsym,
-                               50,       /* min expected SpMV products */
-                               n_cells,
-                               n_cells_ext,
-                               n_faces,
-                               i_face_cells,
-                               mesh->halo,
-                               mesh->i_face_numbering);
-
-  _matrix_vector_test(t_measure,
-                      mv, false,
-                      n_cells, n_cells_ext, n_faces,
-                      i_face_cells, mesh->halo,
-                      mesh->i_face_numbering, da, xa, x, y);
-
-  cs_matrix_variant_destroy(&mv);
+  cs_benchmark_matrix(t_measure,
+                      0,
+                      n_fill_types_nsym,
+                      NULL,
+                      fill_types_nsym,
+                      n_cells,
+                      n_cells_ext,
+                      n_faces,
+                      i_face_cells,
+                      mesh->halo,
+                      mesh->i_face_numbering);
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Tuning for symmetric matrices\n"
-                  "=============================\n"));
+                "\n"
+                "Timing for symmetric matrices\n"
+                "=============================\n");
 
-  mv = cs_matrix_variant_tuned(t_measure,
-                               0,
-                               n_fill_types_sym,
-                               NULL,
-                               fill_types_sym,
-                               fill_weights_sym,
-                               50,  /* min expected SpMV products */
-                               n_cells,
-                               n_cells_ext,
-                               n_faces,
-                               i_face_cells,
-                               mesh->halo,
-                               mesh->i_face_numbering);
-
-  _matrix_vector_test(t_measure,
-                      mv, true,
-                      n_cells, n_cells_ext, n_faces,
-                      i_face_cells, mesh->halo,
-                      mesh->i_face_numbering, da, xa, x, y);
-
-  cs_matrix_variant_destroy(&mv);
+  cs_benchmark_matrix(t_measure,
+                      0,
+                      n_fill_types_sym,
+                      NULL,
+                      fill_types_sym,
+                      n_cells,
+                      n_cells_ext,
+                      n_faces,
+                      i_face_cells,
+                      mesh->halo,
+                      mesh->i_face_numbering);
 
   _sub_matrix_vector_test(t_measure,
                           n_cells,

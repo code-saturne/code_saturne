@@ -339,14 +339,6 @@ struct _cs_matrix_variant_t {
 
   cs_matrix_vector_product_t   *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
-  /* Measured structure creation cost, or -1 otherwise */
-
-  double  matrix_create_cost;
-
-  /* Measured assignment costs for each available fill type, or -1 otherwise */
-
-  double  matrix_assign_cost[CS_MATRIX_N_FILL_TYPES];
-
   /* Measured operation costs for each available operation, or -1 otherwise
      fill_type*2 + exclude_diagonal_flag */
 

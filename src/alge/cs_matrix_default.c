@@ -401,7 +401,6 @@ cs_matrix_initialize(void)
                                      NULL, /* matrix_types, */
                                      fill_types,
                                      fill_weights,
-                                     _n_min_products,
                                      mesh->n_cells,
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,

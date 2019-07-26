@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-07-26 16:46+0200\n"
+"POT-Creation-Date: 2019-07-30 11:59+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3024,171 +3024,6 @@ msgid ""
 "------------------------------------------------------------\n"
 msgstr ""
 
-msgid "y <- A.x"
-msgstr ""
-
-msgid "y <- (A-D).x"
-msgstr ""
-
-msgid "Symmetric y <- A.x"
-msgstr ""
-
-msgid "Symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block diagonal y <- A.x"
-msgstr ""
-
-msgid "Block diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block 6 diagonal y <- A.x"
-msgstr ""
-
-msgid "Block 6 diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block diagonal symmetric y <- A.x"
-msgstr ""
-
-msgid "Block diagonal symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block y <- A.x"
-msgstr ""
-
-msgid "Block y <- (A-D).x"
-msgstr ""
-
-#, c-format
-msgid ""
-"  N ops:       %12ld\n"
-"  Wall clock:  %12.5e\n"
-"  GFLOPS:      %12.5e\n"
-msgstr ""
-"  N ops :      %12ld\n"
-"  Wall clock : %12.5e\n"
-"  GFLOPS :     %12.5e\n"
-
-#, c-format
-msgid ""
-"               Mean         Min          Max          Total\n"
-"  N ops:       %12ld %12ld %12ld %12ld\n"
-"  Wall clock:  %12.5e %12.5e %12.5e\n"
-"  GFLOPS:      %12.5e %12.5e %12.5e %12.5e\n"
-msgstr ""
-"               Mean         Min          Max          Total\n"
-"  N ops :      %12ld %12ld %12ld %12ld\n"
-"  Wall clock : %12.5e %12.5e %12.5e\n"
-"  GFLOPS :     %12.5e %12.5e %12.5e %12.5e\n"
-
-#, c-format
-msgid ""
-"               Mean         Min          Max          Total        Single\n"
-"  N ops:       %12ld %12ld %12ld %12ld %12ld\n"
-"  Wall clock:  %12.5e %12.5e %12.5e\n"
-"  GFLOPS:      %12.5e %12.5e %12.5e %12.5e %12.5e\n"
-msgstr ""
-"               Mean         Min          Max          Total        Single\n"
-"  N ops :      %12ld %12ld %12ld %12ld %12ld\n"
-"  Wall clock : %12.5e %12.5e %12.5e\n"
-"  GFLOPS :     %12.5e %12.5e %12.5e %12.5e %12.5e\n"
-
-msgid ""
-"\n"
-"Matrix.vector product (symm coeffs)\n"
-"---------------------\n"
-msgstr ""
-"\n"
-"Produit matrice.vecteur (coeffs sym)\n"
-"-----------------------\n"
-
-msgid ""
-"\n"
-"Matrix.vector product\n"
-"---------------------\n"
-msgstr ""
-"\n"
-"Produit matrice.vecteur\n"
-"-----------------------\n"
-
-#, c-format
-msgid "  (calls: %d;  test sum: %12.5f)\n"
-msgstr "  (appels : %d;  somme test : %12.5f)\n"
-
-msgid ""
-"\n"
-"Local matrix.vector product\n"
-"---------------------------\n"
-msgstr ""
-"\n"
-"Produit matrice.vecteur local\n"
-"-----------------------------\n"
-
-#, c-format
-msgid ""
-"\n"
-"(Matrix-diagonal).vector product (%s)\n"
-"--------------------------------\n"
-msgstr ""
-"\n"
-"Produit (matrice-diagonale).vecteur (%s)\n"
-"-----------------------------------\n"
-
-msgid ""
-"\n"
-"Matrix.vector product, extradiagonal part, variant 0\n"
-"---------------------\n"
-msgstr ""
-"\n"
-"Produit matrice.vecteur, partie extradiagonale, variante 0\n"
-"-----------------------\n"
-
-msgid ""
-"\n"
-"Matrix.vector product, extradiagonal part, variant 1\n"
-"---------------------\n"
-msgstr ""
-"\n"
-"Produit matrice.vecteur, partie extradiagonale, variante 1\n"
-"-----------------------\n"
-
-msgid ""
-"\n"
-"Matrix.vector product, face values only\n"
-"---------------------\n"
-msgstr ""
-"\n"
-"Produit matrice.vecteur, valeurs aux faces uniquement\n"
-"-----------------------\n"
-
-msgid ""
-"\n"
-"Benchmark mode activated\n"
-"========================\n"
-msgstr ""
-"\n"
-"Activation du mode Benchmark\n"
-"============================\n"
-
-msgid ""
-"\n"
-"General tuning for matrices\n"
-"=====================================\n"
-msgstr ""
-"\n"
-"Optimisation générique des matrices\n"
-"===================================\n"
-
-msgid ""
-"\n"
-"Tuning for symmetric matrices\n"
-"=============================\n"
-msgstr ""
-"\n"
-"Optimisation des matrices symétriques\n"
-"=====================================\n"
-
 msgid "invalid value of isstpp for a work array"
 msgstr "valeur invalide de isstpc pour un tableau de travail"
 
@@ -3426,6 +3261,42 @@ msgid ""
 "does not handle case with excluded diagonal."
 msgstr ""
 
+msgid "y <- A.x"
+msgstr ""
+
+msgid "y <- (A-D).x"
+msgstr ""
+
+msgid "Symmetric y <- A.x"
+msgstr ""
+
+msgid "Symmetric y <- (A-D).x"
+msgstr ""
+
+msgid "Block diagonal y <- A.x"
+msgstr ""
+
+msgid "Block diagonal y <- (A-D).x"
+msgstr ""
+
+msgid "Block 6 diagonal y <- A.x"
+msgstr ""
+
+msgid "Block 6 diagonal y <- (A-D).x"
+msgstr ""
+
+msgid "Block diagonal symmetric y <- A.x"
+msgstr ""
+
+msgid "Block diagonal symmetric y <- (A-D).x"
+msgstr ""
+
+msgid "Block y <- A.x"
+msgstr ""
+
+msgid "Block y <- (A-D).x"
+msgstr ""
+
 msgid ""
 "Assigning non-symmetric matrix coefficients to a matrix\n"
 "in a symmetric CSR format."
@@ -3516,16 +3387,6 @@ msgstr ""
 "La fonction de produit matrice.vecteur de type \"%s\"\n"
 "n'est pas disponible dans cette installation."
 
-msgid ""
-"\n"
-"Checking matrix structure and operation variants (diff/reference):\n"
-"------------------------------------------------\n"
-msgstr ""
-"\n"
-"Test de variantes de structures et opérations matricielles (diff/"
-"référence) :\n"
-"---------------------------------------------------------------------------\n"
-
 #, c-format
 msgid ""
 "\n"
@@ -3535,24 +3396,6 @@ msgstr ""
 "\n"
 "Réglage pour des matrices de type : %s\n"
 "===================================\n"
-
-msgid "scalar"
-msgstr "scalaire"
-
-msgid "scalar symmetric"
-msgstr "scalaire symmétrique"
-
-msgid "block 3 diagonal"
-msgstr "à diagonale bloc 3"
-
-msgid "block 6 diagonal"
-msgstr "à diagonale bloc 6"
-
-msgid "block 3 diagonal symmetric"
-msgstr "symmétrique à diagonale bloc 3"
-
-msgid "block 3"
-msgstr ""
 
 msgid "Block 3 diagonal y <- A.x"
 msgstr ""
@@ -3572,21 +3415,8 @@ msgstr ""
 msgid "Block 3 y <- (A-D).x"
 msgstr ""
 
-#, c-format
-msgid " matrix %s coefficients assign"
-msgstr " affectation des coefficients matriciels %s"
-
-msgid "matrix structure creation/destruction"
-msgstr "création/destruction de la structure de la matrice"
-
 msgid "time (s)"
 msgstr "temps (s)"
-
-msgid " mean"
-msgstr " moyen"
-
-msgid "max"
-msgstr "max"
 
 msgid "speedup"
 msgstr ""
@@ -3596,6 +3426,9 @@ msgstr "écart type"
 
 msgid "mean"
 msgstr "moyenne"
+
+msgid "max"
+msgstr "max"
 
 msgid "min"
 msgstr "min"
@@ -3795,6 +3628,9 @@ msgstr ""
 #, c-format
 msgid "    Coarsest level solver:       %s\n"
 msgstr "    Solveur de niveau grossier : %s\n"
+
+msgid " mean"
+msgstr " moyen"
 
 msgid "minimum"
 msgstr "minimum"
@@ -7761,6 +7597,24 @@ msgstr ""
 msgid "Freesteam support not available in this build."
 msgstr "Le support de Freesteam n'est pas disponible sur cette installation."
 
+#, c-format
+msgid ""
+" Compute the porosity from a scan points file:\n"
+"    %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"  Transformation       %12.5g %12.5g %12.5g %12.5g\n"
+"  matrix:              %12.5g %12.5g %12.5g %12.5g\n"
+"                       %12.5g %12.5g %12.5g %12.5g\n"
+"    (last column is translation vector)\n"
+msgstr ""
+"  Matrice de           %12.5g %12.5g %12.5g %12.5g\n"
+"  transformation :     %12.5g %12.5g %12.5g %12.5g\n"
+"                       %12.5g %12.5g %12.5g %12.5g\n"
+"    (la dernière colonne représente une translation)\n"
+
 msgid "Porosity from scan: Could not open file."
 msgstr ""
 
@@ -7768,10 +7622,26 @@ msgid "Porosity from scan: Could not read the number of lines."
 msgstr ""
 
 #, c-format
+msgid "Porosity from scan: %d points to be read.\n"
+msgstr ""
+
+#, c-format
 msgid "Porosity from scan: Error while reading dataset. Line %d\n"
 msgstr ""
 
 msgid "Porosity from scan: Error while reading dataset."
+msgstr ""
+
+#, c-format
+msgid ""
+"  Bounding box [%f, %f, %f], [%f, %f, %f].\n"
+"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"  Porosity from scan: %d additional points to be read.\n"
+"\n"
 msgstr ""
 
 msgid "Porosity from scan: Could not close the file."
@@ -15436,12 +15306,16 @@ msgstr ""
 
 #, c-format
 msgid ""
-"    idiver:                 %3d  (0, 1, or 2: compute radiative S.T.)\n"
+"    idiver:                 %3d  (0, 1, or 2: method to compute radiative S."
+"T.)\n"
 "    imodak:                 %3d  (1: Modak absorption coeff.; O none)\n"
 "    iimpar:                 %3d  (0, 1 or 2: log wall temperature)\n"
 "    iimlum:                 %3d  (0, 1 or 2: log solver info)\n"
 "    imoadf:                 %3d  (0, 1 or 2: none, ADF08, ADF50)\n"
 "    imfsck:                 %3d  (0 or 1: no FSCK, FSCK)\n"
+msgstr ""
+
+msgid "    Infra-red atmospheric 3D model on\n"
 msgstr ""
 
 msgid ""
@@ -15523,6 +15397,16 @@ msgstr ""
 msgid "      Radiative transfer with transparent medium."
 msgstr ""
 
+msgid ""
+"      Atmo radiative transfer with transparent medium for upward "
+"directions.\n"
+msgstr ""
+
+msgid ""
+"      Atmo radiative transfer with transparent medium for downward "
+"directions.\n"
+msgstr ""
+
 #, c-format
 msgid ""
 "%s (in %s)\n"
@@ -15565,7 +15449,8 @@ msgstr ""
 #, c-format
 msgid ""
 "Volume integral of radiative source term:  Srad = %11.4e Watt\n"
-"(If IDIVER = 1 or 2, we must have Srad = -Fnet)\n"
+"(If cs_glob_rad_transfer_params->idiver = 1 or 2, we must have Srad = -"
+"Fnet)\n"
 msgstr ""
 
 msgid "-------------------------------------------------------------------\n"
@@ -16446,18 +16331,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-
-#~ msgid " %s: Invalid dimension.\n"
-#~ msgstr " %s : Dimension invalide.\n"
-
-#~ msgid ""
-#~ "Edge for extrusion joining vertices at coordinates\n"
-#~ " [%12.3g, %12.3g, %12.3g] and\n"
-#~ " [%12.3g, %12.3g, %12.3g] has %d adjacent faces."
-#~ msgstr ""
-#~ "l'arête pour l'extrusion joignant les sommets de coordonnées\n"
-#~ " [%12.3g, %12.3g, %12.3g] et\n"
-#~ " [%12.3g, %12.3g, %12.3g] a %d faces adjacentes."
-
-#~ msgid "    number of additional user statistics: %d\n"
-#~ msgstr "    nombre de statistiques utilisateur supplémentaires : %10d\n"

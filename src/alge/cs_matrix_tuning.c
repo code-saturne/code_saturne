@@ -118,14 +118,6 @@ BEGIN_C_DECLS
 
 /* Short names for matrix types */
 
-static const char *_matrix_fill_name[CS_MATRIX_N_FILL_TYPES]
-  = {N_("scalar"),
-     N_("scalar symmetric"),
-     N_("block 3 diagonal"),
-     N_("block 6 diagonal"),
-     N_("block 3 diagonal symmetric"),
-     N_("block 3")};
-
 static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES][2]
   = {{N_("y <- A.x"),
       N_("y <- (A-D).x")},
@@ -219,40 +211,26 @@ _matrix_tune_test(double                 t_measure,
 
   for (v_id = 0; v_id < n_variants; v_id++) {
 
-    bool test_assign = false;
-
     cs_matrix_variant_t *v = m_variant + v_id;
 
     type = v->type;
 
     if (type != type_prev) {
 
-      test_assign = true;
+      if (m != NULL)
+        cs_matrix_destroy(&m);
+      if (ms != NULL)
+        cs_matrix_structure_destroy(&ms);
+      ms = cs_matrix_structure_create(type,
+                                      true,
+                                      n_cells,
+                                      n_cells_ext,
+                                      n_faces,
+                                      face_cell,
+                                      halo,
+                                      numbering);
+      m = cs_matrix_create(ms);
 
-      wt0 = cs_timer_wtime(), wt1 = wt0;
-      run_id = 0, n_runs = 8;
-      while (run_id < n_runs) {
-        while (run_id < n_runs) {
-          if (m != NULL)
-            cs_matrix_destroy(&m);
-          if (ms != NULL)
-            cs_matrix_structure_destroy(&ms);
-          ms = cs_matrix_structure_create(type,
-                                          true,
-                                          n_cells,
-                                          n_cells_ext,
-                                          n_faces,
-                                          face_cell,
-                                          halo,
-                                          numbering);
-          m = cs_matrix_create(ms);
-          run_id++;
-        }
-        wt1 = cs_timer_wtime();
-        if (wt1 - wt0 < t_measure)
-          n_runs *= 2;
-      }
-      v->matrix_create_cost = (wt1 - wt0) / n_runs;
     }
 
     /* Loop on fill patterns sizes */
@@ -269,41 +247,20 @@ _matrix_tune_test(double                 t_measure,
 
       /* Loop on diagonal exclusion flags */
 
-      double t_measure_assign = -1;
-
       if (   v->vector_multiply[f_id][0] == NULL
           && v->vector_multiply[f_id][1] == NULL)
         continue;
 
       /* Measure overhead of setting coefficients if not already done */
 
-      if (test_assign) {
-        t_measure_assign = t_measure;
-        n_runs = 8;
-      }
-      else
-        n_runs = 1;
-
-      wt0 = cs_timer_wtime(), wt1 = wt0;
-      run_id = 0;
-      while (run_id < n_runs) {
-        while (run_id < n_runs) {
-          cs_matrix_set_coefficients(m,
-                                     sym_coeffs,
-                                     _d_block_size,
-                                     _ed_block_size,
-                                     n_faces,
-                                     (const cs_lnum_2_t *)face_cell,
-                                     da,
-                                     xa);
-          run_id++;
-        }
-        wt1 = cs_timer_wtime();
-        if (wt1 - wt0 < t_measure_assign)
-          n_runs *= 2;
-      }
-      if (n_runs > 1)
-        v->matrix_assign_cost[f_id] = (wt1 - wt0) / n_runs;
+      cs_matrix_set_coefficients(m,
+                                 sym_coeffs,
+                                 _d_block_size,
+                                 _ed_block_size,
+                                 n_faces,
+                                 (const cs_lnum_2_t *)face_cell,
+                                 da,
+                                 xa);
 
       /* Measure matrix.vector operations */
 
@@ -365,130 +322,6 @@ _matrix_tune_test(double                 t_measure,
 
   BFT_FREE(da);
   BFT_FREE(xa);
-}
-
-/*----------------------------------------------------------------------------
- * Print title for statistics on matrix tuning SpMv info.
- *
- * parameters:
- *   struct_flag <-- 0: assignment; 1: structure creation
- *   fill_type   <-- matrix fill type
- *----------------------------------------------------------------------------*/
-
-static void
-_matrix_tune_create_assign_title(int                    struct_flag,
-                                 cs_matrix_fill_type_t  fill_type)
-{
-  size_t i = 0;
-  size_t l = 80;
-  char title[81] = "";
-
-  /* Print title */
-
-  if (struct_flag == 0) {
-    snprintf(title + i,  l-i, _(" matrix %s coefficients assign"),
-             _(_matrix_fill_name[fill_type]));
-    title[80] = '\0';
-    i = strlen(title);
-    l -= i;
-  }
-  else
-    strncat(title + i, _("matrix structure creation/destruction"), l);
-
-  title[80] = '\0';
-
-  l = cs_log_strlen(title);
-
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n%s\n", title);
-
-  for (i = 0; i < l; i++)
-    title[i] = '-';
-  title[l] = '\0';
-
-  cs_log_printf(CS_LOG_PERFORMANCE, "%s\n", title);
-
-  /* Compute local ratios */
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    char tmp_s[4][24] =  {"", "", "", ""};
-
-    cs_log_strpadl(tmp_s[0], _("time (s)"), 16, 24);
-    cs_log_strpadl(tmp_s[1], _(" mean"), 12, 24);
-    cs_log_strpadl(tmp_s[2], _("max"), 12, 24);
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %21s %s\n"
-                  "  %24s %s %s\n",
-                  " ", " ", tmp_s[0],
-                  " ", tmp_s[1], tmp_s[2]);
-  }
-
-#endif
-
-  if (cs_glob_n_ranks == 1) {
-
-    char tmp_s[24] =  {""};
-
-    cs_log_strpadl(tmp_s, _("time (s)"), 12, 24);
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %s\n",
-                  " ", tmp_s);
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Print statistics on matrix tuning creation or assignment info.
- *
- * parameters:
- *   m_variant   <-- array of matrix variants
- *   variant_id  <-- variant id
- *   struct_flag <-- 0: assignment; 1: structure creation
- *   fill_type   <-- type of matrix fill
- *----------------------------------------------------------------------------*/
-
-static void
-_matrix_tune_create_assign_stats(const cs_matrix_variant_t  *m_variant,
-                                 int                         variant_id,
-                                 int                         struct_flag,
-                                 cs_matrix_fill_type_t       fill_type)
-{
-  char title[32];
-
-  double t_loc = -1;
-
-  const cs_matrix_variant_t  *v = m_variant + variant_id;
-
-  cs_log_strpad(title, v->name, 24, 32);
-
-  if (struct_flag == 0)
-    t_loc = v->matrix_assign_cost[fill_type];
-  else
-    t_loc = v->matrix_create_cost;
-
-  if (t_loc < 0)
-    return;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-    double t_max, t_sum = -1;
-    MPI_Allreduce(&t_loc, &t_sum, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
-    MPI_Allreduce(&t_loc, &t_max, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %s %12.5e %12.5e\n",
-                  title, t_sum/cs_glob_n_ranks, t_max);
-  }
-
-#endif
-
-  if (cs_glob_n_ranks == 1)
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %s %12.5e\n", title, t_loc);
 }
 
 /*----------------------------------------------------------------------------
@@ -657,13 +490,11 @@ _matrix_tune_spmv_stats(const cs_matrix_variant_t  *m_variant,
 static void
 _variant_init(cs_matrix_variant_t  *v)
 {
-  v->matrix_create_cost = -1.;
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
     for (int j = 0; j < 2; j++) {
       v->vector_multiply[i][j] = NULL;
       v->matrix_vector_cost[i][j][0] = -1.;
     }
-    v->matrix_assign_cost[i] = -1.;
   }
 }
 
@@ -693,8 +524,6 @@ _variant_init(cs_matrix_variant_t  *v)
  *   types          <-- array of matrix types tuned for, or NULL
  *   fill_types     <-- array of fill types tuned for, or NULL
  *   fill_weights   <-- weight of fill types tuned for, or NULL
- *   n_min_products <-- minimum number of SpMv products (to estimate
- *                      amortization of coefficients assignment)
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
@@ -714,7 +543,6 @@ cs_matrix_variant_tuned(double                 t_measure,
                         cs_matrix_type_t       types[],
                         cs_matrix_fill_type_t  fill_types[],
                         double                 fill_weights[],
-                        int                    n_min_products,
                         cs_lnum_t              n_cells,
                         cs_lnum_t              n_cells_ext,
                         cs_lnum_t              n_faces,
@@ -726,7 +554,6 @@ cs_matrix_variant_tuned(double                 t_measure,
 
   double speedup, max_speedup;
   double t_speedup[CS_MATRIX_N_TYPES][CS_MATRIX_N_FILL_TYPES];
-  double t_overhead[CS_MATRIX_N_TYPES][CS_MATRIX_N_FILL_TYPES];
   int cur_select[CS_MATRIX_N_FILL_TYPES][2];
 
   bool                   type_filter[CS_MATRIX_N_TYPES] = {true,
@@ -777,7 +604,6 @@ cs_matrix_variant_tuned(double                 t_measure,
          fill_type < CS_MATRIX_N_FILL_TYPES;
          fill_type++) {
       t_speedup[t_id][fill_type] = -1;
-      t_overhead[t_id][fill_type] = 0;
     }
   }
 
@@ -805,20 +631,6 @@ cs_matrix_variant_tuned(double                 t_measure,
 
   /* Print info on variants */
 
-  _matrix_tune_create_assign_title(1, 0);
-  for (v_id = 0; v_id < n_variants; v_id++)
-    _matrix_tune_create_assign_stats(m_variant, v_id, 1, CS_MATRIX_SCALAR);
-
-  for (f_id = 0; f_id < _n_fill_types; f_id++) {
-    cs_matrix_fill_type_t  fill_type = _fill_types[f_id];
-    _matrix_tune_create_assign_title(0, fill_type);
-    for (v_id = 0; v_id < n_variants; v_id++)
-      _matrix_tune_create_assign_stats(m_variant,
-                                       v_id,
-                                       0,
-                                       fill_type);
-  }
-
   for (f_id = 0; f_id < _n_fill_types; f_id++) {
     cs_matrix_fill_type_t  fill_type = _fill_types[f_id];
     tot_weight += _fill_weights[f_id];
@@ -838,14 +650,8 @@ cs_matrix_variant_tuned(double                 t_measure,
     v = m_variant + v_id;
     for (f_id = 0; f_id < _n_fill_types; f_id++) {
       cs_matrix_fill_type_t  fill_type = _fill_types[f_id];
-      if (   v->matrix_assign_cost[fill_type] > 0
-          && (n_min_products > 0 && n_min_products < 10000))
-        t_overhead[v->type][fill_type]
-          = v->matrix_assign_cost[fill_type] / n_min_products;
-      speedup = (  (  m_variant->matrix_vector_cost[fill_type][0][0]
-                    + t_overhead[m_variant->type][fill_type])
-                 / (  v->matrix_vector_cost[fill_type][0][0]
-                    + t_overhead[v->type][fill_type]));
+      speedup =   m_variant->matrix_vector_cost[fill_type][0][0]
+                / v->matrix_vector_cost[fill_type][0][0];
       if (t_speedup[v->type][fill_type] < speedup)
         t_speedup[v->type][fill_type] = speedup;
     }
@@ -891,15 +697,6 @@ cs_matrix_variant_tuned(double                 t_measure,
     v = m_variant + v_id;
     if (v->type != r->type)
       continue;
-
-    if (v->matrix_create_cost > 0)
-      r->matrix_create_cost = v->matrix_create_cost;
-    for (cs_matrix_fill_type_t fill_type = 0;
-         fill_type < CS_MATRIX_N_FILL_TYPES;
-         fill_type++) {
-      if (v->matrix_assign_cost[fill_type] > 0)
-        r->matrix_assign_cost[fill_type] = v->matrix_assign_cost[fill_type];
-    }
 
     for (f_id = 0; f_id < _n_fill_types; f_id++) {
       for (ed_flag = 1; ed_flag >= 0; ed_flag--) { /* full matrix priority */
