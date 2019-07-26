@@ -1508,6 +1508,8 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
   }
   else {
 
+    assert(selected_lst != NULL);
+
     /* Selected faces are stored by increasing number */
     cs_lnum_t  n_i_faces = 0;
     for (cs_lnum_t  i = 0; i < n_f_selected; i++) {
@@ -1678,6 +1680,8 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
     }
     else {  /* Partial selection */
 
+      assert(selected_lst != NULL);
+
       /* Loop on selected vertices */
       for (cs_lnum_t i = 0; i < n_vertices; i++)
         retval[selected_lst[i]] = const_val;
@@ -1697,6 +1701,8 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
 
     }
     else { /* Partial selection */
+
+      assert(selected_lst != NULL);
 
       /* Loop on selected vertices */
       for (cs_lnum_t i = 0; i < n_vertices; i++)
@@ -1748,6 +1754,8 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
     }
     else {
 
+      assert(selected_lst != NULL);
+
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f = 0; f < n_f_selected; f++)
         retval[selected_lst[f]] = input[0];
@@ -1768,6 +1776,8 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
     }
     else {
 
+      assert(selected_lst != NULL);
+
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f = 0; f < n_f_selected; f++)
         memcpy(retval + 3*selected_lst[f], input, _3real);
@@ -1787,6 +1797,8 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
 
     }
     else {
+
+      assert(selected_lst != NULL);
 
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f = 0; f < n_f_selected; f++)
@@ -1911,9 +1923,9 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
   const cs_lnum_t  n_faces = cs_cdo_quant->n_faces;
   const cs_real_t  *input = (cs_real_t *)def->input;
 
-  if (def->dim == 1) { /* DoF is scalar-valued */
+  if (n_faces == n_f_selected) {
 
-    if (n_faces == n_f_selected) {
+    if (def->dim == 1) { /* DoF is scalar-valued */
 
 #     pragma omp parallel for if (n_faces > CS_THR_MIN)
       for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++)
@@ -1931,6 +1943,8 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
 
   }
   else { /* Definition does not apply to all entities */
+
+    assert(selected_lst != NULL);
 
     if (def->dim == 1) {
 
@@ -1980,10 +1994,6 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
-  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-  const cs_lnum_t  *elt_ids
-    = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
-
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(def->dim, def->qtype);
   cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
@@ -1991,18 +2001,11 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
   switch (def->dim) {
 
   case 1: /* Scalar-valued */
-    if (elt_ids == NULL)
-      _pfsa_by_analytic(time_eval,
-                        anai->func, anai->input,
-                        n_f_selected, selected_lst,
-                        qfunc,
-                        retval);
-    else
-      _pfsa_by_analytic(time_eval,
-                        anai->func, anai->input,
-                        n_f_selected, selected_lst,
-                        qfunc,
-                        retval);
+    _pfsa_by_analytic(time_eval,
+                      anai->func, anai->input,
+                      n_f_selected, selected_lst,
+                      qfunc,
+                      retval);
     break;
 
   case 3: /* Vector-valued */
