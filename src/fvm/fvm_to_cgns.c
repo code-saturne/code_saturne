@@ -1946,7 +1946,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
   size_t  min_block_size = w->min_block_size
                            / (  (sizeof(cgsize_t) * stride)
-                              * (n_g_sub_elements/n_g_elements));
+                              * ((n_g_sub_elements*1.)/n_g_elements));
 
   bi = cs_block_dist_compute_sizes(w->rank,
                                    w->n_ranks,
