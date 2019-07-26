@@ -1062,8 +1062,6 @@ _coord_output(const fvm_to_cgns_writer_t  *w,
                                   buffer,
                                   w->comm);
 
-    cgsize_t partial_write_idx_start = 1;
-
     do {
 
       cs_gnum_t range[2] = {block_start, block_end};
@@ -1073,8 +1071,8 @@ _coord_output(const fvm_to_cgns_writer_t  *w,
       if (_values != NULL) { /* only possible on rank 0 */
 
         int retval = CG_OK;
-        cgsize_t partial_write_idx_end
-          = partial_write_idx_start + block_end - block_start - 1;
+        cgsize_t partial_write_idx_start = range[0];
+        cgsize_t partial_write_idx_end   = range[1] - 1;
 
         assert(block_end > block_start);
 
@@ -1100,8 +1098,6 @@ _coord_output(const fvm_to_cgns_writer_t  *w,
                         "CGNS error:%s"),
                       "cg_coord_partial_write",
                       w->name, base->name, cg_get_error());
-
-          partial_write_idx_start = partial_write_idx_end + 1;
 
         }
 
