@@ -61,7 +61,13 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
- * Local Macro definitions and structure definitions
+ * Local macro definitions
+ *============================================================================*/
+
+#define _dp3  cs_math_3_dot_product
+
+/*=============================================================================
+ * Local static variables
  *============================================================================*/
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
@@ -1897,6 +1903,154 @@ cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the circulation along a selection of (primal) edges.
+ *         Circulation is defined thanks to a constant vector field (by value)
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      n_e_selected   number of selected edges
+ * \param[in]      selected_lst   list of selected edges
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
+                                             const cs_lnum_t    n_e_selected,
+                                             const cs_lnum_t   *selected_lst,
+                                             cs_real_t          retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_VALUE);
+
+  const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
+  const cs_real_t  *edge_vector = cs_cdo_quant->edge_vector;
+  const cs_real_t  *input = (cs_real_t *)def->input;
+
+  if (def->dim == 3) { /* DoF is scalar-valued
+                        * since this is a circulation */
+
+    if (n_edges == n_e_selected) {
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
+        retval[e_id] = _dp3(input, edge_vector + 3*e_id);
+
+    }
+    else { /* Multi-valued case */
+
+      assert(selected_lst != NULL);
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
+        const cs_lnum_t e_id = selected_lst[e];
+        retval[e_id] = _dp3(input, edge_vector + 3*e_id);
+      }
+
+    }
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of definition\n"
+              " for computing a circulation along primal edges.\n", __func__);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the circulation along a selection of (primal) edges.
+ *         Circulation is defined by an analytical function.
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval      physical time at which one evaluates the term
+ * \param[in]      n_e_selected   number of selected edges
+ * \param[in]      selected_lst   list of selected edges
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
+                                                const cs_real_t    time_eval,
+                                                const cs_lnum_t    n_e_selected,
+                                                const cs_lnum_t   *selected_lst,
+                                                cs_real_t          retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
+
+  const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
+  const cs_real_t  *edge_vector = cs_cdo_quant->edge_vector;
+  const cs_real_t  *xv = cs_cdo_quant->vtx_coord;
+  const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
+
+  cs_quadrature_edge_integral_t
+    *qfunc = cs_quadrature_get_edge_integral(def->dim, def->qtype);
+  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
+
+  if (def->dim == 3) { /* DoF is scalar-valued
+                        * since this is a circulation */
+
+    if (n_edges == n_e_selected) {
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+
+        const cs_lnum_t  *_v = e2v->ids + 2*e_id;
+
+        cs_nvec3_t  e_vec;
+        cs_nvec3(edge_vector + 3*e_id, &e_vec);
+
+
+        cs_real_3_t  integral = {0., 0., 0.};
+        qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_vec.meas,
+              anai->func, anai->input, integral);
+
+        retval[e_id] = _dp3(integral, e_vec.unitv);
+
+      }
+    }
+    else { /* Multi-valued case */
+
+      assert(selected_lst != NULL);
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
+
+        const cs_lnum_t e_id = selected_lst[e];
+        const cs_lnum_t  *_v = e2v->ids + 2*e_id;
+
+        cs_nvec3_t  e_vec;
+        cs_nvec3(edge_vector + 3*e_id, &e_vec);
+
+        cs_real_3_t  integral = {0., 0., 0.};
+        qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_vec.meas,
+              anai->func, anai->input, integral);
+
+        retval[e_id] = _dp3(integral, e_vec.unitv);
+
+      }
+
+    }
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of definition\n"
+              " for computing a circulation along primal edges.\n", __func__);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate the average of a function on the faces
  *
  * \param[in]      def            pointer to a cs_xdef_t pointer
@@ -2245,5 +2399,7 @@ cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS

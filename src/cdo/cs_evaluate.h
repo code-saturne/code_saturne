@@ -230,6 +230,44 @@ cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the circulation along a selection of (primal) edges.
+ *         Circulation is defined thanks to a constant vector field (by value)
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      n_e_selected   number of selected edges
+ * \param[in]      selected_lst   list of selected edges
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
+                                             const cs_lnum_t    n_e_selected,
+                                             const cs_lnum_t   *selected_lst,
+                                             cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the circulation along a selection of (primal) edges.
+ *         Circulation is defined by an analytical function.
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval      physical time at which one evaluates the term
+ * \param[in]      n_e_selected   number of selected edges
+ * \param[in]      selected_lst   list of selected edges
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
+                                                const cs_real_t    time_eval,
+                                                const cs_lnum_t    n_e_selected,
+                                                const cs_lnum_t   *selected_lst,
+                                                cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate the average of a function on the faces
  *
  * \param[in]      def            pointer to a cs_xdef_t pointer
