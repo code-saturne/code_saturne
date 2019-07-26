@@ -1061,9 +1061,9 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
     @pyqtSlot(str)
     def modifyInputMesh(self, text):
-	"""
-	Modify the mesh_input/mesh_output value
-	"""
+        """
+        Modify the mesh_input/mesh_output value
+        """
 
         self.lineEditMeshInput.setText(text)
         self.mdl.setMeshInput(text)
