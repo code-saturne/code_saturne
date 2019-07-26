@@ -94,7 +94,7 @@ BEGIN_C_DECLS
   This function is called the end of the setup stage for a KSP solver.
 
   Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
-  this also allows setting furthur function pointers for pre and post-solve
+  this also allows setting further function pointers for pre and post-solve
   operations (see the PETSc documentation).
 
   Note: if the context pointer is non-NULL, it must point to valid data
@@ -138,9 +138,9 @@ struct _cs_sles_petsc_t {
 
   int                  n_iterations_last;  /* Number of iterations for last
                                               system resolution */
-  int                  n_iterations_min;   /* Minimum number ot iterations
+  int                  n_iterations_min;   /* Minimum number of iterations
                                               in system resolution history */
-  int                  n_iterations_max;   /* Maximum number ot iterations
+  int                  n_iterations_max;   /* Maximum number of iterations
                                               in system resolution history */
   int long long        n_iterations_tot;   /* Total accumulated number of
                                               iterations */
@@ -208,7 +208,7 @@ _export_petsc_system(const char   *name,
   if (p == NULL)
     return;
 
-  /* Get system and preconditioner matrixes */
+  /* Get system and preconditioner matrices */
 
   Mat a, pa;
   KSPGetOperators(ksp, &a, &pa);
@@ -281,7 +281,7 @@ _export_petsc_system(const char   *name,
  *
  * parameters:
  *   a  <-- Pointer to PETSc matrix structure
- *   x  <-- Multipliying vector values
+ *   x  <-- Multiplying vector values
  *   y  --> Resulting vector
  *----------------------------------------------------------------------------*/
 
@@ -1234,7 +1234,7 @@ cs_sles_petsc_setup(void               *context,
   /* KSPSetup could be called here for better separation of setup/solve
      logging, but calling it systematically seems to cause issues
      at least with the performance of the GAMG preconditioner
-     (possibly calling unneed operations). So we avoid it for now,
+     (possibly calling unneeded operations). So we avoid it for now,
      noting that the user always has to option of calling it at the
      end of the setup hook. */
 

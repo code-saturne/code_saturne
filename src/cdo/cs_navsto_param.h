@@ -80,10 +80,10 @@ typedef enum {
 /*! \enum cs_navsto_param_sles_t
  *
  *  \brief High-level information about the way of settings the SLES for solving
- *  the Navier-Stokes system. When a the system is treated as a saddle-point
+ *  the Navier-Stokes system. When the system is treated as a saddle-point
  *  problem (monolithic approach in what follows), then one uses these
  *  notations: A_{00} is the upper-left block and A_{11} (should be 0 but the
- *  preconditionner may have entries for the approximation of the inverse of the
+ *  preconditioner may have entries for the approximation of the inverse of the
  *  Schur complement).
  *
  * \var CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
@@ -92,7 +92,7 @@ typedef enum {
  * Use the same mechanism as for a stand-alone equation. In this case, the
  * setting relies on the function \ref cs_equation_set_sles and the different
  * options for solving a linear system such as the choice of the iterative
- * solver or the choice of the preconditionner or the type of residual
+ * solver or the choice of the preconditioner or the type of residual
  * normalization
  *
  *
@@ -115,7 +115,7 @@ typedef enum {
  * Available choice when a monolithic approach is used (i.e. with the parameter
  * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
  * system of equations is solved an additive preconditioner (block diagonal
- * matrix where the block 00 is A_{00} preconditionned by one multigrid
+ * matrix where the block 00 is A_{00} preconditioned by one multigrid
  * iteration and the block 11 is set to the identity. This option is only
  * available with the support to the PETSc library up to now.
  *
@@ -141,7 +141,7 @@ typedef enum {
  * Navier-Stokes system of equations is solved using a upper triangular block
  * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
  * iteration and the block 11 is an approximation of the Schur complement
- * preconditionned with a minres. The main iterative solver is a flexible
+ * preconditioned with a minres. The main iterative solver is a flexible
  * GMRES. This option is only available with the support to the PETSc
  * library up to now.
  *
@@ -154,7 +154,7 @@ typedef enum {
  * Navier-Stokes system of equations is solved using a Golub-Kahan
  * bi-diagonalization. One assumes that the saddle-point system is symmetric.
  * By default, the block A_{00} may be augmented (this is not the default
- * choice) and is solved with a conjuguate gradient algorithm preconditionned
+ * choice) and is solved with a conjugate gradient algorithm preconditioned
  * with a multigrid. The residual is computed in the energy norm. This option is
  * only available with the support to the PETSc library up to now.
  *
@@ -164,7 +164,7 @@ typedef enum {
  * Available choice when a monolithic approach is used (i.e. with the parameter
  * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
  * Navier-Stokes system of equations is solved using a Golub-Kahan
- * bi-diagonalization (GKB) as preconditionner of a flexible GMRES solver. The
+ * bi-diagonalization (GKB) as preconditioner of a flexible GMRES solver. The
  * GKB algorithm is solved with a reduced tolerance as well as the CG+Multigrid
  * used as an inner solver in the GKB algorithm. One assumes that the
  * saddle-point system is symmetric. The residual for the GKB part is computed

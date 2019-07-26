@@ -341,7 +341,7 @@ _build_is_for_fieldsplit(IS   *isp,
   }
 
   /* IndexSet for the velocity DoFs
-   * Pressure unknows are located at cell centers so the treatment should be
+   * Pressure unknowns are located at cell centers so the treatment should be
    * the same in sequential and parallel computation*/
   for (PetscInt i = 0; i < n_cells; i++)
     indices[i] = rset->g_id[i + 3*n_faces];

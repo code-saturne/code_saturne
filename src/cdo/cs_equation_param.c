@@ -92,7 +92,7 @@ static const char _err_empty_eqp[] =
 
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------
- * \brief Predefined settings for GAMG as a preconditionner
+ * \brief Predefined settings for GAMG as a preconditioner
  *----------------------------------------------------------------------------*/
 
 static inline void
@@ -110,7 +110,7 @@ _petsc_pcmg_hook(void)
 }
 
 /*----------------------------------------------------------------------------
- * \brief Predefined settings for GAMG as a preconditionner
+ * \brief Predefined settings for GAMG as a preconditioner
  *----------------------------------------------------------------------------*/
 
 static inline void
@@ -130,7 +130,7 @@ _petsc_pcgamg_hook(void)
 }
 
 /*----------------------------------------------------------------------------
- * \brief Predefined settings for BoomerAMG in HYPRE as a preconditionner
+ * \brief Predefined settings for BoomerAMG in HYPRE as a preconditioner
  *----------------------------------------------------------------------------*/
 
 static inline void
@@ -354,7 +354,7 @@ _petsc_setup_hook(void   *context,
   /* User function for additional settings */
   cs_user_sles_petsc_hook((void *)eqp, a, ksp);
 
-  /* Update the preconditionner with the new defined options */
+  /* Update the preconditioner with the new defined options */
   PCSetFromOptions(pc);
 
   /* Update with the solver with the new defined options */
@@ -432,7 +432,7 @@ _petsc_amg_block_hook(void     *context,
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
 
-  /* Predefined settings when using AMG as a preconditionner */
+  /* Predefined settings when using AMG as a preconditioner */
 #if defined(PETSC_HAVE_HYPRE)
   _petsc_pchypre_hook();
 #else
