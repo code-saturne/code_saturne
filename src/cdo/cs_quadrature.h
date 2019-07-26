@@ -517,16 +517,18 @@ cs_quadrature_edge_1pt_scal(double                 tcur,
                             double                 results[])
 {
   cs_real_3_t  xg;
-  double  evaluation;
+  double  feval;
 
-  // Copied from cs_quadrature_1pt
+  /* Copied from cs_quadrature_1pt */
   xg[0] = .5 * (v1[0] + v2[0]);
   xg[1] = .5 * (v1[1] + v2[1]);
   xg[2] = .5 * (v1[2] + v2[2]);
 
-  ana(tcur, 1, NULL, xg, false, input, &evaluation);
+  /* Evaluate the function at the Gauss points */
+  ana(tcur, 1, NULL, xg, false, input, &feval);
 
-  *results += len * evaluation;
+  /* Update the result with the quadrature rule */
+  *results += len * feval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -555,15 +557,16 @@ cs_quadrature_edge_2pts_scal(double                tcur,
                              double                results[])
 {
   cs_real_3_t  gauss_pts[2];
-  double  evaluation[2], weights[2];
+  double  feval[2], weights[2];
 
   /* Compute Gauss points and its unique weight */
   cs_quadrature_edge_2pts(v1, v2, len, gauss_pts, weights);
 
-  ana(tcur, 2, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  /* Evaluate the function at the Gauss points */
+  ana(tcur, 2, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
 
-  /* Return results */
-  *results += weights[0] * evaluation[0] + weights[1] * evaluation[1];
+  /* Update the result with the quadrature rule */
+  *results += weights[0] * feval[0] + weights[1] * feval[1];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -592,17 +595,141 @@ cs_quadrature_edge_3pts_scal(double                tcur,
                              double                results[])
 {
   cs_real_3_t  gauss_pts[3];
-  double  evaluation[3], weights[3];
+  double  feval[3], weights[3];
 
   /* Compute Gauss points and its weights */
   cs_quadrature_edge_3pts(v1, v2, len, gauss_pts, weights);
 
-  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  /* Evaluate the function at the Gauss points */
+  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
 
-  *results += weights[0] * evaluation[0] + weights[1] * evaluation[1] +
-              weights[2] * evaluation[2];
+  /* Update the result with the quadrature rule */
+  *results += weights[0]*feval[0] + weights[1]*feval[1] + weights[2]*feval[2];
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over an edge using a barycentric quadrature
+ *         rule and add it to \p results
+ *         Case of a vector-valued function.
+ *
+ * \param[in]      tcur        current physical time of the simulation
+ * \param[in]      v1          1st point of the triangle
+ * \param[in]      v2          2nd point of the triangle
+ * \param[in]      len         length of the edge
+ * \param[in]      ana         pointer to the analytic function
+ * \param[in]      input       NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results     array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_edge_1pt_vect(double                 tcur,
+                            const cs_real_3_t      v1,
+                            const cs_real_3_t      v2,
+                            double                 len,
+                            cs_analytic_func_t    *ana,
+                            void                  *input,
+                            double                 results[])
+{
+  cs_real_3_t  xg;
+  double  feval[3];
+
+  /* Copied from cs_quadrature_1pt */
+  xg[0] = .5 * (v1[0] + v2[0]);
+  xg[1] = .5 * (v1[1] + v2[1]);
+  xg[2] = .5 * (v1[2] + v2[2]);
+
+  /* Evaluate the function at the Gauss points */
+  ana(tcur, 1, NULL, xg, false, input, feval);
+
+  /* Update the result with the quadrature rule */
+  results[0] += len * feval[0];
+  results[1] += len * feval[1];
+  results[2] += len * feval[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over an edge with a quadrature rule using 2
+ *         Gauss points and a unique weight and add it to \p results
+ *         Case of a vector-valued function.
+ *
+ * \param[in]      tcur        current physical time of the simulation
+ * \param[in]      v1          1st point of the triangle
+ * \param[in]      v2          2nd point of the triangle
+ * \param[in]      len         length of the edge
+ * \param[in]      ana         pointer to the analytic function
+ * \param[in]      input       NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results     array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_edge_2pts_vect(double                 tcur,
+                             const cs_real_3_t      v1,
+                             const cs_real_3_t      v2,
+                             double                 len,
+                             cs_analytic_func_t    *ana,
+                             void                  *input,
+                             double                 results[])
+{
+  cs_real_3_t  gauss_pts[2];
+  double  feval[6], weights[2];
+
+  /* Compute Gauss points and its unique weight */
+  cs_quadrature_edge_2pts(v1, v2, len, gauss_pts, weights);
+
+  /* Evaluate the function at the Gauss points */
+  ana(tcur, 2, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
+
+  /* Update the result with the quadrature rule */
+  results[0] += weights[0] * feval[0] + weights[1] * feval[3];
+  results[1] += weights[0] * feval[1] + weights[1] * feval[4];
+  results[2] += weights[0] * feval[2] + weights[1] * feval[5];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over an edge with a quadrature rule using 3
+ *         Gauss points and weights and add it to \p results
+ *         Case of a vector-valued function.
+ *
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in]      v1           first point of the edge
+ * \param[in]      v2           second point of the edge
+ * \param[in]      len          length of the edge
+ * \param[in]      ana          pointer to the analytic function
+ * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] results      array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_edge_3pts_vect(double                tcur,
+                             const cs_real_3_t     v1,
+                             const cs_real_3_t     v2,
+                             double                len,
+                             cs_analytic_func_t   *ana,
+                             void                 *input,
+                             double                results[])
+{
+  cs_real_3_t  gauss_pts[3];
+  double  feval[9], weights[3];
+
+  /* Compute Gauss points and its weights */
+  cs_quadrature_edge_3pts(v1, v2, len, gauss_pts, weights);
+
+  /* Evaluate the function at the Gauss points */
+  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
+
+  /* Update the result with the quadrature rule */
+  for (int p = 0; p < 3; p++) {
+    results[0] += weights[p] * feval[3*p  ];
+    results[1] += weights[p] * feval[3*p+1];
+    results[2] += weights[p] * feval[3*p+2];
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1365,6 +1492,71 @@ cs_quadrature_tet_5pts_tens(double                tcur,
     for (short int ij = 0; ij < 9; ij++)
       results[ij] += wp * eval_p[ij];
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the integral function according to the quadrature type
+ *         and the stride provided
+ *         Case of integral along edges.
+ *
+ * \param[in]     dim          dimension of the function to integrate
+ * \param[in]     qtype        quadrature type
+ *
+ * \return a pointer to the integral function
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_quadrature_edge_integral_t *
+cs_quadrature_get_edge_integral(int                   dim,
+                                cs_quadrature_type_t  qtype)
+{
+  switch (dim) {
+
+  case 1: /* Scalar-valued integral */
+
+    switch (qtype) {
+
+    case CS_QUADRATURE_BARY:
+    case CS_QUADRATURE_BARY_SUBDIV:
+      return cs_quadrature_edge_1pt_scal;
+    case CS_QUADRATURE_HIGHER:
+      return cs_quadrature_edge_2pts_scal;
+    case CS_QUADRATURE_HIGHEST:
+      return cs_quadrature_edge_3pts_scal;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid quadrature type\n", __func__);
+    }
+    break;
+
+  case 3: /* Vector-valued case */
+
+    switch (qtype) {
+
+    case CS_QUADRATURE_BARY:
+    case CS_QUADRATURE_BARY_SUBDIV:
+      return cs_quadrature_edge_1pt_vect;
+    case CS_QUADRATURE_HIGHER:
+      return cs_quadrature_edge_2pts_vect;
+    case CS_QUADRATURE_HIGHEST:
+      return cs_quadrature_edge_3pts_vect;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid quadrature type\n", __func__);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid dimension value %d. Only 1 and 3 are valid.\n",
+              __func__, dim);
+
+  } /* switch on dim */
+
+  return NULL; /* Should not go to this stage */
 }
 
 /*----------------------------------------------------------------------------*/
