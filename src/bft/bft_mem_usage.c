@@ -142,6 +142,8 @@ BEGIN_C_DECLS
 static int  _bft_mem_usage_global_initialized = 0;
 
 static size_t _bft_mem_usage_global_max_pr = 0;
+static size_t _bft_mem_usage_global_max_vm = 0;
+static size_t _bft_mem_usage_global_sl = 0;
 
 #if defined(USE_SBRK)
 static void  *_bft_mem_usage_global_init_sbrk = NULL;
@@ -370,20 +372,16 @@ _bft_mem_usage_unset_hooks(void)
 static void
 _bft_mem_usage_pr_size_init(void)
 {
-  char  buf[512]; /* should be large enough for "/proc/%lu/status"
-                     then beginning of file content */
-  size_t  r_size, i;
+  char  buf[81]; /* should be large enough for "/proc/%lu/status"
+                    then beginning of file content */
   bool    status_has_size = false;
   bool    status_has_peak = false;
-  int  fd;
   const pid_t  pid = getpid();
 
   /*
     Under Linux with procfs, one line of the pseudo-file "/proc/pid/status"
     (where pid is the process number) is of the following form:
     VmSize:     xxxx kB
-    This line may be the 12th to 13th for a 2.6.x kernel.
-    On recent enough 2.6.x kernels, another line (the 12th) is of the form:
     VmPeak:     xxxx kB
     When both VmSize and VmPeak are available, we are able to determine
     memory use in a robust fashion using these fields.
@@ -393,33 +391,31 @@ _bft_mem_usage_pr_size_init(void)
     return;
 
   sprintf(buf, "/proc/%lu/status", (unsigned long) pid);
+  FILE *fp = fopen(buf, "r");
 
-  fd = open(buf, O_RDONLY);
+  if (fp != NULL) {
 
-  if (fd != -1) {
+    int fields_read = 0;
 
-    r_size = read(fd, buf, 512);
-
-    if (r_size > 32) { /* Leave a margin for "VmPeak" or "VmSize:" line */
-      r_size -= 32;
-      for (i = 0; i < r_size; i++) {
-        if (buf[i] == 'V' && strncmp(buf+i, "VmPeak:", 7) == 0) {
-          status_has_peak = true;
-          break;
-        }
+    while (fields_read < 2) {
+      char *s = fgets(buf, 80, fp);
+      if (s == NULL)
+        break;
+      if (strncmp(s, "VmSize:", 7) == 0) {
+        status_has_size = true;
+        fields_read += 1;
       }
-      for (i = 0; i < r_size; i++) {
-        if (buf[i] == 'V' && strncmp(buf+i, "VmSize:", 7) == 0) {
-          status_has_size = true;
-          break;
-        }
+      else if (strncmp(s, "VmPeak:", 7) == 0) {
+        status_has_peak = true;
+        fields_read += 1;
       }
-      /* If VmSize was found, proc file may be used */
-      if (status_has_peak && status_has_size)
-        _bft_mem_usage_proc_file_init = 1;
     }
 
-    (void)close(fd);
+    /* If VmSize was found, proc file may be used */
+    if (status_has_peak && status_has_size)
+      _bft_mem_usage_proc_file_init = 1;
+
+    fclose(fp);
   }
 
   /* If initialization failed for some reason (proc file unavailable or does
@@ -518,8 +514,12 @@ bft_mem_usage_pr_size(void)
     Under Linux with procfs, one line of the pseudo-file "/proc/pid/status"
     (where pid is the process number) is of the following form:
     VmSize:     xxxx kB
-    With more recent kernels, we also have a line of the form:
+    With more recent kernels, we also have line of the form:
     VmPeak:     xxxx kB
+    VmHWM:      xxxx kB
+    VmLib:      xxxx kB
+    Representing peak virtual memory, peak resident set size,
+    and shares library  usage respectively.
   */
 
   if (_bft_mem_usage_proc_file_init == 0)
@@ -530,19 +530,17 @@ bft_mem_usage_pr_size(void)
     char  buf[81]; /* should be large enough for "/proc/%lu/status" */
     const pid_t  pid = getpid();
 
-    FILE *fp;
     unsigned long val;
-    char *s;
 
     sprintf(buf, "/proc/%lu/status", (unsigned long) pid);
-    fp = fopen(buf, "r");
+    FILE *fp = fopen(buf, "r");
 
     if (fp != NULL) {
 
       int fields_read = 0;
 
-      while (fields_read < 2) {
-        s = fgets(buf, 80, fp);
+      while (fields_read < 4) {
+        char *s = fgets(buf, 80, fp);
         if (s == NULL)
           break;
         if (strncmp(s, "VmSize:", 7) == 0) {
@@ -550,10 +548,22 @@ bft_mem_usage_pr_size(void)
           sys_mem_usage = (size_t) val;
           fields_read += 1;
         }
-        else if (strncmp(s, "VmPeak:", 7) == 0) {
-          sscanf (s + 7, "%lu", &val);
+        else if (strncmp(s, "VmHWM:", 6) == 0) {
+          sscanf (s + 6, "%lu", &val);
           if ((size_t) val > _bft_mem_usage_global_max_pr)
             _bft_mem_usage_global_max_pr = (size_t) val;
+          fields_read += 1;
+        }
+        else if (strncmp(s, "VmPeak:", 7) == 0) {
+          sscanf (s + 7, "%lu", &val);
+          if ((size_t) val > _bft_mem_usage_global_max_vm)
+            _bft_mem_usage_global_max_vm = (size_t) val;
+          fields_read += 1;
+        }
+        else if (strncmp(s, "VmLib:", 6) == 0) {
+          sscanf (s + 6, "%lu", &val);
+          if ((size_t) val > _bft_mem_usage_global_sl)
+            _bft_mem_usage_global_sl = (size_t) val;
           fields_read += 1;
         }
       }
@@ -730,9 +740,10 @@ bft_mem_usage_pr_size(void)
 /*
  * \brief Return maximum process memory use (in kB) depending on OS.
  *
- * The returned value is the maximum returned by bft_mem_usage_pr_size()
- * during the program's lifetime. With memory allocations which return
- * memory to the system, this value could be incorrect in certain cases.
+ * The returned value is the maximum memory used during the program's
+ * lifetime.
+ *
+ * \return maximum measured program size, or 0 if not available
  */
 
 size_t
@@ -741,6 +752,35 @@ bft_mem_usage_max_pr_size(void)
   (void) bft_mem_usage_pr_size();
 
   return _bft_mem_usage_global_max_pr;
+}
+
+/*
+ * \brief Return maximum process virtual memory use (in kB) depending on OS.
+ *
+ * \return  maximum measured virtual memory usage, or 0 if not available
+ */
+
+size_t
+bft_mem_usage_max_vm_size(void)
+{
+  (void) bft_mem_usage_pr_size();
+
+  return _bft_mem_usage_global_max_vm;
+}
+
+/*
+ * \brief Return shared library memory use (in kB) depending on OS.
+ *
+ * \return  maximum measured shared library memory usage,
+ *          or 0 if not available
+ */
+
+size_t
+bft_mem_usage_shared_lib_size(void)
+{
+  (void) bft_mem_usage_pr_size();
+
+  return _bft_mem_usage_global_sl;
 }
 
 /*

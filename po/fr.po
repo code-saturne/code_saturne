@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-07-15 21:52+0200\n"
+"POT-Creation-Date: 2019-07-26 03:38+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5080,9 +5080,19 @@ msgstr "Consommation mémoire totale mesurée :     "
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
+msgid "Virtual memory used:                     "
+msgstr "Mémoire virtuelle mesurée :               "
+
+msgid "Shared libraries memory used:            "
+msgstr "Mémoire pour les bibliothèques partagées :"
+
 #, c-format
 msgid "  %s %12.3f %ciB\n"
 msgstr "  %s %12.3f %cio\n"
+
+#, c-format
+msgid "  %s\n"
+msgstr "  %s\n"
 
 #, c-format
 msgid "                             local minimum: %12.3f %ciB  (rank %d)\n"
@@ -5352,26 +5362,6 @@ msgid "    type:                       %d"
 msgstr "    type :                      %d"
 
 #, c-format
-msgid ""
-"  Boundary zone \"%s\"\n"
-"    id              = %d\n"
-"    Number of faces = %llu\n"
-"    Surface         = %14.7e\n"
-"    Fluid surface   = %14.7e\n"
-msgstr ""
-
-msgid ""
-"    Perimeter       = -1 (not computed)\n"
-"    Fluid perimeter = -1 (not computed)\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"    Perimeter       = %14.7e\n"
-"    Fluid perimeter = %14.7e\n"
-msgstr ""
-
-#, c-format
 msgid "Boundary zone with id %d is not defined."
 msgstr "La zone de bord avec id %d n'est pas définie."
 
@@ -5453,6 +5443,26 @@ msgstr ""
 "\n"
 "Zones de bord\n"
 "-------------\n"
+
+#, c-format
+msgid ""
+"  Boundary zone \"%s\"\n"
+"    id              = %d\n"
+"    Number of faces = %llu\n"
+"    Surface         = %14.7e\n"
+"    Fluid surface   = %14.7e\n"
+msgstr ""
+
+msgid ""
+"    Perimeter       = -1 (not computed)\n"
+"    Fluid perimeter = -1 (not computed)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"    Perimeter       = %14.7e\n"
+"    Fluid perimeter = %14.7e\n"
+msgstr ""
 
 #, c-format
 msgid "    %d first and last elements:\n"
@@ -5835,6 +5845,9 @@ msgstr "accumulateur"
 
 msgid "user"
 msgstr "utilisateur"
+
+msgid "CDO"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9832,26 +9845,6 @@ msgstr "terme source de masse"
 msgid "groundwater soil"
 msgstr ""
 
-#, c-format
-msgid ""
-"  Volume zone \"%s\"\n"
-"    id              = %d\n"
-"    Number of cells = %llu\n"
-"    Volume          = %14.7e\n"
-"    Fluid volume    = %14.7e\n"
-msgstr ""
-
-msgid ""
-"    Surface         = -1 (not computed)\n"
-"    Fluid surface   = -1 (not computed)\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"    Surface         = %14.7e\n"
-"    Fluid surface   = %14.7e\n"
-msgstr ""
-
 msgid "cell with forbidden zone overlap"
 msgstr ""
 
@@ -9885,6 +9878,26 @@ msgstr ""
 "\n"
 "Zones volumiques\n"
 "----------------\n"
+
+#, c-format
+msgid ""
+"  Volume zone \"%s\"\n"
+"    id              = %d\n"
+"    Number of cells = %llu\n"
+"    Volume          = %14.7e\n"
+"    Fluid volume    = %14.7e\n"
+msgstr ""
+
+msgid ""
+"    Surface         = -1 (not computed)\n"
+"    Fluid surface   = -1 (not computed)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"    Surface         = %14.7e\n"
+"    Fluid surface   = %14.7e\n"
+msgstr ""
 
 msgid "bft_mem_init() has already been called"
 msgstr ""
@@ -10026,6 +10039,12 @@ msgstr ""
 
 #, c-format
 msgid ""
+" %s: Eq. %s. Invalid scheme for the space discretization.\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid ""
 " Space scheme for eq. %s is incompatible with a field.\n"
 " Stop adding a cs_field_t structure.\n"
 msgstr ""
@@ -10071,10 +10090,6 @@ msgid ""
 " %s: Stop evaluating a potential from 'quantity over volume'.\n"
 " This situation is not handled yet."
 msgstr ""
-
-#, c-format
-msgid " %s: Invalid dimension.\n"
-msgstr " %s : Dimension invalide.\n"
 
 #, c-format
 msgid " %s: Invalid dimension of analytical function.\n"
@@ -10156,7 +10171,8 @@ msgstr ""
 #, c-format
 msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_ADVECTION_SCHEME\n"
-" Choice between upwind, samarskii, sg, centered, cip mix_cenetered_upwind"
+" Choice between upwind, samarskii, sg, centered, cip, cip_cw, "
+"mix_centered_upwind"
 msgstr ""
 
 #, c-format
@@ -10201,6 +10217,9 @@ msgid "CDO vertex-based"
 msgstr ""
 
 msgid "CDO vertex+cell-based"
+msgstr ""
+
+msgid "CDO edge-based"
 msgstr ""
 
 msgid "CDO face-based"
@@ -10338,12 +10357,6 @@ msgid "highest"
 msgstr ""
 
 msgid " Invalid numerical scheme to set a source term."
-msgstr ""
-
-msgid " Invalid type of definition.\n"
-msgstr ""
-
-msgid " Invalid case. Not able to compute the source term.\n"
 msgstr ""
 
 #, c-format
@@ -16408,6 +16421,9 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid " %s: Invalid dimension.\n"
+#~ msgstr " %s : Dimension invalide.\n"
 
 #~ msgid ""
 #~ "Edge for extrusion joining vertices at coordinates\n"

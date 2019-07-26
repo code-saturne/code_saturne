@@ -1559,20 +1559,22 @@ void
 cs_base_mem_finalize(void)
 {
   int    ind_bil, itot;
-  double valreal[2];
+  double valreal[4];
 
 #if defined(HAVE_MPI)
   int  imax = 0, imin = 0;
-  double val_sum[2];
-  int  ind_min[2];
-  _cs_base_mpi_double_int_t  val_in[2], val_min[2], val_max[2];
+  double val_sum[4];
+  int  ind_min[4];
+  _cs_base_mpi_double_int_t  val_in[4], val_min[4], val_max[4];
 #endif
 
-  int   ind_val[2] = {1, 1};
+  int   ind_val[4] = {1, 1, 1, 1};
   const char  unit[8] = {'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
 
   const char  * type_bil[] = {N_("Total memory used:                       "),
-                              N_("Theoretical instrumented dynamic memory: ")};
+                              N_("Theoretical instrumented dynamic memory: "),
+                              N_("Virtual memory used:                     "),
+                              N_("Shared libraries memory used:            ")};
 
   /* Memory summary */
 
@@ -1581,30 +1583,32 @@ cs_base_mem_finalize(void)
 
   valreal[0] = (double)bft_mem_usage_max_pr_size();
   valreal[1] = (double)bft_mem_size_max();
+  valreal[2] = (double)bft_mem_usage_max_vm_size();
+  valreal[3] = (double)bft_mem_usage_shared_lib_size();
 
   /* Ignore inconsistent measurements */
 
-  for (ind_bil = 0; ind_bil < 2; ind_bil++) {
+  for (ind_bil = 0; ind_bil < 4; ind_bil++) {
     if (valreal[ind_bil] < 1.0)
       ind_val[ind_bil] = 0;
   }
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    MPI_Reduce(ind_val, ind_min, 2, MPI_INT, MPI_MIN,
+    MPI_Reduce(ind_val, ind_min, 4, MPI_INT, MPI_MIN,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(valreal, val_sum, 2, MPI_DOUBLE, MPI_SUM,
+    MPI_Reduce(valreal, val_sum, 4, MPI_DOUBLE, MPI_SUM,
                0, cs_glob_mpi_comm);
-    for (ind_bil = 0; ind_bil < 2; ind_bil++) {
+    for (ind_bil = 0; ind_bil < 4; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
       val_in[ind_bil].rank = cs_glob_rank_id;
     }
-    MPI_Reduce(val_in, val_min, 2, MPI_DOUBLE_INT, MPI_MINLOC,
+    MPI_Reduce(val_in, val_min, 4, MPI_DOUBLE_INT, MPI_MINLOC,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(val_in, val_max, 2, MPI_DOUBLE_INT, MPI_MAXLOC,
+    MPI_Reduce(val_in, val_max, 4, MPI_DOUBLE_INT, MPI_MAXLOC,
                0, cs_glob_mpi_comm);
     if (cs_glob_rank_id == 0) {
-      for (ind_bil = 0; ind_bil < 2; ind_bil++) {
+      for (ind_bil = 0; ind_bil < 4; ind_bil++) {
         ind_val[ind_bil]  = ind_min[ind_bil];
         valreal[ind_bil] = val_sum[ind_bil];
       }
@@ -1614,7 +1618,7 @@ cs_base_mem_finalize(void)
 
   /* Similar handling of several instrumentation methods */
 
-  for (ind_bil = 0 ; ind_bil < 2 ; ind_bil++) {
+  for (ind_bil = 0; ind_bil < 4; ind_bil++) {
 
     /* If an instrumentation method returns an apparently consistent
        result, print it. */
@@ -1640,9 +1644,14 @@ cs_base_mem_finalize(void)
 
       /* Print to log file */
 
-      cs_log_printf(CS_LOG_PERFORMANCE,
-                    _("  %s %12.3f %ciB\n"),
-                    _(type_bil[ind_bil]), valreal[ind_bil], unit[itot]);
+      if (ind_bil < 2 || cs_glob_n_ranks < 2)
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("  %s %12.3f %ciB\n"),
+                      _(type_bil[ind_bil]), valreal[ind_bil], unit[itot]);
+      else
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("  %s\n"),
+                      _(type_bil[ind_bil]));
 
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
