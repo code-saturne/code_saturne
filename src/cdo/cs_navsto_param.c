@@ -229,7 +229,6 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
   param->verbosity = 1;
 
   /* Default numerical settings */
-  param->time_scheme  = CS_TIME_SCHEME_EULER_IMPLICIT;
   param->theta = 1.0;
   param->space_scheme = CS_SPACE_SCHEME_CDOFB;
 
@@ -241,6 +240,11 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
   param->has_gravity = false;
   param->gravity[0] = param->gravity[1] = param->gravity[2] = 0.;
   param->time_state = time_state;
+  if (time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
+    /* Forcing steady state in order to avoid inconsistencies */
+    param->time_scheme = CS_TIME_SCHEME_STEADY;
+  else
+    param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
 
   /* Resolution parameters */
   param->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
