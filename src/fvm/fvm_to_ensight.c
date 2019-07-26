@@ -2003,7 +2003,7 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
                                   &n_g_sub_elements,
                                   NULL);
 
-  min_block_size /= (n_g_sub_elements/n_g_elements) * stride;
+  min_block_size /= ((n_g_sub_elements*1.)/n_g_elements) * stride;
 
   /* Decode connectivity */
 
