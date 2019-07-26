@@ -223,7 +223,7 @@ _build_e2v_connect(const cs_adjacency_t  *v2v)
 
   /* Arrays ids and sgn are allocated during the creation of the structure */
   cs_adjacency_t  *e2v = cs_adjacency_create(CS_ADJACENCY_SIGNED,
-                                             2, // stride
+                                             2, /* stride */
                                              n_edges);
 
   /* Fill arrays */
@@ -426,7 +426,7 @@ _compute_max_ent(const cs_mesh_t      *m,
 
       const cs_lnum_t  v_id = c2v_ids[v];
       if (v_count[v_id] > n_max_v2ec) n_max_v2ec = v_count[v_id];
-      v_count[v_id] = 0; // reset
+      v_count[v_id] = 0; /* reset */
 
     }
 
@@ -479,12 +479,12 @@ _compute_max_ent(const cs_mesh_t      *m,
   BFT_FREE(v_count);
 
   /* Store computed values */
-  connect->n_max_vbyc = n_max_vc;   // Max number of vertices for a cell
-  connect->n_max_ebyc = n_max_ec;   // Max number of edges for a cell
-  connect->n_max_fbyc = n_max_fc;   // Max number of faces for a cell
+  connect->n_max_vbyc = n_max_vc;   /* Max number of vertices for a cell */
+  connect->n_max_ebyc = n_max_ec;   /* Max number of edges for a cell */
+  connect->n_max_fbyc = n_max_fc;   /* Max number of faces for a cell */
   connect->n_max_v2ec = n_max_v2ec;
   connect->n_max_v2fc = n_max_v2fc;
-  connect->n_max_vbyf = n_max_vf;   // Max number of vertices in a face
+  connect->n_max_vbyf = n_max_vf;   /* Max number of vertices in a face */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -502,7 +502,7 @@ static fvm_element_t
 _get_cell_type(cs_lnum_t                 c_id,
                const cs_cdo_connect_t   *connect)
 {
-  fvm_element_t  ret_type = FVM_CELL_POLY; // Default value
+  fvm_element_t  ret_type = FVM_CELL_POLY; /* Default value */
 
   int  n_vc = connect->c2v->idx[c_id+1] - connect->c2v->idx[c_id];
   int  n_ec = connect->c2e->idx[c_id+1] - connect->c2e->idx[c_id];
@@ -517,7 +517,7 @@ _get_cell_type(cs_lnum_t                 c_id,
     ret_type = FVM_CELL_PYRAM;
 
   /* Prism ? */
-  else if (n_vc == 6 && n_ec == 9 && n_fc == 5) { // Potentially a prism
+  else if (n_vc == 6 && n_ec == 9 && n_fc == 5) { /* Could be a prism */
 
     int  count[2] = {0, 0};
 
@@ -527,9 +527,9 @@ _get_cell_type(cs_lnum_t                 c_id,
 
       cs_lnum_t  f_id = connect->c2f->ids[i];
 
-      if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] == 4) // Quad
+      if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] == 4) /* Quad */
         count[1] += 1;
-      if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] == 3) // Tria
+      if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] == 3) /* Tria */
         count[0] += 1;
 
       if (count[0] == 2 && count[1] == 3)
@@ -539,7 +539,7 @@ _get_cell_type(cs_lnum_t                 c_id,
   }
 
   /* Hexahedron ? */
-  else if (n_vc == 8 && n_ec == 12 && n_fc == 6) { // Potentially a hexahedron
+  else if (n_vc == 8 && n_ec == 12 && n_fc == 6) { /* Could be a hexahedron */
 
     bool  is_hexa = true;
 

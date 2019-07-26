@@ -112,6 +112,14 @@ typedef struct { /* Specific mesh quantities */
   /* Face-based quantities */
   /* ===================== */
 
+  cs_lnum_t         n_faces;        /* n_i_faces + n_b_faces */
+  cs_gnum_t         n_g_faces;      /* Global number of faces */
+
+  /* cs_quant_t structure attached to a face (interior or border) can be built
+     on-the-fly: cs_quant_get(flag, f_id, quant). In order to reduce the memory
+     consumption one shares face quantities with the ones defined in the legacy
+     part and stored in the cs_mesh_quantities_t structure */
+
   cs_lnum_t         n_i_faces;      /* Local number of interior faces */
   const cs_real_t  *i_face_normal;  /* Shared with cs_mesh_quantities_t */
   const cs_real_t  *i_face_center;  /* Shared with cs_mesh_quantities_t */
@@ -122,18 +130,15 @@ typedef struct { /* Specific mesh quantities */
   const cs_real_t  *b_face_center;  /* Shared with cs_mesh_quantities_t */
   const cs_real_t  *b_face_surf;    /* Shared with cs_mesh_quantities_t */
 
-  cs_lnum_t         n_faces;        /* n_i_faces + n_b_faces */
-  cs_gnum_t         n_g_faces;      /* Global number of faces */
-
-  /* cs_quant_t structure attached to a face (interior or border) is build
-     on-the-fly  cs_quant_get(flag, f_id, quant) */
-
-  cs_real_t        *dedge_vector;
-
-  /* cs_nvec3_t structure attached to a dual edge is build on-the-fly
-     Dual edge quantities (length and unit vector)
-     Scan with the c2f connectivity
+  /* cs_nvec3_t structure attached to a dual edge can be built on-the-fly to
+     access to its length and its unit tangential vector. One
+     recalls that a dual edge is associated to a primal face and is shared with
+     two cells if the face lies inside the domain and shared with one cell if
+     the face lies on the domain boundary.
+     Scan this quantity with the c2f connectivity
   */
+
+  cs_real_t        *dedge_vector;   /* Allocation to 3*c2f->idx[n_faces] */
 
   cs_quant_info_t   face_info;
 
@@ -143,14 +148,15 @@ typedef struct { /* Specific mesh quantities */
   cs_lnum_t         n_edges;        /* Local number of edges */
   cs_gnum_t         n_g_edges;      /* Global number of edges */
 
-  cs_real_t        *edge_vector;    /* norm of the vector is equal to the
+  cs_real_t        *edge_vector;    /* Allocation to 3*n_edges
+                                       Norm of the vector is equal to the
                                        distance between two vertices.
-                                       unit vector is the tangential direction
+                                       Unit vector is the tangential direction
                                        attached to the edge */
 
-  /* For each edge belonging to a cell, two contributions coming from 2
-     triangles  s(x_cell, x_face, x_edge) for face in Face_edge are considered.
-     Scan with the c2e connectivity */
+  /* For each edge e belonging to a cell c, two contributions coming from 2
+     triangles  s(x_c, x_f, x_e) for a face f in Face_e are considered.
+     Scan this quantity with the c2e connectivity */
 
   cs_real_t        *sface_normal;   /* 2 triangle-face normals by edge in a
                                        cell */

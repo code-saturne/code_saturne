@@ -306,11 +306,11 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
 
   cs_time_step_t  *ts = domain->time_step;
 
-  if (ts->nt_max > 0) // nt_max has been set
+  if (ts->nt_max > 0) /* nt_max has been set */
     if (ts->nt_cur > ts->nt_max)
       one_more_iter = false;
 
-  if (ts->t_max > 0) // t_max has been set
+  if (ts->t_max > 0) /* t_max has been set */
     if (ts->t_cur >= ts->t_max)
       one_more_iter = false;
 

@@ -249,7 +249,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
   d->z_id = z_id;
   d->state = state;
   d->meta = meta;
-  d->qtype = CS_QUADRATURE_BARY; // default value
+  d->qtype = CS_QUADRATURE_BARY; /* default value */
 
   switch (type) {
 
@@ -318,7 +318,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
     }
     break;
 
-  default: // analytic functions or more generic functions
+  default: /* analytic functions or more generic functions */
     d->input = input;
     break;
 
