@@ -85,6 +85,7 @@ cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations-balance_by_zone.c \
 cs_user_extra_operations-boundary_forces.c \
+cs_user_extra_operations-nusselt_and_friction_calculation.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
