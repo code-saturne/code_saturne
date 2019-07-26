@@ -137,14 +137,12 @@ cs_notebook_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief dump the notebook structure to the listing file
- *
- * Dumps the notebook structure information to the main log file
+ * \brief Output the notebook info to the setup log.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_notebook_dump_info(void);
+cs_notebook_log(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

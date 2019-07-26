@@ -47,6 +47,7 @@
 #include "bft_printf.h"
 
 #include "cs_gui_util.h"
+#include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parameters.h"
 
@@ -119,7 +120,7 @@ static cs_map_name_to_id_t *_entry_map = NULL;
  */
 /*----------------------------------------------------------------------------*/
 
-_cs_notebook_entry_t *
+static _cs_notebook_entry_t *
 cs_notebook_entry_by_name(const char *name)
 {
   int id = cs_map_name_to_id_try(_entry_map, name);
@@ -149,9 +150,9 @@ cs_notebook_entry_by_name(const char *name)
 /*----------------------------------------------------------------------------*/
 
 static _cs_notebook_entry_t *
-_entry_create(const char *name,
-              int         uncertain,
-              bool        editable)
+_entry_create(const char  *name,
+              int          uncertain,
+              bool         editable)
 {
   size_t l = strlen(name);
   const char *addr_0 = NULL, *addr_1 = NULL;
@@ -284,33 +285,37 @@ _entry_set_value(_cs_notebook_entry_t *e,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief dump the notebook structure to the listing file
- *
- * Dumps the notebook structure information to the listing file
- *
+ * \brief Output the notebook info to the setup log.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_notebook_dump_info(void)
+cs_notebook_log(void)
 {
   if (_n_entries == 0)
     return;
 
-  bft_printf(" --------------------------- \n");
-  bft_printf("     NOTEBOOK PARAMETERS \n");
-  bft_printf(" --------------------------- \n");
-  for (int i = 0; i < _n_entries; i++) {
-    bft_printf(" Entry #%d\n", i);
-    bft_printf(" Name        : %s\n", _entries[i]->name);
-    bft_printf(" Description : %s\n", _entries[i]->description);
-    bft_printf(" Uncertain   : %d\n", _entries[i]->uncertain);
-    bft_printf(" Editable    : %d\n", _entries[i]->editable);
-    bft_printf(" Value       : %f\n", _entries[i]->val);
-    bft_printf_flush();
-  }
-  bft_printf(" --------------------------- \n");
-  bft_printf_flush();
+  cs_log_t l = CS_LOG_SETUP;
+
+  cs_log_printf(l, _("Notebook:\n"
+                     "---------\n"));
+  for (int i = 0; i < _n_entries; i++)
+    cs_log_printf(l, _("\n"
+                       "  Entry #%d\n"
+                       "    name:         %s\n"
+                       "    description:  %s\n"
+                       "    uncertain:    %d\n"
+                       "    editable:     %d\n"
+                       "    value:        %f\n"),
+                  i,
+                  _entries[i]->name,
+                  _entries[i]->description,
+                  _entries[i]->uncertain,
+                  _entries[i]->editable,
+                  _entries[i]->val);
+
+  cs_log_printf(l, "\n");
+  cs_log_separator(l);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -325,7 +330,6 @@ cs_notebook_dump_info(void)
 void
 cs_notebook_load_from_file(void)
 {
-
   cs_tree_node_t *tnb = cs_tree_get_node(cs_glob_tree,
                                          "physical_properties/notebook");
   for (cs_tree_node_t *n = cs_tree_find_node(tnb, "var");
@@ -366,8 +370,7 @@ cs_notebook_load_from_file(void)
     _entry_set_value(e, val);
 
   }
-  cs_notebook_dump_info();
-
+  cs_notebook_log();
 }
 
 /*----------------------------------------------------------------------------*/
