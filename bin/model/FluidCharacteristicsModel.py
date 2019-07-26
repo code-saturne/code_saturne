@@ -53,13 +53,12 @@ from code_saturne.model.NotebookModel import NotebookModel
 # EOS
 #-------------------------------------------------------------------------------
 
-EOS = 1
+EOS = 0
 try:
    import eosAva
-except:
-   EOS = 0
-else :
-   import eosAva
+   EOS = 1
+except Exception:
+   pass
 
 # Perfect gases to exclude from EOS choices
 
@@ -171,8 +170,8 @@ class FluidCharacteristicsModel(Variables, Model):
             # suppress perfect gas
             fls = self.ava.whichFluids()
             for fli in fls:
-                if fli not in eos_excl:
-                    eos_excl.append(fli)
+                if fli in eos_excl:
+                    continue
                 if fli not in self.lib_properties.keys():
                     self.lib_properties[fli] = self.mask_EOS
                 else:
