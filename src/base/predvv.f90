@@ -514,7 +514,7 @@ iprev = 0
 if (vcopt_p%iwgrec.eq.1) then
 
   ! retrieve density used in diffusive flux scheme (correction step)
-  if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.ge.0.or.ippmod(icompf).eq.3)) then
+  if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
     call field_get_id("density_mass", f_id)
     call field_get_val_s(f_id, cpro_rho_mass)
 
