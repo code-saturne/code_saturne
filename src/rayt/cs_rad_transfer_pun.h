@@ -78,6 +78,7 @@ BEGIN_C_DECLS
  * \param[in, out]  ckmel     absorption coefficient for gas-particles mix
  * \param[out]      q         explicit flux density vector
  * \param[in]       abo       weights of the i-th gray gas at boundaries
+ * \param[out]      int_rad_domega integral of I dOmega
  * \param[in]       iband     number of the i-th gray gas
  */
 /*----------------------------------------------------------------------------*/
@@ -98,6 +99,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                     cs_real_t        ckmel[],
                     cs_real_3_t      q[],
                     const cs_real_t  abo[],
+                    cs_real_t        int_rad_domega[],
                     int              iband);
 
 /*----------------------------------------------------------------------------*/

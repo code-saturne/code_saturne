@@ -1248,17 +1248,6 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
       cs_real_t hint = 0.0;
 
-      if (vect_s != NULL) {
-        cs_real_3_t normal;
-        cs_math_3_normalise(b_face_normal[face_id], normal);
-        if ((bc_type[face_id] == CS_INLET
-          || bc_type[face_id] == CS_CONVECTIVE_INLET
-          || bc_type[face_id] == CS_OUTLET
-          || bc_type[face_id] == CS_FREE_INLET)
-            && (CS_ABS(cs_math_3_dot_product(vect_s,  normal)) <cs_math_epzero)) {
-
-        }
-      }
       /* Inlet/Outlet face: entering intensity fixed to zero flux
        * which mimic an infinite extrusion
        * (warning: the treatment is different from than of P-1 model)
@@ -1281,7 +1270,14 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
         if (vect_s != NULL) {
           cs_real_3_t normal;
           cs_math_3_normalise(b_face_normal[face_id], normal);
-          if (CS_ABS(cs_math_3_dot_product(vect_s,  normal)) <cs_math_epzero)
+          cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s,  normal);
+          cs_real_t *grav = cs_glob_physical_constants->gravity;
+          cs_real_t g_norm = cs_math_3_norm(grav);
+          cs_real_t d_g = (g_norm > 0.) ? 1. / g_norm : 0.;
+          cs_real_t g_dot_n_norm = cs_math_3_dot_product(grav,  normal) * d_g;
+          if (CS_ABS(vs_dot_n) < cs_math_epzero
+              || (vs_dot_n < 0. /* Entering */
+                &&  g_dot_n_norm < -0.5) )
             neumann = false;
         }
 

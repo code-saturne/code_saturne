@@ -62,8 +62,6 @@ BEGIN_C_DECLS
  *  - P-1 approximation (only recommended for pulverized coal)
  *
  *  \param[in, out]  bc_type       boundary face types
- *  \param[in]       nclacp        number of pulverized coal classes
- *  \param[in]       nclafu        number of fuel classes
  *  \param[in]       dt            time step (per cell)
  *  \param[in]       cp2fol        fuel oil liquid CP
  *  \param[in]       cp2ch         pulverized coal CP's
@@ -73,8 +71,6 @@ BEGIN_C_DECLS
 
 void
 cs_rad_transfer_solve(int               bc_type[],
-                      int               nclacp,
-                      int               nclafu,
                       const cs_real_t   dt[],
                       cs_real_t         cp2fol,
                       const cs_real_t   cp2ch[],
