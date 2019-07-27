@@ -1590,9 +1590,13 @@ cs_rad_transfer_solve(int               bc_type[],
 
     /* Summing up the quantities of each grey gas    */
 
-    /* Absorption */
+    /* Absorption
+     * ---------- */
+
+    /* (gas phase, precomputed)  */
+
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      absom[cell_id] += ckg[cell_id] * int_rad_domega[cell_id] * wq[gg_id];
+      absom[cell_id] += int_abso[cell_id] * wq[gg_id];
 
     /* Coal solid phase or fuel droplets */
     for (int class_id = 0; class_id < n_classes; class_id++) {
@@ -1613,7 +1617,10 @@ cs_rad_transfer_solve(int               bc_type[],
       }
     }
 
-    /* Emission (gas phase, precomputed)  */
+    /* Emission
+     * -------- */
+
+    /* (gas phase, precomputed)  */
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       emim[cell_id] += int_emi[cell_id]
