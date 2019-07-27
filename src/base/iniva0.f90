@@ -80,7 +80,7 @@ integer          iel   , ifac
 integer          iclip , ii    , jj    , idim, f_dim
 integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
-integer          kscmin, kscmax
+integer          kscmin
 integer          f_type, idftnp
 integer          keyvar
 integer          f_id, kdflim
