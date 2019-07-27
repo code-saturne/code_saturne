@@ -17,6 +17,8 @@ User changes:
   * With a high enough verbosity, the residual after each level's
     smoother or solver application is logged.
 
+- Add VoF settings in the GUI.
+
 Numerics and physical modelling:
 
 - Make clipping of Reynolds stresses more robust for the coupled solver.
@@ -34,7 +36,7 @@ Architectural changes:
   has loaded the default API, so compatibility with Salome
   versions 7 or older is dropped.
 
-- Move part of VoF module from Fortran 90 to C.
+- Move most part of VoF module from Fortran 90 to C.
 
 - Added optional support for CUDA in build system.
   At this stage, only device info is added to system information,
