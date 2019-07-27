@@ -1169,7 +1169,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
   const int itytur_cur = iturb_cur/10;
   const int itytur_old = iturb_old/10;
 
-  /* If the turbulence modela has not changed, nothing to do */
+  /* If the turbulence model has not changed, nothing to do */
 
   if (iturb_cur == iturb_old)
     return;
