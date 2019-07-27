@@ -1413,8 +1413,13 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
     write(nfecra,1070)
   endif
 
-  call cs_rad_transfer_solve(itypfb, nclacp, nclafu, &
-                             dt, cp2fol, cp2ch, ichcor)
+  ! Call the 1D radiative model
+  ! Compute the divergence of the ir and solar radiative fluxes:
+  if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
+    call atr1vf()
+  endif
+
+  call cs_rad_transfer_solve(itypfb, dt, cp2fol, cp2ch, ichcor)
 endif
 
 if (nscal.ge.1) then

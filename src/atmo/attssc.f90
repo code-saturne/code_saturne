@@ -51,6 +51,7 @@ use period
 use mesh
 use atincl
 use field
+use radiat
 use cs_c_bindings
 
 !===============================================================================
@@ -105,9 +106,10 @@ call field_get_val_s(icrom, crom)
 
 !===============================================================================
 ! 2. Taking into acount radiative forcing for the 1d radiative module
+!    (if the 3D module is not activated)
 !===============================================================================
 
-if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
+if (ippmod(iatmos).ge.1.and.iatra1.ge.1.and.iirayo.eq.0) then
 
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_pottemp)
   call field_get_val_s(itempc, cpro_tempc)
@@ -120,11 +122,10 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     allocate(ray3Dst(ncel))
 
     ! Call the 1D radiative model
-    ! Compute the divergence of the ir and solar radiative fluxes :
-
-    ! Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
+    ! Compute the divergence of the ir and solar radiative fluxes:
     call atr1vf()
 
+    ! Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
     ! Infra red
     call mscrss(idrayi, 1, ray3Di)
 

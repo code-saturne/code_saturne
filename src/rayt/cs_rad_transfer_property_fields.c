@@ -252,12 +252,12 @@ cs_rad_transfer_prp(void)
         const char *name[4] = {"rad_flux_up",
                                "rad_flux_down",
                                "rad_absorption_coeff_up",
-                               "rad_absorption_coeff_down",};
+                               "rad_absorption_coeff_down"};
         const char *label[4] = {"Upwards radiative flux",
                                 "Downwards radiative flux",
                                 "",
                                 ""};
-        const bool hide[4] = {true, true, false, false};
+        const bool hide[4] = {false, false, true, true};
 
         for (int i = 0; i < 4; i++) {
 
@@ -270,8 +270,8 @@ cs_rad_transfer_prp(void)
           /* show or hide property */
           if (!hide[i]) {
             cs_field_set_key_int(f, keyvis, 1);
-            cs_field_set_key_int(f, keylog, 1);
           }
+          cs_field_set_key_int(f, keylog, 1);
 
           /* set label */
           if (strlen(label[i]) > 0)

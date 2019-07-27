@@ -171,11 +171,11 @@ cs_rad_transfer_options(void)
 
   rt_params->xnp1mx       = 10.0;
 
-  /* ->  Explicit radiative source term computation mode initialization IDIVER
+  /* ->  Explicit radiative source term computation mode
    *            = 0 => Semi-analytic (mandatory if transparent)
    *            = 1 => Conservative
    *            = 2 => Corrected semi-analytic (to be conservative)
-   *     REMARK : if transparent, IDIVER = -1 automatically in raydom  */
+   *     REMARK: if transparent, idiver = -1 automatically in raydom  */
 
   rt_params->idiver       = 2;
 
@@ -345,7 +345,7 @@ cs_rad_transfer_log_setup(void)
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    idiver:                 %3d  (0, 1, or 2: compute radiative S.T.)\n"
+     _("    idiver:                 %3d  (0, 1, or 2: method to compute radiative S.T.)\n"
        "    imodak:                 %3d  (1: Modak absorption coeff.; O none)\n"
        "    iimpar:                 %3d  (0, 1 or 2: log wall temperature)\n"
        "    iimlum:                 %3d  (0, 1 or 2: log solver info)\n"
@@ -357,6 +357,12 @@ cs_rad_transfer_log_setup(void)
      cs_glob_rad_transfer_params->iimlum,
      cs_glob_rad_transfer_params->imoadf,
      cs_glob_rad_transfer_params->imfsck);
+
+  if (cs_glob_rad_transfer_params->atmo_ir_absorption)
+    cs_log_printf
+      (CS_LOG_SETUP,
+     _("    Infra-red atmospheric 3D model on\n"));
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -128,6 +128,7 @@ BEGIN_C_DECLS
  * \param[in, out]  ckmel     absorption coefficient for gas-particles mix
  * \param[out]      q         explicit flux density vector
  * \param[in]       abo       weights of the i-th gray gas at boundaries
+ * \param[out]      int_rad_domega integral of I dOmega
  * \param[in]       iband     number of the i-th gray gas
  */
 /*----------------------------------------------------------------------------*/
@@ -148,6 +149,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                     cs_real_t        ckmel[],
                     cs_real_3_t      q[],
                     const cs_real_t  abo[],
+                    cs_real_t        int_rad_domega[],
                     int              iband)
 {
   cs_real_t stephn = cs_physical_constants_stephan;
@@ -161,8 +163,6 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   cs_field_t *f_theta4 = CS_FI_(rad_abs, 0);
   cs_field_t *f_thetaa = CS_FI_(rad_emi, 0);
   cs_field_t *f_eps = CS_F_(emissivity);
-
-  cs_real_t *rad_st_expl = CS_FI_(rad_est, 0)->val;
 
   /* Allocate temporary array  */
   cs_real_t *dpvar;
@@ -305,7 +305,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   /* Compute part of absorption or radiative source term */
   aa = 4.0 * stephn;
   for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
-    rad_st_expl[iel] = aa * f_theta4->val[iel];
+    int_rad_domega[iel] = aa * f_theta4->val[iel];
 
   const cs_real_t *b_dist = cs_glob_mesh_quantities->b_dist;
 

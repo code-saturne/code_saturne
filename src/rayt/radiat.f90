@@ -127,12 +127,11 @@ module radiat
 
     ! Interface to C function handling resolution
 
-    subroutine cs_rad_transfer_solve(bc_type, nclacp, nclafu,         &
+    subroutine cs_rad_transfer_solve(bc_type,                         &
                                      dt, cp2fol, cp2ch, ichcor)       &
       bind(C, name='cs_rad_transfer_solve')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(kind=c_int), value :: nclacp, nclafu
       integer(kind=c_int), dimension(*) :: bc_type, ichcor
       real(kind=c_double), value :: cp2fol
       real(kind=c_double), dimension(*) :: dt, cp2ch
