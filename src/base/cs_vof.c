@@ -234,11 +234,11 @@ static cs_cavitation_parameters_t  _cavit_parameters =
  *============================================================================*/
 
 void
-cs_f_vof_get_pointers(int    **ivofmt,
-                      double **rho1,
-                      double **rho2,
-                      double **mu1,
-                      double **mu2);
+cs_f_vof_get_pointers(unsigned **ivofmt,
+                      double   **rho1,
+                      double   **rho2,
+                      double   **mu1,
+                      double   **mu2);
 
 void
 cs_f_vof_compute_linear_rho_mu(void);
@@ -278,11 +278,11 @@ cs_f_cavitation_get_pointers(double **presat,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_vof_get_pointers(int    **ivofmt,
-                      double **rho1,
-                      double **rho2,
-                      double **mu1,
-                      double **mu2)
+cs_f_vof_get_pointers(unsigned **ivofmt,
+                      double   **rho1,
+                      double   **rho2,
+                      double   **mu1,
+                      double   **mu2)
 {
   *ivofmt = &(_vof_parameters.vof_model);
   *rho1   = &(_vof_parameters.rho1);
