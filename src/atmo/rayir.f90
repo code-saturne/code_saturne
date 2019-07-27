@@ -86,7 +86,7 @@ use period
 use ppppar
 use ppthch
 use ppincl
-use atincl, only: kmx, rvsra, cpvcpa, sigc, irdu, iru, ird
+use atincl, only: kmx, cpvcpa, sigc, irdu, iru, ird
 use cstnum, only: epzero, pi
 
 !===============================================================================
