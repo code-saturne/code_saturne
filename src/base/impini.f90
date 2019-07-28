@@ -367,7 +367,7 @@ write(nfecra,9900)
 '    ----------------------------------------',                 /)
  2111 format(                                                     &
 '       IVOFMT = ',4x,i10,    ' ( 0  : disabled              )',/,&
-'                               ( >=0: enabled               )',/)
+'                               ( > 0: enabled               )',/)
  2121 format(                                                     &
 '  -- Fluid 1:',                                                /,&
 '       RHO1   = ', e14.5,  ' (Reference density          )',   /,&
