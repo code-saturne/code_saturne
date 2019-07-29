@@ -406,6 +406,15 @@ if (iporos.ge.1) then
   call field_create(f_name, itycat, ityloc, 1, .false., ipori)
   call field_set_key_int(ipori, keylog, 1)
   call field_set_key_int(ipori, keyvis, pflag)
+
+  f_name = 'cell_f_vol'
+  call field_create(f_name,&
+                    itycat,&
+                    1,& ! location: cell
+                    1,& ! dimension
+                    .false.,&
+                    f_id)
+
   if (iporos.eq.2) then
     f_name = 'tensorial_porosity'
     call field_create(f_name, itycat, ityloc, 6, .false., iporf)
@@ -442,8 +451,42 @@ if (iporos.ge.1) then
                       1,& ! dimension
                       .false.,&
                       f_id)
+    f_name = 'i_f_face_normal'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'i_f_face_surf'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'b_f_face_normal'
+    call field_create(f_name,&
+                      itycat,&
+                      3,& ! location: boundary faces
+                      3,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'b_f_face_surf'
+    call field_create(f_name,&
+                      itycat,&
+                      3,& ! location: boundary faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
 
   endif
+
+  ! Make fluid surfaces of mesh quantity point to the created fields
+  call cs_mesh_quantities_set_has_disable_flag(1)
 endif
 
 !===============================================================================
