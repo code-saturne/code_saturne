@@ -54,6 +54,11 @@ BEGIN_C_DECLS
 #define CS_MAXWELL_ESTATIC_EQNAME   "electrostatic"
 #define CS_MAXWELL_EFIELD_NAME      "electric_field"
 #define CS_MAXWELL_DFIELD_NAME      "electric_induction"
+
+#define CS_MAXWELL_MSTATIC_EQNAME   "magnetostatic"
+#define CS_MAXWELL_MFIELD_NAME      "magnetic_field"
+#define CS_MAXWELL_BFIELD_NAME      "magnetic_induction"
+
 #define CS_MAXWELL_JEFFECT_NAME     "joule_effect"
 
 /*============================================================================
