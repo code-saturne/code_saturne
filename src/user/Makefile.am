@@ -75,7 +75,10 @@ AM_LDFLAGS =
 EXTRA_DIST = cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
 cs_user_initialization.f90  \
-cs_user_parameters.f90 cs_user_physical_properties.f90 cs_user_porosity.f90
+cs_user_parameters.f90 \
+cs_user_physical_properties.f90 \
+cs_user_source_terms.f90 \
+cs_user_porosity.f90
 
 # Library source files
 
@@ -108,7 +111,7 @@ cs_user_porosity.c \
 cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \
 cs_user_solver.c \
-cs_user_source_terms.f90 \
+cs_user_source_terms.c \
 cs_user_turbomachinery.c \
 cs_user_zones.c \
 cs_user_boundary_conditions_ale.f90 \
@@ -173,6 +176,17 @@ cs_f_user_physical_properties.obj: $(cs_user_f_physical_properties)
 cs_f_user_physical_properties.lo: $(cs_user_f_physical_properties)
 	$(LTFCCOMPILE) -c -o cs_f_user_physical_properties.o $(cs_user_f_physical_properties)
 
+cs_user_f_source_terms = $(top_srcdir)/src/user/cs_user_source_terms.f90
+
+cs_f_user_source_terms.o: $(cs_user_f_source_terms)
+	$(FCCOMPILE) -c -o cs_f_user_source_terms.o  $(cs_user_f_source_terms)
+
+cs_f_user_source_terms.obj: $(cs_user_f_source_terms)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_source_terms)`
+
+cs_f_user_source_terms.lo: $(cs_user_f_source_terms)
+	$(LTFCCOMPILE) -c -o cs_f_user_source_terms.o $(cs_user_f_source_terms)
+
 cs_user_f_porosity = $(top_srcdir)/src/user/cs_user_porosity.f90
 
 cs_f_user_porosity.o: $(cs_user_f_porosity)
@@ -188,7 +202,7 @@ noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
 libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo \
 cs_f_user_initialization.lo cs_f_user_physical_properties.lo \
-cs_f_user_boundary_conditions.lo \
+cs_f_user_source_terms.lo cs_f_user_boundary_conditions.lo \
 cs_f_user_porosity.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
@@ -199,6 +213,7 @@ cs_user_parameters.f90 \
 cs_user_extra_operations.f90 \
 cs_user_initialization.f90 \
 cs_user_physical_properties.f90 \
+cs_user_source_terms.f90 \
 cs_user_porosity.f90
 
 clean-local:

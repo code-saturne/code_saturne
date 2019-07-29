@@ -406,6 +406,23 @@ cs_user_physical_properties(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function called at each time step to define physical properties.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       f_id     field id of the variable
+ * \param[out]      st_exp   explicit source term
+ * \param[out]      st_imp   implicit part of the source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_source_terms(cs_domain_t *domain,
+                     int         f_id,
+                     cs_real_t   *st_exp,
+                     cs_real_t   *st_imp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the porosity (volume factor \f$ \epsilon \f$
  *        when the porosity model is activated
  *        (iporos greater than 1 in cs_user_parameters.f90).

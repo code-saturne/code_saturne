@@ -311,6 +311,9 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
+! C version
+call user_source_terms(ivarfl(ivar), smbr, rovsdt)
+
 !     If we extrapolate the source terms
 if (st_prv_id.ge.0) then
   do iel = 1, ncel

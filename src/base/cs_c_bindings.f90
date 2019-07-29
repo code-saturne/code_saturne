@@ -1663,6 +1663,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function
+
+    subroutine user_source_terms(f_id, st_exp, st_imp)  &
+      bind(C, name='cs_user_source_terms_wrapper')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
+    end subroutine user_source_terms
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for user arrays
 
     subroutine cs_gui_user_arrays()  &

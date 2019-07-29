@@ -625,6 +625,17 @@ cs_user_physical_properties_wrapper(void)
 }
 
 void
+cs_user_source_terms_wrapper(int       f_id,
+                             cs_real_t *st_exp,
+                             cs_real_t *st_imp)
+{
+  cs_user_source_terms(cs_glob_domain,
+                       f_id,
+                       st_exp,
+                       st_imp);
+}
+
+void
 cs_user_extra_operations_wrapper(void)
 {
   cs_user_extra_operations(cs_glob_domain);

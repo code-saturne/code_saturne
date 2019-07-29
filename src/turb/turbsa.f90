@@ -413,6 +413,9 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    tsexp  , tsimp )
 
+! C version
+call user_source_terms(ivarfl(inusa), tsexp, tsimp)
+
 !===============================================================================
 ! 6. User source terms and d/dt(rho) and div(rho u) are taken into account
 !      stored in rhssa

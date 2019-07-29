@@ -257,6 +257,9 @@ call ustssc                                                                    &
   dt     ,                                                                     &
   ckupdc , smacel , smbrs  , rovsdt )
 
+! C version
+call user_source_terms(ivarfl(isca(iscal)), smbrs, rovsdt)
+
 do iel = 1, ncel
   smbrs(iel) = smbrs(iel) + rovsdt(iel)*cvar_energ(iel)
   rovsdt(iel) = max(-rovsdt(iel),zero)

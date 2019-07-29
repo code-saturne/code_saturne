@@ -316,12 +316,16 @@ endif
 !===============================================================================
 ! 2. User source terms
 !===============================================================================
+
 call cs_user_turbulence_source_terms2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
+
+! C version
+call user_source_terms(ivarfl(ivar), smbr, rovsdt)
 
 do isou = 1, dimrij
   ! If we extrapolate the source terms

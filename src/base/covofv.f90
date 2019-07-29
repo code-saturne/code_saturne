@@ -293,6 +293,9 @@ call ustsvv &
   dt     ,                                                       &
   ckupdc , smacel , smbrv  , fimp )
 
+! C version
+call user_source_terms(ivarfl(isca(iscal)), smbrv, fimp)
+
 ! Store the source terms for convective limiter
 call field_get_key_int(iflid, kst, st_id)
 if (st_id .ge.0) then
@@ -316,7 +319,7 @@ end if
 
 ! Si on extrapole les TS :
 !   SMBRV recoit -theta TS du pas de temps precedent
-!     (on aurait pu le faire avant ustssc, mais avec le risque que
+!     (on aurait pu le faire avant ustsvv, mais avec le risque que
 !      l'utilisateur l'ecrase)
 !   SMBRV recoit la partie du terme source qui depend de la variable
 !   A l'ordre 2, on suppose que le ROVSDT fourni par l'utilisateur est <0
