@@ -598,9 +598,33 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
                 const cs_cdo_quantities_t    *quant,
                 const cs_param_hodge_t        h_info,
                 const cs_property_t          *pty,
-                const double                  in_vals[],
+                const cs_real_t               in_vals[],
                 cs_real_t                     t_eval,
-                double                        result[]);
+                cs_real_t                     result[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute cellwise a discrete hodge operator in order to define
+ *          a circulation array from a flux array
+ *
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      h_info    cs_param_hodge_t structure
+ * \param[in]      pty       pointer to a cs_property_t structure or NULL
+ * \param[in]      flux      vector to multiply with the discrete Hodge op.
+ * \param[in, out] circul    array storing the resulting matrix-vector product
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
+                               const cs_cdo_quantities_t    *quant,
+                               cs_real_t                     t_eval,
+                               const cs_param_hodge_t        h_info,
+                               const cs_property_t          *pty,
+                               const cs_real_t               flux[],
+                               cs_real_t                     circul[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

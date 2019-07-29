@@ -371,10 +371,26 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     cb->hdg = cs_sdm_square_create(n_fc);
     break;
 
+  case CS_SPACE_SCHEME_CDOEB:
+    {
+      int  n_ent = CS_MAX(n_fc, n_ec);
+
+      size = n_ent*(n_ent+1);
+      BFT_MALLOC(cb->values, size, double);
+      memset(cb->values, 0, size*sizeof(cs_real_t));
+
+      size = 2*n_ent;
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+      cb->hdg = cs_sdm_square_create(n_ent);
+    }
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0, _("Invalid space scheme."));
 
-  } // End of switch on space scheme
+  } /* End of switch on space scheme */
 
   return cb;
 }
@@ -1081,7 +1097,7 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
       pty_fdk0[0] += pty[0][kk] * nkf0[kk];
       pty_fdk0[1] += pty[1][kk] * nkf0[kk];
       pty_fdk0[2] += pty[2][kk] * nkf0[kk];
-      //
+
       pty_fdk1[0] += pty[0][kk] * nkf1[kk];
       pty_fdk1[1] += pty[1][kk] * nkf1[kk];
       pty_fdk1[2] += pty[2][kk] * nkf1[kk];
@@ -1148,7 +1164,7 @@ _compute_hodge_cost(const int       n_ent,
     for (int k = 0; k < n_ent; k++) /* Loop over sub-volumes */
       stab_part += kappa[k] * alpha_i[k] * alpha_i[k];
 
-    mi[i] += beta2 * stab_part; // Consistency part has already been computed
+    mi[i] += beta2 * stab_part; /* Consistency part has already been computed */
 
     /* Compute extra-diag entries */
     for (int j = i + 1; j < n_ent; j++) { /* Loop on cell entities J */
@@ -1164,7 +1180,7 @@ _compute_hodge_cost(const int       n_ent,
         stab_part += kappa[k] * alpha_i[k] * alpha_j[k];
 
       mi[j] += beta2 * stab_part;
-      mj[i] = mi[j]; // Symmetric by construction
+      mj[i] = mi[j]; /* Symmetric by construction */
 
     } /* End of loop on J entities */
 
@@ -1853,7 +1869,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 
       si[vi] += dval;
       sj[vj] += dval;
-      si[vj] = sj[vi] = -dval; // sgn_i * sgn_j = -1
+      si[vj] = sj[vi] = -dval; /* sgn_i * sgn_j = -1 */
 
     } /* End of loop on cell edges */
 
@@ -1880,7 +1896,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 
       si[vi] += dval;
       sj[vj] += dval;
-      si[vj] = sj[vi] = -dval; // sgn_j * sgn_i = -1
+      si[vj] = sj[vi] = -dval; /* sgn_j * sgn_i = -1 */
 
     } /* End of loop on cell edges */
 
@@ -1976,19 +1992,19 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
         for (int k = 0; k < 3; k++)
           glv[si][k] = cm->wvc[si]*grd_c[k];
 
-        if (wvf[si] > 0) // Face contrib.
+        if (wvf[si] > 0) /* Face contrib. */
           for (int k = 0; k < 3; k++)
             glv[si][k] += wvf[si]*grd_f[k];
 
-        if (si == v1) // Vertex 1 contrib
+        if (si == v1) /* Vertex 1 contrib */
           for (int k = 0; k < 3; k++)
             glv[si][k] += grd_v1[k];
 
-        if (si == v2) // Vertex 2 contrib
+        if (si == v2) /* Vertex 2 contrib */
           for (int k = 0; k < 3; k++)
             glv[si][k] += grd_v2[k];
 
-      } // Loop on cell vertices
+      } /* Loop on cell vertices */
 
       /* Build the upper right part */
       for (int si = 0; si < sloc->n_rows; si++) {
@@ -2111,15 +2127,15 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
         for (int k = 0; k < 3; k++)
           glv[si][k] = 0;
 
-        if (wvf[si] > 0) // Face contrib.
+        if (wvf[si] > 0) /* Face contrib. */
           for (int k = 0; k < 3; k++)
             glv[si][k] += wvf[si]*grd_f[k];
 
-        if (si == v1) // Vertex 1 contrib
+        if (si == v1) /* Vertex 1 contrib */
           for (int k = 0; k < 3; k++)
             glv[si][k] += grd_v1[k];
 
-        if (si == v2) // Vertex 2 contrib
+        if (si == v2) /* Vertex 2 contrib */
           for (int k = 0; k < 3; k++)
             glv[si][k] += grd_v2[k];
 
@@ -2275,10 +2291,10 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 
     double  *mi = hdg->val + vi*msize;
 
-    mi[vi] = c_coef1 * cm->wvc[vi];       // Diagonal entry
+    mi[vi] = c_coef1 * cm->wvc[vi];       /* Diagonal entry */
     for (short int vj = vi+1; vj < cm->n_vc; vj++)
       mi[vj] = 0.;
-    mi[cm->n_vc] = c_coef2 * cm->wvc[vi]; // Cell column
+    mi[cm->n_vc] = c_coef2 * cm->wvc[vi]; /* Cell column */
 
   } /* Loop on cell vertices */
 
@@ -2387,7 +2403,7 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
     /* Diag. entry has an additional contrib */
     mi[vi] = vi_coef * (0.5 + cm->wvc[vi]);
     for (short int vj = vi + 1; vj < cm->n_vc; vj++)
-      mi[vj] = vi_coef * cm->wvc[vj]; // Extra-diagonal entries
+      mi[vj] = vi_coef * cm->wvc[vj]; /* Extra-diagonal entries */
 
   } /* Loop on cell vertices */
 
@@ -3194,9 +3210,9 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
                 const cs_cdo_quantities_t    *quant,
                 const cs_param_hodge_t        h_info,
                 const cs_property_t          *pty,
-                const double                  in_vals[],
+                const cs_real_t               in_vals[],
                 cs_real_t                     t_eval,
-                double                        result[])
+                cs_real_t                     result[])
 {
   if (in_vals == NULL)
     return;
@@ -3444,6 +3460,139 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     } /* Main loop on cells */
 
     BFT_FREE(_in);
+    cs_cell_builder_free(&cb);
+
+  } /* OpenMP Block */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute cellwise a discrete hodge operator in order to define
+ *          a circulation array from a flux array
+ *
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      h_info    cs_param_hodge_t structure
+ * \param[in]      pty       pointer to a cs_property_t structure or NULL
+ * \param[in]      flux      vector to multiply with the discrete Hodge op.
+ * \param[in, out] circul    array storing the resulting matrix-vector product
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
+                               const cs_cdo_quantities_t    *quant,
+                               cs_real_t                     t_eval,
+                               const cs_param_hodge_t        h_info,
+                               const cs_property_t          *pty,
+                               const cs_real_t               flux[],
+                               cs_real_t                     circul[])
+{
+  if (flux == NULL)
+    return;
+
+  const char *func_name = __func__;
+
+  if (circul == NULL) {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Resulting vector must be allocated", __func__);
+    return; /* Avoid a warning */
+  }
+  assert(connect != NULL && quant != NULL); /* Sanity checks */
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
+  shared(quant, connect, flux, t_eval, circul, pty, func_name)          \
+  firstprivate(h_info)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    cs_flag_t  msh_flag = 0;
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    bool pty_uniform = cs_property_is_uniform(pty);
+    cs_hodge_t  *compute = NULL;
+    cs_cell_builder_t  *cb = NULL;
+    double  *_fluxes = NULL;
+
+    switch (h_info.type) {
+
+    /* Only this type of discrete Hodge operator makes sense for this
+       operation */
+    case CS_PARAM_HODGE_TYPE_FPED:
+
+      msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
+      cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
+      BFT_MALLOC(_fluxes, connect->n_max_fbyc, double);
+
+      switch (h_info.algo) {
+      case CS_PARAM_HODGE_ALGO_COST:
+        compute = cs_hodge_fped_cost_get;
+        break;
+      case CS_PARAM_HODGE_ALGO_BUBBLE:
+        compute = cs_hodge_fped_bubble_get;
+        break;
+      case CS_PARAM_HODGE_ALGO_VORONOI:
+        compute = cs_hodge_fped_voro_get;
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid algorithm for Fp->Ed Hodge operator", func_name);
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of discrete Hodge operator", func_name);
+    }
+
+    if (pty == NULL) {
+      cb->dpty_val = 1;
+      cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1.0;
+      cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0.0;
+      cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0.0;
+    }
+
+    if (pty_uniform) { /* Get the value from the first cell */
+      cs_property_get_cell_tensor(0, t_eval, pty, h_info.inv_pty, cb->dpty_mat);
+      if (h_info.is_iso)
+        cb->dpty_val = cb->dpty_mat[0][0];
+    }
+
+    const cs_adjacency_t  *c2f = connect->c2f;
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+      /* Retrieve the value of the property inside the current cell */
+      if (!pty_uniform) {
+        cs_property_tensor_in_cell(cm, pty, t_eval, h_info.inv_pty,
+                                   cb->dpty_mat);
+        if (h_info.is_iso)
+          cb->dpty_val = cb->dpty_mat[0][0];
+      }
+
+      /* Build the local discrete Hodge operator */
+      compute(h_info, cm, cb);
+
+      /* Define a local vector to multiply for the current cell */
+      for (short int f = 0; f < cm->n_fc; f++)
+        _fluxes[f] = flux[cm->f_ids[f]];
+      cs_real_t  *_circ = circul + c2f->idx[c_id];
+
+      /* Local matrix-vector operation */
+      cs_sdm_square_matvec(cb->hdg, _fluxes, _circ);
+
+    } /* Main loop on cells */
+
+    BFT_FREE(_fluxes);
     cs_cell_builder_free(&cb);
 
   } /* OpenMP Block */
