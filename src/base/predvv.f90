@@ -449,6 +449,9 @@ call ustsnv &
   dt     ,                                                       &
   ckupdc , smacel , tsexp  , tsimp  )
 
+! C version
+call user_source_terms(ivarfl(iu), tsexp, tsimp)
+
 n_fans = cs_fan_n_fans()
 if (n_fans .gt. 0) then
   if (ntcabs.eq.ntpabs+1) then

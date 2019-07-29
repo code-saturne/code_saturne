@@ -412,6 +412,9 @@ call ustssc &
   dt     ,                                                       &
   ckupdc , smacel , smbrs  , rovsdt )
 
+! C version
+call user_source_terms(ivarfl(isca(iscal)), smbrs, rovsdt)
+
 ! Take into account radioactive decay rate (implicit source term)
 if (ippmod(idarcy).eq.1) then
   call cs_gwf_decay_rate(ivarfl(ivar), rovsdt)

@@ -298,6 +298,9 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
 
+! C version
+call user_source_terms(ivarfl(ivar), smbr, rovsdt)
+
 !     If we extrapolate the source terms
 if (istprv.ge.0) then
   do iel = 1, ncel
@@ -562,6 +565,9 @@ call cs_user_turbulence_source_terms &
    icepdc , icetsm , itypsm ,                                     &
    ckupdc , smacel ,                                              &
    smbr   , rovsdt )
+
+! C version
+call user_source_terms(ivarfl(ivar), smbr, rovsdt)
 
 !     If we extrapolate the source terms
 if (istprv.ge.0) then

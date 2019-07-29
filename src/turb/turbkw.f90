@@ -519,12 +519,18 @@ call cs_user_turbulence_source_terms &
    ckupdc , smacel ,                                              &
    smbrk  , usimpk )
 
+! C version
+call user_source_terms(ivarfl(ik), smbrk, usimpk)
+
 call cs_user_turbulence_source_terms &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(iomg)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ckupdc , smacel ,                                              &
    smbrw  , usimpw )
+
+! C version
+call user_source_terms(ivarfl(iomg), smbrw, usimpw)
 
 ! If source terms are extrapolated over time
 if (istprv.ge.0) then
