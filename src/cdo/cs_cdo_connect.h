@@ -208,6 +208,24 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the discrete curl operator across each primal faces.
+ *        From an edge-based array (seen as circulations) compute a face-based
+ *        array (seen as fluxes)
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in]      edge_values  array of values at edges
+ * \param[in, out] curl_values  array storing the curl across faces (allocated
+ *                              if necessary)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
+                             const cs_real_t           *edge_values,
+                             cs_real_t                **p_curl_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of connectivity information
  *
  * \param[in]  connect     pointer to cs_cdo_connect_t structure

@@ -1149,6 +1149,51 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the discrete curl operator across each primal faces.
+ *        From an edge-based array (seen as circulations) compute a face-based
+ *        array (seen as fluxes)
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t struct.
+ * \param[in]      edge_values  array of values at edges
+ * \param[in, out] curl_values  array storing the curl across faces (allocated
+ *                              if necessary)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
+                             const cs_real_t           *edge_values,
+                             cs_real_t                **p_curl_values)
+{
+  if (connect == NULL || edge_values == NULL)
+    return;
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
+
+  cs_real_t  *curl_values = *p_curl_values;
+  if (curl_values == NULL)
+    BFT_MALLOC(curl_values, n_faces, cs_real_t);
+
+  const cs_adjacency_t  *f2e = connect->f2e;
+  assert(f2e != NULL && f2e->sgn != NULL); /* Sanity checks */
+
+  for (cs_lnum_t f = 0; f < n_faces; f++) {
+
+    const cs_lnum_t  start = f2e->idx[f], end = f2e->idx[f+1];
+    const cs_lnum_t  *ids = f2e->ids + start;
+    const short int  *sgn = f2e->sgn + start;
+
+    curl_values[f] = 0;
+    for (int e = 0; e < end-start; e++)
+      curl_values[f] += sgn[e]*edge_values[ids[e]];
+
+  } /* Loop on faces */
+
+  /* Return pointer */
+  *p_curl_values = curl_values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of connectivity information
  *
  * \param[in]  connect     pointer to cs_cdo_connect_t structure
