@@ -2741,7 +2741,32 @@ cs_mesh_quantities_set_porous_model(int  porous_model)
 void
 cs_mesh_quantities_set_has_disable_flag(int  flag)
 {
-  cs_glob_mesh_quantities->has_disable_flag = flag;
+  cs_mesh_quantities_t *mq =cs_glob_mesh_quantities;
+
+  mq->has_disable_flag = flag;
+  /* if off, fluid surfaces points toward cell surfaces */
+  /* Porous models */
+  if (cs_glob_porous_model > 0) {
+    if (flag == 0) {
+      /* Set pointer of compution faces to standard faces */
+      if (cs_glob_porous_model == 3) {
+        mq->i_f_face_normal = mq->i_face_normal;
+        mq->b_f_face_normal = mq->b_face_normal;
+        mq->i_f_face_surf   = mq->i_face_surf;
+        mq->b_f_face_surf   = mq->b_face_surf;
+      }
+      mq->cell_f_vol = mq->cell_vol;
+    } else {
+      /* Use fluid sufaces and volume */
+      if (cs_glob_porous_model == 3) {
+        mq->i_f_face_normal = cs_field_by_name("i_f_face_normal")->val;
+        mq->b_f_face_normal = cs_field_by_name("b_f_face_normal")->val;
+        mq->i_f_face_surf   = cs_field_by_name("i_f_face_surf")->val;
+        mq->b_f_face_surf   = cs_field_by_name("b_f_face_surf")->val;
+      }
+      mq->cell_f_vol        = cs_field_by_name("cell_f_vol")->val;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3126,48 +3151,23 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   cs_mesh_quantities_compute_preprocess(mesh, mesh_quantities);
 
-  /* Balance porous model */
-  if (cs_glob_porous_model == 3) {
-    if (mesh_quantities->i_f_face_normal == NULL)
-      BFT_MALLOC(mesh_quantities->i_f_face_normal, n_i_faces*dim, cs_real_t);
+  /* Fluid surfaces and volume: point to standard quantities and
+   * may be modified afterwards */
+  mesh_quantities->i_f_face_normal = mesh_quantities->i_face_normal;
+  mesh_quantities->b_f_face_normal = mesh_quantities->b_face_normal;
+  mesh_quantities->i_f_face_surf = mesh_quantities->i_face_surf;
+  mesh_quantities->b_f_face_surf = mesh_quantities->b_face_surf;
 
-    if (mesh_quantities->b_f_face_normal == NULL)
-      BFT_MALLOC(mesh_quantities->b_f_face_normal, n_b_faces*dim, cs_real_t);
-
-    if (mesh_quantities->i_f_face_surf == NULL)
-      BFT_MALLOC(mesh_quantities->i_f_face_surf, n_i_faces, cs_real_t);
-
-    if (mesh_quantities->b_f_face_surf == NULL)
-      BFT_MALLOC(mesh_quantities->b_f_face_surf, n_b_faces, cs_real_t);
-
-    if (mesh_quantities->i_f_face_factor == NULL)
-      BFT_MALLOC(mesh_quantities->i_f_face_factor, n_i_faces, cs_real_2_t);
-
-    if (mesh_quantities->b_f_face_factor == NULL)
-      BFT_MALLOC(mesh_quantities->b_f_face_factor, n_b_faces, cs_real_t);
-
-  }
-  else {
-    mesh_quantities->i_f_face_normal = mesh_quantities->i_face_normal;
-    mesh_quantities->b_f_face_normal = mesh_quantities->b_face_normal;
-    mesh_quantities->i_f_face_surf = mesh_quantities->i_face_surf;
-    mesh_quantities->b_f_face_surf = mesh_quantities->b_face_surf;
-  }
+  mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
 
   /* Porous models */
   if (cs_glob_porous_model > 0) {
     mesh_quantities->has_disable_flag = 1;
-    if (mesh_quantities->cell_f_vol == NULL)
-      BFT_MALLOC(mesh_quantities->cell_f_vol, n_cells_with_ghosts, cs_real_t);
-
   }
   else {
-    mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
-
     mesh_quantities->min_f_vol = mesh_quantities->min_vol;
     mesh_quantities->max_f_vol = mesh_quantities->max_vol;
     mesh_quantities->tot_f_vol = mesh_quantities->tot_vol;
-
   }
 
   if (mesh_quantities->has_disable_flag == 1) {
