@@ -1202,7 +1202,7 @@ cs_rad_transfer_solve(int               bc_type[],
      is required for boundary conditions. */
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 2)
-    cs_rad_transfer_absorption(tempk, kgi, agi, w_gg);
+    cs_rad_transfer_absorption(tempk, ckg, kgi, agi, w_gg);
 
   else {
 

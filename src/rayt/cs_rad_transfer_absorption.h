@@ -58,6 +58,7 @@ BEGIN_C_DECLS
  * length is at least of the order of unity.
  *
  * \param[in]   tempk  gas phase temperature at cells (in Kelvin)
+ * \param[out]  cpro_caki0 Medium (gas) Absorption coefficient
  * \param[out]  kgas   radiation coefficients of the gray gases at cells
  *                      (per gas)
  * \param[out]  agas   weights of the gray gases at cells (per gas)
@@ -67,6 +68,7 @@ BEGIN_C_DECLS
 
 void
 cs_rad_transfer_absorption(const cs_real_t  tempk[],
+                           cs_real_t        cpro_cak0[],
                            cs_real_t        kgas[],
                            cs_real_t        agas[],
                            cs_real_t        agasb[]);
