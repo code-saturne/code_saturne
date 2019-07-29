@@ -118,14 +118,12 @@ cs_user_boundary_conditions(int         nvar,
   /* Getting the value of a user defined parameter t_inlet */
   cs_real_t t_bnd = cs_notebook_parameter_value_by_name("t_inlet");
 
-
   /* Variables needed for boundary condition sub-selection */
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-
   const int keyvar = cs_field_key_id("variable_id");
   cs_field_t *scalar = cs_field_by_name_try("scalar1");
-  int iscal = cs_field_get_key_int(scalar, keyvar) - 1;
+  int ivar = cs_field_get_key_int(scalar, keyvar) - 1;
 
   cs_lnum_t  nelts = 0;
   cs_lnum_t *lstelt = NULL;
@@ -135,13 +133,24 @@ cs_user_boundary_conditions(int         nvar,
   cs_selector_get_b_face_list("inlet", &nelts, lstelt);
 
   for (cs_lnum_t ielt = 0; ielt < nelts; ielt++) {
-    cs_lnum_t f_id = lstelt[ielt];
+    cs_lnum_t face_id = lstelt[ielt];
 
-    icodcl[iscal*n_b_faces + f_id] = 1;
-    rcodcl[iscal*n_b_faces + f_id] = t_bnd;
+    icodcl[ivar*n_b_faces + face_id] = 1;
+    rcodcl[ivar*n_b_faces + face_id] = t_bnd;
   }
 
   BFT_FREE(lstelt);
+
+  /* Use boundary zones */
+  const cs_zone_t *zone = cs_boundary_zone_by_name("grid_inlet");
+
+  for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+    cs_lnum_t face_id = zone->elt_ids[i];
+
+    /* Dirichlet */
+    icodcl[ivar*n_b_faces + face_id] = 1;
+    rcodcl[ivar*n_b_faces + face_id] = 0.;
+  }
 
 }
 
