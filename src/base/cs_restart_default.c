@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,6 +56,7 @@
 #include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
+#include "cs_random.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
 #include "cs_physical_constants.h"
@@ -1492,7 +1494,27 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
     /* TODO perform the conversion from other models to SA. */
 
+  } else if (itytur_cur == 4) { /* LES mode */
+
+      cs_real_3_t *v_vel = (cs_real_3_t *)(CS_F_(vel)->vals[t_id]);
+
+      cs_real_t *v_k;
+      BFT_MALLOC(v_k, n_cells, cs_real_t);
+
+      err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
+
+      /* Now add sqrt(2/3 k) as noise on the velocity */
+
+      cs_real_t rand[3];
+      cs_random_normal(3, rand);
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int i = 0; i < 3; i++)
+          v_vel[cell_id][i] += rand[i] * sqrt(2./3.*v_k[cell_id]);
+      }
+
   }
+
 
   if (err_sum != 0)
     bft_error
