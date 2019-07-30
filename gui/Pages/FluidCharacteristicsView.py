@@ -219,7 +219,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if mdl_atmo != 'off':
             self.modelRho.addItem(self.tr('defined in atphyv'), 'predefined_law')
         if mdl_hgn != "off":
-            self.modelRho.addItem(self.tr('Linear law'), 'predefined_law')
+            self.modelRho.addItem(self.tr('linear mixture law'), 'predefined_law')
         elif mdl_joule == 'arc':
             self.modelRho.addItem(self.tr('defined in elphyv'), 'predefined_law')
         elif mdl_comp != 'off':
@@ -233,7 +233,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if mdl_joule == 'arc':
             self.modelMu.addItem(self.tr('defined in elphyv'), 'predefined_law')
         if mdl_hgn != "off":
-            self.modelMu.addItem(self.tr('Linear law'), 'predefined_law')
+            self.modelMu.addItem(self.tr('linear mixture law'), 'predefined_law')
 
         self.modelCp.addItem(self.tr('constant'), 'constant')
         self.modelCp.addItem(self.tr('user law'), 'user_law')
@@ -590,8 +590,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __model.setItem(str_model='predefined_law')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
-                    __button.hide()
-                    __combo.hide()
                     __button.hide()
                     self.mdl.setPropertyMode(tag, 'predefined_law')
                     __line.setEnabled(True)
