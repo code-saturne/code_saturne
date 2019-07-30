@@ -104,10 +104,21 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
-!>                               - 11 Boundary value related to the next cell
+!>                               - 10 Boundary value related to the next cell
 !>                                 value by an affine function
+!>                               - 11 Generalized Dirichlet for vectors
+!>                               - 12 Dirichlet boundary value related to the
+!>                                 next cell value by an affine function for
+!>                                 the advection operator and Neumann for the
+!>                                 diffusion operator
 !>                               - 13 Dirichlet for the advection operator and
 !>                                 Neumann for the diffusion operator
+!>                               - 14 Generalized symmetry for vectors (used for
+!>                                 Marangoni effects modeling)
+!>                               - 15 Neumann for the advection operator and
+!>                                 homogeneous Neumann for the diffusion
+!>                                 operator (walls with hydro. pressure for
+!>                                 the compressible module)
 !> \param[in,out] isostd        indicator for standard outlet
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
@@ -1469,7 +1480,7 @@ do ifac = 1, nfabor
   ! Boundary value proportional to boundary cell value
   !---------------------------------------------------
 
-  elseif (icodcl(ifac,ipr).eq.11) then
+  elseif (icodcl(ifac,ipr).eq.10) then
 
     pinf = rcodcl(ifac,ipr,1)
     ratio = rcodcl(ifac,ipr,2)
@@ -1479,6 +1490,21 @@ do ifac = 1, nfabor
          coefbp(ifac), cofbfp(ifac),                         &
          pinf        , ratio       , hint                    )
 
+  ! Imposed value for the convection operator is proportional to boundary
+  ! cell value, imposed flux for diffusion
+  !----------------------------------------------------------------------
+
+  elseif (icodcl(ifac,ipr).eq.12) then
+
+    pinf = rcodcl(ifac,ipr,1)
+    ratio = rcodcl(ifac,ipr,2)
+    dimp = rcodcl(ifac,ipr,3)
+
+    call set_affine_function_conv_neumann_diff_scalar        &
+       ( coefap(ifac), cofafp(ifac),                         &
+         coefbp(ifac), cofbfp(ifac),                         &
+         pinf        , ratio       , dimp                    )
+
   ! Imposed value for the convection operator, imposed flux for diffusion
   !----------------------------------------------------------------------
 
@@ -1487,10 +1513,22 @@ do ifac = 1, nfabor
     pimp = rcodcl(ifac,ipr,1)
     dimp = rcodcl(ifac,ipr,3)
 
-    call set_dirichlet_conv_neumann_diff_scalar &
+    call set_dirichlet_conv_neumann_diff_scalar              &
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          pimp              , dimp )
+
+  ! Neumann for the convection operator, zero flux for diffusion
+  !----------------------------------------------------------------------
+
+  elseif (icodcl(ifac,ipr).eq.15) then
+
+    dimp = rcodcl(ifac,ipr,3)
+
+    call set_neumann_conv_h_neumann_diff_scalar              &
+       ( coefap(ifac), cofafp(ifac),                         &
+         coefbp(ifac), cofbfp(ifac),                         &
+         dimp , hint )
 
   endif
 
@@ -4692,6 +4730,7 @@ cofbf(3,1) = hint(6)*(1.d0 - coefb(3,3))
 return
 end subroutine
 
+
 !===============================================================================
 
 !-------------------------------------------------------------------------------
@@ -4723,8 +4762,6 @@ implicit none
 
 double precision coefa, cofaf, coefb, cofbf, pinf, ratio, hint
 
-! Local variables
-
 !===============================================================================
 
 ! Gradient BCs
@@ -4737,6 +4774,95 @@ cofbf =  hint*(1.d0 - coefb)
 
 return
 end subroutine
+
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     dimp          Flux value to impose
+!> \param[in]     hint          Internal exchange coefficient
+!_______________________________________________________________________________
+
+subroutine set_neumann_conv_h_neumann_diff_scalar &
+ (coefa , cofaf, coefb, cofbf, dimp, hint)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa, cofaf, coefb, cofbf, dimp, hint
+
+!===============================================================================
+
+! Gradient BCs
+call set_neumann_scalar(coefa, cofaf, coefb, cofbf, dimp, hint)
+
+! Flux BCs
+cofaf = 0.d0
+cofbf = 0.d0
+
+return
+end subroutine
+
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pinf          affine part
+!> \param[in]     ratio         linear part
+!> \param[in]     dimp          Flux value to impose
+!_______________________________________________________________________________
+
+subroutine set_affine_function_conv_neumann_diff_scalar &
+ (coefa, cofaf, coefb, cofbf, pinf, ratio, dimp)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa, cofaf, coefb, cofbf, pinf, ratio, dimp
+
+!===============================================================================
+
+! Gradient BCs
+coefb = ratio
+coefa = pinf
+
+! Flux BCs
+cofaf = dimp
+cofbf = 0.d0
+
+return
+end subroutine
+
 
 !===============================================================================
 
@@ -4778,6 +4904,7 @@ cofbf = hext
 
 return
 end subroutine
+
 
 !===============================================================================
 
@@ -4950,22 +5077,7 @@ end subroutine
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     itrale        ALE iteration number
-!> \param[in,out] icodcl        face boundary condition code:
-!>                               - 1 Dirichlet
-!>                               - 2 Radiative outlet
-!>                               - 3 Neumann
-!>                               - 4 sliding and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 5 smooth wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rough wall and
-!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 9 free inlet/outlet
-!>                                 (input mass flux blocked to 0)
-!>                               - 11 Boundary value related to the next cell
-!>                                 value by an affine function
-!>                               - 13 Dirichlet for the advection operator and
-!>                                 Neumann for the diffusion operator
+!> \param[in,out] icodcl        face boundary condition code (see \ref condli)
 !> \param[in,out] isostd        indicator for standard outlet
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)

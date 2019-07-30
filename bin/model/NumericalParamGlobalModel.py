@@ -76,7 +76,7 @@ class NumericalParamGlobalModel(Model):
         from code_saturne.model.HgnModel import HgnModel
         if HgnModel(self.case).getHgnModel() == 'no_mass_transfer':
             self.default['hydrostatic_pressure'] ='on'
-        self.default['hydrostatic_equilibrium'] ='on'
+        self.default['hydrostatic_equilibrium'] ='off'
         self.default['wall_pressure_extrapolation'] = 'neumann'
         self.default['time_scheme_order'] = 1
         from code_saturne.model.GroundwaterModel import GroundwaterModel

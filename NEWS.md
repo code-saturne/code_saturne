@@ -126,7 +126,20 @@ Default option changes:
   on several verification test cases run on tetrahedral meshes
   (INTERNAL_COUPLING, PERMEABILITY_GRADIENT, PLANE_COUETTE_FLOW).
 
+- Change a default setting (GUI) of the compressible model:
+  for hydro. pressure treatment at walls (disabled by default now).
+  Physical modelling:
+
 Bug fixes:
+
+- Fix for wall boundary conditions with the compressible model / algorithm.
+  Always use a homogeneous Neumann on pressure for the mass balance step.
+  This fixes mass conservation for cases:
+  * with gravity and hydro. pressure treatment
+  * without gravity and without hydro. pressure treatment.
+  Note that the default behaviour (GUI) was to enable the hydro. pressure
+  treatment at walls. Hence in all cases with this default setting and no
+  gravity, this fix has no impact. 
 
 - Fix missing variable change for computed pressure with EVM in a
   postprocessing utility function.
