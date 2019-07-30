@@ -2745,6 +2745,8 @@ cs_mesh_quantities_set_has_disable_flag(int  flag)
         mq->b_f_face_normal = mq->b_face_normal;
         mq->i_f_face_surf   = mq->i_face_surf;
         mq->b_f_face_surf   = mq->b_face_surf;
+        mq->i_f_face_factor = NULL;
+        mq->b_f_face_factor = NULL;
       }
       mq->cell_f_vol = mq->cell_vol;
     } else {
@@ -2754,6 +2756,8 @@ cs_mesh_quantities_set_has_disable_flag(int  flag)
         mq->b_f_face_normal = cs_field_by_name("b_f_face_normal")->val;
         mq->i_f_face_surf   = cs_field_by_name("i_f_face_surf")->val;
         mq->b_f_face_surf   = cs_field_by_name("b_f_face_surf")->val;
+        mq->i_f_face_factor = cs_field_by_name("i_f_face_factor");
+        mq->b_f_face_factor = cs_field_by_name("b_f_face_factor");
       }
       mq->cell_f_vol        = cs_field_by_name("cell_f_vol")->val;
     }
@@ -2846,24 +2850,12 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
   BFT_FREE(mq->cell_cen);
   BFT_FREE(mq->cell_vol);
-  if (cs_glob_porous_model > 0)
-    BFT_FREE(mq->cell_f_vol);
   BFT_FREE(mq->i_face_normal);
   BFT_FREE(mq->b_face_normal);
-  if (cs_glob_porous_model == 3) {
-    BFT_FREE(mq->i_f_face_normal);
-    BFT_FREE(mq->b_f_face_normal);
-  }
   BFT_FREE(mq->i_face_cog);
   BFT_FREE(mq->b_face_cog);
   BFT_FREE(mq->i_face_surf);
   BFT_FREE(mq->b_face_surf);
-  if (cs_glob_porous_model == 3) {
-    BFT_FREE(mq->i_f_face_surf);
-    BFT_FREE(mq->b_f_face_surf);
-    BFT_FREE(mq->i_f_face_factor);
-    BFT_FREE(mq->b_f_face_factor);
-  }
   BFT_FREE(mq->i_dist);
   BFT_FREE(mq->b_dist);
   BFT_FREE(mq->weight);

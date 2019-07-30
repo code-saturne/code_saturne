@@ -483,6 +483,22 @@ if (iporos.ge.1) then
                       .false.,&
                       f_id)
 
+    f_name = 'i_f_face_factor'
+    call field_create(f_name,&
+                      itycat,&
+                      2,& ! location: inner faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
+    f_name = 'b_f_face_factor'
+    call field_create(f_name,&
+                      itycat,&
+                      3,& ! location: boundary faces
+                      1,& ! dimension
+                      .false.,&
+                      f_id)
+
   endif
 
   ! Make fluid surfaces of mesh quantity point to the created fields
