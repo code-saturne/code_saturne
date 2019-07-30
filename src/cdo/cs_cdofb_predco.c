@@ -69,7 +69,6 @@
 #include "cs_navsto_sles.h"
 #include "cs_param.h"
 #include "cs_post.h"
-#include "cs_sles.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
@@ -1187,17 +1186,19 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_field_current_to_previous(velp_fld);
 
-  /* Now solve the system */
   cs_real_t  *velp_c = velp_fld->val;
-  cs_real_t *velp_f = sc->predicted_velocity_f;
-  cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  cs_real_t  *velp_f = sc->predicted_velocity_f;
 
-  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, velp_f, rhs);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_PREDCO_DBG,
-                        velp_f, rhs, 3*n_faces);
-#endif
+  /* Solve the linear system (treated as a scalar-valued system
+   * with 3 times more DoFs) */
+  cs_real_t  normalization = 1.0; /* TODO */
+  cs_equation_solve_scalar_system(3*n_faces,
+                                  mom_eqp,
+                                  matrix,
+                                  mom_rs,
+                                  normalization,
+                                  velp_f,
+                                  rhs);
 
   /* Update pressure, velocity and divergence fields */
   cs_timer_t  t_upd = cs_timer_time();
@@ -1210,7 +1211,6 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                                         velp_f, velp_c);
 
   /* Frees */
-  cs_sles_free(sles);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
 

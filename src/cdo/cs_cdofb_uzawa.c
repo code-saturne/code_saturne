@@ -1327,10 +1327,17 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
    *    of the field related to mom_eq (i.e. the velocity). x_f = u_{f,k=0}
    *  - Handle parallelism (if // --> b is allocated since it gathers
    *    contribution from ranks sharing faces)
-   */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
-  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+   *
+   * Solve the linear system (treated as a scalar-valued system
+   *  with 3 times more DoFs) */
+  cs_real_t  normalization = 1.0; /* TODO */
+  solv_iter += cs_equation_solve_scalar_system(3*n_faces,
+                                               mom_eqp,
+                                               matrix,
+                                               rs,
+                                               normalization,
+                                               vel_f,
+                                               rhs);
 
   /* Update field */
   t_upd = cs_timer_time();
@@ -1394,8 +1401,14 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
       /* Null initial guess */
       memset(delta_vel_f, 0, 3*n_faces*rsize);
 
-      solv_iter += (loc_solv_iter =
-        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, delta_vel_f, rhs));
+      solv_iter +=
+        (loc_solv_iter = cs_equation_solve_scalar_system(3*n_faces,
+                                                         mom_eqp,
+                                                         matrix,
+                                                         rs,
+                                                         normalization,
+                                                         delta_vel_f,
+                                                         rhs));
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
@@ -1410,7 +1423,8 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
       if (loc_solv_iter == 0) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "\n  The inner iterations stagnated. Stopping.\n");
+                      "\n %s: The inner iterations stagnated. Stopping.\n",
+                      __func__);
         cvg_code = -2;
         break;
       }
@@ -1501,7 +1515,6 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
-  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
   t_tmp = cs_timer_time();
@@ -1793,10 +1806,17 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
    *    of the field related to mom_eq (i.e. the velocity). x_f = u_{f,k=0}
    *  - Handle parallelism (if // --> b is allocated since it gathers
    *    contribution from ranks sharing faces)
-   */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
-  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+   *
+   * Solve the linear system (treated as a scalar-valued system
+   * with 3 times more DoFs) */
+  cs_real_t  normalization = 1.0; /* TODO */
+  solv_iter += cs_equation_solve_scalar_system(3*n_faces,
+                                               mom_eqp,
+                                               matrix,
+                                               rs,
+                                               normalization,
+                                               vel_f,
+                                               rhs);
 
   /* Update field */
   t_upd = cs_timer_time();
@@ -1859,9 +1879,14 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       /* Null initial guess */
       memset(delta_vel_f, 0, 3*n_faces*rsize);
-
-      solv_iter += (loc_solv_iter =
-        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, delta_vel_f, rhs));
+      solv_iter +=
+        (loc_solv_iter = cs_equation_solve_scalar_system(3*n_faces,
+                                                         mom_eqp,
+                                                         matrix,
+                                                         rs,
+                                                         normalization,
+                                                         delta_vel_f,
+                                                         rhs));
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
@@ -1876,7 +1901,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       if (loc_solv_iter == 0) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "\n  The inner iterations stagnated. Stopping.\n");
+                      "\n %s: The inner iterations stagnated. Stopping.\n",
+                      __func__);
         cvg_code = -2;
         break;
       }
@@ -1966,7 +1992,6 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
-  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
   t_tmp = cs_timer_time();
@@ -2371,8 +2396,14 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
       /* Null initial guess */
       memset(delta_vel_f, 0, 3*n_faces*rsize);
 
-      solv_iter += (loc_solv_iter =
-        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, delta_vel_f, rhs));
+      solv_iter +=
+        (loc_solv_iter = cs_equation_solve_scalar_system(3*n_faces,
+                                                         mom_eqp,
+                                                         matrix,
+                                                         rs,
+                                                         normalization,
+                                                         delta_vel_f,
+                                                         rhs));
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
@@ -2477,7 +2508,6 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
-  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
   t_tmp = cs_timer_time();
@@ -2571,13 +2601,19 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
    *    of the field related to mom_eq (i.e. the velocity). x_f = u_{f,k=0}
    *  - Handle parallelism (if // --> b is allocated since it gathers
    *    contribution from ranks sharing faces)
-   */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
-  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+   *
+   * Solve the linear system (treated as a scalar-valued system
+   * with 3 times more DoFs) */
+  cs_real_t  normalization = 1.0; /* TODO */
+  solv_iter += cs_equation_solve_scalar_system(3*quant->n_faces,
+                                               mom_eqp,
+                                               matrix,
+                                               rs,
+                                               normalization,
+                                               vel_f,
+                                               rhs);
 
   /* Frees */
-  cs_sles_free(sles);         sles   = NULL;
   cs_matrix_destroy(&matrix); matrix = NULL;
   BFT_FREE(rhs);              rhs    = NULL;
 
@@ -2621,14 +2657,16 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
       /* Actually values from last iteration */
 #endif
 
-      sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-      /* Is it necessary to destroy and recreate it? */
-
-      solv_iter += (loc_solv_iter =
-        cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs));
+      solv_iter +=
+        (loc_solv_iter = cs_equation_solve_scalar_system(3*quant->n_faces,
+                                                         mom_eqp,
+                                                         matrix,
+                                                         rs,
+                                                         normalization,
+                                                         vel_f,
+                                                         rhs));
 
       /* Frees */
-      cs_sles_free(sles);         sles   = NULL;
       cs_matrix_destroy(&matrix); matrix = NULL;
       BFT_FREE(rhs);              rhs    = NULL;
 

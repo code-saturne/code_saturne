@@ -943,16 +943,18 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
-  /* Now solve the system */
-  cs_real_t *vel_f = mom_eqc->face_values;
-  cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  /* Solve the linear system (treated as a scalar-valued system
+   * with 3 times more DoFs) */
+  cs_real_t  *vel_f = mom_eqc->face_values;
+  cs_real_t  normalization = 1.0; /* TODO */
 
-  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_AC_DBG,
-                        vel_f, rhs, 3*n_faces);
-#endif
+  cs_equation_solve_scalar_system(3*n_faces,
+                                  mom_eqp,
+                                  matrix,
+                                  rs,
+                                  normalization,
+                                  vel_f,
+                                  rhs);
 
   /* Update pressure, velocity and divergence fields */
   t_upd = cs_timer_time();
@@ -979,7 +981,6 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 #endif
 
   /* Frees */
-  cs_sles_free(sles);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
 
@@ -1295,10 +1296,18 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
-  /* Now solve the system */
+  /* Solve the linear system (treated as a scalar-valued system
+   * with 3 times more DoFs) */
   cs_real_t *vel_f = mom_eqc->face_values;
-  cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+  cs_real_t  normalization = 1.0; /* TODO */
+
+  cs_equation_solve_scalar_system(3*n_faces,
+                                  mom_eqp,
+                                  matrix,
+                                  rs,
+                                  normalization,
+                                  vel_f,
+                                  rhs);
 
   /* Update pressure, velocity and divergence fields */
   t_upd = cs_timer_time();
@@ -1309,11 +1318,6 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
                                         mom_eqc->rc_tilda,
                                         mom_eqc->acf_tilda,
                                         vel_f, vel_c);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_AC_DBG,
-                        vel_f, rhs, 3*n_faces);
-#endif
 
   /* Updates after the resolution:
    *  the divergence: div = B.u_f
@@ -1330,7 +1334,6 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 #endif
 
   /* Frees */
-  cs_sles_free(sles);
   BFT_FREE(rhs);
   cs_matrix_destroy(&matrix);
 
