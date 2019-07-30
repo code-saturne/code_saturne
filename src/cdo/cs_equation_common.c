@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -46,6 +47,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_parall.h"
+#include "cs_sles.h"
 #include "cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------*/
@@ -375,12 +377,12 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_equation_prepare_system(int                   stride,
-                           cs_lnum_t             x_size,
-                           const cs_matrix_t    *matrix,
-                           cs_range_set_t       *rset,
-                           cs_real_t            *x,
-                           cs_real_t            *b)
+cs_equation_prepare_system(int                     stride,
+                           cs_lnum_t               x_size,
+                           const cs_matrix_t      *matrix,
+                           const cs_range_set_t   *rset,
+                           cs_real_t              *x,
+                           cs_real_t              *b)
 {
   const cs_lnum_t  n_scatter_elts = x_size; /* size of x and rhs */
   const cs_lnum_t  n_gather_elts = cs_matrix_get_n_rows(matrix);
@@ -443,6 +445,111 @@ cs_equation_prepare_system(int                   stride,
   cs_parall_counter(&nnz, 1);
 
   return nnz;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a linear system arising from a scalar-valued CDO scheme
+ *
+ * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
+ * \param[in]  eqp            pointer to a cs_equation_param_t structure
+ * \param[in]  matrix         pointer to a cs_matrix_t structure
+ * \param[in]  rs             pointer to a cs_range_set_t structure
+ * \param[in]  normalization  value used for the residual normalization
+ * \param[in, out] x          solution of the linear system (in: initial guess)
+ * \param[in, out] b          right-hand side (scatter/gather if needed)
+ *
+ * \return the number of iterations of the linear solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
+                                const cs_equation_param_t    *eqp,
+                                const cs_matrix_t            *matrix,
+                                const cs_range_set_t         *rset,
+                                cs_real_t                     normalization,
+                                cs_real_t                    *x,
+                                cs_real_t                    *b)
+{
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_param_sles_t  slesp = eqp->sles_param;
+
+  /* Retrieve the cs_sles_t structure */
+  cs_sles_t  *sles = cs_sles_find_or_add(slesp.field_id, NULL);
+
+  /* Set xsol */
+  cs_real_t  *xsol = NULL;
+  if (n_cols > n_scatter_dofs) {
+    assert(cs_glob_n_ranks > 1);
+    BFT_MALLOC(xsol, n_cols, cs_real_t);
+    memcpy(xsol, x, n_scatter_dofs*sizeof(cs_real_t));
+  }
+  else
+    xsol = x;
+
+  /* Retrieve the solving info structure stored in the cs_field_t structure */
+  cs_field_t  *fld = cs_field_by_id(slesp.field_id);
+  cs_solving_info_t  sinfo;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
+  sinfo.rhs_norm = normalization;
+
+  /* Prepare solving (handle parallelism) */
+  cs_gnum_t  nnz = cs_equation_prepare_system(1, /* stride for scalar-valued */
+                                              n_scatter_dofs,
+                                              matrix,
+                                              rset,
+                                              xsol,
+                                              b);
+
+  /* Solve the linear solver */
+  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
+                                                    matrix,
+                                                    CS_HALO_ROTATION_IGNORE,
+                                                    slesp.eps,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
+                                                    b,
+                                                    xsol,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+  if (slesp.verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d | n_iters %d"
+                  " residual % -8.4e | normalization % -8.4e | nnz %lu\n",
+                  eqp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm,
+                  nnz);
+
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         xsol, x);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         b, b);
+
+  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
+                        slesp.verbosity,
+                        x, b, n_scatter_dofs);
+#endif
+
+  /* Free what can be freed at this stage */
+  cs_sles_free(sles);
+
+  if (n_cols > n_scatter_dofs)
+    BFT_FREE(xsol);
+
+  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  return (sinfo.n_it);
 }
 
 /*----------------------------------------------------------------------------*/

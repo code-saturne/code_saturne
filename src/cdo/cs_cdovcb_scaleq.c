@@ -36,7 +36,6 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
-#include <float.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -634,108 +633,6 @@ _assemble(const cs_cdovcb_scaleq_t          *eqc,
 
     cell_sources[cm->c_id] = csys->source[cm->n_vc];
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve a linear system arising from a scalar-valued CDO-Vb scheme
- *
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in, out] x        solution of the linear system (in: initial guess)
- * \param[in, out] b        right-hand side (scatter/gather if needed)
- *
- * \return the number of iterations of the linear solver
- */
-/*----------------------------------------------------------------------------*/
-
-static int
-_solve_vcb_system(cs_sles_t                    *sles,
-                  const cs_matrix_t            *matrix,
-                  const cs_equation_param_t    *eqp,
-                  cs_real_t                    *x,
-                  cs_real_t                    *b)
-{
-  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
-  const cs_lnum_t  n_scatter_elts = n_vertices;
-  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
-
-  /* Set xsol */
-  cs_real_t  *xsol = NULL;
-  if (n_cols > n_scatter_elts) {
-    assert(cs_glob_n_ranks > 1);
-    BFT_MALLOC(xsol, n_cols, cs_real_t);
-    memcpy(xsol, x, n_scatter_elts*sizeof(cs_real_t));
-  }
-  else
-    xsol = x;
-
-  /* solving info */
-  const int  field_id = cs_sles_get_f_id(sles);
-  assert(field_id > -1);
-  cs_field_t  *fld = cs_field_by_id(field_id);
-
-  cs_solving_info_t sinfo;
-  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
-  sinfo.n_it = 0;
-  sinfo.res_norm = DBL_MAX;
-
-  /* Prepare solving (handle parallelism) */
-  cs_range_set_t *rset = cs_shared_connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
-  cs_gnum_t  nnz = cs_equation_prepare_system(1,            /* stride */
-                                              n_scatter_elts,
-                                              matrix,
-                                              rset,
-                                              xsol, b);
-
-  /* Solve the linear solver */
-  sinfo.rhs_norm = 1.0; /* No renormalization by default (TODO) */
-  const cs_param_sles_t  sles_param = eqp->sles_param;
-
-  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
-                                                    matrix,
-                                                    CS_HALO_ROTATION_IGNORE,
-                                                    sles_param.eps,
-                                                    sinfo.rhs_norm,
-                                                    &(sinfo.n_it),
-                                                    &(sinfo.res_norm),
-                                                    b,
-                                                    xsol,
-                                                    0,      /* aux. size */
-                                                    NULL);  /* aux. buffers */
-
-  /* Output information about the convergence of the resolution */
-  if (sles_param.verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
-                  " residual % -8.4e nnz %lu\n",
-                  eqp->name, code, sinfo.n_it, sinfo.res_norm, nnz);
-
-  if (cs_glob_n_ranks > 1) /* Parallel mode */
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         xsol, x);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-  if (cs_glob_n_ranks > 1) /* Parallel mode */
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE, 1, /* type and stride */
-                         b, b);
-
-  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
-                        CS_CDOVCB_SCALEQ_DBG,
-                        x, b, n_vertices);
-#endif
-
-  /* Free what can be freed at this stage */
-  cs_sles_free(sles);
-
-  if (n_cols > n_scatter_elts)
-    BFT_FREE(xsol);
-
-  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
-
-  return (sinfo.n_it);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1458,11 +1355,14 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_field_current_to_previous(fld);
 
   /* Solve the linear system */
-  _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix,
-                    eqp,
-                    fld->val,
-                    rhs);
+  cs_real_t  normalization = 1.0;
+  cs_equation_solve_scalar_system(n_vertices,
+                                  eqp,
+                                  matrix,
+                                  rs,
+                                  normalization,
+                                  fld->val,
+                                  rhs);
 
   /* Update field */
   t0 = cs_timer_time();
@@ -1719,12 +1619,15 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   cs_field_current_to_previous(fld);
 
   /* Solve the linear system */
-  _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix,
-                    eqp,
-                    fld->val, rhs);
+  cs_real_t  normalization = 1.0;
+  cs_equation_solve_scalar_system(n_vertices,
+                                  eqp,
+                                  matrix,
+                                  rs,
+                                  normalization,
+                                  fld->val,
+                                  rhs);
 
-  /* Update field */
   t0 = cs_timer_time();
 
   /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
@@ -2059,10 +1962,14 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   cs_field_current_to_previous(fld);
 
   /* Solve the linear system */
-  _solve_vcb_system(cs_sles_find_or_add(field_id, NULL),
-                    matrix,
-                    eqp,
-                    fld->val, rhs);
+  cs_real_t  normalization = 1.0;
+  cs_equation_solve_scalar_system(n_vertices,
+                                  eqp,
+                                  matrix,
+                                  rs,
+                                  normalization,
+                                  fld->val,
+                                  rhs);
 
   /* Update field */
   t0 = cs_timer_time();
