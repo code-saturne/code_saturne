@@ -215,6 +215,8 @@ _display_rank_histogram(cs_log_t  log_id,
     cs_log_printf(log_id, "    %3d : [ %10d ; %10d ] = %10d\n",
                   1, count_min, count_max, n_counts);
   }
+
+  BFT_FREE(r_count);
 }
 
 /*----------------------------------------------------------------------------*/
