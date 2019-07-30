@@ -47,7 +47,19 @@ Default option changes:
 - Set k-epsilon turbulence models to uncoupled option by default
   (it was already uncoupled by default for all models except standard k-epsilon)
 
+- Change a default setting (GUI) of the compressible model:
+  for hydro. pressure treatment at walls (disabled by default now).
+
 Bug fixes:
+
+- Fix for wall boundary conditions with the compressible model / algorithm.
+  Always use a homogeneous Neumann on pressure for the mass balance step.
+  This fixes mass conservation for cases:
+  * with gravity and hydro. pressure treatment
+  * without gravity and without hydro. pressure treatment.
+  Note that the default behaviour (GUI) was to enable the hydro. pressure
+  treatment at walls. Hence in all cases with this default setting and no
+  gravity, this fix has no impact.    
 
 - Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
   momentum equation) and ensure variable density indicator (irovar) is set to 1
