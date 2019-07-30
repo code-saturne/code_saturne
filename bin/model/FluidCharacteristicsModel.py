@@ -949,6 +949,8 @@ class FluidCharacteristicsModel(Variables, Model):
         ref_pressure = self.getPressure()
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
@@ -977,6 +979,8 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
         symbols.append(('rho', 'Density'))
+
+        symbols.append(('volume', 'Zone volume'))
 
         from code_saturne.model.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() == 'on':
@@ -1007,6 +1011,8 @@ class FluidCharacteristicsModel(Variables, Model):
         ref_pressure = self.getPressure()
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
@@ -1032,6 +1038,8 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('t0', 'Reference temperature (K) = '+str(ref_temperature)))
         symbols.append(('T', 'Temperature'))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
@@ -1054,6 +1062,8 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))
 
@@ -1073,6 +1083,8 @@ class FluidCharacteristicsModel(Variables, Model):
         sym.append((str(scalar),str(scalar)))
         diff0_value = self.m_sca.getScalarDiffusivityInitialValue(scalar)
         sym.append((str(name)+'_ref', str(scalar)+' diffusion coefficient (reference value, m^2/s) = '+str(diff0_value)))
+
+        sym.append(('volume', 'Zone volume'))
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))

@@ -346,6 +346,8 @@ permeability=1.;"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
 
+        sym.append(('volume', 'Zone volume'))
+
         for (nme, val) in NotebookModel(self.case).getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 

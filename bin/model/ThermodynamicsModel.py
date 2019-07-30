@@ -607,6 +607,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         rho0_value = self.getInitialValue(fieldId, 'density')
         symbols.append(('rho0', 'Density (reference value) = '+str(rho0_value)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
             known_fields.append((s, s))
@@ -643,6 +645,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         mu0_val = self.getInitialValue(fieldId, 'molecular_viscosity')
         symbols.append(('mu0', 'Viscosity (reference value) = '+str(mu0_val)))
+
+        symbols.append(('volume', 'Zone volume'))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
@@ -682,6 +686,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         cp0_val = self.getInitialValue(fieldId, "specific_heat")
         symbols.append(('cp0', 'Specific heat (reference value) = '+str(cp0_val)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
             known_fields.append((s, s))
@@ -718,6 +724,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         l0_val = self.getInitialValue(fieldId, 'thermal_conductivity')
         symbols.append(('lambda0', 'Thermal conductivity (reference value) = '+str(l0_val)))
+
+        symbols.append(('volume', 'Zone volume'))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
@@ -757,6 +765,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         s0_val = self.getInitialValue('none', 'surface_tension')
         symbols.append(('sigma0', 'Surface tension (reference value) = '+str(s0_val)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for s in self.m_spe.getScalarNameList():
               symbols.append((s, s))
               known_fields.append((s, s))
@@ -789,6 +799,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
+
+        symbols.append(('volume', 'Zone volume'))
 
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
@@ -824,6 +836,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
             known_fields.append((s, s))
@@ -858,6 +872,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
+        symbols.append(('volume', 'Zone volume'))
+
         for s in self.m_spe.getScalarByFieldId(fieldId):
             symbols.append((s, s))
             known_fields.append((s, s))
@@ -884,6 +900,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             symbols.append(s)
             known_fields.append(s)
 
+        symbols.append(('volume', 'Zone volume'))
+
         for s in self.m_spe.getScalarNameList():
             symbols.append((s, self.tr("Additional species")))
             known_fields.append((s, self.tr("Additional species")))
@@ -906,6 +924,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         for s in self.list_scalars:
             symbols.append(s)
             known_fields.append(s)
+
+        symbols.append(('volume', 'Zone volume'))
 
         for s in self.m_spe.getScalarNameList():
             symbols.append((s, self.tr('Additional species')))
@@ -930,6 +950,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             symbols.append(s)
             known_fields.append(s)
 
+        symbols.append(('volume', 'Zone volume'))
+
         for s in self.m_spe.getScalarNameList():
             symbols.append((s, self.tr('additional species')))
             known_fields.append((s, self.tr('additional species')))
@@ -952,6 +974,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         for s in self.list_scalars:
             symbols.append(s)
             known_fields.append(s)
+
+        symbols.append(('volume', 'Zone volume'))
 
         for s in self.m_spe.getScalarNameList():
             symbols.append((s, self.tr('Additional species')))
@@ -976,6 +1000,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         for s in self.list_scalars:
             symbols.append(s)
             known_fields.append(s)
+
+        symbols.append(('volume', 'Zone volume'))
 
         for s in self.m_spe.getScalarNameList():
             symbols.append((s, self.tr('additional species')))
