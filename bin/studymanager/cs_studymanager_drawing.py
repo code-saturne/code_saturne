@@ -190,6 +190,15 @@ class Plot(object):
                 j += 1
                 line = line.replace(", ", " ") # compatibility with CSV
                 line = line.lstrip()
+
+                # for CSV files, try to detect a header to skip it
+                if j == 1:
+                    try:
+                        val = float(line.split()[0])
+                    # if it can not be converted to float
+                    except ValueError as not_float:
+                        continue
+
                 if xcol:
                     self.xspan.append(float(line.split()[xcol-1])*xfois + xplus)
                 else:
