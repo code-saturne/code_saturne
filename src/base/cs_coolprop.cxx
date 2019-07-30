@@ -105,7 +105,7 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
   fluids.push_back(CoolPropMaterial);
   std::string Name1 = "";
   std::string Name2 = "P";
-  std::string Backend = "HEOS";
+  std::string Backend = "HEOS";  // "SRK" for cubic, "BICUBIC&HEOS" for tabulated
 
   if (thermo_plane == CS_PHYS_PROP_PLANE_PH)
     Name1 = "H";
