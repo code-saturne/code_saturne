@@ -108,7 +108,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          ivoid(1)
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision epsrsp
-double precision sclnor
+double precision sclnor, hint
 
 integer          imucpp, idftnp, iswdyp
 integer          imvis1, f_id0, idtcfl
@@ -213,6 +213,20 @@ if (icv.ge.0) then
 else
   cpro_cv => rvoid1
 endif
+
+! Computation of the boundary coefficients for the pressure gradient
+! recontruction in accordance with the diffusion boundary coefficients
+! (coefaf_p, coefbf_p)
+
+do ifac = 1, nfabor
+  iel = ifabor(ifac)
+  hint = dt(iel) / distb(ifac)
+
+  call set_neumann_scalar                 &
+     ( wbfa(ifac)    , coefaf_p(ifac),    &
+       wbfb(ifac)    , coefbf_p(ifac),    &
+       coefaf_p(ifac), hint )
+enddo
 
 !===============================================================================
 ! 2. SOURCE TERMS
