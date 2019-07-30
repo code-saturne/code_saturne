@@ -291,7 +291,8 @@ do ifac = 1, nfabor
 
   if (icodcl(ifac,ipr).ne.1 .and. icodcl(ifac,ipr).ne.2 .and.     &
       icodcl(ifac,ipr).ne.3 .and. icodcl(ifac,ipr).ne.11.and.     &
-      icodcl(ifac,ipr).ne.13) then
+      icodcl(ifac,ipr).ne.12.and. icodcl(ifac,ipr).ne.13.and.     &
+      icodcl(ifac,ipr).ne.15) then
     if (itypfb(ifac).gt.0) then
       itypfb(ifac) = -itypfb(ifac)
     endif
