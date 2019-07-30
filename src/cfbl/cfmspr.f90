@@ -114,7 +114,7 @@ integer          imucpp, idftnp, iswdyp
 integer          imvis1, f_id0, idtcfl
 integer          f_id
 
-double precision thetv, relaxp, hint
+double precision thetv, relaxp
 double precision normp
 
 double precision rvoid(1)
@@ -213,17 +213,6 @@ if (icv.ge.0) then
 else
   cpro_cv => rvoid1
 endif
-
-! Computation of the boundary coefficients for the pressure gradient
-! recontruction in accordance with the diffusion boundary coefficients (coefaf_p,
-! coefbf_p). Always a homogeneous Neumann except at walls where the hydrostatic
-! pressure is taken into account (icfgrp option).
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-  hint = dt(iel) / distb(ifac)
-  wbfa(ifac) = -coefaf_p(ifac) / hint
-  wbfb(ifac) = 1.d0
-enddo
 
 !===============================================================================
 ! 2. SOURCE TERMS

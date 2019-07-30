@@ -126,7 +126,7 @@ double precision, allocatable, dimension(:) :: bc_fracv, bc_fracm, bc_frace
 double precision, allocatable, dimension(:,:) :: bc_vel
 
 double precision, dimension(:), pointer :: coefbp
-double precision, dimension(:), pointer :: crom, brom, cpro_cp, cpro_cv, cvar_en
+double precision, dimension(:), pointer :: crom, brom, cpro_cv, cvar_en
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 
@@ -215,7 +215,7 @@ do ifac = 1, nfabor
 
     if(icfgrp.eq.1) then
 
-      icodcl(ifac,ipr) = 3
+      icodcl(ifac,ipr) = 15
       hint = dt(iel)/distb(ifac)
       rcodcl(ifac,ipr,3) = -hint                                  &
            * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                  &
@@ -231,12 +231,12 @@ do ifac = 1, nfabor
       call cs_cf_thermo_wall_bc(wbfa, wbfb, ifac-1)
 
       if (wbfb(ifac).lt.rinfin*0.5d0.and.wbfb(ifac).gt.0.d0) then
-        icodcl(ifac,ipr) = 11
+        icodcl(ifac,ipr) = 12
         rcodcl(ifac,ipr,1) = wbfa(ifac)
         rcodcl(ifac,ipr,2) = wbfb(ifac)
       else
         ! If rarefaction is too strong : homogeneous Dirichlet
-        icodcl(ifac,ipr) = 1
+        icodcl(ifac,ipr) = 13
         rcodcl(ifac,ipr,1) = 0.d0
       endif
 
