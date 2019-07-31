@@ -1308,7 +1308,7 @@ cs_equation_set_sles(void)
 
     /* Initialize cs_sles_t structure */
     if (eqp->type != CS_EQUATION_TYPE_NAVSTO)
-      cs_equation_param_set_sles(eqp, eq->field_id);
+      cs_equation_param_set_sles(eqp);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -2034,7 +2034,7 @@ cs_equation_create_fields(void)
     /* Sanity check */
     assert(eq != NULL);
 
-    const cs_equation_param_t  *eqp = eq->param;
+    cs_equation_param_t  *eqp = eq->param;
 
     /* Redondant definition to handle C/FORTRAN */
     int  has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
@@ -2073,6 +2073,9 @@ cs_equation_create_fields(void)
                                                 location_id,
                                                 eqp->dim,
                                                 has_previous);
+
+    /* SLES is associated to a field_id */
+    eqp->sles_param.field_id = eq->field_id;
 
     if (eqp->process_flag & CS_EQUATION_POST_NORMAL_FLUX) {
 

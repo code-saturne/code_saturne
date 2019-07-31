@@ -1325,19 +1325,15 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
- *
- * \param[in]   eqp          pointer to a \ref cs_equation_param_t struct.
- * \param[in]   field_id     id of the cs_field_t struct. for this equation
+
+ * \param[in, out]  eqp       pointer to a \ref cs_equation_param_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_sles(cs_equation_param_t      *eqp,
-                           int                       field_id)
+cs_equation_param_set_sles(cs_equation_param_t      *eqp)
 {
   cs_param_sles_t  slesp = eqp->sles_param;
-
-  slesp.field_id = field_id;
 
   switch (slesp.solver_class) {
   case CS_PARAM_SLES_CLASS_CS: /* Code_Saturne solvers */
@@ -1395,63 +1391,63 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
       switch (slesp.solver) {
 
       case CS_PARAM_ITSOL_JACOBI:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_JACOBI,
                                -1, /* Not useful to apply a preconditioner */
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_GAUSS_SEIDEL:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_P_GAUSS_SEIDEL,
                                -1, /* Not useful to apply a preconditioner */
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_P_SYM_GAUSS_SEIDEL,
                                -1, /* Not useful to apply a preconditioner */
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_CG:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_PCG,
                                poly_degree,
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_FCG:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_IPCG,
                                poly_degree,
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_BICG:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_BICGSTAB,
                                poly_degree,
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_BICGSTAB2:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_BICGSTAB2,
                                poly_degree,
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_CR3:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_PCR3,
                                poly_degree,
                                slesp.n_max_iter);
         break;
       case CS_PARAM_ITSOL_GMRES:
-        it = cs_sles_it_define(field_id,
+        it = cs_sles_it_define(slesp.field_id,
                                NULL,
                                CS_SLES_GMRES,
                                poly_degree,
@@ -1462,7 +1458,9 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
           switch (slesp.amg_type) {
 
           case CS_PARAM_AMG_HOUSE_V:
-            mg = cs_multigrid_define(field_id, NULL, CS_MULTIGRID_V_CYCLE);
+            mg = cs_multigrid_define(slesp.field_id,
+                                     NULL,
+                                     CS_MULTIGRID_V_CYCLE);
 
             /* Advanced setup (default is specified inside the brackets) */
             cs_multigrid_set_solver_options
@@ -1483,7 +1481,9 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
             break;
 
           case CS_PARAM_AMG_HOUSE_K:
-            mg = cs_multigrid_define(field_id, NULL, CS_MULTIGRID_K_CYCLE);
+            mg = cs_multigrid_define(slesp.field_id,
+                                     NULL,
+                                     CS_MULTIGRID_K_CYCLE);
 
             cs_multigrid_set_solver_options
               (mg,
@@ -1563,7 +1563,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
       /* Define the level of verbosity for SLES structure */
       if (slesp.verbosity > 3) {
 
-        cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+        cs_sles_t  *sles = cs_sles_find_or_add(slesp.field_id, NULL);
         cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
 
         cs_sles_it_set_plot_options(sles_it, eqp->name,
@@ -1590,7 +1590,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
                     " %s: Incompatible PETSc settings for parallel run.\n",
                     __func__);
 
-        cs_sles_petsc_define(field_id,
+        cs_sles_petsc_define(slesp.field_id,
                              NULL,
                              MATSEQAIJ, /* Warning SEQ not MPI */
                              _petsc_setup_hook,
@@ -1600,13 +1600,13 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
       else {
 
         if (slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
-          cs_sles_petsc_define(field_id,
+          cs_sles_petsc_define(slesp.field_id,
                                NULL,
                                MATMPIAIJ,
                                _petsc_amg_block_hook,
                                (void *)eqp);
         else
-          cs_sles_petsc_define(field_id,
+          cs_sles_petsc_define(slesp.field_id,
                                NULL,
                                MATMPIAIJ,
                                _petsc_setup_hook,
@@ -1634,7 +1634,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp,
   /* Define the level of verbosity for SLES structure */
   if (slesp.verbosity > 1) {
 
-    cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+    cs_sles_t  *sles = cs_sles_find_or_add(slesp.field_id, NULL);
 
     /* Set verbosity */
     cs_sles_set_verbosity(sles, slesp.verbosity);

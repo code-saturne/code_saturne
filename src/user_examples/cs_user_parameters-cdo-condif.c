@@ -576,8 +576,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   {
     /* Copy the settings for AdvDiff.Upw */
     cs_equation_param_t  *eqp_ref = cs_equation_param_by_name("AdvDiff.Upw");
-    cs_equation_t *eq = cs_equation_by_name("AdvDiff.SG");
-    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("AdvDiff.SG");
 
     /* Copy the settings */
     cs_equation_param_update_from(eqp_ref, eqp);
@@ -588,7 +587,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
     /* Call this function to be sure that the linear solver is set to what
        one wants */
-    cs_equation_param_set_sles(eqp, cs_equation_get_field_id(eq));
+    cs_equation_param_set_sles(eqp);
 
   }
   /*! [param_cdo_copy_settings] */

@@ -1927,7 +1927,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
   switch (nsp->sles_strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
-    cs_equation_param_set_sles(mom_eqp, field_id);
+    cs_equation_param_set_sles(mom_eqp);
     break;
 
 #if defined(HAVE_PETSC)

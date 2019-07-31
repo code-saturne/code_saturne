@@ -1051,7 +1051,7 @@ cs_cdofb_uzawa_set_sles(const cs_navsto_param_t    *nsp,
   switch (nsp->sles_strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
-    cs_equation_param_set_sles(mom_eqp, field_id);
+    cs_equation_param_set_sles(mom_eqp);
     break;
 
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:

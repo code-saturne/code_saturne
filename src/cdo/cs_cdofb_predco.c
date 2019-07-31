@@ -916,7 +916,7 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
   switch (nsp->sles_strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
-    cs_equation_param_set_sles(mom_eqp, field_id);
+    cs_equation_param_set_sles(mom_eqp);
     break;
 
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
@@ -945,8 +945,10 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
   }
 
   /* For the correction step, use the generic way to setup the SLES */
-  cs_equation_param_set_sles(cs_equation_get_param(nsc->correction),
-                             cs_equation_get_field_id(nsc->correction));
+  cs_equation_param_t  *corr_eqp = cs_equation_get_param(nsc->correction);
+
+  corr_eqp->sles_param.field_id = cs_equation_get_field_id(nsc->correction);
+  cs_equation_param_set_sles(corr_eqp);
 
 }
 
