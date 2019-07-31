@@ -843,6 +843,50 @@ _steady_build(const cs_mesh_t          *mesh,
   *pt_rhs    = rhs;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the convergence code and print information about the
+ *         convergence if requested
+ *
+ * \param[in]  nsp        pointer to a a cs_navsto_param_t structure
+ * \param[in]  sc         pointer to the scheme context structure
+ * \param[in]  eqp        pointer to the momentum cs_equation_param_t structure
+ * \param[in]  solv_iter  cumulated number of iteratinos for the inner solver
+ * \param[in, out]  cvg_code   convergence code to indicate the status
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_cvg_code(const cs_navsto_param_t         *nsp,
+                const cs_cdofb_uzawa_t          *sc,
+                const cs_equation_param_t       *eqp,
+                int                              solv_iter,
+                short int                       *cvg_code)
+{
+  if (sc->residual > nsp->residual_tolerance) {
+    if (*cvg_code == 2)
+      *cvg_code = -1;
+  }
+  else
+    *cvg_code = 1;
+
+  if (eqp->sles_param.verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n <Uzawa Summary> Convergence.Code       %-d\n"
+                  "                   Final.Residual         %7.6e\n"
+                  "                   Uzawa.Iters            %d\n"
+                  "                   Cumulated.Solver.Iters %d, mean: %6.1f\n",
+                  *cvg_code, sc->residual, sc->last_iter, solv_iter,
+                  (float)solv_iter/sc->last_iter);
+
+  if (*cvg_code < 0) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n Warnings: Uzawa algorithm did not converge.\n");
+    if (*cvg_code < -2)
+      bft_error(__FILE__, __LINE__, 0, " Uzawa algorithm diverged.\n");
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1319,7 +1363,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
    *  2 = default
    */
   short int  cvg_code = 2;
-  cs_lnum_t  iter = 1, loc_solv_iter = 0, solv_iter = 0;
+  int  iter = 1, loc_solv_iter = 0, solv_iter = 0;
   double  res = DBL_MAX;
 
   /* Prepare the call to the linear solver:
@@ -1412,7 +1456,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
-      cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+      cs_static_condensation_recover_vector(connect->c2f,
                                             mom_eqc->rc_tilda,
                                             mom_eqc->acf_tilda,
                                             delta_vel_f,
@@ -1482,30 +1526,10 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
   /**************  INNER ITERATIONS - END  *************/
 
-  if (res > nsp->residual_tolerance) {
-    if (cvg_code == 2)
-      cvg_code = -1;
-  }
-  else
-    cvg_code = 1;
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n <Uzawa Summary>\n"
-                "  Convergence.Code             %-d\n"
-                "  Final.Residual               %7.6e\n"
-                "  Uzawa.Iterations             %d\n"
-                "  Cumulated.Solver.Iterations %d, mean: %6.1f\n",
-                cvg_code, res, iter, solv_iter, (float)solv_iter/iter);
-
-  if (cvg_code < 0) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n ATTENTION: Uzawa algorithm did NOT converge.\n");
-    if (cvg_code < -2)
-      bft_error(__FILE__, __LINE__, 0, " Uzawa algorithm DIVERGED.\n");
-  }
-
   sc->last_iter = iter;
   sc->residual = res;
+
+  _check_cvg_code(nsp, sc, mom_eqp, solv_iter, &cvg_code);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, cs_shared_time_step->nt_cur,
@@ -1723,7 +1747,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
       }
       else
         bft_error(__FILE__, __LINE__, 0,
-                  "Only diagonal time treatment available so far.");
+                  "%s: Only diagonal time treatment is available so far.",
+                  __func__);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1798,7 +1823,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
    *  2 = default
    */
   short int  cvg_code = 2;
-  cs_lnum_t  iter = 1, loc_solv_iter = 0, solv_iter = 0;
+  int  iter = 1, loc_solv_iter = 0, solv_iter = 0;
   double  res = DBL_MAX;
 
   /* Prepare the call to the linear solver:
@@ -1890,7 +1915,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       t_upd = cs_timer_time();
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
-      cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+      cs_static_condensation_recover_vector(connect->c2f,
                                             mom_eqc->rc_tilda,
                                             mom_eqc->acf_tilda,
                                             delta_vel_f,
@@ -1960,30 +1985,10 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
   /**************  INNER ITERATIONS - END  *************/
 
-  if (res > nsp->residual_tolerance) {
-    if (cvg_code == 2)
-      cvg_code = -1;
-  }
-  else
-    cvg_code = 1;
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n <Uzawa Summary>\n"
-                "  Convergence.Code             %-d\n"
-                "  Final.Residual               %7.6e\n"
-                "  Uzawa.Iterations             %d\n"
-                "  Cumulated.Solver.Iterations %d, mean: %6.1f\n",
-                cvg_code, res, iter, solv_iter, (float)solv_iter/iter);
-
-  if (cvg_code < 0) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n ATTENTION: Uzawa algorithm did NOT converge.\n");
-    if (cvg_code < -2)
-      bft_error(__FILE__, __LINE__, 0, " Uzawa algorithm DIVERGED.\n");
-  }
-
   sc->last_iter = iter;
   sc->residual = res;
+
+  _check_cvg_code(nsp, sc, mom_eqp, solv_iter, &cvg_code);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_UZAWA_DBG,
@@ -2321,7 +2326,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
    *  2 = default
    */
   short int  cvg_code = 2;
-  cs_lnum_t  iter = 1, loc_solv_iter = 0, solv_iter = 0;
+  int  iter = 1, loc_solv_iter = 0, solv_iter = 0;
   double  res = DBL_MAX;
 
   /* Prepare the call to the linear solver:
@@ -2329,10 +2334,17 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
    *    of the field related to mom_eq (i.e. the velocity). x_f = u_{f,k=0}
    *  - Handle parallelism (if // --> b is allocated since it gathers
    *    contribution from ranks sharing faces)
-   */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
-  solv_iter += cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
+   *
+   * Solve the linear system (treated as a scalar-valued system
+   * with 3 times more DoFs) */
+  cs_real_t  normalization = 1.0; /* TODO */
+  solv_iter += cs_equation_solve_scalar_system(3*n_faces,
+                                               mom_eqp,
+                                               matrix,
+                                               rs,
+                                               normalization,
+                                               vel_f,
+                                               rhs);
 
   /* Update field */
   t_upd = cs_timer_time();
@@ -2393,7 +2405,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
       iter++;
 
-      /* Null initial guess */
+      /* Initial guess set to zero */
       memset(delta_vel_f, 0, 3*n_faces*rsize);
 
       solv_iter +=
@@ -2406,8 +2418,9 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
                                                          rhs));
 
       t_upd = cs_timer_time();
+
       /* Compute delta_vel_c from the knowledge of delta_vel_f */
-      cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+      cs_static_condensation_recover_vector(connect->c2f,
                                             mom_eqc->rc_tilda,
                                             mom_eqc->acf_tilda,
                                             delta_vel_f,
@@ -2476,30 +2489,10 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
   /**************  INNER ITERATIONS - END  *************/
 
-  if (res > nsp->residual_tolerance) {
-    if (cvg_code == 2)
-      cvg_code = -1;
-  }
-  else
-    cvg_code = 1;
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n <Uzawa Summary>\n"
-                "  Convergence.Code             %-d\n"
-                "  Final.Residual               %7.6e\n"
-                "  Uzawa.Iterations             %d\n"
-                "  Cumulated.Solver.Iterations %d, mean: %6.1f\n",
-                cvg_code, res, iter, solv_iter, (float)solv_iter/iter);
-
-  if (cvg_code < 0) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n ATTENTION: Uzawa algorithm did NOT converge.\n");
-    if (cvg_code < -2)
-      bft_error(__FILE__, __LINE__, 0, " Uzawa algorithm DIVERGED.\n");
-  }
-
   sc->last_iter = iter;
   sc->residual = res;
+
+  _check_cvg_code(nsp, sc, mom_eqp, solv_iter, &cvg_code);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_UZAWA_DBG,
@@ -2541,8 +2534,9 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
 
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
   /* Using the same scaling for the pressure update */
   const cs_property_t  *relax = cc->zeta;
 
@@ -2593,7 +2587,7 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
    *  2 = default
    */
   short int  cvg_code = 2;
-  cs_lnum_t  iter = 1, loc_solv_iter = 0, solv_iter = 0;
+  int  iter = 1, loc_solv_iter = 0, solv_iter = 0;
   double  res = DBL_MAX;
 
   /* Prepare the call to the linear solver:
@@ -2672,7 +2666,7 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
 
       /* Reconstruction */
       t_upd = cs_timer_time();
-      cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+      cs_static_condensation_recover_vector(connect->c2f,
                                             mom_eqc->rc_tilda,
                                             mom_eqc->acf_tilda,
                                             vel_f, vel_c);
@@ -2713,33 +2707,13 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
 
   /**************  INNER ITERATIONS - END  *************/
 
-  if (res > nsp->residual_tolerance) {
-    if (cvg_code == 2)
-      cvg_code = -1;
-  }
-  else
-    cvg_code = 1;
+  sc->last_iter = iter;
+  sc->residual = res;
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n <Uzawa Summary>\n"
-                "  Convergence.Code             %-d\n"
-                "  Final.Residual               %7.6e\n"
-                "  Uzawa.Iterations             %d\n"
-                "  Cumulated.Solver.Iterations %d, mean: %6.1f\n",
-                cvg_code, res, iter, solv_iter, (float)solv_iter/iter);
-
-  if (cvg_code < 0) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n ATTENTION: Uzawa algorithm did NOT converge.\n");
-    if (cvg_code < -2)
-      bft_error(__FILE__, __LINE__, 0, " Uzawa algorithm DIVERGED.\n");
-  }
+  _check_cvg_code(nsp, sc, mom_eqp, solv_iter, &cvg_code);
 
   /* Rescale pressure */
   cs_cdofb_navsto_set_zero_mean_pressure(quant, pr);
-
-  sc->last_iter = iter;
-  sc->residual = res;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
   cs_dbg_fprintf_system(mom_eqp->name, cs_shared_time_step->nt_cur,
