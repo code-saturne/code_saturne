@@ -2756,8 +2756,8 @@ cs_mesh_quantities_set_has_disable_flag(int  flag)
         mq->b_f_face_normal = cs_field_by_name("b_f_face_normal")->val;
         mq->i_f_face_surf   = cs_field_by_name("i_f_face_surf")->val;
         mq->b_f_face_surf   = cs_field_by_name("b_f_face_surf")->val;
-        mq->i_f_face_factor = cs_field_by_name("i_f_face_factor");
-        mq->b_f_face_factor = cs_field_by_name("b_f_face_factor");
+        mq->i_f_face_factor = cs_field_by_name("i_f_face_factor")->val;
+        mq->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
       }
       mq->cell_f_vol        = cs_field_by_name("cell_f_vol")->val;
     }
