@@ -54,11 +54,15 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_MATRIX_NATIVE,     /* Native matrix format */
-  CS_MATRIX_CSR,        /* Compressed Sparse Row storage format */
-  CS_MATRIX_CSR_SYM,    /* Compressed Symmetric Sparse Row storage format */
-  CS_MATRIX_MSR,        /* Modified Compressed Sparse Row storage format */
-  CS_MATRIX_N_TYPES     /* Number of known matrix types */
+  CS_MATRIX_NATIVE,           /*!< Native (edge-based) matrix storage */
+  CS_MATRIX_CSR,              /*!< Compressed Sparse Row storage */
+  CS_MATRIX_CSR_SYM,          /*!< Compressed Symmetric Sparse Row storage */
+  CS_MATRIX_MSR,              /*!< Modified Compressed Sparse Row storage
+                                (separate diagonal) */
+
+  CS_MATRIX_N_BUILTIN_TYPES,  /*!< Number of known and built-in matrix types */
+
+  CS_MATRIX_N_TYPES           /*!< Number of known matrix types */
 
 } cs_matrix_type_t;
 
@@ -280,24 +284,6 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms);
 
 cs_matrix_t *
 cs_matrix_create(const cs_matrix_structure_t  *ms);
-
-/*----------------------------------------------------------------------------
- * Create a matrix container using a given variant.
- *
- * If the matrix variant is incompatible with the structure, it is ignored,
- * and defaults for that structure are used instead.
- *
- * parameters:
- *   ms <-- associated matrix structure
- *   mv <-- associated matrix variant
- *
- * returns:
- *   pointer to created matrix structure;
- *----------------------------------------------------------------------------*/
-
-cs_matrix_t *
-cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
-                            const cs_matrix_variant_t    *mv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -819,6 +805,24 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
                          const cs_real_t    **x_val);
 
 /*----------------------------------------------------------------------------
+ * Assign functions based on a variant to a given matrix.
+ *
+ * If the matrix variant is incompatible with the structure, it is ignored,
+ * and defaults for that structure are used instead.
+ *
+ * parameters:
+ *   m <-> associated matrix structure
+ *   mv <-- associated matrix variant
+ *
+ * returns:
+ *   pointer to created matrix structure;
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_apply_variant(cs_matrix_t                *m,
+                        const cs_matrix_variant_t  *mv);
+
+/*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x
  *
  * This function includes a halo update of x prior to multiplication by A.
@@ -999,42 +1003,37 @@ cs_matrix_msr_assembler_values_add(void             *matrix_p,
                                    const cs_lnum_t   col_idx[],
                                    const cs_real_t   vals[]);
 
-/*----------------------------------------------------------------------------
- * Build list of variants for tuning or testing.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build list of variants for tuning or testing.
  *
- * parameters:
- *   n_fill_types <-- number of fill types tuned for
- *   fill_types   <-- array of fill types tuned for
- *   type_filter  <-- true for matrix types tuned for, false for others
- *   numbering    <-- vectorization or thread-related numbering info,
- *                    or NULL
- *   n_variants   --> number of variants
- *   m_variant    --> array of matrix variants
- *----------------------------------------------------------------------------*/
+ * The matrix coefficients should be assigned, so the fill type can
+ * be determined.
+ *
+ * \param[in]   m             associated matrix
+ * \param[out]  n_variants    number of variants
+ * \param[out]  m_variant     array of matrix variants
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_variant_build_list(int                      n_fill_types,
-                             cs_matrix_fill_type_t    fill_types[],
-                             bool                     type_filter[],
-                             const cs_numbering_t    *numbering,
+cs_matrix_variant_build_list(const cs_matrix_t       *m,
                              int                     *n_variants,
                              cs_matrix_variant_t    **m_variant);
 
-/*----------------------------------------------------------------------------
- * Build matrix variant
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build matrix variant
  *
  * The variant will initially use default matrix-vector functions,
  * which can be later modified using cs_matrix_variant_set_func().
  *
- * parameters:
- *   type         <-- type of matrix considered
- *   numbering    <-- vectorization or thread-related numbering info,
- *                    or NULL
- *----------------------------------------------------------------------------*/
+ * \param[in]  m   pointer to matrix
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_variant_t *
-cs_matrix_variant_create(cs_matrix_type_t         type,
-                         const cs_numbering_t    *numbering);
+cs_matrix_variant_create(cs_matrix_t  *m);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix variant structure.
@@ -1046,6 +1045,19 @@ cs_matrix_variant_create(cs_matrix_type_t         type,
 void
 cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply a variant to a given matrix
+ *
+ * \param[in, out]  m   pointer to matrix
+ * \param[in]       mv  pointer to matrix variant pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_apply(cs_matrix_t          *m,
+                        cs_matrix_variant_t  *mv);
+
 /*----------------------------------------------------------------------------
  * Select the sparse matrix-vector product function to be used by a
  * matrix variant for a given fill type.
@@ -1055,7 +1067,6 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
  *   CS_MATRIX_NATIVE  (all fill types)
  *     default
  *     standard
- *     fixed           (for CS_MATRIX_??_BLOCK_D or CS_MATRIX_??_BLOCK_D_SYM)
  *     omp             (for OpenMP with compatible numbering)
  *     vector          (For vector machine with compatible numbering)
  *
@@ -1089,27 +1100,6 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
                            cs_matrix_fill_type_t    fill_type,
                            int                      ed_flag,
                            const char              *func_name);
-
-/*----------------------------------------------------------------------------
- * Merge a functions to a matrix variant from another variant sharing
- * the same structure.
- *
- * Functions from the structure to merge for the selected fill type are
- * assigned to the main variant.
- *
- * This can be useful when tuning has been done separately for different fill
- * types, and the resulting selected structure is identical.
- *
- * parameters:
- *   mv        <-> pointer to matrix variant
- *   mv_merge  <-- pointer to matrix variant to merge
- *   fill_type <-- matrix fill type to merge from
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_variant_merge(cs_matrix_variant_t        *mv,
-                        const cs_matrix_variant_t  *mv_merge,
-                        cs_matrix_fill_type_t       fill_type);
 
 /*----------------------------------------------------------------------------
  * Get the type associated with a matrix variant.

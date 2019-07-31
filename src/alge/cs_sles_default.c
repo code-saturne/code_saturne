@@ -214,7 +214,8 @@ _sles_default_native(int                f_id,
 
     /* Multigrid used as preconditioner if possible, as solver otherwise */
 
-    if ((matrix_type == CS_MATRIX_MSR) || (matrix_type == CS_MATRIX_N_TYPES)) {
+    if (   (matrix_type == CS_MATRIX_MSR)
+        || (matrix_type >= CS_MATRIX_N_TYPES)) {
       if (sles_it_type == CS_SLES_PCG && cs_glob_n_threads > 1)
         sles_it_type = CS_SLES_FCG;
       cs_sles_it_t *c = cs_sles_it_define(f_id,
@@ -523,6 +524,8 @@ cs_sles_setup_native_conv_diff(int                  f_id,
     a_diff = _matrix_setup[setup_id][2];
   }
 
+  cs_matrix_default_set_tuned(a);
+
   /* Setup system */
 
   if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") != 0)
@@ -617,6 +620,8 @@ cs_sles_setup_native_coupling(int               f_id,
   else {
     a = _matrix_setup[setup_id][0];
   }
+
+  cs_matrix_default_set_tuned(a);
 
   /* Setup system */
 
@@ -775,6 +780,8 @@ cs_sles_solve_native(int                  f_id,
                                (const cs_lnum_2_t *)(m->i_face_cells),
                                da,
                                xa);
+
+    cs_matrix_default_set_tuned(a);
 
     _sles_setup[setup_id] = sc;
     _matrix_setup[setup_id][0] = a;

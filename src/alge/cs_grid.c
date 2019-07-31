@@ -220,8 +220,6 @@ struct _cs_grid_t {
   int               comm_id;           /* Associated communicator
                                           (owner when merge_idx != NULL) */
 
-  /* Distribution information */
-
 #endif
 };
 
@@ -5569,7 +5567,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
   cs_lnum_t isym = 2;
   bool conv_diff = f->conv_diff;
 
-  /* By default, always use MSR structure, as it often seems to provide the
+  /* By default, always use MSR structure, as it usually provides the
      best performance, and is required for the hybrid Gauss-Seidel-Jacobi
      smoothers. In multithreaded case, we also prefer to use a matrix
      structure allowing threading without a specific renumbering, as
@@ -5784,6 +5782,30 @@ cs_grid_coarsen(const cs_grid_t  *f,
     }
 #endif
 
+    c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
+                                                  true,
+                                                  c->n_rows,
+                                                  c->n_cols_ext,
+                                                  c->n_faces,
+                                                  c->face_cell,
+                                                  c->halo,
+                                                  NULL);
+
+    c->_matrix = cs_matrix_create(c->matrix_struct);
+
+    cs_matrix_set_coefficients(c->_matrix,
+                               c->symmetric,
+                               c->db_size,
+                               c->eb_size,
+                               c->n_faces,
+                               c->face_cell,
+                               c->da,
+                               c->xa);
+
+    c->matrix = c->_matrix;
+
+    /* Apply tuning if needed */
+
     if (_grid_tune_max_level > 0) {
 
       cs_matrix_fill_type_t mft
@@ -5809,24 +5831,13 @@ cs_grid_coarsen(const cs_grid_t  *f,
 
           int n_min_products;
           double t_measure;
-          int n_fill_types = 1;
-          cs_matrix_fill_type_t fill_types[1] = {mft};
-          double fill_weights[1] = {1};
 
           cs_matrix_get_tuning_runs(&n_min_products, &t_measure);
 
-          coarse_mv = cs_matrix_variant_tuned(t_measure,
-                                              0, /* n_matrix_types, */
-                                              n_fill_types,
-                                              NULL, /* matrix_types, */
-                                              fill_types,
-                                              fill_weights,
-                                              c->n_rows,
-                                              c->n_cols_ext,
-                                              c->n_faces,
-                                              c->face_cell,
-                                              c->halo,
-                                              NULL);  /* face_numbering */
+          coarse_mv = cs_matrix_variant_tuned(c->matrix,
+                                              1,
+                                              n_min_products,
+                                              t_measure);
 
           _grid_tune_variant[k] = coarse_mv;
 
@@ -5841,34 +5852,8 @@ cs_grid_coarsen(const cs_grid_t  *f,
     }
 
     if (coarse_mv != NULL)
-      coarse_matrix_type = cs_matrix_variant_type(coarse_mv);
-
-    c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
-                                                  true,
-                                                  c->n_rows,
-                                                  c->n_cols_ext,
-                                                  c->n_faces,
-                                                  c->face_cell,
-                                                  c->halo,
-                                                  NULL);
-
-    if (coarse_mv != NULL)
-      c->_matrix = cs_matrix_create_by_variant(c->matrix_struct, coarse_mv);
-    else
-      c->_matrix = cs_matrix_create(c->matrix_struct);
-
-    cs_matrix_set_coefficients(c->_matrix,
-                               c->symmetric,
-                               c->db_size,
-                               c->eb_size,
-                               c->n_faces,
-                               c->face_cell,
-                               c->da,
-                               c->xa);
-
+      cs_matrix_variant_apply(c->_matrix, coarse_mv);
   }
-
-  c->matrix = c->_matrix;
 
   /* Recurse if necessary */
 
@@ -6720,56 +6705,6 @@ cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
   }
 
   _grid_tune_max_fill_level[fill_type] = max_level;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Force matrix variant selection for multigrid coarse meshes.
- *
- * The finest mesh (level 0) is handled by the default tuning options,
- * so only coarser meshes are considered here.
- *
- * \param[in]  fill_type  associated matrix fill type
- * \param[in]  level      level for which variant is assiged
- * \param[in]  mv         matrix variant to assign (NULL to unassign)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
-                           int                         level,
-                           const cs_matrix_variant_t  *mv)
-{
-  if (_grid_tune_max_level < level) {
-
-    if (_grid_tune_max_level == 0) {
-      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
-      for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
-        _grid_tune_max_fill_level[i] = 0;
-    }
-
-    BFT_REALLOC(_grid_tune_variant,
-                CS_MATRIX_N_FILL_TYPES*level, cs_matrix_variant_t *);
-
-    for (int i = _grid_tune_max_level; i < level; i++) {
-      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
-        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
-      }
-    }
-
-    _grid_tune_max_level = level;
-  }
-
-  int k = CS_MATRIX_N_FILL_TYPES*(level-1) + fill_type;
-
-  if (_grid_tune_variant[k] != NULL)
-    cs_matrix_variant_destroy(&(_grid_tune_variant[k]));
-
-  if (mv != NULL) {
-    cs_matrix_type_t m_type = cs_matrix_variant_type(mv);
-    _grid_tune_variant[k] = cs_matrix_variant_create(m_type, NULL);
-    cs_matrix_variant_merge(_grid_tune_variant[k], mv, fill_type);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

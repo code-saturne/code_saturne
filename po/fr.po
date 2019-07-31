@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-08-05 18:18+0200\n"
+"POT-Creation-Date: 2019-08-06 11:18+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3261,42 +3261,6 @@ msgid ""
 "does not handle case with excluded diagonal."
 msgstr ""
 
-msgid "y <- A.x"
-msgstr ""
-
-msgid "y <- (A-D).x"
-msgstr ""
-
-msgid "Symmetric y <- A.x"
-msgstr ""
-
-msgid "Symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block diagonal y <- A.x"
-msgstr ""
-
-msgid "Block diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block 6 diagonal y <- A.x"
-msgstr ""
-
-msgid "Block 6 diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block diagonal symmetric y <- A.x"
-msgstr ""
-
-msgid "Block diagonal symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block y <- A.x"
-msgstr ""
-
-msgid "Block y <- (A-D).x"
-msgstr ""
-
 msgid ""
 "Assigning non-symmetric matrix coefficients to a matrix\n"
 "in a symmetric CSR format."
@@ -3340,19 +3304,16 @@ msgstr ""
 msgid "Matrix is missing a vector multiply function for fill type %s."
 msgstr ""
 
-msgid "Native, baseline"
+msgid "native, baseline"
 msgstr ""
 
-msgid "Native, fixed blocks"
+msgid "native, OpenMP"
 msgstr ""
 
-msgid "Native, OpenMP"
+msgid "native, OpenMP atomic"
 msgstr ""
 
-msgid "Native, OpenMP atomic"
-msgstr ""
-
-msgid "Native, vectorized"
+msgid "native, vectorized"
 msgstr ""
 
 msgid "CSR, with MKL"
@@ -3362,9 +3323,6 @@ msgid "CSR_SYM"
 msgstr ""
 
 msgid "CSR_SYM, with MKL"
-msgstr ""
-
-msgid "MSR, generic"
 msgstr ""
 
 msgid "MSR, with MKL"
@@ -3390,70 +3348,20 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"Tuning for matrices of type: %s\n"
+"Selected SpMV variant for matrix of type %s and fill %s:\n"
+"  %32s for y <= A.x       (speedup: %6.2f)\n"
+"  %32s for y <= (A-D).x   (speedup: %6.2f)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Tuning for matrices of type %s and fill %s\n"
 "===========================\n"
 msgstr ""
 "\n"
-"Réglage pour des matrices de type : %s\n"
+"Réglage pour des matrices de type : %s et remplissage %s\n"
 "===================================\n"
-
-msgid "Block 3 diagonal y <- A.x"
-msgstr ""
-
-msgid "Block 3 diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block 3 diagonal symmetric y <- A.x"
-msgstr ""
-
-msgid "Block 3 diagonal symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block 3 y <- A.x"
-msgstr ""
-
-msgid "Block 3 y <- (A-D).x"
-msgstr ""
-
-msgid "time (s)"
-msgstr "temps (s)"
-
-msgid "speedup"
-msgstr ""
-
-msgid "std. dev."
-msgstr "écart type"
-
-msgid "mean"
-msgstr "moyenne"
-
-msgid "max"
-msgstr "max"
-
-msgid "min"
-msgstr "min"
-
-#, c-format
-msgid ""
-"\n"
-"  -%s:\n"
-msgstr ""
-
-#, c-format
-msgid "    %s : %d ranks\n"
-msgstr "    %s : %d rangs\n"
-
-#, c-format
-msgid "  %-44s : %s\n"
-msgstr "  %-44s : %s\n"
-
-#, c-format
-msgid ""
-"\n"
-"Elapsed tuning time: %12.3f s.\n"
-msgstr ""
-"\n"
-"Temps de réglage écoulé : %12.3f s.\n"
 
 #, c-format
 msgid ""
@@ -9279,6 +9187,9 @@ msgstr ""
 "                                (1: température en kelvin)\n"
 "                                (2: température en celsius)\n"
 "    iscalt:      %14d (numéro du scalaire thermique)\n"
+
+msgid "mean"
+msgstr "moyenne"
 
 msgid "variance"
 msgstr "variable"
@@ -16374,6 +16285,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-
-#~ msgid "The calculation continues with nswrsm = 20.\n"
-#~ msgstr "Le calcul se poursuit avec nswrsm = 20.\n"

@@ -330,20 +330,14 @@ struct _cs_matrix_t {
 
 struct _cs_matrix_variant_t {
 
-  char                   name[32];     /* Variant name */
+  char                   name[2][32]; /* Variant names */
 
-  cs_matrix_type_t       type;         /* Matrix storage and definition type */
+  cs_matrix_type_t       type;        /* Matrix storage and definition type */
+  cs_matrix_fill_type_t  fill_type;   /* Matrix storage and definition type */
 
-  /* Function pointer arrays, with variants:
-     fill_type + exclude_diagonal_flag */
+  /* Function pointer arrays, with and without exclude_diagonal_flag */
 
-  cs_matrix_vector_product_t   *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
-
-  /* Measured operation costs for each available operation, or -1 otherwise
-     fill_type*2 + exclude_diagonal_flag */
-
-  double  matrix_vector_cost[CS_MATRIX_N_FILL_TYPES][2][2];
-
+  cs_matrix_vector_product_t   *vector_multiply[2];
 };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

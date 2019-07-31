@@ -158,7 +158,7 @@ cs_matrix_native(bool        symmetric,
                  const int  *extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
- * Force matrix variant for a given fill type
+ * Determine or apply default tuning for a given matrix type
  *
  * Information from the variant used fo this definition is copied,
  * so it may be freed after calling this function.
@@ -169,33 +169,7 @@ cs_matrix_native(bool        symmetric,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_variant(cs_matrix_fill_type_t       fill_type,
-                      const cs_matrix_variant_t  *mv);
-
-/*----------------------------------------------------------------------------
- * Set matrix tuning behavior for a given fill type
- *
- * parameters:
- *   fill type  <-- Fill type for which tuning behavior is set
- *   tune       <-- 1 to activate tuning, 0 to deactivate
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_set_tuning(cs_matrix_fill_type_t   fill_type,
-                     int                     tune);
-
-/*----------------------------------------------------------------------------
- * Return matrix tuning behavior for a given fill type.
- *
- * parameters:
- *   fill type  <-- Fill type for which tuning behavior is set
- *
- * returns:
- *   1 if tuning is active, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_matrix_get_tuning(cs_matrix_fill_type_t   fill_type);
+cs_matrix_default_set_tuned(cs_matrix_t  *m);
 
 /*----------------------------------------------------------------------------
  * Set number of matrix computation runs for tuning.
@@ -226,6 +200,19 @@ cs_matrix_set_tuning_runs(int     n_min_products,
 void
 cs_matrix_get_tuning_runs(int     *n_min_products,
                           double  *t_measure);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default matrix type for a given fill type.
+ *
+ * \param[in] fill type  Fill type for which tuning behavior is set
+ * \param[in] mv         Matrix variant to use for this type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
+                           cs_matrix_type_t       type);
 
 /*----------------------------------------------------------------------------
  * Return a (0-based) global block row numbering.

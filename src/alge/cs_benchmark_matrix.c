@@ -317,18 +317,6 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-    _variant_add("Native, fixed blocks",
-                 CS_MATRIX_NATIVE,
-                 n_fill_types,
-                 fill_types,
-                 2, /* ed_flag */
-                 NULL,
-                 "fixed",
-                 NULL,
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
-
     if (numbering != NULL) {
 
 #if defined(HAVE_OPENMP)
@@ -638,6 +626,10 @@ _matrix_check(int                          n_variants,
 
         cs_matrix_timing_variant_t *v = m_variant + v_id;
 
+        if (   strlen(v->vector_multiply_name[f_id][0]) < 1
+            && strlen(v->vector_multiply_name[f_id][1]) < 1)
+          continue;
+
         ms = cs_matrix_structure_create(v->type,
                                         true,
                                         n_rows,
@@ -647,30 +639,34 @@ _matrix_check(int                          n_variants,
                                         halo,
                                         numbering);
 
-        cs_matrix_variant_t *mv
-          = cs_matrix_variant_create(v->type, numbering);
+        m = cs_matrix_create(ms);
+
+        cs_matrix_set_coefficients(m,
+                                   sym_coeffs,
+                                   _d_block_size,
+                                   _ed_block_size,
+                                   n_edges,
+                                   edges,
+                                   da,
+                                   xa);
+
+        cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
+
         if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0)
           cs_matrix_variant_set_func(mv,
                                      numbering,
                                      f_id,
                                      ed_flag,
                                      v->vector_multiply_name[f_id][ed_flag]);
-        m = cs_matrix_create_by_variant(ms, mv);
+
+        cs_matrix_variant_apply(m, mv);
+
         cs_matrix_variant_destroy(&mv);
 
         cs_matrix_vector_product_t
           *vector_multiply = m->vector_multiply[f_id][ed_flag];
 
         if (vector_multiply != NULL) {
-
-          cs_matrix_set_coefficients(m,
-                                     sym_coeffs,
-                                     _d_block_size,
-                                     _ed_block_size,
-                                     n_edges,
-                                     edges,
-                                     da,
-                                     xa);
 
           /* Check multiplication */
 
@@ -690,9 +686,9 @@ _matrix_check(int                          n_variants,
             bft_printf_flush();
           }
 
-          cs_matrix_release_coefficients(m);
-
         }
+
+        cs_matrix_release_coefficients(m);
 
         cs_matrix_destroy(&m);
         cs_matrix_structure_destroy(&ms);
@@ -847,19 +843,7 @@ _matrix_time_test(double                       t_measure,
       if (m != NULL)
         cs_matrix_destroy(&m);
 
-      cs_matrix_variant_t *mv
-        = cs_matrix_variant_create(type, numbering);
-      for (ed_flag = 0; ed_flag < 2; ed_flag++) {
-        if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0)
-            cs_matrix_variant_set_func(mv,
-                                       numbering,
-                                       f_id,
-                                       ed_flag,
-                                       v->vector_multiply_name[f_id][ed_flag]);
-      }
-
-      m = cs_matrix_create_by_variant(ms, mv);
-      cs_matrix_variant_destroy(&mv);
+      m = cs_matrix_create(ms);
 
       /* Measure overhead of setting coefficients if not already done */
 
@@ -894,6 +878,18 @@ _matrix_time_test(double                       t_measure,
       /* Measure matrix.vector operations */
 
       for (ed_flag = 0; ed_flag < 2; ed_flag++) {
+
+        cs_matrix_variant_t *mv = cs_matrix_variant_create(m);
+
+        if (strlen(v->vector_multiply_name[f_id][ed_flag]) > 0)
+          cs_matrix_variant_set_func(mv,
+                                     numbering,
+                                     f_id,
+                                     ed_flag,
+                                     v->vector_multiply_name[f_id][ed_flag]);
+
+        cs_matrix_variant_apply(m, mv);
+        cs_matrix_variant_destroy(&mv);
 
         cs_matrix_vector_product_t
           *vector_multiply = m->vector_multiply[f_id][ed_flag];
@@ -1420,10 +1416,10 @@ cs_benchmark_matrix(double                 t_measure,
 {
   int  t_id, f_id, v_id, ed_flag;
 
-  bool                   type_filter[CS_MATRIX_N_TYPES] = {true,
-                                                           true,
-                                                           true,
-                                                           true};
+  bool                   type_filter[CS_MATRIX_N_BUILTIN_TYPES] = {true,
+                                                                   true,
+                                                                   true,
+                                                                   true};
 
   int                    _n_fill_types_default = 3;
   cs_matrix_fill_type_t  _fill_types_default[] = {CS_MATRIX_SCALAR,
@@ -1444,7 +1440,7 @@ cs_benchmark_matrix(double                 t_measure,
   /* Use defaults if required */
 
   if (_n_types > 0) {
-    for (t_id = 0; t_id < CS_MATRIX_N_TYPES; t_id++)
+    for (t_id = 0; t_id < CS_MATRIX_N_BUILTIN_TYPES; t_id++)
       type_filter[t_id] = false;
     for (t_id = 0; t_id < n_types; t_id++)
       type_filter[types[t_id]] = true;

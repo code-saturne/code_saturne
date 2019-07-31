@@ -95,29 +95,12 @@ cs_user_matrix_tuning(void)
 
   /* Set tuning runs (defaults) */
 
-  cs_matrix_set_tuning_runs(10,   /* n_min_products */
+  cs_matrix_set_tuning_runs(20,   /* n_min_products */
                             0.5); /* t_measure */
 
-  /* Activate tuning for selected matrix fill types. */
+  /* Force default for selected types */
 
-  cs_matrix_set_tuning(CS_MATRIX_SCALAR, 1);
-
-  cs_matrix_set_tuning(CS_MATRIX_SCALAR_SYM, 1);
-
-  /* Force variant for selected types */
-
-  cs_matrix_variant_t *mv
-    = cs_matrix_variant_create(CS_MATRIX_MSR,
-                               cs_glob_mesh->i_face_numbering);
-  cs_matrix_variant_set_func(mv,
-                             cs_glob_mesh->i_face_numbering,
-                             CS_MATRIX_BLOCK_D,
-                             2,
-                             "default");
-
-  cs_matrix_set_variant(CS_MATRIX_BLOCK_D, mv);
-
-  cs_matrix_variant_destroy(&mv);
+  cs_matrix_default_set_type(CS_MATRIX_BLOCK_D, CS_MATRIX_MSR);
 
   /* Also allow tuning for multigrid for all expected levels
    * (we rarely have more than 10 or 11 levels except for huge meshes). */

@@ -101,37 +101,23 @@ BEGIN_C_DECLS
 
 static bool _initialized = false;
 
-/* _matrix_variant_tuned[mft] may be defined for a given fill type mft
-   when variants are defined,  but are merged if possible
-   upon calling cs_matrix_initialize(), so access for a given fill
-   type is done using _matrix_variant_tuned[tuned_matrix_id[mft]]
-   after that call */
+/* _matrix_variant_tuned[mft] may be defined for a matrix and fill type
+   when variants are defined */
 
-static cs_matrix_variant_t *_matrix_variant_tuned[CS_MATRIX_N_FILL_TYPES];
+static cs_matrix_type_t  _default_type[CS_MATRIX_N_FILL_TYPES];
 
-static cs_matrix_structure_t *_matrix_struct_tuned[CS_MATRIX_N_FILL_TYPES];
-static cs_matrix_t *_matrix_tuned[CS_MATRIX_N_FILL_TYPES];
+static cs_matrix_variant_t
+*_matrix_variant_tuned[CS_MATRIX_N_BUILTIN_TYPES][CS_MATRIX_N_FILL_TYPES];
 
-/* _tuned_matrix_id[mft] is initialized to -1, and may be set to -2
-   (or reset -to -1) using cs_matrix_set_tuning(mft, tune) to indicate
-   that autotuning is requested */
+/* Matrix structures, if needed */
 
-static int _tuned_matrix_id[CS_MATRIX_N_FILL_TYPES];
-
-/* MSR matrix structure, if needed */
-
-static cs_matrix_structure_t *_matrix_struct_msr = NULL;
-static cs_matrix_t *_matrix_msr = NULL;
-
-/* Native matrix structure, if needed */
-
-static cs_matrix_structure_t *_matrix_struct_native = NULL;
-static cs_matrix_t *_matrix_native = NULL;
+static cs_matrix_structure_t  *_matrix_struct[CS_MATRIX_N_TYPES];
+static cs_matrix_t            *_matrix[CS_MATRIX_N_TYPES];
 
 /* Tuning options */
 
+static int    _n_min_products = 50;
 static double _t_measure = 0.5;
-static int _n_min_products = 50;
 
 /* Pointer to global (block-based) numbering, if used */
 
@@ -155,16 +141,12 @@ static void
 _initialize_api(void)
 {
   if (! _initialized) {
-    for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
-      _matrix_variant_tuned[mft] = NULL;
-      _matrix_struct_tuned[mft] = NULL;
-      _matrix_tuned[mft] = NULL;
-      _tuned_matrix_id[mft] = -1;
+    for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {
+      for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
+        _matrix_variant_tuned[t][mft] = NULL;
+      _matrix_struct[t] = NULL;
+      _matrix[t] = NULL;
     }
-    _matrix_struct_msr = NULL;
-    _matrix_msr = NULL;
-    _matrix_struct_native = NULL;
-    _matrix_native = NULL;
     _initialized = true;
   }
 }
@@ -198,6 +180,89 @@ _build_block_row_g_id(cs_lnum_t         n_rows,
                       0, /* g_id_base */
                       _l_range,
                       _global_row_id);
+}
+
+/*----------------------------------------------------------------------------
+ * Update or build matrix structure for a given type
+ *
+ * parameters:
+ *   t   <-- matrix type
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_matrix_struct(cs_matrix_type_t  t)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
+
+  if (_matrix_struct[t] != NULL)
+    cs_matrix_structure_destroy(&(_matrix_struct[t]));
+
+  switch(t) {
+  case CS_MATRIX_MSR:
+    {
+      if (ma != NULL)
+        _matrix_struct[t]
+          = cs_matrix_structure_create_msr_shared(true,
+                                                  ma->single_faces_to_cells,
+                                                  mesh->n_cells,
+                                                  mesh->n_cells_with_ghosts,
+                                                  ma->cell_cells_idx,
+                                                  ma->cell_cells,
+                                                  mesh->halo,
+                                                  mesh->i_face_numbering);
+      else
+        _matrix_struct[t]
+          = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                       true,
+                                       mesh->n_cells,
+                                       mesh->n_cells_with_ghosts,
+                                       mesh->n_i_faces,
+                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                       mesh->halo,
+                                       mesh->i_face_numbering);
+    }
+    break;
+
+  default:
+    {
+      _matrix_struct[t]
+        = cs_matrix_structure_create(t,
+                                     true,
+                                     mesh->n_cells,
+                                     mesh->n_cells_with_ghosts,
+                                     mesh->n_i_faces,
+                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                     mesh->halo,
+                                     mesh->i_face_numbering);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return a matrix matching a given type.
+ *
+ * parameters:
+ *   t   <-- matrix type
+ *
+ * returns:
+ *   pointer to created matrix
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_t *
+_get_matrix(cs_matrix_type_t  t)
+{
+  if (_matrix[t] != NULL)
+    return _matrix[t];
+
+  /* If structure has not been built yet, build it */
+
+  if (_matrix_struct[t] == NULL)
+    _update_matrix_struct(t);
+
+  _matrix[t] = cs_matrix_create(_matrix_struct[t]);
+
+  return _matrix[t];
 }
 
 /*----------------------------------------------------------------------------
@@ -360,127 +425,8 @@ cs_matrix_vector_native_multiply(bool                symmetric,
 void
 cs_matrix_initialize(void)
 {
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
-
-  int n_tuned_types = 0;
-  bool matrix_tune = false;
-
-  assert(mesh != NULL);
-
   if (!_initialized)
     _initialize_api();
-
-  /* Compute tuned variants for matrix */
-
-  for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
-
-    cs_matrix_variant_t *mv = _matrix_variant_tuned[i];
-
-    _matrix_variant_tuned[i] = NULL;
-
-    if (mv == NULL) {
-
-      if (_tuned_matrix_id[i] < -1) {
-
-        matrix_tune = true;
-
-        cs_log_printf(CS_LOG_PERFORMANCE,
-                      _("\n"
-                        "Tuning for matrices of type: %s\n"
-                        "===========================\n"),
-                      cs_matrix_fill_type_name[i]);
-
-        int n_fill_types = 1;
-        cs_matrix_fill_type_t fill_types[1] = {i};
-        double fill_weights[1] = {1};
-
-        mv = cs_matrix_variant_tuned(_t_measure,
-                                     0, /* n_matrix_types, */
-                                     n_fill_types,
-                                     NULL, /* matrix_types, */
-                                     fill_types,
-                                     fill_weights,
-                                     mesh->n_cells,
-                                     mesh->n_cells_with_ghosts,
-                                     mesh->n_i_faces,
-                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                     mesh->halo,
-                                     mesh->i_face_numbering);
-
-      }
-
-      else {
-
-        cs_matrix_type_t m_type = CS_MATRIX_NATIVE;
-
-        mv = cs_matrix_variant_create(m_type,
-                                      mesh->i_face_numbering);
-
-      }
-
-    }
-
-    /* Prepare to share matrix variants and structures if possible */
-
-    int m_id = -1;
-    cs_matrix_type_t m_type = cs_matrix_variant_type(mv);
-
-    for (int j = 0; j < n_tuned_types; j++) {
-      if (m_type == _matrix_struct_tuned[j]->type) {
-        m_id = j;
-        cs_matrix_variant_merge(_matrix_variant_tuned[m_id], mv, i);
-        _tuned_matrix_id[i] = j;
-        cs_matrix_variant_destroy(&mv);
-        break;
-      }
-    }
-
-    /* Build new structure otherwise */
-
-    if (m_id < 0) {
-
-      m_id = n_tuned_types;
-
-      _matrix_variant_tuned[m_id] = mv;
-
-      _tuned_matrix_id[i] = m_id;
-
-      if (m_type == CS_MATRIX_MSR && ma != NULL)
-        _matrix_struct_tuned[m_id]
-          = cs_matrix_structure_create_msr_shared(true,
-                                                  ma->single_faces_to_cells,
-                                                  mesh->n_cells,
-                                                  mesh->n_cells_with_ghosts,
-                                                  ma->cell_cells_idx,
-                                                  ma->cell_cells,
-                                                  mesh->halo,
-                                                  mesh->i_face_numbering);
-
-      else
-        _matrix_struct_tuned[m_id]
-          = cs_matrix_structure_create(m_type,
-                                       true,
-                                       mesh->n_cells,
-                                       mesh->n_cells_with_ghosts,
-                                       mesh->n_i_faces,
-                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                       mesh->halo,
-                                       mesh->i_face_numbering);
-
-      _matrix_tuned[m_id]
-        = cs_matrix_create_by_variant(_matrix_struct_tuned[m_id], mv);
-
-      n_tuned_types += 1;
-
-    }
-
-  }
-
-  if (matrix_tune > 0) {
-    cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-    cs_log_separator(CS_LOG_PERFORMANCE);
-  }
 
   /* Matrices for internal couplings */
 
@@ -505,27 +451,16 @@ cs_matrix_finalize(void)
 {
   BFT_FREE(_global_row_id);
 
-  for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
-    _tuned_matrix_id[mft] = -1;
-
-  for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
-    if (_matrix_tuned[i] != NULL)
-      cs_matrix_destroy(&(_matrix_tuned[i]));
-    if (_matrix_struct_tuned[i] != NULL)
-      cs_matrix_structure_destroy(&(_matrix_struct_tuned[i]));
-    if (_matrix_variant_tuned[i] != NULL)
-      cs_matrix_variant_destroy(&(_matrix_variant_tuned[i]));
+  for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {
+    for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
+      if (_matrix_variant_tuned[t][i] != NULL)
+        cs_matrix_variant_destroy(&(_matrix_variant_tuned[t][i]));
+    }
+    if (_matrix[t] != NULL)
+      cs_matrix_destroy(&(_matrix[t]));
+    if (_matrix_struct[t] != NULL)
+      cs_matrix_structure_destroy(&(_matrix_struct[t]));
   }
-
-  if (_matrix_msr != NULL)
-    cs_matrix_destroy(&(_matrix_msr));
-  if (_matrix_struct_msr != NULL)
-    cs_matrix_structure_destroy(&(_matrix_struct_msr));
-
-  if (_matrix_native != NULL)
-    cs_matrix_destroy(&(_matrix_native));
-  if (_matrix_struct_native != NULL)
-    cs_matrix_structure_destroy(&(_matrix_struct_native));
 
   /* Matrices for internal couplings */
 
@@ -550,103 +485,21 @@ void
 cs_matrix_update_mesh(void)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
   if (_global_row_id != NULL)
     _build_block_row_g_id(mesh->n_cells, mesh->halo);
 
-  for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
+  for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_TYPES; t++) {
 
-    if (_matrix_tuned[i] != NULL) {
+    if (_matrix[t] == NULL)
+      continue;
 
-      const cs_matrix_type_t m_type = (_matrix_tuned[i])->type;
+    cs_matrix_destroy(&(_matrix[t]));
 
-      cs_matrix_destroy(&(_matrix_tuned[i]));
-      cs_matrix_structure_destroy(&(_matrix_struct_tuned[i]));
+    if (_matrix_struct[t] != NULL)
+      _update_matrix_struct(t);
 
-      if (m_type == CS_MATRIX_MSR && ma != NULL)
-        _matrix_struct_tuned[i]
-          = cs_matrix_structure_create_msr_shared(true,
-                                                  ma->single_faces_to_cells,
-                                                  mesh->n_cells,
-                                                  mesh->n_cells_with_ghosts,
-                                                  ma->cell_cells_idx,
-                                                  ma->cell_cells,
-                                                  mesh->halo,
-                                                  mesh->i_face_numbering);
-
-      else
-        _matrix_struct_tuned[i]
-          = cs_matrix_structure_create(m_type,
-                                       true,
-                                       mesh->n_cells,
-                                       mesh->n_cells_with_ghosts,
-                                       mesh->n_i_faces,
-                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                       mesh->halo,
-                                       mesh->i_face_numbering);
-
-      assert(_matrix_variant_tuned[i] != NULL);
-
-      _matrix_tuned[i]
-        = cs_matrix_create_by_variant(_matrix_struct_tuned[i],
-                                      _matrix_variant_tuned[i]);
-
-    }
-
-  }
-
-  /* MSR might also be required separately */
-
-  if (_matrix_msr != NULL) {
-
-    cs_matrix_destroy(&(_matrix_msr));
-    cs_matrix_structure_destroy(&(_matrix_struct_msr));
-
-    if (ma != NULL)
-      _matrix_struct_msr
-        = cs_matrix_structure_create_msr_shared(true,
-                                                ma->single_faces_to_cells,
-                                                mesh->n_cells,
-                                                mesh->n_cells_with_ghosts,
-                                                ma->cell_cells_idx,
-                                                ma->cell_cells,
-                                                mesh->halo,
-                                                mesh->i_face_numbering);
-    else
-      _matrix_struct_msr
-        = cs_matrix_structure_create(CS_MATRIX_MSR,
-                                     true,
-                                     mesh->n_cells,
-                                     mesh->n_cells_with_ghosts,
-                                     mesh->n_i_faces,
-                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                     mesh->halo,
-                                     mesh->i_face_numbering);
-
-    _matrix_msr = cs_matrix_create(_matrix_struct_msr);
-
-  }
-
-  /* Same for native... */
-
-  if (_matrix_native != NULL) {
-
-    cs_matrix_destroy(&(_matrix_native));
-    cs_matrix_structure_destroy(&(_matrix_struct_native));
-
-    _matrix_struct_native
-      = cs_matrix_structure_create(CS_MATRIX_NATIVE,
-                                   true,
-                                   mesh->n_cells,
-                                   mesh->n_cells_with_ghosts,
-                                   mesh->n_i_faces,
-                                   (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                   mesh->halo,
-                                   mesh->i_face_numbering);
-
-    _matrix_native = cs_matrix_create(_matrix_struct_native);
-
+    _matrix[t] = cs_matrix_create(_matrix_struct[t]);
   }
 
   /* Matrices for internal couplings */
@@ -664,8 +517,8 @@ cs_matrix_update_mesh(void)
  *
  * parameters:
  *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- Block sizes for diagonal
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal
  *
  * returns:
  *   pointer to default matrix structure adapted to fill type
@@ -673,8 +526,8 @@ cs_matrix_update_mesh(void)
 
 cs_matrix_t  *
 cs_matrix_default(bool        symmetric,
-                  const int  *diag_block_size,
-                  const int  *extra_diag_block_size)
+                  const int   diag_block_size[],
+                  const int   extra_diag_block_size[])
 {
   cs_matrix_t *m = NULL;
 
@@ -682,8 +535,19 @@ cs_matrix_default(bool        symmetric,
                                                       diag_block_size,
                                                       extra_diag_block_size);
 
-  if (_tuned_matrix_id[mft] > -1)
-    m = _matrix_tuned[_tuned_matrix_id[mft]];
+  cs_matrix_type_t t = _default_type[mft];
+
+  /* Modify in case unsupported */
+
+  if (mft == CS_MATRIX_BLOCK)
+    t = CS_MATRIX_NATIVE;
+
+  else if (t == CS_MATRIX_CSR_SYM) {
+    if (mft != CS_MATRIX_SCALAR_SYM)
+      t = CS_MATRIX_NATIVE;
+  }
+
+  m = _get_matrix(t);
 
   return m;
 }
@@ -705,60 +569,15 @@ cs_matrix_msr(bool        symmetric,
               const int  *diag_block_size,
               const int  *extra_diag_block_size)
 {
-  cs_matrix_t *m = NULL;
-
-  /* If default matrix for fill type is already MSR, return that */
-
+  cs_matrix_type_t t = CS_MATRIX_MSR;
   cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
                                                       diag_block_size,
                                                       extra_diag_block_size);
 
-  if (_matrix_tuned[mft] != NULL) {
-    if ((_matrix_tuned[mft])->type == CS_MATRIX_MSR)
-      m = cs_matrix_default(symmetric,
-                            diag_block_size,
-                            extra_diag_block_size);
-  }
+  if (mft == CS_MATRIX_BLOCK)
+    t = CS_MATRIX_NATIVE;
 
-  if (m == NULL) {
-
-    /* Create matrix if not done yet */
-
-    if (_matrix_msr == NULL) {
-
-      const cs_mesh_t  *mesh = cs_glob_mesh;
-      const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
-
-      if (ma != NULL)
-        _matrix_struct_msr
-          = cs_matrix_structure_create_msr_shared(true,
-                                                  ma->single_faces_to_cells,
-                                                  mesh->n_cells,
-                                                  mesh->n_cells_with_ghosts,
-                                                  ma->cell_cells_idx,
-                                                  ma->cell_cells,
-                                                  mesh->halo,
-                                                  mesh->i_face_numbering);
-      else
-        _matrix_struct_msr
-          = cs_matrix_structure_create(CS_MATRIX_MSR,
-                                       true,
-                                       mesh->n_cells,
-                                       mesh->n_cells_with_ghosts,
-                                       mesh->n_i_faces,
-                                       (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                       mesh->halo,
-                                       mesh->i_face_numbering);
-
-      _matrix_msr = cs_matrix_create(_matrix_struct_msr);
-
-    }
-
-    m = _matrix_msr;
-
-  }
-
-  return m;
+  return _get_matrix(t);
 }
 
 /*----------------------------------------------------------------------------
@@ -778,52 +597,15 @@ cs_matrix_native(bool        symmetric,
                  const int  *diag_block_size,
                  const int  *extra_diag_block_size)
 {
-  cs_matrix_t *m = NULL;
+  CS_UNUSED(symmetric);
+  CS_UNUSED(diag_block_size);
+  CS_UNUSED(extra_diag_block_size);
 
-  /* If default matrix for fill type is already native, return that */
-
-  cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
-                                                      diag_block_size,
-                                                      extra_diag_block_size);
-
-  if (_matrix_tuned[_tuned_matrix_id[mft]] != NULL) {
-    if ((_matrix_tuned[_tuned_matrix_id[mft]])->type == CS_MATRIX_NATIVE)
-      m = cs_matrix_default(symmetric,
-                            diag_block_size,
-                            extra_diag_block_size);
-  }
-
-  if (m == NULL) {
-
-    /* Create matrix if not done yet */
-
-    if (_matrix_native == NULL) {
-
-      cs_mesh_t  *mesh = cs_glob_mesh;
-
-      _matrix_struct_native
-        = cs_matrix_structure_create(CS_MATRIX_NATIVE,
-                                     true,
-                                     mesh->n_cells,
-                                     mesh->n_cells_with_ghosts,
-                                     mesh->n_i_faces,
-                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                     mesh->halo,
-                                     mesh->i_face_numbering);
-
-      _matrix_native = cs_matrix_create(_matrix_struct_native);
-
-    }
-
-    m = _matrix_native;
-
-  }
-
-  return m;
+  return _get_matrix(CS_MATRIX_NATIVE);
 }
 
 /*----------------------------------------------------------------------------
- * Force matrix variant for a given fill type
+ * Determine or apply default tuning for a given matrix type
  *
  * Information from the variant used fo this definition is copied,
  * so it may be freed after calling this function.
@@ -834,69 +616,25 @@ cs_matrix_native(bool        symmetric,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_variant(cs_matrix_fill_type_t       fill_type,
-                      const cs_matrix_variant_t  *mv)
+cs_matrix_default_set_tuned(cs_matrix_t  *m)
 {
-  if (!_initialized)
-    _initialize_api();
+  if (   m->type < 0 || m->type > CS_MATRIX_N_BUILTIN_TYPES
+      || m->fill_type < 0 || m->fill_type > CS_MATRIX_N_FILL_TYPES)
+    return;
 
-  /* Create default variant for copy if none present */
+  if (_matrix_variant_tuned[m->type][m->fill_type] == NULL
+      && (_t_measure > 0 || _n_min_products > 0)) {
 
-  if (_matrix_variant_tuned[fill_type] == NULL) {
-    cs_matrix_type_t m_type = cs_matrix_variant_type(mv);
-    _matrix_variant_tuned[fill_type] = cs_matrix_variant_create(m_type,
-                                                                NULL);
+    _matrix_variant_tuned[m->type][m->fill_type]
+      = cs_matrix_variant_tuned(_matrix[m->type],
+                                1,
+                                m->fill_type,
+                                _t_measure);
+
   }
 
-  cs_matrix_variant_t *_mv = _matrix_variant_tuned[fill_type];
-  cs_matrix_variant_merge(_mv, mv, fill_type);
-}
-
-/*----------------------------------------------------------------------------
- * Set matrix tuning behavior for a given fill type
- *
- * parameters:
- *   fill type  <-- Fill type for which tuning behavior is set
- *   tune       <-- 1 to activate tuning, 0 to deactivate
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_set_tuning(cs_matrix_fill_type_t   fill_type,
-                     int                     tune)
-{
-  if (!_initialized)
-    _initialize_api();
-
-  if (_tuned_matrix_id[fill_type] < 0) {
-    if (tune)
-      _tuned_matrix_id[fill_type] = -2;
-    else
-      _tuned_matrix_id[fill_type] = -1;
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Return matrix tuning behavior for a given fill type.
- *
- * parameters:
- *   fill type  <-- Fill type for which tuning behavior is set
- *
- * returns:
- *   1 if tuning is active, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_matrix_get_tuning(cs_matrix_fill_type_t   fill_type)
-{
-  int retval = 0;
-
-  if (!_initialized)
-    _initialize_api();
-
-  if (_tuned_matrix_id[fill_type] < -1)
-    retval = 1;
-
-  return retval;
+  if (_matrix_variant_tuned[m->type][m->fill_type] != NULL)
+    cs_matrix_variant_apply(m, _matrix_variant_tuned[m->type][m->fill_type]);
 }
 
 /*----------------------------------------------------------------------------
@@ -944,6 +682,22 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
 
   if (t_measure != NULL)
     *t_measure = _t_measure;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default matrix type for a given fill type.
+ *
+ * \param[in] fill type  Fill type for which tuning behavior is set
+ * \param[in] mv         Matrix variant to use for this type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
+                           cs_matrix_type_t       type)
+{
+  _default_type[fill_type] = type;
 }
 
 /*----------------------------------------------------------------------------
