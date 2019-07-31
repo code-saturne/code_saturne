@@ -52,6 +52,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_cdo_main.h"
 #include "cs_domain.h"
+#include "cs_equation.h"
 
 #include "cs_log.h"
 #include "cs_interface.h"
@@ -452,7 +453,6 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
   /* Local activation of CDO module if required */
 
-  // cs_domain_t  *domain = cs_domain_create();
   cs_domain_t  *domain = cs_glob_domain;
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_WITH_FV);
 
@@ -482,6 +482,13 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                                      NULL);
 
   cs_cdo_initialize_structures(domain, m, mq);
+
+  /* Create equation builder and context.
+   *  Initialize field values */
+  cs_equation_initialize(domain->mesh,
+                         domain->connect,
+                         domain->cdo_quantities,
+                         domain->time_step);
 
   /* Compute or access reference volume for displacement limiter */
 
