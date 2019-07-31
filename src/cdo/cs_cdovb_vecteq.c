@@ -588,90 +588,6 @@ _vbv_enforce_values(const cs_equation_param_t     *eqp,
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Cellwise computation of the renormalization coefficient for the
- *         the residual norm of the linear system
- *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cellwise view of the mesh/quantities
- * \param[in]      csys      pointer to a cellwise view of the system
- * \param[in, out] rhs_norm  quantity used for the RHS normalization
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_vbv_compute_cw_sles_normalization(const cs_equation_param_t    *eqp,
-                                   const cs_cell_mesh_t         *cm,
-                                   const cs_cell_sys_t          *csys,
-                                   cs_real_t                    *rhs_norm)
-{
-  if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
-
-    cs_real_t  _rhs_norm = 0;
-    for (int v = 0; v < cm->n_vc; v++)
-      for (int k = 0; k < 3; k++)
-        _rhs_norm += cm->wvc[v] * csys->rhs[3*v+k]*csys->rhs[3*v+k];
-
-    *rhs_norm += cm->vol_c * _rhs_norm;
-
-  }
-  else if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_DIAG_RHS) {
-
-    const cs_sdm_t  *m = csys->mat;
-
-    cs_real_3_t  mv;
-    cs_real_t  _rhs_norm = 0;
-
-    for (int v = 0; v < cm->n_vc; v++) {
-      const cs_sdm_t  *mVV = cs_sdm_get_block(m, v, v);
-      cs_sdm_33_matvec(mVV, csys->rhs + 3*v, mv);
-      _rhs_norm += _dp3(mv, csys->rhs + 3*v);
-    }
-
-    *rhs_norm += _rhs_norm;
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Last stage to compute of the renormalization coefficient for the
- *         the residual norm of the linear system
- *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in, out] rhs_norm  quantity used for the RHS normalization
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_vbv_sync_sles_normalization(const cs_equation_param_t    *eqp,
-                             cs_real_t                    *rhs_norm)
-{
-  cs_parall_sum(1, CS_DOUBLE, rhs_norm);
-
-  switch (eqp->sles_param.resnorm_type) {
-
-  case CS_PARAM_RESNORM_WEIGHTED_RHS:
-    *rhs_norm = sqrt(1/cs_shared_quant->vol_tot*(*rhs_norm));
-    if (*rhs_norm < 10*FLT_MIN)
-      *rhs_norm = cs_shared_quant->vol_tot/cs_shared_quant->n_g_cells;
-    break;
-
-  case CS_PARAM_RESNORM_DIAG_RHS:
-    break;
-
-  case CS_PARAM_RESNORM_VOLTOT:
-    *rhs_norm = cs_shared_quant->vol_tot/cs_shared_quant->n_g_cells;
-    break;
-
-  default:
-    *rhs_norm = 1.0;
-    break;
-
-  }
-}
-
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -1310,8 +1226,11 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       } /* End of source term */
 
-      /* Compute a norm of the RHS for the normalization of the SLES */
-      _vbv_compute_cw_sles_normalization(eqp, cm, csys, &rhs_norm);
+      /* Compute a norm of the RHS for the normalization of the residual
+         of the linear system to solve */
+      cs_equation_cw_vect_res_normalization(eqp->sles_param.resnorm_type,
+                                            cm->vol_c, csys, cm->wvc,
+                                            &rhs_norm);
 
       /* Apply boundary conditions (those which are weakly enforced) */
       _vbv_apply_weak_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
@@ -1350,7 +1269,10 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */
-  _vbv_sync_sles_normalization(eqp, &rhs_norm);
+  cs_equation_sync_res_normalization(eqp->sles_param.resnorm_type,
+                                     eqc->n_dofs, /* 3*n_vertices */
+                                     rhs,
+                                     &rhs_norm);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();

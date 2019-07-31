@@ -42,6 +42,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_blas.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_local.h"
 #include "cs_log.h"
@@ -357,6 +358,175 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
   BFT_FREE(eqb);
 
   *p_builder = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the residual normalization at the cellwise level according
+ *         to the type of renormalization
+ *         Case of scalar-valued system.
+ *
+ * \param[in]      type            type of renormalization
+ * \param[in]      vol_c           cell volume
+ * \param[in]      csys            pointer to a cs_cell_sys_t structure
+ * \param[in]      rhs             array related to the right-hand side
+ * \param[in, out] normalization   value of the  residual normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_cw_scal_res_normalization(cs_param_resnorm_type_t     type,
+                                      cs_real_t                   vol_c,
+                                      const cs_cell_sys_t        *csys,
+                                      const cs_real_t             weight[],
+                                      cs_real_t                  *normalization)
+{
+  if (type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+
+    assert(weight != NULL);
+    cs_real_t  _rhs_norm = 0;
+    for (short int i = 0; i < csys->n_dofs; i++)
+      _rhs_norm += weight[i] * csys->rhs[i]*csys->rhs[i];
+
+    *normalization += vol_c * _rhs_norm;
+
+  }
+  else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
+
+    cs_real_t  _rhs_norm = 0;
+    if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)   ||
+        (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
+        csys->has_internal_enforcement) {
+
+      for (short int i = 0; i < csys->n_dofs; i++) {
+        if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+          continue;
+        else if (csys->intern_forced_ids[i] > -1)
+          continue;
+        else
+          _rhs_norm += csys->rhs[i]*csys->rhs[i];
+      }
+
+    }
+    else { /* No need to apply a filter */
+
+      for (short int i = 0; i < csys->n_dofs; i++)
+        _rhs_norm += csys->rhs[i]*csys->rhs[i];
+
+    }
+
+    *normalization += _rhs_norm;
+
+  } /* Type of residual normalization */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the residual normalization at the cellwise level according
+ *         to the type of renormalization
+ *         Case of vector-valued system
+ *
+ * \param[in]      type            type of renormalization
+ * \param[in]      vol_c           cell volume
+ * \param[in]      csys            pointer to a cs_cell_sys_t structure
+ * \param[in]      rhs             array related to the right-hand side
+ * \param[in, out] normalization   value of the  residual normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_cw_vect_res_normalization(cs_param_resnorm_type_t     type,
+                                      cs_real_t                   vol_c,
+                                      const cs_cell_sys_t        *csys,
+                                      const cs_real_t             weight[],
+                                      cs_real_t                  *normalization)
+{
+  if (type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+
+    assert(weight != NULL);
+    cs_real_t  _rhs_norm = 0;
+    short int  n_ent = csys->n_dofs/3;
+    for (short int i = 0; i < n_ent; i++) {
+      const cs_real_t  w = weight[i];
+      const cs_real_t  *_rhs = csys->rhs + 3*i;
+      _rhs_norm += w * (_rhs[0]*_rhs[0] + _rhs[1]*_rhs[1] + _rhs[2]*_rhs[2]);
+    }
+
+    *normalization += vol_c * _rhs_norm;
+
+  }
+  else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
+
+    cs_real_t  _rhs_norm = 0;
+    if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)   ||
+        (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
+        csys->has_internal_enforcement) {
+
+      for (short int i = 0; i < csys->n_dofs; i++) {
+        if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+          continue;
+        else if (csys->intern_forced_ids[i] > -1)
+          continue;
+        else
+          _rhs_norm += csys->rhs[i]*csys->rhs[i];
+      }
+
+    }
+    else { /* No need to apply a filter */
+
+      for (short int i = 0; i < csys->n_dofs; i++)
+        _rhs_norm += csys->rhs[i]*csys->rhs[i];
+
+    }
+
+    *normalization += _rhs_norm;
+
+  } /* Type of residual normalization */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last stage to compute of the renormalization coefficient for the
+ *         the residual norm of the linear system
+ *
+ * \param[in]      type            type of renormalization
+ * \param[in]      rhs_size        size of the rhs array
+ * \param[in]      rhs             array related to the right-hand side
+ * \param[in, out] normalization   value of the  residual normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_res_normalization(cs_param_resnorm_type_t    type,
+                                   cs_lnum_t                  rhs_size,
+                                   const cs_real_t            rhs[],
+                                   cs_real_t                 *normalization)
+{
+  switch (type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS:
+  case CS_PARAM_RESNORM_FILTERED_RHS:
+    *normalization = cs_dot_xx(rhs_size, rhs);
+    cs_parall_sum(1, CS_REAL_TYPE, normalization);
+    if (*normalization < 100*DBL_MIN)
+      *normalization = 1.0;
+    else
+      *normalization = sqrt((*normalization));
+    break;
+
+  case CS_PARAM_RESNORM_WEIGHTED_RHS:
+    cs_parall_sum(1, CS_REAL_TYPE, normalization);
+    if (*normalization < 100*DBL_MIN)
+      *normalization = 1.0;
+    else
+      *normalization = sqrt((*normalization)/cs_shared_quant->vol_tot);
+    break;
+
+  default:
+    *normalization = 1.0;
+    break;
+
+  } /* Type of normalization */
 }
 
 /*----------------------------------------------------------------------------*/

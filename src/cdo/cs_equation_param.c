@@ -762,12 +762,12 @@ _set_key(const char            *label,
   case CS_EQKEY_ITSOL_RESNORM_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NONE;
-    else if (strcmp(keyval, "vol_tot") == 0)
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_VOLTOT;
+    else if (strcmp(keyval, "rhs") == 0)
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
     else if (strcmp(keyval, "weighted_rhs") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_WEIGHTED_RHS;
-    else if (strcmp(keyval, "matrix_diag") == 0)
-      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_DIAG_RHS;
+    else if (strcmp(keyval, "filtered") == 0)
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1951,17 +1951,17 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                 slesp.eps);
 
   switch (slesp.resnorm_type) {
-  case CS_PARAM_RESNORM_DIAG_RHS:
+  case CS_PARAM_RESNORM_NORM2_RHS:
     cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
-                  "Matrix diagonal (\"matrix_diag\")");
+                  "Euclidean norm of the RHS");
     break;
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
     cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
-                  "Weighted RHS (\"weighted_rhs\")");
+                  "Weighted Euclidean norm of the RHS");
     break;
-  case CS_PARAM_RESNORM_VOLTOT:
+  case CS_PARAM_RESNORM_FILTERED_RHS:
     cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
-                  "Volumic (\"vol_tot\")");
+                  "Filtered Euclidean norm of the RHS");
     break;
   case CS_PARAM_RESNORM_NONE:
   default:

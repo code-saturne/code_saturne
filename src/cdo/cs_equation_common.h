@@ -368,6 +368,66 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the residual normalization at the cellwise level according
+ *         to the type of renormalization
+ *         Case of scalar-valued system
+ *
+ * \param[in]      type            type of renormalization
+ * \param[in]      vol_c           cell volume
+ * \param[in]      csys            pointer to a cs_cell_sys_t structure
+ * \param[in]      rhs             array related to the right-hand side
+ * \param[in, out] normalization   value of the  residual normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_cw_scal_res_normalization(cs_param_resnorm_type_t    type,
+                                      cs_real_t                  vol_c,
+                                      const cs_cell_sys_t       *csys,
+                                      const cs_real_t            weight[],
+                                      cs_real_t                 *normalization);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the residual normalization at the cellwise level according
+ *         to the type of renormalization
+ *         Case of vector-valued system
+ *
+ * \param[in]      type            type of renormalization
+ * \param[in]      vol_c           cell volume
+ * \param[in]      csys            pointer to a cs_cell_sys_t structure
+ * \param[in]      rhs             array related to the right-hand side
+ * \param[in, out] normalization   value of the  residual normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_cw_vect_res_normalization(cs_param_resnorm_type_t    type,
+                                      cs_real_t                  vol_c,
+                                      const cs_cell_sys_t       *csys,
+                                      const cs_real_t            weight[],
+                                      cs_real_t                 *normalization);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last stage to compute of the renormalization coefficient for the
+ *         the residual norm of the linear system
+ *
+ * \param[in]      type            type of renormalization
+ * \param[in]      rhs_size        size of the rhs array
+ * \param[in]      rhs             array related to the right-hand side
+ * \param[in, out] normalization   value of the  residual normalization
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_sync_res_normalization(cs_param_resnorm_type_t    type,
+                                   cs_lnum_t                  rhs_size,
+                                   const cs_real_t            rhs[],
+                                   cs_real_t                 *normalization);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Prepare a linear system and synchronize buffers to handle parallelism.
  *        Transfer a mesh-based description of arrays x0 and rhs into an
  *        algebraic description for the linear system in x and b.
