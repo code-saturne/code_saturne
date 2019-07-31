@@ -1056,8 +1056,14 @@ cs_cdofb_uzawa_set_sles(const cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
 #if defined(HAVE_PETSC)
-    if (mom_eqp->sles_param.amg_type == CS_PARAM_AMG_NONE)
+    if (mom_eqp->sles_param.amg_type == CS_PARAM_AMG_NONE) {
+#if defined(PETSC_HAVE_HYPRE)
       mom_eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+#else
+      mom_eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+#endif
+    }
+
     cs_sles_petsc_init();
     cs_sles_petsc_define(field_id,
                          NULL,
