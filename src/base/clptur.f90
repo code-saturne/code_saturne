@@ -162,7 +162,7 @@ integer          iuntur, f_dim
 integer          nlogla, nsubla, iuiptn
 integer          f_id_rough, f_id, iustar
 
-double precision rnx, rny, rnz, rxnn
+double precision rnx, rny, rnz
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
 double precision uiptn, uiptmn, uiptmx
@@ -1830,9 +1830,6 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(/,' LA NORMALE A LA FACE DE BORD DE PAROI ',I10,/,   &
-         ' EST NULLE ; COORDONNEES : ',3E12.5)
-
  2010 format(/,                                                   &
  3X,'** CONDITIONS AUX LIMITES EN PAROI LISSE',/,                 &
  '   ----------------------------------------',/,                 &
@@ -1947,9 +1944,6 @@ endif
 '@                                                            ',/)
 
 #else
-
- 1000 format(/,' THE NORMAL TO THE WALL BOUNDARY FACE ',I10,/,    &
-         ' IS NULL; COORDINATES: ',3E12.5)
 
  2010 format(/,                                                   &
  3X,'** BOUNDARY CONDITIONS FOR SMOOTH WALLS',/,                  &

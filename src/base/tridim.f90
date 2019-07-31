@@ -592,7 +592,6 @@ if (nftcdt.gt.0) then
 
   call condensation_copain_model &
 ( nvar   , nfbpcd , ifbpcd , izzftcd ,                           &
-  tpar   ,                                                       &
   spcond , hpcond )
 
 endif

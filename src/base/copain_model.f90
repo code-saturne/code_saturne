@@ -46,9 +46,6 @@
 !> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     izzftcd       faces zone with condensation source terms imposed
 !>                              (at previous and current time steps)
-!> \param[in]     tpar          temperature imposed at the cold wall
-!>                              as constant or variable in time
-!>                              with a 1D thermal model
 !> \param[out]    gam_s         value associated to each variable in the
 !>                              condensation source terms (Lambda_cond)
 !> \param[out]    hpcond        value associated to the fluid exchange coeff.
@@ -58,7 +55,6 @@
 
 subroutine condensation_copain_model &
  ( nvar   , nfbpcd , ifbpcd , izzftcd ,  &
-   tpar   ,                              &
    gam_s  , hpcond )
 
 !===============================================================================
@@ -92,7 +88,6 @@ implicit none
 
 integer          nvar, nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
 
-double precision tpar
 double precision gam_s(nfbpcd,nvar)
 double precision hpcond(nfbpcd)
 
