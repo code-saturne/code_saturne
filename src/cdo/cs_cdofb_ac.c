@@ -566,7 +566,7 @@ _apply_remaining_bc(const cs_cdofb_ac_t           *sc,
 
       } /* End of switch */
 
-    } /* Loop boundary faces */
+    } /* Loop on boundary faces */
 
   } /* Boundary cell */
 }
@@ -858,8 +858,9 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc)
+  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,    \
+         mav, rs, dir_values, zeta, vel_c, pr, sc)                       \
+  firstprivate(time_eval, dt_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -974,7 +975,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */
       if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
-                                                      or Hodge-Voronoi */
+                                                          or Hodge-Voronoi */
 
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
@@ -989,8 +990,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -1183,7 +1184,9 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc, compute_initial_source)
+         mav, rs, dir_values, zeta, vel_c, pr, sc,                      \
+         compute_initial_source)                                        \
+  firstprivate(time_eval, t_cur, dt_cur, tcoef)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1304,8 +1307,8 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
-      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, pr[c_id],
-                       csys, cb);
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type,
+                       pr[c_id], csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */
@@ -1339,8 +1342,8 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -1408,8 +1411,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   /* Now solve the system */
   cs_real_t *vel_f = mom_eqc->face_values;
   cs_sles_t *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp,
-                               vel_f, rhs);
+  cs_cdofb_vecteq_solve_system(sles, matrix, mom_eqp, vel_f, rhs);
 
   /* Update pressure, velocity and divergence fields */
   t_upd = cs_timer_time();

@@ -1116,7 +1116,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
-         field_val, cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)
+         field_val, cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)  \
+  firstprivate(dt_cur, t_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

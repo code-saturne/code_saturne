@@ -1317,7 +1317,8 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values,   \
-         fld, rs, _vcbs_cell_system, _vcbs_cell_builder)
+         fld, rs, _vcbs_cell_system, _vcbs_cell_builder)                \
+  firstprivate(time_eval)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1522,7 +1523,8 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values,   \
-         fld, rs, _vcbs_cell_system, _vcbs_cell_builder)
+         fld, rs, _vcbs_cell_system, _vcbs_cell_builder)                \
+  firstprivate(time_eval, inv_dtcur, t_cur)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1601,7 +1603,7 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+        CS_CDO_OMP_ASSERT(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1819,7 +1821,8 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values, \
          fld, rs, _vcbs_cell_system,                                  \
-         _vcbs_cell_builder, compute_initial_source)
+         _vcbs_cell_builder, compute_initial_source)                  \
+  firstprivate(n_vertices, time_eval, t_cur, tcoef, dt_cur, inv_dtcur)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1942,7 +1945,7 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+        CS_CDO_OMP_ASSERT(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -2142,8 +2145,9 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     return;
   }
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
-  shared(quant, connect, eqp, eqb, vf_flux, pot_v, pot_c, _vcbs_cell_builder)
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)           \
+  shared(quant, connect, eqp, eqb, vf_flux, pot_v, pot_c, _vcbs_cell_builder) \
+  firstprivate(t_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

@@ -1114,7 +1114,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, mom_rs, dir_values, vel_c, pr_c, sc)
+         mav, mom_rs, dir_values, vel_c, pr_c, sc)                      \
+  firstprivate(time_eval, inv_dtcur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1231,8 +1232,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-            "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
 
       /* 5- STATIC CONDENSATION
        * ======================

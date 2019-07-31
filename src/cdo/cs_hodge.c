@@ -2605,6 +2605,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 {
   if (in_vals == NULL)
     return;
+
   if (result == NULL) {
     bft_error(__FILE__, __LINE__, 0, "Resulting vector must be allocated");
     return; // Avoid a warning
@@ -2612,7 +2613,8 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
   assert(connect != NULL && quant != NULL); // Sanity checks
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
-  shared(quant, connect, in_vals, t_eval, result, pty)
+  shared(quant, connect, in_vals, t_eval, result, pty)                     \
+  firstprivate(h_info)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

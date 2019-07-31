@@ -47,6 +47,17 @@ BEGIN_C_DECLS
 #define CS_CDO_OMP_SYNC_SECTIONS  0 /* > 0 --> critical sections
                                        otherwise atomic sections */
 
+/* Avoid issues with assert in some OpenMp contructs using gcc 9 */
+#if defined(HAVE_OPENMP) && defined(__GNUC__)
+  #if __GNUC__ == 9
+    #define CS_CDO_OMP_ASSERT(e)
+  #else
+    #define CS_CDO_OMP_ASSERT(e)  assert(e)
+  #endif
+#else
+  #define CS_CDO_OMP_ASSERT(e)  assert(e)
+#endif
+
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
    matrices */

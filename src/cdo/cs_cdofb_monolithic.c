@@ -1476,7 +1476,8 @@ _solve_system(cs_sles_t                     *sles,
 
   /* De-interlace the velocity array and the rhs for the face DoFs */
 # pragma omp parallel for if (CS_THR_MIN > n_faces) default(none) \
-  shared(vel_f, b_f, xsol, b)
+  shared(vel_f, b_f, xsol, b) \
+  firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
     xsol[f            ] = vel_f[3*f];
@@ -1544,7 +1545,8 @@ _solve_system(cs_sles_t                     *sles,
 
   /* Interlace xsol --> vel_f and pre_c */
 # pragma omp parallel for if (CS_THR_MIN > n_faces) default(none) \
-  shared(vel_f, xsol)
+  shared(vel_f, xsol) \
+  firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
     vel_f[3*f]   = xsol[f];
@@ -1982,7 +1984,8 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mass_rhs, mav, dir_values, vel_c, sc)
+         mass_rhs, mav, dir_values, vel_c, sc)                          \
+         firstprivate(t_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2216,7 +2219,8 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mass_rhs, mav, dir_values, vel_c, sc)
+         mass_rhs, mav, dir_values, vel_c, sc)                          \
+         firstprivate(t_eval, inv_dtcur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2333,8 +2337,8 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-                  "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.\n");
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -2484,7 +2488,8 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mass_rhs, mav, dir_values, vel_c, sc, compute_initial_source)
+         mass_rhs, mav, dir_values, vel_c, sc, compute_initial_source)  \
+  firstprivate(t_eval, t_cur, dt_cur, tcoef, inv_dtcur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2627,8 +2632,8 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
 
       }
       else
-        bft_error(__FILE__, __LINE__, 0, " %s: Only diagonal time treatment "
-                  "available so far.\n", __func__);
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
 
       /* 5- STATIC CONDENSATION
        * ======================

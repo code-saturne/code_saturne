@@ -387,7 +387,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
       for (int k = 0; k < 3; k++) {
         vect[k] = xb[k] - xa[k];
-        xe[k] = 0.5* ( xb[k] + xa[k]) ;
+        xe[k] = 0.5* (xb[k] + xa[k]) ;
       }
 
     }
@@ -395,7 +395,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
       for (int k = 0; k < 3; k++) {
         vect[k] = xa[k] - xb[k];
-        xe[k] = 0.5* ( xb[k] + xa[k]) ;
+        xe[k] = 0.5* (xb[k] + xa[k]) ;
       }
 
     }
@@ -413,7 +413,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
 # pragma omp parallel default(none) \
   shared(quant, topo, parent_thread_array, edge_center, cs_glob_n_threads)
-  { // OMP Block
+  { /* OMP Block */
     const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -451,7 +451,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
         }
         else {
           const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
-          assert(bf_id > -1);
+          CS_CDO_OMP_ASSERT(bf_id > -1);
           for (int k = 0; k < 3; k++)
             xfxc[k] = quant->b_face_center[3*bf_id+k] - xc[k];
         }
@@ -479,14 +479,14 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
               break;
             }
           }
-          assert(e < n_ec);
+          CS_CDO_OMP_ASSERT(e < n_ec);
 
           /* Portion of dual faces to consider */
           cs_real_t  *sface = quant->sface_normal + 6*(c2e_idx[0]+e);
 
           /* One should have (normal_tria, tangent_e) > 0 */
           const double  orient = _dp3(tria.unitv, edge.unitv);
-          assert(fabs(orient) > 0);
+          CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
           /* Store the computed data */
           if (orient < 0) {
@@ -501,7 +501,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 #if defined(DEBUG) && !defined(NDEBUG)
           cs_nvec3_t  df_nvec;
           cs_nvec3(sface + 3*parent[e], &df_nvec);
-          assert(fabs(_dp3(df_nvec.unitv, edge.unitv)) > 0);
+          CS_CDO_OMP_ASSERT(fabs(_dp3(df_nvec.unitv, edge.unitv)) > 0);
 #endif
           parent[e] += 1;
 
@@ -522,7 +522,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
     BFT_FREE(parent);
 
-  } // End of OpenMP block
+  } /* End of OpenMP block */
 
   BFT_FREE(parent_thread_array);
   BFT_FREE(edge_center);
@@ -591,15 +591,15 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
           if (c2v_ids[_v] == v1_id) _v1 = _v;
           if (c2v_ids[_v] == v2_id) _v2 = _v;
         }
-        assert(_v1 < n_vc && _v2 < n_vc);
+        CS_CDO_OMP_ASSERT(_v1 < n_vc && _v2 < n_vc);
         vol_vc[_v1] += pvol;
         vol_vc[_v2] += pvol;
 
-      } // Loop on face edges
+      } /* Loop on face edges */
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
-  }  // Loop on cells
+  } /* Loop on cells */
 
 }
 
@@ -610,7 +610,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 static void
 _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
 {
-  assert(quant != NULL); // Sanity check
+  assert(quant != NULL); /* Sanity check */
 
   /* Cell info (set default values) */
   quant->cell_info.h_min = quant->cell_info.meas_min = DBL_MAX;
@@ -629,7 +629,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
       quant->cell_info.h_min = cbrt(meas);
     }
 
-  } // Loop on cells
+  } /* Loop on cells */
 
   /* Face info (set default values) */
   quant->face_info.h_min = quant->face_info.meas_min = DBL_MAX;
@@ -648,7 +648,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
       quant->face_info.h_min = sqrt(meas);
     }
 
-  } // Loop on faces
+  } /* Loop on faces */
 
   for (cs_lnum_t  f_id = 0; f_id < quant->n_b_faces; f_id++) {
 
@@ -663,7 +663,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
       quant->face_info.h_min = sqrt(meas);
     }
 
-  } // Loop on faces
+  } /* Loop on faces */
 
   /* Edge info (set default values) */
   quant->edge_info.h_min = quant->edge_info.meas_min = DBL_MAX;
@@ -682,7 +682,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
       quant->edge_info.h_min = edge.meas;
     }
 
-  } // Loop on edges
+  } /* Loop on edges */
 
 }
 
@@ -720,12 +720,12 @@ _vtx_algorithm(const cs_cdo_connect_t      *connect,
       xc[1] += xv[1];
       xc[2] += xv[2];
 
-    } // Loop on cell vertices
+    } /* Loop on cell vertices */
 
     const double  coef = 1./(ve-vs);
     for (int k = 0; k < 3; k++) xc[k] *= coef;
 
-  } // Loop on cells
+  } /* Loop on cells */
 
 }
 
@@ -827,7 +827,7 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-    if (topo->cell_type[c_id] == FVM_CELL_HEXA) { // Check if orthogonal
+    if (topo->cell_type[c_id] == FVM_CELL_HEXA) { /* Check if orthogonal */
 
       double  ortho_crit = 0.;
       for (cs_lnum_t i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1];
@@ -839,14 +839,14 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 
         ortho_crit += fabs(1 - _dp3(de_nv.unitv, pf_nv.unitv));
 
-      } // Loop on cell faces
+      } /* Loop on cell faces */
 
       if (ortho_crit < ortho_threshold)
         cdoq->cell_flag[c_id] |= CS_CDO_ORTHO;
 
-    } // Hexahedron
+    } /* Hexahedron */
 
-  } // Loop on cells
+  } /* Loop on cells */
 
 }
 
@@ -1052,7 +1052,7 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
 
       }
 
-    } // Loop on cell faces
+    } /* Loop on cell faces */
 
   } /* End of loop on cells */
 
